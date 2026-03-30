@@ -1,0 +1,19 @@
+{
+  "name": "nestbook",
+  "version": "1.0.0",
+  "description": "NestBook — booking and property management for small hospitality businesses",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "db:seed": "npm run db:seed --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

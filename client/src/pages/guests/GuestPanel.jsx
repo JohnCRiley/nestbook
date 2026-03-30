@@ -1,0 +1,250 @@
+import { useState } from 'react';
+import { initials, phoneFlag, phoneCountry, fmtDate, fmtPrice } from '../../utils/guestHelpers.js';
+import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
+import { nightsBetween } from '../../utils/format.js';
+
+/**
+ * Slide-in panel showing full guest details, booking history, and an edit form.
+ */
+export default function GuestPanel({ guest, bookings, onClose, onGuestUpdated }) {
+  const [mode, setMode] = useState('view');   // 'view' | 'edit'
+
+  return (
+    <>
+      <div className="panel-backdrop" onClick={onClose} />
+      <aside className="detail-panel" role="dialog" aria-label="Guest details">
+
+        <PanelHeader guest={guest} onClose={onClose} />
+
+        <div className="panel-scroll">
+          <div className="panel-body">
+            {mode === 'view' ? (
+              <ViewMode guest={guest} bookings={bookings} onEdit={() => setMode('edit')} />
+            ) : (
+              <EditMode
+                guest={guest}
+                onCancel={() => setMode('view')}
+                onSaved={(updated) => { onGuestUpdated(updated); setMode('view'); }}
+              />
+            )}
+          </div>
+        </div>
+
+      </aside>
+    </>
+  );
+}
+
+// ── Panel header ──────────────────────────────────────────────────────────────
+
+function PanelHeader({ guest, onClose }) {
+  const flag    = phoneFlag(guest.phone);
+  const country = phoneCountry(guest.phone);
+
+  return (
+    <div className="panel-header">
+      <button className="panel-close" onClick={onClose} aria-label="Close">✕</button>
+      <div className="panel-header-row">
+        <div className="panel-avatar-lg">
+          {initials(guest.first_name, guest.last_name)}
+        </div>
+        <div>
+          <div className="panel-guest-name" style={{ marginBottom: 2 }}>
+            {guest.first_name} {guest.last_name}
+            {flag && <span style={{ marginLeft: 7, fontSize: '1.1rem' }}>{flag}</span>}
+          </div>
+          {country && (
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.78rem' }}>{country}</div>
+          )}
+        </div>
+      </div>
+      <div className="panel-booking-ref">
+        Guest #{guest.id} · Added {fmtDate(guest.created_at?.slice(0, 10))}
+      </div>
+    </div>
+  );
+}
+
+// ── View mode ─────────────────────────────────────────────────────────────────
+
+function ViewMode({ guest, bookings, onEdit }) {
+  const sorted = [...bookings].sort((a, b) => (b.check_in_date > a.check_in_date ? 1 : -1));
+  const totalSpend = bookings.reduce((s, b) => s + (b.total_price || 0), 0);
+
+  return (
+    <>
+      {/* Contact details */}
+      <div className="panel-section">
+        <div className="panel-section-title">Contact</div>
+        <PanelRow label="Email" value={guest.email  || '—'} />
+        <PanelRow label="Phone" value={guest.phone  || '—'} />
+        {guest.notes && <PanelRow label="Notes" value={guest.notes} />}
+      </div>
+
+      {/* Stay summary */}
+      <div className="panel-section">
+        <div className="panel-section-title">Stay Summary</div>
+        <div className="panel-price-callout">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div className="panel-price-main">{fmtPrice(totalSpend)}</div>
+              <div className="panel-price-detail">total across all bookings</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--accent-dark)' }}>
+                {bookings.length}
+              </div>
+              <div style={{ fontSize: '0.78rem', opacity: 0.75 }}>
+                {bookings.length === 1 ? 'booking' : 'bookings'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Booking history */}
+      <div className="panel-section">
+        <div className="panel-section-title">Booking History</div>
+        {sorted.length === 0 ? (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>No bookings yet</div>
+        ) : (
+          sorted.map((b) => <HistoryRow key={b.id} booking={b} />)
+        )}
+      </div>
+
+      {/* Edit action */}
+      <div className="panel-actions">
+        <button className="btn-panel-primary" onClick={onEdit}>Edit Guest Details</button>
+      </div>
+    </>
+  );
+}
+
+// ── Edit mode ─────────────────────────────────────────────────────────────────
+
+function EditMode({ guest, onCancel, onSaved }) {
+  const [form, setForm] = useState({
+    first_name: guest.first_name ?? '',
+    last_name:  guest.last_name  ?? '',
+    email:      guest.email      ?? '',
+    phone:      guest.phone      ?? '',
+    notes:      guest.notes      ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState(null);
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSave = async () => {
+    if (!form.first_name.trim() || !form.last_name.trim()) {
+      setError('First and last name are required.');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/guests/${guest.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const updated = await res.json();
+      onSaved(updated);
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="panel-section">
+        <div className="panel-section-title">Edit Guest Details</div>
+
+        {error && (
+          <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>
+        )}
+
+        <div className="panel-edit-form">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label="First Name" name="first_name" value={form.first_name} onChange={handleChange} />
+            <Field label="Last Name"  name="last_name"  value={form.last_name}  onChange={handleChange} />
+          </div>
+          <Field label="Email" name="email" value={form.email} onChange={handleChange} type="email" />
+          <Field label="Phone" name="phone" value={form.phone} onChange={handleChange} type="tel" />
+          <div className="panel-field">
+            <label className="panel-field-label">Notes</label>
+            <textarea
+              name="notes"
+              className="panel-field-input panel-field-textarea"
+              value={form.notes}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="panel-actions">
+        <button className="btn-panel-primary" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+        <button className="btn-secondary" onClick={onCancel} disabled={saving}
+          style={{ border: '1.5px solid var(--border)' }}>
+          Cancel
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ── HistoryRow ────────────────────────────────────────────────────────────────
+
+function HistoryRow({ booking: b }) {
+  const nights = nightsBetween(b.check_in_date, b.check_out_date);
+  return (
+    <div className="history-row">
+      <div className="history-dates">
+        {fmtDate(b.check_in_date)} → {fmtDate(b.check_out_date)}
+      </div>
+      <div className="history-meta">
+        <span>{b.room_name ?? `Room #${b.room_id}`}</span>
+        <span>·</span>
+        <span>{nights} {nights === 1 ? 'night' : 'nights'}</span>
+        <span>·</span>
+        <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+          {BADGE_LABEL[b.status] ?? b.status}
+        </span>
+        <span className="history-price">{fmtPrice(b.total_price)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Shared sub-components ─────────────────────────────────────────────────────
+
+function PanelRow({ label, value }) {
+  return (
+    <div className="panel-row">
+      <span className="panel-row-label">{label}</span>
+      <span className="panel-row-value">{value}</span>
+    </div>
+  );
+}
+
+function Field({ label, name, value, onChange, type = 'text' }) {
+  return (
+    <div className="panel-field">
+      <label className="panel-field-label">{label}</label>
+      <input
+        type={type}
+        name={name}
+        className="panel-field-input"
+        value={value}
+        onChange={onChange}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Simple Booking Management for Small Properties</title>
+<meta name="description" content="NestBook is the elegant booking and property management system for B&Bs, gîtes and guest houses across Europe.">
+<style>
+/* ── Reset & tokens ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --dark:   #1a4710;
+  --mid:    #2f771b;
+  --light:  #d9f0cc;
+  --page:   #ffffff;
+  --soft:   #f3f7f2;
+  --border: #e0ecdb;
+  --text:   #1a2e14;
+  --muted:  #557a4a;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(26,71,16,0.10);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--page);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+.section    { padding: 88px 0; }
+.section-sm { padding: 64px 0; }
+.text-center { text-align: center; }
+
+.badge {
+  display: inline-block;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 5px 13px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.section-heading {
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.section-sub {
+  font-size: 1.05rem;
+  color: var(--muted);
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 24px;
+  border-radius: 9px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 2px solid transparent;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--mid);
+  color: #fff;
+  border-color: var(--mid);
+}
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(47,119,27,0.3); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--dark);
+  border-color: var(--border);
+}
+.btn-outline:hover { border-color: var(--mid); color: var(--mid); background: var(--soft); }
+
+.btn-white {
+  background: #fff;
+  color: var(--dark);
+  border-color: rgba(255,255,255,0.3);
+}
+.btn-white:hover { background: var(--light); transform: translateY(-1px); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+}
+.btn-ghost:hover { color: var(--dark); }
+
+.btn-lg { padding: 15px 30px; font-size: 1rem; border-radius: 10px; }
+
+/* ── Navbar ───────────────────────────────────────────────────────────────── */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 64px;
+}
+.nb-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--dark);
+  letter-spacing: -0.4px;
+  margin-right: 32px;
+  flex-shrink: 0;
+}
+.nb-logo-leaf {
+  width: 32px; height: 32px;
+  background: var(--dark);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.nb-logo-leaf::after {
+  content: '';
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--light);
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+.nav-link {
+  padding: 7px 13px;
+  border-radius: 7px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.12s;
+}
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Language switcher */
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--soft);
+  border-radius: 8px;
+  padding: 3px;
+  margin-right: 6px;
+}
+.lang-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.12s;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+.lang-btn:hover  { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  padding: 100px 0 80px;
+  overflow: hidden;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(217,240,204,0.5) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding: 5px 13px 5px 8px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+.hero-kicker-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mid);
+  flex-shrink: 0;
+}
+.hero-headline {
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 900;
+  color: var(--dark);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+.hero-headline em {
+  font-style: normal;
+  color: var(--mid);
+}
+.hero-sub {
+  font-size: 1.1rem;
+  color: var(--muted);
+  line-height: 1.75;
+  margin-bottom: 32px;
+  max-width: 440px;
+}
+.hero-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+.hero-trust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.hero-trust-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+/* ── App Preview Mockup ───────────────────────────────────────────────────── */
+.preview-wrap {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(26,71,16,0.15), 0 2px 8px rgba(0,0,0,0.06);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+/* Browser chrome */
+.preview-chrome {
+  background: #f0f0f0;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #ddd;
+}
+.preview-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.preview-bar {
+  flex: 1;
+  background: #fff;
+  border-radius: 4px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 0.6rem;
+  color: #999;
+  border: 1px solid #e0e0e0;
+}
+/* App shell inside preview */
+.preview-app {
+  display: flex;
+  height: 320px;
+}
+.preview-sidebar {
+  width: 120px;
+  background: var(--dark);
+  flex-shrink: 0;
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+}
+.psb-brand {
+  padding: 0 12px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 8px;
+}
+.psb-brand-name {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.psb-brand-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--light);
+}
+.psb-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.55);
+  border-left: 2px solid transparent;
+}
+.psb-item.active {
+  background: rgba(47,119,27,0.35);
+  border-left-color: var(--light);
+  color: #fff;
+  font-weight: 600;
+}
+.psb-icon {
+  width: 12px; height: 12px;
+  background: currentColor;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+.psb-item.active .psb-icon { opacity: 1; }
+.psb-footer {
+  margin-top: auto;
+  padding: 10px 12px 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.55rem;
+  color: rgba(255,255,255,0.3);
+  line-height: 1.5;
+}
+.psb-footer strong { color: var(--light); font-size: 0.6rem; display: block; margin-top: 2px; }
+
+/* Dashboard content inside preview */
+.preview-content {
+  flex: 1;
+  background: #f3f7f2;
+  padding: 14px;
+  overflow: hidden;
+}
+.preview-pg-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 10px;
+}
+.preview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.preview-stat {
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--mid);
+}
+.preview-stat-val { font-size: 1rem; font-weight: 700; color: var(--dark); line-height: 1; }
+.preview-stat-lbl { font-size: 0.5rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* Mini calendar grid */
+.preview-cal-wrap {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+.preview-cal {
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.preview-cal-head {
+  background: var(--light);
+  padding: 5px 8px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--dark);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.preview-cal-body { padding: 6px 8px; }
+.preview-booking {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.5rem;
+  color: var(--text);
+}
+.preview-booking:last-child { border-bottom: none; }
+.preview-booking-bar {
+  height: 10px;
+  border-radius: 3px;
+  background: var(--mid);
+  flex-shrink: 0;
+}
+.preview-booking-bar.arriving { background: #86efac; }
+.preview-booking-bar.confirmed { background: var(--mid); }
+.preview-booking-bar.past { background: #e2e8f0; }
+
+/* ── Preview section heading ──────────────────────────────────────────────── */
+#preview { background: var(--soft); }
+.preview-section-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── Features ─────────────────────────────────────────────────────────────── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+}
+.feature-card {
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.feature-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+.feature-icon {
+  width: 48px; height: 48px;
+  background: var(--light);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 16px;
+}
+.feature-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 8px;
+}
+.feature-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ── Languages ────────────────────────────────────────────────────────────── */
+#languages { background: var(--dark); color: #fff; }
+#languages .section-heading { color: #fff; }
+#languages .section-sub { color: rgba(255,255,255,0.65); }
+.lang-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 48px;
+}
+.lang-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  text-align: center;
+  transition: background 0.15s;
+}
+.lang-card:hover { background: rgba(255,255,255,0.13); }
+.lang-flag { font-size: 2.5rem; margin-bottom: 10px; }
+.lang-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--light);
+  margin-bottom: 12px;
+}
+.lang-phrase {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
+}
+.lang-phrase strong { display: block; color: rgba(255,255,255,0.8); font-style: normal; font-size: 0.85rem; margin-bottom: 4px; }
+
+/* ── Testimonials ─────────────────────────────────────────────────────────── */
+#testimonials { background: var(--soft); }
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+}
+.testimonial-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+}
+.testimonial-stars {
+  color: #f59e0b;
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+  letter-spacing: 2px;
+}
+.testimonial-quote {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.75;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.testimonial-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.testimonial-name  { font-size: 0.875rem; font-weight: 700; color: var(--dark); }
+.testimonial-place { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+/* ── Pricing ──────────────────────────────────────────────────────────────── */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 48px;
+  align-items: start;
+}
+.pricing-card {
+  background: var(--soft);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  position: relative;
+  transition: box-shadow 0.15s;
+}
+.pricing-card:hover { box-shadow: var(--shadow); }
+.pricing-card.highlight {
+  background: var(--dark);
+  border-color: var(--dark);
+  color: #fff;
+  box-shadow: 0 12px 40px rgba(26,71,16,0.28);
+  transform: scale(1.03);
+}
+.pricing-popular {
+  position: absolute;
+  top: -13px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--mid);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.pricing-tier  { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 8px; }
+.pricing-card.highlight .pricing-tier { color: var(--light); }
+.pricing-price { font-size: 2.4rem; font-weight: 900; color: var(--dark); letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+.pricing-card.highlight .pricing-price { color: #fff; }
+.pricing-price span { font-size: 1rem; font-weight: 500; }
+.pricing-period { font-size: 0.78rem; color: var(--muted); margin-bottom: 24px; }
+.pricing-card.highlight .pricing-period { color: rgba(255,255,255,0.55); }
+.pricing-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.pricing-features li { font-size: 0.85rem; display: flex; align-items: flex-start; gap: 9px; }
+.pricing-features li::before {
+  content: '✓';
+  font-weight: 700;
+  color: var(--mid);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.pricing-card.highlight .pricing-features li { color: rgba(255,255,255,0.85); }
+.pricing-card.highlight .pricing-features li::before { color: var(--light); }
+
+/* ── CTA ──────────────────────────────────────────────────────────────────── */
+.cta-section {
+  background: linear-gradient(135deg, var(--dark) 0%, #1e5c12 100%);
+  padding: 96px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(217,240,204,0.08) 0%, transparent 70%);
+}
+.cta-section h2 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 14px; }
+.cta-section p  { font-size: 1.05rem; color: rgba(255,255,255,0.65); max-width: 500px; margin: 0 auto 36px; }
+.cta-buttons    { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.cta-note { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-top: 16px; }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer {
+  background: #0f2909;
+  color: rgba(255,255,255,0.55);
+  padding: 48px 0 28px;
+}
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+.footer-brand-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4  { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links   { display: flex; flex-direction: column; gap: 8px; }
+.footer-link    { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+}
+.footer-leaf {
+  width: 22px; height: 22px;
+  background: var(--mid);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.footer-leaf::after {
+  content: '';
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--light);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero-inner         { grid-template-columns: 1fr; }
+  .preview-wrap       { display: none; }
+  .features-grid      { grid-template-columns: repeat(2, 1fr); }
+  .lang-cards         { grid-template-columns: repeat(2, 1fr); }
+  .testimonials-grid  { grid-template-columns: 1fr; }
+  .pricing-grid       { grid-template-columns: 1fr; }
+  .pricing-card.highlight { transform: none; }
+  .footer-inner       { grid-template-columns: 1fr 1fr; }
+  .nav-links          { display: none; }
+}
+@media (max-width: 600px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .lang-cards    { grid-template-columns: 1fr 1fr; }
+  .footer-inner  { grid-template-columns: 1fr; }
+  .section { padding: 60px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  NAVBAR                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<header class="navbar">
+  <div class="container navbar-inner">
+
+    <a href="#" class="nb-logo">
+      <div class="nb-logo-leaf"></div>
+      NestBook
+    </a>
+
+    <nav class="nav-links">
+      <a href="#features"     class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="#pricing"      class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="#languages"    class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+      </div>
+      <button class="btn btn-ghost" data-i18n="nav.signin">Sign in</button>
+      <a href="/dashboard" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  HERO                                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+
+      <!-- Left: copy -->
+      <div>
+        <div class="hero-kicker">
+          <span class="hero-kicker-dot"></span>
+          <span data-i18n="hero.kicker">Made for small European properties</span>
+        </div>
+
+        <h1 class="hero-headline" data-i18n-html="hero.headline">
+          Your guests deserve a smooth welcome. <em>So do you.</em>
+        </h1>
+
+        <p class="hero-sub" data-i18n="hero.sub">
+          NestBook is the simple, elegant booking and property management system built for B&Bs, gîtes and guest houses across Europe.
+        </p>
+
+        <div class="hero-btns">
+          <a href="/dashboard" class="btn btn-primary btn-lg" data-i18n="hero.cta">Start free — no card needed</a>
+          <a href="#preview"   class="btn btn-outline btn-lg" data-i18n="hero.demo">See it in action</a>
+        </div>
+
+        <div class="hero-trust">
+          <span data-i18n="hero.trust1">No setup fee</span>
+          <span class="hero-trust-dot"></span>
+          <span data-i18n="hero.trust2">Cancel any time</span>
+          <span class="hero-trust-dot"></span>
+          <span data-i18n="hero.trust3">English · Français · Español · Deutsch</span>
+        </div>
+      </div>
+
+      <!-- Right: app preview mockup -->
+      <div>
+        <div class="preview-wrap">
+          <!-- Browser chrome -->
+          <div class="preview-chrome">
+            <div class="preview-dot" style="background:#ff5f57"></div>
+            <div class="preview-dot" style="background:#febc2e"></div>
+            <div class="preview-dot" style="background:#28c840"></div>
+            <div class="preview-bar">nestbook.app/dashboard</div>
+          </div>
+          <!-- App shell -->
+          <div class="preview-app">
+            <!-- Sidebar -->
+            <div class="preview-sidebar">
+              <div class="psb-brand">
+                <div class="psb-brand-name">
+                  <span class="psb-brand-dot"></span> NestBook
+                </div>
+              </div>
+              <div class="psb-item active">
+                <div class="psb-icon" style="border-radius:3px"></div>
+                <span style="font-size:0.62rem">Dashboard</span>
+              </div>
+              <div class="psb-item">
+                <div class="psb-icon" style="border-radius:3px"></div>
+                <span style="font-size:0.62rem">Calendar</span>
+              </div>
+              <div class="psb-item">
+                <div class="psb-icon" style="border-radius:3px"></div>
+                <span style="font-size:0.62rem">Bookings</span>
+              </div>
+              <div class="psb-item">
+                <div class="psb-icon" style="border-radius:3px"></div>
+                <span style="font-size:0.62rem">Guests</span>
+              </div>
+              <div class="psb-item">
+                <div class="psb-icon" style="border-radius:3px"></div>
+                <span style="font-size:0.62rem">Rooms</span>
+              </div>
+              <div class="psb-item">
+                <div class="psb-icon" style="border-radius:3px"></div>
+                <span style="font-size:0.62rem">Settings</span>
+              </div>
+              <div class="psb-footer">
+                Property<strong>Domaine des Lavandes</strong>
+              </div>
+            </div>
+            <!-- Content -->
+            <div class="preview-content">
+              <div class="preview-pg-title">Good morning ☀️</div>
+              <!-- Stat cards -->
+              <div class="preview-stats">
+                <div class="preview-stat">
+                  <div class="preview-stat-val">2</div>
+                  <div class="preview-stat-lbl">In house</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-val">1</div>
+                  <div class="preview-stat-lbl">Arriving</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-val">0</div>
+                  <div class="preview-stat-lbl">Departing</div>
+                </div>
+                <div class="preview-stat">
+                  <div class="preview-stat-val">€1.8k</div>
+                  <div class="preview-stat-lbl">Revenue</div>
+                </div>
+              </div>
+              <!-- Mini calendar -->
+              <div class="preview-cal-wrap">
+                <div class="preview-cal">
+                  <div class="preview-cal-head">Today's Arrivals</div>
+                  <div class="preview-cal-body">
+                    <div class="preview-booking">
+                      <div class="preview-booking-bar arriving" style="width:28px"></div>
+                      <span>Marie D. — Le Nid</span>
+                    </div>
+                    <div class="preview-booking">
+                      <div class="preview-booking-bar past" style="width:28px"></div>
+                      <span>James W. — Suite</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="preview-cal">
+                  <div class="preview-cal-head">Upcoming 7 days</div>
+                  <div class="preview-cal-body">
+                    <div class="preview-booking">
+                      <div class="preview-booking-bar confirmed" style="width:36px"></div>
+                      <span>Carlos G. — Apt.</span>
+                    </div>
+                    <div class="preview-booking">
+                      <div class="preview-booking-bar confirmed" style="width:28px"></div>
+                      <span>Anna K. — Family</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  APP PREVIEW (anchor for "See it in action")                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="section-sm text-center" id="preview" style="background:var(--soft)">
+  <div class="container preview-section-wrap">
+    <div class="badge" data-i18n="preview.badge">The dashboard</div>
+    <h2 class="section-heading" data-i18n="preview.heading">Everything in one place</h2>
+    <p class="section-sub" data-i18n="preview.sub">
+      A single screen tells you who's arriving today, who's in-house, what's coming up, and how the month is going.
+    </p>
+    <!-- Full-width preview on larger screens -->
+    <div style="margin-top:40px">
+      <div class="preview-wrap" style="max-width:100%">
+        <div class="preview-chrome">
+          <div class="preview-dot" style="background:#ff5f57"></div>
+          <div class="preview-dot" style="background:#febc2e"></div>
+          <div class="preview-dot" style="background:#28c840"></div>
+          <div class="preview-bar">nestbook.app/calendar</div>
+        </div>
+        <!-- Calendar grid mockup -->
+        <div style="display:flex; height:260px; background:#f3f7f2; overflow:hidden">
+          <!-- Sidebar (same as above but inline) -->
+          <div class="preview-sidebar" style="width:110px">
+            <div class="psb-brand">
+              <div class="psb-brand-name"><span class="psb-brand-dot"></span> NestBook</div>
+            </div>
+            <div class="psb-item"><div class="psb-icon"></div><span style="font-size:0.6rem">Dashboard</span></div>
+            <div class="psb-item active"><div class="psb-icon"></div><span style="font-size:0.6rem">Calendar</span></div>
+            <div class="psb-item"><div class="psb-icon"></div><span style="font-size:0.6rem">Bookings</span></div>
+            <div class="psb-item"><div class="psb-icon"></div><span style="font-size:0.6rem">Guests</span></div>
+            <div class="psb-item"><div class="psb-icon"></div><span style="font-size:0.6rem">Rooms</span></div>
+            <div class="psb-footer">Property<strong>Domaine des Lavandes</strong></div>
+          </div>
+          <!-- Calendar area -->
+          <div style="flex:1; padding:14px; overflow:hidden">
+            <!-- Calendar grid -->
+            <div style="display:grid; grid-template-columns:90px repeat(7,1fr); border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff; font-size:0.55rem">
+              <!-- Header row -->
+              <div style="background:var(--light); padding:6px 8px; border-right:2px solid rgba(47,119,27,0.2); font-weight:700; color:var(--dark)">Room</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Mon<br>28</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Tue<br>29</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Wed<br>30</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:#fff; border-right:1px solid rgba(47,119,27,0.12)"><span style="background:var(--mid);border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center">31</span></div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Thu<br>1</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Fri<br>2</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark)">Sat<br>3</div>
+              <!-- Room 1 -->
+              <div style="padding:6px 8px; border-right:2px solid rgba(47,119,27,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Suite Lavande</div>
+              <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
+              <div style="background:var(--mid); border-top:1px solid var(--border); padding:3px 4px; color:#fff; font-weight:600">James</div>
+              <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
+              <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <!-- Room 2 -->
+              <div style="padding:6px 8px; border-right:2px solid rgba(47,119,27,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Ch. Mistral</div>
+              <div style="background:#e2e8f0; border-top:1px solid var(--border); padding:3px 4px; color:#94a3b8; font-size:0.5rem">Sophie</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="background:#86efac; border-top:1px solid var(--border); border-right:1px solid var(--border); padding:3px 4px; color:#166534; font-weight:600">Hans</div>
+              <div style="background:var(--mid); border-top:1px solid var(--border); border-right:1px solid var(--border)"></div>
+              <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
+              <!-- Room 3 -->
+              <div style="padding:6px 8px; border-right:2px solid rgba(47,119,27,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Le Nid</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="background:#86efac; border-top:1px solid var(--border); border-right:1px solid var(--border); padding:3px 4px; color:#166534; font-weight:600">Marie</div>
+              <div style="background:var(--mid); border-top:1px solid var(--border); border-right:1px solid var(--border)"></div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+              <div style="border-top:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  FEATURES                                                                  -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="section text-center" id="features">
+  <div class="container">
+    <div class="badge" data-i18n="features.badge">Features</div>
+    <h2 class="section-heading" data-i18n="features.heading">Everything you need. Nothing you don't.</h2>
+    <p class="section-sub" data-i18n="features.sub">Built for owners who want to spend time with their guests, not fighting software.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <div class="feature-title" data-i18n="features.cal.title">Visual Calendar</div>
+        <div class="feature-desc" data-i18n="features.cal.desc">Week-view availability grid — rooms across the top, dates down the side. Click any cell to book or view details instantly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <div class="feature-title" data-i18n="features.guests.title">Guest Records</div>
+        <div class="feature-desc" data-i18n="features.guests.desc">A full guest directory with contact details, stay history, notes and total spend — searchable by name or email.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔌</div>
+        <div class="feature-title" data-i18n="features.widget.title">Booking Widget</div>
+        <div class="feature-desc" data-i18n="features.widget.desc">One script tag turns your existing website into a direct booking engine — no third-party fees, no commission.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📶</div>
+        <div class="feature-title" data-i18n="features.offline.title">Works Offline</div>
+        <div class="feature-desc" data-i18n="features.offline.desc">Check guests in and manage bookings even without internet. Everything syncs when you reconnect.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔑</div>
+        <div class="feature-title" data-i18n="features.roles.title">Owner & Staff Roles</div>
+        <div class="feature-desc" data-i18n="features.roles.desc">Invite reception staff with limited access. Owners keep full control over settings, pricing and reports.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <div class="feature-title" data-i18n="features.i18n.title">4 Languages Built In</div>
+        <div class="feature-desc" data-i18n="features.i18n.desc">The dashboard and the guest-facing booking widget both work in English, French, Spanish and German — no plugins needed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  LANGUAGES                                                                 -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="section text-center" id="languages">
+  <div class="container">
+    <div class="badge" style="background:rgba(255,255,255,0.15); color:var(--light)" data-i18n="langs.badge">Made for Europe</div>
+    <h2 class="section-heading" data-i18n="langs.heading">One app, four languages</h2>
+    <p class="section-sub" data-i18n="langs.sub">Whether your guests book in English, your staff prefer French, and your accountant wants German — NestBook switches instantly.</p>
+    <div class="lang-cards">
+      <div class="lang-card">
+        <div class="lang-flag">🇬🇧</div>
+        <div class="lang-name">English</div>
+        <div class="lang-phrase">
+          <strong data-i18n="langs.en.phrase">"Check-in: 3pm. Checkout: 11am."</strong>
+          <span data-i18n="langs.en.sub">For B&Bs from Cornwall to Edinburgh</span>
+        </div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-flag">🇫🇷</div>
+        <div class="lang-name">Français</div>
+        <div class="lang-phrase">
+          <strong>"Arrivée : 15h. Départ : 11h."</strong>
+          <span data-i18n="langs.fr.sub">Pour les gîtes de Provence à la Bretagne</span>
+        </div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-flag">🇪🇸</div>
+        <div class="lang-name">Español</div>
+        <div class="lang-phrase">
+          <strong>"Entrada: 15h. Salida: 11h."</strong>
+          <span data-i18n="langs.es.sub">Para casas rurales de Andalucía a Cataluña</span>
+        </div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-flag">🇩🇪</div>
+        <div class="lang-name">Deutsch</div>
+        <div class="lang-phrase">
+          <strong>"Anreise: 15 Uhr. Abreise: 11 Uhr."</strong>
+          <span data-i18n="langs.de.sub">Für Gästehäuser von Bayern bis zur Nordsee</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  TESTIMONIALS                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="section text-center" id="testimonials">
+  <div class="container">
+    <div class="badge" data-i18n="testimonials.badge">From our customers</div>
+    <h2 class="section-heading" data-i18n="testimonials.heading">Loved by small property owners</h2>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote" data-i18n="testimonials.1.quote">"I used to manage everything in a spreadsheet and a paper diary. NestBook replaced both in an afternoon. I can check arrivals on my phone before I even get out of bed."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">MH</div>
+          <div>
+            <div class="testimonial-name" data-i18n="testimonials.1.name">Margaret Hughes</div>
+            <div class="testimonial-place" data-i18n="testimonials.1.place">🇬🇧 The Wisteria B&B, Cotswolds</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote" data-i18n="testimonials.2.quote">"Le widget de réservation sur mon site a tout changé. Les clients réservent directement, sans commission. En trois mois j'ai récupéré plus que le coût annuel de l'abonnement."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">PB</div>
+          <div>
+            <div class="testimonial-name" data-i18n="testimonials.2.name">Pierre Beaumont</div>
+            <div class="testimonial-place" data-i18n="testimonials.2.place">🇫🇷 Domaine des Lavandes, Provence</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-quote" data-i18n="testimonials.3.quote">"We run a six-room guest house and my husband and I both needed to see the calendar. The owner and staff roles mean we're never accidentally double-booking each other. Brilliant."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">SC</div>
+          <div>
+            <div class="testimonial-name" data-i18n="testimonials.3.name">Siobhán Connolly</div>
+            <div class="testimonial-place" data-i18n="testimonials.3.place">🇮🇪 The Harbour House, Kinsale</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  PRICING                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="section text-center" id="pricing" style="background:var(--soft)">
+  <div class="container">
+    <div class="badge" data-i18n="pricing.badge">Pricing</div>
+    <h2 class="section-heading" data-i18n="pricing.heading">Simple, honest pricing</h2>
+    <p class="section-sub" data-i18n="pricing.sub">No commission, no booking fees, no surprises. Just a flat monthly rate.</p>
+
+    <div class="pricing-grid">
+
+      <!-- Starter -->
+      <div class="pricing-card">
+        <div class="pricing-tier" data-i18n="pricing.starter.tier">Starter</div>
+        <div class="pricing-price"><span>€</span>0</div>
+        <div class="pricing-period" data-i18n="pricing.starter.period">Free forever</div>
+        <ul class="pricing-features">
+          <li data-i18n="pricing.starter.f1">1 property, up to 3 rooms</li>
+          <li data-i18n="pricing.starter.f2">Booking calendar & management</li>
+          <li data-i18n="pricing.starter.f3">Guest records</li>
+          <li data-i18n="pricing.starter.f4">All 4 languages</li>
+          <li data-i18n="pricing.starter.f5">Booking widget (branded)</li>
+        </ul>
+        <a href="/dashboard" class="btn btn-outline" style="width:100%; justify-content:center" data-i18n="pricing.starter.cta">Get started free</a>
+      </div>
+
+      <!-- Pro (highlighted) -->
+      <div class="pricing-card highlight">
+        <div class="pricing-popular" data-i18n="pricing.pro.popular">Most popular</div>
+        <div class="pricing-tier" data-i18n="pricing.pro.tier">Pro</div>
+        <div class="pricing-price"><span>€</span>19</div>
+        <div class="pricing-period" data-i18n="pricing.pro.period">per month, billed monthly</div>
+        <ul class="pricing-features">
+          <li data-i18n="pricing.pro.f1">1 property, unlimited rooms</li>
+          <li data-i18n="pricing.pro.f2">Everything in Starter</li>
+          <li data-i18n="pricing.pro.f3">White-label booking widget</li>
+          <li data-i18n="pricing.pro.f4">Staff accounts (up to 5)</li>
+          <li data-i18n="pricing.pro.f5">Email booking confirmations</li>
+          <li data-i18n="pricing.pro.f6">Revenue reports</li>
+          <li data-i18n="pricing.pro.f7">Priority support</li>
+        </ul>
+        <a href="/dashboard" class="btn btn-white" style="width:100%; justify-content:center" data-i18n="pricing.pro.cta">Start 14-day free trial</a>
+      </div>
+
+      <!-- Multi-property -->
+      <div class="pricing-card">
+        <div class="pricing-tier" data-i18n="pricing.multi.tier">Multi-property</div>
+        <div class="pricing-price"><span>€</span>39</div>
+        <div class="pricing-period" data-i18n="pricing.multi.period">per month, billed monthly</div>
+        <ul class="pricing-features">
+          <li data-i18n="pricing.multi.f1">Up to 5 properties</li>
+          <li data-i18n="pricing.multi.f2">Everything in Pro</li>
+          <li data-i18n="pricing.multi.f3">Unlimited staff accounts</li>
+          <li data-i18n="pricing.multi.f4">Cross-property calendar view</li>
+          <li data-i18n="pricing.multi.f5">API access</li>
+          <li data-i18n="pricing.multi.f6">Dedicated onboarding call</li>
+        </ul>
+        <a href="/dashboard" class="btn btn-outline" style="width:100%; justify-content:center" data-i18n="pricing.multi.cta">Contact us</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  CTA                                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="container" style="position:relative; z-index:1">
+    <h2 data-i18n="cta.heading">Ready to simplify your bookings?</h2>
+    <p data-i18n="cta.sub">Join hundreds of small property owners across Europe who've ditched the spreadsheet and the paper diary.</p>
+    <div class="cta-buttons">
+      <a href="/dashboard" class="btn btn-white btn-lg" data-i18n="cta.btn1">Start for free</a>
+      <a href="/widget-test.html" class="btn btn-lg" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.25)" data-i18n="cta.btn2">See the booking widget →</a>
+    </div>
+    <p class="cta-note" data-i18n="cta.note">No credit card required · Cancel any time · GDPR compliant</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  FOOTER                                                                    -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+
+      <div>
+        <div class="footer-brand-name">
+          <div class="footer-leaf"></div>
+          NestBook
+        </div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/dashboard" class="footer-link" data-i18n="footer.dashboard">Dashboard</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="#" class="footer-link" data-i18n="footer.about">About</a>
+          <a href="#" class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="#" class="footer-link" data-i18n="footer.contact">Contact</a>
+          <a href="#" class="footer-link" data-i18n="footer.press">Press</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="#" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="#" class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="#" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="#" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  TRANSLATIONS & LANGUAGE SWITCHER                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+const I18N = {
+  en: {
+    'nav.features':  'Features',
+    'nav.pricing':   'Pricing',
+    'nav.languages': 'Languages',
+    'nav.demo':      'Live demo',
+    'nav.signin':    'Sign in',
+    'nav.try':       'Try free',
+    'hero.kicker':   'Made for small European properties',
+    'hero.headline': 'Your guests deserve a smooth welcome. <em>So do you.</em>',
+    'hero.sub':      'NestBook is the simple, elegant booking and property management system built for B&Bs, gîtes and guest houses across Europe.',
+    'hero.cta':      'Start free — no card needed',
+    'hero.demo':     'See it in action',
+    'hero.trust1':   'No setup fee',
+    'hero.trust2':   'Cancel any time',
+    'hero.trust3':   'English · Français · Español · Deutsch',
+    'preview.badge':   'The dashboard',
+    'preview.heading': 'Everything in one place',
+    'preview.sub':     'A single screen tells you who\'s arriving today, who\'s in-house, what\'s coming up, and how the month is going.',
+    'features.badge':  'Features',
+    'features.heading':'Everything you need. Nothing you don\'t.',
+    'features.sub':    'Built for owners who want to spend time with their guests, not fighting software.',
+    'features.cal.title':    'Visual Calendar',
+    'features.cal.desc':     'Week-view availability grid — rooms across the top, dates down the side. Click any cell to book or view details instantly.',
+    'features.guests.title': 'Guest Records',
+    'features.guests.desc':  'A full guest directory with contact details, stay history, notes and total spend — searchable by name or email.',
+    'features.widget.title': 'Booking Widget',
+    'features.widget.desc':  'One script tag turns your existing website into a direct booking engine — no third-party fees, no commission.',
+    'features.offline.title':'Works Offline',
+    'features.offline.desc': 'Check guests in and manage bookings even without internet. Everything syncs when you reconnect.',
+    'features.roles.title':  'Owner & Staff Roles',
+    'features.roles.desc':   'Invite reception staff with limited access. Owners keep full control over settings, pricing and reports.',
+    'features.i18n.title':   '4 Languages Built In',
+    'features.i18n.desc':    'The dashboard and the guest-facing booking widget both work in English, French, Spanish and German — no plugins needed.',
+    'langs.badge':   'Made for Europe',
+    'langs.heading': 'One app, four languages',
+    'langs.sub':     'Whether your guests book in English, your staff prefer French, and your accountant wants German — NestBook switches instantly.',
+    'langs.en.phrase': '"Check-in: 3pm. Checkout: 11am."',
+    'langs.en.sub':    'For B&Bs from Cornwall to Edinburgh',
+    'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
+    'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
+    'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'testimonials.badge':   'From our customers',
+    'testimonials.heading': 'Loved by small property owners',
+    'testimonials.1.quote': '"I used to manage everything in a spreadsheet and a paper diary. NestBook replaced both in an afternoon. I can check arrivals on my phone before I even get out of bed."',
+    'testimonials.1.name':  'Margaret Hughes',
+    'testimonials.1.place': '🇬🇧 The Wisteria B&B, Cotswolds',
+    'testimonials.2.quote': '"The booking widget on my site changed everything. Guests book directly, no commission. In three months I recovered more than the annual subscription cost."',
+    'testimonials.2.name':  'Pierre Beaumont',
+    'testimonials.2.place': '🇫🇷 Domaine des Lavandes, Provence',
+    'testimonials.3.quote': '"We run a six-room guest house and my husband and I both needed to see the calendar. The owner and staff roles mean we\'re never accidentally double-booking. Brilliant."',
+    'testimonials.3.name':  'Siobhán Connolly',
+    'testimonials.3.place': '🇮🇪 The Harbour House, Kinsale',
+    'pricing.badge':   'Pricing',
+    'pricing.heading': 'Simple, honest pricing',
+    'pricing.sub':     'No commission, no booking fees, no surprises. Just a flat monthly rate.',
+    'pricing.starter.tier':   'Starter',
+    'pricing.starter.period': 'Free forever',
+    'pricing.starter.f1': '1 property, up to 3 rooms',
+    'pricing.starter.f2': 'Booking calendar & management',
+    'pricing.starter.f3': 'Guest records',
+    'pricing.starter.f4': 'All 4 languages',
+    'pricing.starter.f5': 'Booking widget (branded)',
+    'pricing.starter.cta': 'Get started free',
+    'pricing.pro.popular': 'Most popular',
+    'pricing.pro.tier':    'Pro',
+    'pricing.pro.period':  'per month, billed monthly',
+    'pricing.pro.f1': '1 property, unlimited rooms',
+    'pricing.pro.f2': 'Everything in Starter',
+    'pricing.pro.f3': 'White-label booking widget',
+    'pricing.pro.f4': 'Staff accounts (up to 5)',
+    'pricing.pro.f5': 'Email booking confirmations',
+    'pricing.pro.f6': 'Revenue reports',
+    'pricing.pro.f7': 'Priority support',
+    'pricing.pro.cta': 'Start 14-day free trial',
+    'pricing.multi.tier':   'Multi-property',
+    'pricing.multi.period': 'per month, billed monthly',
+    'pricing.multi.f1': 'Up to 5 properties',
+    'pricing.multi.f2': 'Everything in Pro',
+    'pricing.multi.f3': 'Unlimited staff accounts',
+    'pricing.multi.f4': 'Cross-property calendar view',
+    'pricing.multi.f5': 'API access',
+    'pricing.multi.f6': 'Dedicated onboarding call',
+    'pricing.multi.cta': 'Contact us',
+    'cta.heading': 'Ready to simplify your bookings?',
+    'cta.sub':     'Join hundreds of small property owners across Europe who\'ve ditched the spreadsheet and the paper diary.',
+    'cta.btn1':    'Start for free',
+    'cta.btn2':    'See the booking widget →',
+    'cta.note':    'No credit card required · Cancel any time · GDPR compliant',
+    'footer.tagline':  'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':  'Product',
+    'footer.features': 'Features',
+    'footer.pricing':  'Pricing',
+    'footer.languages':'Languages',
+    'footer.widget':   'Booking widget',
+    'footer.dashboard':'Dashboard',
+    'footer.company':  'Company',
+    'footer.about':    'About',
+    'footer.blog':     'Blog',
+    'footer.contact':  'Contact',
+    'footer.press':    'Press',
+    'footer.legal':    'Legal',
+    'footer.privacy':  'Privacy Policy',
+    'footer.terms':    'Terms of Service',
+    'footer.gdpr':     'GDPR',
+    'footer.cookies':  'Cookies',
+    'footer.copy':     '© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+
+  fr: {
+    'nav.features':  'Fonctionnalités',
+    'nav.pricing':   'Tarifs',
+    'nav.languages': 'Langues',
+    'nav.demo':      'Démo en direct',
+    'nav.signin':    'Connexion',
+    'nav.try':       'Essai gratuit',
+    'hero.kicker':   'Conçu pour les petites propriétés européennes',
+    'hero.headline': 'Vos hôtes méritent un accueil parfait. <em>Vous aussi.</em>',
+    'hero.sub':      'NestBook est le système de gestion de réservations simple et élégant, conçu pour les B&Bs, gîtes et maisons d\'hôtes en Europe.',
+    'hero.cta':      'Commencer gratuitement',
+    'hero.demo':     'Voir la démo',
+    'hero.trust1':   'Sans frais d\'installation',
+    'hero.trust2':   'Résiliable à tout moment',
+    'hero.trust3':   'English · Français · Español · Deutsch',
+    'preview.badge':   'Le tableau de bord',
+    'preview.heading': 'Tout en un seul endroit',
+    'preview.sub':     'Un seul écran vous indique qui arrive aujourd\'hui, qui est en chambre, ce qui est prévu et comment se passe le mois.',
+    'features.badge':  'Fonctionnalités',
+    'features.heading':'Tout ce qu\'il vous faut. Rien de plus.',
+    'features.sub':    'Conçu pour les propriétaires qui veulent passer du temps avec leurs hôtes, pas se battre avec un logiciel.',
+    'features.cal.title':    'Calendrier visuel',
+    'features.cal.desc':     'Grille de disponibilité hebdomadaire — chambres en haut, dates sur le côté. Cliquez sur une case pour réserver ou consulter les détails.',
+    'features.guests.title': 'Fiches clients',
+    'features.guests.desc':  'Un répertoire complet avec coordonnées, historique des séjours, notes et total dépensé — recherchable par nom ou e-mail.',
+    'features.widget.title': 'Widget de réservation',
+    'features.widget.desc':  'Une balise script transforme votre site en moteur de réservation direct — sans commission, sans frais tiers.',
+    'features.offline.title':'Fonctionne hors ligne',
+    'features.offline.desc': 'Enregistrez les arrivées et gérez les réservations même sans internet. Tout se synchronise à la reconnexion.',
+    'features.roles.title':  'Rôles propriétaire & personnel',
+    'features.roles.desc':   'Invitez le personnel de réception avec un accès limité. Le propriétaire garde le contrôle total des paramètres et des rapports.',
+    'features.i18n.title':   '4 langues intégrées',
+    'features.i18n.desc':    'Le tableau de bord et le widget de réservation fonctionnent en anglais, français, espagnol et allemand — sans plugin.',
+    'langs.badge':   'Fait pour l\'Europe',
+    'langs.heading': 'Une appli, quatre langues',
+    'langs.sub':     'Que vos hôtes réservent en anglais, votre personnel préfère le français ou votre comptable veut l\'allemand — NestBook bascule instantanément.',
+    'langs.en.phrase': '"Check-in: 15h. Départ: 11h."',
+    'langs.en.sub':    'Pour les B&Bs de Cornouailles à Édimbourg',
+    'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
+    'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
+    'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'testimonials.badge':   'Nos clients témoignent',
+    'testimonials.heading': 'Apprécié par les petits hébergeurs',
+    'testimonials.1.quote': '"Je gérais tout dans un tableur et un agenda papier. NestBook a tout remplacé en une après-midi. Je peux vérifier les arrivées sur mon téléphone avant même de me lever."',
+    'testimonials.1.name':  'Margaret Hughes',
+    'testimonials.1.place': '🇬🇧 The Wisteria B&B, Cotswolds',
+    'testimonials.2.quote': '"Le widget de réservation sur mon site a tout changé. Les clients réservent directement, sans commission. En trois mois j\'ai récupéré plus que le coût annuel de l\'abonnement."',
+    'testimonials.2.name':  'Pierre Beaumont',
+    'testimonials.2.place': '🇫🇷 Domaine des Lavandes, Provence',
+    'testimonials.3.quote': '"Nous gérons une maison d\'hôtes de six chambres, mon mari et moi avions besoin de voir le calendrier ensemble. Les rôles évitent les doubles réservations. Parfait."',
+    'testimonials.3.name':  'Siobhán Connolly',
+    'testimonials.3.place': '🇮🇪 The Harbour House, Kinsale',
+    'pricing.badge':   'Tarifs',
+    'pricing.heading': 'Des tarifs simples et transparents',
+    'pricing.sub':     'Pas de commission, pas de frais de réservation, pas de mauvaises surprises. Un forfait mensuel tout compris.',
+    'pricing.starter.tier':   'Découverte',
+    'pricing.starter.period': 'Gratuit pour toujours',
+    'pricing.starter.f1': '1 propriété, jusqu\'à 3 chambres',
+    'pricing.starter.f2': 'Calendrier et gestion des réservations',
+    'pricing.starter.f3': 'Fiches clients',
+    'pricing.starter.f4': 'Les 4 langues',
+    'pricing.starter.f5': 'Widget de réservation (avec logo NestBook)',
+    'pricing.starter.cta': 'Commencer gratuitement',
+    'pricing.pro.popular': 'Le plus populaire',
+    'pricing.pro.tier':    'Pro',
+    'pricing.pro.period':  'par mois, facturation mensuelle',
+    'pricing.pro.f1': '1 propriété, chambres illimitées',
+    'pricing.pro.f2': 'Tout ce qui est inclus dans Découverte',
+    'pricing.pro.f3': 'Widget sans logo NestBook',
+    'pricing.pro.f4': 'Comptes personnel (jusqu\'à 5)',
+    'pricing.pro.f5': 'Confirmations de réservation par e-mail',
+    'pricing.pro.f6': 'Rapports de revenus',
+    'pricing.pro.f7': 'Support prioritaire',
+    'pricing.pro.cta': 'Essai gratuit 14 jours',
+    'pricing.multi.tier':   'Multi-propriétés',
+    'pricing.multi.period': 'par mois, facturation mensuelle',
+    'pricing.multi.f1': 'Jusqu\'à 5 propriétés',
+    'pricing.multi.f2': 'Tout ce qui est inclus dans Pro',
+    'pricing.multi.f3': 'Comptes personnel illimités',
+    'pricing.multi.f4': 'Vue calendrier inter-propriétés',
+    'pricing.multi.f5': 'Accès API',
+    'pricing.multi.f6': 'Appel d\'intégration dédié',
+    'pricing.multi.cta': 'Nous contacter',
+    'cta.heading': 'Prêt à simplifier vos réservations ?',
+    'cta.sub':     'Rejoignez des centaines de petits hébergeurs en Europe qui ont abandonné le tableur et l\'agenda papier.',
+    'cta.btn1':    'Commencer gratuitement',
+    'cta.btn2':    'Voir le widget de réservation →',
+    'cta.note':    'Sans carte bancaire · Résiliable à tout moment · Conforme RGPD',
+    'footer.tagline':  'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':  'Produit',
+    'footer.features': 'Fonctionnalités',
+    'footer.pricing':  'Tarifs',
+    'footer.languages':'Langues',
+    'footer.widget':   'Widget de réservation',
+    'footer.dashboard':'Tableau de bord',
+    'footer.company':  'Entreprise',
+    'footer.about':    'À propos',
+    'footer.blog':     'Blog',
+    'footer.contact':  'Contact',
+    'footer.press':    'Presse',
+    'footer.legal':    'Mentions légales',
+    'footer.privacy':  'Politique de confidentialité',
+    'footer.terms':    'Conditions d\'utilisation',
+    'footer.gdpr':     'RGPD',
+    'footer.cookies':  'Cookies',
+    'footer.copy':     '© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+
+  es: {
+    'nav.features':  'Funciones',
+    'nav.pricing':   'Precios',
+    'nav.languages': 'Idiomas',
+    'nav.demo':      'Demo en vivo',
+    'nav.signin':    'Iniciar sesión',
+    'nav.try':       'Prueba gratis',
+    'hero.kicker':   'Diseñado para pequeñas propiedades europeas',
+    'hero.headline': 'Tus huéspedes merecen una bienvenida perfecta. <em>Tú también.</em>',
+    'hero.sub':      'NestBook es el sistema de gestión de reservas sencillo y elegante, diseñado para B&Bs, casas rurales y casas de huéspedes en Europa.',
+    'hero.cta':      'Empezar gratis — sin tarjeta',
+    'hero.demo':     'Ver en acción',
+    'hero.trust1':   'Sin cuota de alta',
+    'hero.trust2':   'Cancela cuando quieras',
+    'hero.trust3':   'English · Français · Español · Deutsch',
+    'preview.badge':   'El panel de control',
+    'preview.heading': 'Todo en un solo lugar',
+    'preview.sub':     'Una sola pantalla te dice quién llega hoy, quién está alojado, qué hay por venir y cómo va el mes.',
+    'features.badge':  'Funciones',
+    'features.heading':'Todo lo que necesitas. Nada más.',
+    'features.sub':    'Diseñado para propietarios que quieren pasar tiempo con sus huéspedes, no pelearse con el software.',
+    'features.cal.title':    'Calendario visual',
+    'features.cal.desc':     'Vista semanal de disponibilidad — habitaciones arriba, fechas al lado. Haz clic en cualquier celda para reservar o ver detalles.',
+    'features.guests.title': 'Fichas de huéspedes',
+    'features.guests.desc':  'Directorio completo con datos de contacto, historial de estancias, notas y gasto total — buscable por nombre o correo.',
+    'features.widget.title': 'Widget de reservas',
+    'features.widget.desc':  'Una línea de código convierte tu web en motor de reservas directo — sin comisiones ni intermediarios.',
+    'features.offline.title':'Funciona sin conexión',
+    'features.offline.desc': 'Registra llegadas y gestiona reservas aunque no tengas internet. Todo se sincroniza al reconectarte.',
+    'features.roles.title':  'Roles propietario y personal',
+    'features.roles.desc':   'Invita al personal de recepción con acceso limitado. El propietario mantiene el control total de la configuración y los informes.',
+    'features.i18n.title':   '4 idiomas incluidos',
+    'features.i18n.desc':    'El panel y el widget de reservas funcionan en inglés, francés, español y alemán — sin plugins.',
+    'langs.badge':   'Hecho para Europa',
+    'langs.heading': 'Una app, cuatro idiomas',
+    'langs.sub':     'Tanto si tus huéspedes reservan en inglés, tu personal prefiere el francés o tu contable quiere el alemán — NestBook cambia al instante.',
+    'langs.en.phrase': '"Check-in: 15h. Salida: 11h."',
+    'langs.en.sub':    'Para B&Bs de Cornualles a Edimburgo',
+    'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
+    'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
+    'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'testimonials.badge':   'Nuestros clientes',
+    'testimonials.heading': 'Amado por pequeños propietarios',
+    'testimonials.1.quote': '"Antes gestionaba todo en una hoja de cálculo y una agenda de papel. NestBook lo sustituyó todo en una tarde. Puedo ver las llegadas en el móvil antes de levantarme."',
+    'testimonials.1.name':  'Margaret Hughes',
+    'testimonials.1.place': '🇬🇧 The Wisteria B&B, Cotswolds',
+    'testimonials.2.quote': '"El widget de reservas en mi web lo cambió todo. Los clientes reservan directamente, sin comisión. En tres meses recuperé más que el coste anual de la suscripción."',
+    'testimonials.2.name':  'Pierre Beaumont',
+    'testimonials.2.place': '🇫🇷 Domaine des Lavandes, Provenza',
+    'testimonials.3.quote': '"Llevamos una casa de seis habitaciones y tanto mi marido como yo necesitábamos ver el calendario. Los roles evitan las dobles reservas. ¡Genial!"',
+    'testimonials.3.name':  'Siobhán Connolly',
+    'testimonials.3.place': '🇮🇪 The Harbour House, Kinsale',
+    'pricing.badge':   'Precios',
+    'pricing.heading': 'Precios simples y transparentes',
+    'pricing.sub':     'Sin comisiones, sin cargos por reserva, sin sorpresas. Solo una tarifa mensual plana.',
+    'pricing.starter.tier':   'Inicial',
+    'pricing.starter.period': 'Gratis para siempre',
+    'pricing.starter.f1': '1 propiedad, hasta 3 habitaciones',
+    'pricing.starter.f2': 'Calendario y gestión de reservas',
+    'pricing.starter.f3': 'Fichas de huéspedes',
+    'pricing.starter.f4': 'Los 4 idiomas',
+    'pricing.starter.f5': 'Widget de reservas (con logo NestBook)',
+    'pricing.starter.cta': 'Empezar gratis',
+    'pricing.pro.popular': 'El más popular',
+    'pricing.pro.tier':    'Pro',
+    'pricing.pro.period':  'al mes, facturación mensual',
+    'pricing.pro.f1': '1 propiedad, habitaciones ilimitadas',
+    'pricing.pro.f2': 'Todo lo del plan Inicial',
+    'pricing.pro.f3': 'Widget sin logo NestBook',
+    'pricing.pro.f4': 'Cuentas de personal (hasta 5)',
+    'pricing.pro.f5': 'Confirmaciones de reserva por correo',
+    'pricing.pro.f6': 'Informes de ingresos',
+    'pricing.pro.f7': 'Soporte prioritario',
+    'pricing.pro.cta': 'Prueba gratis 14 días',
+    'pricing.multi.tier':   'Multi-propiedad',
+    'pricing.multi.period': 'al mes, facturación mensual',
+    'pricing.multi.f1': 'Hasta 5 propiedades',
+    'pricing.multi.f2': 'Todo lo del plan Pro',
+    'pricing.multi.f3': 'Cuentas de personal ilimitadas',
+    'pricing.multi.f4': 'Vista de calendario entre propiedades',
+    'pricing.multi.f5': 'Acceso a la API',
+    'pricing.multi.f6': 'Llamada de incorporación dedicada',
+    'pricing.multi.cta': 'Contáctanos',
+    'cta.heading': '¿Listo para simplificar tus reservas?',
+    'cta.sub':     'Únete a cientos de pequeños propietarios de toda Europa que han dejado atrás la hoja de cálculo y la agenda de papel.',
+    'cta.btn1':    'Empezar gratis',
+    'cta.btn2':    'Ver el widget de reservas →',
+    'cta.note':    'Sin tarjeta · Cancela cuando quieras · Cumple con el RGPD',
+    'footer.tagline':  'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':  'Producto',
+    'footer.features': 'Funciones',
+    'footer.pricing':  'Precios',
+    'footer.languages':'Idiomas',
+    'footer.widget':   'Widget de reservas',
+    'footer.dashboard':'Panel de control',
+    'footer.company':  'Empresa',
+    'footer.about':    'Sobre nosotros',
+    'footer.blog':     'Blog',
+    'footer.contact':  'Contacto',
+    'footer.press':    'Prensa',
+    'footer.legal':    'Legal',
+    'footer.privacy':  'Política de privacidad',
+    'footer.terms':    'Términos de servicio',
+    'footer.gdpr':     'RGPD',
+    'footer.cookies':  'Cookies',
+    'footer.copy':     '© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+
+  de: {
+    'nav.features':  'Funktionen',
+    'nav.pricing':   'Preise',
+    'nav.languages': 'Sprachen',
+    'nav.demo':      'Live-Demo',
+    'nav.signin':    'Anmelden',
+    'nav.try':       'Kostenlos testen',
+    'hero.kicker':   'Für kleine europäische Unterkünfte entwickelt',
+    'hero.headline': 'Ihre Gäste verdienen einen reibungslosen Empfang. <em>Sie auch.</em>',
+    'hero.sub':      'NestBook ist das einfache, elegante Buchungs- und Immobilienverwaltungssystem für B&Bs, Ferienhäuser und Gästehäuser in ganz Europa.',
+    'hero.cta':      'Kostenlos starten — keine Karte nötig',
+    'hero.demo':     'In Aktion sehen',
+    'hero.trust1':   'Keine Einrichtungsgebühr',
+    'hero.trust2':   'Jederzeit kündbar',
+    'hero.trust3':   'English · Français · Español · Deutsch',
+    'preview.badge':   'Das Dashboard',
+    'preview.heading': 'Alles an einem Ort',
+    'preview.sub':     'Ein einziger Bildschirm zeigt Ihnen, wer heute anreist, wer im Haus ist, was bevorsteht und wie der Monat läuft.',
+    'features.badge':  'Funktionen',
+    'features.heading':'Alles, was Sie brauchen. Nichts, was Sie nicht brauchen.',
+    'features.sub':    'Für Eigentümer entwickelt, die Zeit mit ihren Gästen verbringen möchten — nicht mit der Software kämpfen.',
+    'features.cal.title':    'Visueller Kalender',
+    'features.cal.desc':     'Wochenansicht mit Verfügbarkeitsraster — Zimmer oben, Tage seitlich. Klicken Sie auf eine Zelle, um zu buchen oder Details anzuzeigen.',
+    'features.guests.title': 'Gästekartei',
+    'features.guests.desc':  'Vollständiges Gästeverzeichnis mit Kontaktdaten, Aufenthaltshistorie, Notizen und Gesamtausgaben — durchsuchbar nach Name oder E-Mail.',
+    'features.widget.title': 'Buchungs-Widget',
+    'features.widget.desc':  'Ein Script-Tag verwandelt Ihre Website in eine Direktbuchungsmaschine — keine Provisionen, keine Drittgebühren.',
+    'features.offline.title':'Offline nutzbar',
+    'features.offline.desc': 'Checken Sie Gäste auch ohne Internet ein und verwalten Sie Buchungen. Alles synchronisiert sich beim Wiederverbinden.',
+    'features.roles.title':  'Eigentümer- und Mitarbeiterrollen',
+    'features.roles.desc':   'Laden Sie Empfangsmitarbeiter mit eingeschränktem Zugriff ein. Eigentümer behalten die volle Kontrolle über Einstellungen und Berichte.',
+    'features.i18n.title':   '4 Sprachen integriert',
+    'features.i18n.desc':    'Dashboard und Buchungs-Widget funktionieren auf Englisch, Französisch, Spanisch und Deutsch — keine Plugins erforderlich.',
+    'langs.badge':   'Für Europa gemacht',
+    'langs.heading': 'Eine App, vier Sprachen',
+    'langs.sub':     'Ob Ihre Gäste auf Englisch buchen, Ihr Personal Französisch bevorzugt oder Ihr Buchhalter Deutsch möchte — NestBook wechselt sofort.',
+    'langs.en.phrase': '"Check-in: 15 Uhr. Abreise: 11 Uhr."',
+    'langs.en.sub':    'Für B&Bs von Cornwall bis Edinburgh',
+    'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
+    'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
+    'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'testimonials.badge':   'Unsere Kunden',
+    'testimonials.heading': 'Geliebt von kleinen Unterkunftsbetreibern',
+    'testimonials.1.quote': '"Früher habe ich alles in einer Tabelle und einem Papierkalender verwaltet. NestBook hat beides an einem Nachmittag ersetzt. Ich kann die Ankünfte auf dem Handy prüfen, bevor ich aufstehe."',
+    'testimonials.1.name':  'Margaret Hughes',
+    'testimonials.1.place': '🇬🇧 The Wisteria B&B, Cotswolds',
+    'testimonials.2.quote': '"Das Buchungs-Widget auf meiner Seite hat alles verändert. Gäste buchen direkt, ohne Provision. In drei Monaten habe ich mehr zurückgewonnen als die jährlichen Abokosten."',
+    'testimonials.2.name':  'Pierre Beaumont',
+    'testimonials.2.place': '🇫🇷 Domaine des Lavandes, Provence',
+    'testimonials.3.quote': '"Wir betreiben ein Gästehaus mit sechs Zimmern. Mein Mann und ich brauchten beide Zugriff auf den Kalender. Dank der Rollen gibt es keine versehentlichen Doppelbuchungen mehr. Toll!"',
+    'testimonials.3.name':  'Siobhán Connolly',
+    'testimonials.3.place': '🇮🇪 The Harbour House, Kinsale',
+    'pricing.badge':   'Preise',
+    'pricing.heading': 'Einfache, faire Preise',
+    'pricing.sub':     'Keine Provision, keine Buchungsgebühren, keine Überraschungen. Nur ein fixer Monatsbeitrag.',
+    'pricing.starter.tier':   'Starter',
+    'pricing.starter.period': 'Dauerhaft kostenlos',
+    'pricing.starter.f1': '1 Unterkunft, bis zu 3 Zimmer',
+    'pricing.starter.f2': 'Buchungskalender & -verwaltung',
+    'pricing.starter.f3': 'Gästekartei',
+    'pricing.starter.f4': 'Alle 4 Sprachen',
+    'pricing.starter.f5': 'Buchungs-Widget (mit NestBook-Logo)',
+    'pricing.starter.cta': 'Kostenlos starten',
+    'pricing.pro.popular': 'Am beliebtesten',
+    'pricing.pro.tier':    'Pro',
+    'pricing.pro.period':  'pro Monat, monatlich abgerechnet',
+    'pricing.pro.f1': '1 Unterkunft, unbegrenzte Zimmer',
+    'pricing.pro.f2': 'Alles aus Starter',
+    'pricing.pro.f3': 'White-Label-Buchungs-Widget',
+    'pricing.pro.f4': 'Mitarbeiterkonten (bis zu 5)',
+    'pricing.pro.f5': 'E-Mail-Buchungsbestätigungen',
+    'pricing.pro.f6': 'Umsatzberichte',
+    'pricing.pro.f7': 'Prioritäts-Support',
+    'pricing.pro.cta': '14 Tage kostenlos testen',
+    'pricing.multi.tier':   'Mehrobjekt',
+    'pricing.multi.period': 'pro Monat, monatlich abgerechnet',
+    'pricing.multi.f1': 'Bis zu 5 Unterkünfte',
+    'pricing.multi.f2': 'Alles aus Pro',
+    'pricing.multi.f3': 'Unbegrenzte Mitarbeiterkonten',
+    'pricing.multi.f4': 'Objektübergreifende Kalenderansicht',
+    'pricing.multi.f5': 'API-Zugang',
+    'pricing.multi.f6': 'Persönliches Onboarding-Gespräch',
+    'pricing.multi.cta': 'Kontakt aufnehmen',
+    'cta.heading': 'Bereit, Ihre Buchungen zu vereinfachen?',
+    'cta.sub':     'Schließen Sie sich Hunderten von kleinen Unterkunftsbetreibern in Europa an, die Tabelle und Papierkalender hinter sich gelassen haben.',
+    'cta.btn1':    'Kostenlos starten',
+    'cta.btn2':    'Buchungs-Widget ansehen →',
+    'cta.note':    'Keine Kreditkarte · Jederzeit kündbar · DSGVO-konform',
+    'footer.tagline':  'Einfaches, elegantes Buchungsmanagement für kleine Beherbergungsbetriebe in Europa.',
+    'footer.product':  'Produkt',
+    'footer.features': 'Funktionen',
+    'footer.pricing':  'Preise',
+    'footer.languages':'Sprachen',
+    'footer.widget':   'Buchungs-Widget',
+    'footer.dashboard':'Dashboard',
+    'footer.company':  'Unternehmen',
+    'footer.about':    'Über uns',
+    'footer.blog':     'Blog',
+    'footer.contact':  'Kontakt',
+    'footer.press':    'Presse',
+    'footer.legal':    'Rechtliches',
+    'footer.privacy':  'Datenschutzrichtlinie',
+    'footer.terms':    'Nutzungsbedingungen',
+    'footer.gdpr':     'DSGVO',
+    'footer.cookies':  'Cookies',
+    'footer.copy':     '© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+};
+
+// ── Apply translations ─────────────────────────────────────────────────────
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+
+  // Plain text nodes
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+
+  // HTML content (for hero headline with <em>)
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-html');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+
+  // Update active lang button
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+
+  // Store selection
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+
+// ── Wire up switcher buttons ───────────────────────────────────────────────
+document.querySelectorAll('.lang-btn').forEach((btn) => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+
+// ── Init with stored preference ────────────────────────────────────────────
+(function () {
+  let lang = 'en';
+  try { lang = localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
+  // Only apply if not already English (default HTML is English)
+  if (lang !== 'en') applyLang(lang);
+})();
+
+// ── Smooth scroll for nav links ────────────────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach((link) => {
+  link.addEventListener('click', (e) => {
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// ── Navbar shadow on scroll ────────────────────────────────────────────────
+const navbar = document.querySelector('.navbar');
+window.addEventListener('scroll', () => {
+  navbar.style.boxShadow = window.scrollY > 10
+    ? '0 2px 16px rgba(26,71,16,0.10)'
+    : '';
+}, { passive: true });
+</script>
+</body>
+</html>

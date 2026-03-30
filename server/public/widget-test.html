@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NestBook Widget — Test Page</title>
+  <style>
+    body {
+      font-family: Georgia, serif;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      background: #fafdf8;
+      color: #333;
+    }
+    h1 { color: #1a4710; }
+    .hero {
+      background: linear-gradient(135deg, #1a4710, #2f771b);
+      color: white;
+      border-radius: 12px;
+      padding: 40px;
+      margin: 32px 0;
+      text-align: center;
+    }
+    .hero h2 { font-size: 2rem; margin-bottom: 8px; }
+    .hero p  { opacity: 0.8; }
+    .info {
+      background: #d9f0cc;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 0.875rem;
+      color: #1a4710;
+      margin-bottom: 24px;
+    }
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .room-card {
+      background: white;
+      border: 1px solid #dde;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .room-card h3 { color: #1a4710; margin-bottom: 4px; }
+    .room-card p { color: #888; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+
+  <h1>🏡 Domaine des Lavandes</h1>
+  <p>Provençal gîte near Roussillon — a simulated property website to test the NestBook booking widget.</p>
+
+  <div class="info">
+    ℹ️ This is a test page served by the NestBook server. The floating <strong>Book Now</strong> button in the bottom-right corner is the embeddable widget. Click it to try the full 4-step booking flow.
+  </div>
+
+  <div class="hero">
+    <h2>Your Escape in Provence</h2>
+    <p>Lavender fields, stone farmhouses and long summer evenings.<br>Book directly with us for the best rates.</p>
+  </div>
+
+  <h2>Our Rooms</h2>
+  <div class="rooms-grid">
+    <div class="room-card">
+      <h3>La Suite Lavande</h3>
+      <p>Suite · 2 guests · €180/night · WiFi, En-suite, Balcony, Minibar</p>
+    </div>
+    <div class="room-card">
+      <h3>La Chambre Mistral</h3>
+      <p>Double · 2 guests · €120/night · WiFi, En-suite</p>
+    </div>
+    <div class="room-card">
+      <h3>La Chambre Garrigue</h3>
+      <p>Double · 2 guests · €110/night · WiFi, En-suite</p>
+    </div>
+    <div class="room-card">
+      <h3>L'Appartement</h3>
+      <p>Apartment · 4 guests · €220/night · WiFi, Kitchenette, Terrace, Parking</p>
+    </div>
+  </div>
+
+  <!-- ✅ This is the embed snippet — one line, works on any website -->
+  <script
+    src="http://localhost:3001/widget.js"
+    data-property-id="1"
+    data-lang="en"
+    data-currency="EUR"
+    async>
+  </script>
+
+</body>
+</html>
