@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { nightsBetween } from '../../utils/format.js';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -67,7 +68,7 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await apiFetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

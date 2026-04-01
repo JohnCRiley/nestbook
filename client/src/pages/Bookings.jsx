@@ -3,6 +3,7 @@ import { localToday } from '../utils/format.js';
 import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../utils/bookingConstants.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
+import { apiFetch } from '../utils/apiFetch.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -32,9 +33,9 @@ export default function Bookings() {
   // ── Data fetching ──────────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
-      fetch('/api/bookings?property_id=1').then((r) => r.json()),
-      fetch('/api/rooms?property_id=1').then((r) => r.json()),
-      fetch('/api/guests').then((r) => r.json()),
+      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
+      apiFetch('/api/rooms?property_id=1').then((r) => r.json()),
+      apiFetch('/api/guests').then((r) => r.json()),
     ]).then(([b, r, g]) => {
       setBookings(b);
       setRooms(r);
@@ -44,7 +45,7 @@ export default function Bookings() {
   }, []);
 
   const refreshBookings = () =>
-    fetch('/api/bookings?property_id=1')
+    apiFetch('/api/bookings?property_id=1')
       .then((r) => r.json())
       .then(setBookings);
 
@@ -90,7 +91,7 @@ export default function Bookings() {
   };
 
   const handleStatusUpdate = (bookingId, newStatus) => {
-    fetch(`/api/bookings/${bookingId}`, {
+    apiFetch(`/api/bookings/${bookingId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       // Merge the new status into the current selected booking fields

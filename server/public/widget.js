@@ -272,7 +272,7 @@
     style.id    = 'nb-styles';
     style.textContent = `
 /* ── NestBook Widget — all selectors namespaced with nb- ── */
-#nb-root *, #nb-root *::before, #nb-root *::after { box-sizing: border-box; margin: 0; }
+#nb-root *, #nb-root *::before, #nb-root *::after { box-sizing: border-box; }
 #nb-root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 15px;
@@ -385,7 +385,7 @@
 .nb-steps {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 8px;
   flex: 1;
   justify-content: center;
 }
@@ -401,7 +401,7 @@
   position: absolute;
   right: 100%;
   top: 10px;
-  width: 24px;
+  width: 8px;
   height: 1px;
   background: rgba(255,255,255,0.25);
 }

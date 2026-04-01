@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
+import PlanGate from '../components/PlanGate.jsx';
+import { apiFetch } from '../utils/apiFetch.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -76,8 +78,8 @@ export default function Settings() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
-      fetch('/api/properties/1').then((r) => r.json()),
-      fetch('/api/users?property_id=1').then((r) => r.json()),
+      apiFetch('/api/properties/1').then((r) => r.json()),
+      apiFetch('/api/users?property_id=1').then((r) => r.json()),
     ]).then(([p, u]) => {
       setProperty(p);
       setForm({
@@ -108,7 +110,7 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/properties/1', {
+      const res = await apiFetch('/api/properties/1', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -278,9 +280,11 @@ export default function Settings() {
                 ))}
               </div>
               <div style={{ marginTop: 14 }}>
-                <button className="btn-secondary" onClick={() => setShowInvite(true)}>
-                  + Invite Staff Member
-                </button>
+                <PlanGate requiredPlan="pro">
+                  <button className="btn-secondary" onClick={() => setShowInvite(true)}>
+                    + Invite Staff Member
+                  </button>
+                </PlanGate>
               </div>
             </div>
           </div>
@@ -288,8 +292,10 @@ export default function Settings() {
 
       </div>
 
-      {/* ── Embed widget — full width ─────────────────────────────────────── */}
-      <EmbedSection snippet={embedSnippet} />
+      {/* ── Embed widget — full width (Pro feature) ──────────────────────── */}
+      <PlanGate requiredPlan="pro">
+        <EmbedSection snippet={embedSnippet} />
+      </PlanGate>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
       {showInvite && (

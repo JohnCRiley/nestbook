@@ -76,10 +76,34 @@ export function initSchema() {
       property_id   INTEGER REFERENCES properties(id),
       name          TEXT    NOT NULL,
       email         TEXT    NOT NULL UNIQUE,
-      password_hash TEXT    NOT NULL,  -- bcrypt hash; auth wired up in a later step
+      password_hash TEXT    NOT NULL,
       role          TEXT    NOT NULL DEFAULT 'reception'
                             CHECK(role IN ('owner','reception')),
+      plan          TEXT    NOT NULL DEFAULT 'free'
+                            CHECK(plan IN ('free','pro','multi')),
       created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Migrate existing databases — add plan column if it doesn't exist yet.
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'`);
+  } catch {
+    // Column already exists — safe to ignore.
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id                INTEGER NOT NULL UNIQUE REFERENCES users(id),
+      stripe_customer_id     TEXT,
+      stripe_subscription_id TEXT,
+      plan                   TEXT NOT NULL DEFAULT 'free'
+                                     CHECK(plan IN ('free','pro','multi')),
+      status                 TEXT NOT NULL DEFAULT 'active'
+                                     CHECK(status IN ('active','cancelled','past_due')),
+      current_period_end     TEXT,
+      created_at             TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
 

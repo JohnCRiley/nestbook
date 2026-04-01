@@ -4,7 +4,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 import { initSchema }       from './db/schema.js';
+import { requireAuth }      from './middleware/requireAuth.js';
 import { healthRouter }     from './routes/health.js';
+import { authRouter }       from './routes/auth.js';
+import { stripeRouter }     from './routes/stripe.js';
 import { propertiesRouter } from './routes/properties.js';
 import { roomsRouter }      from './routes/rooms.js';
 import { guestsRouter }     from './routes/guests.js';
@@ -31,8 +34,19 @@ app.use(express.json());
 // ── Static files (serves server/public/widget.js) ────────────────────────────
 app.use(express.static(join(__dirname, 'public')));
 
-// ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api',              healthRouter);
+// ── Stripe webhook needs the raw body for signature verification ──────────────
+// Must be registered BEFORE express.json() parses everything else.
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+
+// ── Public routes (no auth required) ─────────────────────────────────────────
+app.use('/api',       healthRouter);
+app.use('/api/auth',  authRouter);
+
+// ── Auth middleware — protects everything below this line ─────────────────────
+app.use('/api', requireAuth);
+
+// ── Protected routes ──────────────────────────────────────────────────────────
+app.use('/api/stripe',       stripeRouter);
 app.use('/api/properties',   propertiesRouter);
 app.use('/api/rooms',        roomsRouter);
 app.use('/api/guests',       guestsRouter);

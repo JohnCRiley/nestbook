@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { initials, phoneFlag, phoneCountry } from '../utils/guestHelpers.js';
 import GuestPanel    from './guests/GuestPanel.jsx';
 import NewGuestModal from './guests/NewGuestModal.jsx';
+import { apiFetch } from '../utils/apiFetch.js';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -16,8 +17,8 @@ export default function Guests() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
-      fetch('/api/guests').then((r) => r.json()),
-      fetch('/api/bookings?property_id=1').then((r) => r.json()),
+      apiFetch('/api/guests').then((r) => r.json()),
+      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
     ]).then(([g, b]) => {
       setGuests(g);
       setBookings(b);

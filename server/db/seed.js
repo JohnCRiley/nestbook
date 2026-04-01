@@ -5,16 +5,32 @@
  * The script is idempotent: if any property already exists it exits early.
  */
 
+import bcrypt from 'bcryptjs';
 import { initSchema } from './schema.js';
 import db from './database.js';
 
 // Make sure the tables exist before we try to insert into them.
 initSchema();
 
+// ── Always ensure the demo user exists (even if db was already seeded) ───────
+function ensureDemoUser(propertyId) {
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get('demo@nestbook.io');
+  if (!existing) {
+    const hash = bcrypt.hashSync('demo1234', 10);
+    db.prepare(
+      `INSERT INTO users (property_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, 'owner')`
+    ).run(propertyId, 'Demo Owner', 'demo@nestbook.io', hash);
+    console.log('  ✓ Demo user created  (demo@nestbook.io / demo1234)');
+  }
+}
+
 // ── Guard ───────────────────────────────────────────────────────────────────
 const { count } = db.prepare('SELECT COUNT(*) AS count FROM properties').get();
 if (count > 0) {
-  console.log('Database already contains data — skipping seed.');
+  // Ensure demo user is present even on an already-seeded database.
+  const prop = db.prepare('SELECT id FROM properties LIMIT 1').get();
+  ensureDemoUser(prop.id);
+  console.log('Database already contains data — skipping main seed.');
   process.exit(0);
 }
 
@@ -111,8 +127,11 @@ try {
     VALUES (?, ?, ?, ?, ?)
   `);
 
-  insertUser.run(propertyId, 'Pierre Beaumont', 'pierre@domainedeslavandes.fr', '$2b$10$SEED_PLACEHOLDER_OWNER_HASH', 'owner');
-  insertUser.run(propertyId, 'Isabelle Renard',  'isabelle@domainedeslavandes.fr', '$2b$10$SEED_PLACEHOLDER_STAFF_HASH', 'reception');
+  insertUser.run(propertyId, 'Pierre Beaumont', 'pierre@domainedeslavandes.fr', bcrypt.hashSync('pierre1234', 10), 'owner');
+  insertUser.run(propertyId, 'Isabelle Renard',  'isabelle@domainedeslavandes.fr', bcrypt.hashSync('isabelle1234', 10), 'reception');
+
+  // Demo account — always available for testing
+  ensureDemoUser(propertyId);
 
   // ── Done ──────────────────────────────────────────────────────────────────
   db.exec('COMMIT');

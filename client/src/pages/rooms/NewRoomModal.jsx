@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatAmenity } from './RoomPanel.jsx';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
@@ -30,7 +31,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/rooms', {
+      const res = await apiFetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

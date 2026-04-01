@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 export default function InviteStaffModal({ onClose, onSuccess }) {
   const [form,       setForm]       = useState({ name: '', email: '', role: 'reception' });
@@ -17,7 +18,7 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/users', {
+      const res = await apiFetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

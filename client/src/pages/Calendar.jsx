@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { localToday }  from '../utils/format.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
+import { apiFetch } from '../utils/apiFetch.js';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -111,9 +112,9 @@ export default function Calendar() {
   // ── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
-      fetch('/api/bookings?property_id=1').then((r) => r.json()),
-      fetch('/api/rooms?property_id=1').then((r) => r.json()),
-      fetch('/api/guests').then((r) => r.json()),
+      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
+      apiFetch('/api/rooms?property_id=1').then((r) => r.json()),
+      apiFetch('/api/guests').then((r) => r.json()),
     ]).then(([b, r, g]) => {
       setBookings(b);
       setRooms(r);
@@ -123,7 +124,7 @@ export default function Calendar() {
   }, []);
 
   const refreshBookings = useCallback(() =>
-    fetch('/api/bookings?property_id=1')
+    apiFetch('/api/bookings?property_id=1')
       .then((r) => r.json())
       .then(setBookings), []);
 
@@ -149,7 +150,7 @@ export default function Calendar() {
   };
 
   const handlePanelStatusUpdate = (bookingId, newStatus) => {
-    fetch(`/api/bookings/${bookingId}`, {
+    apiFetch(`/api/bookings/${bookingId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...selectedBooking, status: newStatus }),

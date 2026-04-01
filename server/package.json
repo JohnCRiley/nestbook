@@ -4,12 +4,15 @@
   "description": "NestBook backend — Express API with SQLite",
   "type": "module",
   "scripts": {
-    "dev": "node --watch --no-warnings=ExperimentalWarning index.js",
-    "start": "node --no-warnings=ExperimentalWarning index.js",
+    "dev": "node --watch --no-warnings=ExperimentalWarning --env-file=.env index.js",
+    "start": "node --no-warnings=ExperimentalWarning --env-file=.env index.js",
     "db:seed": "node --no-warnings=ExperimentalWarning db/seed.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "stripe": "^21.0.1"
   }
 }

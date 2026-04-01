@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { initials, phoneFlag, phoneCountry, fmtDate, fmtPrice } from '../../utils/guestHelpers.js';
 import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 /**
  * Slide-in panel showing full guest details, booking history, and an edit form.
@@ -145,7 +146,7 @@ function EditMode({ guest, onCancel, onSaved }) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/guests/${guest.id}`, {
+      const res = await apiFetch(`/api/guests/${guest.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

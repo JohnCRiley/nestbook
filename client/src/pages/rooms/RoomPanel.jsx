@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const STATUS_OPTIONS = ['available', 'occupied', 'maintenance'];
@@ -160,7 +161,7 @@ function EditMode({ room, onCancel, onSaved }) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/rooms/${room.id}`, {
+      const res = await apiFetch(`/api/rooms/${room.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -4,6 +4,7 @@ import { StatusPill, formatAmenity } from './rooms/RoomPanel.jsx';
 import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
+import { apiFetch } from '../utils/apiFetch.js';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -21,9 +22,9 @@ export default function Rooms() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     Promise.all([
-      fetch('/api/rooms?property_id=1').then((r) => r.json()),
-      fetch('/api/bookings?property_id=1').then((r) => r.json()),
-      fetch('/api/guests').then((r) => r.json()),
+      apiFetch('/api/rooms?property_id=1').then((r) => r.json()),
+      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
+      apiFetch('/api/guests').then((r) => r.json()),
     ]).then(([r, b, g]) => {
       setRooms(r);
       setBookings(b);
@@ -33,7 +34,7 @@ export default function Rooms() {
   }, []);
 
   const refreshRooms = () =>
-    fetch('/api/rooms?property_id=1').then((r) => r.json()).then(setRooms);
+    apiFetch('/api/rooms?property_id=1').then((r) => r.json()).then(setRooms);
 
   // ── Active booking per room (covers today) ─────────────────────────────────
   // "Active" = non-cancelled, check_in <= today < check_out
@@ -107,7 +108,7 @@ export default function Rooms() {
   const handleBookingSuccess = () => {
     setBookingValues(null);
     // Refresh bookings so active-room state updates
-    fetch('/api/bookings?property_id=1').then((r) => r.json()).then(setBookings);
+    apiFetch('/api/bookings?property_id=1').then((r) => r.json()).then(setBookings);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────

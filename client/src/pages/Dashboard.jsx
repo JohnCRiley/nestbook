@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiFetch } from '../utils/apiFetch.js';
 import {
   localToday,
   formatDateLong,
@@ -33,7 +34,7 @@ export default function Dashboard() {
   const today = localToday();
 
   useEffect(() => {
-    fetch('/api/bookings?property_id=1')
+    apiFetch('/api/bookings?property_id=1')
       .then((r) => {
         if (!r.ok) throw new Error(`API error ${r.status}`);
         return r.json();

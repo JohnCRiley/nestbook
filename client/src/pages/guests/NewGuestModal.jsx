@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiFetch } from '../../utils/apiFetch.js';
 
 const EMPTY = { first_name: '', last_name: '', email: '', phone: '', notes: '' };
 
@@ -19,7 +20,7 @@ export default function NewGuestModal({ onClose, onSuccess }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/guests', {
+      const res = await apiFetch('/api/guests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
