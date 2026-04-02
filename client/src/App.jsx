@@ -13,6 +13,8 @@ import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
+import AdminRoute       from './admin/AdminRoute.jsx';
+import AdminLayout      from './admin/AdminLayout.jsx';
 
 function AppLayout() {
   return (
@@ -43,6 +45,11 @@ export default function App() {
           <Route path="/register" element={<Register       />} />
           <Route path="/success"  element={<PaymentSuccess />} />
           <Route path="/cancel"   element={<PaymentCancel  />} />
+          <Route path="/super-admin/*" element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          } />
           <Route path="/*" element={
             <ProtectedRoute>
               <AppLayout />

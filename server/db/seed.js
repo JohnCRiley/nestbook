@@ -24,12 +24,58 @@ function ensureDemoUser(propertyId) {
   }
 }
 
+// ── Ensure extra admin test properties exist ─────────────────────────────────
+function ensureAdminTestData() {
+  const { count } = db.prepare('SELECT COUNT(*) AS count FROM properties').get();
+  if (count >= 6) return; // already have extra properties
+
+  const extraProps = [
+    { name: 'The Harbour Inn',       type: 'guesthouse', city: 'Galway',    country: 'Ireland',     plan: 'pro',   months: 5 },
+    { name: 'Mas de Provence',       type: 'gite',       city: 'Aix',       country: 'France',      plan: 'multi', months: 4 },
+    { name: 'Schwarzwald Pension',   type: 'bnb',        city: 'Freiburg',  country: 'Germany',     plan: 'free',  months: 3 },
+    { name: 'Casa del Sol',          type: 'hotel',      city: 'Seville',   country: 'Spain',       plan: 'pro',   months: 2 },
+    { name: 'The Cotswold Bothy',    type: 'gite',       city: 'Chipping',  country: 'UK',          plan: 'free',  months: 1 },
+  ];
+
+  for (const p of extraProps) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - p.months);
+    const createdAt = d.toISOString();
+
+    const propResult = db.prepare(`
+      INSERT INTO properties (name, type, city, country, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(p.name, p.type, p.city, p.country, createdAt);
+
+    const propId = propResult.lastInsertRowid;
+    const email  = p.name.toLowerCase().replace(/\s+/g, '.') + '@example.com';
+    const hash   = bcrypt.hashSync('pass1234', 10);
+
+    db.prepare(`
+      INSERT INTO users (property_id, name, email, password_hash, role, plan, created_at)
+      VALUES (?, ?, ?, ?, 'owner', ?, ?)
+    `).run(propId, 'Owner ' + p.name.split(' ').pop(), email, hash, p.plan, createdAt);
+
+    if (p.plan !== 'free') {
+      const mrr = p.plan === 'multi' ? 39 : 19;
+      const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      db.prepare(`
+        INSERT OR IGNORE INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end)
+        VALUES ((SELECT id FROM users WHERE email = ?), 'cus_test', 'sub_test', ?, 'active', ?)
+      `).run(email, p.plan, periodEnd);
+      db.prepare("UPDATE users SET plan = ? WHERE email = ?").run(p.plan, email);
+    }
+  }
+  console.log('  ✓ Admin test properties created (5 extra properties)');
+}
+
 // ── Guard ───────────────────────────────────────────────────────────────────
 const { count } = db.prepare('SELECT COUNT(*) AS count FROM properties').get();
 if (count > 0) {
-  // Ensure demo user is present even on an already-seeded database.
+  // Ensure demo user and admin test data are present even on an already-seeded database.
   const prop = db.prepare('SELECT id FROM properties LIMIT 1').get();
   ensureDemoUser(prop.id);
+  ensureAdminTestData();
   console.log('Database already contains data — skipping main seed.');
   process.exit(0);
 }
@@ -135,6 +181,9 @@ try {
 
   // ── Done ──────────────────────────────────────────────────────────────────
   db.exec('COMMIT');
+
+  // Extra properties for admin dashboard (outside main transaction is fine)
+  ensureAdminTestData();
 
   console.log('✓ Seed complete:');
   console.log(`  1 property   (id ${propertyId})`);

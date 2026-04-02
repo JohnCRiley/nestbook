@@ -4,15 +4,17 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 import { initSchema }       from './db/schema.js';
-import { requireAuth }      from './middleware/requireAuth.js';
-import { healthRouter }     from './routes/health.js';
-import { authRouter }       from './routes/auth.js';
-import { stripeRouter }     from './routes/stripe.js';
-import { propertiesRouter } from './routes/properties.js';
-import { roomsRouter }      from './routes/rooms.js';
-import { guestsRouter }     from './routes/guests.js';
-import { bookingsRouter }   from './routes/bookings.js';
-import { usersRouter }      from './routes/users.js';
+import { requireAuth }       from './middleware/requireAuth.js';
+import { requireSuperAdmin } from './middleware/requireSuperAdmin.js';
+import { healthRouter }      from './routes/health.js';
+import { authRouter }        from './routes/auth.js';
+import { stripeRouter }      from './routes/stripe.js';
+import { propertiesRouter }  from './routes/properties.js';
+import { roomsRouter }       from './routes/rooms.js';
+import { guestsRouter }      from './routes/guests.js';
+import { bookingsRouter }    from './routes/bookings.js';
+import { usersRouter }       from './routes/users.js';
+import { adminRouter }       from './routes/admin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +54,7 @@ app.use('/api/rooms',        roomsRouter);
 app.use('/api/guests',       guestsRouter);
 app.use('/api/bookings',     bookingsRouter);
 app.use('/api/users',        usersRouter);
+app.use('/api/admin',        requireSuperAdmin, adminRouter);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
