@@ -1,8 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
-import { apiFetch } from '../utils/apiFetch.js';
+import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import {
   IconDashboard,
   IconCalendar,
@@ -14,27 +13,21 @@ import {
 } from './Icons.jsx';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', Icon: IconDashboard },
-  { to: '/calendar',  label: 'Calendar',  Icon: IconCalendar  },
-  { to: '/bookings',  label: 'Bookings',  Icon: IconBookings  },
-  { to: '/guests',    label: 'Guests',    Icon: IconGuests    },
-  { to: '/rooms',     label: 'Rooms',     Icon: IconRooms     },
-  { to: '/settings',  label: 'Settings',  Icon: IconSettings  },
-  { to: '/pricing',   label: 'Pricing',   Icon: IconPricing   },
+  { to: '/dashboard', key: 'dashboard', Icon: IconDashboard },
+  { to: '/calendar',  key: 'calendar',  Icon: IconCalendar  },
+  { to: '/bookings',  key: 'bookings',  Icon: IconBookings  },
+  { to: '/guests',    key: 'guests',    Icon: IconGuests    },
+  { to: '/rooms',     key: 'rooms',     Icon: IconRooms     },
+  { to: '/settings',  key: 'settings',  Icon: IconSettings  },
+  { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const plan = usePlan();
-  const [property, setProperty] = useState(null);
-
-  useEffect(() => {
-    apiFetch('/api/properties')
-      .then((r) => r.json())
-      .then(([first]) => setProperty(first ?? null))
-      .catch(() => {});
-  }, []);
+  const { property } = useLocale();
+  const t = useT();
 
   function handleLogout() {
     logout();
@@ -49,21 +42,21 @@ export default function Sidebar() {
           <span className="brand-dot" />
           NestBook
         </div>
-        <div className="brand-sub">Property Management</div>
+        <div className="brand-sub">{t('tagline')}</div>
       </div>
 
       {/* Navigation */}
       <nav className="sidebar-nav">
-        <div className="nav-section-label">Menu</div>
+        <div className="nav-section-label">{t('main')}</div>
 
-        {NAV_ITEMS.map(({ to, label, Icon }) => (
+        {NAV_ITEMS.map(({ to, key, Icon }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
           >
             <Icon />
-            {label}
+            {t(key)}
           </NavLink>
         ))}
       </nav>
@@ -72,7 +65,7 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         {property && (
           <>
-            <div className="footer-label">Property</div>
+            <div className="footer-label">{t('propertyLabel')}</div>
             <div className="footer-property-row">
               <span className="footer-property">{property.name}</span>
               <span className={`sidebar-plan-badge sidebar-plan-badge-${plan}`}>
@@ -89,7 +82,7 @@ export default function Sidebar() {
         </div>
 
         <button className="sidebar-logout-btn" onClick={handleLogout}>
-          Sign out
+          {t('signOut')}
         </button>
       </div>
     </aside>

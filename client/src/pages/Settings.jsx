@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -25,44 +26,47 @@ const LOCALES = [
   { value: 'fr', label: '🇫🇷 Français' },
   { value: 'es', label: '🇪🇸 Español' },
   { value: 'de', label: '🇩🇪 Deutsch' },
-];
-
-const FEATURES = [
-  {
-    key:     'widget',
-    label:   'Online Booking Widget',
-    desc:    'Allow guests to book directly from your website via the embed snippet.',
-    default: true,
-  },
-  {
-    key:     'email_confirmations',
-    label:   'Email Confirmations',
-    desc:    'Automatically send booking confirmation emails to guests.',
-    default: true,
-  },
-  {
-    key:     'breakfast',
-    label:   'Breakfast Included',
-    desc:    'Show "breakfast included" on booking pages and confirmation emails.',
-    default: false,
-  },
-  {
-    key:     'deposit',
-    label:   'Require Deposit',
-    desc:    'Require a deposit payment to confirm bookings.',
-    default: false,
-  },
-  {
-    key:     'offline',
-    label:   'Offline Mode',
-    desc:    'Allow staff to record bookings without internet connectivity.',
-    default: true,
-  },
+  { value: 'nl', label: '🇳🇱 Nederlands' },
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Settings() {
+  const t = useT();
+
+  const FEATURES = [
+    {
+      key:     'widget',
+      label:   t('fWidget'),
+      desc:    t('fWidgetSub'),
+      default: true,
+    },
+    {
+      key:     'email_confirmations',
+      label:   t('fEmail'),
+      desc:    t('fEmailSub'),
+      default: true,
+    },
+    {
+      key:     'breakfast',
+      label:   t('fBreakfast'),
+      desc:    t('fBreakfastSub'),
+      default: false,
+    },
+    {
+      key:     'deposit',
+      label:   t('fDeposit'),
+      desc:    t('fDepositSub'),
+      default: false,
+    },
+    {
+      key:     'offline',
+      label:   t('fOffline'),
+      desc:    t('fOfflineSub'),
+      default: true,
+    },
+  ];
+
   const [property,    setProperty]    = useState(null);
   const [users,       setUsers]       = useState([]);
   const [form,        setForm]        = useState(null);
@@ -153,7 +157,7 @@ export default function Settings() {
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-header">
-        <h1>Settings</h1>
+        <h1>{t('settings')}</h1>
         <div className="page-date">Manage your property configuration and account</div>
       </div>
 
@@ -164,27 +168,27 @@ export default function Settings() {
         <div>
           <div className="settings-card">
             <div className="settings-card-header">
-              <h2>Property Details</h2>
+              <h2>{t('propDetails')}</h2>
               <p>Basic information about your property</p>
             </div>
             <div className="settings-card-body">
               <div className="settings-form">
 
-                <FormField label="Property Name">
+                <FormField label={t('propName')}>
                   <input name="name" className="form-control"
                     value={form.name} onChange={handleFormChange} />
                 </FormField>
 
-                <FormField label="Property Type">
+                <FormField label={t('propType')}>
                   <select name="type" className="form-control"
                     value={form.type} onChange={handleFormChange}>
-                    {PROPERTY_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                    {PROPERTY_TYPES.map((tp) => (
+                      <option key={tp.value} value={tp.value}>{tp.label}</option>
                     ))}
                   </select>
                 </FormField>
 
-                <FormField label="Street Address">
+                <FormField label={t('address')}>
                   <input name="address" className="form-control"
                     value={form.address} onChange={handleFormChange}
                     placeholder="47 Route de Gordes" />
@@ -204,18 +208,18 @@ export default function Settings() {
                 </div>
 
                 <div className="settings-form-row">
-                  <FormField label="Check-in Time">
+                  <FormField label={t('checkin')}>
                     <input name="check_in_time" type="time" className="form-control"
                       value={form.check_in_time} onChange={handleFormChange} />
                   </FormField>
-                  <FormField label="Check-out Time">
+                  <FormField label={t('checkout')}>
                     <input name="check_out_time" type="time" className="form-control"
                       value={form.check_out_time} onChange={handleFormChange} />
                   </FormField>
                 </div>
 
                 <div className="settings-form-row">
-                  <FormField label="Currency">
+                  <FormField label={t('currency')}>
                     <select name="currency" className="form-control"
                       value={form.currency} onChange={handleFormChange}>
                       {CURRENCIES.map((c) => (
@@ -235,7 +239,7 @@ export default function Settings() {
 
                 <div className="settings-save-row">
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving…' : 'Save Changes'}
+                    {saving ? 'Saving…' : t('saveChanges')}
                   </button>
                 </div>
 
@@ -249,7 +253,7 @@ export default function Settings() {
           {/* Features */}
           <div className="settings-card">
             <div className="settings-card-header">
-              <h2>Features</h2>
+              <h2>{t('features')}</h2>
               <p>Enable or disable functionality for your property</p>
             </div>
             <div className="settings-card-body" style={{ padding: '0 20px' }}>
@@ -270,13 +274,13 @@ export default function Settings() {
           {/* Access & Roles */}
           <div className="settings-card">
             <div className="settings-card-header">
-              <h2>Access &amp; Roles</h2>
+              <h2>{t('access')}</h2>
               <p>Staff accounts with access to this property</p>
             </div>
             <div className="settings-card-body">
               <div className="user-list">
                 {users.map((u) => (
-                  <UserRow key={u.id} user={u} />
+                  <UserRow key={u.id} user={u} t={t} />
                 ))}
               </div>
               <div style={{ marginTop: 14 }}>
@@ -391,7 +395,7 @@ function ToggleRow({ label, desc, checked, onChange }) {
   );
 }
 
-function UserRow({ user }) {
+function UserRow({ user, t }) {
   const initials =
     user.name.split(' ').map((p) => p[0]?.toUpperCase() ?? '').slice(0, 2).join('');
   return (
@@ -402,7 +406,7 @@ function UserRow({ user }) {
         <div className="user-email">{user.email}</div>
       </div>
       <span className={`role-badge role-${user.role}`}>
-        {user.role === 'owner' ? 'Owner' : 'Reception'}
+        {user.role === 'owner' ? t('fOwner') : t('fReception')}
       </span>
     </div>
   );

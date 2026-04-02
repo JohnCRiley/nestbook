@@ -4,22 +4,22 @@ import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../utils/bookingConstan
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const FILTERS = [
-  { key: 'all',         label: 'All'          },
-  { key: 'arriving',    label: 'Arriving'     },
-  { key: 'in_house',    label: 'In House'     },
-  { key: 'confirmed',   label: 'Confirmed'    },
-  { key: 'checked_out', label: 'Checked Out'  },
-  { key: 'cancelled',   label: 'Cancelled'    },
-];
+import { useT } from '../i18n/LocaleContext.jsx';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Bookings() {
   const today = localToday();
+  const t = useT();
+
+  const FILTERS = [
+    { key: 'all',         label: t('filters')[0] },
+    { key: 'arriving',    label: t('filters')[1] },
+    { key: 'in_house',    label: t('filters')[2] },
+    { key: 'confirmed',   label: t('filters')[3] },
+    { key: 'checked_out', label: t('filters')[4] },
+    { key: 'cancelled',   label: t('filters')[5] },
+  ];
 
   const [bookings,       setBookings]       = useState([]);
   const [rooms,          setRooms]          = useState([]);
@@ -105,19 +105,19 @@ export default function Bookings() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">Loading bookings…</div>;
+  if (loading) return <div className="loading-screen">{t('loadingBookings')}</div>;
 
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>Bookings</h1>
-          <div className="page-date">{bookings.length} total reservations</div>
+          <h1>{t('bookings')}</h1>
+          <div className="page-date">{bookings.length} {t('totalReservations')}</div>
         </div>
         <button className="btn-primary" onClick={() => setShowNewModal(true)}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          New Booking
+          {t('newBooking').replace('+ ', '')}
         </button>
       </div>
 
@@ -129,7 +129,7 @@ export default function Bookings() {
           <input
             type="text"
             className="search-input"
-            placeholder="Search guest name…"
+            placeholder={t('searchBooking')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -154,20 +154,20 @@ export default function Bookings() {
       <div className="table-wrap">
         {filtered.length === 0 ? (
           <div className="table-empty">
-            {search ? `No bookings matching "${search}"` : 'No bookings for this filter'}
+            {search ? `No bookings matching "${search}"` : t('noBookingsFilter')}
           </div>
         ) : (
           <table className="bookings-table">
             <thead>
               <tr>
-                <th>Guest</th>
-                <th>Room</th>
-                <th>Check-in</th>
-                <th>Check-out</th>
-                <th style={{ textAlign: 'center' }}>Guests</th>
-                <th>Source</th>
-                <th>Total</th>
-                <th>Status</th>
+                <th>{t('thGuest')}</th>
+                <th>{t('thRoom')}</th>
+                <th>{t('thCheckIn')}</th>
+                <th>{t('thCheckOut')}</th>
+                <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
+                <th>{t('thSource')}</th>
+                <th>{t('thTotal')}</th>
+                <th>{t('thStatus')}</th>
               </tr>
             </thead>
             <tbody>

@@ -3,10 +3,13 @@ import { initials, phoneFlag, phoneCountry } from '../utils/guestHelpers.js';
 import GuestPanel    from './guests/GuestPanel.jsx';
 import NewGuestModal from './guests/NewGuestModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Guests() {
+  const t = useT();
+
   const [guests,          setGuests]          = useState([]);
   const [bookings,        setBookings]        = useState([]);
   const [loading,         setLoading]         = useState(true);
@@ -82,27 +85,27 @@ export default function Guests() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">Loading guests…</div>;
+  if (loading) return <div className="loading-screen">{t('loadingGuests')}</div>;
 
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>Guests</h1>
-          <div className="page-date">{guests.length} guest records</div>
+          <h1>{t('guests')}</h1>
+          <div className="page-date">{guests.length} {t('guestRecords')}</div>
         </div>
         <button className="btn-primary" onClick={() => setShowNewModal(true)}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          New Guest
+          {t('newGuest').replace('+ ', '')}
         </button>
       </div>
 
       {/* ── Stat bar ─────────────────────────────────────────────────────── */}
       <div className="stat-bar">
-        <StatBarItem value={stats.total}        label="Total Guests" />
-        <StatBarItem value={stats.newThisMonth} label="New This Month" />
-        <StatBarItem value={stats.topCountry}   label="Top Country" isText />
+        <StatBarItem value={stats.total}        label={t('totalGuests')} />
+        <StatBarItem value={stats.newThisMonth} label={t('newThisMonth')} />
+        <StatBarItem value={stats.topCountry}   label={t('topCountry')} isText />
       </div>
 
       {/* ── Search ───────────────────────────────────────────────────────── */}
@@ -112,7 +115,7 @@ export default function Guests() {
           <input
             type="text"
             className="search-input"
-            placeholder="Search by name or email…"
+            placeholder={t('searchGuests')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -128,7 +131,7 @@ export default function Guests() {
       <div className="guest-grid">
         {filtered.length === 0 ? (
           <div className="guests-empty">
-            {search ? `No guests matching "${search}"` : 'No guests yet — add your first one!'}
+            {search ? `No guests matching "${search}"` : t('noGuests')}
           </div>
         ) : (
           filtered.map((guest) => (

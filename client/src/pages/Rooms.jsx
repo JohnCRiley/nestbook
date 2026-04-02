@@ -5,11 +5,13 @@ import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Rooms() {
   const today = localToday();
+  const t = useT();
 
   const [rooms,         setRooms]         = useState([]);
   const [bookings,      setBookings]      = useState([]);
@@ -112,28 +114,28 @@ export default function Rooms() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">Loading rooms…</div>;
+  if (loading) return <div className="loading-screen">{t('loadingRooms')}</div>;
 
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>Rooms</h1>
-          <div className="page-date">{rooms.length} rooms configured</div>
+          <h1>{t('rooms')}</h1>
+          <div className="page-date">{rooms.length} {t('roomsCount')}</div>
         </div>
         <button className="btn-primary" onClick={() => setShowNewRoom(true)}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          Add Room
+          {t('addRoom').replace('+ ', '')}
         </button>
       </div>
 
       {/* ── Stat bar ─────────────────────────────────────────────────────── */}
       <div className="stat-bar">
-        <StatBarItem value={stats.total}       label="Total Rooms" />
-        <StatBarItem value={stats.available}   label="Available Tonight" accent="var(--accent)" />
-        <StatBarItem value={stats.occupied}    label="Occupied Tonight"  accent="#f59e0b" />
-        <StatBarItem value={stats.maintenance} label="Maintenance"       accent="#94a3b8" />
+        <StatBarItem value={stats.total}       label={t('totalRooms')} />
+        <StatBarItem value={stats.available}   label={t('availableTonight')} accent="var(--accent)" />
+        <StatBarItem value={stats.occupied}    label={t('occupied')}         accent="#f59e0b" />
+        <StatBarItem value={stats.maintenance} label={t('maintenance')}      accent="#94a3b8" />
       </div>
 
       {/* ── Card grid ────────────────────────────────────────────────────── */}
@@ -147,6 +149,7 @@ export default function Rooms() {
             today={today}
             onClick={handleCardClick}
             onBook={handleBook}
+            t={t}
           />
         ))}
       </div>
@@ -187,7 +190,7 @@ export default function Rooms() {
 
 // ── RoomCard ──────────────────────────────────────────────────────────────────
 
-function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook }) {
+function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t }) {
   const amenities     = (room.amenities ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const stripeClass   = `stripe-${room.status}`;
   const isAvailable   = room.status === 'available' && !activeBooking;
@@ -219,14 +222,14 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook }) {
         {/* Price */}
         <div className="room-price">
           €{room.price_per_night}
-          <span className="room-price-sub">/night</span>
+          <span className="room-price-sub">{t('perNight')}</span>
         </div>
 
         {/* Facts: capacity */}
         <div className="room-facts">
           <span className="room-fact">
             <GuestIcon />
-            {room.capacity} {room.capacity === 1 ? 'guest' : 'guests'}
+            {t('guestWord')(room.capacity)}
           </span>
         </div>
 
@@ -258,7 +261,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook }) {
       {isMaintenance && (
         <div className="room-occupied-strip" style={{ background: '#f8fafc', borderTopColor: '#cbd5e1', color: '#475569' }}>
           <span>🔧</span>
-          <span>Under maintenance</span>
+          <span>{t('underMaintenance')}</span>
         </div>
       )}
 
@@ -266,7 +269,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook }) {
       {isAvailable && (
         <div className="room-card-footer" onClick={(e) => e.stopPropagation()}>
           <button className="btn-book" onClick={() => onBook(room)}>
-            Book this room
+            {t('bookThisRoom')}
           </button>
         </div>
       )}

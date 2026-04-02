@@ -3,6 +3,7 @@ import { localToday }  from '../utils/format.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -46,30 +47,24 @@ function addWeeks(date, n) {
   return d;
 }
 
-const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
-
 /** "Mon 30" */
-function fmtDayHeader(date) {
+function fmtDayHeader(date, dayNames) {
   return {
-    name: DAY_NAMES[date.getDay() === 0 ? 6 : date.getDay() - 1],
+    name: dayNames[date.getDay() === 0 ? 6 : date.getDay() - 1],
     num:  date.getDate(),
   };
 }
 
 /** "March 2026" or "March – April 2026" for the week label. */
-function weekLabel(days) {
+function weekLabel(days, monthNames) {
   const first = days[0], last = days[6];
   if (first.getMonth() === last.getMonth()) {
-    return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`;
+    return `${monthNames[first.getMonth()]} ${first.getFullYear()}`;
   }
   if (first.getFullYear() === last.getFullYear()) {
-    return `${MONTH_NAMES[first.getMonth()]} – ${MONTH_NAMES[last.getMonth()]} ${first.getFullYear()}`;
+    return `${monthNames[first.getMonth()]} \u2013 ${monthNames[last.getMonth()]} ${first.getFullYear()}`;
   }
-  return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()} – ${MONTH_NAMES[last.getMonth()]} ${last.getFullYear()}`;
+  return `${monthNames[first.getMonth()]} ${first.getFullYear()} \u2013 ${monthNames[last.getMonth()]} ${last.getFullYear()}`;
 }
 
 // ── Cell state resolver ───────────────────────────────────────────────────────
@@ -97,6 +92,10 @@ function cellInfo(bookings, roomId, dayIso) {
 export default function Calendar() {
   const today   = localToday();
   const todayDate = parseDate(today);
+  const t = useT();
+
+  const DAY_NAMES   = t('dayNames');
+  const MONTH_NAMES = t('monthNames');
 
   // week anchor: always a Monday
   const [monday, setMonday] = useState(() => weekStart(todayDate));
@@ -168,7 +167,7 @@ export default function Calendar() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">Loading calendar…</div>;
+  if (loading) return <div className="loading-screen">{t('loadingCalendar')}</div>;
 
   const isCurrentWeek = toIso(monday) === toIso(weekStart(todayDate));
 
@@ -177,21 +176,21 @@ export default function Calendar() {
       {/* ── Page toolbar ────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>Calendar</h1>
-          <div className="page-date">Week view — click a cell to book or view details</div>
+          <h1>{t('calendar')}</h1>
+          <div className="page-date">{t('calHint')}</div>
         </div>
 
         {/* Week navigation */}
         <div className="calendar-nav">
           <button className="cal-nav-btn" onClick={goPrev} aria-label="Previous week">‹</button>
 
-          <span className="cal-week-label">{weekLabel(days)}</span>
+          <span className="cal-week-label">{weekLabel(days, MONTH_NAMES)}</span>
 
           <button className="cal-nav-btn" onClick={goNext} aria-label="Next week">›</button>
 
           {!isCurrentWeek && (
             <button className="btn-secondary" onClick={goToday} style={{ padding: '7px 14px' }}>
-              Today
+              {t('today')}
             </button>
           )}
         </div>
@@ -199,7 +198,7 @@ export default function Calendar() {
 
       {/* ── Legend ──────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 14 }}>
-        <Legend />
+        <Legend t={t} />
       </div>
 
       {/* ── Grid ────────────────────────────────────────────────────────── */}
@@ -211,7 +210,7 @@ export default function Calendar() {
           {days.map((day) => {
             const iso      = toIso(day);
             const isToday  = iso === today;
-            const { name, num } = fmtDayHeader(day);
+            const { name, num } = fmtDayHeader(day, DAY_NAMES);
             return (
               <div key={iso} className={`cal-day-header${isToday ? ' is-today' : ''}`}>
                 <div className="cal-day-name">{name}</div>
@@ -357,13 +356,13 @@ function EmptyCell({ isPast, onClick }) {
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-function Legend() {
+function Legend({ t }) {
   const items = [
-    { cls: 'sw-arriving',    label: 'In House' },
-    { cls: 'sw-booked',      label: 'Confirmed / Booked' },
-    { cls: 'sw-checked-out', label: 'Checked Out' },
-    { cls: 'sw-available',   label: 'Available' },
-    { cls: 'sw-maintenance', label: 'Maintenance' },
+    { cls: 'sw-arriving',    label: t('calLegendInHouse') },
+    { cls: 'sw-booked',      label: t('calLegendConfirmed') },
+    { cls: 'sw-checked-out', label: t('calLegendCheckedOut') },
+    { cls: 'sw-available',   label: t('calLegendAvailable') },
+    { cls: 'sw-maintenance', label: t('calLegendMaintenance') },
   ];
   return (
     <div className="cal-legend">

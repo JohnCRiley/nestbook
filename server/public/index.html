@@ -498,7 +498,7 @@ img { display: block; max-width: 100%; }
 #languages .section-sub { color: rgba(255,255,255,0.65); }
 .lang-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-top: 48px;
 }
@@ -751,6 +751,7 @@ img { display: block; max-width: 100%; }
         <button class="lang-btn" data-lang="fr">FR</button>
         <button class="lang-btn" data-lang="es">ES</button>
         <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
       </div>
       <button class="btn btn-ghost" data-i18n="nav.signin">Sign in</button>
       <a href="/dashboard" class="btn btn-primary" data-i18n="nav.try">Try free</a>
@@ -791,7 +792,7 @@ img { display: block; max-width: 100%; }
           <span class="hero-trust-dot"></span>
           <span data-i18n="hero.trust2">Cancel any time</span>
           <span class="hero-trust-dot"></span>
-          <span data-i18n="hero.trust3">English · Français · Español · Deutsch</span>
+          <span data-i18n="hero.trust3">English · Français · Español · Deutsch · Nederlands</span>
         </div>
       </div>
 
@@ -1020,7 +1021,7 @@ img { display: block; max-width: 100%; }
       </div>
       <div class="feature-card">
         <div class="feature-icon">🌍</div>
-        <div class="feature-title" data-i18n="features.i18n.title">4 Languages Built In</div>
+        <div class="feature-title" data-i18n="features.i18n.title">5 Languages Built In</div>
         <div class="feature-desc" data-i18n="features.i18n.desc">The dashboard and the guest-facing booking widget both work in English, French, Spanish and German — no plugins needed.</div>
       </div>
     </div>
@@ -1033,7 +1034,7 @@ img { display: block; max-width: 100%; }
 <section class="section text-center" id="languages">
   <div class="container">
     <div class="badge" style="background:rgba(255,255,255,0.15); color:var(--light)" data-i18n="langs.badge">Made for Europe</div>
-    <h2 class="section-heading" data-i18n="langs.heading">One app, four languages</h2>
+    <h2 class="section-heading" data-i18n="langs.heading">One app, five languages</h2>
     <p class="section-sub" data-i18n="langs.sub">Whether your guests book in English, your staff prefer French, and your accountant wants German — NestBook switches instantly.</p>
     <div class="lang-cards">
       <div class="lang-card">
@@ -1066,6 +1067,14 @@ img { display: block; max-width: 100%; }
         <div class="lang-phrase">
           <strong>"Anreise: 15 Uhr. Abreise: 11 Uhr."</strong>
           <span data-i18n="langs.de.sub">Für Gästehäuser von Bayern bis zur Nordsee</span>
+        </div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-flag">🇳🇱</div>
+        <div class="lang-name">Nederlands</div>
+        <div class="lang-phrase">
+          <strong data-i18n="langs.nl.phrase">"Inchecken: 15:00. Uitchecken: 11:00."</strong>
+          <span data-i18n="langs.nl.sub">Voor B&amp;Bs van Zeeland tot Groningen</span>
         </div>
       </div>
     </div>
@@ -1140,7 +1149,7 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.starter.f1">1 property, up to 3 rooms</li>
           <li data-i18n="pricing.starter.f2">Booking calendar & management</li>
           <li data-i18n="pricing.starter.f3">Guest records</li>
-          <li data-i18n="pricing.starter.f4">All 4 languages</li>
+          <li data-i18n="pricing.starter.f4">All 5 languages</li>
           <li data-i18n="pricing.starter.f5">Booking widget (branded)</li>
         </ul>
         <a href="/dashboard" class="btn btn-outline" style="width:100%; justify-content:center" data-i18n="pricing.starter.cta">Get started free</a>
@@ -1249,7 +1258,7 @@ img { display: block; max-width: 100%; }
 
     <div class="footer-bottom">
       <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
-      <span>EN · FR · ES · DE</span>
+      <span>EN · FR · ES · DE · NL</span>
     </div>
   </div>
 </footer>
@@ -1273,7 +1282,7 @@ const I18N = {
     'hero.demo':     'See it in action',
     'hero.trust1':   'No setup fee',
     'hero.trust2':   'Cancel any time',
-    'hero.trust3':   'English · Français · Español · Deutsch',
+    'hero.trust3':   'English · Français · Español · Deutsch · Nederlands',
     'preview.badge':   'The dashboard',
     'preview.heading': 'Everything in one place',
     'preview.sub':     'A single screen tells you who\'s arriving today, who\'s in-house, what\'s coming up, and how the month is going.',
@@ -1290,16 +1299,18 @@ const I18N = {
     'features.offline.desc': 'Check guests in and manage bookings even without internet. Everything syncs when you reconnect.',
     'features.roles.title':  'Owner & Staff Roles',
     'features.roles.desc':   'Invite reception staff with limited access. Owners keep full control over settings, pricing and reports.',
-    'features.i18n.title':   '4 Languages Built In',
-    'features.i18n.desc':    'The dashboard and the guest-facing booking widget both work in English, French, Spanish and German — no plugins needed.',
+    'features.i18n.title':   '5 Languages Built In',
+    'features.i18n.desc':    'The dashboard and the guest-facing booking widget both work in English, French, Spanish, German and Dutch — no plugins needed.',
     'langs.badge':   'Made for Europe',
-    'langs.heading': 'One app, four languages',
-    'langs.sub':     'Whether your guests book in English, your staff prefer French, and your accountant wants German — NestBook switches instantly.',
+    'langs.heading': 'One app, five languages',
+    'langs.sub':     'Whether your guests book in English, your staff prefer French, or your Dutch owner wants everything in Nederlands — NestBook switches instantly.',
     'langs.en.phrase': '"Check-in: 3pm. Checkout: 11am."',
     'langs.en.sub':    'For B&Bs from Cornwall to Edinburgh',
     'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
     'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
     'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'langs.nl.phrase': '"Inchecken: 15:00. Uitchecken: 11:00."',
+    'langs.nl.sub':    'Voor B&Bs van Zeeland tot Groningen',
     'testimonials.badge':   'From our customers',
     'testimonials.heading': 'Loved by small property owners',
     'testimonials.1.quote': '"I used to manage everything in a spreadsheet and a paper diary. NestBook replaced both in an afternoon. I can check arrivals on my phone before I even get out of bed."',
@@ -1319,7 +1330,7 @@ const I18N = {
     'pricing.starter.f1': '1 property, up to 3 rooms',
     'pricing.starter.f2': 'Booking calendar & management',
     'pricing.starter.f3': 'Guest records',
-    'pricing.starter.f4': 'All 4 languages',
+    'pricing.starter.f4': 'All 5 languages',
     'pricing.starter.f5': 'Booking widget (branded)',
     'pricing.starter.cta': 'Get started free',
     'pricing.pro.popular': 'Most popular',
@@ -1381,7 +1392,7 @@ const I18N = {
     'hero.demo':     'Voir la démo',
     'hero.trust1':   'Sans frais d\'installation',
     'hero.trust2':   'Résiliable à tout moment',
-    'hero.trust3':   'English · Français · Español · Deutsch',
+    'hero.trust3':   'English · Français · Español · Deutsch · Nederlands',
     'preview.badge':   'Le tableau de bord',
     'preview.heading': 'Tout en un seul endroit',
     'preview.sub':     'Un seul écran vous indique qui arrive aujourd\'hui, qui est en chambre, ce qui est prévu et comment se passe le mois.',
@@ -1398,16 +1409,18 @@ const I18N = {
     'features.offline.desc': 'Enregistrez les arrivées et gérez les réservations même sans internet. Tout se synchronise à la reconnexion.',
     'features.roles.title':  'Rôles propriétaire & personnel',
     'features.roles.desc':   'Invitez le personnel de réception avec un accès limité. Le propriétaire garde le contrôle total des paramètres et des rapports.',
-    'features.i18n.title':   '4 langues intégrées',
-    'features.i18n.desc':    'Le tableau de bord et le widget de réservation fonctionnent en anglais, français, espagnol et allemand — sans plugin.',
+    'features.i18n.title':   '5 langues intégrées',
+    'features.i18n.desc':    'Le tableau de bord et le widget de réservation fonctionnent en anglais, français, espagnol, allemand et néerlandais — sans plugin.',
     'langs.badge':   'Fait pour l\'Europe',
-    'langs.heading': 'Une appli, quatre langues',
+    'langs.heading': 'Une appli, cinq langues',
     'langs.sub':     'Que vos hôtes réservent en anglais, votre personnel préfère le français ou votre comptable veut l\'allemand — NestBook bascule instantanément.',
     'langs.en.phrase': '"Check-in: 15h. Départ: 11h."',
     'langs.en.sub':    'Pour les B&Bs de Cornouailles à Édimbourg',
     'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
     'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
     'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'langs.nl.phrase': '"Inchecken: 15:00. Uitchecken: 11:00."',
+    'langs.nl.sub':    'Voor B&Bs van Zeeland tot Groningen',
     'testimonials.badge':   'Nos clients témoignent',
     'testimonials.heading': 'Apprécié par les petits hébergeurs',
     'testimonials.1.quote': '"Je gérais tout dans un tableur et un agenda papier. NestBook a tout remplacé en une après-midi. Je peux vérifier les arrivées sur mon téléphone avant même de me lever."',
@@ -1427,7 +1440,7 @@ const I18N = {
     'pricing.starter.f1': '1 propriété, jusqu\'à 3 chambres',
     'pricing.starter.f2': 'Calendrier et gestion des réservations',
     'pricing.starter.f3': 'Fiches clients',
-    'pricing.starter.f4': 'Les 4 langues',
+    'pricing.starter.f4': 'Les 5 langues',
     'pricing.starter.f5': 'Widget de réservation (avec logo NestBook)',
     'pricing.starter.cta': 'Commencer gratuitement',
     'pricing.pro.popular': 'Le plus populaire',
@@ -1489,7 +1502,7 @@ const I18N = {
     'hero.demo':     'Ver en acción',
     'hero.trust1':   'Sin cuota de alta',
     'hero.trust2':   'Cancela cuando quieras',
-    'hero.trust3':   'English · Français · Español · Deutsch',
+    'hero.trust3':   'English · Français · Español · Deutsch · Nederlands',
     'preview.badge':   'El panel de control',
     'preview.heading': 'Todo en un solo lugar',
     'preview.sub':     'Una sola pantalla te dice quién llega hoy, quién está alojado, qué hay por venir y cómo va el mes.',
@@ -1506,16 +1519,18 @@ const I18N = {
     'features.offline.desc': 'Registra llegadas y gestiona reservas aunque no tengas internet. Todo se sincroniza al reconectarte.',
     'features.roles.title':  'Roles propietario y personal',
     'features.roles.desc':   'Invita al personal de recepción con acceso limitado. El propietario mantiene el control total de la configuración y los informes.',
-    'features.i18n.title':   '4 idiomas incluidos',
-    'features.i18n.desc':    'El panel y el widget de reservas funcionan en inglés, francés, español y alemán — sin plugins.',
+    'features.i18n.title':   '5 idiomas incluidos',
+    'features.i18n.desc':    'El panel y el widget de reservas funcionan en inglés, francés, español, alemán y neerlandés — sin plugins.',
     'langs.badge':   'Hecho para Europa',
-    'langs.heading': 'Una app, cuatro idiomas',
+    'langs.heading': 'Una app, cinco idiomas',
     'langs.sub':     'Tanto si tus huéspedes reservan en inglés, tu personal prefiere el francés o tu contable quiere el alemán — NestBook cambia al instante.',
     'langs.en.phrase': '"Check-in: 15h. Salida: 11h."',
     'langs.en.sub':    'Para B&Bs de Cornualles a Edimburgo',
     'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
     'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
     'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'langs.nl.phrase': '"Inchecken: 15:00. Uitchecken: 11:00."',
+    'langs.nl.sub':    'Voor B&Bs van Zeeland tot Groningen',
     'testimonials.badge':   'Nuestros clientes',
     'testimonials.heading': 'Amado por pequeños propietarios',
     'testimonials.1.quote': '"Antes gestionaba todo en una hoja de cálculo y una agenda de papel. NestBook lo sustituyó todo en una tarde. Puedo ver las llegadas en el móvil antes de levantarme."',
@@ -1535,7 +1550,7 @@ const I18N = {
     'pricing.starter.f1': '1 propiedad, hasta 3 habitaciones',
     'pricing.starter.f2': 'Calendario y gestión de reservas',
     'pricing.starter.f3': 'Fichas de huéspedes',
-    'pricing.starter.f4': 'Los 4 idiomas',
+    'pricing.starter.f4': 'Los 5 idiomas',
     'pricing.starter.f5': 'Widget de reservas (con logo NestBook)',
     'pricing.starter.cta': 'Empezar gratis',
     'pricing.pro.popular': 'El más popular',
@@ -1597,7 +1612,7 @@ const I18N = {
     'hero.demo':     'In Aktion sehen',
     'hero.trust1':   'Keine Einrichtungsgebühr',
     'hero.trust2':   'Jederzeit kündbar',
-    'hero.trust3':   'English · Français · Español · Deutsch',
+    'hero.trust3':   'English · Français · Español · Deutsch · Nederlands',
     'preview.badge':   'Das Dashboard',
     'preview.heading': 'Alles an einem Ort',
     'preview.sub':     'Ein einziger Bildschirm zeigt Ihnen, wer heute anreist, wer im Haus ist, was bevorsteht und wie der Monat läuft.',
@@ -1614,16 +1629,18 @@ const I18N = {
     'features.offline.desc': 'Checken Sie Gäste auch ohne Internet ein und verwalten Sie Buchungen. Alles synchronisiert sich beim Wiederverbinden.',
     'features.roles.title':  'Eigentümer- und Mitarbeiterrollen',
     'features.roles.desc':   'Laden Sie Empfangsmitarbeiter mit eingeschränktem Zugriff ein. Eigentümer behalten die volle Kontrolle über Einstellungen und Berichte.',
-    'features.i18n.title':   '4 Sprachen integriert',
-    'features.i18n.desc':    'Dashboard und Buchungs-Widget funktionieren auf Englisch, Französisch, Spanisch und Deutsch — keine Plugins erforderlich.',
+    'features.i18n.title':   '5 Sprachen integriert',
+    'features.i18n.desc':    'Dashboard und Buchungs-Widget funktionieren auf Englisch, Französisch, Spanisch, Deutsch und Niederländisch — keine Plugins erforderlich.',
     'langs.badge':   'Für Europa gemacht',
-    'langs.heading': 'Eine App, vier Sprachen',
+    'langs.heading': 'Eine App, fünf Sprachen',
     'langs.sub':     'Ob Ihre Gäste auf Englisch buchen, Ihr Personal Französisch bevorzugt oder Ihr Buchhalter Deutsch möchte — NestBook wechselt sofort.',
     'langs.en.phrase': '"Check-in: 15 Uhr. Abreise: 11 Uhr."',
     'langs.en.sub':    'Für B&Bs von Cornwall bis Edinburgh',
     'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
     'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
     'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'langs.nl.phrase': '"Inchecken: 15:00. Uitchecken: 11:00."',
+    'langs.nl.sub':    'Voor B&Bs van Zeeland tot Groningen',
     'testimonials.badge':   'Unsere Kunden',
     'testimonials.heading': 'Geliebt von kleinen Unterkunftsbetreibern',
     'testimonials.1.quote': '"Früher habe ich alles in einer Tabelle und einem Papierkalender verwaltet. NestBook hat beides an einem Nachmittag ersetzt. Ich kann die Ankünfte auf dem Handy prüfen, bevor ich aufstehe."',
@@ -1643,7 +1660,7 @@ const I18N = {
     'pricing.starter.f1': '1 Unterkunft, bis zu 3 Zimmer',
     'pricing.starter.f2': 'Buchungskalender & -verwaltung',
     'pricing.starter.f3': 'Gästekartei',
-    'pricing.starter.f4': 'Alle 4 Sprachen',
+    'pricing.starter.f4': 'Alle 5 Sprachen',
     'pricing.starter.f5': 'Buchungs-Widget (mit NestBook-Logo)',
     'pricing.starter.cta': 'Kostenlos starten',
     'pricing.pro.popular': 'Am beliebtesten',
@@ -1689,6 +1706,116 @@ const I18N = {
     'footer.gdpr':     'DSGVO',
     'footer.cookies':  'Cookies',
     'footer.copy':     '© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+
+  nl: {
+    'nav.features':  'Functies',
+    'nav.pricing':   'Prijzen',
+    'nav.languages': 'Talen',
+    'nav.demo':      'Live demo',
+    'nav.signin':    'Inloggen',
+    'nav.try':       'Gratis proberen',
+    'hero.kicker':   'Eenvoudig reserveringsbeheer voor kleine accommodaties',
+    'hero.headline': 'Uw gasten verdienen een warm welkom. <em>U ook.</em>',
+    'hero.sub':      'NestBook houdt uw kamers, reserveringen en gasten georganiseerd — zonder de complexiteit van grote hotelsoftware.',
+    'hero.cta':      'Gratis starten — geen creditcard nodig',
+    'hero.demo':     'Zie de boekingswidget ↗',
+    'hero.trust1':   'Geen installatiekosten',
+    'hero.trust2':   'Altijd opzegbaar',
+    'hero.trust3':   'English · Français · Español · Deutsch · Nederlands',
+    'preview.badge':   'Het dashboard',
+    'preview.heading': 'Alles op één plek',
+    'preview.sub':     'Eén scherm vertelt u wie er vandaag aankomt, wie er verblijft, wat er aankomt en hoe de maand verloopt.',
+    'features.badge':  'Alles wat u nodig heeft',
+    'features.heading':'Gebouwd voor kleine accommodaties',
+    'features.sub':    'Geen cursussen. Geen lange installatie. Open het en begin met reserveringen aannemen.',
+    'features.cal.title':    'Visuele beschikbaarheidskalender',
+    'features.cal.desc':     'Zie al uw kamers in één oogopslag. Klik op een vrije cel om direct een reservering te maken.',
+    'features.guests.title': 'Gastendossiers',
+    'features.guests.desc':  'Geschiedenis, contactgegevens en voorkeuren van elke gast, altijd bij de hand.',
+    'features.widget.title': 'Insluitable boekingswidget',
+    'features.widget.desc':  'Eén regel code op uw website en gasten boeken direct — zonder commissie.',
+    'features.offline.title':'Werkt offline',
+    'features.offline.desc': 'Slechte verbinding? NestBook blijft werken en synchroniseert wanneer u weer online bent.',
+    'features.roles.title':  'Eigenaar en personeelsrollen',
+    'features.roles.desc':   'Geef receptiepersoneel een eigen eenvoudige weergave. Houd beheerdersinstellingen voor uzelf.',
+    'features.i18n.title':   '5 talen ingebouwd',
+    'features.i18n.desc':    'Schakel met één klik tussen Nederlands, Engels, Frans, Spaans en Duits.',
+    'langs.badge':   'Spreekt u NestBook?',
+    'langs.heading': 'Gemaakt voor Europese accommodatie-eigenaren',
+    'langs.sub':     'Of u nu een B&B in de Achterhoek beheert, een gîte in de Provence, een casa rural in Andalusië of een Pension in Beieren — NestBook spreekt uw taal.',
+    'langs.en.phrase': '"Check-in: 3pm. Checkout: 11am."',
+    'langs.en.sub':    'Voor B&Bs van Cornwall tot Edinburgh',
+    'langs.fr.sub':    'Pour les gîtes de Provence à la Bretagne',
+    'langs.es.sub':    'Para casas rurales de Andalucía a Cataluña',
+    'langs.de.sub':    'Für Gästehäuser von Bayern bis zur Nordsee',
+    'langs.nl.phrase': '"Inchecken: 15:00. Uitchecken: 11:00."',
+    'langs.nl.sub':    'Voor B&Bs van Zeeland tot Groningen',
+    'testimonials.badge':   'Wat eigenaren zeggen',
+    'testimonials.heading': 'Echte accommodaties, echte resultaten',
+    'testimonials.1.quote': '"Ik beheerde alles in een papieren agenda. NestBook was in 20 minuten ingesteld en ik weet niet meer hoe ik het zonder deed."',
+    'testimonials.1.name':  'Margaret Hughes',
+    'testimonials.1.place': '🇬🇧 The Wisteria B&B, Cotswolds',
+    'testimonials.2.quote': '"Le fait que tout soit en français est vraiment appréciable. Simple, efficace, parfait pour notre gîte."',
+    'testimonials.2.name':  'Pierre Beaumont',
+    'testimonials.2.place': '🇫🇷 Domaine des Lavandes, Provence',
+    'testimonials.3.quote': '"De offline modus was doorslaggevend voor ons. Onze wifi is onbetrouwbaar en alle andere systemen stopten gewoon met werken."',
+    'testimonials.3.name':  'Siobhán Connolly',
+    'testimonials.3.place': '🇮🇪 The Harbour House, Kinsale',
+    'pricing.badge':   'Prijzen',
+    'pricing.heading': 'Eenvoudige, eerlijke prijzen',
+    'pricing.sub':     'Geen verborgen kosten. Geen commissie per boeking. Altijd opzegbaar.',
+    'pricing.starter.tier':   'Starter',
+    'pricing.starter.period': 'Voor altijd gratis',
+    'pricing.starter.f1': '1 accommodatie, tot 3 kamers',
+    'pricing.starter.f2': 'Boekingskalender en -beheer',
+    'pricing.starter.f3': 'Gastendossiers',
+    'pricing.starter.f4': 'Alle 5 talen',
+    'pricing.starter.f5': 'Boekingswidget (met NestBook-logo)',
+    'pricing.starter.cta': 'Gratis starten',
+    'pricing.pro.popular': 'Meest populair',
+    'pricing.pro.tier':    'Pro',
+    'pricing.pro.period':  'per maand, maandelijks gefactureerd',
+    'pricing.pro.f1': '1 accommodatie, onbeperkte kamers',
+    'pricing.pro.f2': 'Alles uit Starter',
+    'pricing.pro.f3': 'White-label boekingswidget',
+    'pricing.pro.f4': 'Personeelsaccounts (tot 5)',
+    'pricing.pro.f5': 'E-mailbevestigingen voor gasten',
+    'pricing.pro.f6': 'Omzetrapportages',
+    'pricing.pro.f7': 'Prioriteitsondersteuning',
+    'pricing.pro.cta': '30 dagen gratis proberen',
+    'pricing.multi.tier':   'Meerdere accommodaties',
+    'pricing.multi.period': 'per maand, maandelijks gefactureerd',
+    'pricing.multi.f1': 'Tot 5 accommodaties',
+    'pricing.multi.f2': 'Alles uit Pro',
+    'pricing.multi.f3': 'Onbeperkte personeelsaccounts',
+    'pricing.multi.f4': 'Gedeelde kalenderweergave',
+    'pricing.multi.f5': 'API-toegang',
+    'pricing.multi.f6': 'Persoonlijk onboardinggesprek',
+    'pricing.multi.cta': 'Neem contact op',
+    'cta.heading': 'Klaar om uw reserveringen te vereenvoudigen?',
+    'cta.sub':     'Sluit u aan bij duizenden kleine accommodatie-eigenaren die de papieren agenda hebben ingeruild voor iets beters.',
+    'cta.btn1':    'Gratis starten',
+    'cta.btn2':    'Zie de widget ↗',
+    'cta.note':    'Geen creditcard · Geen verplichting · Altijd opzegbaar',
+    'footer.tagline':  'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':  'Product',
+    'footer.features': 'Functies',
+    'footer.pricing':  'Prijzen',
+    'footer.languages':'Talen',
+    'footer.widget':   'Boekingswidget',
+    'footer.dashboard':'Dashboard',
+    'footer.company':  'Bedrijf',
+    'footer.about':    'Over ons',
+    'footer.blog':     'Blog',
+    'footer.contact':  'Contact',
+    'footer.press':    'Pers',
+    'footer.legal':    'Juridisch',
+    'footer.privacy':  'Privacybeleid',
+    'footer.terms':    'Gebruiksvoorwaarden',
+    'footer.gdpr':     'AVG',
+    'footer.cookies':  'Cookies',
+    'footer.copy':     '© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
   },
 };
 

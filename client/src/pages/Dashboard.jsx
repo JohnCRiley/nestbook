@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useT } from '../i18n/LocaleContext.jsx';
 import {
   localToday,
   formatDateLong,
@@ -17,16 +18,11 @@ const BADGE_CLASS = {
   cancelled:   'badge badge-cancelled',
 };
 
-const BADGE_LABEL = {
-  arriving:    'In House',
-  confirmed:   'Confirmed',
-  checked_out: 'Checked Out',
-  cancelled:   'Cancelled',
-};
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const t = useT();
+
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
@@ -64,11 +60,18 @@ export default function Dashboard() {
   );
 
   const hour     = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
+
+  const BADGE_LABEL = {
+    arriving:    t('calLegendInHouse'),
+    confirmed:   t('confirmed'),
+    checked_out: t('checkedOut'),
+    cancelled:   t('cancelled'),
+  };
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (loading) return <div className="loading-screen">Loading dashboard…</div>;
+  if (loading) return <div className="loading-screen">{t('loadingDashboard')}</div>;
   if (error)   return <div className="loading-screen" style={{ color: '#dc2626' }}>Error: {error}</div>;
 
   return (
@@ -81,10 +84,10 @@ export default function Dashboard() {
 
       {/* ── Stat cards ─────────────────────────────────────────────────── */}
       <div className="stats-grid">
-        <StatCard value={occupiedTonight.length}           label="Occupied Tonight" />
-        <StatCard value={arrivalsToday.length}             label="Arrivals Today" />
-        <StatCard value={departuresToday.length}           label="Departures Today" />
-        <StatCard value={formatCurrency(monthRevenue)}     label="Revenue This Month" />
+        <StatCard value={occupiedTonight.length}           label={t('occupied')} />
+        <StatCard value={arrivalsToday.length}             label={t('arrivals')} />
+        <StatCard value={departuresToday.length}           label={t('departures')} />
+        <StatCard value={formatCurrency(monthRevenue)}     label={t('revenue')} />
       </div>
 
       {/* ── Two-column sections ─────────────────────────────────────────── */}
@@ -93,21 +96,23 @@ export default function Dashboard() {
         {/* Today's Arrivals */}
         <div className="section-card">
           <div className="section-head">
-            <h2>Today's Arrivals</h2>
+            <h2>{t('todayArrivalsTitle')}</h2>
             <span className="count-pill">{arrivalsToday.length}</span>
           </div>
           {arrivalsToday.length === 0 ? (
-            <div className="empty-state">No arrivals scheduled for today</div>
+            <div className="empty-state">{t('noArrivalsToday')}</div>
           ) : (
             arrivalsToday.map((b) => (
               <BookingRow
                 key={b.id}
                 booking={b}
+                badgeLabel={BADGE_LABEL}
                 right={
                   <span className={BADGE_CLASS[b.status] ?? 'badge'}>
                     {BADGE_LABEL[b.status] ?? b.status}
                   </span>
                 }
+                nightWord={t('nightWord')}
               />
             ))
           )}
@@ -116,16 +121,17 @@ export default function Dashboard() {
         {/* Upcoming — Next 7 Days */}
         <div className="section-card">
           <div className="section-head">
-            <h2>Upcoming — Next 7 Days</h2>
+            <h2>{t('upcomingTitle')}</h2>
             <span className="count-pill">{upcoming.length}</span>
           </div>
           {upcoming.length === 0 ? (
-            <div className="empty-state">No confirmed arrivals in the next 7 days</div>
+            <div className="empty-state">{t('noUpcoming7Days')}</div>
           ) : (
             upcoming.map((b) => (
               <BookingRow
                 key={b.id}
                 booking={b}
+                badgeLabel={BADGE_LABEL}
                 right={
                   <>
                     <span className="booking-date">{formatDateShort(b.check_in_date)}</span>
@@ -134,6 +140,7 @@ export default function Dashboard() {
                     </span>
                   </>
                 }
+                nightWord={t('nightWord')}
               />
             ))
           )}
@@ -155,14 +162,14 @@ function StatCard({ value, label }) {
   );
 }
 
-function BookingRow({ booking: b, right }) {
+function BookingRow({ booking: b, right, nightWord }) {
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   return (
     <div className="booking-row">
       <div className="booking-guest">
         <div className="guest-name">{b.guest_first_name} {b.guest_last_name}</div>
         <div className="booking-meta">
-          {b.room_name} &middot; {nights} {nights === 1 ? 'night' : 'nights'}
+          {b.room_name} &middot; {nightWord(nights)}
         </div>
       </div>
       <div className="booking-right">{right}</div>

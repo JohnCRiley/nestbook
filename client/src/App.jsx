@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext.jsx';
+import { LocaleProvider } from './i18n/LocaleContext.jsx';
 import ProtectedRoute   from './components/ProtectedRoute.jsx';
 import Sidebar          from './components/Sidebar.jsx';
 import Login            from './pages/Login.jsx';
@@ -18,21 +19,23 @@ import AdminLayout      from './admin/AdminLayout.jsx';
 
 function AppLayout() {
   return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main-content">
-        <Routes>
-          <Route path="/"          element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/calendar"  element={<Calendar  />} />
-          <Route path="/bookings"  element={<Bookings  />} />
-          <Route path="/guests"    element={<Guests    />} />
-          <Route path="/rooms"     element={<Rooms     />} />
-          <Route path="/settings"  element={<Settings  />} />
-          <Route path="/pricing"   element={<Pricing   />} />
-        </Routes>
-      </main>
-    </div>
+    <LocaleProvider>
+      <div className="layout">
+        <Sidebar />
+        <main className="main-content">
+          <Routes>
+            <Route path="/"          element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/calendar"  element={<Calendar  />} />
+            <Route path="/bookings"  element={<Bookings  />} />
+            <Route path="/guests"    element={<Guests    />} />
+            <Route path="/rooms"     element={<Rooms     />} />
+            <Route path="/settings"  element={<Settings  />} />
+            <Route path="/pricing"   element={<Pricing   />} />
+          </Routes>
+        </main>
+      </div>
+    </LocaleProvider>
   );
 }
 
