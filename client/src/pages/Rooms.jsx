@@ -5,13 +5,14 @@ import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Rooms() {
   const today = localToday();
   const t = useT();
+  const { currencySymbol } = useLocale();
 
   const [rooms,         setRooms]         = useState([]);
   const [bookings,      setBookings]      = useState([]);
@@ -150,6 +151,7 @@ export default function Rooms() {
             onClick={handleCardClick}
             onBook={handleBook}
             t={t}
+            currencySymbol={currencySymbol}
           />
         ))}
       </div>
@@ -190,7 +192,7 @@ export default function Rooms() {
 
 // ── RoomCard ──────────────────────────────────────────────────────────────────
 
-function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t }) {
+function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, currencySymbol }) {
   const amenities     = (room.amenities ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const stripeClass   = `stripe-${room.status}`;
   const isAvailable   = room.status === 'available' && !activeBooking;
@@ -221,7 +223,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t }
 
         {/* Price */}
         <div className="room-price">
-          €{room.price_per_night}
+          {currencySymbol}{room.price_per_night}
           <span className="room-price-sub">{t('perNight')}</span>
         </div>
 

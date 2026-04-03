@@ -61,6 +61,6 @@ export function addDays(dateStr, n) {
 /** "€900" or "€1,850" — returns "—" for null/undefined. */
 export function formatCurrency(amount, currency = 'EUR') {
   if (amount == null) return '—';
-  const symbol = { EUR: '€', GBP: '£', USD: '$' }[currency] ?? currency;
+  const symbol = { EUR: '€', GBP: '£', USD: '$', CHF: '₣' }[currency] ?? currency;
   return symbol + Number(amount).toLocaleString('en-GB');
 }

@@ -68,8 +68,8 @@ export function fmtDate(dateStr) {
   });
 }
 
-/** "€900" or "—" */
-export function fmtPrice(amount) {
+/** "€900" or "—" — pass currency symbol to override default €. */
+export function fmtPrice(amount, currencySymbol = '€') {
   if (amount == null) return '—';
-  return '€' + Number(amount).toLocaleString('en-GB');
+  return currencySymbol + Number(amount).toLocaleString('en-GB');
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { apiFetch } from '../../utils/apiFetch.js';
+import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
 const PLAN_MRR = { pro: 19, multi: 39 };
 

@@ -3,6 +3,7 @@ import { initials, phoneFlag, phoneCountry, fmtDate, fmtPrice } from '../../util
 import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { useLocale } from '../../i18n/LocaleContext.jsx';
 
 /**
  * Slide-in panel showing full guest details, booking history, and an edit form.
@@ -69,6 +70,7 @@ function PanelHeader({ guest, onClose }) {
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 function ViewMode({ guest, bookings, onEdit }) {
+  const { currencySymbol } = useLocale();
   const sorted = [...bookings].sort((a, b) => (b.check_in_date > a.check_in_date ? 1 : -1));
   const totalSpend = bookings.reduce((s, b) => s + (b.total_price || 0), 0);
 
@@ -88,7 +90,7 @@ function ViewMode({ guest, bookings, onEdit }) {
         <div className="panel-price-callout">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div className="panel-price-main">{fmtPrice(totalSpend)}</div>
+              <div className="panel-price-main">{fmtPrice(totalSpend, currencySymbol)}</div>
               <div className="panel-price-detail">total across all bookings</div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -204,6 +206,7 @@ function EditMode({ guest, onCancel, onSaved }) {
 // ── HistoryRow ────────────────────────────────────────────────────────────────
 
 function HistoryRow({ booking: b }) {
+  const { currencySymbol } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   return (
     <div className="history-row">
@@ -218,7 +221,7 @@ function HistoryRow({ booking: b }) {
         <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
           {BADGE_LABEL[b.status] ?? b.status}
         </span>
-        <span className="history-price">{fmtPrice(b.total_price)}</span>
+        <span className="history-price">{fmtPrice(b.total_price, currencySymbol)}</span>
       </div>
     </div>
   );

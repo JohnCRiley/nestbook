@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../../utils/apiFetch.js';
+import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
 const TYPE_LABELS = {
   bnb: 'B&B', gite: 'Gîte', guesthouse: 'Guest House', hotel: 'Hotel', other: 'Other',

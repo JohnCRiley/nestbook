@@ -85,12 +85,25 @@ export function initSchema() {
     )
   `);
 
-  // Migrate existing databases — add plan column if it doesn't exist yet.
+  // Migrations — safe to run on every start, silently ignored if column exists.
   try {
     db.exec(`ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'`);
-  } catch {
-    // Column already exists — safe to ignore.
-  }
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN is_super_admin INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS super_admin_logs (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT    NOT NULL DEFAULT (datetime('now')),
+      ip        TEXT    NOT NULL,
+      email     TEXT,
+      success   INTEGER NOT NULL,
+      note      TEXT
+    )
+  `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS subscriptions (

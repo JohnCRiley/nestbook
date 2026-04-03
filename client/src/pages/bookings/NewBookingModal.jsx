@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { useLocale } from '../../i18n/LocaleContext.jsx';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -28,6 +29,7 @@ const EMPTY_FORM = {
  * Pass `initialValues` to pre-fill fields (e.g. from a calendar cell click).
  */
 export default function NewBookingModal({ rooms, guests, onClose, onSuccess, initialValues }) {
+  const { currencySymbol } = useLocale();
   const [form,       setForm]       = useState({ ...EMPTY_FORM, ...initialValues });
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
@@ -138,7 +140,7 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
                     .filter((r) => r.status !== 'maintenance')
                     .map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} ({r.type}) — €{r.price_per_night}/night · up to {r.capacity}{' '}
+                        {r.name} ({r.type}) — {currencySymbol}{r.price_per_night}/night · up to {r.capacity}{' '}
                         {r.capacity === 1 ? 'guest' : 'guests'}
                       </option>
                     ))}
@@ -232,7 +234,7 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
 
               {/* Total price */}
               <div className="form-group span-2">
-                <label className="form-label">Total Price (€)</label>
+                <label className="form-label">Total Price ({currencySymbol})</label>
                 <input
                   type="number"
                   name="total_price"
@@ -245,8 +247,8 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
                 />
                 {selectedRoom && nightsCount && (
                   <div className="form-hint">
-                    €{selectedRoom.price_per_night}/night × {nightsCount} nights
-                    = €{selectedRoom.price_per_night * nightsCount}
+                    {currencySymbol}{selectedRoom.price_per_night}/night × {nightsCount} nights
+                    = {currencySymbol}{selectedRoom.price_per_night * nightsCount}
                   </div>
                 )}
               </div>

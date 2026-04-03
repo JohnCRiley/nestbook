@@ -4,6 +4,7 @@ import Properties    from './pages/Properties.jsx';
 import Users         from './pages/Users.jsx';
 import Revenue       from './pages/Revenue.jsx';
 import AdminSettings from './pages/AdminSettings.jsx';
+import { clearSASession } from './saApiFetch.js';
 
 const NAV = [
   { to: '/super-admin',            label: 'Overview',    end: true },
@@ -15,6 +16,11 @@ const NAV = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+
+  function handleLogout() {
+    clearSASession();
+    navigate('/super-admin/login', { replace: true });
+  }
 
   return (
     <div className="admin-layout">
@@ -43,6 +49,13 @@ export default function AdminLayout() {
             onClick={() => navigate('/dashboard')}
           >
             ← Customer view
+          </button>
+          <button
+            className="admin-switch-btn"
+            style={{ marginTop: 8, color: '#f87171', borderColor: '#7f1d1d' }}
+            onClick={handleLogout}
+          >
+            Sign out
           </button>
         </div>
       </aside>

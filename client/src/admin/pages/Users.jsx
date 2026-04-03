@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../../utils/apiFetch.js';
+import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
 export default function Users() {
   const [rows, setRows] = useState([]);

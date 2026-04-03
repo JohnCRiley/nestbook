@@ -1,11 +1,13 @@
 import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../../utils/bookingConstants.js';
-import { formatDateMedium, nightsBetween, formatCurrency } from '../../utils/format.js';
+import { formatDateMedium, nightsBetween } from '../../utils/format.js';
+import { useLocale } from '../../i18n/LocaleContext.jsx';
 
 /**
  * Slide-in panel showing full details for a selected booking.
  * Appears from the right; closed by clicking the backdrop or the × button.
  */
 export default function BookingPanel({ booking: b, onClose, onStatusUpdate }) {
+  const { fmtCurrency } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
 
@@ -66,10 +68,10 @@ export default function BookingPanel({ booking: b, onClose, onStatusUpdate }) {
             <div className="panel-section">
               <div className="panel-section-title">Pricing</div>
               <div className="panel-price-callout">
-                <div className="panel-price-main">{formatCurrency(b.total_price)}</div>
+                <div className="panel-price-main">{fmtCurrency(b.total_price)}</div>
                 {perNight && (
                   <div className="panel-price-detail">
-                    {formatCurrency(perNight)}/night × {nights} {nights === 1 ? 'night' : 'nights'}
+                    {fmtCurrency(perNight)}/night × {nights} {nights === 1 ? 'night' : 'nights'}
                   </div>
                 )}
               </div>

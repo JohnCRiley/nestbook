@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import {
   localToday,
   formatDateLong,
   formatDateShort,
   nightsBetween,
   addDays,
-  formatCurrency,
 } from '../utils/format.js';
 
 // ── Badge config (duplicated from Bookings so Dashboard has no cross-dep) ─────
@@ -22,6 +21,7 @@ const BADGE_CLASS = {
 
 export default function Dashboard() {
   const t = useT();
+  const { fmtCurrency } = useLocale();
 
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -87,7 +87,7 @@ export default function Dashboard() {
         <StatCard value={occupiedTonight.length}           label={t('occupied')} />
         <StatCard value={arrivalsToday.length}             label={t('arrivals')} />
         <StatCard value={departuresToday.length}           label={t('departures')} />
-        <StatCard value={formatCurrency(monthRevenue)}     label={t('revenue')} />
+        <StatCard value={fmtCurrency(monthRevenue)}     label={t('revenue')} />
       </div>
 
       {/* ── Two-column sections ─────────────────────────────────────────── */}

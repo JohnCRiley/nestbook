@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch --no-warnings=ExperimentalWarning --env-file=.env index.js",
     "start": "node --no-warnings=ExperimentalWarning --env-file=.env index.js",
-    "db:seed": "node --no-warnings=ExperimentalWarning db/seed.js"
+    "db:seed": "node --no-warnings=ExperimentalWarning db/seed.js",
+    "db:migrate": "node --no-warnings=ExperimentalWarning db/migrate.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

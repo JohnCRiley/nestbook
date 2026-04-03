@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { useLocale } from '../../i18n/LocaleContext.jsx';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const STATUS_OPTIONS = ['available', 'occupied', 'maintenance'];
@@ -17,10 +18,6 @@ function fmtDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
-}
-
-function fmtPrice(amount) {
-  return amount != null ? `€${Number(amount).toLocaleString('en-GB')}` : '—';
 }
 
 /** Upcoming bookings: non-cancelled, check-out in the future, sorted by check-in, limit 5. */
@@ -75,6 +72,7 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 function ViewMode({ room, bookings, today, onEdit, onBook }) {
+  const { currencySymbol } = useLocale();
   const amenities = parseAmenities(room.amenities);
   const upcoming  = upcomingBookings(bookings, today);
 
@@ -85,7 +83,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
         <div className="panel-section-title">Room Details</div>
         <PanelRow label="Type"       value={<span style={{ textTransform: 'capitalize' }}>{room.type}</span>} />
         <PanelRow label="Capacity"   value={`${room.capacity} ${room.capacity === 1 ? 'guest' : 'guests'}`} />
-        <PanelRow label="Price"      value={`€${room.price_per_night}/night`} />
+        <PanelRow label="Price"      value={`${currencySymbol}${room.price_per_night}/night`} />
         <PanelRow label="Status"     value={<StatusPill status={room.status} />} />
         {amenities.length > 0 && (
           <PanelRow label="Amenities" value={
@@ -99,7 +97,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
       {/* Pricing callout */}
       <div className="panel-section">
         <div className="panel-price-callout">
-          <div className="panel-price-main">€{room.price_per_night}<span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.75 }}>/night</span></div>
+          <div className="panel-price-main">{currencySymbol}{room.price_per_night}<span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.75 }}>/night</span></div>
           <div className="panel-price-detail">Capacity: {room.capacity} · {room.type}</div>
         </div>
       </div>
@@ -138,6 +136,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
 function EditMode({ room, onCancel, onSaved }) {
+  const { currencySymbol } = useLocale();
   const [form, setForm] = useState({
     name:            room.name            ?? '',
     type:            room.type            ?? 'double',
@@ -214,7 +213,7 @@ function EditMode({ room, onCancel, onSaved }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="Price / Night (€)" name="price_per_night" value={form.price_per_night}
+            <Field label={`Price / Night (${currencySymbol})`} name="price_per_night" value={form.price_per_night}
               onChange={handleChange} type="number" />
             <Field label="Capacity (guests)" name="capacity" value={form.capacity}
               onChange={handleChange} type="number" min="1" max="20" />
@@ -256,6 +255,7 @@ function EditMode({ room, onCancel, onSaved }) {
 // ── ScheduleRow ───────────────────────────────────────────────────────────────
 
 function ScheduleRow({ booking: b }) {
+  const { fmtCurrency } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   return (
     <div className="schedule-row">
@@ -270,7 +270,7 @@ function ScheduleRow({ booking: b }) {
         <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
           {BADGE_LABEL[b.status] ?? b.status}
         </span>
-        <span className="schedule-price">{fmtPrice(b.total_price)}</span>
+        <span className="schedule-price">{fmtCurrency(b.total_price)}</span>
       </div>
     </div>
   );

@@ -298,7 +298,7 @@ export default function Settings() {
 
       {/* ── Embed widget — full width (Pro feature) ──────────────────────── */}
       <PlanGate requiredPlan="pro">
-        <EmbedSection snippet={embedSnippet} />
+        <EmbedSection snippet={embedSnippet} t={t} />
       </PlanGate>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
@@ -318,7 +318,7 @@ export default function Settings() {
 
 // ── EmbedSection ──────────────────────────────────────────────────────────────
 
-function EmbedSection({ snippet }) {
+function EmbedSection({ snippet, t }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -331,13 +331,14 @@ function EmbedSection({ snippet }) {
   return (
     <div className="embed-section">
       <div className="embed-header">
-        <h2>Embed Your Booking Widget</h2>
-        <p>Let guests book directly from your own website</p>
+        <h2>{t('embedTitle')}</h2>
+        <p>{t('embedSub')}</p>
       </div>
       <div className="embed-body">
         <p className="embed-desc">
-          Copy the snippet below and paste it into the <code style={{ background: '#f1f5f9', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em' }}>&lt;body&gt;</code> of any page on your website
-          where you want the booking calendar to appear — your homepage, a "Book Now" page, etc.
+          {t('embedDesc').split('<body>').map((part, i) =>
+            i === 0 ? part : <span key={i}><code style={{ background: '#f1f5f9', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em' }}>&lt;body&gt;</code>{part}</span>
+          )}
         </p>
 
         <div className="embed-code-wrap">
@@ -345,7 +346,7 @@ function EmbedSection({ snippet }) {
             className={`embed-copy-btn${copied ? ' copied' : ''}`}
             onClick={handleCopy}
           >
-            {copied ? '✓ Copied!' : 'Copy'}
+            {copied ? t('embedCopied') : t('embedCopy')}
           </button>
           {snippet}
         </div>
@@ -353,15 +354,15 @@ function EmbedSection({ snippet }) {
         <div className="embed-steps">
           <div className="embed-step">
             <span className="embed-step-num">1</span>
-            <span>Copy the snippet above using the Copy button.</span>
+            <span>{t('embedStep1')}</span>
           </div>
           <div className="embed-step">
             <span className="embed-step-num">2</span>
-            <span>Open your website editor (WordPress, Wix, Squarespace, etc.) and navigate to the page where you want the widget.</span>
+            <span>{t('embedStep2')}</span>
           </div>
           <div className="embed-step">
             <span className="embed-step-num">3</span>
-            <span>Paste the snippet into the HTML of that page. The widget will appear automatically and match the language and currency set above.</span>
+            <span>{t('embedStep3')}</span>
           </div>
         </div>
       </div>

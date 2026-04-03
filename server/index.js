@@ -3,18 +3,19 @@ import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-import { initSchema }       from './db/schema.js';
-import { requireAuth }       from './middleware/requireAuth.js';
-import { requireSuperAdmin } from './middleware/requireSuperAdmin.js';
-import { healthRouter }      from './routes/health.js';
-import { authRouter }        from './routes/auth.js';
-import { stripeRouter }      from './routes/stripe.js';
-import { propertiesRouter }  from './routes/properties.js';
-import { roomsRouter }       from './routes/rooms.js';
-import { guestsRouter }      from './routes/guests.js';
-import { bookingsRouter }    from './routes/bookings.js';
-import { usersRouter }       from './routes/users.js';
-import { adminRouter }       from './routes/admin.js';
+import { initSchema }                from './db/schema.js';
+import { requireAuth }               from './middleware/requireAuth.js';
+import { requireSuperAdminSession }  from './middleware/requireSuperAdminSession.js';
+import { healthRouter }              from './routes/health.js';
+import { authRouter }                from './routes/auth.js';
+import { superAdminAuthRouter }      from './routes/superAdminAuth.js';
+import { stripeRouter }              from './routes/stripe.js';
+import { propertiesRouter }          from './routes/properties.js';
+import { roomsRouter }               from './routes/rooms.js';
+import { guestsRouter }              from './routes/guests.js';
+import { bookingsRouter }            from './routes/bookings.js';
+import { usersRouter }               from './routes/users.js';
+import { adminRouter }               from './routes/admin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -25,38 +26,42 @@ initSchema();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS: allow the dashboard (localhost:5173) in development, plus any origin for
-// the embeddable widget (which runs on the property owner's own website domain).
 app.use(cors({
   origin: (origin, callback) => callback(null, true),
   credentials: false,
 }));
 app.use(express.json());
 
-// ── Static files (serves server/public/widget.js) ────────────────────────────
+// ── Static files ──────────────────────────────────────────────────────────────
 app.use(express.static(join(__dirname, 'public')));
 
-// ── Stripe webhook needs the raw body for signature verification ──────────────
-// Must be registered BEFORE express.json() parses everything else.
+// ── Stripe webhook needs raw body ─────────────────────────────────────────────
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
-// ── Public routes (no auth required) ─────────────────────────────────────────
-app.use('/api',       healthRouter);
-app.use('/api/auth',  authRouter);
+// ── Public routes (no auth) ───────────────────────────────────────────────────
+app.use('/api',                healthRouter);
+app.use('/api/auth',           authRouter);
+app.use('/api/super-admin',    superAdminAuthRouter);
 
-// ── Auth middleware — protects everything below this line ─────────────────────
+// ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
+// Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.
+// Returns 404 on any auth failure to keep the panel invisible.
+app.use('/api/admin', requireSuperAdminSession, adminRouter);
+
+// ── Auth middleware — protects all regular /api routes below ──────────────────
 app.use('/api', requireAuth);
 
-// ── Protected routes ──────────────────────────────────────────────────────────
+// ── Customer-facing protected routes ─────────────────────────────────────────
 app.use('/api/stripe',       stripeRouter);
 app.use('/api/properties',   propertiesRouter);
 app.use('/api/rooms',        roomsRouter);
 app.use('/api/guests',       guestsRouter);
 app.use('/api/bookings',     bookingsRouter);
 app.use('/api/users',        usersRouter);
-app.use('/api/admin',        requireSuperAdmin, adminRouter);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`NestBook server running on http://localhost:${PORT}`);
+  const saPasswordLoaded = !!process.env.SUPER_ADMIN_PASSWORD;
+  console.log(`Super admin password loaded: ${saPasswordLoaded ? 'YES' : 'NO'}`);
 });

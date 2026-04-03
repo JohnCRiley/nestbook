@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatAmenity } from './RoomPanel.jsx';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { useLocale } from '../../i18n/LocaleContext.jsx';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
@@ -14,6 +15,7 @@ const parseAmenities = (str) =>
   (str ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
 export default function NewRoomModal({ onClose, onSuccess }) {
+  const { currencySymbol } = useLocale();
   const [form,       setForm]       = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
@@ -97,7 +99,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Price / Night (€) *</label>
+                <label className="form-label">Price / Night ({currencySymbol}) *</label>
                 <input name="price_per_night" type="number" className="form-control"
                   value={form.price_per_night} onChange={handleChange}
                   min="0" step="0.01" placeholder="120" required />

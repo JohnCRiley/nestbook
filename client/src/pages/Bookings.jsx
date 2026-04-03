@@ -4,7 +4,7 @@ import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../utils/bookingConstan
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -209,6 +209,7 @@ export default function Bookings() {
 // ── BookingRow ────────────────────────────────────────────────────────────────
 
 function BookingRow({ booking: b, isSelected, onClick }) {
+  const { fmtCurrency } = useLocale();
   return (
     <tr
       className={isSelected ? 'row-selected' : ''}
@@ -241,7 +242,7 @@ function BookingRow({ booking: b, isSelected, onClick }) {
 
       {/* Price */}
       <td className="cell-price">
-        {b.total_price != null ? `€${Number(b.total_price).toLocaleString('en-GB')}` : <span className="cell-muted">TBC</span>}
+        {b.total_price != null ? fmtCurrency(b.total_price) : <span className="cell-muted">TBC</span>}
       </td>
 
       {/* Status */}

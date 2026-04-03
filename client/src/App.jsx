@@ -14,28 +14,27 @@ import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
-import AdminRoute       from './admin/AdminRoute.jsx';
-import AdminLayout      from './admin/AdminLayout.jsx';
+import AdminRoute         from './admin/AdminRoute.jsx';
+import AdminLayout        from './admin/AdminLayout.jsx';
+import SuperAdminLogin    from './admin/SuperAdminLogin.jsx';
 
 function AppLayout() {
   return (
-    <LocaleProvider>
-      <div className="layout">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/"          element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/calendar"  element={<Calendar  />} />
-            <Route path="/bookings"  element={<Bookings  />} />
-            <Route path="/guests"    element={<Guests    />} />
-            <Route path="/rooms"     element={<Rooms     />} />
-            <Route path="/settings"  element={<Settings  />} />
-            <Route path="/pricing"   element={<Pricing   />} />
-          </Routes>
-        </main>
-      </div>
-    </LocaleProvider>
+    <div className="layout">
+      <Sidebar />
+      <main className="main-content">
+        <Routes>
+          <Route path="/"          element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/calendar"  element={<Calendar  />} />
+          <Route path="/bookings"  element={<Bookings  />} />
+          <Route path="/guests"    element={<Guests    />} />
+          <Route path="/rooms"     element={<Rooms     />} />
+          <Route path="/settings"  element={<Settings  />} />
+          <Route path="/pricing"   element={<Pricing   />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
 
@@ -43,11 +42,13 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+      <LocaleProvider>
         <Routes>
           <Route path="/login"    element={<Login          />} />
           <Route path="/register" element={<Register       />} />
           <Route path="/success"  element={<PaymentSuccess />} />
           <Route path="/cancel"   element={<PaymentCancel  />} />
+          <Route path="/super-admin/login" element={<SuperAdminLogin />} />
           <Route path="/super-admin/*" element={
             <AdminRoute>
               <AdminLayout />
@@ -59,6 +60,7 @@ export default function App() {
             </ProtectedRoute>
           } />
         </Routes>
+      </LocaleProvider>
       </BrowserRouter>
     </AuthProvider>
   );

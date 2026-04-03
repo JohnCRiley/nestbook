@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/apiFetch.js';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 export default function PaymentSuccess() {
+  const t = useT();
   const [plan, setPlan] = useState('');
 
   useEffect(() => {
@@ -28,18 +30,18 @@ export default function PaymentSuccess() {
     }
   }, []);
 
-  const planLabel = { pro: 'Pro', multi: 'Multi-property' }[plan] ?? 'new';
+  const planLabel = { pro: t('planProName'), multi: t('planMultiName') }[plan] ?? plan;
 
   return (
     <div className="auth-page">
       <div className="auth-card" style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-        <h1 className="auth-heading">You're all set!</h1>
+        <h1 className="auth-heading">{t('paySuccessTitle')}</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: 8, marginBottom: 24 }}>
-          Welcome to the <strong>{planLabel} plan</strong>. Your new features are active now.
+          {t('paySuccessMsg')(planLabel)}
         </p>
         <Link to="/dashboard" className="auth-btn" style={{ display: 'inline-block', textDecoration: 'none' }}>
-          Go to dashboard →
+          {t('paySuccessBtn')}
         </Link>
       </div>
     </div>

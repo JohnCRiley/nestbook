@@ -2,65 +2,46 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlan } from '../hooks/usePlan.js';
 import { apiFetch } from '../utils/apiFetch.js';
-
-const PLANS = [
-  {
-    key:    'free',
-    name:   'Starter',
-    price:  'Free',
-    period: 'forever',
-    desc:   'Everything you need to get started.',
-    features: [
-      '1 property',
-      'Up to 10 rooms',
-      'Booking calendar',
-      'Guest records',
-      'Basic reporting',
-      'Email support',
-    ],
-    cta: 'Your current plan',
-  },
-  {
-    key:      'pro',
-    name:     'Pro',
-    price:    '£19',
-    period:   'per month',
-    desc:     'For growing properties that need more.',
-    popular:  true,
-    features: [
-      '1 property',
-      'Unlimited rooms',
-      'Everything in Starter',
-      'Booking widget for your website',
-      'Staff accounts',
-      'Email confirmations',
-      'Priority support',
-    ],
-    cta: 'Upgrade to Pro',
-  },
-  {
-    key:    'multi',
-    name:   'Multi-property',
-    price:  '£39',
-    period: 'per month',
-    desc:   'For owners managing several properties.',
-    features: [
-      'Up to 5 properties',
-      'Unlimited rooms',
-      'Everything in Pro',
-      'Multi-property dashboard',
-      'Dedicated onboarding call',
-      'Priority phone support',
-    ],
-    cta: 'Upgrade to Multi',
-  },
-];
+import { useT } from '../i18n/LocaleContext.jsx';
 
 export default function Pricing() {
   const currentPlan = usePlan();
   const navigate    = useNavigate();
-  const [loading, setLoading] = useState(null); // which plan button is loading
+  const t           = useT();
+  const [loading, setLoading] = useState(null);
   const [error,   setError]   = useState('');
+
+  // Build plan data from translated strings
+  const PLANS = [
+    {
+      key:      'free',
+      name:     t('planStarterName'),
+      price:    'Free',
+      period:   t('planForever'),
+      desc:     t('planStarterDesc'),
+      features: t('planStarterFeatures'),
+      cta:      t('planStarterCta'),
+    },
+    {
+      key:      'pro',
+      name:     t('planProName'),
+      price:    '€19',
+      period:   t('planPerMonth'),
+      desc:     t('planProDesc'),
+      popular:  true,
+      features: t('planProFeatures'),
+      cta:      t('planProCta'),
+    },
+    {
+      key:      'multi',
+      name:     t('planMultiName'),
+      price:    '€39',
+      period:   t('planPerMonth'),
+      desc:     t('planMultiDesc'),
+      features: t('planMultiFeatures'),
+      cta:      t('planMultiCta'),
+    },
+  ];
 
   async function handleUpgrade(planKey) {
     if (planKey === 'free') return;
@@ -80,7 +61,6 @@ export default function Pricing() {
         return;
       }
 
-      // Redirect to Stripe's hosted checkout page
       window.location.href = data.url;
     } catch {
       setError('Could not connect to server. Is it running?');
@@ -93,8 +73,8 @@ export default function Pricing() {
     <div className="page-shell">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Pricing</h1>
-          <p className="page-subtitle">Simple, transparent plans. No hidden fees.</p>
+          <h1 className="page-title">{t('pricing')}</h1>
+          <p className="page-subtitle">{t('pricingSubtitle')}</p>
         </div>
       </div>
 
@@ -105,7 +85,6 @@ export default function Pricing() {
       <div className="pricing-grid">
         {PLANS.map((plan) => {
           const isCurrent  = currentPlan === plan.key;
-          const isUpgrade  = plan.key !== 'free' && !isCurrent;
           const isDisabled = isCurrent || loading !== null;
 
           return (
@@ -113,8 +92,8 @@ export default function Pricing() {
               key={plan.key}
               className={`pricing-card${plan.popular ? ' pricing-card-popular' : ''}${isCurrent ? ' pricing-card-current' : ''}`}
             >
-              {plan.popular && <div className="pricing-badge">Most popular</div>}
-              {isCurrent    && <div className="pricing-badge pricing-badge-current">Current plan</div>}
+              {plan.popular && <div className="pricing-badge">{t('planMostPopular')}</div>}
+              {isCurrent    && <div className="pricing-badge pricing-badge-current">{t('planCurrentBadge')}</div>}
 
               <div className="pricing-name">{plan.name}</div>
               <div className="pricing-price">
@@ -137,7 +116,7 @@ export default function Pricing() {
                 onClick={() => handleUpgrade(plan.key)}
                 disabled={isDisabled}
               >
-                {loading === plan.key ? 'Redirecting…' : isCurrent ? 'Current plan' : plan.cta}
+                {loading === plan.key ? t('planCtaRedirecting') : isCurrent ? t('planCtaCurrent') : plan.cta}
               </button>
             </div>
           );
