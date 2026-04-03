@@ -94,6 +94,14 @@ export function initSchema() {
     db.exec(`ALTER TABLE users ADD COLUMN is_super_admin INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN password_reset_token TEXT`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN password_reset_expires TEXT`);
+  } catch { /* already exists */ }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS super_admin_logs (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,

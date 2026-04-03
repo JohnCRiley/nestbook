@@ -1613,6 +1613,23 @@ a { text-decoration: none; }
   border: 1px solid var(--border);
 }
 
+.btn-ghost-sm {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s, color 0.12s;
+}
+.btn-ghost-sm:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .user-avatar-sm {
   width: 36px; height: 36px;
   border-radius: 50%;
@@ -1995,6 +2012,34 @@ a { text-decoration: none; }
 .sidebar-logout-btn:hover {
   background: rgba(255,255,255,0.14);
   color: #fff;
+}
+
+/* Sidebar utility buttons (fullscreen, install) */
+.sidebar-util-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 0;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.78rem;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+}
+.sidebar-util-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+.sidebar-util-btn--subtle {
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
+  font-size: 0.73rem;
+}
+.sidebar-util-btn--subtle:hover {
+  color: rgba(255,255,255,0.7);
 }
 
 /* ── Pricing page ────────────────────────────────────────────────────────── */

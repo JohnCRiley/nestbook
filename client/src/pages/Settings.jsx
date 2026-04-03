@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
+import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT } from '../i18n/LocaleContext.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
+import { useKiosk } from '../hooks/useKiosk.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -33,6 +36,8 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
+  const { user } = useAuth();
+  const { kiosk, setKioskMode } = useKiosk();
 
   const FEATURES = [
     {
@@ -72,7 +77,8 @@ export default function Settings() {
   const [form,        setForm]        = useState(null);
   const [saving,      setSaving]      = useState(false);
   const [toast,       setToast]       = useState(null);   // { msg, type }
-  const [showInvite,  setShowInvite]  = useState(false);
+  const [showInvite,      setShowInvite]      = useState(false);
+  const [resetTarget,     setResetTarget]     = useState(null);   // user object | null
 
   // Feature toggles live in local state only (no backend yet — persist later)
   const [features, setFeatures] = useState(() =>
@@ -271,6 +277,26 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Kiosk mode — owner only */}
+          {user?.role === 'owner' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>Reception kiosk mode</h2>
+                <p>When enabled, reception staff automatically enter fullscreen on login</p>
+              </div>
+              <div className="settings-card-body" style={{ padding: '0 20px' }}>
+                <div className="toggle-list">
+                  <ToggleRow
+                    label="Kiosk mode"
+                    desc="Locks reception view to Calendar and Bookings in fullscreen"
+                    checked={kiosk}
+                    onChange={() => setKioskMode(!kiosk)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Access & Roles */}
           <div className="settings-card">
             <div className="settings-card-header">
@@ -280,7 +306,13 @@ export default function Settings() {
             <div className="settings-card-body">
               <div className="user-list">
                 {users.map((u) => (
-                  <UserRow key={u.id} user={u} t={t} />
+                  <UserRow
+                    key={u.id}
+                    user={u}
+                    t={t}
+                    isOwner={user?.role === 'owner'}
+                    onResetPassword={() => setResetTarget(u)}
+                  />
                 ))}
               </div>
               <div style={{ marginTop: 14 }}>
@@ -306,6 +338,13 @@ export default function Settings() {
         <InviteStaffModal
           onClose={() => setShowInvite(false)}
           onSuccess={handleInviteSuccess}
+        />
+      )}
+
+      {resetTarget && (
+        <ResetStaffPasswordModal
+          user={resetTarget}
+          onClose={() => setResetTarget(null)}
         />
       )}
 
@@ -396,7 +435,7 @@ function ToggleRow({ label, desc, checked, onChange }) {
   );
 }
 
-function UserRow({ user, t }) {
+function UserRow({ user, t, isOwner, onResetPassword }) {
   const initials =
     user.name.split(' ').map((p) => p[0]?.toUpperCase() ?? '').slice(0, 2).join('');
   return (
@@ -409,6 +448,15 @@ function UserRow({ user, t }) {
       <span className={`role-badge role-${user.role}`}>
         {user.role === 'owner' ? t('fOwner') : t('fReception')}
       </span>
+      {isOwner && (
+        <button
+          className="btn-ghost-sm"
+          onClick={onResetPassword}
+          title="Reset password"
+        >
+          Reset password
+        </button>
+      )}
     </div>
   );
 }

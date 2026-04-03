@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 
+const KIOSK_KEY = 'nb_kiosk';
+
 export default function Login() {
   const { login } = useAuth();
   const navigate  = useNavigate();
@@ -31,6 +33,12 @@ export default function Login() {
       }
 
       login(data.token, data.user);
+
+      // Reception staff in kiosk mode → enter fullscreen
+      if (data.user?.role === 'reception' && localStorage.getItem(KIOSK_KEY) === 'true') {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+
       navigate('/dashboard', { replace: true });
     } catch {
       setError('Could not connect to server. Is it running?');

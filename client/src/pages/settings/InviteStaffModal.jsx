@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 
 export default function InviteStaffModal({ onClose, onSuccess }) {
-  const [form,       setForm]       = useState({ name: '', email: '', role: 'reception' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'reception' });
   const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState(null);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -15,6 +15,19 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
       setError('Name and email are required.');
       return;
     }
+    if (!form.password) {
+      setError('A temporary password is required.');
+      return;
+    }
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     try {
@@ -22,13 +35,11 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id:   1,
-          name:          form.name.trim(),
-          email:         form.email.trim(),
-          // Placeholder hash — a real invite flow would email a setup link.
-          // For now we store a recognisable placeholder so it's obvious in the DB.
-          password_hash: '$2b$10$INVITE_PENDING_SET_VIA_EMAIL_FLOW',
-          role:          form.role,
+          property_id: 1,
+          name:        form.name.trim(),
+          email:       form.email.trim(),
+          password:    form.password,
+          role:        form.role,
         }),
       });
       if (!res.ok) {
@@ -45,10 +56,10 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
   return (
     <div className="modal-overlay"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal" role="dialog" aria-label="Invite staff member">
+      <div className="modal" role="dialog" aria-label="Add staff member">
 
         <div className="modal-header">
-          <h2>Invite Staff Member</h2>
+          <h2>Add Staff Member</h2>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
 
@@ -79,11 +90,32 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
                 </select>
               </div>
 
+              <div className="form-group">
+                <label className="form-label">Temporary Password *</label>
+                <input name="password" type="password" className="form-control"
+                  value={form.password} onChange={handleChange} required
+                  placeholder="Min. 8 characters" />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Confirm Password *</label>
+                <input name="confirmPassword" type="password" className="form-control"
+                  value={form.confirmPassword} onChange={handleChange} required
+                  placeholder="Repeat password" />
+              </div>
+
               <div className="form-group span-2">
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                  In a future release, an invitation email with a setup link will be sent automatically.
-                  For now the account is created immediately and a password can be set in a later step.
-                </p>
+                <div style={{
+                  background: '#f0faf0',
+                  border: '1px solid #c6e8bb',
+                  borderRadius: 6,
+                  padding: '10px 14px',
+                  fontSize: '0.8rem',
+                  color: '#3a6e2a',
+                  lineHeight: 1.6,
+                }}>
+                  Share this temporary password with your staff member and ask them to change it on first login.
+                </div>
               </div>
             </div>
           </div>
