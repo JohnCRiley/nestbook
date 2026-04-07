@@ -2108,15 +2108,17 @@ a { text-decoration: none; }
 
 .auth-logo {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 2px;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
-.auth-logo-dot {
-  width: 10px; height: 10px;
-  background: var(--accent);
-  border-radius: 50%;
+.auth-leaf-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  display: block;
   flex-shrink: 0;
 }
 

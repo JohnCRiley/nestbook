@@ -73,7 +73,7 @@ export default function Register() {
 
         {/* Logo */}
         <div className="auth-logo">
-          <span className="auth-logo-dot" />
+          <img src="/icon.svg" alt="NestBook" className="auth-leaf-icon" />
           <span className="auth-logo-name">NestBook</span>
         </div>
         <p className="auth-tagline">Property Management</p>
