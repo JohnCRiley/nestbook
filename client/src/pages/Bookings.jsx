@@ -150,7 +150,25 @@ export default function Bookings() {
         </div>
       </div>
 
-      {/* ── Table ─────────────────────────────────────────────────────────── */}
+      {/* ── Mobile card list (hidden on tablet+desktop via CSS) ─────────── */}
+      <div className="booking-cards">
+        {filtered.length === 0 ? (
+          <div className="table-empty">
+            {search ? `No bookings matching "${search}"` : t('noBookingsFilter')}
+          </div>
+        ) : (
+          filtered.map((b) => (
+            <BookingCard
+              key={b.id}
+              booking={b}
+              isSelected={selectedBooking?.id === b.id}
+              onClick={handleRowClick}
+            />
+          ))
+        )}
+      </div>
+
+      {/* ── Desktop/tablet table (hidden on mobile via CSS) ───────────────── */}
       <div className="table-wrap">
         {filtered.length === 0 ? (
           <div className="table-empty">
@@ -252,6 +270,32 @@ function BookingRow({ booking: b, isSelected, onClick }) {
         </span>
       </td>
     </tr>
+  );
+}
+
+// ── BookingCard (mobile view) ─────────────────────────────────────────────────
+
+function BookingCard({ booking: b, isSelected, onClick }) {
+  const { fmtCurrency } = useLocale();
+  return (
+    <div
+      className={`booking-card${isSelected ? ' booking-card--selected' : ''}`}
+      onClick={() => onClick(b)}
+    >
+      <div className="bc-header">
+        <span className="bc-name">{b.guest_first_name} {b.guest_last_name}</span>
+        <span className={BADGE_CLASS[b.status] ?? 'badge'}>
+          {BADGE_LABEL[b.status] ?? b.status}
+        </span>
+      </div>
+      <div className="bc-room">{b.room_name ?? '—'}</div>
+      <div className="bc-dates">
+        {formatTableDate(b.check_in_date)} → {formatTableDate(b.check_out_date)}
+      </div>
+      {b.total_price != null && (
+        <div className="bc-price">{fmtCurrency(b.total_price)}</div>
+      )}
+    </div>
   );
 }
 

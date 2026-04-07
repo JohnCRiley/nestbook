@@ -713,6 +713,54 @@ a { text-decoration: none; }
   font-size: 0.875rem;
 }
 
+/* ─── Booking cards (mobile only — hidden on tablet+desktop) ──────────────── */
+.booking-cards { display: none; }
+
+.booking-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color 0.12s, background 0.1s;
+}
+.booking-card:hover          { background: #f7fbf6; border-color: rgba(47,119,27,0.3); }
+.booking-card--selected      { background: #edf7e8; border-color: var(--accent); }
+
+.bc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.bc-name  { font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+.bc-room  { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 3px; }
+.bc-dates { font-size: 0.8rem;  color: var(--text-muted); margin-bottom: 3px; }
+.bc-price { font-size: 0.82rem; font-weight: 600; color: var(--accent-dark); }
+
+/* ─── Bookings responsive ─────────────────────────────────────────────────── */
+
+/* Tablet: hide Guests count + Source columns */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .bookings-table th:nth-child(5),
+  .bookings-table td:nth-child(5),
+  .bookings-table th:nth-child(6),
+  .bookings-table td:nth-child(6) { display: none; }
+}
+
+/* Mobile: show cards, hide table; full-width search; wrapping controls */
+@media (max-width: 767px) {
+  .booking-cards { display: flex; flex-direction: column; gap: 8px; }
+  .table-wrap    { display: none; }
+
+  .controls-row  { gap: 8px; }
+  .search-wrap   { width: 100%; }
+  .search-input  { width: 100%; box-sizing: border-box; }
+  .filter-bar    { width: 100%; }
+}
+
 /* ─── Slide-in booking detail panel ─────────────────────────────────────── */
 @keyframes fadeIn      { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideInRight {
@@ -1210,6 +1258,18 @@ a { text-decoration: none; }
 }
 
 /* ── Calendar responsive ─────────────────────────────────────────────────── */
+
+/* Narrow desktop (1024–1259px): full 240px sidebar leaves ~704px for content,
+   so compress room label + day columns before the grid would overflow. */
+@media (min-width: 1024px) and (max-width: 1259px) {
+  .calendar-grid {
+    grid-template-columns: 120px repeat(7, minmax(0, 1fr));
+    min-width: 0;
+  }
+  .cal-room-type { display: none; }
+  .cal-room-label { padding: 8px 8px; }
+  .cal-booking-nights { display: none; }
+}
 
 /* Tablet: shrink room label + day columns so 7 days fit without overflow */
 @media (min-width: 768px) and (max-width: 1023px) {
