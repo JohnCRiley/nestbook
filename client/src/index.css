@@ -1209,6 +1209,46 @@ a { text-decoration: none; }
   border: 1px solid #ddd;
 }
 
+/* ── Calendar responsive ─────────────────────────────────────────────────── */
+
+/* Tablet: shrink room label + day columns so 7 days fit without overflow */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .calendar-grid {
+    grid-template-columns: 60px repeat(7, minmax(68px, 1fr));
+    min-width: 0;
+  }
+  .cal-room-label { padding: 8px 6px; }
+  .cal-room-name  { font-size: 0.75rem; }
+  .cal-room-type  { display: none; }
+  .cal-day-header { padding: 8px 4px; }
+  .cal-cell-inner { padding: 4px 5px; }
+  .cal-booking-nights { display: none; }
+}
+
+/* Mobile: 3-day view, stacked toolbar */
+@media (max-width: 767px) {
+  .calendar-grid {
+    grid-template-columns: 60px repeat(3, 1fr);
+    min-width: 0;
+  }
+  .cal-room-label  { padding: 8px 6px; }
+  .cal-room-name   { font-size: 0.75rem; }
+  .cal-room-type   { display: none; }
+  .cal-week-label  { min-width: 0; font-size: 0.85rem; }
+  .cal-booking-nights { display: none; }
+
+  /* Stack toolbar: title above, nav below */
+  .page-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .calendar-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 /* ─── Guests page ────────────────────────────────────────────────────────── */
 
 /* Stat bar */

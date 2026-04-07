@@ -47,6 +47,13 @@ function addWeeks(date, n) {
   return d;
 }
 
+/** Add N days to a Date (returns a new Date). */
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
 /** "Mon 30" */
 function fmtDayHeader(date, dayNames) {
   return {
@@ -65,6 +72,15 @@ function weekLabel(days, monthNames) {
     return `${monthNames[first.getMonth()]} \u2013 ${monthNames[last.getMonth()]} ${first.getFullYear()}`;
   }
   return `${monthNames[first.getMonth()]} ${first.getFullYear()} \u2013 ${monthNames[last.getMonth()]} ${last.getFullYear()}`;
+}
+
+/** "5 – 7 Apr 2026" or "30 Mar – 1 Apr 2026" for the mobile 3-day label. */
+function mobileDayLabel(days, monthNames) {
+  const first = days[0], last = days[days.length - 1];
+  if (first.getMonth() === last.getMonth()) {
+    return `${first.getDate()} \u2013 ${last.getDate()} ${monthNames[first.getMonth()]} ${first.getFullYear()}`;
+  }
+  return `${first.getDate()} ${monthNames[first.getMonth()]} \u2013 ${last.getDate()} ${monthNames[last.getMonth()]} ${last.getFullYear()}`;
 }
 
 // ── Cell state resolver ───────────────────────────────────────────────────────
@@ -97,8 +113,19 @@ export default function Calendar() {
   const DAY_NAMES   = t('dayNames');
   const MONTH_NAMES = t('monthNames');
 
-  // week anchor: always a Monday
+  // week anchor: always a Monday (desktop/tablet)
   const [monday, setMonday] = useState(() => weekStart(todayDate));
+
+  // mobile 3-day view: center date
+  const [mobileCenter, setMobileCenter] = useState(todayDate);
+
+  // responsive breakpoint detection
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   const [bookings, setBookings] = useState([]);
   const [rooms,    setRooms]    = useState([]);
@@ -127,13 +154,16 @@ export default function Calendar() {
       .then((r) => r.json())
       .then(setBookings), []);
 
-  // ── Week days derived from anchor ──────────────────────────────────────────
-  const days = useMemo(() => weekDays(monday), [monday]);
+  // ── Days derived from anchor (7-day desktop or 3-day mobile) ─────────────
+  const days = useMemo(() => {
+    if (isMobile) return [-1, 0, 1].map((offset) => addDays(mobileCenter, offset));
+    return weekDays(monday);
+  }, [isMobile, monday, mobileCenter]);
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  const goPrev   = () => setMonday((m) => addWeeks(m, -1));
-  const goNext   = () => setMonday((m) => addWeeks(m, +1));
-  const goToday  = () => setMonday(weekStart(todayDate));
+  const goPrev  = () => { if (isMobile) setMobileCenter((c) => addDays(c, -3)); else setMonday((m) => addWeeks(m, -1)); };
+  const goNext  = () => { if (isMobile) setMobileCenter((c) => addDays(c, +3)); else setMonday((m) => addWeeks(m, +1)); };
+  const goToday = () => { if (isMobile) setMobileCenter(todayDate); else setMonday(weekStart(todayDate)); };
 
   // ── Cell click handlers ────────────────────────────────────────────────────
   const handleBookedClick = (booking) => {
@@ -169,7 +199,9 @@ export default function Calendar() {
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return <div className="loading-screen">{t('loadingCalendar')}</div>;
 
-  const isCurrentWeek = toIso(monday) === toIso(weekStart(todayDate));
+  const isCurrentPeriod = isMobile
+    ? toIso(mobileCenter) === today
+    : toIso(monday) === toIso(weekStart(todayDate));
 
   return (
     <>
@@ -182,13 +214,15 @@ export default function Calendar() {
 
         {/* Week navigation */}
         <div className="calendar-nav">
-          <button className="cal-nav-btn" onClick={goPrev} aria-label="Previous week">‹</button>
+          <button className="cal-nav-btn" onClick={goPrev} aria-label="Previous">‹</button>
 
-          <span className="cal-week-label">{weekLabel(days, MONTH_NAMES)}</span>
+          <span className="cal-week-label">
+            {isMobile ? mobileDayLabel(days, MONTH_NAMES) : weekLabel(days, MONTH_NAMES)}
+          </span>
 
-          <button className="cal-nav-btn" onClick={goNext} aria-label="Next week">›</button>
+          <button className="cal-nav-btn" onClick={goNext} aria-label="Next">›</button>
 
-          {!isCurrentWeek && (
+          {!isCurrentPeriod && (
             <button className="btn-secondary" onClick={goToday} style={{ padding: '7px 14px' }}>
               {t('today')}
             </button>
