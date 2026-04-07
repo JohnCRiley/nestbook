@@ -103,10 +103,6 @@ export default function Login() {
           <Link to="/register">Create one free</Link>
         </p>
 
-        {/* Demo hint */}
-        <div className="auth-demo-hint">
-          <strong>Demo account:</strong> demo@nestbook.io / demo1234
-        </div>
       </div>
     </div>
   );
