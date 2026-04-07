@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NestBook — Simple Booking Management for Small Properties</title>
 <meta name="description" content="NestBook is the elegant booking and property management system for B&Bs, gîtes and guest houses across Europe.">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
 <style>
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -140,21 +141,11 @@ img { display: block; max-width: 100%; }
   margin-right: 32px;
   flex-shrink: 0;
 }
-.nb-logo-leaf {
+.nb-logo-img {
   width: 32px; height: 32px;
-  background: var(--dark);
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 7px;
+  display: block;
   flex-shrink: 0;
-}
-.nb-logo-leaf::after {
-  content: '';
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--light);
 }
 .nav-links {
   display: flex;
@@ -688,21 +679,14 @@ img { display: block; max-width: 100%; }
   flex-wrap: wrap;
   font-size: 0.75rem;
 }
-.footer-leaf {
+.footer-leaf-img {
   width: 22px; height: 22px;
-  background: var(--mid);
-  border-radius: 50% 50% 50% 0;
+  border-radius: 5px;
   transform: rotate(-45deg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-.footer-leaf::after {
-  content: '';
-  width: 9px; height: 9px;
-  border-radius: 50%;
-  background: var(--light);
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
@@ -734,7 +718,7 @@ img { display: block; max-width: 100%; }
   <div class="container navbar-inner">
 
     <a href="#" class="nb-logo">
-      <div class="nb-logo-leaf"></div>
+      <img src="/icon.svg" class="nb-logo-img" alt="NestBook" />
       NestBook
     </a>
 
@@ -1217,7 +1201,7 @@ img { display: block; max-width: 100%; }
 
       <div>
         <div class="footer-brand-name">
-          <div class="footer-leaf"></div>
+          <img src="/icon.svg" class="footer-leaf-img" alt="" />
           NestBook
         </div>
         <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
