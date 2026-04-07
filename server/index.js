@@ -33,7 +33,11 @@ app.use(cors({
 app.use(express.json());
 
 // ── Static files ──────────────────────────────────────────────────────────────
+// Landing page, widget.js, widget-test.html
 app.use(express.static(join(__dirname, 'public')));
+
+// React SPA assets (JS, CSS, icons) — served at /app/*
+app.use('/app', express.static(join(__dirname, '../client/dist')));
 
 // ── Stripe webhook needs raw body ─────────────────────────────────────────────
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
@@ -58,6 +62,12 @@ app.use('/api/rooms',        roomsRouter);
 app.use('/api/guests',       guestsRouter);
 app.use('/api/bookings',     bookingsRouter);
 app.use('/api/users',        usersRouter);
+
+// ── React SPA catch-all — must be after all API routes ───────────────────────
+// Any /app/* path that isn't a static file is handed to React Router.
+app.get('/app/*', (req, res) => {
+  res.sendFile(join(__dirname, '../client/dist/index.html'));
+});
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
