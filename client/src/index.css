@@ -759,6 +759,21 @@ a { text-decoration: none; }
   .search-wrap   { width: 100%; }
   .search-input  { width: 100%; box-sizing: border-box; }
   .filter-bar    { width: 100%; }
+
+  /* Dashboard: 2×2 stat grid */
+  .stats-grid    { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  /* Dashboard two-column panels stack */
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+/* Very small screens: single-column stat cards */
+@media (max-width: 399px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
+
+/* Settings: stack to single column on tablet + mobile */
+@media (max-width: 1023px) {
+  .settings-layout { grid-template-columns: 1fr; }
 }
 
 /* ─── Slide-in booking detail panel ─────────────────────────────────────── */
