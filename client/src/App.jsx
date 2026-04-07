@@ -41,7 +41,7 @@ function AppLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/app">
       <LocaleProvider>
         <Routes>
           <Route path="/login"    element={<Login          />} />

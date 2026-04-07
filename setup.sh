@@ -65,33 +65,7 @@ pm2 startup systemd -u root --hp /root | tail -1 | bash
 log "PM2 started and registered with systemd."
 
 log "Configuring nginx..."
-cat > /etc/nginx/sites-available/nestbook << 'EOF'
-server {
-    listen 80;
-    server_name _;
-
-    root /opt/nestbook/client/dist;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass             http://127.0.0.1:3001;
-        proxy_http_version     1.1;
-        proxy_set_header       Upgrade           $http_upgrade;
-        proxy_set_header       Connection        'upgrade';
-        proxy_set_header       Host              $host;
-        proxy_set_header       X-Real-IP         $remote_addr;
-        proxy_set_header       X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header       X-Forwarded-Proto $scheme;
-        proxy_cache_bypass     $http_upgrade;
-        proxy_read_timeout     60s;
-        proxy_request_buffering off;
-    }
-}
-EOF
+cp /opt/nestbook/server/nginx.conf /etc/nginx/sites-available/nestbook
 ln -sf /etc/nginx/sites-available/nestbook /etc/nginx/sites-enabled/nestbook
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
