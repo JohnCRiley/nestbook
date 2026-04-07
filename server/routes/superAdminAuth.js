@@ -8,11 +8,12 @@ export const superAdminAuthRouter = Router();
 const JWT_SECRET     = process.env.JWT_SECRET || 'nestbook-dev-secret-change-in-production';
 const SA_JWT_EXPIRES = '2h';
 
-// Read at call-time so it reflects the live process.env value
+// Read at call-time so it reflects the live process.env value.
+// .trim() guards against accidental trailing whitespace from .env editors.
 function getSuperAdminPassword() {
-  return process.env.SUPER_ADMIN_PASSWORD ?? '';
+  return (process.env.SUPER_ADMIN_PASSWORD ?? '').trim();
 }
-const MAX_ATTEMPTS         = 3;
+const MAX_ATTEMPTS         = 10;
 const LOCKOUT_MS           = 15 * 60 * 1000; // 15 minutes
 
 // ── In-memory rate limiter ────────────────────────────────────────────────────

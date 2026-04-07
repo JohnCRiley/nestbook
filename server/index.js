@@ -72,6 +72,6 @@ app.get('/app/*', (req, res) => {
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`NestBook server running on http://localhost:${PORT}`);
-  const saPasswordLoaded = !!process.env.SUPER_ADMIN_PASSWORD;
-  console.log(`Super admin password loaded: ${saPasswordLoaded ? 'YES' : 'NO'}`);
+  const saPassword = (process.env.SUPER_ADMIN_PASSWORD ?? '').trim();
+  console.log(`SA password loaded: ${saPassword.length > 0 ? `YES [length: ${saPassword.length}]` : 'NO — set SUPER_ADMIN_PASSWORD in .env'}`);
 });
