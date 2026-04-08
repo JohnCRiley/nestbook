@@ -38,7 +38,7 @@ authRouter.post('/login', (req, res) => {
 
 // ── POST /api/auth/register ───────────────────────────────────────────────
 authRouter.post('/register', (req, res) => {
-  const { name, email, password, confirmPassword, propertyName, propertyType } = req.body;
+  const { name, email, password, confirmPassword, propertyName, propertyType, discountCode } = req.body;
 
   if (!name || !email || !password || !propertyName || !propertyType) {
     return res.status(400).json({ error: 'All required fields must be filled in.' });
@@ -64,9 +64,15 @@ authRouter.post('/register', (req, res) => {
       `INSERT INTO properties (name, type) VALUES (?, ?)`
     ).run(propertyName, propertyType);
 
+    // Validate discount code if provided (store it; applied at checkout)
+    const upperCode = discountCode?.trim().toUpperCase() || null;
+    const validCode = upperCode
+      ? db.prepare('SELECT code FROM discount_codes WHERE code = ? AND active = 1').get(upperCode)?.code
+      : null;
+
     const user = db.prepare(
-      `INSERT INTO users (property_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, 'owner')`
-    ).run(prop.lastInsertRowid, name, normalEmail, hash);
+      `INSERT INTO users (property_id, name, email, password_hash, role, discount_code) VALUES (?, ?, ?, ?, 'owner', ?)`
+    ).run(prop.lastInsertRowid, name, normalEmail, hash, validCode ?? null);
 
     db.exec('COMMIT');
 

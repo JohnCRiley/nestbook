@@ -1,9 +1,11 @@
 import { Router } from 'express';
+import Stripe from 'stripe';
 import db from '../db/database.js';
 
 export const adminRouter = Router();
 
-const PLAN_MRR = { pro: 19, multi: 39 };
+const PLAN_MRR  = { pro: 19, multi: 39 };
+const stripe    = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // ── GET /api/admin/stats ──────────────────────────────────────────────────────
 adminRouter.get('/stats', (req, res) => {
@@ -31,15 +33,217 @@ adminRouter.get('/signups', (req, res) => {
 });
 
 // ── GET /api/admin/users ──────────────────────────────────────────────────────
+// Enriched with subscription data for plan management controls.
 adminRouter.get('/users', (req, res) => {
   const rows = db.prepare(`
     SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
-           p.name as property_name, p.country
+           u.discount_code,
+           p.name as property_name, p.country,
+           s.stripe_customer_id, s.stripe_subscription_id,
+           s.status as sub_status, s.current_period_end,
+           s.notes as sub_notes, s.cancel_at_period_end
     FROM users u
     LEFT JOIN properties p ON p.id = u.property_id
+    LEFT JOIN subscriptions s ON s.user_id = u.id
     ORDER BY u.created_at DESC
   `).all();
   res.json(rows);
+});
+
+// ── POST /api/admin/users/:id/set-plan ────────────────────────────────────────
+// Sets a user's plan directly in the DB — no Stripe interaction.
+adminRouter.post('/users/:id/set-plan', (req, res) => {
+  const { plan } = req.body;
+  if (!['free', 'pro', 'multi'].includes(plan)) {
+    return res.status(400).json({ error: 'Invalid plan.' });
+  }
+  const userId = Number(req.params.id);
+
+  db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
+
+  const existing = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+  if (existing) {
+    db.prepare('UPDATE subscriptions SET plan = ? WHERE user_id = ?').run(plan, userId);
+  } else if (plan !== 'free') {
+    db.prepare(`
+      INSERT INTO subscriptions (user_id, plan, status)
+      VALUES (?, ?, 'active')
+    `).run(userId, plan);
+  }
+
+  res.json({ success: true, plan });
+});
+
+// ── POST /api/admin/users/:id/comp ────────────────────────────────────────────
+// Sets plan to Pro with "Complimentary" note. Cancels any active Stripe sub.
+adminRouter.post('/users/:id/comp', async (req, res) => {
+  const userId = Number(req.params.id);
+
+  // Cancel any active Stripe subscription immediately
+  const sub = db.prepare('SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ?').get(userId);
+  if (stripe && sub?.stripe_subscription_id) {
+    try {
+      await stripe.subscriptions.cancel(sub.stripe_subscription_id);
+    } catch (err) {
+      console.warn('[admin/comp] Stripe cancel failed:', err.message);
+    }
+  }
+
+  db.prepare('UPDATE users SET plan = ? WHERE id = ?').run('pro', userId);
+
+  const existing = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+  if (existing) {
+    db.prepare(`
+      UPDATE subscriptions
+      SET plan = 'pro', status = 'active', notes = 'Complimentary',
+          stripe_subscription_id = NULL, cancel_at_period_end = 0
+      WHERE user_id = ?
+    `).run(userId);
+  } else {
+    db.prepare(`
+      INSERT INTO subscriptions (user_id, plan, status, notes)
+      VALUES (?, 'pro', 'active', 'Complimentary')
+    `).run(userId);
+  }
+
+  res.json({ success: true });
+});
+
+// ── POST /api/admin/users/:id/cancel-subscription ────────────────────────────
+// Cancels Stripe subscription at period end. Keeps access until then.
+adminRouter.post('/users/:id/cancel-subscription', async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured.' });
+
+  const userId = Number(req.params.id);
+  const sub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(userId);
+
+  if (!sub?.stripe_subscription_id) {
+    return res.status(400).json({ error: 'No active Stripe subscription found for this user.' });
+  }
+
+  try {
+    await stripe.subscriptions.update(sub.stripe_subscription_id, { cancel_at_period_end: true });
+    db.prepare('UPDATE subscriptions SET cancel_at_period_end = 1 WHERE user_id = ?').run(userId);
+    res.json({ success: true, cancel_at: sub.current_period_end });
+  } catch (err) {
+    console.error('[admin/cancel-sub]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/users/:id/refund ─────────────────────────────────────────
+// Issues a Stripe refund. Body: { amount? } — amount in euros; omit for full refund.
+adminRouter.post('/users/:id/refund', async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured.' });
+
+  const userId = Number(req.params.id);
+  const sub = db.prepare('SELECT stripe_customer_id FROM subscriptions WHERE user_id = ?').get(userId);
+
+  if (!sub?.stripe_customer_id) {
+    return res.status(400).json({ error: 'No Stripe customer found for this user.' });
+  }
+
+  const { amount } = req.body; // euros, optional
+
+  try {
+    const invoices = await stripe.invoices.list({ customer: sub.stripe_customer_id, limit: 1 });
+    const invoice  = invoices.data[0];
+    if (!invoice?.payment_intent) {
+      return res.status(400).json({ error: 'No recent payment found for this customer.' });
+    }
+
+    const pi       = await stripe.paymentIntents.retrieve(invoice.payment_intent);
+    const chargeId = typeof pi.latest_charge === 'string' ? pi.latest_charge : pi.latest_charge?.id;
+    if (!chargeId) return res.status(400).json({ error: 'No charge found on payment.' });
+
+    const refundParams = { charge: chargeId };
+    if (amount) refundParams.amount = Math.round(Number(amount) * 100); // euros → cents
+
+    const refund = await stripe.refunds.create(refundParams);
+    res.json({ refund_id: refund.id, amount: refund.amount / 100, status: refund.status });
+  } catch (err) {
+    console.error('[admin/refund]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/admin/discount-codes ────────────────────────────────────────────
+adminRouter.get('/discount-codes', (req, res) => {
+  const rows = db.prepare(`
+    SELECT * FROM discount_codes ORDER BY created_at DESC
+  `).all();
+  res.json(rows);
+});
+
+// ── POST /api/admin/discount-codes ───────────────────────────────────────────
+// Creates a discount code and a corresponding Stripe coupon.
+adminRouter.post('/discount-codes', async (req, res) => {
+  const { code, discount_percent, duration, duration_months, max_uses } = req.body;
+
+  if (!code?.trim()) return res.status(400).json({ error: 'Code is required.' });
+  if (!discount_percent || discount_percent < 1 || discount_percent > 100) {
+    return res.status(400).json({ error: 'Discount percent must be 1–100.' });
+  }
+  if (!['once', 'repeating', 'forever'].includes(duration)) {
+    return res.status(400).json({ error: 'Invalid duration.' });
+  }
+  if (duration === 'repeating' && !duration_months) {
+    return res.status(400).json({ error: 'duration_months required for repeating discount.' });
+  }
+
+  const upperCode = code.trim().toUpperCase();
+
+  const existing = db.prepare('SELECT id FROM discount_codes WHERE code = ?').get(upperCode);
+  if (existing) return res.status(409).json({ error: `Code "${upperCode}" already exists.` });
+
+  let stripeCouponId = null;
+  if (stripe) {
+    try {
+      const couponParams = {
+        id:           upperCode,
+        name:         upperCode,
+        percent_off:  Number(discount_percent),
+        duration,
+        ...(duration === 'repeating' ? { duration_in_months: Number(duration_months) } : {}),
+      };
+      const coupon = await stripe.coupons.create(couponParams);
+      stripeCouponId = coupon.id;
+    } catch (err) {
+      console.warn('[admin/discount-codes] Stripe coupon create failed:', err.message);
+      // Continue — code still works for manual application even without Stripe coupon
+    }
+  }
+
+  db.prepare(`
+    INSERT INTO discount_codes
+      (code, discount_percent, duration, duration_months, max_uses, stripe_coupon_id, active)
+    VALUES (?, ?, ?, ?, ?, ?, 1)
+  `).run(
+    upperCode,
+    Number(discount_percent),
+    duration,
+    duration_months ? Number(duration_months) : null,
+    max_uses ? Number(max_uses) : null,
+    stripeCouponId,
+  );
+
+  const row = db.prepare('SELECT * FROM discount_codes WHERE code = ?').get(upperCode);
+  res.status(201).json(row);
+});
+
+// ── DELETE /api/admin/discount-codes/:id ─────────────────────────────────────
+// Deactivates a discount code (and archives the Stripe coupon).
+adminRouter.delete('/discount-codes/:id', async (req, res) => {
+  const row = db.prepare('SELECT * FROM discount_codes WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Discount code not found.' });
+
+  db.prepare('UPDATE discount_codes SET active = 0 WHERE id = ?').run(req.params.id);
+
+  if (stripe && row.stripe_coupon_id) {
+    try { await stripe.coupons.del(row.stripe_coupon_id); } catch (_) {}
+  }
+
+  res.json({ success: true });
 });
 
 // ── GET /api/admin/properties ─────────────────────────────────────────────────
@@ -72,7 +276,6 @@ adminRouter.get('/revenue', (req, res) => {
     ORDER BY month ASC
   `).all();
 
-  // Build last-6-months array, filling zeros for gaps
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date();

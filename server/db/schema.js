@@ -128,5 +128,34 @@ export function initSchema() {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS discount_codes (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      code             TEXT    NOT NULL UNIQUE,
+      discount_percent INTEGER NOT NULL CHECK(discount_percent > 0 AND discount_percent <= 100),
+      duration         TEXT    NOT NULL DEFAULT 'once'
+                               CHECK(duration IN ('once','repeating','forever')),
+      duration_months  INTEGER,
+      max_uses         INTEGER,
+      current_uses     INTEGER NOT NULL DEFAULT 0,
+      stripe_coupon_id TEXT,
+      active           INTEGER NOT NULL DEFAULT 1,
+      created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Additional migrations
+  try {
+    db.exec(`ALTER TABLE subscriptions ADD COLUMN notes TEXT`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE subscriptions ADD COLUMN cancel_at_period_end INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN discount_code TEXT`);
+  } catch { /* already exists */ }
+
   console.log('✓ Database schema ready.');
 }

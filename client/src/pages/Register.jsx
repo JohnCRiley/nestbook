@@ -17,7 +17,7 @@ export default function Register() {
 
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
-    propertyName: '', propertyType: '',
+    propertyName: '', propertyType: '', discountCode: '',
   });
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -126,6 +126,15 @@ export default function Register() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="discountCode">
+              Discount code <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+            </label>
+            <input id="discountCode" type="text" className="auth-input" value={form.discountCode}
+              onChange={set('discountCode')} placeholder="e.g. BETA50"
+              style={{ textTransform: 'uppercase' }} />
           </div>
 
           <button type="submit" className="auth-btn" disabled={loading}>

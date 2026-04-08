@@ -2796,3 +2796,114 @@ a { text-decoration: none; }
   color: #64748b;
   text-align: right;
 }
+
+/* ── Super-admin action controls ─────────────────────────────────────────── */
+
+/* Plan select inside the users table */
+.sa-plan-select {
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #334155;
+  background: #f8fafc;
+  cursor: pointer;
+}
+.sa-plan-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Small inline badges */
+.sa-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.sa-badge-comp {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.sa-badge-cancel {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Action button group in each row */
+.sa-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Small action buttons */
+.sa-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.sa-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.sa-btn-comp {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.sa-btn-comp:hover:not(:disabled) {
+  background: #bfdbfe;
+}
+.sa-btn-cancel {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+.sa-btn-cancel:hover:not(:disabled) {
+  background: #fde68a;
+}
+.sa-btn-refund {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+.sa-btn-refund:hover:not(:disabled) {
+  background: #bbf7d0;
+}
+
+/* Toast notification */
+.sa-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sa-toast-in 0.2s ease;
+}
+.sa-toast-success {
+  background: #166534;
+  color: #fff;
+}
+.sa-toast-error {
+  background: #dc2626;
+  color: #fff;
+}
+@keyframes sa-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

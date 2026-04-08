@@ -2,11 +2,77 @@ import { useEffect, useState } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
 export default function Users() {
-  const [rows, setRows] = useState([]);
+  const [rows,         setRows]         = useState([]);
+  const [busy,         setBusy]         = useState({});   // { `${id}_action`: true }
+  const [refundTarget, setRefundTarget] = useState(null); // { id, name, email } | null
+  const [toast,        setToast]        = useState(null);
 
   useEffect(() => {
     apiFetch('/api/admin/users').then(r => r.json()).then(setRows).catch(() => {});
   }, []);
+
+  function showToast(msg, type = 'success') {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  function setBusyKey(id, action, val) {
+    setBusy(b => ({ ...b, [`${id}_${action}`]: val }));
+  }
+
+  async function setPlan(userId, plan) {
+    setBusyKey(userId, 'plan', true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}/set-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
+      if (res.ok) {
+        setRows(r => r.map(u => u.id === userId ? { ...u, plan } : u));
+        showToast(`Plan updated to ${plan}.`);
+      } else {
+        const d = await res.json();
+        showToast(d.error || 'Failed to update plan.', 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    setBusyKey(userId, 'plan', false);
+  }
+
+  async function compAccount(userId, name) {
+    if (!window.confirm(`Set ${name}'s account to Pro (Complimentary) and cancel any Stripe subscription?`)) return;
+    setBusyKey(userId, 'comp', true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}/comp`, { method: 'POST' });
+      if (res.ok) {
+        setRows(r => r.map(u => u.id === userId
+          ? { ...u, plan: 'pro', sub_notes: 'Complimentary', stripe_subscription_id: null, cancel_at_period_end: 0 }
+          : u
+        ));
+        showToast(`${name} comped as Pro.`);
+      } else {
+        const d = await res.json();
+        showToast(d.error || 'Failed to comp account.', 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    setBusyKey(userId, 'comp', false);
+  }
+
+  async function cancelSub(userId, name) {
+    if (!window.confirm(`Cancel ${name}'s Stripe subscription at period end?`)) return;
+    setBusyKey(userId, 'cancel', true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}/cancel-subscription`, { method: 'POST' });
+      if (res.ok) {
+        setRows(r => r.map(u => u.id === userId ? { ...u, cancel_at_period_end: 1 } : u));
+        showToast(`${name}'s subscription will cancel at period end.`);
+      } else {
+        const d = await res.json();
+        showToast(d.error || 'Failed to cancel subscription.', 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    setBusyKey(userId, 'cancel', false);
+  }
 
   return (
     <>
@@ -19,45 +85,186 @@ export default function Users() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
+              <th>Name / Email</th>
               <th>Role</th>
               <th>Plan</th>
               <th>Property</th>
-              <th>Country</th>
+              <th>Discount</th>
               <th>Joined</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(u => (
               <tr key={u.id}>
-                <td><strong>{u.name}</strong></td>
-                <td className="admin-muted">{u.email}</td>
+                <td>
+                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{u.name}</div>
+                  <div className="admin-muted" style={{ fontSize: '0.8rem' }}>{u.email}</div>
+                </td>
                 <td>
                   <span className={`role-badge role-${u.role}`}>
                     {u.role === 'owner' ? 'Owner' : 'Reception'}
                   </span>
                 </td>
-                <td><PlanBadge plan={u.plan} /></td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <select
+                      className="sa-plan-select"
+                      value={u.plan ?? 'free'}
+                      disabled={!!busy[`${u.id}_plan`]}
+                      onChange={e => setPlan(u.id, e.target.value)}
+                    >
+                      <option value="free">Free</option>
+                      <option value="pro">Pro</option>
+                      <option value="multi">Multi</option>
+                    </select>
+                    {u.sub_notes === 'Complimentary' && (
+                      <span className="sa-badge sa-badge-comp">COMP</span>
+                    )}
+                    {u.cancel_at_period_end ? (
+                      <span className="sa-badge sa-badge-cancel">Cancelling</span>
+                    ) : null}
+                  </div>
+                </td>
                 <td>{u.property_name ?? '—'}</td>
-                <td className="admin-muted">{u.country ?? '—'}</td>
+                <td className="admin-muted" style={{ fontSize: '0.8rem' }}>
+                  {u.discount_code ?? '—'}
+                </td>
                 <td className="admin-muted">{fmtDate(u.created_at)}</td>
+                <td>
+                  <div className="sa-actions">
+                    <button
+                      className="sa-btn sa-btn-comp"
+                      disabled={!!busy[`${u.id}_comp`]}
+                      onClick={() => compAccount(u.id, u.name)}
+                      title="Set to Pro complimentary (cancels Stripe sub)"
+                    >
+                      {busy[`${u.id}_comp`] ? '…' : 'Comp'}
+                    </button>
+                    {u.stripe_subscription_id && !u.cancel_at_period_end ? (
+                      <button
+                        className="sa-btn sa-btn-cancel"
+                        disabled={!!busy[`${u.id}_cancel`]}
+                        onClick={() => cancelSub(u.id, u.name)}
+                        title="Cancel Stripe subscription at period end"
+                      >
+                        {busy[`${u.id}_cancel`] ? '…' : 'Cancel sub'}
+                      </button>
+                    ) : null}
+                    {u.stripe_customer_id ? (
+                      <button
+                        className="sa-btn sa-btn-refund"
+                        onClick={() => setRefundTarget({ id: u.id, name: u.name, email: u.email })}
+                        title="Issue a refund via Stripe"
+                      >
+                        Refund
+                      </button>
+                    ) : null}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {refundTarget && (
+        <RefundModal
+          user={refundTarget}
+          onClose={() => setRefundTarget(null)}
+          onSuccess={(msg) => { setRefundTarget(null); showToast(msg); }}
+          onError={(msg) => showToast(msg, 'error')}
+        />
+      )}
+
+      {toast && (
+        <div className={`sa-toast sa-toast-${toast.type}`}>{toast.msg}</div>
+      )}
     </>
   );
 }
 
-function PlanBadge({ plan }) {
+// ── Refund modal ──────────────────────────────────────────────────────────────
+
+function RefundModal({ user, onClose, onSuccess, onError }) {
+  const [mode,    setMode]    = useState('full');   // 'full' | 'partial'
+  const [amount,  setAmount]  = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (mode === 'partial' && (!amount || Number(amount) <= 0)) {
+      onError('Enter a valid refund amount.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const body = mode === 'partial' ? { amount: Number(amount) } : {};
+      const res  = await apiFetch(`/api/admin/users/${user.id}/refund`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onSuccess(`Refund of €${data.amount.toFixed(2)} issued. Stripe ID: ${data.refund_id}`);
+      } else {
+        onError(data.error || 'Refund failed.');
+      }
+    } catch { onError('Network error.'); }
+    setLoading(false);
+  }
+
   return (
-    <span className={`sidebar-plan-badge sidebar-plan-badge-${plan ?? 'free'}`}>
-      {plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free'}
-    </span>
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 440 }}>
+        <div className="modal-header">
+          <h2>Issue refund</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ marginBottom: 16, color: '#64748b', fontSize: '0.9rem' }}>
+            Refund for <strong>{user.name}</strong> ({user.email})
+          </p>
+          <form onSubmit={submit}>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.9rem' }}>
+                <input type="radio" name="mode" checked={mode === 'full'} onChange={() => setMode('full')} />
+                Full refund
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.9rem' }}>
+                <input type="radio" name="mode" checked={mode === 'partial'} onChange={() => setMode('partial')} />
+                Partial refund
+              </label>
+            </div>
+            {mode === 'partial' && (
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label" style={{ fontSize: '0.85rem' }}>Amount (€)</label>
+                <input
+                  type="number" min="0.01" step="0.01"
+                  className="form-control"
+                  placeholder="e.g. 9.50"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  style={{ marginTop: 6 }}
+                  autoFocus
+                />
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Processing…' : 'Issue refund'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso) {
   if (!iso) return '—';

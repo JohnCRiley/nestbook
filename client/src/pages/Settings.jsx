@@ -7,6 +7,8 @@ import { useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useKiosk } from '../hooks/useKiosk.js';
 
+const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PROPERTY_TYPES = [
@@ -79,6 +81,8 @@ export default function Settings() {
   const [toast,       setToast]       = useState(null);   // { msg, type }
   const [showInvite,      setShowInvite]      = useState(false);
   const [resetTarget,     setResetTarget]     = useState(null);   // user object | null
+  const [sub,             setSub]             = useState(null);   // subscription info
+  const [cancelling,      setCancelling]      = useState(false);
 
   // Feature toggles live in local state only (no backend yet — persist later)
   const [features, setFeatures] = useState(() =>
@@ -90,7 +94,8 @@ export default function Settings() {
     Promise.all([
       apiFetch('/api/properties/1').then((r) => r.json()),
       apiFetch('/api/users?property_id=1').then((r) => r.json()),
-    ]).then(([p, u]) => {
+      apiFetch('/api/stripe/subscription').then((r) => r.json()).catch(() => null),
+    ]).then(([p, u, s]) => {
       setProperty(p);
       setForm({
         name:           p.name           ?? '',
@@ -104,6 +109,7 @@ export default function Settings() {
         locale:         p.locale         ?? 'en',
       });
       setUsers(u);
+      if (s && !s.error) setSub(s);
     });
   }, []);
 
@@ -138,6 +144,24 @@ export default function Settings() {
 
   const handleFeatureToggle = (key) =>
     setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Cancel your subscription? You\'ll keep access until the end of your current billing period.')) return;
+    setCancelling(true);
+    try {
+      const res = await apiFetch('/api/stripe/cancel-subscription', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setSub(s => ({ ...s, cancel_at_period_end: 1 }));
+        showToast('Subscription will cancel at the end of your billing period.');
+      } else {
+        showToast(data.error || 'Failed to cancel subscription.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    }
+    setCancelling(false);
+  };
 
   const handleInviteSuccess = (newUser) => {
     setUsers((prev) => [...prev, newUser]);
@@ -297,6 +321,58 @@ export default function Settings() {
             </div>
           )}
 
+          {/* Subscription */}
+          {user?.role === 'owner' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>Subscription</h2>
+                <p>Your current plan and billing details</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Current plan</span>
+                    <span style={{
+                      fontWeight: 700, fontSize: '0.85rem',
+                      color: sub?.plan === 'free' ? '#64748b' : '#166534',
+                      background: sub?.plan === 'free' ? '#f1f5f9' : '#dcfce7',
+                      padding: '2px 10px', borderRadius: 20,
+                    }}>
+                      {PLAN_LABELS[sub?.plan ?? user?.plan ?? 'free']}
+                      {sub?.notes === 'Complimentary' ? ' (Complimentary)' : ''}
+                    </span>
+                  </div>
+
+                  {sub?.current_period_end && sub?.plan !== 'free' && (
+                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                      {sub.cancel_at_period_end
+                        ? <span style={{ color: '#dc2626' }}>
+                            Cancels on {fmtDate(sub.current_period_end)}
+                          </span>
+                        : <>Next billing date: <strong style={{ color: '#0f172a' }}>{fmtDate(sub.current_period_end)}</strong></>
+                      }
+                    </div>
+                  )}
+
+                  {sub?.cancel_at_period_end ? (
+                    <div style={{ fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 12px' }}>
+                      Your subscription is scheduled to cancel. You'll keep access until your billing period ends.
+                    </div>
+                  ) : sub?.plan && sub.plan !== 'free' && sub?.notes !== 'Complimentary' ? (
+                    <button
+                      className="btn-secondary"
+                      style={{ alignSelf: 'flex-start', color: '#dc2626', borderColor: '#fca5a5' }}
+                      disabled={cancelling}
+                      onClick={handleCancelSubscription}
+                    >
+                      {cancelling ? 'Cancelling…' : 'Cancel subscription'}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Access & Roles */}
           <div className="settings-card">
             <div className="settings-card-header">
@@ -410,6 +486,11 @@ function EmbedSection({ snippet, t }) {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 function FormField({ label, children }) {
   return (

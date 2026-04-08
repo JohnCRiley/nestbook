@@ -18,10 +18,35 @@ stripeRouter.get('/subscription', (req, res) => {
   const sub  = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
 
   res.json({
-    plan:               user?.plan               ?? 'free',
-    status:             sub?.status              ?? 'active',
-    current_period_end: sub?.current_period_end  ?? null,
+    plan:                user?.plan                ?? 'free',
+    status:              sub?.status               ?? 'active',
+    current_period_end:  sub?.current_period_end   ?? null,
+    cancel_at_period_end: sub?.cancel_at_period_end ?? 0,
+    notes:               sub?.notes                ?? null,
   });
+});
+
+// ── POST /api/stripe/cancel-subscription ─────────────────────────────────────
+// Customer-facing: cancels at period end so they keep access until it expires.
+stripeRouter.post('/cancel-subscription', async (req, res) => {
+  const sub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+
+  if (!sub?.stripe_subscription_id) {
+    return res.status(400).json({ error: 'No active Stripe subscription found.' });
+  }
+  if (sub.cancel_at_period_end) {
+    return res.status(400).json({ error: 'Subscription is already scheduled for cancellation.' });
+  }
+
+  try {
+    await stripe.subscriptions.update(sub.stripe_subscription_id, { cancel_at_period_end: true });
+    db.prepare('UPDATE subscriptions SET cancel_at_period_end = 1 WHERE user_id = ?')
+      .run(req.user.userId);
+    res.json({ success: true, cancel_at: sub.current_period_end });
+  } catch (err) {
+    console.error('[stripe/cancel-subscription]', err.message);
+    res.status(500).json({ error: 'Failed to cancel subscription. Please try again.' });
+  }
 });
 
 // ── POST /api/stripe/sync-session ────────────────────────────────────────────
@@ -81,7 +106,8 @@ stripeRouter.post('/sync-session', async (req, res) => {
     if (existingSub) {
       const result = db.prepare(`
         UPDATE subscriptions
-        SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = ?, status = 'active', current_period_end = ?
+        SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = ?,
+            status = 'active', current_period_end = ?, cancel_at_period_end = 0
         WHERE user_id = ?
       `).run(customerId, sub?.id, plan, periodEnd, userId);
       console.log('[sync-session] UPDATE subscriptions changes:', result.changes);
@@ -93,6 +119,13 @@ stripeRouter.post('/sync-session', async (req, res) => {
       console.log('[sync-session] INSERT subscriptions done');
     }
 
+    // Increment discount code usage if the user had one applied
+    const userRow = db.prepare('SELECT discount_code FROM users WHERE id = ?').get(userId);
+    if (userRow?.discount_code) {
+      db.prepare('UPDATE discount_codes SET current_uses = current_uses + 1 WHERE code = ? AND active = 1')
+        .run(userRow.discount_code.toUpperCase());
+    }
+
     res.json({ plan });
   } catch (err) {
     console.error('[sync-session] error:', err.message);
@@ -102,6 +135,7 @@ stripeRouter.post('/sync-session', async (req, res) => {
 
 // ── POST /api/stripe/create-checkout-session ──────────────────────────────────
 // Creates a Stripe Checkout session for the chosen plan, returns the hosted URL.
+// Automatically applies the user's discount code if valid.
 stripeRouter.post('/create-checkout-session', async (req, res) => {
   const { plan } = req.body;
 
@@ -109,8 +143,21 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
     return res.status(400).json({ error: 'Invalid plan. Choose "pro" or "multi".' });
   }
 
-  const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(req.user.userId);
+  const user = db.prepare('SELECT id, name, email, discount_code FROM users WHERE id = ?').get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  // Resolve any valid discount code for this user
+  let discounts = [];
+  if (user.discount_code) {
+    const dc = db.prepare(`
+      SELECT * FROM discount_codes
+      WHERE code = ? AND active = 1
+    `).get(user.discount_code.toUpperCase());
+
+    if (dc?.stripe_coupon_id && (!dc.max_uses || dc.current_uses < dc.max_uses)) {
+      discounts = [{ coupon: dc.stripe_coupon_id }];
+    }
+  }
 
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
@@ -122,6 +169,7 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
       metadata:   { userId: String(user.id) },
       success_url: `${clientUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${clientUrl}/cancel`,
+      ...(discounts.length ? { discounts } : {}),
     });
 
     res.json({ url: session.url });
@@ -169,7 +217,8 @@ stripeRouter.post('/webhook', async (req, res) => {
         if (existingSub) {
           db.prepare(`
             UPDATE subscriptions
-            SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = ?, status = 'active', current_period_end = ?
+            SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = ?,
+                status = 'active', current_period_end = ?, cancel_at_period_end = 0
             WHERE user_id = ?
           `).run(customerId, subscriptionId, plan, periodEnd, userId);
         } else {
@@ -190,12 +239,13 @@ stripeRouter.post('/webhook', async (req, res) => {
         const plan    = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
         const status  = sub.status === 'past_due' ? 'past_due' : 'active';
         const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        const cancelAtEnd = sub.cancel_at_period_end ? 1 : 0;
 
         db.prepare(`
           UPDATE subscriptions
-          SET plan = ?, status = ?, current_period_end = ?
+          SET plan = ?, status = ?, current_period_end = ?, cancel_at_period_end = ?
           WHERE stripe_subscription_id = ?
-        `).run(plan, status, periodEnd, sub.id);
+        `).run(plan, status, periodEnd, cancelAtEnd, sub.id);
 
         db.prepare(`
           UPDATE users SET plan = ?
@@ -208,7 +258,7 @@ stripeRouter.post('/webhook', async (req, res) => {
         const sub = event.data.object;
 
         db.prepare(`
-          UPDATE subscriptions SET status = 'cancelled'
+          UPDATE subscriptions SET status = 'cancelled', cancel_at_period_end = 0
           WHERE stripe_subscription_id = ?
         `).run(sub.id);
 
