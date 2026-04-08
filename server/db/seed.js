@@ -14,16 +14,17 @@ initSchema();
 
 // ── Always ensure the demo user exists (even if db was already seeded) ───────
 function ensureDemoUser(propertyId) {
+  const hash = bcrypt.hashSync('demo1234', 10);
   const existing = db.prepare('SELECT id FROM users WHERE email = ?').get('demo@nestbook.io');
   if (!existing) {
-    const hash = bcrypt.hashSync('demo1234', 10);
     db.prepare(
       `INSERT INTO users (property_id, name, email, password_hash, role, is_super_admin) VALUES (?, ?, ?, ?, 'owner', 1)`
     ).run(propertyId, 'Demo Owner', 'demo@nestbook.io', hash);
     console.log('  ✓ Demo user created  (demo@nestbook.io / demo1234)');
   } else {
-    // Ensure is_super_admin is set on existing databases
-    db.prepare('UPDATE users SET is_super_admin = 1 WHERE email = ?').run('demo@nestbook.io');
+    // Always reset to correct bcrypt hash — fixes DBs seeded before bcrypt was added
+    db.prepare('UPDATE users SET is_super_admin = 1, password_hash = ? WHERE email = ?').run(hash, 'demo@nestbook.io');
+    console.log('  ✓ Demo user updated  (demo@nestbook.io / demo1234)');
   }
 }
 

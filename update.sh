@@ -27,6 +27,11 @@ log "Building React frontend..."
 cd /opt/nestbook/client && npm run build
 log "Frontend built to client/dist/."
 
+log "Syncing shared assets to server/public/..."
+cp /opt/nestbook/client/public/icon.svg     /opt/nestbook/server/public/icon.svg
+cp /opt/nestbook/client/public/manifest.json /opt/nestbook/server/public/manifest.json
+log "Shared assets synced."
+
 log "Updating nginx config..."
 cp /opt/nestbook/server/nginx.conf /etc/nginx/sites-available/nestbook
 nginx -t
