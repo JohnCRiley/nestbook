@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ── Primary SEO ──────────────────────────────────────────────────────── -->
+<title>Why small B&Bs and gîtes are switching from paper diaries to simple booking software — NestBook Blog</title>
+<meta name="description" content="Discover why small B&B and gîte owners across Europe are ditching the paper diary for simple, affordable booking software — and what to look for when choosing one.">
+<meta name="keywords" content="b&b booking software, gite management software, paper diary alternative, small property management, booking calendar Europe, direct bookings">
+<meta name="author" content="The NestBook Team">
+<link rel="canonical" href="https://nestbook.io/blog/why-small-bbs-are-switching-to-booking-software.html">
+<meta name="robots" content="index, follow">
+
+<!-- ── Open Graph ───────────────────────────────────────────────────────── -->
+<meta property="og:type"        content="article">
+<meta property="og:url"         content="https://nestbook.io/blog/why-small-bbs-are-switching-to-booking-software.html">
+<meta property="og:title"       content="Why small B&Bs and gîtes are switching from paper diaries to simple booking software">
+<meta property="og:description" content="Discover why small B&B and gîte owners across Europe are ditching the paper diary for simple, affordable booking software — and what to look for when choosing one.">
+<meta property="og:image"       content="https://nestbook.io/icon.svg">
+<meta property="og:image:width"  content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale"      content="en_GB">
+<meta property="og:site_name"   content="NestBook">
+<meta property="article:published_time" content="2026-04-08T00:00:00Z">
+<meta property="article:author" content="The NestBook Team">
+<meta property="article:section" content="Running a B&B">
+
+<!-- ── Twitter Card ─────────────────────────────────────────────────────── -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Why small B&Bs and gîtes are switching from paper diaries to simple booking software">
+<meta name="twitter:description" content="Discover why small B&B and gîte owners across Europe are ditching the paper diary for simple, affordable booking software.">
+<meta name="twitter:image"       content="https://nestbook.io/icon.svg">
+
+<!-- ── JSON-LD Article Schema ───────────────────────────────────────────── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Why small B&Bs and gîtes are switching from paper diaries to simple booking software",
+  "description": "Discover why small B&B and gîte owners across Europe are ditching the paper diary for simple, affordable booking software — and what to look for when choosing one.",
+  "author": { "@type": "Organization", "name": "The NestBook Team", "url": "https://nestbook.io/about.html" },
+  "publisher": { "@type": "Organization", "name": "NestBook", "url": "https://nestbook.io", "logo": { "@type": "ImageObject", "url": "https://nestbook.io/icon.svg" } },
+  "datePublished": "2026-04-08",
+  "dateModified": "2026-04-08",
+  "url": "https://nestbook.io/blog/why-small-bbs-are-switching-to-booking-software.html",
+  "mainEntityOfPage": "https://nestbook.io/blog/why-small-bbs-are-switching-to-booking-software.html",
+  "inLanguage": "en-GB",
+  "keywords": ["b&b booking software", "gite management", "paper diary", "small property", "direct bookings"]
+}
+</script>
+
+<!-- ── Breadcrumb Schema ─────────────────────────────────────────────────── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home",  "item": "https://nestbook.io/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog",  "item": "https://nestbook.io/blog/" },
+    { "@type": "ListItem", "position": 3, "name": "Why small B&Bs are switching to booking software" }
+  ]
+}
+</script>
+
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+/* Reading progress bar */
+#progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--mid), #5cbf44);
+  z-index: 200;
+  transition: width 0.1s linear;
+}
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; text-decoration: none; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+
+/* Navbar */
+.navbar { position: sticky; top: 3px; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-link.active { color: var(--dark); background: var(--soft); font-weight: 600; }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* Breadcrumb */
+.breadcrumb { padding: 16px 0 0; }
+.breadcrumb-list { display: flex; align-items: center; gap: 6px; list-style: none; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
+.breadcrumb-list a { color: var(--muted); transition: color 0.12s; }
+.breadcrumb-list a:hover { color: var(--dark); }
+.breadcrumb-sep { color: #c8dcc3; }
+
+/* Article layout */
+.article-layout { max-width: 720px; margin: 0 auto; padding: 0 28px; }
+
+/* Article header */
+.article-header { padding: 40px 0 36px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+.article-category { display: inline-block; background: var(--light); color: var(--dark); font-size: 0.72rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; }
+.article-header h1 { font-size: clamp(1.65rem, 4vw, 2.4rem); font-weight: 900; color: var(--dark); letter-spacing: -0.7px; line-height: 1.2; margin-bottom: 20px; }
+.article-meta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.article-byline { display: flex; align-items: center; gap: 10px; }
+.article-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--mid), var(--dark)); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 0.75rem; flex-shrink: 0; }
+.article-author { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.article-date   { font-size: 0.8rem; color: var(--muted); }
+.article-divider { color: #c8dcc3; }
+.article-read   { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+
+/* Body typography */
+.article-body { font-size: 1.05rem; line-height: 1.85; color: #2a3d22; }
+.article-body p { margin-bottom: 1.5em; }
+.article-body h2 { font-size: 1.45rem; font-weight: 800; color: var(--dark); letter-spacing: -0.4px; margin: 2.25em 0 0.75em; line-height: 1.25; }
+.article-body h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin: 1.75em 0 0.6em; }
+.article-body ul, .article-body ol { padding-left: 1.5em; margin-bottom: 1.5em; }
+.article-body li { margin-bottom: 0.5em; }
+.article-body strong { font-weight: 700; color: var(--dark); }
+.article-body .lead { font-size: 1.15rem; color: var(--muted); font-style: italic; border-left: 3px solid var(--light); padding-left: 20px; margin-bottom: 2em; }
+
+/* Share bar */
+.share-bar { display: flex; align-items: center; gap: 12px; padding: 28px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 40px 0; flex-wrap: wrap; }
+.share-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.share-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text); transition: all 0.12s; font-family: inherit; }
+.share-btn:hover { border-color: var(--mid); color: var(--mid); background: var(--soft); }
+.share-btn.copied { border-color: var(--mid); color: var(--mid); background: var(--light); }
+
+/* CTA box */
+.article-cta { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); border-radius: 16px; padding: 40px; text-align: center; margin: 48px 0; }
+.article-cta h2 { font-size: 1.5rem; font-weight: 900; color: #fff; letter-spacing: -0.4px; margin-bottom: 10px; }
+.article-cta p  { color: rgba(255,255,255,0.78); font-size: 1rem; margin-bottom: 24px; line-height: 1.65; }
+.btn-white { background: #fff; color: var(--dark); border-color: #fff; }
+.btn-white:hover { background: var(--light); border-color: var(--light); }
+
+/* Related posts */
+.related-section { margin: 48px 0 0; padding-top: 40px; border-top: 1px solid var(--border); }
+.related-section h2 { font-size: 1.1rem; font-weight: 800; color: var(--dark); margin-bottom: 20px; }
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.related-card { background: var(--soft); border: 1px solid var(--border); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 8px; transition: box-shadow 0.12s; }
+.related-card:hover { box-shadow: 0 4px 16px rgba(26,71,16,0.08); }
+.related-card-category { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+.related-card h3 { font-size: 0.9rem; font-weight: 700; color: var(--dark); line-height: 1.35; }
+.related-card-meta { font-size: 0.75rem; color: var(--muted); }
+.related-card-soon { font-size: 0.72rem; color: #94a3b8; font-style: italic; }
+
+/* Footer */
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; margin-top: 80px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links  { display: flex; flex-direction: column; gap: 8px; }
+.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } .related-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .article-layout { padding: 0 20px; } .article-cta { padding: 28px 20px; } }
+</style>
+</head>
+<body>
+
+<!-- Reading progress bar -->
+<div id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Reading progress"></div>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/blog/"      class="nav-link active" data-i18n="nav.blog">Blog</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol class="breadcrumb-list">
+        <li><a href="/">Home</a></li>
+        <li class="breadcrumb-sep" aria-hidden="true">›</li>
+        <li><a href="/blog/">Blog</a></li>
+        <li class="breadcrumb-sep" aria-hidden="true">›</li>
+        <li aria-current="page">Why small B&Bs are switching to booking software</li>
+      </ol>
+    </nav>
+  </div>
+
+  <article class="article-layout" id="article">
+
+    <header class="article-header">
+      <span class="article-category">Running a B&amp;B</span>
+      <h1>Why small B&Bs and gîtes are switching from paper diaries to simple booking software</h1>
+      <div class="article-meta">
+        <div class="article-byline">
+          <div class="article-avatar" aria-hidden="true">NB</div>
+          <div>
+            <div class="article-author">The NestBook Team</div>
+            <div class="article-date">April 2026</div>
+          </div>
+        </div>
+        <span class="article-divider" aria-hidden="true">·</span>
+        <span class="article-read">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3.5l2 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          4 min read
+        </span>
+      </div>
+    </header>
+
+    <div class="article-body">
+
+      <p class="lead">For decades, the paper diary sat at the heart of every small B&B and gîte. A thick, well-worn book on the reception desk, full of pencilled names, crossed-out dates and margin notes. It worked. Just about.</p>
+
+      <p>But something is changing.</p>
+
+      <p>Across France, the UK, Spain and the Netherlands, small property owners are quietly making a switch. Not to the complicated, expensive hotel management systems designed for chains and large hotels. To something simpler. Something that actually fits the way a small property works.</p>
+
+      <p>Here's what's driving it.</p>
+
+      <h2>The paper diary problem nobody talks about</h2>
+
+      <p>The paper diary has one catastrophic flaw that every B&B owner knows but rarely admits: <strong>it only exists in one place</strong>.</p>
+
+      <p>Your partner calls from the market — is Room 3 free next weekend? You don't know, because the diary is on the desk at home. A guest emails asking if you have availability in July. You can't check until you get back. Someone phones while you're in the garden and books a room you'd mentally reserved for someone else.</p>
+
+      <p>Double bookings. Missed enquiries. Guests arriving to find their room isn't ready because you forgot to note the early check-in.</p>
+
+      <p>The paper diary doesn't cause these problems on purpose. It just wasn't designed for a world where guests expect instant answers and bookings come from three different directions at once.</p>
+
+      <h2>Why big hotel software isn't the answer</h2>
+
+      <p>The obvious solution — hotel management software — turns out not to be obvious at all for small properties.</p>
+
+      <p>The systems designed for hotels are built for hotels. They assume you have a front desk team, a revenue manager, a channel management strategy and a budget to match. The learning curve is steep. The monthly cost is high. The features you actually need are buried under dozens you'll never use.</p>
+
+      <p>A four-room gîte in the Dordogne doesn't need yield management. A six-bedroom B&B in Dorset doesn't need a group booking module. They need something that answers one question clearly: <strong>who is arriving, who is leaving, and what rooms are free?</strong></p>
+
+      <h2>What small property owners actually need</h2>
+
+      <p>After talking to dozens of B&B and gîte owners across Europe, the same things come up every time:</p>
+
+      <h3>A clear visual calendar</h3>
+      <p>Not a spreadsheet, not a list — a proper grid showing every room and every date at a glance. The kind of thing you can look at for two seconds and know exactly where you stand.</p>
+
+      <h3>Something their partner can use too</h3>
+      <p>Many small properties are run by couples. The booking system needs to work for both people, with appropriate access for each.</p>
+
+      <h3>A way to take bookings directly from their own website</h3>
+      <p>Not through Booking.com or Airbnb, where a commission disappears on every reservation. A simple form that guests fill in, and the booking appears in the dashboard instantly.</p>
+
+      <h3>Works when the wifi doesn't</h3>
+      <p>Rural properties in France and Ireland know this problem well. The internet goes down at exactly the wrong moment. A system that works offline and syncs when the connection returns isn't a luxury — it's essential.</p>
+
+      <h3>Something that speaks their language</h3>
+      <p>Literally. A French gîte owner shouldn't have to navigate software written entirely in English. Neither should a Dutch B&B owner or a Spanish <em>casa rural</em>.</p>
+
+      <h2>The moment it clicks</h2>
+
+      <p>The owners who've made the switch describe the same moment. It's usually a Tuesday morning, coffee in hand, opening the app on their phone or tablet. Every room visible. Today's arrivals listed. This week's departures clear. A booking that came in overnight already there, confirmed, with the guest's contact details ready.</p>
+
+      <p>No paper. No deciphering handwriting. No wondering if they remembered to cross off the right dates.</p>
+
+      <p>It just works.</p>
+
+      <h2>What to look for</h2>
+
+      <p>If you're a small property owner thinking about making the switch, here's what actually matters:</p>
+
+      <ul>
+        <li><strong>Simplicity first.</strong> If you need a training course to use it, it's not designed for small properties.</li>
+        <li><strong>Fair pricing.</strong> You shouldn't be paying hundreds of pounds a month for software to manage six rooms. Look for transparent pricing with a free tier to try before committing.</li>
+        <li><strong>Direct booking capability.</strong> The ability to take bookings straight from your own website — without commission — pays for the software many times over.</li>
+        <li><strong>Offline capability.</strong> Especially important for rural properties.</li>
+        <li><strong>Your language.</strong> The software should work in the language you think in.</li>
+        <li><strong>Data in Europe.</strong> For GDPR compliance, your guests' data should be stored on European servers.</li>
+      </ul>
+
+      <h2>A final thought</h2>
+
+      <p>The paper diary had a good run. For a simpler time, it was the right tool.</p>
+
+      <p>But the guests booking your rooms in 2026 found you on their phone, checked your availability on their laptop and expect a confirmation email in their inbox. The tools you use to manage those bookings should work the same way.</p>
+
+      <p><strong>Simple. Reliable. Always there when you need it.</strong></p>
+
+      <p>That's what NestBook was built for.</p>
+
+    </div><!-- /.article-body -->
+
+    <!-- Share bar -->
+    <div class="share-bar">
+      <span class="share-label">Share</span>
+      <button class="share-btn" id="btn-copy-link" onclick="copyLink()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M6 8a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243l-.75.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 6a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243l.75-.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span id="copy-link-label">Copy link</span>
+      </button>
+      <a class="share-btn" id="btn-twitter"
+         href="https://twitter.com/intent/tweet?text=Why+small+B%26Bs+and+g%C3%AEtes+are+switching+from+paper+diaries+to+simple+booking+software&url=https%3A%2F%2Fnestbook.io%2Fblog%2Fwhy-small-bbs-are-switching-to-booking-software.html&via=nestbookio"
+         target="_blank" rel="noopener noreferrer">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M13.18 1h-2.18l-3.33 4.27L4.39 1H0l5.22 6.67L.27 13h2.18l3.58-4.59L9.61 13H14L8.6 6.04 13.18 1zm-2.65 10.44L2.4 2.5h.9l8.13 8.94h-.9z"/></svg>
+        X / Twitter
+      </a>
+      <a class="share-btn" id="btn-linkedin"
+         href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fnestbook.io%2Fblog%2Fwhy-small-bbs-are-switching-to-booking-software.html"
+         target="_blank" rel="noopener noreferrer">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M1.57 4.66H3.8V12H1.57V4.66zM2.69.67a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6zM5.1 4.66h2.13v1.01h.03c.3-.56 1.02-1.15 2.1-1.15 2.24 0 2.65 1.48 2.65 3.4V12H9.79V8.3c0-.83-.02-1.9-1.16-1.9-1.16 0-1.34.91-1.34 1.84V12H5.1V4.66z"/></svg>
+        LinkedIn
+      </a>
+    </div>
+
+    <!-- CTA box -->
+    <div class="article-cta">
+      <h2>Try NestBook free</h2>
+      <p>Join small B&B and gîte owners across Europe who've made the switch. Free forever on the Starter plan — no card needed.</p>
+      <a href="/app/register" class="btn btn-white">Start for free →</a>
+    </div>
+
+    <!-- Related posts -->
+    <section class="related-section" aria-label="Related articles">
+      <h2>More from the blog</h2>
+      <div class="related-grid">
+        <div class="related-card">
+          <span class="related-card-category">Direct bookings</span>
+          <h3>How to take direct bookings from your website — without paying commission</h3>
+          <div class="related-card-meta">Coming soon · 5 min read</div>
+          <span class="related-card-soon">We're working on this one</span>
+        </div>
+        <div class="related-card">
+          <span class="related-card-category">GDPR for hosts</span>
+          <h3>What GDPR actually means for a small B&B owner (in plain English)</h3>
+          <div class="related-card-meta">Coming soon · 6 min read</div>
+          <span class="related-card-soon">We're working on this one</span>
+        </div>
+      </div>
+    </section>
+
+  </article>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name"><img src="/icon.svg" class="footer-leaf-img" alt="" />NestBook</div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Reading progress bar ──────────────────────────────────────────────────────
+const progressBar = document.getElementById('progress-bar');
+function updateProgress() {
+  const article = document.getElementById('article');
+  const rect    = article.getBoundingClientRect();
+  const total   = article.offsetHeight - window.innerHeight;
+  const scrolled = Math.max(0, -rect.top);
+  const pct = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0;
+  progressBar.style.width = pct + '%';
+  progressBar.setAttribute('aria-valuenow', Math.round(pct));
+}
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+// ── Share: copy link ──────────────────────────────────────────────────────────
+function copyLink() {
+  const label = document.getElementById('copy-link-label');
+  const btn   = document.getElementById('btn-copy-link');
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    label.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { label.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    // fallback for http
+    const ta = document.createElement('textarea');
+    ta.value = window.location.href;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    label.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { label.textContent = 'Copy link'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── i18n (nav + footer only — article stays in English) ──────────────────────
+const I18N = {
+  en: {
+    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.blog':'Blog','nav.signin':'Sign in','nav.try':'Try free',
+    'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.languages':'Languages','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
+    'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Legal','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.gdpr':'GDPR','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.blog':'Blog','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.languages':'Langues','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
+    'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Mentions légales','footer.privacy':'Politique de confidentialité','footer.terms':'Conditions d\'utilisation','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.blog':'Blog','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.languages':'Idiomas','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
+    'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto',
+    'footer.legal':'Legal','footer.privacy':'Política de privacidad','footer.terms':'Términos de servicio','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.blog':'Blog','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.languages':'Sprachen','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
+    'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt',
+    'footer.legal':'Rechtliches','footer.privacy':'Datenschutzrichtlinie','footer.terms':'Nutzungsbedingungen','footer.gdpr':'DSGVO','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.blog':'Blog','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.languages':'Talen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
+    'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Juridisch','footer.privacy':'Privacybeleid','footer.terms':'Gebruiksvoorwaarden','footer.gdpr':'AVG','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
+const nb = document.querySelector('.navbar');
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+</script>
+</body>
+</html>

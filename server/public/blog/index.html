@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Blog — NestBook</title>
-<meta name="description" content="The NestBook blog. Tips, updates and insights for small hospitality businesses. Coming soon.">
+<meta name="description" content="Tips, updates and insights for small B&B, gîte and guest house owners across Europe. Booking software guides, direct booking advice and hospitality tips from NestBook.">
 <link rel="canonical" href="https://nestbook.io/blog/">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nestbook.io/blog/">
 <meta property="og:title" content="Blog — NestBook">
+<meta property="og:description" content="Tips, updates and insights for small B&B, gîte and guest house owners across Europe.">
+<meta property="og:image" content="https://nestbook.io/icon.svg">
 <meta property="og:site_name" content="NestBook">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <style>
@@ -35,24 +37,52 @@ img { display: block; max-width: 100%; }
 .nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
 .nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
 .nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-link.active { color: var(--dark); background: var(--soft); font-weight: 600; }
 .nav-right { display: flex; align-items: center; gap: 8px; }
 .lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
 .lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
 .lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
 .lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
+/* Hero */
 .page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
 .page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
 .page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
 
-.coming-soon { flex: 1; display: flex; align-items: center; justify-content: center; padding: 80px 28px; }
-.coming-soon-inner { text-align: center; max-width: 480px; }
-.coming-soon-icon { font-size: 4rem; margin-bottom: 24px; }
-.coming-soon-inner h2 { font-size: 1.75rem; font-weight: 800; color: var(--dark); letter-spacing: -0.4px; margin-bottom: 14px; }
-.coming-soon-inner p  { color: var(--muted); line-height: 1.8; margin-bottom: 28px; }
-.coming-soon-inner .topics { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 32px; }
-.topic-tag { background: var(--light); color: var(--dark); font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; }
+/* Topic filter bar */
+.topic-bar { padding: 24px 0 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.topic-tag { background: var(--light); color: var(--dark); font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; cursor: default; }
 
+/* Post grid */
+.posts-section { flex: 1; padding: 56px 0 80px; }
+.posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; }
+
+/* Post card */
+.post-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.15s, transform 0.15s; }
+.post-card:hover { box-shadow: 0 8px 32px rgba(26,71,16,0.10); transform: translateY(-2px); }
+.post-card-img { height: 180px; background: linear-gradient(135deg, var(--light) 0%, #c8e8bc 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.post-card-img-icon { font-size: 4rem; opacity: 0.6; }
+.post-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+.post-card-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.post-card-category { background: var(--light); color: var(--dark); font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+.post-card-date { font-size: 0.78rem; color: var(--muted); }
+.post-card-read { font-size: 0.78rem; color: var(--muted); }
+.post-card-read::before { content: '·'; margin-right: 12px; }
+.post-card h2 { font-size: 1.1rem; font-weight: 800; color: var(--dark); letter-spacing: -0.3px; line-height: 1.35; margin-bottom: 10px; }
+.post-card-excerpt { font-size: 0.875rem; color: #557a4a; line-height: 1.7; flex: 1; margin-bottom: 20px; }
+.post-card-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--mid); transition: color 0.12s; }
+.post-card-link:hover { color: var(--dark); }
+.post-card-link svg { transition: transform 0.12s; }
+.post-card:hover .post-card-link svg { transform: translateX(3px); }
+
+/* CTA band */
+.cta-band { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); padding: 64px 0; text-align: center; }
+.cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 12px; }
+.cta-band p  { color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; }
+.btn-white { background: #fff; color: var(--dark); border-color: #fff; }
+.btn-white:hover { background: var(--light); border-color: var(--light); }
+
+/* Footer */
 .footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
 .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
@@ -77,7 +107,7 @@ img { display: block; max-width: 100%; }
       <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
       <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
       <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
-      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+      <a href="/blog/"      class="nav-link active" data-i18n="nav.blog">Blog</a>
     </nav>
     <div class="nav-right">
       <div class="lang-switcher" role="group" aria-label="Language">
@@ -97,15 +127,7 @@ img { display: block; max-width: 100%; }
   <div class="container">
     <h1 data-i18n="blog.title">Blog</h1>
     <p data-i18n="blog.subtitle">Tips, updates, and insights for small hospitality businesses across Europe.</p>
-  </div>
-</section>
-
-<div class="coming-soon">
-  <div class="coming-soon-inner">
-    <div class="coming-soon-icon">✍️</div>
-    <h2 data-i18n="blog.soon.heading">Coming soon</h2>
-    <p data-i18n="blog.soon.desc">We're working on articles to help you run your property more smoothly. Check back soon — or sign up to NestBook to be notified when we publish.</p>
-    <div class="topics">
+    <div class="topic-bar">
       <span class="topic-tag" data-i18n="blog.topic1">Running a B&amp;B</span>
       <span class="topic-tag" data-i18n="blog.topic2">Booking tips</span>
       <span class="topic-tag" data-i18n="blog.topic3">GDPR for hosts</span>
@@ -113,9 +135,44 @@ img { display: block; max-width: 100%; }
       <span class="topic-tag" data-i18n="blog.topic5">Direct bookings</span>
       <span class="topic-tag" data-i18n="blog.topic6">NestBook updates</span>
     </div>
-    <a href="/app/register" class="btn btn-primary" data-i18n="blog.cta">Start using NestBook free</a>
   </div>
-</div>
+</section>
+
+<section class="posts-section">
+  <div class="container">
+    <div class="posts-grid">
+
+      <!-- Post 1 -->
+      <a class="post-card" href="/blog/why-small-bbs-are-switching-to-booking-software.html">
+        <div class="post-card-img">
+          <span class="post-card-img-icon">📖</span>
+        </div>
+        <div class="post-card-body">
+          <div class="post-card-meta">
+            <span class="post-card-category">Running a B&amp;B</span>
+            <span class="post-card-date">April 2026</span>
+            <span class="post-card-read">4 min read</span>
+          </div>
+          <h2>Why small B&Bs and gîtes are switching from paper diaries to simple booking software</h2>
+          <p class="post-card-excerpt">For decades, the paper diary sat at the heart of every small B&B and gîte. It worked — just about. Here's what's driving the switch to something simpler.</p>
+          <span class="post-card-link">
+            Read article
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <h2 data-i18n="blog.cta.heading">Ready to ditch the paper diary?</h2>
+    <p data-i18n="blog.cta.sub">Join property owners across Europe who've made the switch to NestBook.</p>
+    <a href="/app/register" class="btn btn-white" data-i18n="blog.cta.btn">Try NestBook free</a>
+  </div>
+</section>
 
 <footer class="footer">
   <div class="container">
@@ -162,13 +219,13 @@ img { display: block; max-width: 100%; }
 <script>
 const I18N = {
   en: {
-    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.demo':'Live demo','nav.signin':'Sign in','nav.try':'Try free',
+    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.blog':'Blog','nav.signin':'Sign in','nav.try':'Try free',
     'blog.title':'Blog','blog.subtitle':'Tips, updates, and insights for small hospitality businesses across Europe.',
-    'blog.soon.heading':'Coming soon',
-    'blog.soon.desc':'We\'re working on articles to help you run your property more smoothly. Check back soon — or sign up to NestBook to be notified when we publish.',
     'blog.topic1':'Running a B&B','blog.topic2':'Booking tips','blog.topic3':'GDPR for hosts',
     'blog.topic4':'Seasonal pricing','blog.topic5':'Direct bookings','blog.topic6':'NestBook updates',
-    'blog.cta':'Start using NestBook free',
+    'blog.cta.heading':'Ready to ditch the paper diary?',
+    'blog.cta.sub':'Join property owners across Europe who\'ve made the switch to NestBook.',
+    'blog.cta.btn':'Try NestBook free',
     'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
     'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.languages':'Languages','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
     'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact',
@@ -176,13 +233,13 @@ const I18N = {
     'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
   },
   fr: {
-    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.demo':'Démo en direct','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.blog':'Blog','nav.signin':'Connexion','nav.try':'Essai gratuit',
     'blog.title':'Blog','blog.subtitle':'Conseils, actualités et bonnes pratiques pour les petits hébergements en Europe.',
-    'blog.soon.heading':'Bientôt disponible',
-    'blog.soon.desc':'Nous préparons des articles pour vous aider à gérer votre hébergement plus facilement. Revenez bientôt — ou inscrivez-vous sur NestBook pour être notifié lors des publications.',
     'blog.topic1':'Gérer un B&B','blog.topic2':'Conseils de réservation','blog.topic3':'RGPD pour les hébergeurs',
     'blog.topic4':'Tarification saisonnière','blog.topic5':'Réservations directes','blog.topic6':'Actualités NestBook',
-    'blog.cta':'Commencer gratuitement',
+    'blog.cta.heading':'Prêt à ranger le cahier de réservations ?',
+    'blog.cta.sub':'Rejoignez les propriétaires à travers l\'Europe qui ont opté pour NestBook.',
+    'blog.cta.btn':'Essayer NestBook gratuitement',
     'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
     'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.languages':'Langues','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
     'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact',
@@ -190,13 +247,13 @@ const I18N = {
     'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
   },
   es: {
-    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.demo':'Demo en vivo','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.blog':'Blog','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
     'blog.title':'Blog','blog.subtitle':'Consejos, novedades e ideas para pequeños alojamientos en Europa.',
-    'blog.soon.heading':'Próximamente',
-    'blog.soon.desc':'Estamos preparando artículos para ayudarte a gestionar tu alojamiento con más facilidad. Vuelve pronto — o regístrate en NestBook para recibir notificaciones.',
     'blog.topic1':'Gestionar un B&B','blog.topic2':'Consejos de reservas','blog.topic3':'RGPD para anfitriones',
     'blog.topic4':'Precios de temporada','blog.topic5':'Reservas directas','blog.topic6':'Novedades de NestBook',
-    'blog.cta':'Empezar gratis',
+    'blog.cta.heading':'¿Listo para dejar el diario de papel?',
+    'blog.cta.sub':'Únete a los propietarios de toda Europa que han hecho el cambio a NestBook.',
+    'blog.cta.btn':'Prueba NestBook gratis',
     'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
     'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.languages':'Idiomas','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
     'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto',
@@ -204,13 +261,13 @@ const I18N = {
     'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
   },
   de: {
-    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.demo':'Live-Demo','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.blog':'Blog','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
     'blog.title':'Blog','blog.subtitle':'Tipps, Updates und Einblicke für kleine Gastgewerbebetriebe in Europa.',
-    'blog.soon.heading':'Demnächst verfügbar',
-    'blog.soon.desc':'Wir arbeiten an Artikeln, die Ihnen helfen, Ihre Unterkunft reibungsloser zu führen. Schauen Sie bald wieder vorbei — oder melden Sie sich bei NestBook an.',
     'blog.topic1':'B&B führen','blog.topic2':'Buchungstipps','blog.topic3':'DSGVO für Gastgeber',
     'blog.topic4':'Saisonale Preisgestaltung','blog.topic5':'Direktbuchungen','blog.topic6':'NestBook-Updates',
-    'blog.cta':'NestBook kostenlos starten',
+    'blog.cta.heading':'Bereit, das Papierheft zu ersetzen?',
+    'blog.cta.sub':'Schließen Sie sich Unterkunftsbetreibern in ganz Europa an, die auf NestBook umgestiegen sind.',
+    'blog.cta.btn':'NestBook kostenlos testen',
     'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
     'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.languages':'Sprachen','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
     'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt',
@@ -218,13 +275,13 @@ const I18N = {
     'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
   },
   nl: {
-    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.demo':'Live demo','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.blog':'Blog','nav.signin':'Inloggen','nav.try':'Gratis proberen',
     'blog.title':'Blog','blog.subtitle':'Tips, updates en inzichten voor kleine horecabedrijven in Europa.',
-    'blog.soon.heading':'Binnenkort beschikbaar',
-    'blog.soon.desc':'We werken aan artikelen om u te helpen uw accommodatie soepeler te runnen. Kom snel terug — of meld u aan bij NestBook om op de hoogte te worden gebracht.',
     'blog.topic1':'Een B&B runnen','blog.topic2':'Boekingstips','blog.topic3':'AVG voor verhuurders',
     'blog.topic4':'Seizoensprijzen','blog.topic5':'Directe boekingen','blog.topic6':'NestBook updates',
-    'blog.cta':'Gratis starten met NestBook',
+    'blog.cta.heading':'Klaar om het papieren dagboek achter te laten?',
+    'blog.cta.sub':'Sluit u aan bij accommodatiebeheerders door heel Europa die de overstap naar NestBook hebben gemaakt.',
+    'blog.cta.btn':'Gratis starten met NestBook',
     'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
     'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.languages':'Talen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
     'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact',
