@@ -3,8 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NestBook — Simple Booking Management for Small Properties</title>
-<meta name="description" content="NestBook is the elegant booking and property management system for B&Bs, gîtes and guest houses across Europe.">
+
+<!-- ── Primary SEO ──────────────────────────────────────────────────────── -->
+<title>NestBook — Simple Booking Management for B&Bs, Gîtes &amp; Guest Houses</title>
+<meta name="description" content="NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B&Bs, gîtes, guest houses and small hotels across Europe. Free to start.">
+<meta name="keywords" content="b&b booking software, gite management, guest house booking system, small hotel software, property management Europe, booking calendar, chambres d'hôtes logiciel">
+<link rel="canonical" href="https://nestbook.io">
+<meta name="robots" content="index, follow">
+<meta name="author" content="NestBook">
+
+<!-- ── Open Graph ───────────────────────────────────────────────────────── -->
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://nestbook.io">
+<meta property="og:title"       content="NestBook — Simple Booking Management for B&Bs, Gîtes &amp; Guest Houses">
+<meta property="og:description" content="NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B&Bs, gîtes, guest houses and small hotels across Europe. Free to start.">
+<meta property="og:image"       content="https://nestbook.io/icon.svg">
+<meta property="og:image:width"  content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale"      content="en_GB">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="nl_NL">
+<meta property="og:site_name"   content="NestBook">
+
+<!-- ── Twitter Card ─────────────────────────────────────────────────────── -->
+<meta name="twitter:card"        content="summary">
+<meta name="twitter:title"       content="NestBook — Simple Booking Management for B&Bs, Gîtes &amp; Guest Houses">
+<meta name="twitter:description" content="NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B&Bs, gîtes, guest houses and small hotels across Europe. Free to start.">
+<meta name="twitter:image"       content="https://nestbook.io/icon.svg">
+
+<!-- ── Structured data ──────────────────────────────────────────────────── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "NestBook",
+  "url": "https://nestbook.io",
+  "description": "Simple, affordable booking and property management for B&Bs, gîtes, guest houses and small hotels across Europe.",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR",
+    "description": "Free to start — no credit card required"
+  },
+  "creator": {
+    "@type": "Organization",
+    "name": "NestBook",
+    "url": "https://nestbook.io"
+  }
+}
+</script>
+
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <style>
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
@@ -1253,6 +1305,9 @@ img { display: block; max-width: 100%; }
 <script>
 const I18N = {
   en: {
+    'meta.title':       'NestBook \u2014 Simple Booking Management for B\u0026Bs, G\u00eetes \u0026 Guest Houses',
+    'meta.description': 'NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B\u0026Bs, g\u00eetes, guest houses and small hotels across Europe. Free to start.',
+    'meta.locale':      'en_GB',
     'nav.features':  'Features',
     'nav.pricing':   'Pricing',
     'nav.languages': 'Languages',
@@ -1363,6 +1418,9 @@ const I18N = {
   },
 
   fr: {
+    'meta.title':       'NestBook \u2014 Gestion de r\u00e9servations simple pour B\u0026Bs, g\u00eetes et chambres d\u2019h\u00f4tes',
+    'meta.description': 'NestBook est le syst\u00e8me simple et abordable de gestion des r\u00e9servations pour les petits h\u00e9bergements. Con\u00e7u pour les B\u0026Bs, g\u00eetes, chambres d\u2019h\u00f4tes et petits h\u00f4tels en Europe. Gratuit pour commencer.',
+    'meta.locale':      'fr_FR',
     'nav.features':  'Fonctionnalités',
     'nav.pricing':   'Tarifs',
     'nav.languages': 'Langues',
@@ -1473,6 +1531,9 @@ const I18N = {
   },
 
   es: {
+    'meta.title':       'NestBook \u2014 Gesti\u00f3n de reservas sencilla para B\u0026Bs, casas rurales y casas de hu\u00e9spedes',
+    'meta.description': 'NestBook es el sistema simple y asequible de gesti\u00f3n de reservas para peque\u00f1os alojamientos. Dise\u00f1ado para B\u0026Bs, casas rurales, casas de hu\u00e9spedes y hoteles peque\u00f1os en Europa. Gratis para empezar.',
+    'meta.locale':      'es_ES',
     'nav.features':  'Funciones',
     'nav.pricing':   'Precios',
     'nav.languages': 'Idiomas',
@@ -1583,6 +1644,9 @@ const I18N = {
   },
 
   de: {
+    'meta.title':       'NestBook \u2014 Einfache Buchungsverwaltung f\u00fcr B\u0026Bs, G\u00eetes \u0026 Pensionen',
+    'meta.description': 'NestBook ist das einfache und g\u00fcnstige Buchungs- und Verwaltungssystem f\u00fcr kleine Beherbergungsbetriebe. F\u00fcr B\u0026Bs, G\u00eetes, Pensionen und kleine Hotels in Europa entwickelt. Kostenlos starten.',
+    'meta.locale':      'de_DE',
     'nav.features':  'Funktionen',
     'nav.pricing':   'Preise',
     'nav.languages': 'Sprachen',
@@ -1693,6 +1757,9 @@ const I18N = {
   },
 
   nl: {
+    'meta.title':       'NestBook \u2014 Eenvoudig boekingsbeheer voor B\u0026Bs, g\u00eetes en gasthuizen',
+    'meta.description': 'NestBook is het eenvoudige en betaalbare boekings- en beheersysteem voor kleine horecabedrijven. Gebouwd voor B\u0026Bs, g\u00eetes, gasthuizen en kleine hotels in Europa. Gratis om te starten.',
+    'meta.locale':      'nl_NL',
     'nav.features':  'Functies',
     'nav.pricing':   'Prijzen',
     'nav.languages': 'Talen',
@@ -1804,6 +1871,12 @@ const I18N = {
 };
 
 // ── Apply translations ─────────────────────────────────────────────────────
+function setMeta(name, val, prop) {
+  const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+  const el  = document.querySelector(sel);
+  if (el) el.setAttribute('content', val);
+}
+
 function applyLang(lang) {
   const t = I18N[lang] || I18N.en;
   document.documentElement.lang = lang;
@@ -1819,6 +1892,21 @@ function applyLang(lang) {
     const key = el.getAttribute('data-i18n-html');
     if (t[key] !== undefined) el.innerHTML = t[key];
   });
+
+  // Update SEO meta tags
+  if (t['meta.title']) {
+    document.title = t['meta.title'];
+    setMeta('og:title',       t['meta.title'],       true);
+    setMeta('twitter:title',  t['meta.title'],       false);
+  }
+  if (t['meta.description']) {
+    setMeta('description',         t['meta.description'], false);
+    setMeta('og:description',      t['meta.description'], true);
+    setMeta('twitter:description', t['meta.description'], false);
+  }
+  if (t['meta.locale']) {
+    setMeta('og:locale', t['meta.locale'], true);
+  }
 
   // Update active lang button
   document.querySelectorAll('.lang-btn').forEach((btn) => {
