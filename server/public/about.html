@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About NestBook — Simple Booking Software for Small Properties</title>
+<meta name="description" content="We're a small, passionate team building simple, affordable booking software for B&Bs, gîtes and guest houses across Europe.">
+<link rel="canonical" href="https://nestbook.io/about.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://nestbook.io/about.html">
+<meta property="og:title"       content="About NestBook">
+<meta property="og:description" content="We're a small, passionate team building simple, affordable booking software for B&Bs, gîtes and guest houses across Europe.">
+<meta property="og:image"       content="https://nestbook.io/icon.svg">
+<meta property="og:site_name"   content="NestBook">
+<meta name="twitter:card"        content="summary">
+<meta name="twitter:title"       content="About NestBook">
+<meta name="twitter:description" content="We're a small, passionate team building simple booking software for small European properties.">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+/* ── Reset & tokens ───────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --dark:   #1a4710;
+  --mid:    #2f771b;
+  --light:  #d9f0cc;
+  --page:   #ffffff;
+  --soft:   #f3f7f2;
+  --border: #e0ecdb;
+  --text:   #1a2e14;
+  --muted:  #557a4a;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(26,71,16,0.10);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--page);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 12px 24px; border-radius: 9px; font-size: 0.9rem;
+  font-weight: 600; cursor: pointer; transition: all 0.15s;
+  border: 2px solid transparent; font-family: inherit; white-space: nowrap;
+}
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+.btn-lg { padding: 15px 30px; font-size: 1rem; border-radius: 10px; }
+
+/* ── Navbar ───────────────────────────────────────────────────────────────── */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.navbar-inner { display: flex; align-items: center; gap: 0; height: 64px; }
+.nb-logo {
+  display: flex; align-items: center; gap: 9px;
+  font-weight: 800; font-size: 1.15rem; color: var(--dark);
+  letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0;
+}
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; flex-shrink: 0; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; letter-spacing: 0.3px; }
+.lang-btn:hover  { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* ── Page hero ────────────────────────────────────────────────────────────── */
+.page-hero {
+  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  padding: 72px 0 60px;
+  border-bottom: 1px solid var(--border);
+}
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+
+/* ── About content ────────────────────────────────────────────────────────── */
+.about-body { padding: 72px 0 88px; }
+.about-section { margin-bottom: 64px; }
+.about-section:last-child { margin-bottom: 0; }
+.about-section h2 {
+  font-size: 1.5rem; font-weight: 800; color: var(--dark);
+  letter-spacing: -0.3px; margin-bottom: 16px;
+}
+.about-section p { color: var(--muted); line-height: 1.8; margin-bottom: 14px; max-width: 700px; }
+.about-section p:last-child { margin-bottom: 0; }
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-top: 24px;
+}
+.value-card {
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.value-card h3 { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 8px; }
+.value-card p  { font-size: 0.9rem; color: var(--muted); line-height: 1.65; margin: 0; }
+
+.cta-band {
+  background: var(--dark);
+  color: rgba(255,255,255,0.85);
+  border-radius: var(--radius);
+  padding: 40px 40px;
+  text-align: center;
+  margin-top: 64px;
+}
+.cta-band h2 { color: #fff; font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; }
+.cta-band p  { color: rgba(255,255,255,0.7); margin-bottom: 24px; max-width: none; }
+.btn-white { background: #fff; color: var(--dark); border: 2px solid rgba(255,255,255,0.3); padding: 12px 28px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; font-family: inherit; }
+.btn-white:hover { background: var(--light); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4  { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links   { display: flex; flex-direction: column; gap: 8px; }
+.footer-link    { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .footer-inner  { grid-template-columns: 1fr 1fr; }
+  .nav-links     { display: none; }
+}
+@media (max-width: 600px) {
+  .footer-inner  { grid-template-columns: 1fr; }
+  .values-grid   { grid-template-columns: 1fr; }
+  .page-hero { padding: 48px 0 40px; }
+  .about-body { padding: 48px 0 64px; }
+  .cta-band { padding: 32px 24px; }
+}
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo">
+      <img src="/icon.svg" class="nb-logo-img" alt="NestBook" />
+      NestBook
+    </a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="about.title">About NestBook</h1>
+    <p data-i18n="about.subtitle">We're a small, passionate team building the simplest, most affordable booking software for small European properties.</p>
+  </div>
+</section>
+
+<main class="about-body">
+  <div class="container">
+
+    <div class="about-section">
+      <h2 data-i18n="about.story.heading">Our story</h2>
+      <p data-i18n="about.story.p1">NestBook was born out of frustration. We watched small B&B and gîte owners struggle with booking software built for large hotel chains — overpriced, overcomplicated, and indifferent to the realities of running a 4-room guest house in the French countryside or a coastal B&B in Cornwall.</p>
+      <p data-i18n="about.story.p2">So we built something different. NestBook is designed from the ground up for owners who want to spend time with their guests, not fighting software. No month-long onboarding. No features you'll never use. Just what you need to run your property beautifully.</p>
+    </div>
+
+    <div class="about-section">
+      <h2 data-i18n="about.mission.heading">Our mission</h2>
+      <p data-i18n="about.mission.p1">To give every small hospitality business in Europe access to professional, elegant booking tools — regardless of their technical skill or budget. We believe a two-room gîte in Burgundy deserves the same quality of software as a 200-room city hotel.</p>
+    </div>
+
+    <div class="about-section">
+      <h2 data-i18n="about.values.heading">What we believe in</h2>
+      <div class="values-grid">
+        <div class="value-card">
+          <h3 data-i18n="about.v1.title">Simplicity first</h3>
+          <p data-i18n="about.v1.desc">Every feature we add must make your life simpler, not more complicated. If it doesn't, it doesn't ship.</p>
+        </div>
+        <div class="value-card">
+          <h3 data-i18n="about.v2.title">Privacy by design</h3>
+          <p data-i18n="about.v2.desc">Your data and your guests' data stays in Europe. We use EU hosting (Hetzner), never sell data, and never use tracking cookies.</p>
+        </div>
+        <div class="value-card">
+          <h3 data-i18n="about.v3.title">Fair pricing</h3>
+          <p data-i18n="about.v3.desc">No commissions on bookings. No lock-in. A flat monthly rate that makes sense for small businesses. Free to start, always.</p>
+        </div>
+        <div class="value-card">
+          <h3 data-i18n="about.v4.title">Built for Europe</h3>
+          <p data-i18n="about.v4.desc">Five languages, GDPR compliance built-in, and pricing in euros. We're made for European operators, by people who understand European hospitality.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-section">
+      <h2 data-i18n="about.team.heading">The team</h2>
+      <p data-i18n="about.team.p1">We're a small, independent team. No venture capital, no growth-at-all-costs mindset. Just a focused group of developers and hospitality enthusiasts building something we'd want to use ourselves.</p>
+      <p data-i18n="about.team.p2">Questions? We'd love to hear from you. Reach us any time at <a href="mailto:hello@nestbook.io" style="color:var(--mid)">hello@nestbook.io</a>.</p>
+    </div>
+
+    <div class="cta-band">
+      <h2 data-i18n="about.cta.heading">Ready to try NestBook?</h2>
+      <p data-i18n="about.cta.sub">Free to start, no credit card needed. Set up your property in minutes.</p>
+      <a href="/app/register" class="btn-white" data-i18n="about.cta.btn">Start for free →</a>
+    </div>
+
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name">
+          <img src="/icon.svg" class="footer-leaf-img" alt="" />
+          NestBook
+        </div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features': 'Features', 'nav.pricing': 'Pricing', 'nav.languages': 'Languages',
+    'nav.demo': 'Live demo', 'nav.signin': 'Sign in', 'nav.try': 'Try free',
+    'about.title':    'About NestBook',
+    'about.subtitle': 'We\'re a small, passionate team building the simplest, most affordable booking software for small European properties.',
+    'about.story.heading': 'Our story',
+    'about.story.p1': 'NestBook was born out of frustration. We watched small B&B and gîte owners struggle with booking software built for large hotel chains — overpriced, overcomplicated, and indifferent to the realities of running a 4-room guest house in the French countryside or a coastal B&B in Cornwall.',
+    'about.story.p2': 'So we built something different. NestBook is designed from the ground up for owners who want to spend time with their guests, not fighting software. No month-long onboarding. No features you\'ll never use. Just what you need to run your property beautifully.',
+    'about.mission.heading': 'Our mission',
+    'about.mission.p1': 'To give every small hospitality business in Europe access to professional, elegant booking tools — regardless of their technical skill or budget. We believe a two-room gîte in Burgundy deserves the same quality of software as a 200-room city hotel.',
+    'about.values.heading': 'What we believe in',
+    'about.v1.title': 'Simplicity first', 'about.v1.desc': 'Every feature we add must make your life simpler, not more complicated. If it doesn\'t, it doesn\'t ship.',
+    'about.v2.title': 'Privacy by design', 'about.v2.desc': 'Your data and your guests\' data stays in Europe. We use EU hosting (Hetzner), never sell data, and never use tracking cookies.',
+    'about.v3.title': 'Fair pricing', 'about.v3.desc': 'No commissions on bookings. No lock-in. A flat monthly rate that makes sense for small businesses. Free to start, always.',
+    'about.v4.title': 'Built for Europe', 'about.v4.desc': 'Five languages, GDPR compliance built-in, and pricing in euros. We\'re made for European operators, by people who understand European hospitality.',
+    'about.team.heading': 'The team',
+    'about.team.p1': 'We\'re a small, independent team. No venture capital, no growth-at-all-costs mindset. Just a focused group of developers and hospitality enthusiasts building something we\'d want to use ourselves.',
+    'about.team.p2': 'Questions? We\'d love to hear from you. Reach us any time at hello@nestbook.io.',
+    'about.cta.heading': 'Ready to try NestBook?',
+    'about.cta.sub': 'Free to start, no credit card needed. Set up your property in minutes.',
+    'about.cta.btn': 'Start for free →',
+    'footer.tagline': 'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product': 'Product', 'footer.features': 'Features', 'footer.pricing': 'Pricing',
+    'footer.languages': 'Languages', 'footer.widget': 'Booking widget', 'footer.signin': 'Sign in to your dashboard',
+    'footer.company': 'Company', 'footer.about': 'About', 'footer.blog': 'Blog', 'footer.contact': 'Contact',
+    'footer.legal': 'Legal', 'footer.privacy': 'Privacy Policy', 'footer.terms': 'Terms of Service',
+    'footer.gdpr': 'GDPR', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features': 'Fonctionnalités', 'nav.pricing': 'Tarifs', 'nav.languages': 'Langues',
+    'nav.demo': 'Démo en direct', 'nav.signin': 'Connexion', 'nav.try': 'Essai gratuit',
+    'about.title':    'À propos de NestBook',
+    'about.subtitle': 'Nous sommes une petite équipe passionnée qui construit le logiciel de réservation le plus simple et le plus abordable pour les petites propriétés européennes.',
+    'about.story.heading': 'Notre histoire',
+    'about.story.p1': 'NestBook est né d\'une frustration. Nous avons vu des propriétaires de B&B et de gîtes se débattre avec des logiciels de réservation conçus pour les grandes chaînes hôtelières — trop chers, trop complexes et indifférents aux réalités d\'une maison d\'hôtes de 4 chambres en Provence ou d\'un B&B en Bretagne.',
+    'about.story.p2': 'Alors nous avons construit quelque chose de différent. NestBook est conçu de fond en comble pour les propriétaires qui veulent passer du temps avec leurs hôtes, pas se battre contre un logiciel. Pas de formation interminable. Pas de fonctionnalités dont vous n\'aurez jamais besoin.',
+    'about.mission.heading': 'Notre mission',
+    'about.mission.p1': 'Donner à chaque petite entreprise hôtelière en Europe accès à des outils de réservation professionnels et élégants — quelle que soit sa compétence technique ou son budget. Nous croyons qu\'un gîte de deux chambres en Bourgogne mérite la même qualité de logiciel qu\'un hôtel de 200 chambres.',
+    'about.values.heading': 'Ce en quoi nous croyons',
+    'about.v1.title': 'La simplicité avant tout', 'about.v1.desc': 'Chaque fonctionnalité que nous ajoutons doit simplifier votre quotidien, pas le compliquer.',
+    'about.v2.title': 'La confidentialité par conception', 'about.v2.desc': 'Vos données et celles de vos hôtes restent en Europe. Hébergement EU (Hetzner), jamais de vente de données, jamais de cookies de traçage.',
+    'about.v3.title': 'Des tarifs équitables', 'about.v3.desc': 'Pas de commissions sur les réservations. Pas d\'engagement. Un forfait mensuel adapté aux petites entreprises. Gratuit pour commencer, toujours.',
+    'about.v4.title': 'Fait pour l\'Europe', 'about.v4.desc': 'Cinq langues, conformité RGPD intégrée et tarifs en euros. Conçu pour les hébergeurs européens.',
+    'about.team.heading': 'L\'équipe',
+    'about.team.p1': 'Nous sommes une petite équipe indépendante. Pas de capital-risque, pas de mentalité «croissance à tout prix». Juste un groupe de développeurs et de passionnés d\'hôtellerie.',
+    'about.team.p2': 'Des questions ? Nous serions ravis de vous entendre. Contactez-nous à tout moment à hello@nestbook.io.',
+    'about.cta.heading': 'Prêt à essayer NestBook ?',
+    'about.cta.sub': 'Gratuit pour commencer, sans carte bancaire. Configurez votre propriété en quelques minutes.',
+    'about.cta.btn': 'Commencer gratuitement →',
+    'footer.tagline': 'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product': 'Produit', 'footer.features': 'Fonctionnalités', 'footer.pricing': 'Tarifs',
+    'footer.languages': 'Langues', 'footer.widget': 'Widget de réservation', 'footer.signin': 'Connexion au tableau de bord',
+    'footer.company': 'Entreprise', 'footer.about': 'À propos', 'footer.blog': 'Blog', 'footer.contact': 'Contact',
+    'footer.legal': 'Mentions légales', 'footer.privacy': 'Politique de confidentialité', 'footer.terms': 'Conditions d\'utilisation',
+    'footer.gdpr': 'RGPD', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features': 'Funciones', 'nav.pricing': 'Precios', 'nav.languages': 'Idiomas',
+    'nav.demo': 'Demo en vivo', 'nav.signin': 'Iniciar sesión', 'nav.try': 'Prueba gratis',
+    'about.title':    'Sobre NestBook',
+    'about.subtitle': 'Somos un pequeño equipo apasionado que construye el software de reservas más sencillo y asequible para pequeñas propiedades europeas.',
+    'about.story.heading': 'Nuestra historia',
+    'about.story.p1': 'NestBook nació de la frustración. Vimos a propietarios de B&Bs y casas rurales luchar con software diseñado para grandes cadenas hoteleras — demasiado caro, demasiado complicado e indiferente a las realidades de gestionar una casa de 4 habitaciones en Andalucía o un B&B en Galicia.',
+    'about.story.p2': 'Así que construimos algo diferente. NestBook está diseñado desde cero para propietarios que quieren pasar tiempo con sus huéspedes, no pelearse con el software. Sin formación interminable. Sin funciones que nunca usarás.',
+    'about.mission.heading': 'Nuestra misión',
+    'about.mission.p1': 'Dar a cada pequeña empresa hotelera en Europa acceso a herramientas de reserva profesionales y elegantes, independientemente de sus conocimientos técnicos o presupuesto.',
+    'about.values.heading': 'En lo que creemos',
+    'about.v1.title': 'La simplicidad primero', 'about.v1.desc': 'Cada función que añadimos debe simplificar tu vida, no complicarla.',
+    'about.v2.title': 'Privacidad por diseño', 'about.v2.desc': 'Tus datos y los de tus huéspedes se quedan en Europa. Hosting EU (Hetzner), nunca vendemos datos, nunca usamos cookies de seguimiento.',
+    'about.v3.title': 'Precios justos', 'about.v3.desc': 'Sin comisiones por reservas. Sin permanencia. Una tarifa mensual plana que tiene sentido para pequeñas empresas.',
+    'about.v4.title': 'Hecho para Europa', 'about.v4.desc': 'Cinco idiomas, cumplimiento RGPD integrado y precios en euros. Hecho para operadores europeos.',
+    'about.team.heading': 'El equipo',
+    'about.team.p1': 'Somos un equipo pequeño e independiente. Sin capital riesgo, sin mentalidad de crecimiento a cualquier precio. Solo un grupo de desarrolladores entusiastas de la hostelería.',
+    'about.team.p2': '¿Preguntas? Nos encantaría saber de ti. Contáctanos en cualquier momento en hello@nestbook.io.',
+    'about.cta.heading': '¿Listo para probar NestBook?',
+    'about.cta.sub': 'Gratis para empezar, sin tarjeta de crédito. Configura tu propiedad en minutos.',
+    'about.cta.btn': 'Empezar gratis →',
+    'footer.tagline': 'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product': 'Producto', 'footer.features': 'Funciones', 'footer.pricing': 'Precios',
+    'footer.languages': 'Idiomas', 'footer.widget': 'Widget de reservas', 'footer.signin': 'Iniciar sesión en el panel',
+    'footer.company': 'Empresa', 'footer.about': 'Sobre nosotros', 'footer.blog': 'Blog', 'footer.contact': 'Contacto',
+    'footer.legal': 'Legal', 'footer.privacy': 'Política de privacidad', 'footer.terms': 'Términos de servicio',
+    'footer.gdpr': 'RGPD', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features': 'Funktionen', 'nav.pricing': 'Preise', 'nav.languages': 'Sprachen',
+    'nav.demo': 'Live-Demo', 'nav.signin': 'Anmelden', 'nav.try': 'Kostenlos testen',
+    'about.title':    'Über NestBook',
+    'about.subtitle': 'Wir sind ein kleines, leidenschaftliches Team, das die einfachste und günstigste Buchungssoftware für kleine europäische Unterkünfte entwickelt.',
+    'about.story.heading': 'Unsere Geschichte',
+    'about.story.p1': 'NestBook entstand aus Frustration. Wir haben gesehen, wie Besitzer von B&Bs und Gästehäusern mit Buchungssoftware kämpfen, die für große Hotelketten gebaut wurde — überteuert, überkompliziert und gleichgültig gegenüber den Realitäten eines 4-Zimmer-Gästehauses in Bayern.',
+    'about.story.p2': 'Also haben wir etwas anderes gebaut. NestBook ist von Grund auf für Eigentümer konzipiert, die Zeit mit ihren Gästen verbringen möchten, nicht mit Software kämpfen.',
+    'about.mission.heading': 'Unsere Mission',
+    'about.mission.p1': 'Jedem kleinen Gastgewerbebetrieb in Europa Zugang zu professionellen, eleganten Buchungstools zu geben — unabhängig von technischen Kenntnissen oder Budget.',
+    'about.values.heading': 'Woran wir glauben',
+    'about.v1.title': 'Einfachheit zuerst', 'about.v1.desc': 'Jede Funktion, die wir hinzufügen, muss Ihr Leben einfacher machen, nicht komplizierter.',
+    'about.v2.title': 'Datenschutz by Design', 'about.v2.desc': 'Ihre Daten und die Ihrer Gäste bleiben in Europa. EU-Hosting (Hetzner), keine Datenverkäufe, keine Tracking-Cookies.',
+    'about.v3.title': 'Faire Preise', 'about.v3.desc': 'Keine Buchungsprovisionen. Keine Bindung. Ein monatlicher Pauschalpreis, der für Kleinbetriebe sinnvoll ist.',
+    'about.v4.title': 'Für Europa gebaut', 'about.v4.desc': 'Fünf Sprachen, integrierte DSGVO-Konformität und Preise in Euro. Gemacht für europäische Betreiber.',
+    'about.team.heading': 'Das Team',
+    'about.team.p1': 'Wir sind ein kleines, unabhängiges Team. Kein Risikokapital, keine Wachstum-um-jeden-Preis-Mentalität.',
+    'about.team.p2': 'Fragen? Wir freuen uns von Ihnen zu hören. Erreichen Sie uns jederzeit unter hello@nestbook.io.',
+    'about.cta.heading': 'Bereit, NestBook auszuprobieren?',
+    'about.cta.sub': 'Kostenlos starten, keine Kreditkarte erforderlich. Richten Sie Ihre Unterkunft in Minuten ein.',
+    'about.cta.btn': 'Kostenlos starten →',
+    'footer.tagline': 'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product': 'Produkt', 'footer.features': 'Funktionen', 'footer.pricing': 'Preise',
+    'footer.languages': 'Sprachen', 'footer.widget': 'Buchungs-Widget', 'footer.signin': 'Am Dashboard anmelden',
+    'footer.company': 'Unternehmen', 'footer.about': 'Über uns', 'footer.blog': 'Blog', 'footer.contact': 'Kontakt',
+    'footer.legal': 'Rechtliches', 'footer.privacy': 'Datenschutzrichtlinie', 'footer.terms': 'Nutzungsbedingungen',
+    'footer.gdpr': 'DSGVO', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features': 'Functies', 'nav.pricing': 'Prijzen', 'nav.languages': 'Talen',
+    'nav.demo': 'Live demo', 'nav.signin': 'Inloggen', 'nav.try': 'Gratis proberen',
+    'about.title':    'Over NestBook',
+    'about.subtitle': 'Wij zijn een klein, gepassioneerd team dat de eenvoudigste en meest betaalbare boekingssoftware bouwt voor kleine Europese accommodaties.',
+    'about.story.heading': 'Ons verhaal',
+    'about.story.p1': 'NestBook is geboren uit frustratie. We zagen hoe eigenaren van B&Bs en gasthuizen worstelden met boekingssoftware die gebouwd was voor grote hotelketens — te duur, te ingewikkeld en onverschillig voor de realiteit van een 4-kamer pension in Nederland of een B&B in Zeeland.',
+    'about.story.p2': 'Dus bouwden we iets anders. NestBook is van de grond af aan ontworpen voor eigenaren die tijd willen doorbrengen met hun gasten, niet vechten met software.',
+    'about.mission.heading': 'Onze missie',
+    'about.mission.p1': 'Elk klein horecabedrijf in Europa toegang geven tot professionele, elegante boekingstools — ongeacht technische kennis of budget.',
+    'about.values.heading': 'Waar we in geloven',
+    'about.v1.title': 'Eenvoud voorop', 'about.v1.desc': 'Elke functie die we toevoegen moet uw leven eenvoudiger maken, niet ingewikkelder.',
+    'about.v2.title': 'Privacy by design', 'about.v2.desc': 'Uw gegevens en die van uw gasten blijven in Europa. EU-hosting (Hetzner), nooit gegevens verkopen, nooit tracking cookies.',
+    'about.v3.title': 'Eerlijke prijzen', 'about.v3.desc': 'Geen boekingscommissies. Geen binding. Een vast maandbedrag dat zinvol is voor kleine bedrijven.',
+    'about.v4.title': 'Gebouwd voor Europa', 'about.v4.desc': 'Vijf talen, ingebouwde AVG-naleving en prijzen in euro\'s. Gemaakt voor Europese accommodatie-eigenaren.',
+    'about.team.heading': 'Het team',
+    'about.team.p1': 'Wij zijn een klein, onafhankelijk team. Geen durfkapitaal, geen groeien-koste-wat-het-kost mentaliteit.',
+    'about.team.p2': 'Vragen? We horen graag van u. Bereik ons altijd op hello@nestbook.io.',
+    'about.cta.heading': 'Klaar om NestBook te proberen?',
+    'about.cta.sub': 'Gratis te starten, geen creditcard nodig. Stel uw accommodatie in minuten in.',
+    'about.cta.btn': 'Gratis starten →',
+    'footer.tagline': 'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product': 'Product', 'footer.features': 'Functies', 'footer.pricing': 'Prijzen',
+    'footer.languages': 'Talen', 'footer.widget': 'Boekingswidget', 'footer.signin': 'Inloggen op dashboard',
+    'footer.company': 'Bedrijf', 'footer.about': 'Over ons', 'footer.blog': 'Blog', 'footer.contact': 'Contact',
+    'footer.legal': 'Juridisch', 'footer.privacy': 'Privacybeleid', 'footer.terms': 'Gebruiksvoorwaarden',
+    'footer.gdpr': 'AVG', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function setMeta(name, val, prop) {
+  const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+  const el  = document.querySelector(sel);
+  if (el) el.setAttribute('content', val);
+}
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-html');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+
+document.querySelectorAll('.lang-btn').forEach((btn) => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+
+(function () {
+  let lang = 'en';
+  try { lang = localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
+  if (lang !== 'en') applyLang(lang);
+})();
+
+const navbar = document.querySelector('.navbar');
+window.addEventListener('scroll', () => {
+  navbar.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(26,71,16,0.10)' : '';
+}, { passive: true });
+</script>
+</body>
+</html>

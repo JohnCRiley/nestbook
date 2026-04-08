@@ -16,6 +16,7 @@ import { guestsRouter }              from './routes/guests.js';
 import { bookingsRouter }            from './routes/bookings.js';
 import { usersRouter }               from './routes/users.js';
 import { adminRouter }               from './routes/admin.js';
+import { contactRouter }             from './routes/contact.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +46,7 @@ app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 // ── Public routes (no auth) ───────────────────────────────────────────────────
 app.use('/api',                healthRouter);
 app.use('/api/auth',           authRouter);
+app.use('/api/contact',        contactRouter);
 app.use('/api/super-admin',    superAdminAuthRouter);
 
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────

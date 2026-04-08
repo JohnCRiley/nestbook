@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact NestBook — We'd Love to Hear From You</title>
+<meta name="description" content="Get in touch with the NestBook team. We respond within 24 hours. hello@nestbook.io">
+<link rel="canonical" href="https://nestbook.io/contact.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nestbook.io/contact.html">
+<meta property="og:title" content="Contact NestBook">
+<meta property="og:description" content="Get in touch with the NestBook team. We respond within 24 hours.">
+<meta property="og:image" content="https://nestbook.io/icon.svg">
+<meta property="og:site_name" content="NestBook">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --dark:   #1a4710; --mid: #2f771b; --light: #d9f0cc;
+  --page:   #ffffff; --soft: #f3f7f2; --border: #e0ecdb;
+  --text:   #1a2e14; --muted: #557a4a; --radius: 12px;
+  --shadow: 0 4px 24px rgba(26,71,16,0.10);
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; flex-shrink: 0; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; letter-spacing: 0.3px; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+
+.contact-body { padding: 72px 0 88px; }
+.contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 60px; align-items: start; }
+
+.contact-info h2 { font-size: 1.3rem; font-weight: 800; color: var(--dark); margin-bottom: 16px; }
+.contact-info p  { color: var(--muted); line-height: 1.8; margin-bottom: 20px; }
+.contact-detail { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.contact-detail-icon { font-size: 1.2rem; margin-top: 2px; }
+.contact-detail-text strong { display: block; color: var(--dark); font-weight: 700; font-size: 0.9rem; }
+.contact-detail-text span   { color: var(--muted); font-size: 0.9rem; }
+.contact-email-link { color: var(--mid); font-weight: 600; }
+.contact-email-link:hover { text-decoration: underline; }
+
+.contact-form-wrap { background: var(--soft); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--dark); margin-bottom: 7px; }
+.form-input, .form-textarea {
+  width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 0.9rem; font-family: inherit; color: var(--text); background: #fff;
+  transition: border-color 0.15s; outline: none;
+}
+.form-input:focus, .form-textarea:focus { border-color: var(--mid); box-shadow: 0 0 0 3px rgba(47,119,27,0.1); }
+.form-textarea { min-height: 140px; resize: vertical; }
+.form-submit { width: 100%; justify-content: center; padding: 14px; font-size: 0.95rem; }
+.form-message { display: none; margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; }
+.form-message.success { background: var(--light); color: var(--dark); display: block; }
+.form-message.error   { background: #fce8e8; color: #a31e1e; display: block; }
+
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4  { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links   { display: flex; flex-direction: column; gap: 8px; }
+.footer-link    { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@media (max-width: 900px) {
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+  .nav-links    { display: none; }
+  .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+}
+@media (max-width: 600px) {
+  .footer-inner { grid-template-columns: 1fr; }
+  .page-hero { padding: 48px 0 40px; }
+  .contact-body { padding: 48px 0 64px; }
+}
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo">
+      <img src="/icon.svg" class="nb-logo-img" alt="NestBook" />
+      NestBook
+    </a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="contact.title">Get in touch</h1>
+    <p data-i18n="contact.subtitle">We'd love to hear from you. Questions, feedback, or just want to say hello — we respond within 24 hours.</p>
+  </div>
+</section>
+
+<main class="contact-body">
+  <div class="container">
+    <div class="contact-grid">
+
+      <div class="contact-info">
+        <h2 data-i18n="contact.info.heading">How to reach us</h2>
+        <p data-i18n="contact.info.p1">The fastest way to reach us is by email. We're a small team and we read every message personally.</p>
+
+        <div class="contact-detail">
+          <div class="contact-detail-icon">✉️</div>
+          <div class="contact-detail-text">
+            <strong data-i18n="contact.email.label">Email</strong>
+            <span><a href="mailto:hello@nestbook.io" class="contact-email-link">hello@nestbook.io</a></span>
+          </div>
+        </div>
+
+        <div class="contact-detail">
+          <div class="contact-detail-icon">⏱️</div>
+          <div class="contact-detail-text">
+            <strong data-i18n="contact.response.label">Response time</strong>
+            <span data-i18n="contact.response.value">Within 24 hours, usually much faster</span>
+          </div>
+        </div>
+
+        <div class="contact-detail">
+          <div class="contact-detail-icon">🌍</div>
+          <div class="contact-detail-text">
+            <strong data-i18n="contact.langs.label">Languages</strong>
+            <span data-i18n="contact.langs.value">English, French, Spanish, German, Dutch</span>
+          </div>
+        </div>
+
+        <div class="contact-detail">
+          <div class="contact-detail-icon">🔒</div>
+          <div class="contact-detail-text">
+            <strong data-i18n="contact.privacy.label">Privacy</strong>
+            <span data-i18n="contact.privacy.value">Your message is only used to respond to your enquiry. We never share your details.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-form-wrap">
+        <form id="contact-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="cf-name" data-i18n="contact.form.name">Your name</label>
+            <input class="form-input" type="text" id="cf-name" name="name" autocomplete="name" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cf-email" data-i18n="contact.form.email">Your email address</label>
+            <input class="form-input" type="email" id="cf-email" name="email" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="cf-message" data-i18n="contact.form.message">Your message</label>
+            <textarea class="form-textarea" id="cf-message" name="message" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary form-submit" data-i18n="contact.form.submit">Send message</button>
+          <div class="form-message" id="form-msg"></div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name">
+          <img src="/icon.svg" class="footer-leaf-img" alt="" />
+          NestBook
+        </div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const MSGS = {
+  en: { success: 'Message sent! We\'ll get back to you within 24 hours.', error: 'Could not send your message. Please email us directly at hello@nestbook.io.', sending: 'Sending…' },
+  fr: { success: 'Message envoyé ! Nous vous répondrons dans les 24 heures.', error: 'Impossible d\'envoyer votre message. Écrivez-nous directement à hello@nestbook.io.', sending: 'Envoi…' },
+  es: { success: '¡Mensaje enviado! Te responderemos en 24 horas.', error: 'No se pudo enviar el mensaje. Escríbenos directamente a hello@nestbook.io.', sending: 'Enviando…' },
+  de: { success: 'Nachricht gesendet! Wir antworten innerhalb von 24 Stunden.', error: 'Ihre Nachricht konnte nicht gesendet werden. Schreiben Sie uns direkt an hello@nestbook.io.', sending: 'Wird gesendet…' },
+  nl: { success: 'Bericht verzonden! We reageren binnen 24 uur.', error: 'Bericht kon niet worden verzonden. Stuur ons een e-mail op hello@nestbook.io.', sending: 'Verzenden…' },
+};
+
+const I18N = {
+  en: {
+    'nav.features': 'Features', 'nav.pricing': 'Pricing', 'nav.languages': 'Languages',
+    'nav.demo': 'Live demo', 'nav.signin': 'Sign in', 'nav.try': 'Try free',
+    'contact.title': 'Get in touch',
+    'contact.subtitle': 'We\'d love to hear from you. Questions, feedback, or just want to say hello — we respond within 24 hours.',
+    'contact.info.heading': 'How to reach us',
+    'contact.info.p1': 'The fastest way to reach us is by email. We\'re a small team and we read every message personally.',
+    'contact.email.label': 'Email', 'contact.response.label': 'Response time',
+    'contact.response.value': 'Within 24 hours, usually much faster',
+    'contact.langs.label': 'Languages', 'contact.langs.value': 'English, French, Spanish, German, Dutch',
+    'contact.privacy.label': 'Privacy', 'contact.privacy.value': 'Your message is only used to respond to your enquiry. We never share your details.',
+    'contact.form.name': 'Your name', 'contact.form.email': 'Your email address',
+    'contact.form.message': 'Your message', 'contact.form.submit': 'Send message',
+    'footer.tagline': 'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product': 'Product', 'footer.features': 'Features', 'footer.pricing': 'Pricing',
+    'footer.languages': 'Languages', 'footer.widget': 'Booking widget', 'footer.signin': 'Sign in to your dashboard',
+    'footer.company': 'Company', 'footer.about': 'About', 'footer.blog': 'Blog', 'footer.contact': 'Contact',
+    'footer.legal': 'Legal', 'footer.privacy': 'Privacy Policy', 'footer.terms': 'Terms of Service',
+    'footer.gdpr': 'GDPR', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features': 'Fonctionnalités', 'nav.pricing': 'Tarifs', 'nav.languages': 'Langues',
+    'nav.demo': 'Démo en direct', 'nav.signin': 'Connexion', 'nav.try': 'Essai gratuit',
+    'contact.title': 'Nous contacter',
+    'contact.subtitle': 'Nous serions ravis d\'avoir de vos nouvelles. Questions, retours ou juste un bonjour — nous répondons dans les 24 heures.',
+    'contact.info.heading': 'Comment nous joindre',
+    'contact.info.p1': 'Le moyen le plus rapide de nous joindre est par e-mail. Nous sommes une petite équipe et nous lisons chaque message personnellement.',
+    'contact.email.label': 'E-mail', 'contact.response.label': 'Délai de réponse',
+    'contact.response.value': 'En moins de 24 heures, souvent bien plus vite',
+    'contact.langs.label': 'Langues', 'contact.langs.value': 'Anglais, Français, Espagnol, Allemand, Néerlandais',
+    'contact.privacy.label': 'Confidentialité', 'contact.privacy.value': 'Votre message est uniquement utilisé pour répondre à votre demande. Nous ne partageons jamais vos coordonnées.',
+    'contact.form.name': 'Votre nom', 'contact.form.email': 'Votre adresse e-mail',
+    'contact.form.message': 'Votre message', 'contact.form.submit': 'Envoyer le message',
+    'footer.tagline': 'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product': 'Produit', 'footer.features': 'Fonctionnalités', 'footer.pricing': 'Tarifs',
+    'footer.languages': 'Langues', 'footer.widget': 'Widget de réservation', 'footer.signin': 'Connexion au tableau de bord',
+    'footer.company': 'Entreprise', 'footer.about': 'À propos', 'footer.blog': 'Blog', 'footer.contact': 'Contact',
+    'footer.legal': 'Mentions légales', 'footer.privacy': 'Politique de confidentialité', 'footer.terms': 'Conditions d\'utilisation',
+    'footer.gdpr': 'RGPD', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features': 'Funciones', 'nav.pricing': 'Precios', 'nav.languages': 'Idiomas',
+    'nav.demo': 'Demo en vivo', 'nav.signin': 'Iniciar sesión', 'nav.try': 'Prueba gratis',
+    'contact.title': 'Contáctanos',
+    'contact.subtitle': 'Nos encantaría saber de ti. Preguntas, comentarios o simplemente saludar — respondemos en 24 horas.',
+    'contact.info.heading': 'Cómo contactarnos',
+    'contact.info.p1': 'La forma más rápida de contactarnos es por correo electrónico. Somos un equipo pequeño y leemos cada mensaje personalmente.',
+    'contact.email.label': 'Correo electrónico', 'contact.response.label': 'Tiempo de respuesta',
+    'contact.response.value': 'En 24 horas, normalmente mucho antes',
+    'contact.langs.label': 'Idiomas', 'contact.langs.value': 'Inglés, Francés, Español, Alemán, Neerlandés',
+    'contact.privacy.label': 'Privacidad', 'contact.privacy.value': 'Tu mensaje solo se usa para responder a tu consulta. Nunca compartimos tus datos.',
+    'contact.form.name': 'Tu nombre', 'contact.form.email': 'Tu dirección de correo',
+    'contact.form.message': 'Tu mensaje', 'contact.form.submit': 'Enviar mensaje',
+    'footer.tagline': 'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product': 'Producto', 'footer.features': 'Funciones', 'footer.pricing': 'Precios',
+    'footer.languages': 'Idiomas', 'footer.widget': 'Widget de reservas', 'footer.signin': 'Iniciar sesión en el panel',
+    'footer.company': 'Empresa', 'footer.about': 'Sobre nosotros', 'footer.blog': 'Blog', 'footer.contact': 'Contacto',
+    'footer.legal': 'Legal', 'footer.privacy': 'Política de privacidad', 'footer.terms': 'Términos de servicio',
+    'footer.gdpr': 'RGPD', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features': 'Funktionen', 'nav.pricing': 'Preise', 'nav.languages': 'Sprachen',
+    'nav.demo': 'Live-Demo', 'nav.signin': 'Anmelden', 'nav.try': 'Kostenlos testen',
+    'contact.title': 'Kontakt aufnehmen',
+    'contact.subtitle': 'Wir freuen uns von Ihnen zu hören. Fragen, Feedback oder einfach Hallo sagen — wir antworten innerhalb von 24 Stunden.',
+    'contact.info.heading': 'So erreichen Sie uns',
+    'contact.info.p1': 'Der schnellste Weg, uns zu erreichen, ist per E-Mail. Wir sind ein kleines Team und lesen jede Nachricht persönlich.',
+    'contact.email.label': 'E-Mail', 'contact.response.label': 'Antwortzeit',
+    'contact.response.value': 'Innerhalb von 24 Stunden, oft viel schneller',
+    'contact.langs.label': 'Sprachen', 'contact.langs.value': 'Englisch, Französisch, Spanisch, Deutsch, Niederländisch',
+    'contact.privacy.label': 'Datenschutz', 'contact.privacy.value': 'Ihre Nachricht wird nur zur Beantwortung Ihrer Anfrage verwendet. Wir geben Ihre Daten nie weiter.',
+    'contact.form.name': 'Ihr Name', 'contact.form.email': 'Ihre E-Mail-Adresse',
+    'contact.form.message': 'Ihre Nachricht', 'contact.form.submit': 'Nachricht senden',
+    'footer.tagline': 'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product': 'Produkt', 'footer.features': 'Funktionen', 'footer.pricing': 'Preise',
+    'footer.languages': 'Sprachen', 'footer.widget': 'Buchungs-Widget', 'footer.signin': 'Am Dashboard anmelden',
+    'footer.company': 'Unternehmen', 'footer.about': 'Über uns', 'footer.blog': 'Blog', 'footer.contact': 'Kontakt',
+    'footer.legal': 'Rechtliches', 'footer.privacy': 'Datenschutzrichtlinie', 'footer.terms': 'Nutzungsbedingungen',
+    'footer.gdpr': 'DSGVO', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features': 'Functies', 'nav.pricing': 'Prijzen', 'nav.languages': 'Talen',
+    'nav.demo': 'Live demo', 'nav.signin': 'Inloggen', 'nav.try': 'Gratis proberen',
+    'contact.title': 'Neem contact op',
+    'contact.subtitle': 'We horen graag van u. Vragen, feedback of gewoon hallo zeggen — we reageren binnen 24 uur.',
+    'contact.info.heading': 'Hoe u ons bereikt',
+    'contact.info.p1': 'De snelste manier om ons te bereiken is per e-mail. We zijn een klein team en lezen elk bericht persoonlijk.',
+    'contact.email.label': 'E-mail', 'contact.response.label': 'Reactietijd',
+    'contact.response.value': 'Binnen 24 uur, meestal veel sneller',
+    'contact.langs.label': 'Talen', 'contact.langs.value': 'Engels, Frans, Spaans, Duits, Nederlands',
+    'contact.privacy.label': 'Privacy', 'contact.privacy.value': 'Uw bericht wordt alleen gebruikt om uw vraag te beantwoorden. We delen uw gegevens nooit.',
+    'contact.form.name': 'Uw naam', 'contact.form.email': 'Uw e-mailadres',
+    'contact.form.message': 'Uw bericht', 'contact.form.submit': 'Bericht verzenden',
+    'footer.tagline': 'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product': 'Product', 'footer.features': 'Functies', 'footer.pricing': 'Prijzen',
+    'footer.languages': 'Talen', 'footer.widget': 'Boekingswidget', 'footer.signin': 'Inloggen op dashboard',
+    'footer.company': 'Bedrijf', 'footer.about': 'Over ons', 'footer.blog': 'Blog', 'footer.contact': 'Contact',
+    'footer.legal': 'Juridisch', 'footer.privacy': 'Privacybeleid', 'footer.terms': 'Gebruiksvoorwaarden',
+    'footer.gdpr': 'AVG', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+let currentLang = 'en';
+
+function setMeta(name, val, prop) {
+  const el = document.querySelector(prop ? `meta[property="${name}"]` : `meta[name="${name}"]`);
+  if (el) el.setAttribute('content', val);
+}
+
+function applyLang(lang) {
+  currentLang = lang;
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+
+document.querySelectorAll('.lang-btn').forEach((btn) => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+(function () {
+  let lang = 'en';
+  try { lang = localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
+  if (lang !== 'en') applyLang(lang);
+})();
+
+// ── Contact form ────────────────────────────────────────────────────────────
+const form   = document.getElementById('contact-form');
+const msgEl  = document.getElementById('form-msg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const m = MSGS[currentLang] || MSGS.en;
+  const submitBtn = form.querySelector('[type=submit]');
+
+  msgEl.className = 'form-message';
+  msgEl.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.textContent = m.sending;
+
+  const body = {
+    name:    form.querySelector('#cf-name').value.trim(),
+    email:   form.querySelector('#cf-email').value.trim(),
+    message: form.querySelector('#cf-message').value.trim(),
+  };
+
+  try {
+    const res  = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      msgEl.textContent = m.success;
+      msgEl.className = 'form-message success';
+      form.reset();
+    } else {
+      msgEl.textContent = data.error || m.error;
+      msgEl.className = 'form-message error';
+    }
+  } catch (_) {
+    msgEl.textContent = m.error;
+    msgEl.className = 'form-message error';
+  }
+
+  submitBtn.disabled = false;
+  const t = I18N[currentLang] || I18N.en;
+  submitBtn.textContent = t['contact.form.submit'] || 'Send message';
+});
+
+const navbar = document.querySelector('.navbar');
+window.addEventListener('scroll', () => {
+  navbar.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(26,71,16,0.10)' : '';
+}, { passive: true });
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — NestBook</title>
+<meta name="description" content="The NestBook blog. Tips, updates and insights for small hospitality businesses. Coming soon.">
+<link rel="canonical" href="https://nestbook.io/blog/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nestbook.io/blog/">
+<meta property="og:title" content="Blog — NestBook">
+<meta property="og:site_name" content="NestBook">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+.btn-outline { background: transparent; color: var(--dark); border-color: var(--border); }
+.btn-outline:hover { border-color: var(--mid); color: var(--mid); background: var(--soft); }
+
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+
+.coming-soon { flex: 1; display: flex; align-items: center; justify-content: center; padding: 80px 28px; }
+.coming-soon-inner { text-align: center; max-width: 480px; }
+.coming-soon-icon { font-size: 4rem; margin-bottom: 24px; }
+.coming-soon-inner h2 { font-size: 1.75rem; font-weight: 800; color: var(--dark); letter-spacing: -0.4px; margin-bottom: 14px; }
+.coming-soon-inner p  { color: var(--muted); line-height: 1.8; margin-bottom: 28px; }
+.coming-soon-inner .topics { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 32px; }
+.topic-tag { background: var(--light); color: var(--dark); font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; }
+
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links  { display: flex; flex-direction: column; gap: 8px; }
+.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 40px; } }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="blog.title">Blog</h1>
+    <p data-i18n="blog.subtitle">Tips, updates, and insights for small hospitality businesses across Europe.</p>
+  </div>
+</section>
+
+<div class="coming-soon">
+  <div class="coming-soon-inner">
+    <div class="coming-soon-icon">✍️</div>
+    <h2 data-i18n="blog.soon.heading">Coming soon</h2>
+    <p data-i18n="blog.soon.desc">We're working on articles to help you run your property more smoothly. Check back soon — or sign up to NestBook to be notified when we publish.</p>
+    <div class="topics">
+      <span class="topic-tag" data-i18n="blog.topic1">Running a B&amp;B</span>
+      <span class="topic-tag" data-i18n="blog.topic2">Booking tips</span>
+      <span class="topic-tag" data-i18n="blog.topic3">GDPR for hosts</span>
+      <span class="topic-tag" data-i18n="blog.topic4">Seasonal pricing</span>
+      <span class="topic-tag" data-i18n="blog.topic5">Direct bookings</span>
+      <span class="topic-tag" data-i18n="blog.topic6">NestBook updates</span>
+    </div>
+    <a href="/app/register" class="btn btn-primary" data-i18n="blog.cta">Start using NestBook free</a>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name"><img src="/icon.svg" class="footer-leaf-img" alt="" />NestBook</div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.demo':'Live demo','nav.signin':'Sign in','nav.try':'Try free',
+    'blog.title':'Blog','blog.subtitle':'Tips, updates, and insights for small hospitality businesses across Europe.',
+    'blog.soon.heading':'Coming soon',
+    'blog.soon.desc':'We\'re working on articles to help you run your property more smoothly. Check back soon — or sign up to NestBook to be notified when we publish.',
+    'blog.topic1':'Running a B&B','blog.topic2':'Booking tips','blog.topic3':'GDPR for hosts',
+    'blog.topic4':'Seasonal pricing','blog.topic5':'Direct bookings','blog.topic6':'NestBook updates',
+    'blog.cta':'Start using NestBook free',
+    'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.languages':'Languages','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
+    'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Legal','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.gdpr':'GDPR','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.demo':'Démo en direct','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'blog.title':'Blog','blog.subtitle':'Conseils, actualités et bonnes pratiques pour les petits hébergements en Europe.',
+    'blog.soon.heading':'Bientôt disponible',
+    'blog.soon.desc':'Nous préparons des articles pour vous aider à gérer votre hébergement plus facilement. Revenez bientôt — ou inscrivez-vous sur NestBook pour être notifié lors des publications.',
+    'blog.topic1':'Gérer un B&B','blog.topic2':'Conseils de réservation','blog.topic3':'RGPD pour les hébergeurs',
+    'blog.topic4':'Tarification saisonnière','blog.topic5':'Réservations directes','blog.topic6':'Actualités NestBook',
+    'blog.cta':'Commencer gratuitement',
+    'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.languages':'Langues','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
+    'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Mentions légales','footer.privacy':'Politique de confidentialité','footer.terms':'Conditions d\'utilisation','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.demo':'Demo en vivo','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'blog.title':'Blog','blog.subtitle':'Consejos, novedades e ideas para pequeños alojamientos en Europa.',
+    'blog.soon.heading':'Próximamente',
+    'blog.soon.desc':'Estamos preparando artículos para ayudarte a gestionar tu alojamiento con más facilidad. Vuelve pronto — o regístrate en NestBook para recibir notificaciones.',
+    'blog.topic1':'Gestionar un B&B','blog.topic2':'Consejos de reservas','blog.topic3':'RGPD para anfitriones',
+    'blog.topic4':'Precios de temporada','blog.topic5':'Reservas directas','blog.topic6':'Novedades de NestBook',
+    'blog.cta':'Empezar gratis',
+    'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.languages':'Idiomas','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
+    'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto',
+    'footer.legal':'Legal','footer.privacy':'Política de privacidad','footer.terms':'Términos de servicio','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.demo':'Live-Demo','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'blog.title':'Blog','blog.subtitle':'Tipps, Updates und Einblicke für kleine Gastgewerbebetriebe in Europa.',
+    'blog.soon.heading':'Demnächst verfügbar',
+    'blog.soon.desc':'Wir arbeiten an Artikeln, die Ihnen helfen, Ihre Unterkunft reibungsloser zu führen. Schauen Sie bald wieder vorbei — oder melden Sie sich bei NestBook an.',
+    'blog.topic1':'B&B führen','blog.topic2':'Buchungstipps','blog.topic3':'DSGVO für Gastgeber',
+    'blog.topic4':'Saisonale Preisgestaltung','blog.topic5':'Direktbuchungen','blog.topic6':'NestBook-Updates',
+    'blog.cta':'NestBook kostenlos starten',
+    'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.languages':'Sprachen','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
+    'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt',
+    'footer.legal':'Rechtliches','footer.privacy':'Datenschutzrichtlinie','footer.terms':'Nutzungsbedingungen','footer.gdpr':'DSGVO','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.demo':'Live demo','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'blog.title':'Blog','blog.subtitle':'Tips, updates en inzichten voor kleine horecabedrijven in Europa.',
+    'blog.soon.heading':'Binnenkort beschikbaar',
+    'blog.soon.desc':'We werken aan artikelen om u te helpen uw accommodatie soepeler te runnen. Kom snel terug — of meld u aan bij NestBook om op de hoogte te worden gebracht.',
+    'blog.topic1':'Een B&B runnen','blog.topic2':'Boekingstips','blog.topic3':'AVG voor verhuurders',
+    'blog.topic4':'Seizoensprijzen','blog.topic5':'Directe boekingen','blog.topic6':'NestBook updates',
+    'blog.cta':'Gratis starten met NestBook',
+    'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.languages':'Talen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
+    'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Juridisch','footer.privacy':'Privacybeleid','footer.terms':'Gebruiksvoorwaarden','footer.gdpr':'AVG','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
+const nb = document.querySelector('.navbar');
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+</script>
+</body>
+</html>

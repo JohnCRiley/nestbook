@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Policy — NestBook</title>
+<meta name="description" content="NestBook uses only essential cookies. No tracking, no advertising. Learn what cookies we use and why.">
+<link rel="canonical" href="https://nestbook.io/cookies.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nestbook.io/cookies.html">
+<meta property="og:title" content="Cookie Policy — NestBook">
+<meta property="og:description" content="NestBook uses only essential cookies. No tracking, no advertising.">
+<meta property="og:site_name" content="NestBook">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero .meta { font-size: 0.875rem; color: var(--muted); }
+
+.prose-body { padding: 64px 0 88px; }
+.prose-wrap { max-width: 780px; }
+.prose-wrap h2 { font-size: 1.3rem; font-weight: 800; color: var(--dark); margin: 40px 0 12px; }
+.prose-wrap h2:first-child { margin-top: 0; }
+.prose-wrap p  { color: var(--muted); line-height: 1.8; margin-bottom: 14px; }
+.prose-wrap ul, .prose-wrap ol { color: var(--muted); line-height: 1.8; margin: 0 0 14px 24px; }
+.prose-wrap li { margin-bottom: 6px; }
+.prose-wrap a  { color: var(--mid); }
+.prose-wrap a:hover { text-decoration: underline; }
+
+.cookie-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 0.875rem; }
+.cookie-table th { text-align: left; padding: 10px 14px; background: var(--soft); border: 1px solid var(--border); font-weight: 700; color: var(--dark); }
+.cookie-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+.cookie-table tr:nth-child(even) td { background: #fafcfa; }
+
+.no-track-banner { background: var(--light); border: 1px solid #b8dfa8; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 32px; display: flex; align-items: flex-start; gap: 14px; }
+.no-track-icon  { font-size: 1.5rem; flex-shrink: 0; }
+.no-track-text strong { display: block; color: var(--dark); font-weight: 700; margin-bottom: 4px; }
+.no-track-text p { color: var(--muted); font-size: 0.9rem; margin: 0; }
+
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links  { display: flex; flex-direction: column; gap: 8px; }
+.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 40px; } .prose-body { padding: 40px 0 64px; } .cookie-table { font-size: 0.78rem; } }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="cookies.title">Cookie Policy</h1>
+    <p class="meta" data-i18n="cookies.updated">Last updated: April 2026</p>
+  </div>
+</section>
+
+<main class="prose-body">
+  <div class="container">
+    <div class="prose-wrap">
+
+      <div class="no-track-banner">
+        <div class="no-track-icon">🛡️</div>
+        <div class="no-track-text">
+          <strong data-i18n="cookies.nottrack.title">No tracking. No advertising. Essential only.</strong>
+          <p data-i18n="cookies.nottrack.desc">NestBook uses only the cookies strictly necessary to make the service work. We do not use analytics cookies, advertising cookies, or any third-party tracking.</p>
+        </div>
+      </div>
+
+      <h2 data-i18n="cookies.what.heading">What are cookies?</h2>
+      <p data-i18n="cookies.what.p1">Cookies are small text files stored in your browser when you visit a website. They allow the website to remember information about your visit — such as whether you are logged in — and are essential for many website features to function correctly.</p>
+
+      <h2 data-i18n="cookies.use.heading">Cookies we use</h2>
+      <p data-i18n="cookies.use.intro">We use a minimal set of cookies, all of which are strictly necessary for the service to operate:</p>
+
+      <table class="cookie-table">
+        <thead>
+          <tr>
+            <th data-i18n="cookies.table.name">Cookie / Storage</th>
+            <th data-i18n="cookies.table.purpose">Purpose</th>
+            <th data-i18n="cookies.table.duration">Duration</th>
+            <th data-i18n="cookies.table.type">Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>nb-token</code></td>
+            <td data-i18n="cookies.row1.purpose">Authentication — keeps you logged in to the NestBook dashboard. Stored in localStorage.</td>
+            <td data-i18n="cookies.row1.duration">7 days</td>
+            <td data-i18n="cookies.row1.type">Essential</td>
+          </tr>
+          <tr>
+            <td><code>nb-lang</code></td>
+            <td data-i18n="cookies.row2.purpose">Language preference — remembers the language you selected. Stored in localStorage.</td>
+            <td data-i18n="cookies.row2.duration">Persistent</td>
+            <td data-i18n="cookies.row2.type">Essential / Preference</td>
+          </tr>
+          <tr>
+            <td><code>nb-cookie-consent</code></td>
+            <td data-i18n="cookies.row3.purpose">Records that you have dismissed the cookie notice. Stored in localStorage.</td>
+            <td data-i18n="cookies.row3.duration">Persistent</td>
+            <td data-i18n="cookies.row3.type">Essential</td>
+          </tr>
+          <tr>
+            <td data-i18n="cookies.row4.name">Stripe cookies</td>
+            <td data-i18n="cookies.row4.purpose">Payment processing — set by Stripe when you complete a subscription payment. Used for fraud prevention and payment security only.</td>
+            <td data-i18n="cookies.row4.duration">Session / 1 year</td>
+            <td data-i18n="cookies.row4.type">Essential</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 data-i18n="cookies.notuse.heading">Cookies we do NOT use</h2>
+      <ul>
+        <li data-i18n="cookies.notuse.1">Analytics or visitor tracking cookies (e.g. Google Analytics)</li>
+        <li data-i18n="cookies.notuse.2">Advertising or retargeting cookies</li>
+        <li data-i18n="cookies.notuse.3">Social media tracking pixels</li>
+        <li data-i18n="cookies.notuse.4">Third-party profiling or behavioural tracking of any kind</li>
+      </ul>
+
+      <h2 data-i18n="cookies.manage.heading">How to manage cookies</h2>
+      <p data-i18n="cookies.manage.p1">Because we only use essential cookies, disabling them will affect the functionality of NestBook. However, you can control cookies through your browser settings:</p>
+      <ul>
+        <li data-i18n="cookies.manage.chrome"><strong>Chrome:</strong> Settings → Privacy and security → Cookies and other site data</li>
+        <li data-i18n="cookies.manage.firefox"><strong>Firefox:</strong> Settings → Privacy &amp; Security → Cookies and Site Data</li>
+        <li data-i18n="cookies.manage.safari"><strong>Safari:</strong> Preferences → Privacy → Manage Website Data</li>
+        <li data-i18n="cookies.manage.edge"><strong>Edge:</strong> Settings → Cookies and site permissions</li>
+      </ul>
+      <p data-i18n="cookies.manage.p2">You can also delete the NestBook localStorage entries at any time using your browser's developer tools (Application → Local Storage).</p>
+
+      <h2 data-i18n="cookies.contact.heading">Questions?</h2>
+      <p data-i18n="cookies.contact.p1">If you have any questions about our use of cookies, please contact us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.</p>
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name"><img src="/icon.svg" class="footer-leaf-img" alt="" />NestBook</div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.demo':'Live demo','nav.signin':'Sign in','nav.try':'Try free',
+    'cookies.title':'Cookie Policy','cookies.updated':'Last updated: April 2026',
+    'cookies.nottrack.title':'No tracking. No advertising. Essential only.',
+    'cookies.nottrack.desc':'NestBook uses only the cookies strictly necessary to make the service work. We do not use analytics cookies, advertising cookies, or any third-party tracking.',
+    'cookies.what.heading':'What are cookies?',
+    'cookies.what.p1':'Cookies are small text files stored in your browser when you visit a website. They allow the website to remember information about your visit — such as whether you are logged in — and are essential for many website features to function correctly.',
+    'cookies.use.heading':'Cookies we use',
+    'cookies.use.intro':'We use a minimal set of cookies, all of which are strictly necessary for the service to operate:',
+    'cookies.table.name':'Cookie / Storage','cookies.table.purpose':'Purpose','cookies.table.duration':'Duration','cookies.table.type':'Type',
+    'cookies.row1.purpose':'Authentication — keeps you logged in to the NestBook dashboard. Stored in localStorage.',
+    'cookies.row1.duration':'7 days','cookies.row1.type':'Essential',
+    'cookies.row2.purpose':'Language preference — remembers the language you selected. Stored in localStorage.',
+    'cookies.row2.duration':'Persistent','cookies.row2.type':'Essential / Preference',
+    'cookies.row3.purpose':'Records that you have dismissed the cookie notice. Stored in localStorage.',
+    'cookies.row3.duration':'Persistent','cookies.row3.type':'Essential',
+    'cookies.row4.name':'Stripe cookies',
+    'cookies.row4.purpose':'Payment processing — set by Stripe when you complete a subscription payment. Used for fraud prevention and payment security only.',
+    'cookies.row4.duration':'Session / 1 year','cookies.row4.type':'Essential',
+    'cookies.notuse.heading':'Cookies we do NOT use',
+    'cookies.notuse.1':'Analytics or visitor tracking cookies (e.g. Google Analytics)',
+    'cookies.notuse.2':'Advertising or retargeting cookies',
+    'cookies.notuse.3':'Social media tracking pixels',
+    'cookies.notuse.4':'Third-party profiling or behavioural tracking of any kind',
+    'cookies.manage.heading':'How to manage cookies',
+    'cookies.manage.p1':'Because we only use essential cookies, disabling them will affect the functionality of NestBook. However, you can control cookies through your browser settings:',
+    'cookies.manage.chrome':'Chrome: Settings → Privacy and security → Cookies and other site data',
+    'cookies.manage.firefox':'Firefox: Settings → Privacy & Security → Cookies and Site Data',
+    'cookies.manage.safari':'Safari: Preferences → Privacy → Manage Website Data',
+    'cookies.manage.edge':'Edge: Settings → Cookies and site permissions',
+    'cookies.manage.p2':'You can also delete the NestBook localStorage entries at any time using your browser\'s developer tools (Application → Local Storage).',
+    'cookies.contact.heading':'Questions?',
+    'cookies.contact.p1':'If you have any questions about our use of cookies, please contact us at hello@nestbook.io.',
+    'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.languages':'Languages','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
+    'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Legal','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.gdpr':'GDPR','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.demo':'Démo en direct','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'cookies.title':'Politique de cookies','cookies.updated':'Dernière mise à jour : avril 2026',
+    'cookies.nottrack.title':'Pas de traçage. Pas de publicité. Uniquement l\'essentiel.',
+    'cookies.nottrack.desc':'NestBook n\'utilise que les cookies strictement nécessaires au fonctionnement du service. Nous n\'utilisons pas de cookies analytiques, publicitaires ou de traçage tiers.',
+    'cookies.what.heading':'Que sont les cookies ?',
+    'cookies.what.p1':'Les cookies sont de petits fichiers texte stockés dans votre navigateur lorsque vous visitez un site web. Ils permettent au site de mémoriser des informations sur votre visite — comme le fait que vous êtes connecté — et sont essentiels au bon fonctionnement de nombreuses fonctionnalités.',
+    'cookies.use.heading':'Cookies que nous utilisons',
+    'cookies.use.intro':'Nous utilisons un ensemble minimal de cookies, tous strictement nécessaires au fonctionnement du service :',
+    'cookies.table.name':'Cookie / Stockage','cookies.table.purpose':'Finalité','cookies.table.duration':'Durée','cookies.table.type':'Type',
+    'cookies.row1.purpose':'Authentification — vous maintient connecté au tableau de bord NestBook. Stocké dans localStorage.',
+    'cookies.row1.duration':'7 jours','cookies.row1.type':'Essentiel',
+    'cookies.row2.purpose':'Préférence de langue — mémorise la langue que vous avez sélectionnée. Stocké dans localStorage.',
+    'cookies.row2.duration':'Persistant','cookies.row2.type':'Essentiel / Préférence',
+    'cookies.row3.purpose':'Enregistre que vous avez fermé la bannière de cookies. Stocké dans localStorage.',
+    'cookies.row3.duration':'Persistant','cookies.row3.type':'Essentiel',
+    'cookies.row4.name':'Cookies Stripe',
+    'cookies.row4.purpose':'Traitement des paiements — définis par Stripe lors d\'un paiement d\'abonnement. Utilisés uniquement pour la prévention de la fraude et la sécurité des paiements.',
+    'cookies.row4.duration':'Session / 1 an','cookies.row4.type':'Essentiel',
+    'cookies.notuse.heading':'Cookies que nous N\'utilisons PAS',
+    'cookies.notuse.1':'Cookies analytiques ou de suivi des visiteurs (ex. Google Analytics)',
+    'cookies.notuse.2':'Cookies publicitaires ou de reciblage',
+    'cookies.notuse.3':'Pixels de suivi des réseaux sociaux',
+    'cookies.notuse.4':'Profilage tiers ou suivi comportemental quelconque',
+    'cookies.manage.heading':'Gestion des cookies',
+    'cookies.manage.p1':'Comme nous n\'utilisons que des cookies essentiels, les désactiver affectera les fonctionnalités de NestBook. Vous pouvez néanmoins les contrôler via les paramètres de votre navigateur :',
+    'cookies.manage.chrome':'Chrome : Paramètres → Confidentialité et sécurité → Cookies et autres données de site',
+    'cookies.manage.firefox':'Firefox : Paramètres → Vie privée et sécurité → Cookies et données de site',
+    'cookies.manage.safari':'Safari : Préférences → Confidentialité → Gérer les données de site',
+    'cookies.manage.edge':'Edge : Paramètres → Cookies et autorisations de site',
+    'cookies.manage.p2':'Vous pouvez également supprimer les entrées localStorage de NestBook via les outils de développement de votre navigateur (Application → Local Storage).',
+    'cookies.contact.heading':'Des questions ?',
+    'cookies.contact.p1':'Si vous avez des questions sur notre utilisation des cookies, contactez-nous à hello@nestbook.io.',
+    'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.languages':'Langues','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
+    'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Mentions légales','footer.privacy':'Politique de confidentialité','footer.terms':'Conditions d\'utilisation','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.demo':'Demo en vivo','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'cookies.title':'Política de cookies','cookies.updated':'Última actualización: abril de 2026',
+    'cookies.nottrack.title':'Sin seguimiento. Sin publicidad. Solo lo esencial.',
+    'cookies.nottrack.desc':'NestBook utiliza únicamente las cookies estrictamente necesarias para el funcionamiento del servicio. No usamos cookies de análisis, publicidad ni rastreo de terceros.',
+    'cookies.what.heading':'¿Qué son las cookies?',
+    'cookies.what.p1':'Las cookies son pequeños archivos de texto almacenados en tu navegador cuando visitas un sitio web. Permiten que el sitio recuerde información sobre tu visita — como si has iniciado sesión — y son esenciales para el correcto funcionamiento de muchas funciones.',
+    'cookies.use.heading':'Cookies que utilizamos',
+    'cookies.use.intro':'Utilizamos un conjunto mínimo de cookies, todas estrictamente necesarias para el funcionamiento del servicio:',
+    'cookies.table.name':'Cookie / Almacenamiento','cookies.table.purpose':'Finalidad','cookies.table.duration':'Duración','cookies.table.type':'Tipo',
+    'cookies.row1.purpose':'Autenticación — te mantiene conectado al panel de NestBook. Almacenado en localStorage.',
+    'cookies.row1.duration':'7 días','cookies.row1.type':'Esencial',
+    'cookies.row2.purpose':'Preferencia de idioma — recuerda el idioma seleccionado. Almacenado en localStorage.',
+    'cookies.row2.duration':'Persistente','cookies.row2.type':'Esencial / Preferencia',
+    'cookies.row3.purpose':'Registra que has cerrado el aviso de cookies. Almacenado en localStorage.',
+    'cookies.row3.duration':'Persistente','cookies.row3.type':'Esencial',
+    'cookies.row4.name':'Cookies de Stripe',
+    'cookies.row4.purpose':'Procesamiento de pagos — establecidas por Stripe al completar un pago de suscripción. Solo para prevención de fraude y seguridad de pago.',
+    'cookies.row4.duration':'Sesión / 1 año','cookies.row4.type':'Esencial',
+    'cookies.notuse.heading':'Cookies que NO utilizamos',
+    'cookies.notuse.1':'Cookies de análisis o seguimiento de visitantes (p. ej. Google Analytics)',
+    'cookies.notuse.2':'Cookies de publicidad o retargeting',
+    'cookies.notuse.3':'Píxeles de seguimiento de redes sociales',
+    'cookies.notuse.4':'Perfilado de terceros ni rastreo conductual de ningún tipo',
+    'cookies.manage.heading':'Cómo gestionar las cookies',
+    'cookies.manage.p1':'Como solo utilizamos cookies esenciales, desactivarlas afectará la funcionalidad de NestBook. Puedes controlarlas a través de la configuración del navegador:',
+    'cookies.manage.chrome':'Chrome: Configuración → Privacidad y seguridad → Cookies y otros datos de sitios',
+    'cookies.manage.firefox':'Firefox: Ajustes → Privacidad y seguridad → Cookies y datos del sitio',
+    'cookies.manage.safari':'Safari: Preferencias → Privacidad → Administrar datos de sitios web',
+    'cookies.manage.edge':'Edge: Configuración → Cookies y permisos del sitio',
+    'cookies.manage.p2':'También puedes eliminar las entradas localStorage de NestBook en cualquier momento usando las herramientas de desarrollo del navegador (Aplicación → Local Storage).',
+    'cookies.contact.heading':'¿Preguntas?',
+    'cookies.contact.p1':'Si tienes alguna pregunta sobre nuestro uso de cookies, contáctanos en hello@nestbook.io.',
+    'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.languages':'Idiomas','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
+    'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto',
+    'footer.legal':'Legal','footer.privacy':'Política de privacidad','footer.terms':'Términos de servicio','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.demo':'Live-Demo','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'cookies.title':'Cookie-Richtlinie','cookies.updated':'Zuletzt aktualisiert: April 2026',
+    'cookies.nottrack.title':'Kein Tracking. Keine Werbung. Nur das Notwendige.',
+    'cookies.nottrack.desc':'NestBook verwendet nur Cookies, die für den Betrieb des Dienstes unbedingt erforderlich sind. Wir verwenden keine Analyse-, Werbe- oder Drittanbieter-Tracking-Cookies.',
+    'cookies.what.heading':'Was sind Cookies?',
+    'cookies.what.p1':'Cookies sind kleine Textdateien, die in Ihrem Browser gespeichert werden, wenn Sie eine Website besuchen. Sie ermöglichen der Website, Informationen über Ihren Besuch zu speichern — z. B. ob Sie eingeloggt sind — und sind für viele Funktionen unerlässlich.',
+    'cookies.use.heading':'Cookies, die wir verwenden',
+    'cookies.use.intro':'Wir verwenden einen minimalen Satz von Cookies, die alle für den Betrieb des Dienstes unbedingt erforderlich sind:',
+    'cookies.table.name':'Cookie / Speicher','cookies.table.purpose':'Zweck','cookies.table.duration':'Dauer','cookies.table.type':'Typ',
+    'cookies.row1.purpose':'Authentifizierung — hält Sie im NestBook-Dashboard angemeldet. Gespeichert in localStorage.',
+    'cookies.row1.duration':'7 Tage','cookies.row1.type':'Notwendig',
+    'cookies.row2.purpose':'Sprachpräferenz — merkt sich die von Ihnen gewählte Sprache. Gespeichert in localStorage.',
+    'cookies.row2.duration':'Dauerhaft','cookies.row2.type':'Notwendig / Präferenz',
+    'cookies.row3.purpose':'Speichert, dass Sie den Cookie-Hinweis geschlossen haben. Gespeichert in localStorage.',
+    'cookies.row3.duration':'Dauerhaft','cookies.row3.type':'Notwendig',
+    'cookies.row4.name':'Stripe-Cookies',
+    'cookies.row4.purpose':'Zahlungsabwicklung — von Stripe gesetzt, wenn Sie eine Abonnementzahlung abschließen. Nur zur Betrugsprävention und Zahlungssicherheit.',
+    'cookies.row4.duration':'Sitzung / 1 Jahr','cookies.row4.type':'Notwendig',
+    'cookies.notuse.heading':'Cookies, die wir NICHT verwenden',
+    'cookies.notuse.1':'Analyse- oder Besucherverfolgungscookies (z. B. Google Analytics)',
+    'cookies.notuse.2':'Werbe- oder Retargeting-Cookies',
+    'cookies.notuse.3':'Social-Media-Tracking-Pixel',
+    'cookies.notuse.4':'Drittanbieter-Profiling oder Verhaltens-Tracking jeglicher Art',
+    'cookies.manage.heading':'Cookie-Verwaltung',
+    'cookies.manage.p1':'Da wir nur notwendige Cookies verwenden, beeinträchtigt deren Deaktivierung die Funktionalität von NestBook. Sie können Cookies über Ihre Browsereinstellungen verwalten:',
+    'cookies.manage.chrome':'Chrome: Einstellungen → Datenschutz und Sicherheit → Cookies und andere Websitedaten',
+    'cookies.manage.firefox':'Firefox: Einstellungen → Datenschutz & Sicherheit → Cookies und Website-Daten',
+    'cookies.manage.safari':'Safari: Einstellungen → Datenschutz → Website-Daten verwalten',
+    'cookies.manage.edge':'Edge: Einstellungen → Cookies und Websiteberechtigungen',
+    'cookies.manage.p2':'Sie können die NestBook-localStorage-Einträge jederzeit über die Entwicklertools Ihres Browsers löschen (Anwendung → Local Storage).',
+    'cookies.contact.heading':'Fragen?',
+    'cookies.contact.p1':'Bei Fragen zu unserer Cookie-Nutzung wenden Sie sich bitte an hello@nestbook.io.',
+    'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.languages':'Sprachen','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
+    'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt',
+    'footer.legal':'Rechtliches','footer.privacy':'Datenschutzrichtlinie','footer.terms':'Nutzungsbedingungen','footer.gdpr':'DSGVO','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.demo':'Live demo','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'cookies.title':'Cookiebeleid','cookies.updated':'Laatst bijgewerkt: april 2026',
+    'cookies.nottrack.title':'Geen tracking. Geen advertenties. Alleen essentieel.',
+    'cookies.nottrack.desc':'NestBook gebruikt alleen de cookies die strikt noodzakelijk zijn voor het functioneren van de service. We gebruiken geen analytische cookies, advertentiecookies of tracking door derden.',
+    'cookies.what.heading':'Wat zijn cookies?',
+    'cookies.what.p1':'Cookies zijn kleine tekstbestanden die in uw browser worden opgeslagen wanneer u een website bezoekt. Ze stellen de website in staat informatie over uw bezoek te onthouden — zoals of u bent ingelogd — en zijn essentieel voor veel websitefuncties.',
+    'cookies.use.heading':'Cookies die we gebruiken',
+    'cookies.use.intro':'We gebruiken een minimale set cookies, allemaal strikt noodzakelijk voor het functioneren van de service:',
+    'cookies.table.name':'Cookie / Opslag','cookies.table.purpose':'Doel','cookies.table.duration':'Duur','cookies.table.type':'Type',
+    'cookies.row1.purpose':'Authenticatie — houdt u ingelogd op het NestBook-dashboard. Opgeslagen in localStorage.',
+    'cookies.row1.duration':'7 dagen','cookies.row1.type':'Essentieel',
+    'cookies.row2.purpose':'Taalvoorkeur — onthoudt de door u geselecteerde taal. Opgeslagen in localStorage.',
+    'cookies.row2.duration':'Permanent','cookies.row2.type':'Essentieel / Voorkeur',
+    'cookies.row3.purpose':'Registreert dat u de cookiemelding heeft gesloten. Opgeslagen in localStorage.',
+    'cookies.row3.duration':'Permanent','cookies.row3.type':'Essentieel',
+    'cookies.row4.name':'Stripe-cookies',
+    'cookies.row4.purpose':'Betalingsverwerking — ingesteld door Stripe bij het afronden van een abonnementsbetaling. Alleen voor fraudepreventie en betalingsbeveiliging.',
+    'cookies.row4.duration':'Sessie / 1 jaar','cookies.row4.type':'Essentieel',
+    'cookies.notuse.heading':'Cookies die we NIET gebruiken',
+    'cookies.notuse.1':'Analytische cookies of bezoekersvolging (bijv. Google Analytics)',
+    'cookies.notuse.2':'Advertentie- of retargetingcookies',
+    'cookies.notuse.3':'Trackingpixels van sociale media',
+    'cookies.notuse.4':'Profilering door derden of gedragsvolging van welke aard dan ook',
+    'cookies.manage.heading':'Cookies beheren',
+    'cookies.manage.p1':'Omdat we alleen essentiële cookies gebruiken, zal het uitschakelen ervan de functionaliteit van NestBook beïnvloeden. U kunt cookies beheren via uw browserinstellingen:',
+    'cookies.manage.chrome':'Chrome: Instellingen → Privacy en beveiliging → Cookies en andere sitegegevens',
+    'cookies.manage.firefox':'Firefox: Instellingen → Privacy & beveiliging → Cookies en sitegegevens',
+    'cookies.manage.safari':'Safari: Voorkeuren → Privacy → Websitegegevens beheren',
+    'cookies.manage.edge':'Edge: Instellingen → Cookies en sitemachtigingen',
+    'cookies.manage.p2':'U kunt de NestBook localStorage-vermeldingen ook op elk moment verwijderen via de ontwikkelaarstools van uw browser (Applicatie → Local Storage).',
+    'cookies.contact.heading':'Vragen?',
+    'cookies.contact.p1':'Als u vragen heeft over ons gebruik van cookies, neem dan contact met ons op via hello@nestbook.io.',
+    'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.languages':'Talen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
+    'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Juridisch','footer.privacy':'Privacybeleid','footer.terms':'Gebruiksvoorwaarden','footer.gdpr':'AVG','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
+const nb = document.querySelector('.navbar');
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+</script>
+</body>
+</html>

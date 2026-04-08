@@ -1273,20 +1273,20 @@ img { display: block; max-width: 100%; }
       <div class="footer-col">
         <h4 data-i18n="footer.company">Company</h4>
         <div class="footer-links">
-          <a href="#" class="footer-link" data-i18n="footer.about">About</a>
-          <a href="#" class="footer-link" data-i18n="footer.blog">Blog</a>
-          <a href="#" class="footer-link" data-i18n="footer.contact">Contact</a>
-          <a href="#" class="footer-link" data-i18n="footer.press">Press</a>
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+          <a href="#"             class="footer-link" data-i18n="footer.press">Press</a>
         </div>
       </div>
 
       <div class="footer-col">
         <h4 data-i18n="footer.legal">Legal</h4>
         <div class="footer-links">
-          <a href="#" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
-          <a href="#" class="footer-link" data-i18n="footer.terms">Terms of Service</a>
-          <a href="#" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
-          <a href="#" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
         </div>
       </div>
 
@@ -1298,6 +1298,14 @@ img { display: block; max-width: 100%; }
     </div>
   </div>
 </footer>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  COOKIE CONSENT BANNER                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:999; background:#0f2909; color:rgba(255,255,255,0.85); padding:16px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; font-size:0.875rem; box-shadow:0 -2px 16px rgba(0,0,0,0.2);">
+  <span id="cookie-notice-text" style="flex:1; min-width:200px;">We use essential cookies only — for login sessions and language preferences. No tracking, no advertising. <a href="/cookies.html" style="color:#d9f0cc; text-decoration:underline;">Learn more</a></span>
+  <button id="cookie-accept" style="background:#2f771b; color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:0.875rem; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0;" data-i18n="cookie.accept">Got it</button>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  TRANSLATIONS & LANGUAGE SWITCHER                                          -->
@@ -1415,6 +1423,8 @@ const I18N = {
     'footer.gdpr':     'GDPR',
     'footer.cookies':  'Cookies',
     'footer.copy':     '© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+    'cookie.notice':   'We use essential cookies only — for login sessions and language preferences. No tracking, no advertising. <a href="/cookies.html" style="color:#d9f0cc;text-decoration:underline">Learn more</a>',
+    'cookie.accept':   'Got it',
   },
 
   fr: {
@@ -1528,6 +1538,8 @@ const I18N = {
     'footer.gdpr':     'RGPD',
     'footer.cookies':  'Cookies',
     'footer.copy':     '© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+    'cookie.notice':   'Nous utilisons uniquement des cookies essentiels — pour les sessions de connexion et les préférences de langue. Pas de traçage, pas de publicité. <a href="/cookies.html" style="color:#d9f0cc;text-decoration:underline">En savoir plus</a>',
+    'cookie.accept':   'Compris',
   },
 
   es: {
@@ -1641,6 +1653,8 @@ const I18N = {
     'footer.gdpr':     'RGPD',
     'footer.cookies':  'Cookies',
     'footer.copy':     '© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+    'cookie.notice':   'Usamos solo cookies esenciales — para sesiones de inicio de sesión y preferencias de idioma. Sin seguimiento, sin publicidad. <a href="/cookies.html" style="color:#d9f0cc;text-decoration:underline">Más información</a>',
+    'cookie.accept':   'Entendido',
   },
 
   de: {
@@ -1754,6 +1768,8 @@ const I18N = {
     'footer.gdpr':     'DSGVO',
     'footer.cookies':  'Cookies',
     'footer.copy':     '© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+    'cookie.notice':   'Wir verwenden nur notwendige Cookies — für Login-Sitzungen und Spracheinstellungen. Kein Tracking, keine Werbung. <a href="/cookies.html" style="color:#d9f0cc;text-decoration:underline">Mehr erfahren</a>',
+    'cookie.accept':   'Verstanden',
   },
 
   nl: {
@@ -1867,6 +1883,8 @@ const I18N = {
     'footer.gdpr':     'AVG',
     'footer.cookies':  'Cookies',
     'footer.copy':     '© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+    'cookie.notice':   'We gebruiken alleen essentiële cookies — voor inlogsessies en taalvoorkeuren. Geen tracking, geen advertenties. <a href="/cookies.html" style="color:#d9f0cc;text-decoration:underline">Meer informatie</a>',
+    'cookie.accept':   'Begrepen',
   },
 };
 
@@ -1887,11 +1905,15 @@ function applyLang(lang) {
     if (t[key] !== undefined) el.textContent = t[key];
   });
 
-  // HTML content (for hero headline with <em>)
+  // HTML content (for hero headline with <em>, cookie notice, etc.)
   document.querySelectorAll('[data-i18n-html]').forEach((el) => {
     const key = el.getAttribute('data-i18n-html');
     if (t[key] !== undefined) el.innerHTML = t[key];
   });
+
+  // Cookie banner notice (contains HTML link)
+  const cookieNotice = document.getElementById('cookie-notice-text');
+  if (cookieNotice && t['cookie.notice']) cookieNotice.innerHTML = t['cookie.notice'];
 
   // Update SEO meta tags
   if (t['meta.title']) {
@@ -1948,6 +1970,26 @@ window.addEventListener('scroll', () => {
     ? '0 2px 16px rgba(26,71,16,0.10)'
     : '';
 }, { passive: true });
+
+// ── Cookie consent banner ──────────────────────────────────────────────────
+(function () {
+  const banner = document.getElementById('cookie-banner');
+  const acceptBtn = document.getElementById('cookie-accept');
+  if (!banner || !acceptBtn) return;
+
+  let accepted = false;
+  try { accepted = !!localStorage.getItem('nb-cookie-consent'); } catch (_) {}
+
+  if (!accepted) {
+    // Show after a short delay so it doesn't flash on page load
+    setTimeout(() => { banner.style.display = 'flex'; }, 1200);
+  }
+
+  acceptBtn.addEventListener('click', () => {
+    try { localStorage.setItem('nb-cookie-consent', '1'); } catch (_) {}
+    banner.style.display = 'none';
+  });
+})();
 </script>
 </body>
 </html>

@@ -361,6 +361,33 @@ export async function sendBookingConfirmation(booking, property) {
 }
 
 /**
+ * Forward a contact form submission to hello@nestbook.io.
+ * @param {object} params — { name, email, message }
+ */
+export async function sendContactEmail({ name, email, message }) {
+  if (!resend) return;
+  const html = shell(`
+    <h2 style="margin:0 0 16px;font-size:1.1rem;color:#1a4710;">New contact message</h2>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+      <tr><td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:30%;">Name</td>
+          <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${name}</td></tr>
+      <tr><td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Email</td>
+          <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${email}</td></tr>
+    </table>
+    <p style="font-size:0.875rem;color:#374151;line-height:1.7;white-space:pre-wrap;">${message}</p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0 12px;">
+    <p style="font-size:0.75rem;color:#9ca3af;">Reply directly to this email to respond to ${name}.</p>`);
+  await resend.emails.send({
+    from:     FROM,
+    to:       'hello@nestbook.io',
+    replyTo:  email,
+    subject:  `Contact: ${name} — nestbook.io`,
+    html,
+  });
+}
+
+/**
  * Send a welcome email to a newly-registered owner.
  * @param {object} user     — { name, email }
  * @param {object} property — { name, type, ... }

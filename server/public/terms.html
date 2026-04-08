@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service — NestBook</title>
+<meta name="description" content="NestBook Terms of Service. Read our terms covering service description, plans, acceptable use, liability, and cancellation.">
+<link rel="canonical" href="https://nestbook.io/terms.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nestbook.io/terms.html">
+<meta property="og:title" content="Terms of Service — NestBook">
+<meta property="og:site_name" content="NestBook">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero .meta { font-size: 0.875rem; color: var(--muted); }
+
+.prose-body { padding: 64px 0 88px; }
+.prose-wrap { max-width: 780px; }
+.prose-wrap h2 { font-size: 1.3rem; font-weight: 800; color: var(--dark); margin: 40px 0 12px; }
+.prose-wrap h2:first-child { margin-top: 0; }
+.prose-wrap h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin: 24px 0 8px; }
+.prose-wrap p  { color: var(--muted); line-height: 1.8; margin-bottom: 14px; }
+.prose-wrap ul, .prose-wrap ol { color: var(--muted); line-height: 1.8; margin: 0 0 14px 24px; }
+.prose-wrap li { margin-bottom: 6px; }
+.prose-wrap a  { color: var(--mid); }
+.prose-wrap a:hover { text-decoration: underline; }
+.toc { background: var(--soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 40px; }
+.toc h3 { font-size: 0.875rem; font-weight: 700; color: var(--dark); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.toc ol  { margin-left: 18px; }
+.toc li  { font-size: 0.875rem; margin-bottom: 4px; }
+.toc a   { color: var(--mid); }
+.toc a:hover { text-decoration: underline; }
+
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links  { display: flex; flex-direction: column; gap: 8px; }
+.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 40px; } .prose-body { padding: 40px 0 64px; } }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="terms.title">Terms of Service</h1>
+    <p class="meta" data-i18n="terms.updated">Last updated: April 2026 · Governing law: England and Wales</p>
+  </div>
+</section>
+
+<main class="prose-body">
+  <div class="container">
+    <div class="prose-wrap">
+
+      <div class="toc">
+        <h3 data-i18n="terms.toc.heading">Contents</h3>
+        <ol>
+          <li><a href="#service" data-i18n="terms.toc.1">The Service</a></li>
+          <li><a href="#account" data-i18n="terms.toc.2">Your Account</a></li>
+          <li><a href="#plans"   data-i18n="terms.toc.3">Plans &amp; Payments</a></li>
+          <li><a href="#use"     data-i18n="terms.toc.4">Acceptable Use</a></li>
+          <li><a href="#data"    data-i18n="terms.toc.5">Your Data</a></li>
+          <li><a href="#ip"      data-i18n="terms.toc.6">Intellectual Property</a></li>
+          <li><a href="#liability" data-i18n="terms.toc.7">Liability</a></li>
+          <li><a href="#cancel"  data-i18n="terms.toc.8">Cancellation</a></li>
+          <li><a href="#changes" data-i18n="terms.toc.9">Changes to These Terms</a></li>
+          <li><a href="#contact" data-i18n="terms.toc.10">Contact</a></li>
+        </ol>
+      </div>
+
+      <p data-i18n="terms.intro">By creating a NestBook account you agree to these Terms of Service. Please read them carefully. If you do not agree, do not use NestBook.</p>
+
+      <h2 id="service" data-i18n="terms.service.heading">1. The Service</h2>
+      <p data-i18n="terms.service.p1">NestBook provides web-based property and booking management software for small hospitality businesses ("the Service"). The Service is operated by NestBook (contact: <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>).</p>
+      <p data-i18n="terms.service.p2">We reserve the right to modify, suspend or discontinue any part of the Service at any time with reasonable notice. We will not be liable to you or any third party for any modification, suspension or discontinuation of the Service.</p>
+
+      <h2 id="account" data-i18n="terms.account.heading">2. Your Account</h2>
+      <p data-i18n="terms.account.p1">You must provide accurate, complete information when creating your account. You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account.</p>
+      <p data-i18n="terms.account.p2">You must notify us immediately at hello@nestbook.io if you become aware of any unauthorised use of your account. NestBook will not be liable for any loss arising from unauthorised use of your account.</p>
+      <p data-i18n="terms.account.p3">You must be at least 18 years old to use NestBook. By creating an account you represent that you are 18 or older.</p>
+
+      <h2 id="plans" data-i18n="terms.plans.heading">3. Plans &amp; Payments</h2>
+      <p data-i18n="terms.plans.free">The <strong>Starter (free) plan</strong> is available at no charge and includes up to 1 property and 3 rooms. We reserve the right to modify free plan limits with 30 days' notice.</p>
+      <p data-i18n="terms.plans.paid">Paid plans are billed monthly via Stripe. By subscribing you authorise recurring charges to your payment method. All prices are in euros and include applicable VAT.</p>
+      <p data-i18n="terms.plans.trial">If a free trial is offered, no payment is taken during the trial period. Your subscription begins — and billing starts — at the end of the trial unless you cancel before it ends.</p>
+      <p data-i18n="terms.plans.refund">Payments are non-refundable except where required by applicable law. If you cancel mid-period, your access continues until the end of the current billing period.</p>
+
+      <h2 id="use" data-i18n="terms.use.heading">4. Acceptable Use</h2>
+      <p data-i18n="terms.use.intro">You agree not to:</p>
+      <ul>
+        <li data-i18n="terms.use.1">Use the Service for any unlawful purpose or in violation of any regulations</li>
+        <li data-i18n="terms.use.2">Upload, post or transmit any content that is unlawful, harmful, threatening, abusive, harassing, defamatory or otherwise objectionable</li>
+        <li data-i18n="terms.use.3">Attempt to gain unauthorised access to any part of the Service or its related systems</li>
+        <li data-i18n="terms.use.4">Use the Service to send unsolicited commercial communications (spam)</li>
+        <li data-i18n="terms.use.5">Reverse engineer, decompile or otherwise attempt to extract the source code of the Service</li>
+        <li data-i18n="terms.use.6">Resell or sublicense access to the Service without our written permission</li>
+      </ul>
+      <p data-i18n="terms.use.breach">We reserve the right to suspend or terminate accounts that breach these terms, with or without prior notice depending on the severity of the breach.</p>
+
+      <h2 id="data" data-i18n="terms.data.heading">5. Your Data</h2>
+      <p data-i18n="terms.data.p1">You retain ownership of all data you enter into NestBook (booking records, guest details, etc.). We process your data as described in our <a href="/privacy.html">Privacy Policy</a>.</p>
+      <p data-i18n="terms.data.p2">We will make commercially reasonable efforts to keep your data secure. In the event you close your account, you may request an export of your data within 30 days of closure. After that period we may delete your data.</p>
+
+      <h2 id="ip" data-i18n="terms.ip.heading">6. Intellectual Property</h2>
+      <p data-i18n="terms.ip.p1">The NestBook name, logo, software, and all associated content are owned by or licensed to NestBook. Nothing in these Terms grants you any rights in NestBook's intellectual property other than the limited right to use the Service as described herein.</p>
+
+      <h2 id="liability" data-i18n="terms.liability.heading">7. Liability</h2>
+      <p data-i18n="terms.liability.p1">The Service is provided "as is" and "as available". To the fullest extent permitted by law, NestBook disclaims all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
+      <p data-i18n="terms.liability.p2">To the fullest extent permitted by law, NestBook's total liability to you for any claims arising from or related to the Service shall not exceed the amount you paid to NestBook in the 12 months preceding the claim, or €100, whichever is greater.</p>
+      <p data-i18n="terms.liability.p3">NestBook shall not be liable for any indirect, incidental, special, consequential or punitive damages, including loss of profits, data or goodwill.</p>
+      <p data-i18n="terms.liability.consumer">Nothing in these Terms limits or excludes any liability that cannot be limited or excluded under applicable consumer protection law.</p>
+
+      <h2 id="cancel" data-i18n="terms.cancel.heading">8. Cancellation</h2>
+      <p data-i18n="terms.cancel.p1">You may cancel your subscription at any time from your account settings. Cancellation takes effect at the end of your current billing period. You will retain access until then.</p>
+      <p data-i18n="terms.cancel.p2">We may terminate or suspend your account if you breach these Terms, if required by law, or if we reasonably believe your use of the Service poses a risk to other users or the Service itself.</p>
+
+      <h2 id="changes" data-i18n="terms.changes.heading">9. Changes to These Terms</h2>
+      <p data-i18n="terms.changes.p1">We may update these Terms from time to time. We will notify you by email and/or by a prominent notice on the Service at least 14 days before material changes take effect. Your continued use of the Service after the effective date constitutes your acceptance of the updated Terms.</p>
+
+      <h2 id="contact" data-i18n="terms.contact.heading">10. Contact</h2>
+      <p data-i18n="terms.contact.p1">For questions about these Terms, please contact us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.</p>
+      <p data-i18n="terms.contact.law">These Terms are governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.</p>
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name"><img src="/icon.svg" class="footer-leaf-img" alt="" />NestBook</div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.demo':'Live demo','nav.signin':'Sign in','nav.try':'Try free',
+    'terms.title':'Terms of Service','terms.updated':'Last updated: April 2026 · Governing law: England and Wales',
+    'terms.toc.heading':'Contents',
+    'terms.toc.1':'The Service','terms.toc.2':'Your Account','terms.toc.3':'Plans & Payments',
+    'terms.toc.4':'Acceptable Use','terms.toc.5':'Your Data','terms.toc.6':'Intellectual Property',
+    'terms.toc.7':'Liability','terms.toc.8':'Cancellation','terms.toc.9':'Changes to These Terms','terms.toc.10':'Contact',
+    'terms.intro':'By creating a NestBook account you agree to these Terms of Service. Please read them carefully. If you do not agree, do not use NestBook.',
+    'terms.service.heading':'1. The Service',
+    'terms.service.p1':'NestBook provides web-based property and booking management software for small hospitality businesses ("the Service"). The Service is operated by NestBook (contact: hello@nestbook.io).',
+    'terms.service.p2':'We reserve the right to modify, suspend or discontinue any part of the Service at any time with reasonable notice.',
+    'terms.account.heading':'2. Your Account',
+    'terms.account.p1':'You must provide accurate, complete information when creating your account. You are responsible for maintaining the security of your account credentials.',
+    'terms.account.p2':'Notify us immediately at hello@nestbook.io if you become aware of any unauthorised use of your account.',
+    'terms.account.p3':'You must be at least 18 years old to use NestBook.',
+    'terms.plans.heading':'3. Plans & Payments',
+    'terms.plans.free':'The Starter (free) plan is available at no charge and includes up to 1 property and 3 rooms.',
+    'terms.plans.paid':'Paid plans are billed monthly via Stripe. All prices are in euros and include applicable VAT.',
+    'terms.plans.trial':'If a free trial is offered, billing starts at the end of the trial unless you cancel before it ends.',
+    'terms.plans.refund':'Payments are non-refundable except where required by applicable law. If you cancel mid-period, your access continues until the end of the current billing period.',
+    'terms.use.heading':'4. Acceptable Use',
+    'terms.use.intro':'You agree not to:',
+    'terms.use.1':'Use the Service for any unlawful purpose',
+    'terms.use.2':'Upload content that is unlawful, harmful, abusive, or otherwise objectionable',
+    'terms.use.3':'Attempt to gain unauthorised access to any part of the Service',
+    'terms.use.4':'Use the Service to send unsolicited commercial communications (spam)',
+    'terms.use.5':'Reverse engineer or attempt to extract the source code of the Service',
+    'terms.use.6':'Resell or sublicense access to the Service without our written permission',
+    'terms.use.breach':'We reserve the right to suspend or terminate accounts that breach these terms.',
+    'terms.data.heading':'5. Your Data',
+    'terms.data.p1':'You retain ownership of all data you enter into NestBook. We process your data as described in our Privacy Policy.',
+    'terms.data.p2':'You may request an export of your data within 30 days of account closure.',
+    'terms.ip.heading':'6. Intellectual Property',
+    'terms.ip.p1':'The NestBook name, logo, and software are owned by NestBook. Nothing in these Terms grants you any rights in our intellectual property beyond the limited right to use the Service.',
+    'terms.liability.heading':'7. Liability',
+    'terms.liability.p1':'The Service is provided "as is". NestBook disclaims all warranties, express or implied.',
+    'terms.liability.p2':'NestBook\'s total liability shall not exceed the amount you paid in the 12 months preceding the claim, or €100, whichever is greater.',
+    'terms.liability.p3':'NestBook shall not be liable for any indirect, incidental, or consequential damages.',
+    'terms.liability.consumer':'Nothing in these Terms limits liability that cannot be limited under applicable consumer protection law.',
+    'terms.cancel.heading':'8. Cancellation',
+    'terms.cancel.p1':'You may cancel your subscription at any time from your account settings. Cancellation takes effect at the end of your current billing period.',
+    'terms.cancel.p2':'We may terminate or suspend your account if you breach these Terms.',
+    'terms.changes.heading':'9. Changes to These Terms',
+    'terms.changes.p1':'We will notify you at least 14 days before material changes take effect. Continued use constitutes acceptance.',
+    'terms.contact.heading':'10. Contact',
+    'terms.contact.p1':'For questions about these Terms, contact us at hello@nestbook.io.',
+    'terms.contact.law':'These Terms are governed by the laws of England and Wales.',
+    'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.languages':'Languages','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
+    'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Legal','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.gdpr':'GDPR','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.demo':'Démo en direct','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'terms.title':'Conditions d\'utilisation','terms.updated':'Dernière mise à jour : avril 2026 · Droit applicable : Angleterre et Pays de Galles',
+    'terms.toc.heading':'Sommaire',
+    'terms.toc.1':'Le Service','terms.toc.2':'Votre compte','terms.toc.3':'Plans et paiements',
+    'terms.toc.4':'Utilisation acceptable','terms.toc.5':'Vos données','terms.toc.6':'Propriété intellectuelle',
+    'terms.toc.7':'Responsabilité','terms.toc.8':'Résiliation','terms.toc.9':'Modifications','terms.toc.10':'Contact',
+    'terms.intro':'En créant un compte NestBook, vous acceptez ces Conditions d\'utilisation. Veuillez les lire attentivement.',
+    'terms.service.heading':'1. Le Service',
+    'terms.service.p1':'NestBook fournit un logiciel de gestion immobilière et de réservations en ligne pour les petits hébergements (le « Service »). Contactez-nous à hello@nestbook.io.',
+    'terms.service.p2':'Nous nous réservons le droit de modifier, suspendre ou interrompre toute partie du Service avec un préavis raisonnable.',
+    'terms.account.heading':'2. Votre compte',
+    'terms.account.p1':'Vous devez fournir des informations exactes lors de la création de votre compte et êtes responsable de la sécurité de vos identifiants.',
+    'terms.account.p2':'Informez-nous immédiatement à hello@nestbook.io en cas d\'utilisation non autorisée de votre compte.',
+    'terms.account.p3':'Vous devez avoir au moins 18 ans pour utiliser NestBook.',
+    'terms.plans.heading':'3. Plans et paiements',
+    'terms.plans.free':'Le plan Découverte (gratuit) comprend jusqu\'à 1 propriété et 3 chambres.',
+    'terms.plans.paid':'Les plans payants sont facturés mensuellement via Stripe. Tous les prix sont en euros et incluent la TVA applicable.',
+    'terms.plans.trial':'En cas d\'essai gratuit, la facturation commence à la fin de l\'essai sauf annulation avant.',
+    'terms.plans.refund':'Les paiements ne sont pas remboursables sauf obligation légale. Si vous annulez en cours de période, votre accès est maintenu jusqu\'à la fin de la période en cours.',
+    'terms.use.heading':'4. Utilisation acceptable',
+    'terms.use.intro':'Vous vous engagez à ne pas :',
+    'terms.use.1':'Utiliser le Service à des fins illégales',
+    'terms.use.2':'Téléverser du contenu illicite, nuisible, abusif ou répréhensible',
+    'terms.use.3':'Tenter d\'accéder sans autorisation à toute partie du Service',
+    'terms.use.4':'Utiliser le Service pour envoyer des communications commerciales non sollicitées (spam)',
+    'terms.use.5':'Décompiler ou tenter d\'extraire le code source du Service',
+    'terms.use.6':'Revendre ou sous-licencier l\'accès au Service sans autorisation écrite',
+    'terms.use.breach':'Nous nous réservons le droit de suspendre ou de résilier les comptes qui enfreignent ces conditions.',
+    'terms.data.heading':'5. Vos données',
+    'terms.data.p1':'Vous conservez la propriété de toutes les données que vous saisissez dans NestBook. Nous traitons vos données conformément à notre Politique de confidentialité.',
+    'terms.data.p2':'Vous pouvez demander l\'exportation de vos données dans les 30 jours suivant la clôture de votre compte.',
+    'terms.ip.heading':'6. Propriété intellectuelle',
+    'terms.ip.p1':'Le nom NestBook, le logo et le logiciel appartiennent à NestBook. Ces Conditions ne vous accordent aucun droit sur notre propriété intellectuelle au-delà du droit limité d\'utiliser le Service.',
+    'terms.liability.heading':'7. Responsabilité',
+    'terms.liability.p1':'Le Service est fourni « tel quel ». NestBook décline toute garantie expresse ou implicite.',
+    'terms.liability.p2':'La responsabilité totale de NestBook ne dépassera pas le montant payé dans les 12 mois précédant la réclamation, ou 100 €, selon le montant le plus élevé.',
+    'terms.liability.p3':'NestBook n\'est pas responsable des dommages indirects, accessoires ou consécutifs.',
+    'terms.liability.consumer':'Rien dans ces Conditions ne limite la responsabilité qui ne peut être limitée en vertu du droit de la consommation applicable.',
+    'terms.cancel.heading':'8. Résiliation',
+    'terms.cancel.p1':'Vous pouvez annuler votre abonnement à tout moment depuis les paramètres de votre compte. L\'annulation prend effet à la fin de la période de facturation en cours.',
+    'terms.cancel.p2':'Nous pouvons résilier ou suspendre votre compte en cas de violation de ces Conditions.',
+    'terms.changes.heading':'9. Modifications',
+    'terms.changes.p1':'Nous vous informerons au moins 14 jours avant que des changements importants entrent en vigueur. La poursuite de l\'utilisation vaut acceptation.',
+    'terms.contact.heading':'10. Contact',
+    'terms.contact.p1':'Pour toute question sur ces Conditions, contactez-nous à hello@nestbook.io.',
+    'terms.contact.law':'Ces Conditions sont régies par le droit anglais et gallois.',
+    'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.languages':'Langues','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
+    'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Mentions légales','footer.privacy':'Politique de confidentialité','footer.terms':'Conditions d\'utilisation','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.demo':'Demo en vivo','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'terms.title':'Términos de servicio','terms.updated':'Última actualización: abril de 2026 · Ley aplicable: Inglaterra y Gales',
+    'terms.toc.heading':'Contenido',
+    'terms.toc.1':'El Servicio','terms.toc.2':'Tu cuenta','terms.toc.3':'Planes y pagos',
+    'terms.toc.4':'Uso aceptable','terms.toc.5':'Tus datos','terms.toc.6':'Propiedad intelectual',
+    'terms.toc.7':'Responsabilidad','terms.toc.8':'Cancelación','terms.toc.9':'Cambios','terms.toc.10':'Contacto',
+    'terms.intro':'Al crear una cuenta en NestBook, aceptas estos Términos de servicio. Léelos detenidamente.',
+    'terms.service.heading':'1. El Servicio',
+    'terms.service.p1':'NestBook proporciona software de gestión de propiedades y reservas basado en web para pequeños alojamientos. Contacto: hello@nestbook.io.',
+    'terms.service.p2':'Nos reservamos el derecho de modificar, suspender o discontinuar cualquier parte del Servicio con aviso razonable.',
+    'terms.account.heading':'2. Tu cuenta',
+    'terms.account.p1':'Debes proporcionar información precisa al crear tu cuenta y eres responsable de la seguridad de tus credenciales.',
+    'terms.account.p2':'Notifícanos inmediatamente en hello@nestbook.io si detectas uso no autorizado de tu cuenta.',
+    'terms.account.p3':'Debes tener al menos 18 años para usar NestBook.',
+    'terms.plans.heading':'3. Planes y pagos',
+    'terms.plans.free':'El plan Inicial (gratuito) incluye hasta 1 propiedad y 3 habitaciones.',
+    'terms.plans.paid':'Los planes de pago se facturan mensualmente a través de Stripe. Todos los precios están en euros e incluyen el IVA aplicable.',
+    'terms.plans.trial':'Si se ofrece un periodo de prueba gratuito, la facturación comienza al final del mismo salvo cancelación previa.',
+    'terms.plans.refund':'Los pagos no son reembolsables salvo obligación legal. Si cancelas a mitad de periodo, tu acceso continúa hasta el final del periodo de facturación.',
+    'terms.use.heading':'4. Uso aceptable',
+    'terms.use.intro':'Aceptas no:',
+    'terms.use.1':'Usar el Servicio para ningún propósito ilegal',
+    'terms.use.2':'Subir contenido ilícito, dañino, abusivo u objetable',
+    'terms.use.3':'Intentar acceder sin autorización a ninguna parte del Servicio',
+    'terms.use.4':'Usar el Servicio para enviar comunicaciones comerciales no solicitadas (spam)',
+    'terms.use.5':'Realizar ingeniería inversa o intentar extraer el código fuente del Servicio',
+    'terms.use.6':'Revender o sublicenciar el acceso al Servicio sin permiso escrito',
+    'terms.use.breach':'Nos reservamos el derecho de suspender o cancelar cuentas que incumplan estos términos.',
+    'terms.data.heading':'5. Tus datos',
+    'terms.data.p1':'Conservas la propiedad de todos los datos que introduzcas en NestBook. Procesamos tus datos según nuestra Política de privacidad.',
+    'terms.data.p2':'Puedes solicitar una exportación de tus datos dentro de los 30 días posteriores al cierre de tu cuenta.',
+    'terms.ip.heading':'6. Propiedad intelectual',
+    'terms.ip.p1':'El nombre NestBook, el logotipo y el software son propiedad de NestBook. Nada en estos Términos te otorga derechos sobre nuestra propiedad intelectual más allá del derecho limitado de usar el Servicio.',
+    'terms.liability.heading':'7. Responsabilidad',
+    'terms.liability.p1':'El Servicio se proporciona "tal cual". NestBook renuncia a todas las garantías, expresas o implícitas.',
+    'terms.liability.p2':'La responsabilidad total de NestBook no superará el importe pagado en los 12 meses anteriores a la reclamación, o 100€, lo que sea mayor.',
+    'terms.liability.p3':'NestBook no será responsable de daños indirectos, incidentales o consecuentes.',
+    'terms.liability.consumer':'Nada en estos Términos limita la responsabilidad que no puede limitarse según la ley de protección al consumidor aplicable.',
+    'terms.cancel.heading':'8. Cancelación',
+    'terms.cancel.p1':'Puedes cancelar tu suscripción en cualquier momento desde la configuración de tu cuenta. La cancelación surte efecto al final del período de facturación actual.',
+    'terms.cancel.p2':'Podemos cancelar o suspender tu cuenta si incumples estos Términos.',
+    'terms.changes.heading':'9. Cambios en estos Términos',
+    'terms.changes.p1':'Te informaremos con al menos 14 días de antelación antes de que entren en vigor cambios importantes. El uso continuado constituye la aceptación.',
+    'terms.contact.heading':'10. Contacto',
+    'terms.contact.p1':'Para preguntas sobre estos Términos, contáctanos en hello@nestbook.io.',
+    'terms.contact.law':'Estos Términos se rigen por las leyes de Inglaterra y Gales.',
+    'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.languages':'Idiomas','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
+    'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto',
+    'footer.legal':'Legal','footer.privacy':'Política de privacidad','footer.terms':'Términos de servicio','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.demo':'Live-Demo','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'terms.title':'Nutzungsbedingungen','terms.updated':'Zuletzt aktualisiert: April 2026 · Anwendbares Recht: England und Wales',
+    'terms.toc.heading':'Inhalt',
+    'terms.toc.1':'Der Dienst','terms.toc.2':'Ihr Konto','terms.toc.3':'Pläne und Zahlungen',
+    'terms.toc.4':'Zulässige Nutzung','terms.toc.5':'Ihre Daten','terms.toc.6':'Geistiges Eigentum',
+    'terms.toc.7':'Haftung','terms.toc.8':'Kündigung','terms.toc.9':'Änderungen','terms.toc.10':'Kontakt',
+    'terms.intro':'Mit der Erstellung eines NestBook-Kontos stimmen Sie diesen Nutzungsbedingungen zu. Bitte lesen Sie sie sorgfältig.',
+    'terms.service.heading':'1. Der Dienst',
+    'terms.service.p1':'NestBook bietet webbasierte Unterkunfts- und Buchungsverwaltungssoftware für kleine Gastgewerbebetriebe an. Kontakt: hello@nestbook.io.',
+    'terms.service.p2':'Wir behalten uns das Recht vor, Teile des Dienstes mit angemessener Vorankündigung zu ändern, auszusetzen oder einzustellen.',
+    'terms.account.heading':'2. Ihr Konto',
+    'terms.account.p1':'Sie müssen bei der Kontoerstellung genaue Informationen angeben und sind für die Sicherheit Ihrer Zugangsdaten verantwortlich.',
+    'terms.account.p2':'Benachrichtigen Sie uns umgehend unter hello@nestbook.io bei unbefugter Nutzung Ihres Kontos.',
+    'terms.account.p3':'Sie müssen mindestens 18 Jahre alt sein, um NestBook zu nutzen.',
+    'terms.plans.heading':'3. Pläne und Zahlungen',
+    'terms.plans.free':'Der Starter-Plan (kostenlos) umfasst bis zu 1 Unterkunft und 3 Zimmer.',
+    'terms.plans.paid':'Kostenpflichtige Pläne werden monatlich über Stripe abgerechnet. Alle Preise sind in Euro und enthalten die jeweils gültige MwSt.',
+    'terms.plans.trial':'Bei einem kostenlosen Testzeitraum beginnt die Abrechnung am Ende des Tests, sofern Sie nicht vorher kündigen.',
+    'terms.plans.refund':'Zahlungen sind nicht rückerstattbar, außer wenn dies gesetzlich vorgeschrieben ist.',
+    'terms.use.heading':'4. Zulässige Nutzung',
+    'terms.use.intro':'Sie verpflichten sich, nicht:',
+    'terms.use.1':'Den Dienst für rechtswidrige Zwecke zu nutzen',
+    'terms.use.2':'Rechtswidrige, schädliche oder belästigende Inhalte hochzuladen',
+    'terms.use.3':'Unbefugten Zugang zu Teilen des Dienstes zu versuchen',
+    'terms.use.4':'Den Dienst zum Versenden unerwünschter Werbung (Spam) zu nutzen',
+    'terms.use.5':'Den Quellcode des Dienstes zu dekompilieren oder zu extrahieren',
+    'terms.use.6':'Den Zugang zum Dienst ohne schriftliche Genehmigung weiterzuverkaufen',
+    'terms.use.breach':'Wir behalten uns das Recht vor, Konten zu sperren oder zu kündigen, die gegen diese Bedingungen verstoßen.',
+    'terms.data.heading':'5. Ihre Daten',
+    'terms.data.p1':'Sie behalten das Eigentum an allen Daten, die Sie in NestBook eingeben. Wir verarbeiten Ihre Daten gemäß unserer Datenschutzrichtlinie.',
+    'terms.data.p2':'Sie können innerhalb von 30 Tagen nach Kontoschließung einen Datenexport anfordern.',
+    'terms.ip.heading':'6. Geistiges Eigentum',
+    'terms.ip.p1':'Name, Logo und Software von NestBook sind Eigentum von NestBook. Diese Bedingungen gewähren Ihnen keine Rechte an unserem geistigen Eigentum.',
+    'terms.liability.heading':'7. Haftung',
+    'terms.liability.p1':'Der Dienst wird „wie besehen" bereitgestellt. NestBook lehnt alle ausdrücklichen oder stillschweigenden Garantien ab.',
+    'terms.liability.p2':'Die Gesamthaftung von NestBook übersteigt nicht den in den 12 Monaten vor dem Anspruch gezahlten Betrag oder 100 €.',
+    'terms.liability.p3':'NestBook haftet nicht für indirekte, zufällige oder Folgeschäden.',
+    'terms.liability.consumer':'Diese Bedingungen schränken keine Haftung ein, die nach geltendem Verbraucherschutzrecht nicht eingeschränkt werden kann.',
+    'terms.cancel.heading':'8. Kündigung',
+    'terms.cancel.p1':'Sie können Ihr Abonnement jederzeit in Ihren Kontoeinstellungen kündigen. Die Kündigung gilt zum Ende der laufenden Abrechnungsperiode.',
+    'terms.cancel.p2':'Wir können Ihr Konto bei Verstoß gegen diese Bedingungen kündigen oder sperren.',
+    'terms.changes.heading':'9. Änderungen',
+    'terms.changes.p1':'Wir informieren Sie mindestens 14 Tage vor wesentlichen Änderungen. Die weitere Nutzung gilt als Zustimmung.',
+    'terms.contact.heading':'10. Kontakt',
+    'terms.contact.p1':'Bei Fragen zu diesen Bedingungen wenden Sie sich an hello@nestbook.io.',
+    'terms.contact.law':'Diese Bedingungen unterliegen dem Recht von England und Wales.',
+    'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.languages':'Sprachen','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
+    'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt',
+    'footer.legal':'Rechtliches','footer.privacy':'Datenschutzrichtlinie','footer.terms':'Nutzungsbedingungen','footer.gdpr':'DSGVO','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.demo':'Live demo','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'terms.title':'Gebruiksvoorwaarden','terms.updated':'Laatst bijgewerkt: april 2026 · Toepasselijk recht: Engeland en Wales',
+    'terms.toc.heading':'Inhoud',
+    'terms.toc.1':'De Dienst','terms.toc.2':'Uw account','terms.toc.3':'Abonnementen en betalingen',
+    'terms.toc.4':'Aanvaardbaar gebruik','terms.toc.5':'Uw gegevens','terms.toc.6':'Intellectueel eigendom',
+    'terms.toc.7':'Aansprakelijkheid','terms.toc.8':'Opzegging','terms.toc.9':'Wijzigingen','terms.toc.10':'Contact',
+    'terms.intro':'Door een NestBook-account aan te maken gaat u akkoord met deze Gebruiksvoorwaarden. Lees ze zorgvuldig.',
+    'terms.service.heading':'1. De Dienst',
+    'terms.service.p1':'NestBook biedt webgebaseerde accommodatie- en boekingsbeheersoftware voor kleine horecabedrijven. Contact: hello@nestbook.io.',
+    'terms.service.p2':'We behouden ons het recht voor om delen van de Dienst te wijzigen, op te schorten of stop te zetten met redelijke kennisgeving.',
+    'terms.account.heading':'2. Uw account',
+    'terms.account.p1':'U moet bij het aanmaken van een account nauwkeurige informatie verstrekken en bent verantwoordelijk voor de beveiliging van uw inloggegevens.',
+    'terms.account.p2':'Informeer ons onmiddellijk op hello@nestbook.io bij ongeoorloofd gebruik van uw account.',
+    'terms.account.p3':'U moet minimaal 18 jaar oud zijn om NestBook te gebruiken.',
+    'terms.plans.heading':'3. Abonnementen en betalingen',
+    'terms.plans.free':'Het Starter-abonnement (gratis) omvat maximaal 1 accommodatie en 3 kamers.',
+    'terms.plans.paid':'Betaalde abonnementen worden maandelijks via Stripe gefactureerd. Alle prijzen zijn in euro\'s inclusief BTW.',
+    'terms.plans.trial':'Bij een gratis proefperiode begint de facturering aan het einde van de proefperiode tenzij u eerder opzegt.',
+    'terms.plans.refund':'Betalingen zijn niet restitueerbaar tenzij wettelijk vereist. Bij opzegging halverwege een periode blijft uw toegang actief tot het einde van de lopende periode.',
+    'terms.use.heading':'4. Aanvaardbaar gebruik',
+    'terms.use.intro':'U stemt ermee in niet:',
+    'terms.use.1':'De Dienst te gebruiken voor onwettige doeleinden',
+    'terms.use.2':'Onwettige, schadelijke of beledigende inhoud te uploaden',
+    'terms.use.3':'Ongeautoriseerde toegang te proberen tot delen van de Dienst',
+    'terms.use.4':'De Dienst te gebruiken voor ongewenste commerciële communicatie (spam)',
+    'terms.use.5':'De broncode van de Dienst te reverse-engineeren of te extraheren',
+    'terms.use.6':'Toegang tot de Dienst door te verkopen zonder schriftelijke toestemming',
+    'terms.use.breach':'We behouden ons het recht voor accounts te schorsen of te beëindigen die deze voorwaarden schenden.',
+    'terms.data.heading':'5. Uw gegevens',
+    'terms.data.p1':'U behoudt het eigendom van alle gegevens die u in NestBook invoert. We verwerken uw gegevens zoals beschreven in ons Privacybeleid.',
+    'terms.data.p2':'U kunt binnen 30 dagen na accountsluiting een gegevensexport aanvragen.',
+    'terms.ip.heading':'6. Intellectueel eigendom',
+    'terms.ip.p1':'De naam NestBook, het logo en de software zijn eigendom van NestBook. Deze Voorwaarden geven u geen rechten op ons intellectueel eigendom.',
+    'terms.liability.heading':'7. Aansprakelijkheid',
+    'terms.liability.p1':'De Dienst wordt geleverd "zoals die is". NestBook wijst alle garanties af, uitdrukkelijk of impliciet.',
+    'terms.liability.p2':'De totale aansprakelijkheid van NestBook overschrijdt niet het bedrag betaald in de 12 maanden vóór de claim, of €100.',
+    'terms.liability.p3':'NestBook is niet aansprakelijk voor indirecte, incidentele of gevolgschade.',
+    'terms.liability.consumer':'Niets in deze Voorwaarden beperkt aansprakelijkheid die niet beperkt kan worden onder toepasselijk consumentenrecht.',
+    'terms.cancel.heading':'8. Opzegging',
+    'terms.cancel.p1':'U kunt uw abonnement op elk moment opzeggen via uw accountinstellingen. Opzegging gaat in aan het einde van de lopende factureringsperiode.',
+    'terms.cancel.p2':'We kunnen uw account beëindigen of schorsen als u deze Voorwaarden schendt.',
+    'terms.changes.heading':'9. Wijzigingen',
+    'terms.changes.p1':'We informeren u minimaal 14 dagen van tevoren over wezenlijke wijzigingen. Voortgezet gebruik geldt als aanvaarding.',
+    'terms.contact.heading':'10. Contact',
+    'terms.contact.p1':'Voor vragen over deze Voorwaarden kunt u contact met ons opnemen via hello@nestbook.io.',
+    'terms.contact.law':'Deze Voorwaarden worden beheerst door het recht van Engeland en Wales.',
+    'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.languages':'Talen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
+    'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Juridisch','footer.privacy':'Privacybeleid','footer.terms':'Gebruiksvoorwaarden','footer.gdpr':'AVG','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
+const nb = document.querySelector('.navbar');
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+</script>
+</body>
+</html>

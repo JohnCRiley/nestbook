@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — NestBook</title>
+<meta name="description" content="NestBook Privacy Policy. GDPR-compliant. Learn how we collect, use and protect your data. EU hosting, no data sales, essential cookies only.">
+<link rel="canonical" href="https://nestbook.io/privacy.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nestbook.io/privacy.html">
+<meta property="og:title" content="Privacy Policy — NestBook">
+<meta property="og:site_name" content="NestBook">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero .meta { font-size: 0.875rem; color: var(--muted); }
+
+.prose-body { padding: 64px 0 88px; }
+.prose-wrap { max-width: 780px; }
+.prose-wrap h2 { font-size: 1.3rem; font-weight: 800; color: var(--dark); margin: 40px 0 12px; }
+.prose-wrap h2:first-child { margin-top: 0; }
+.prose-wrap h3 { font-size: 1.05rem; font-weight: 700; color: var(--dark); margin: 24px 0 8px; }
+.prose-wrap p  { color: var(--muted); line-height: 1.8; margin-bottom: 14px; }
+.prose-wrap ul, .prose-wrap ol { color: var(--muted); line-height: 1.8; margin: 0 0 14px 24px; }
+.prose-wrap li { margin-bottom: 6px; }
+.prose-wrap a  { color: var(--mid); }
+.prose-wrap a:hover { text-decoration: underline; }
+.toc { background: var(--soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 40px; }
+.toc h3 { font-size: 0.875rem; font-weight: 700; color: var(--dark); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.toc ol  { margin-left: 18px; }
+.toc li  { font-size: 0.875rem; margin-bottom: 4px; }
+.toc a   { color: var(--mid); }
+.toc a:hover { text-decoration: underline; }
+.rights-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 16px 0 24px; }
+.right-card  { background: var(--soft); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.right-card strong { display: block; color: var(--dark); font-size: 0.875rem; margin-bottom: 4px; }
+.right-card p { font-size: 0.83rem; color: var(--muted); margin: 0; line-height: 1.55; }
+
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links  { display: flex; flex-direction: column; gap: 8px; }
+.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } .rights-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 40px; } .prose-body { padding: 40px 0 64px; } }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
+      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="priv.title">Privacy Policy</h1>
+    <p class="meta" data-i18n="priv.updated">Last updated: April 2026 · NestBook is GDPR-compliant</p>
+  </div>
+</section>
+
+<main class="prose-body">
+  <div class="container">
+    <div class="prose-wrap">
+
+      <div class="toc">
+        <h3 data-i18n="priv.toc.heading">Contents</h3>
+        <ol>
+          <li><a href="#controller" data-i18n="priv.toc.1">Who we are</a></li>
+          <li><a href="#collect"    data-i18n="priv.toc.2">Data we collect</a></li>
+          <li><a href="#use"        data-i18n="priv.toc.3">How we use your data</a></li>
+          <li><a href="#storage"    data-i18n="priv.toc.4">Where we store your data</a></li>
+          <li><a href="#third"      data-i18n="priv.toc.5">Third-party services</a></li>
+          <li><a href="#retention"  data-i18n="priv.toc.6">Data retention</a></li>
+          <li><a href="#rights"     data-i18n="priv.toc.7">Your rights</a></li>
+          <li><a href="#cookies"    data-i18n="priv.toc.8">Cookies</a></li>
+          <li><a href="#children"   data-i18n="priv.toc.9">Children</a></li>
+          <li><a href="#contact"    data-i18n="priv.toc.10">Contact &amp; complaints</a></li>
+        </ol>
+      </div>
+
+      <p data-i18n="priv.intro">This Privacy Policy explains how NestBook collects, uses and protects your personal data when you use our service. We are committed to GDPR compliance and to handling your data with care and respect.</p>
+
+      <h2 id="controller" data-i18n="priv.controller.heading">1. Who we are (Data Controller)</h2>
+      <p data-i18n="priv.controller.p1">NestBook is the data controller for the personal data processed through the NestBook service. You can contact us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.</p>
+
+      <h2 id="collect" data-i18n="priv.collect.heading">2. Data we collect</h2>
+      <h3 data-i18n="priv.collect.account.h">Account information</h3>
+      <p data-i18n="priv.collect.account.p">When you register, we collect your name, email address, and hashed password. We also store your property name and property type.</p>
+      <h3 data-i18n="priv.collect.booking.h">Booking and guest data</h3>
+      <p data-i18n="priv.collect.booking.p">As part of providing the service, we store the booking records, room details, and guest information (name, email, phone) that you enter into NestBook. You are the data controller for your guests' personal data; we process it on your behalf as a data processor.</p>
+      <h3 data-i18n="priv.collect.payment.h">Payment information</h3>
+      <p data-i18n="priv.collect.payment.p">We do not store credit card details. Payments are processed by Stripe, who holds payment card data under PCI-DSS compliance. We receive confirmation of successful payment and a subscription status from Stripe.</p>
+      <h3 data-i18n="priv.collect.technical.h">Technical data</h3>
+      <p data-i18n="priv.collect.technical.p">Our server logs may record IP addresses, browser type, and request timestamps for security and debugging purposes. We do not use analytics tools or tracking cookies.</p>
+
+      <h2 id="use" data-i18n="priv.use.heading">3. How we use your data</h2>
+      <p data-i18n="priv.use.intro">We use your personal data only to:</p>
+      <ul>
+        <li data-i18n="priv.use.1">Create and manage your NestBook account</li>
+        <li data-i18n="priv.use.2">Provide and improve the NestBook service</li>
+        <li data-i18n="priv.use.3">Send transactional emails (booking confirmations, welcome emails) where enabled</li>
+        <li data-i18n="priv.use.4">Process subscription payments via Stripe</li>
+        <li data-i18n="priv.use.5">Respond to your support requests and contact form submissions</li>
+        <li data-i18n="priv.use.6">Comply with legal obligations</li>
+      </ul>
+      <p data-i18n="priv.use.nobiz">We do not sell, rent, or share your personal data with third parties for marketing purposes. We do not use your data to build advertising profiles.</p>
+      <p data-i18n="priv.use.legal">Our legal basis for processing is: <strong>contract performance</strong> (to provide the service you signed up for), <strong>legitimate interests</strong> (security, debugging), and <strong>consent</strong> (for optional email communications).</p>
+
+      <h2 id="storage" data-i18n="priv.storage.heading">4. Where we store your data</h2>
+      <p data-i18n="priv.storage.p1">All NestBook application data is stored on servers operated by <strong>Hetzner Online GmbH</strong>, located in data centres in the European Union (Germany and Finland). Hetzner is GDPR-compliant and we have a Data Processing Agreement in place with them.</p>
+      <p data-i18n="priv.storage.p2">Your data does not leave the EU/EEA in the normal course of service operation.</p>
+
+      <h2 id="third" data-i18n="priv.third.heading">5. Third-party services</h2>
+      <p data-i18n="priv.third.intro">We use a small number of third-party processors, each subject to a Data Processing Agreement:</p>
+      <ul>
+        <li data-i18n="priv.third.stripe"><strong>Stripe</strong> (payments) — processes subscription payment card data. Stripe is PCI-DSS Level 1 certified and GDPR-compliant. Privacy policy: stripe.com/privacy.</li>
+        <li data-i18n="priv.third.resend"><strong>Resend</strong> (transactional email) — used to send booking confirmation and welcome emails. Resend processes recipient email addresses and email content. Privacy policy: resend.com/legal/privacy-policy.</li>
+        <li data-i18n="priv.third.zoho"><strong>Zoho</strong> (support email) — our support mailbox hello@nestbook.io is hosted by Zoho. Messages you send to us are stored in Zoho Mail. Privacy policy: zoho.com/privacy.html.</li>
+      </ul>
+      <p data-i18n="priv.third.no">We do not use Google Analytics, Facebook Pixel, or any other advertising or analytics trackers.</p>
+
+      <h2 id="retention" data-i18n="priv.retention.heading">6. Data retention</h2>
+      <p data-i18n="priv.retention.p1">We retain your account data for as long as your account is active. If you close your account, we will delete or anonymise your personal data within 90 days, except where we are required to retain it for legal or tax compliance purposes (typically up to 7 years for financial records).</p>
+      <p data-i18n="priv.retention.p2">Server logs are retained for a maximum of 30 days.</p>
+
+      <h2 id="rights" data-i18n="priv.rights.heading">7. Your rights under GDPR</h2>
+      <p data-i18n="priv.rights.intro">Under the General Data Protection Regulation, you have the following rights:</p>
+
+      <div class="rights-grid">
+        <div class="right-card">
+          <strong data-i18n="priv.right1.title">Right of access</strong>
+          <p data-i18n="priv.right1.desc">Request a copy of all personal data we hold about you.</p>
+        </div>
+        <div class="right-card">
+          <strong data-i18n="priv.right2.title">Right to rectification</strong>
+          <p data-i18n="priv.right2.desc">Ask us to correct inaccurate or incomplete personal data.</p>
+        </div>
+        <div class="right-card">
+          <strong data-i18n="priv.right3.title">Right to erasure</strong>
+          <p data-i18n="priv.right3.desc">Request deletion of your personal data ("right to be forgotten").</p>
+        </div>
+        <div class="right-card">
+          <strong data-i18n="priv.right4.title">Right to portability</strong>
+          <p data-i18n="priv.right4.desc">Receive your data in a structured, machine-readable format.</p>
+        </div>
+        <div class="right-card">
+          <strong data-i18n="priv.right5.title">Right to object</strong>
+          <p data-i18n="priv.right5.desc">Object to processing based on legitimate interests.</p>
+        </div>
+        <div class="right-card">
+          <strong data-i18n="priv.right6.title">Right to restrict</strong>
+          <p data-i18n="priv.right6.desc">Request that we limit how we process your data in certain circumstances.</p>
+        </div>
+      </div>
+
+      <p data-i18n="priv.rights.exercise">To exercise any of these rights, email us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>. We will respond within 30 days. We may ask you to verify your identity before fulfilling a request.</p>
+
+      <h2 id="cookies" data-i18n="priv.cookies.heading">8. Cookies</h2>
+      <p data-i18n="priv.cookies.p1">We use only essential cookies and browser localStorage. We do not use tracking, advertising, or analytics cookies. For full details, see our <a href="/cookies.html">Cookie Policy</a>.</p>
+
+      <h2 id="children" data-i18n="priv.children.heading">9. Children</h2>
+      <p data-i18n="priv.children.p1">NestBook is not directed at children under 18. We do not knowingly collect personal data from anyone under 18. If you believe we have inadvertently collected data from a minor, please contact us and we will delete it promptly.</p>
+
+      <h2 id="contact" data-i18n="priv.contact.heading">10. Contact &amp; complaints</h2>
+      <p data-i18n="priv.contact.p1">For any privacy-related questions or to exercise your rights, contact us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.</p>
+      <p data-i18n="priv.contact.p2">If you are unhappy with how we have handled your data, you have the right to lodge a complaint with your national data protection authority. In the UK this is the <strong>Information Commissioner's Office (ICO)</strong> at ico.org.uk. In the EU, contact your local supervisory authority.</p>
+
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name"><img src="/icon.svg" class="footer-leaf-img" alt="" />NestBook</div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.demo':'Live demo','nav.signin':'Sign in','nav.try':'Try free',
+    'priv.title':'Privacy Policy','priv.updated':'Last updated: April 2026 · NestBook is GDPR-compliant',
+    'priv.toc.heading':'Contents',
+    'priv.toc.1':'Who we are','priv.toc.2':'Data we collect','priv.toc.3':'How we use your data',
+    'priv.toc.4':'Where we store your data','priv.toc.5':'Third-party services','priv.toc.6':'Data retention',
+    'priv.toc.7':'Your rights','priv.toc.8':'Cookies','priv.toc.9':'Children','priv.toc.10':'Contact & complaints',
+    'priv.intro':'This Privacy Policy explains how NestBook collects, uses and protects your personal data. We are committed to GDPR compliance.',
+    'priv.controller.heading':'1. Who we are (Data Controller)',
+    'priv.controller.p1':'NestBook is the data controller for personal data processed through the NestBook service. Contact: hello@nestbook.io.',
+    'priv.collect.heading':'2. Data we collect',
+    'priv.collect.account.h':'Account information',
+    'priv.collect.account.p':'When you register, we collect your name, email address, and hashed password, plus your property name and type.',
+    'priv.collect.booking.h':'Booking and guest data',
+    'priv.collect.booking.p':'We store booking records, room details, and guest information (name, email, phone) that you enter. You are the data controller for your guests\' data; we process it as your data processor.',
+    'priv.collect.payment.h':'Payment information',
+    'priv.collect.payment.p':'We do not store credit card details. Payments are processed by Stripe under PCI-DSS compliance. We receive subscription status from Stripe.',
+    'priv.collect.technical.h':'Technical data',
+    'priv.collect.technical.p':'Server logs may record IP addresses and request timestamps for security purposes. We do not use analytics tools or tracking cookies.',
+    'priv.use.heading':'3. How we use your data',
+    'priv.use.intro':'We use your personal data only to:',
+    'priv.use.1':'Create and manage your NestBook account',
+    'priv.use.2':'Provide and improve the NestBook service',
+    'priv.use.3':'Send transactional emails (booking confirmations, welcome emails)',
+    'priv.use.4':'Process subscription payments via Stripe',
+    'priv.use.5':'Respond to your support requests and contact form submissions',
+    'priv.use.6':'Comply with legal obligations',
+    'priv.use.nobiz':'We do not sell, rent, or share your data with third parties for marketing purposes.',
+    'priv.use.legal':'Legal basis: contract performance, legitimate interests (security), and consent (optional emails).',
+    'priv.storage.heading':'4. Where we store your data',
+    'priv.storage.p1':'All data is stored on Hetzner Online GmbH servers in EU data centres (Germany and Finland). Hetzner is GDPR-compliant and we have a DPA in place.',
+    'priv.storage.p2':'Your data does not leave the EU/EEA in normal service operation.',
+    'priv.third.heading':'5. Third-party services',
+    'priv.third.intro':'We use a small number of third-party processors, each with a Data Processing Agreement:',
+    'priv.third.stripe':'Stripe (payments) — processes subscription payment data. PCI-DSS Level 1, GDPR-compliant. stripe.com/privacy.',
+    'priv.third.resend':'Resend (transactional email) — sends booking confirmation and welcome emails. resend.com/legal/privacy-policy.',
+    'priv.third.zoho':'Zoho (support email) — our support mailbox hello@nestbook.io is hosted by Zoho Mail. zoho.com/privacy.html.',
+    'priv.third.no':'We do not use Google Analytics, Facebook Pixel, or any advertising or analytics trackers.',
+    'priv.retention.heading':'6. Data retention',
+    'priv.retention.p1':'We retain account data while your account is active. After account closure we delete or anonymise personal data within 90 days (except financial records, retained up to 7 years for legal compliance).',
+    'priv.retention.p2':'Server logs are retained for a maximum of 30 days.',
+    'priv.rights.heading':'7. Your rights under GDPR',
+    'priv.rights.intro':'Under GDPR, you have the following rights:',
+    'priv.right1.title':'Right of access','priv.right1.desc':'Request a copy of all personal data we hold about you.',
+    'priv.right2.title':'Right to rectification','priv.right2.desc':'Ask us to correct inaccurate or incomplete data.',
+    'priv.right3.title':'Right to erasure','priv.right3.desc':'Request deletion of your personal data ("right to be forgotten").',
+    'priv.right4.title':'Right to portability','priv.right4.desc':'Receive your data in a structured, machine-readable format.',
+    'priv.right5.title':'Right to object','priv.right5.desc':'Object to processing based on legitimate interests.',
+    'priv.right6.title':'Right to restrict','priv.right6.desc':'Request that we limit processing in certain circumstances.',
+    'priv.rights.exercise':'To exercise your rights, email hello@nestbook.io. We respond within 30 days.',
+    'priv.cookies.heading':'8. Cookies',
+    'priv.cookies.p1':'We use only essential cookies and localStorage. No tracking, advertising, or analytics cookies. See our Cookie Policy for full details.',
+    'priv.children.heading':'9. Children',
+    'priv.children.p1':'NestBook is not for children under 18. We do not knowingly collect data from minors. Contact us to remove any such data.',
+    'priv.contact.heading':'10. Contact & complaints',
+    'priv.contact.p1':'For privacy questions or to exercise your rights: hello@nestbook.io.',
+    'priv.contact.p2':'You may also lodge a complaint with your national data protection authority (UK: ico.org.uk; EU: your local supervisory authority).',
+    'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.languages':'Languages','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
+    'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Legal','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.gdpr':'GDPR','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.languages':'Langues','nav.demo':'Démo en direct','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'priv.title':'Politique de confidentialité','priv.updated':'Dernière mise à jour : avril 2026 · NestBook est conforme au RGPD',
+    'priv.toc.heading':'Sommaire',
+    'priv.toc.1':'Qui nous sommes','priv.toc.2':'Données collectées','priv.toc.3':'Utilisation de vos données',
+    'priv.toc.4':'Lieu de stockage','priv.toc.5':'Services tiers','priv.toc.6':'Conservation',
+    'priv.toc.7':'Vos droits','priv.toc.8':'Cookies','priv.toc.9':'Mineurs','priv.toc.10':'Contact et réclamations',
+    'priv.intro':'Cette Politique de confidentialité explique comment NestBook collecte, utilise et protège vos données personnelles. Nous nous engageons à respecter le RGPD.',
+    'priv.controller.heading':'1. Qui nous sommes (responsable du traitement)',
+    'priv.controller.p1':'NestBook est le responsable du traitement des données personnelles traitées via le service NestBook. Contact : hello@nestbook.io.',
+    'priv.collect.heading':'2. Données que nous collectons',
+    'priv.collect.account.h':'Informations de compte',
+    'priv.collect.account.p':'Lors de l\'inscription, nous collectons votre nom, adresse e-mail et mot de passe haché, ainsi que le nom et le type de votre propriété.',
+    'priv.collect.booking.h':'Données de réservation et de clients',
+    'priv.collect.booking.p':'Nous stockons les réservations, les détails des chambres et les informations sur les clients (nom, e-mail, téléphone) que vous saisissez. Vous êtes responsable du traitement des données de vos clients ; nous les traitons en tant que sous-traitant.',
+    'priv.collect.payment.h':'Données de paiement',
+    'priv.collect.payment.p':'Nous ne stockons pas les données de carte bancaire. Les paiements sont traités par Stripe dans le cadre de la conformité PCI-DSS. Nous recevons uniquement la confirmation du paiement.',
+    'priv.collect.technical.h':'Données techniques',
+    'priv.collect.technical.p':'Les journaux de serveur peuvent enregistrer les adresses IP et les horodatages des requêtes à des fins de sécurité. Nous n\'utilisons pas d\'outils d\'analyse ni de cookies de traçage.',
+    'priv.use.heading':'3. Utilisation de vos données',
+    'priv.use.intro':'Nous utilisons vos données personnelles uniquement pour :',
+    'priv.use.1':'Créer et gérer votre compte NestBook',
+    'priv.use.2':'Fournir et améliorer le service NestBook',
+    'priv.use.3':'Envoyer des e-mails transactionnels (confirmations de réservation, e-mails de bienvenue)',
+    'priv.use.4':'Traiter les paiements d\'abonnement via Stripe',
+    'priv.use.5':'Répondre à vos demandes d\'assistance et aux soumissions du formulaire de contact',
+    'priv.use.6':'Respecter les obligations légales',
+    'priv.use.nobiz':'Nous ne vendons, ne louons ni ne partageons vos données avec des tiers à des fins commerciales.',
+    'priv.use.legal':'Base légale : exécution du contrat, intérêts légitimes (sécurité) et consentement (e-mails optionnels).',
+    'priv.storage.heading':'4. Lieu de stockage des données',
+    'priv.storage.p1':'Toutes les données sont stockées sur les serveurs de Hetzner Online GmbH dans des centres de données de l\'UE (Allemagne et Finlande). Hetzner est conforme au RGPD et un accord de traitement des données est en place.',
+    'priv.storage.p2':'Vos données ne quittent pas l\'UE/EEE dans le cadre normal du service.',
+    'priv.third.heading':'5. Services tiers',
+    'priv.third.intro':'Nous utilisons un petit nombre de sous-traitants, chacun lié par un accord de traitement des données :',
+    'priv.third.stripe':'Stripe (paiements) — traite les données de paiement. PCI-DSS niveau 1, conforme au RGPD. stripe.com/fr/privacy.',
+    'priv.third.resend':'Resend (e-mails transactionnels) — envoie les confirmations de réservation et les e-mails de bienvenue. resend.com/legal/privacy-policy.',
+    'priv.third.zoho':'Zoho (e-mail d\'assistance) — notre boîte hello@nestbook.io est hébergée par Zoho Mail. zoho.com/privacy.html.',
+    'priv.third.no':'Nous n\'utilisons pas Google Analytics, Facebook Pixel ni aucun autre traceur publicitaire ou analytique.',
+    'priv.retention.heading':'6. Conservation des données',
+    'priv.retention.p1':'Nous conservons les données de compte pendant toute la durée d\'activité de votre compte. Après sa clôture, nous les supprimons ou anonymisons dans les 90 jours (sauf les données financières, conservées jusqu\'à 7 ans).',
+    'priv.retention.p2':'Les journaux de serveur sont conservés au maximum 30 jours.',
+    'priv.rights.heading':'7. Vos droits au titre du RGPD',
+    'priv.rights.intro':'Conformément au RGPD, vous disposez des droits suivants :',
+    'priv.right1.title':'Droit d\'accès','priv.right1.desc':'Demandez une copie de toutes vos données personnelles.',
+    'priv.right2.title':'Droit de rectification','priv.right2.desc':'Demandez la correction de données inexactes ou incomplètes.',
+    'priv.right3.title':'Droit à l\'effacement','priv.right3.desc':'Demandez la suppression de vos données personnelles (« droit à l\'oubli »).',
+    'priv.right4.title':'Droit à la portabilité','priv.right4.desc':'Recevez vos données dans un format structuré et lisible par machine.',
+    'priv.right5.title':'Droit d\'opposition','priv.right5.desc':'Opposez-vous au traitement fondé sur les intérêts légitimes.',
+    'priv.right6.title':'Droit à la limitation','priv.right6.desc':'Demandez la limitation du traitement de vos données dans certaines circonstances.',
+    'priv.rights.exercise':'Pour exercer vos droits, écrivez à hello@nestbook.io. Nous répondons dans les 30 jours.',
+    'priv.cookies.heading':'8. Cookies',
+    'priv.cookies.p1':'Nous n\'utilisons que des cookies essentiels et le localStorage. Aucun cookie de traçage, publicitaire ou analytique. Consultez notre Politique de cookies pour tous les détails.',
+    'priv.children.heading':'9. Mineurs',
+    'priv.children.p1':'NestBook n\'est pas destiné aux moins de 18 ans. Nous ne collectons pas sciemment de données sur des mineurs. Contactez-nous pour supprimer de telles données.',
+    'priv.contact.heading':'10. Contact et réclamations',
+    'priv.contact.p1':'Pour toute question relative à la confidentialité ou pour exercer vos droits : hello@nestbook.io.',
+    'priv.contact.p2':'Vous pouvez également déposer une réclamation auprès de votre autorité nationale de protection des données (France : CNIL, cnil.fr).',
+    'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.languages':'Langues','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
+    'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Mentions légales','footer.privacy':'Politique de confidentialité','footer.terms':'Conditions d\'utilisation','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.languages':'Idiomas','nav.demo':'Demo en vivo','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'priv.title':'Política de privacidad','priv.updated':'Última actualización: abril de 2026 · NestBook cumple con el RGPD',
+    'priv.toc.heading':'Contenido',
+    'priv.toc.1':'Quiénes somos','priv.toc.2':'Datos que recopilamos','priv.toc.3':'Cómo usamos tus datos',
+    'priv.toc.4':'Dónde almacenamos tus datos','priv.toc.5':'Servicios de terceros','priv.toc.6':'Retención',
+    'priv.toc.7':'Tus derechos','priv.toc.8':'Cookies','priv.toc.9':'Menores','priv.toc.10':'Contacto y reclamaciones',
+    'priv.intro':'Esta Política de privacidad explica cómo NestBook recopila, usa y protege tus datos personales. Nos comprometemos con el cumplimiento del RGPD.',
+    'priv.controller.heading':'1. Quiénes somos (Responsable del tratamiento)',
+    'priv.controller.p1':'NestBook es el responsable del tratamiento de los datos personales procesados a través del servicio. Contacto: hello@nestbook.io.',
+    'priv.collect.heading':'2. Datos que recopilamos',
+    'priv.collect.account.h':'Información de cuenta',
+    'priv.collect.account.p':'Al registrarte, recopilamos tu nombre, correo electrónico y contraseña hasheada, junto con el nombre y tipo de tu propiedad.',
+    'priv.collect.booking.h':'Datos de reservas y huéspedes',
+    'priv.collect.booking.p':'Almacenamos reservas, detalles de habitaciones e información de huéspedes (nombre, correo, teléfono) que introduces. Eres el responsable del tratamiento de los datos de tus huéspedes; los procesamos como encargado del tratamiento.',
+    'priv.collect.payment.h':'Datos de pago',
+    'priv.collect.payment.p':'No almacenamos datos de tarjetas de crédito. Los pagos son procesados por Stripe conforme a PCI-DSS. Solo recibimos confirmación del estado de la suscripción.',
+    'priv.collect.technical.h':'Datos técnicos',
+    'priv.collect.technical.p':'Los registros del servidor pueden registrar direcciones IP y marcas de tiempo por motivos de seguridad. No usamos herramientas de análisis ni cookies de seguimiento.',
+    'priv.use.heading':'3. Cómo usamos tus datos',
+    'priv.use.intro':'Usamos tus datos personales únicamente para:',
+    'priv.use.1':'Crear y gestionar tu cuenta NestBook',
+    'priv.use.2':'Proporcionar y mejorar el servicio NestBook',
+    'priv.use.3':'Enviar correos transaccionales (confirmaciones de reserva, correos de bienvenida)',
+    'priv.use.4':'Procesar pagos de suscripción a través de Stripe',
+    'priv.use.5':'Responder a tus solicitudes de soporte y envíos del formulario de contacto',
+    'priv.use.6':'Cumplir con las obligaciones legales',
+    'priv.use.nobiz':'No vendemos, alquilamos ni compartimos tus datos con terceros para fines de marketing.',
+    'priv.use.legal':'Base legal: ejecución del contrato, intereses legítimos (seguridad) y consentimiento (correos opcionales).',
+    'priv.storage.heading':'4. Dónde almacenamos tus datos',
+    'priv.storage.p1':'Todos los datos se almacenan en servidores de Hetzner Online GmbH en centros de datos de la UE (Alemania y Finlandia). Hetzner cumple el RGPD y tenemos un DPA en vigor.',
+    'priv.storage.p2':'Tus datos no salen de la UE/EEE en el funcionamiento normal del servicio.',
+    'priv.third.heading':'5. Servicios de terceros',
+    'priv.third.intro':'Utilizamos un pequeño número de encargados del tratamiento, cada uno con un Acuerdo de Tratamiento de Datos:',
+    'priv.third.stripe':'Stripe (pagos) — procesa datos de pago de suscripciones. PCI-DSS Nivel 1, cumple con el RGPD. stripe.com/es/privacy.',
+    'priv.third.resend':'Resend (correo transaccional) — envía confirmaciones de reserva y correos de bienvenida. resend.com/legal/privacy-policy.',
+    'priv.third.zoho':'Zoho (correo de soporte) — nuestro buzón hello@nestbook.io está alojado en Zoho Mail. zoho.com/privacy.html.',
+    'priv.third.no':'No usamos Google Analytics, Facebook Pixel ni ningún rastreador publicitario o analítico.',
+    'priv.retention.heading':'6. Retención de datos',
+    'priv.retention.p1':'Conservamos los datos mientras tu cuenta esté activa. Tras el cierre, los eliminamos o anonimizamos en 90 días (salvo registros financieros, hasta 7 años).',
+    'priv.retention.p2':'Los registros del servidor se conservan un máximo de 30 días.',
+    'priv.rights.heading':'7. Tus derechos bajo el RGPD',
+    'priv.rights.intro':'En virtud del RGPD, tienes los siguientes derechos:',
+    'priv.right1.title':'Derecho de acceso','priv.right1.desc':'Solicita una copia de todos tus datos personales.',
+    'priv.right2.title':'Derecho de rectificación','priv.right2.desc':'Pide la corrección de datos inexactos o incompletos.',
+    'priv.right3.title':'Derecho de supresión','priv.right3.desc':'Solicita la eliminación de tus datos ("derecho al olvido").',
+    'priv.right4.title':'Derecho a la portabilidad','priv.right4.desc':'Recibe tus datos en formato estructurado y legible por máquina.',
+    'priv.right5.title':'Derecho de oposición','priv.right5.desc':'Oponte al tratamiento basado en intereses legítimos.',
+    'priv.right6.title':'Derecho a la limitación','priv.right6.desc':'Solicita la limitación del tratamiento en determinadas circunstancias.',
+    'priv.rights.exercise':'Para ejercer tus derechos, escríbenos a hello@nestbook.io. Respondemos en 30 días.',
+    'priv.cookies.heading':'8. Cookies',
+    'priv.cookies.p1':'Solo usamos cookies esenciales y localStorage. Sin cookies de seguimiento, publicidad ni análisis. Ver nuestra Política de cookies.',
+    'priv.children.heading':'9. Menores',
+    'priv.children.p1':'NestBook no está dirigido a menores de 18 años. No recopilamos intencionalmente datos de menores. Contáctanos para eliminar dichos datos.',
+    'priv.contact.heading':'10. Contacto y reclamaciones',
+    'priv.contact.p1':'Para consultas de privacidad o ejercer tus derechos: hello@nestbook.io.',
+    'priv.contact.p2':'También puedes presentar una reclamación ante tu autoridad de protección de datos (España: AEPD, aepd.es).',
+    'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.languages':'Idiomas','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
+    'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto',
+    'footer.legal':'Legal','footer.privacy':'Política de privacidad','footer.terms':'Términos de servicio','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.languages':'Sprachen','nav.demo':'Live-Demo','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'priv.title':'Datenschutzrichtlinie','priv.updated':'Zuletzt aktualisiert: April 2026 · NestBook ist DSGVO-konform',
+    'priv.toc.heading':'Inhalt',
+    'priv.toc.1':'Wer wir sind','priv.toc.2':'Erhobene Daten','priv.toc.3':'Datennutzung',
+    'priv.toc.4':'Datenspeicherung','priv.toc.5':'Drittanbieter','priv.toc.6':'Aufbewahrung',
+    'priv.toc.7':'Ihre Rechte','priv.toc.8':'Cookies','priv.toc.9':'Minderjährige','priv.toc.10':'Kontakt & Beschwerden',
+    'priv.intro':'Diese Datenschutzrichtlinie erläutert, wie NestBook Ihre personenbezogenen Daten erhebt, verwendet und schützt. Wir verpflichten uns zur DSGVO-Konformität.',
+    'priv.controller.heading':'1. Wer wir sind (Verantwortlicher)',
+    'priv.controller.p1':'NestBook ist der Verantwortliche für die im Rahmen des NestBook-Dienstes verarbeiteten personenbezogenen Daten. Kontakt: hello@nestbook.io.',
+    'priv.collect.heading':'2. Erhobene Daten',
+    'priv.collect.account.h':'Kontoinformationen',
+    'priv.collect.account.p':'Bei der Registrierung erheben wir Ihren Namen, Ihre E-Mail-Adresse und Ihr gehashtes Passwort sowie den Namen und Typ Ihrer Unterkunft.',
+    'priv.collect.booking.h':'Buchungs- und Gastdaten',
+    'priv.collect.booking.p':'Wir speichern Buchungsdatensätze, Zimmerdetails und Gastinformationen (Name, E-Mail, Telefon), die Sie eingeben. Sie sind Verantwortlicher für Ihre Gastdaten; wir verarbeiten sie als Auftragsverarbeiter.',
+    'priv.collect.payment.h':'Zahlungsdaten',
+    'priv.collect.payment.p':'Wir speichern keine Kreditkartendaten. Zahlungen werden von Stripe gemäß PCI-DSS verarbeitet. Wir erhalten nur den Abonnementstatus.',
+    'priv.collect.technical.h':'Technische Daten',
+    'priv.collect.technical.p':'Server-Logs können IP-Adressen und Zeitstempel für Sicherheitszwecke aufzeichnen. Wir verwenden keine Analysetools oder Tracking-Cookies.',
+    'priv.use.heading':'3. Datennutzung',
+    'priv.use.intro':'Wir verwenden Ihre Daten ausschließlich für:',
+    'priv.use.1':'Erstellung und Verwaltung Ihres NestBook-Kontos',
+    'priv.use.2':'Bereitstellung und Verbesserung des NestBook-Dienstes',
+    'priv.use.3':'Versand von Transaktions-E-Mails (Buchungsbestätigungen, Willkommens-E-Mails)',
+    'priv.use.4':'Abonnementzahlungsabwicklung über Stripe',
+    'priv.use.5':'Beantwortung Ihrer Support-Anfragen',
+    'priv.use.6':'Einhaltung gesetzlicher Verpflichtungen',
+    'priv.use.nobiz':'Wir verkaufen, vermieten oder teilen Ihre Daten nicht zu Marketingzwecken.',
+    'priv.use.legal':'Rechtsgrundlagen: Vertragserfüllung, berechtigte Interessen (Sicherheit) und Einwilligung (optionale E-Mails).',
+    'priv.storage.heading':'4. Datenspeicherung',
+    'priv.storage.p1':'Alle Daten werden auf Servern der Hetzner Online GmbH in EU-Rechenzentren (Deutschland und Finnland) gespeichert. Hetzner ist DSGVO-konform; wir haben einen AV-Vertrag.',
+    'priv.storage.p2':'Ihre Daten verlassen die EU/EWR im normalen Dienstbetrieb nicht.',
+    'priv.third.heading':'5. Drittanbieter',
+    'priv.third.intro':'Wir nutzen eine kleine Anzahl von Auftragsverarbeitern, jeweils mit AVV:',
+    'priv.third.stripe':'Stripe (Zahlungen) — verarbeitet Abonnementzahlungsdaten. PCI-DSS Level 1, DSGVO-konform. stripe.com/de/privacy.',
+    'priv.third.resend':'Resend (Transaktions-E-Mail) — sendet Buchungsbestätigungen und Willkommens-E-Mails. resend.com/legal/privacy-policy.',
+    'priv.third.zoho':'Zoho (Support-E-Mail) — unser Postfach hello@nestbook.io wird von Zoho Mail gehostet. zoho.com/privacy.html.',
+    'priv.third.no':'Wir verwenden kein Google Analytics, kein Facebook-Pixel und keine Werbe- oder Analyse-Tracker.',
+    'priv.retention.heading':'6. Datenspeicherung (Aufbewahrung)',
+    'priv.retention.p1':'Wir speichern Kontodaten, solange Ihr Konto aktiv ist. Nach der Schließung löschen oder anonymisieren wir Daten innerhalb von 90 Tagen (außer Finanzdaten bis zu 7 Jahre).',
+    'priv.retention.p2':'Server-Logs werden maximal 30 Tage aufbewahrt.',
+    'priv.rights.heading':'7. Ihre Rechte gemäß DSGVO',
+    'priv.rights.intro':'Gemäß DSGVO haben Sie folgende Rechte:',
+    'priv.right1.title':'Auskunftsrecht','priv.right1.desc':'Fordern Sie eine Kopie Ihrer gespeicherten Daten an.',
+    'priv.right2.title':'Berichtigungsrecht','priv.right2.desc':'Verlangen Sie die Korrektur unrichtiger oder unvollständiger Daten.',
+    'priv.right3.title':'Recht auf Löschung','priv.right3.desc':'Beantragen Sie die Löschung Ihrer Daten («Recht auf Vergessenwerden»).',
+    'priv.right4.title':'Recht auf Datenübertragbarkeit','priv.right4.desc':'Erhalten Sie Ihre Daten in einem strukturierten, maschinenlesbaren Format.',
+    'priv.right5.title':'Widerspruchsrecht','priv.right5.desc':'Widersprechen Sie Verarbeitungen auf Basis berechtigter Interessen.',
+    'priv.right6.title':'Recht auf Einschränkung','priv.right6.desc':'Verlangen Sie die Einschränkung der Verarbeitung in bestimmten Fällen.',
+    'priv.rights.exercise':'Zur Ausübung Ihrer Rechte schreiben Sie an hello@nestbook.io. Wir antworten innerhalb von 30 Tagen.',
+    'priv.cookies.heading':'8. Cookies',
+    'priv.cookies.p1':'Wir verwenden nur notwendige Cookies und localStorage. Keine Tracking-, Werbe- oder Analyse-Cookies. Siehe Cookie-Richtlinie.',
+    'priv.children.heading':'9. Minderjährige',
+    'priv.children.p1':'NestBook richtet sich nicht an Personen unter 18 Jahren. Wir erheben nicht wissentlich Daten von Minderjährigen. Kontaktieren Sie uns zur Löschung solcher Daten.',
+    'priv.contact.heading':'10. Kontakt & Beschwerden',
+    'priv.contact.p1':'Für Datenschutzfragen oder zur Ausübung Ihrer Rechte: hello@nestbook.io.',
+    'priv.contact.p2':'Sie können auch eine Beschwerde bei Ihrer nationalen Datenschutzbehörde einreichen (Deutschland: BfDI, bfdi.bund.de).',
+    'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.languages':'Sprachen','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
+    'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt',
+    'footer.legal':'Rechtliches','footer.privacy':'Datenschutzrichtlinie','footer.terms':'Nutzungsbedingungen','footer.gdpr':'DSGVO','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.languages':'Talen','nav.demo':'Live demo','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'priv.title':'Privacybeleid','priv.updated':'Laatst bijgewerkt: april 2026 · NestBook is AVG-conform',
+    'priv.toc.heading':'Inhoud',
+    'priv.toc.1':'Wie we zijn','priv.toc.2':'Gegevens die we verzamelen','priv.toc.3':'Hoe we uw gegevens gebruiken',
+    'priv.toc.4':'Waar we uw gegevens opslaan','priv.toc.5':'Diensten van derden','priv.toc.6':'Bewaring',
+    'priv.toc.7':'Uw rechten','priv.toc.8':'Cookies','priv.toc.9':'Kinderen','priv.toc.10':'Contact & klachten',
+    'priv.intro':'Dit Privacybeleid legt uit hoe NestBook uw persoonsgegevens verzamelt, gebruikt en beschermt. Wij zijn toegewijd aan AVG-naleving.',
+    'priv.controller.heading':'1. Wie we zijn (Verwerkingsverantwoordelijke)',
+    'priv.controller.p1':'NestBook is de verwerkingsverantwoordelijke voor de verwerkte persoonsgegevens via de NestBook-service. Contact: hello@nestbook.io.',
+    'priv.collect.heading':'2. Gegevens die we verzamelen',
+    'priv.collect.account.h':'Accountinformatie',
+    'priv.collect.account.p':'Bij registratie verzamelen we uw naam, e-mailadres en gehasht wachtwoord, plus de naam en het type van uw accommodatie.',
+    'priv.collect.booking.h':'Boekings- en gastgegevens',
+    'priv.collect.booking.p':'We slaan boekingen, kamerdetails en gastinformatie (naam, e-mail, telefoon) op die u invoert. U bent verwerkingsverantwoordelijke voor uw gastgegevens; wij verwerken deze als verwerker.',
+    'priv.collect.payment.h':'Betalingsgegevens',
+    'priv.collect.payment.p':'We slaan geen creditcardgegevens op. Betalingen worden verwerkt door Stripe conform PCI-DSS. We ontvangen alleen de abonnementsstatus.',
+    'priv.collect.technical.h':'Technische gegevens',
+    'priv.collect.technical.p':'Serverlogs kunnen IP-adressen en tijdstempels registreren voor beveiligingsdoeleinden. We gebruiken geen analysetools of trackingcookies.',
+    'priv.use.heading':'3. Hoe we uw gegevens gebruiken',
+    'priv.use.intro':'We gebruiken uw persoonsgegevens alleen voor:',
+    'priv.use.1':'Aanmaken en beheren van uw NestBook-account',
+    'priv.use.2':'Leveren en verbeteren van de NestBook-service',
+    'priv.use.3':'Verzenden van transactionele e-mails (boekingsbevestigingen, welkomstmails)',
+    'priv.use.4':'Verwerken van abonnementsbetalingen via Stripe',
+    'priv.use.5':'Beantwoorden van uw supportverzoeken',
+    'priv.use.6':'Voldoen aan wettelijke verplichtingen',
+    'priv.use.nobiz':'We verkopen, verhuren of delen uw gegevens niet met derden voor marketingdoeleinden.',
+    'priv.use.legal':'Rechtsgrond: uitvoering van de overeenkomst, gerechtvaardigd belang (beveiliging) en toestemming (optionele e-mails).',
+    'priv.storage.heading':'4. Waar we uw gegevens opslaan',
+    'priv.storage.p1':'Alle gegevens worden opgeslagen op servers van Hetzner Online GmbH in EU-datacenters (Duitsland en Finland). Hetzner is AVG-conform en we hebben een verwerkersovereenkomst.',
+    'priv.storage.p2':'Uw gegevens verlaten de EU/EER niet bij normaal gebruik van de service.',
+    'priv.third.heading':'5. Diensten van derden',
+    'priv.third.intro':'We maken gebruik van een klein aantal verwerkers, elk met een verwerkersovereenkomst:',
+    'priv.third.stripe':'Stripe (betalingen) — verwerkt abonnementsbetalingen. PCI-DSS niveau 1, AVG-conform. stripe.com/nl/privacy.',
+    'priv.third.resend':'Resend (transactionele e-mail) — verzend boekingsbevestigingen en welkomstmails. resend.com/legal/privacy-policy.',
+    'priv.third.zoho':'Zoho (support-e-mail) — onze mailbox hello@nestbook.io wordt gehost door Zoho Mail. zoho.com/privacy.html.',
+    'priv.third.no':'We gebruiken geen Google Analytics, Facebook Pixel of andere advertentie- of analysetrackers.',
+    'priv.retention.heading':'6. Bewaring van gegevens',
+    'priv.retention.p1':'We bewaren accountgegevens zolang uw account actief is. Na sluiting verwijderen of anonimiseren we gegevens binnen 90 dagen (financiële gegevens tot 7 jaar).',
+    'priv.retention.p2':'Serverlogs worden maximaal 30 dagen bewaard.',
+    'priv.rights.heading':'7. Uw rechten onder de AVG',
+    'priv.rights.intro':'Op grond van de AVG heeft u de volgende rechten:',
+    'priv.right1.title':'Recht op inzage','priv.right1.desc':'Vraag een kopie op van al uw persoonsgegevens.',
+    'priv.right2.title':'Recht op rectificatie','priv.right2.desc':'Verzoek om correctie van onjuiste of onvolledige gegevens.',
+    'priv.right3.title':'Recht op verwijdering','priv.right3.desc':'Verzoek om verwijdering van uw persoonsgegevens ("recht op vergetelheid").',
+    'priv.right4.title':'Recht op gegevensoverdraagbaarheid','priv.right4.desc':'Ontvang uw gegevens in een gestructureerd, machineleesbaar formaat.',
+    'priv.right5.title':'Recht van bezwaar','priv.right5.desc':'Maak bezwaar tegen verwerking op basis van gerechtvaardigd belang.',
+    'priv.right6.title':'Recht op beperking','priv.right6.desc':'Verzoek om beperking van de verwerking in bepaalde omstandigheden.',
+    'priv.rights.exercise':'Voor het uitoefenen van uw rechten: hello@nestbook.io. We reageren binnen 30 dagen.',
+    'priv.cookies.heading':'8. Cookies',
+    'priv.cookies.p1':'We gebruiken alleen essentiële cookies en localStorage. Geen tracking-, advertentie- of analysecookies. Zie ons Cookiebeleid.',
+    'priv.children.heading':'9. Kinderen',
+    'priv.children.p1':'NestBook is niet bedoeld voor personen onder 18 jaar. We verzamelen niet bewust gegevens van minderjarigen. Neem contact op om dergelijke gegevens te verwijderen.',
+    'priv.contact.heading':'10. Contact & klachten',
+    'priv.contact.p1':'Voor privacyvragen of het uitoefenen van uw rechten: hello@nestbook.io.',
+    'priv.contact.p2':'U kunt ook een klacht indienen bij uw nationale toezichthoudende autoriteit (Nederland: Autoriteit Persoonsgegevens, autoriteitpersoonsgegevens.nl).',
+    'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.languages':'Talen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
+    'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact',
+    'footer.legal':'Juridisch','footer.privacy':'Privacybeleid','footer.terms':'Gebruiksvoorwaarden','footer.gdpr':'AVG','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
+const nb = document.querySelector('.navbar');
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+</script>
+</body>
+</html>
