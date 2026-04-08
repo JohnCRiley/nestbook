@@ -7,8 +7,8 @@
 #    1. Installs cloudflared
 #    2. Authenticates with Cloudflare (manual browser step)
 #    3. Creates a tunnel named nestbook-tunnel
-#    4. Writes ~/.cloudflared/config.yml
-#    5. Routes DNS for ssh.nestbook.io and nestbook.io
+#    4. Writes ~/.cloudflared/config.yml (SSH only — web served by nginx directly)
+#    5. Routes DNS for ssh.nestbook.io
 #    6. Installs cloudflared as a systemd service (auto-starts on reboot)
 #    7. Prints client-side setup instructions
 #
@@ -22,8 +22,6 @@ TUNNEL_NAME="nestbook-tunnel"
 CF_DIR="/root/.cloudflared"
 LOG_FILE="/root/cloudflare-tunnel-setup.log"
 SSH_HOSTNAME="ssh.nestbook.io"
-WEB_HOSTNAME="nestbook.io"
-WWW_HOSTNAME="www.nestbook.io"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 log() {
@@ -154,13 +152,6 @@ ingress:
   - hostname: $SSH_HOSTNAME
     service: ssh://localhost:22
 
-  # Web app — nestbook.io routed through nginx on port 80
-  - hostname: $WEB_HOSTNAME
-    service: http://localhost:80
-
-  - hostname: $WWW_HOSTNAME
-    service: http://localhost:80
-
   # Catch-all — required by cloudflared (must be last)
   - service: http_status:404
 EOF
@@ -180,20 +171,6 @@ if cloudflared tunnel route dns "$TUNNEL_NAME" "$SSH_HOSTNAME" 2>&1 | tee -a "$L
   ok "DNS routed: $SSH_HOSTNAME"
 else
   warn "DNS routing failed for $SSH_HOSTNAME — add CNAME manually (see instructions below)."
-fi
-
-log "Routing DNS: $WEB_HOSTNAME → tunnel"
-if cloudflared tunnel route dns "$TUNNEL_NAME" "$WEB_HOSTNAME" 2>&1 | tee -a "$LOG_FILE"; then
-  ok "DNS routed: $WEB_HOSTNAME"
-else
-  warn "DNS routing failed for $WEB_HOSTNAME — add CNAME manually (see instructions below)."
-fi
-
-log "Routing DNS: $WWW_HOSTNAME → tunnel"
-if cloudflared tunnel route dns "$TUNNEL_NAME" "$WWW_HOSTNAME" 2>&1 | tee -a "$LOG_FILE"; then
-  ok "DNS routed: $WWW_HOSTNAME"
-else
-  warn "DNS routing failed for $WWW_HOSTNAME — add CNAME manually (see instructions below)."
 fi
 
 # ── Step 6: Install systemd service ──────────────────────────────────────────
@@ -236,11 +213,9 @@ cat << 'INSTRUCTIONS'
   Type    Name    Target                          Proxy
   ──────  ──────  ─────────────────────────────── ──────
   CNAME   ssh     <TUNNEL_ID>.cfargotunnel.com     ON
-  CNAME   @       <TUNNEL_ID>.cfargotunnel.com     ON
-  CNAME   www     <TUNNEL_ID>.cfargotunnel.com     ON
 
   Replace <TUNNEL_ID> with the tunnel ID shown above.
-  Make sure the orange Cloudflare proxy cloud is ON for all three.
+  Make sure the orange Cloudflare proxy cloud is ON.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   HOW TO SSH IN FROM YOUR LAPTOP
