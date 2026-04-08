@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../db/database.js';
+import { sendWelcomeEmail } from '../email/emailService.js';
 
 export const authRouter = Router();
 
@@ -79,6 +80,12 @@ authRouter.post('/register', (req, res) => {
       token,
       user: { id: user.lastInsertRowid, name, email: normalEmail, role: 'owner', property_id: prop.lastInsertRowid },
     });
+
+    // Fire-and-forget — must not delay the registration response
+    sendWelcomeEmail(
+      { name, email: normalEmail },
+      { name: propertyName, type: propertyType }
+    ).catch(() => {});
   } catch (err) {
     db.exec('ROLLBACK');
     console.error('Register error:', err);

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { sendBookingConfirmation } from '../email/emailService.js';
 
 export const bookingsRouter = Router();
 
@@ -103,9 +104,12 @@ bookingsRouter.post('/', (req, res) => {
       total_price  ?? null
     );
 
-    res.status(201).json(
-      db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(result.lastInsertRowid)
-    );
+    const newBooking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(result.lastInsertRowid);
+    res.status(201).json(newBooking);
+
+    // Fire-and-forget — email must not delay or break the HTTP response
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(newBooking.property_id);
+    sendBookingConfirmation(newBooking, property).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
