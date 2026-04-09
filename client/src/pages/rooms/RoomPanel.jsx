@@ -30,7 +30,7 @@ function upcomingBookings(bookings, today) {
 
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
-export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdated, onBook }) {
+export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdated, onBook, onRoomDeleted }) {
   const [mode, setMode] = useState('view');
 
   return (
@@ -59,7 +59,8 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
                   onEdit={() => setMode('edit')} onBook={onBook} />
               : <EditMode room={room}
                   onCancel={() => setMode('view')}
-                  onSaved={(updated) => { onRoomUpdated(updated); setMode('view'); }} />
+                  onSaved={(updated) => { onRoomUpdated(updated); setMode('view'); }}
+                  onDeleted={() => onRoomDeleted(room.id)} />
             }
           </div>
         </div>
@@ -135,7 +136,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
 
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
-function EditMode({ room, onCancel, onSaved }) {
+function EditMode({ room, onCancel, onSaved, onDeleted }) {
   const { currencySymbol } = useLocale();
   const [form, setForm] = useState({
     name:            room.name            ?? '',
@@ -145,8 +146,10 @@ function EditMode({ room, onCancel, onSaved }) {
     amenities:       room.amenities       ?? '',
     status:          room.status          ?? 'available',
   });
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState(null);
+  const [saving,          setSaving]          = useState(false);
+  const [deleting,        setDeleting]        = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [error,           setError]           = useState(null);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -178,6 +181,20 @@ function EditMode({ room, onCancel, onSaved }) {
     } catch (err) {
       setError(err.message);
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/rooms/${room.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      onDeleted();
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -240,15 +257,86 @@ function EditMode({ room, onCancel, onSaved }) {
       </div>
 
       <div className="panel-actions">
-        <button className="btn-panel-primary" onClick={handleSave} disabled={saving}>
+        <button className="btn-panel-primary" onClick={handleSave} disabled={saving || deleting}>
           {saving ? 'Saving…' : 'Save Changes'}
         </button>
-        <button className="btn-secondary" onClick={onCancel} disabled={saving}
+        <button className="btn-secondary" onClick={onCancel} disabled={saving || deleting}
           style={{ border: '1.5px solid var(--border)' }}>
           Cancel
         </button>
       </div>
+
+      <div style={{ padding: '0 0 8px' }}>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          disabled={saving || deleting}
+          style={{
+            background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem',
+            cursor: 'pointer', padding: '6px 0', textDecoration: 'underline',
+            fontFamily: 'inherit',
+          }}
+        >
+          Delete this room
+        </button>
+      </div>
+
+      {showDeleteModal && (
+        <DeleteModal
+          roomName={room.name}
+          deleting={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </>
+  );
+}
+
+// ── DeleteModal ───────────────────────────────────────────────────────────────
+
+function DeleteModal({ roomName, deleting, onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+      zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px',
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
+        maxWidth: 360, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+      }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
+          Delete room?
+        </h3>
+        <p style={{ margin: '0 0 22px', fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>
+          Are you sure you want to delete <strong>{roomName}</strong>? This cannot be undone.
+        </p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            disabled={deleting}
+            style={{
+              padding: '8px 16px', borderRadius: 7, border: '1.5px solid #e2e8f0',
+              background: '#fff', color: '#334155', fontSize: '0.85rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            style={{
+              padding: '8px 16px', borderRadius: 7, border: 'none',
+              background: '#dc2626', color: '#fff', fontSize: '0.85rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {deleting ? 'Deleting…' : 'Delete room'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

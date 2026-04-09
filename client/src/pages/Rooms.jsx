@@ -89,6 +89,11 @@ export default function Rooms() {
     setSelectedRoom(created);
   };
 
+  const handleRoomDeleted = (id) => {
+    setRooms((prev) => prev.filter((r) => r.id !== id));
+    setSelectedRoom(null);
+  };
+
   // "Book this room" — open booking modal pre-filled with room + today's date
   const handleBook = (room) => {
     setSelectedRoom(null);
@@ -165,6 +170,7 @@ export default function Rooms() {
           onClose={() => setSelectedRoom(null)}
           onRoomUpdated={handleRoomUpdated}
           onBook={() => handleBook(selectedRoom)}
+          onRoomDeleted={handleRoomDeleted}
         />
       )}
 
