@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting Started — NestBook Help</title>
+<meta name="description" content="Everything you need to set up NestBook for your B&B, gîte or guest house. Step-by-step guide and frequently asked questions.">
+<link rel="canonical" href="https://nestbook.io/help.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nestbook.io/help.html">
+<meta property="og:title" content="Getting Started — NestBook Help">
+<meta property="og:description" content="Everything you need to set up NestBook for your B&B, gîte or guest house.">
+<meta property="og:image" content="https://nestbook.io/icon.svg">
+<meta property="og:site_name" content="NestBook">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; text-decoration: none; }
+.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
+.btn-ghost:hover { color: var(--dark); }
+
+.navbar { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.navbar-inner { display: flex; align-items: center; height: 64px; }
+.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
+.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
+.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
+.nav-link:hover { color: var(--dark); background: var(--soft); }
+.nav-right { display: flex; align-items: center; gap: 8px; }
+.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
+.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
+.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
+.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* Hero */
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+
+/* Steps section */
+.steps-section { padding: 72px 0 64px; }
+.section-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--mid); margin-bottom: 12px; }
+.section-heading { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: var(--dark); letter-spacing: -0.5px; margin-bottom: 12px; }
+.section-sub { font-size: 1.05rem; color: var(--muted); max-width: 540px; line-height: 1.75; margin-bottom: 52px; }
+
+.steps-list { display: flex; flex-direction: column; gap: 0; }
+
+.step-card { display: flex; gap: 28px; padding: 32px 0; border-bottom: 1px solid var(--border); }
+.step-card:first-child { padding-top: 0; }
+.step-card:last-child { border-bottom: none; }
+
+.step-num-col { flex-shrink: 0; }
+.step-num { width: 44px; height: 44px; background: var(--dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; font-family: inherit; flex-shrink: 0; }
+
+.step-body { flex: 1; }
+.step-title { font-size: 1.15rem; font-weight: 800; color: var(--dark); letter-spacing: -0.3px; margin-bottom: 8px; }
+.step-desc  { font-size: 0.95rem; color: #2a3d22; line-height: 1.8; }
+.step-tip   { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; background: var(--light); color: var(--dark); font-size: 0.8rem; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
+
+/* FAQ section */
+.faq-section { background: var(--soft); padding: 72px 0; border-top: 1px solid var(--border); }
+.faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
+.faq-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+.faq-q { font-size: 1rem; font-weight: 800; color: var(--dark); letter-spacing: -0.2px; margin-bottom: 12px; }
+.faq-a { font-size: 0.9rem; color: #3a5230; line-height: 1.75; }
+.faq-a a { color: var(--mid); text-decoration: underline; }
+.faq-a a:hover { color: var(--dark); }
+
+/* CTA band */
+.cta-band { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); padding: 72px 0; text-align: center; }
+.cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 12px; }
+.cta-band p  { color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
+.btn-white { background: #fff; color: var(--dark); border-color: #fff; }
+.btn-white:hover { background: var(--light); border-color: var(--light); }
+
+/* Footer */
+.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+.footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
+.footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
+.footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
+.footer-links  { display: flex; flex-direction: column; gap: 8px; }
+.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-link:hover { color: var(--light); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
+.footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; flex-shrink: 0; }
+
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } .faq-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 36px; } .step-card { flex-direction: column; gap: 16px; } .steps-section { padding: 48px 0 40px; } }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container navbar-inner">
+    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
+    <nav class="nav-links">
+      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
+      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/blog/"      class="nav-link" data-i18n="nav.blog">Blog</a>
+      <a href="/help.html"  class="nav-link" style="color:var(--dark);background:var(--soft);font-weight:600;" data-i18n="nav.help">Help</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="fr">FR</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="de">DE</button>
+        <button class="lang-btn" data-lang="nl">NL</button>
+      </div>
+      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
+      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="container">
+    <h1 data-i18n="help.hero.title">Getting started with NestBook</h1>
+    <p data-i18n="help.hero.sub">Everything you need to set up your property, add rooms and start taking bookings — in five simple steps.</p>
+  </div>
+</section>
+
+<section class="steps-section">
+  <div class="container">
+
+    <p class="section-label" data-i18n="help.steps.label">Setup guide</p>
+    <h2 class="section-heading" data-i18n="help.steps.heading">Five steps to your first booking</h2>
+    <p class="section-sub" data-i18n="help.steps.sub">Follow these steps in order. Most people are up and running in under 15 minutes.</p>
+
+    <div class="steps-list">
+
+      <!-- Step 1 -->
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-num">1</div></div>
+        <div class="step-body">
+          <h3 class="step-title" data-i18n="help.s1.title">Add your property details</h3>
+          <p class="step-desc" data-i18n="help.s1.desc">Go to <strong>Settings</strong> in the left sidebar. Fill in your property name, property type, address, check-in time, check-out time and preferred currency. Click <strong>Save changes</strong> when done.</p>
+          <span class="step-tip">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span data-i18n="help.s1.tip">Your currency and language settings affect guest-facing emails and booking confirmations.</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-num">2</div></div>
+        <div class="step-body">
+          <h3 class="step-title" data-i18n="help.s2.title">Add your rooms</h3>
+          <p class="step-desc" data-i18n="help.s2.desc">Go to <strong>Rooms</strong> and click <strong>+ Add Room</strong>. Fill in the room name, type (double, twin, suite…), price per night and capacity. Click Save. Repeat for each room in your property.</p>
+          <span class="step-tip">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span data-i18n="help.s2.tip">You can also add amenities (WiFi, en-suite, balcony…) to help guests choose the right room.</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-num">3</div></div>
+        <div class="step-body">
+          <h3 class="step-title" data-i18n="help.s3.title">Add the booking widget to your website</h3>
+          <p class="step-desc" data-i18n="help.s3.desc">Go to <strong>Settings</strong> and scroll down to the <strong>Embed Widget</strong> section. Copy the script tag shown there and paste it into your website's HTML just before the closing <code style="font-size:0.85em;background:#f1f5f9;padding:1px 5px;border-radius:3px;">&lt;/body&gt;</code> tag. Guests can then book directly from your website — with no commission.</p>
+          <span class="step-tip">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span data-i18n="help.s3.tip">The Embed Widget section is available on the Pro plan. Try the live demo first at nestbook.io/widget-test.html.</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-num">4</div></div>
+        <div class="step-body">
+          <h3 class="step-title" data-i18n="help.s4.title">Start taking bookings</h3>
+          <p class="step-desc" data-i18n="help.s4.desc">Share your website with guests. When a guest completes a booking through your widget, it will appear in your <strong>Bookings</strong> dashboard automatically. You and your guest will both receive an email confirmation.</p>
+          <span class="step-tip">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span data-i18n="help.s4.tip">You can also add bookings manually from the Bookings page — useful for phone or email reservations.</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step-card">
+        <div class="step-num-col"><div class="step-num">5</div></div>
+        <div class="step-body">
+          <h3 class="step-title" data-i18n="help.s5.title">Manage your bookings</h3>
+          <p class="step-desc" data-i18n="help.s5.desc">Use the <strong>Calendar</strong> page for a colour-coded visual overview of all rooms and dates. Use <strong>Bookings</strong> for a full searchable list of all reservations. Use <strong>Guests</strong> to view customer records and contact details.</p>
+          <span class="step-tip">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span data-i18n="help.s5.tip">The Calendar works offline too — perfect for rural properties with unreliable internet.</span>
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="faq-section">
+  <div class="container">
+    <p class="section-label" data-i18n="help.faq.label">FAQ</p>
+    <h2 class="section-heading" data-i18n="help.faq.heading">Frequently asked questions</h2>
+
+    <div class="faq-grid">
+
+      <div class="faq-card">
+        <h3 class="faq-q" data-i18n="help.faq.q1">What if I forget my password?</h3>
+        <p class="faq-a" data-i18n-html="help.faq.a1">On the <a href="/app/login">sign-in page</a>, click <strong>Forgot password?</strong> and enter your email address. You'll receive a reset link within a few minutes. If you don't receive it, check your spam folder or email us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.</p>
+      </div>
+
+      <div class="faq-card">
+        <h3 class="faq-q" data-i18n="help.faq.q2">How do I cancel my subscription?</h3>
+        <p class="faq-a" data-i18n="help.faq.a2">Go to Settings in your dashboard, scroll to the Subscription section, and click Cancel subscription. You'll keep full access until the end of your current billing period — no immediate loss of service.</p>
+      </div>
+
+      <div class="faq-card">
+        <h3 class="faq-q" data-i18n="help.faq.q3">How do I add staff members?</h3>
+        <p class="faq-a" data-i18n="help.faq.a3">Go to Settings and scroll to the Access &amp; Roles section. Click Invite Staff Member and enter their email address. Staff accounts have access to the Calendar and Bookings but cannot change property settings. This feature is available on the Pro plan.</p>
+      </div>
+
+      <div class="faq-card">
+        <h3 class="faq-q" data-i18n="help.faq.q4">Is my data secure?</h3>
+        <p class="faq-a" data-i18n-html="help.faq.a4">Yes. NestBook is fully GDPR compliant. All data is stored on servers in the European Union (Hetzner, Germany). Connections are encrypted with HTTPS. We never sell your data or your guests' data to third parties. See our <a href="/privacy.html">Privacy Policy</a> for full details.</p>
+      </div>
+
+    </div>
+
+    <p style="margin-top:32px; font-size:0.9rem; color:var(--muted);" data-i18n-html="help.faq.more">Have a question that isn't answered here? Email us at <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — we usually reply within one working day.</p>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="container">
+    <h2 data-i18n="help.cta.heading">Ready to get started?</h2>
+    <p data-i18n="help.cta.sub">Create your free account in under a minute. No credit card needed.</p>
+    <a href="/app/register" class="btn btn-white" data-i18n="help.cta.btn">Start for free →</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand-name"><img src="/icon.svg" class="footer-leaf-img" alt="" />NestBook</div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login"  class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+          <a href="/help.html"    class="footer-link" data-i18n="footer.help">Help</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features':'Features','nav.pricing':'Pricing','nav.blog':'Blog','nav.help':'Help','nav.signin':'Sign in','nav.try':'Try free',
+    'help.hero.title':'Getting started with NestBook',
+    'help.hero.sub':'Everything you need to set up your property, add rooms and start taking bookings — in five simple steps.',
+    'help.steps.label':'Setup guide',
+    'help.steps.heading':'Five steps to your first booking',
+    'help.steps.sub':'Follow these steps in order. Most people are up and running in under 15 minutes.',
+    'help.s1.title':'Add your property details',
+    'help.s1.desc':'Go to Settings in the left sidebar. Fill in your property name, property type, address, check-in time, check-out time and preferred currency. Click Save changes when done.',
+    'help.s1.tip':'Your currency and language settings affect guest-facing emails and booking confirmations.',
+    'help.s2.title':'Add your rooms',
+    'help.s2.desc':'Go to Rooms and click + Add Room. Fill in the room name, type (double, twin, suite…), price per night and capacity. Click Save. Repeat for each room in your property.',
+    'help.s2.tip':'You can also add amenities (WiFi, en-suite, balcony…) to help guests choose the right room.',
+    'help.s3.title':'Add the booking widget to your website',
+    'help.s3.desc':'Go to Settings and scroll down to the Embed Widget section. Copy the script tag and paste it into your website\'s HTML just before the closing </body> tag. Guests can then book directly — with no commission.',
+    'help.s3.tip':'The Embed Widget section is available on the Pro plan. Try the live demo first at nestbook.io/widget-test.html.',
+    'help.s4.title':'Start taking bookings',
+    'help.s4.desc':'Share your website with guests. When a guest completes a booking through your widget, it will appear in your Bookings dashboard automatically. You and your guest will both receive an email confirmation.',
+    'help.s4.tip':'You can also add bookings manually from the Bookings page — useful for phone or email reservations.',
+    'help.s5.title':'Manage your bookings',
+    'help.s5.desc':'Use the Calendar page for a colour-coded visual overview of all rooms and dates. Use Bookings for a full searchable list. Use Guests to view customer records and contact details.',
+    'help.s5.tip':'The Calendar works offline too — perfect for rural properties with unreliable internet.',
+    'help.faq.label':'FAQ',
+    'help.faq.heading':'Frequently asked questions',
+    'help.faq.q1':'What if I forget my password?',
+    'help.faq.a1':'On the <a href="/app/login">sign-in page</a>, click <strong>Forgot password?</strong> and enter your email. You\'ll receive a reset link within a few minutes. If you don\'t receive it, check your spam folder or email us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.',
+    'help.faq.q2':'How do I cancel my subscription?',
+    'help.faq.a2':'Go to Settings in your dashboard, scroll to the Subscription section, and click Cancel subscription. You\'ll keep full access until the end of your current billing period.',
+    'help.faq.q3':'How do I add staff members?',
+    'help.faq.a3':'Go to Settings and scroll to Access & Roles. Click Invite Staff Member and enter their email address. Staff accounts can access Calendar and Bookings but cannot change settings. Available on the Pro plan.',
+    'help.faq.q4':'Is my data secure?',
+    'help.faq.a4':'Yes. NestBook is fully GDPR compliant. Data is stored on EU servers (Hetzner, Germany), connections are HTTPS encrypted, and we never sell your data. See our <a href="/privacy.html">Privacy Policy</a> for details.',
+    'help.faq.more':'Have a question not answered here? Email us at <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — we usually reply within one working day.',
+    'help.cta.heading':'Ready to get started?',
+    'help.cta.sub':'Create your free account in under a minute. No credit card needed.',
+    'help.cta.btn':'Start for free →',
+    'footer.tagline':'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product':'Product','footer.features':'Features','footer.pricing':'Pricing','footer.widget':'Booking widget','footer.signin':'Sign in to your dashboard',
+    'footer.company':'Company','footer.about':'About','footer.blog':'Blog','footer.contact':'Contact','footer.help':'Help',
+    'footer.legal':'Legal','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.gdpr':'GDPR','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features':'Fonctionnalités','nav.pricing':'Tarifs','nav.blog':'Blog','nav.help':'Aide','nav.signin':'Connexion','nav.try':'Essai gratuit',
+    'help.hero.title':'Premiers pas avec NestBook',
+    'help.hero.sub':'Tout ce dont vous avez besoin pour configurer votre hébergement, ajouter des chambres et commencer à recevoir des réservations — en cinq étapes simples.',
+    'help.steps.label':'Guide de configuration',
+    'help.steps.heading':'Cinq étapes vers votre première réservation',
+    'help.steps.sub':'Suivez ces étapes dans l\'ordre. La plupart des utilisateurs sont opérationnels en moins de 15 minutes.',
+    'help.s1.title':'Ajoutez les informations de votre hébergement',
+    'help.s1.desc':'Allez dans Paramètres dans la barre latérale gauche. Renseignez le nom, le type, l\'adresse, les horaires d\'arrivée et de départ, et la devise. Cliquez sur Enregistrer.',
+    'help.s1.tip':'Vos paramètres de devise et de langue influencent les e-mails envoyés aux clients.',
+    'help.s2.title':'Ajoutez vos chambres',
+    'help.s2.desc':'Allez dans Chambres et cliquez sur + Ajouter une chambre. Renseignez le nom, le type, le prix par nuit et la capacité. Répétez pour chaque chambre.',
+    'help.s2.tip':'Vous pouvez également ajouter des équipements (WiFi, salle de bain privée, balcon…) pour aider vos clients.',
+    'help.s3.title':'Ajoutez le widget de réservation à votre site',
+    'help.s3.desc':'Dans Paramètres, faites défiler jusqu\'à la section Widget intégré. Copiez le code et collez-le dans votre site juste avant la balise </body>. Vos clients pourront réserver directement, sans commission.',
+    'help.s3.tip':'La section Widget intégré est disponible avec le plan Pro. Essayez d\'abord la démo sur nestbook.io/widget-test.html.',
+    'help.s4.title':'Commencez à recevoir des réservations',
+    'help.s4.desc':'Partagez votre site avec vos clients. Lorsqu\'un client effectue une réservation, elle apparaît automatiquement dans votre tableau de bord. Vous recevez tous les deux une confirmation par e-mail.',
+    'help.s4.tip':'Vous pouvez aussi ajouter des réservations manuellement — utile pour les réservations par téléphone ou e-mail.',
+    'help.s5.title':'Gérez vos réservations',
+    'help.s5.desc':'Utilisez le Calendrier pour une vue visuelle par chambre et par date. Utilisez Réservations pour une liste complète. Utilisez Clients pour consulter les coordonnées de vos clients.',
+    'help.s5.tip':'Le Calendrier fonctionne aussi hors ligne — idéal pour les hébergements ruraux.',
+    'help.faq.label':'FAQ',
+    'help.faq.heading':'Questions fréquentes',
+    'help.faq.q1':'J\'ai oublié mon mot de passe, que faire ?',
+    'help.faq.a1':'Sur la <a href="/app/login">page de connexion</a>, cliquez sur <strong>Mot de passe oublié ?</strong> et saisissez votre adresse e-mail. Vous recevrez un lien de réinitialisation. Si vous ne le recevez pas, vérifiez vos spams ou contactez-nous à <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.',
+    'help.faq.q2':'Comment résilier mon abonnement ?',
+    'help.faq.a2':'Dans Paramètres, faites défiler jusqu\'à la section Abonnement et cliquez sur Annuler l\'abonnement. Vous conservez l\'accès complet jusqu\'à la fin de la période de facturation en cours.',
+    'help.faq.q3':'Comment ajouter des membres du personnel ?',
+    'help.faq.a3':'Dans Paramètres, allez dans Accès et rôles. Cliquez sur Inviter un membre du personnel et saisissez son adresse e-mail. Les comptes du personnel ont accès au Calendrier et aux Réservations, mais ne peuvent pas modifier les paramètres. Disponible avec le plan Pro.',
+    'help.faq.q4':'Mes données sont-elles sécurisées ?',
+    'help.faq.a4':'Oui. NestBook est entièrement conforme au RGPD. Les données sont stockées sur des serveurs européens (Hetzner, Allemagne), les connexions sont chiffrées HTTPS. Consultez notre <a href="/privacy.html">Politique de confidentialité</a> pour plus de détails.',
+    'help.faq.more':'Une question sans réponse ici ? Écrivez-nous à <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — nous répondons généralement sous un jour ouvré.',
+    'help.cta.heading':'Prêt à commencer ?',
+    'help.cta.sub':'Créez votre compte gratuit en moins d\'une minute. Sans carte bancaire.',
+    'help.cta.btn':'Commencer gratuitement →',
+    'footer.tagline':'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product':'Produit','footer.features':'Fonctionnalités','footer.pricing':'Tarifs','footer.widget':'Widget de réservation','footer.signin':'Connexion au tableau de bord',
+    'footer.company':'Entreprise','footer.about':'À propos','footer.blog':'Blog','footer.contact':'Contact','footer.help':'Aide',
+    'footer.legal':'Mentions légales','footer.privacy':'Politique de confidentialité','footer.terms':'Conditions d\'utilisation','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features':'Funciones','nav.pricing':'Precios','nav.blog':'Blog','nav.help':'Ayuda','nav.signin':'Iniciar sesión','nav.try':'Prueba gratis',
+    'help.hero.title':'Primeros pasos con NestBook',
+    'help.hero.sub':'Todo lo que necesita para configurar su alojamiento, añadir habitaciones y empezar a recibir reservas — en cinco pasos sencillos.',
+    'help.steps.label':'Guía de configuración',
+    'help.steps.heading':'Cinco pasos hasta su primera reserva',
+    'help.steps.sub':'Siga estos pasos en orden. La mayoría de los usuarios están en marcha en menos de 15 minutos.',
+    'help.s1.title':'Añada los detalles de su alojamiento',
+    'help.s1.desc':'Vaya a Configuración en la barra lateral izquierda. Complete el nombre, tipo, dirección, hora de entrada, hora de salida y moneda. Haga clic en Guardar cambios.',
+    'help.s1.tip':'Los ajustes de moneda e idioma afectan a los correos enviados a los huéspedes.',
+    'help.s2.title':'Añada sus habitaciones',
+    'help.s2.desc':'Vaya a Habitaciones y haga clic en + Añadir habitación. Complete el nombre, tipo, precio por noche y capacidad. Repita para cada habitación.',
+    'help.s2.tip':'También puede añadir comodidades (WiFi, baño privado, balcón…) para ayudar a los huéspedes a elegir.',
+    'help.s3.title':'Añada el widget de reservas a su web',
+    'help.s3.desc':'En Configuración, desplácese hasta la sección Widget integrado. Copie el código y péguelo en su web justo antes de la etiqueta </body>. Los huéspedes podrán reservar directamente, sin comisiones.',
+    'help.s3.tip':'La sección Widget integrado está disponible con el plan Pro. Pruebe la demo en nestbook.io/widget-test.html.',
+    'help.s4.title':'Empiece a recibir reservas',
+    'help.s4.desc':'Comparta su web con los huéspedes. Cuando un huésped complete una reserva, aparecerá automáticamente en su panel. Ambos recibirán una confirmación por correo electrónico.',
+    'help.s4.tip':'También puede añadir reservas manualmente desde la página de Reservas, útil para reservas por teléfono.',
+    'help.s5.title':'Gestione sus reservas',
+    'help.s5.desc':'Use el Calendario para una vista visual por habitación y fecha. Use Reservas para una lista completa. Use Huéspedes para ver los registros de clientes.',
+    'help.s5.tip':'El Calendario también funciona sin conexión — ideal para alojamientos rurales.',
+    'help.faq.label':'FAQ',
+    'help.faq.heading':'Preguntas frecuentes',
+    'help.faq.q1':'¿Qué hago si olvido mi contraseña?',
+    'help.faq.a1':'En la <a href="/app/login">página de inicio de sesión</a>, haga clic en <strong>¿Olvidó su contraseña?</strong> e introduzca su correo electrónico. Recibirá un enlace de restablecimiento. Si no lo recibe, revise el spam o escríbanos a <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.',
+    'help.faq.q2':'¿Cómo cancelo mi suscripción?',
+    'help.faq.a2':'En Configuración, desplácese hasta la sección Suscripción y haga clic en Cancelar suscripción. Mantendrá el acceso completo hasta el final del período de facturación actual.',
+    'help.faq.q3':'¿Cómo añado miembros del personal?',
+    'help.faq.a3':'En Configuración, vaya a Acceso y roles. Haga clic en Invitar miembro del personal e introduzca su correo. El personal puede acceder al Calendario y las Reservas pero no puede cambiar la configuración. Disponible en el plan Pro.',
+    'help.faq.q4':'¿Son seguros mis datos?',
+    'help.faq.a4':'Sí. NestBook cumple plenamente con el RGPD. Los datos se almacenan en servidores de la UE (Hetzner, Alemania) con conexiones HTTPS cifradas. Consulte nuestra <a href="/privacy.html">Política de privacidad</a> para más detalles.',
+    'help.faq.more':'¿Tiene alguna pregunta que no está aquí? Escríbanos a <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — solemos responder en un día laborable.',
+    'help.cta.heading':'¿Listo para empezar?',
+    'help.cta.sub':'Cree su cuenta gratuita en menos de un minuto. Sin tarjeta de crédito.',
+    'help.cta.btn':'Empezar gratis →',
+    'footer.tagline':'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product':'Producto','footer.features':'Funciones','footer.pricing':'Precios','footer.widget':'Widget de reservas','footer.signin':'Iniciar sesión en el panel',
+    'footer.company':'Empresa','footer.about':'Sobre nosotros','footer.blog':'Blog','footer.contact':'Contacto','footer.help':'Ayuda',
+    'footer.legal':'Legal','footer.privacy':'Política de privacidad','footer.terms':'Términos de servicio','footer.gdpr':'RGPD','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features':'Funktionen','nav.pricing':'Preise','nav.blog':'Blog','nav.help':'Hilfe','nav.signin':'Anmelden','nav.try':'Kostenlos testen',
+    'help.hero.title':'Erste Schritte mit NestBook',
+    'help.hero.sub':'Alles, was Sie brauchen, um Ihre Unterkunft einzurichten, Zimmer hinzuzufügen und Buchungen entgegenzunehmen — in fünf einfachen Schritten.',
+    'help.steps.label':'Einrichtungsanleitung',
+    'help.steps.heading':'Fünf Schritte bis zur ersten Buchung',
+    'help.steps.sub':'Folgen Sie diesen Schritten der Reihe nach. Die meisten Nutzer sind in weniger als 15 Minuten startbereit.',
+    'help.s1.title':'Unterkunftsdaten eingeben',
+    'help.s1.desc':'Gehen Sie zu Einstellungen in der linken Seitenleiste. Geben Sie Name, Typ, Adresse, Check-in- und Check-out-Zeiten sowie die Währung ein. Klicken Sie auf Änderungen speichern.',
+    'help.s1.tip':'Ihre Währungs- und Spracheinstellungen wirken sich auf die Gäste-E-Mails aus.',
+    'help.s2.title':'Zimmer hinzufügen',
+    'help.s2.desc':'Gehen Sie zu Zimmer und klicken Sie auf + Zimmer hinzufügen. Geben Sie Name, Typ, Preis pro Nacht und Kapazität ein. Wiederholen Sie dies für jedes Zimmer.',
+    'help.s2.tip':'Sie können auch Ausstattungsmerkmale (WLAN, eigenes Bad, Balkon…) hinzufügen, um die Zimmerwahl zu erleichtern.',
+    'help.s3.title':'Buchungs-Widget in Ihre Website einbinden',
+    'help.s3.desc':'Gehen Sie zu Einstellungen und scrollen Sie zum Abschnitt Widget einbetten. Kopieren Sie das Script-Tag und fügen Sie es kurz vor dem schließenden </body>-Tag ein. Gäste können dann direkt buchen — ohne Provision.',
+    'help.s3.tip':'Der Bereich Widget einbetten ist im Pro-Plan verfügbar. Testen Sie die Demo unter nestbook.io/widget-test.html.',
+    'help.s4.title':'Buchungen entgegennehmen',
+    'help.s4.desc':'Teilen Sie Ihre Website mit Gästen. Wenn ein Gast eine Buchung abschließt, erscheint diese automatisch in Ihrem Dashboard. Beide erhalten eine E-Mail-Bestätigung.',
+    'help.s4.tip':'Sie können Buchungen auch manuell auf der Seite Buchungen hinzufügen — praktisch für Telefon- oder E-Mail-Reservierungen.',
+    'help.s5.title':'Buchungen verwalten',
+    'help.s5.desc':'Nutzen Sie den Kalender für eine farbcodierte Übersicht aller Zimmer und Daten. Nutzen Sie Buchungen für eine vollständige Liste. Nutzen Sie Gäste für Kundendaten und Kontaktdaten.',
+    'help.s5.tip':'Der Kalender funktioniert auch offline — ideal für Unterkünfte mit unzuverlässigem Internet.',
+    'help.faq.label':'FAQ',
+    'help.faq.heading':'Häufig gestellte Fragen',
+    'help.faq.q1':'Was tun, wenn ich mein Passwort vergessen habe?',
+    'help.faq.a1':'Klicken Sie auf der <a href="/app/login">Anmeldeseite</a> auf <strong>Passwort vergessen?</strong> und geben Sie Ihre E-Mail-Adresse ein. Sie erhalten einen Reset-Link. Falls nicht, prüfen Sie den Spam-Ordner oder schreiben Sie uns an <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.',
+    'help.faq.q2':'Wie kündige ich mein Abonnement?',
+    'help.faq.a2':'Gehen Sie zu Einstellungen, scrollen Sie zum Bereich Abonnement und klicken Sie auf Abonnement kündigen. Sie behalten den vollen Zugang bis zum Ende des aktuellen Abrechnungszeitraums.',
+    'help.faq.q3':'Wie füge ich Mitarbeiter hinzu?',
+    'help.faq.a3':'Gehen Sie zu Einstellungen und zum Bereich Zugang & Rollen. Klicken Sie auf Mitarbeiter einladen und geben Sie die E-Mail-Adresse ein. Mitarbeiter haben Zugang zu Kalender und Buchungen, können aber keine Einstellungen ändern. Im Pro-Plan verfügbar.',
+    'help.faq.q4':'Sind meine Daten sicher?',
+    'help.faq.a4':'Ja. NestBook ist vollständig DSGVO-konform. Daten werden auf EU-Servern gespeichert (Hetzner, Deutschland), Verbindungen sind HTTPS-verschlüsselt. Details finden Sie in unserer <a href="/privacy.html">Datenschutzrichtlinie</a>.',
+    'help.faq.more':'Haben Sie eine Frage, die hier nicht beantwortet wird? Schreiben Sie uns an <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — wir antworten in der Regel innerhalb eines Werktages.',
+    'help.cta.heading':'Bereit loszulegen?',
+    'help.cta.sub':'Erstellen Sie Ihr kostenloses Konto in unter einer Minute. Keine Kreditkarte erforderlich.',
+    'help.cta.btn':'Kostenlos starten →',
+    'footer.tagline':'Einfaches, elegantes Buchungsmanagement für kleine Gastgewerbebetriebe in Europa.',
+    'footer.product':'Produkt','footer.features':'Funktionen','footer.pricing':'Preise','footer.widget':'Buchungs-Widget','footer.signin':'Am Dashboard anmelden',
+    'footer.company':'Unternehmen','footer.about':'Über uns','footer.blog':'Blog','footer.contact':'Kontakt','footer.help':'Hilfe',
+    'footer.legal':'Rechtliches','footer.privacy':'Datenschutzrichtlinie','footer.terms':'Nutzungsbedingungen','footer.gdpr':'DSGVO','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features':'Functies','nav.pricing':'Prijzen','nav.blog':'Blog','nav.help':'Hulp','nav.signin':'Inloggen','nav.try':'Gratis proberen',
+    'help.hero.title':'Aan de slag met NestBook',
+    'help.hero.sub':'Alles wat u nodig heeft om uw accommodatie in te stellen, kamers toe te voegen en boekingen te ontvangen — in vijf eenvoudige stappen.',
+    'help.steps.label':'Installatiegids',
+    'help.steps.heading':'Vijf stappen naar uw eerste boeking',
+    'help.steps.sub':'Volg deze stappen op volgorde. De meeste gebruikers zijn binnen 15 minuten operationeel.',
+    'help.s1.title':'Voeg uw accommodatiegegevens toe',
+    'help.s1.desc':'Ga naar Instellingen in de linker zijbalk. Vul uw naam, type, adres, check-in- en check-outtijden en valuta in. Klik op Wijzigingen opslaan.',
+    'help.s1.tip':'Uw valuta- en taalinstellingen beïnvloeden de e-mails die naar gasten worden verzonden.',
+    'help.s2.title':'Voeg uw kamers toe',
+    'help.s2.desc':'Ga naar Kamers en klik op + Kamer toevoegen. Vul naam, type, prijs per nacht en capaciteit in. Herhaal dit voor elke kamer.',
+    'help.s2.tip':'U kunt ook voorzieningen toevoegen (WiFi, eigen badkamer, balkon…) om gasten te helpen kiezen.',
+    'help.s3.title':'Voeg de boekingswidget toe aan uw website',
+    'help.s3.desc':'Ga naar Instellingen en scroll naar de sectie Widget insluiten. Kopieer de scripttag en plak deze in uw website net vóór de afsluitende </body>-tag. Gasten kunnen dan direct boeken — zonder commissie.',
+    'help.s3.tip':'De sectie Widget insluiten is beschikbaar in het Pro-abonnement. Probeer eerst de demo op nestbook.io/widget-test.html.',
+    'help.s4.title':'Begin met het ontvangen van boekingen',
+    'help.s4.desc':'Deel uw website met gasten. Wanneer een gast een boeking voltooit, verschijnt deze automatisch in uw dashboard. U en uw gast ontvangen beide een e-mailbevestiging.',
+    'help.s4.tip':'U kunt ook handmatig boekingen toevoegen via de pagina Boekingen — handig voor telefonische reserveringen.',
+    'help.s5.title':'Beheer uw boekingen',
+    'help.s5.desc':'Gebruik de Kalender voor een kleurgecodeerd overzicht van alle kamers en datums. Gebruik Boekingen voor een volledige lijst. Gebruik Gasten voor klantgegevens.',
+    'help.s5.tip':'De Kalender werkt ook offline — ideaal voor accommodaties met onbetrouwbaar internet.',
+    'help.faq.label':'FAQ',
+    'help.faq.heading':'Veelgestelde vragen',
+    'help.faq.q1':'Wat als ik mijn wachtwoord vergeten ben?',
+    'help.faq.a1':'Klik op de <a href="/app/login">inlogpagina</a> op <strong>Wachtwoord vergeten?</strong> en voer uw e-mailadres in. U ontvangt een resetlink. Controleer uw spam als u deze niet ontvangt, of mail ons op <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.',
+    'help.faq.q2':'Hoe zeg ik mijn abonnement op?',
+    'help.faq.a2':'Ga naar Instellingen, scroll naar de sectie Abonnement en klik op Abonnement opzeggen. U behoudt volledige toegang tot het einde van uw huidige factureringsperiode.',
+    'help.faq.q3':'Hoe voeg ik personeelsleden toe?',
+    'help.faq.a3':'Ga naar Instellingen en scroll naar Toegang & rollen. Klik op Personeelslid uitnodigen en voer het e-mailadres in. Personeelsleden hebben toegang tot Kalender en Boekingen maar kunnen geen instellingen wijzigen. Beschikbaar in het Pro-abonnement.',
+    'help.faq.q4':'Zijn mijn gegevens veilig?',
+    'help.faq.a4':'Ja. NestBook voldoet volledig aan de AVG. Gegevens worden opgeslagen op EU-servers (Hetzner, Duitsland) met HTTPS-versleuteling. Zie ons <a href="/privacy.html">Privacybeleid</a> voor details.',
+    'help.faq.more':'Heeft u een vraag die hier niet beantwoord wordt? Stuur ons een e-mail op <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — we reageren doorgaans binnen één werkdag.',
+    'help.cta.heading':'Klaar om te beginnen?',
+    'help.cta.sub':'Maak uw gratis account aan in minder dan een minuut. Geen creditcard nodig.',
+    'help.cta.btn':'Gratis starten →',
+    'footer.tagline':'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product':'Product','footer.features':'Functies','footer.pricing':'Prijzen','footer.widget':'Boekingswidget','footer.signin':'Inloggen op dashboard',
+    'footer.company':'Bedrijf','footer.about':'Over ons','footer.blog':'Blog','footer.contact':'Contact','footer.help':'Hulp',
+    'footer.legal':'Juridisch','footer.privacy':'Privacybeleid','footer.terms':'Gebruiksvoorwaarden','footer.gdpr':'AVG','footer.cookies':'Cookies',
+    'footer.copy':'© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-html');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
+  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+}
+document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
+(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
+const nb = document.querySelector('.navbar');
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+</script>
+</body>
+</html>
