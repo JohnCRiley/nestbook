@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — A5 Handout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:  #1a4710;
+    --mid:   #2f771b;
+    --light: #d9f0cc;
+    --leaf:  #3a9122;
+    --white: #ffffff;
+    --soft:  #f0faf0;
+    --text:  #1a2e14;
+    --muted: #557a4a;
+  }
+
+  @page {
+    size: A5 portrait;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .page {
+    width: 148mm;
+    height: 210mm;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.18);
+  }
+
+  /* ── Header ─────────────────────────────── */
+  .header {
+    background: var(--dark);
+    padding: 8mm 10mm 7mm;
+    flex-shrink: 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5mm;
+  }
+
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    color: var(--white);
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  .headline {
+    color: var(--white);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 2.5mm;
+    letter-spacing: -0.3px;
+  }
+
+  .subheadline {
+    color: var(--light);
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .stripe {
+    height: 4px;
+    background: linear-gradient(90deg, var(--leaf), var(--light));
+    flex-shrink: 0;
+  }
+
+  /* ── Body ───────────────────────────────── */
+  .body {
+    flex: 1;
+    padding: 6mm 10mm 5mm;
+    display: flex;
+    flex-direction: column;
+    gap: 5mm;
+    overflow: hidden;
+  }
+
+  .section-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 2.5mm;
+  }
+
+  /* ── Feature list ───────────────────────── */
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5mm;
+  }
+
+  .feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 3mm;
+  }
+
+  .feature-dot {
+    width: 18px;
+    height: 18px;
+    background: var(--dark);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 0.5px;
+  }
+
+  .feature-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.15;
+    margin-bottom: 1px;
+  }
+
+  .feature-desc {
+    font-size: 9px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* ── Trial callout ──────────────────────── */
+  .trial-band {
+    background: var(--dark);
+    border-radius: 7px;
+    padding: 4mm 5mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .trial-label {
+    color: var(--light);
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-bottom: 1px;
+  }
+
+  .trial-sub {
+    color: rgba(217,240,204,0.65);
+    font-size: 9px;
+  }
+
+  .trial-price {
+    text-align: right;
+  }
+
+  .price-val {
+    color: var(--light);
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  .price-per {
+    color: rgba(217,240,204,0.6);
+    font-size: 9px;
+  }
+
+  /* ── CTA + QR ───────────────────────────── */
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 5mm;
+    background: var(--light);
+    border-radius: 8px;
+    padding: 4mm 5mm;
+  }
+
+  .qr-block {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5mm;
+  }
+
+  .qr-img {
+    width: 22mm;
+    height: 22mm;
+    border: 1.5px solid var(--dark);
+    border-radius: 5px;
+    display: block;
+  }
+
+  .qr-label {
+    font-size: 7px;
+    font-weight: 700;
+    color: var(--dark);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cta-text { flex: 1; }
+
+  .cta-heading {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--dark);
+    line-height: 1.2;
+    margin-bottom: 1.5mm;
+  }
+
+  .cta-body {
+    font-size: 8.5px;
+    color: var(--text);
+    line-height: 1.45;
+    margin-bottom: 2mm;
+  }
+
+  .cta-url {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--mid);
+    text-decoration: none;
+  }
+
+  /* ── Footer ─────────────────────────────── */
+  .footer {
+    background: var(--dark);
+    padding: 3mm 10mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .footer-left {
+    color: var(--light);
+    font-size: 8px;
+    font-weight: 600;
+  }
+
+  .footer-right {
+    color: rgba(217,240,204,0.5);
+    font-size: 7.5px;
+  }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="90" fill="#1a4710"/>
+        <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+        <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+        <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+        <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NestBook</span>
+    </div>
+
+    <div class="headline">Booking software for<br>independent properties</div>
+    <div class="subheadline">Calendars, guest records, direct booking widget, and automatic confirmation emails — everything in one simple dashboard.</div>
+  </div>
+
+  <div class="stripe"></div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <div>
+      <div class="section-label">What's included</div>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-dot">📅</div>
+          <div>
+            <div class="feature-title">Visual booking calendar</div>
+            <div class="feature-desc">See every room's availability at a glance. Create and manage bookings in seconds.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-dot">🌐</div>
+          <div>
+            <div class="feature-title">Direct booking widget</div>
+            <div class="feature-desc">Embed on your website. Commission-free bookings direct from your guests.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-dot">👤</div>
+          <div>
+            <div class="feature-title">Guest records &amp; history</div>
+            <div class="feature-desc">Every guest's contact details and stay history, always at your fingertips.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-dot">📨</div>
+          <div>
+            <div class="feature-title">Automatic confirmation emails</div>
+            <div class="feature-desc">Professional booking confirmations sent the moment a booking is made.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-dot">📱</div>
+          <div>
+            <div class="feature-title">Works on phone, tablet, desktop</div>
+            <div class="feature-desc">Install as an app or use in any browser. Available wherever you are.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trial band -->
+    <div class="trial-band">
+      <div>
+        <div class="trial-label">30-day free trial</div>
+        <div class="trial-sub">No credit card · No contract · Cancel any time</div>
+      </div>
+      <div class="trial-price">
+        <div class="price-val">€29</div>
+        <div class="price-per">/ month after trial</div>
+      </div>
+    </div>
+
+    <!-- CTA + QR -->
+    <div class="cta-row">
+      <div class="qr-block">
+        <img class="qr-img"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
+          alt="Scan to register"
+          width="83" height="83">
+        <div class="qr-label">Scan to register</div>
+      </div>
+      <div class="cta-text">
+        <div class="cta-heading">Try NestBook free for 30 days</div>
+        <div class="cta-body">Set up in under 10 minutes. No tech skills required. Start your free trial at:</div>
+        <a class="cta-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">nestbook.io &nbsp;·&nbsp; hello@nestbook.io</div>
+    <div class="footer-right">For independent hospitality</div>
+  </div>
+
+</div>
+
+</body>
+</html>

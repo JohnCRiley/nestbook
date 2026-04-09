@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — A-Frame Poster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:  #1a4710;
+    --mid:   #2f771b;
+    --light: #d9f0cc;
+    --leaf:  #3a9122;
+    --white: #ffffff;
+    --soft:  #f0faf0;
+    --text:  #1a2e14;
+  }
+
+  /* A-frame = A1 landscape equivalent standing tall — design at 594mm × 841mm (A1) */
+  @page {
+    size: 594mm 841mm portrait;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #c0c0c0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  .page {
+    width: 594mm;
+    height: 841mm;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 6px 60px rgba(0,0,0,0.25);
+    /* Scale to fit screen preview */
+    transform-origin: top left;
+  }
+
+  /* ── Full-height green top section ──────── */
+  .top {
+    background: var(--dark);
+    flex: 0 0 55%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30mm 25mm;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Decorative circles */
+  .top::before {
+    content: '';
+    position: absolute;
+    width: 500mm;
+    height: 500mm;
+    border-radius: 50%;
+    border: 60mm solid rgba(255,255,255,0.03);
+    top: -180mm;
+    right: -200mm;
+    pointer-events: none;
+  }
+
+  .top::after {
+    content: '';
+    position: absolute;
+    width: 350mm;
+    height: 350mm;
+    border-radius: 50%;
+    border: 40mm solid rgba(255,255,255,0.03);
+    bottom: -120mm;
+    left: -100mm;
+    pointer-events: none;
+  }
+
+  .big-logo {
+    width: 90mm;
+    height: 90mm;
+    margin-bottom: 14mm;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.35));
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-lockup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5mm;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-name {
+    color: var(--white);
+    font-size: 88px;
+    font-weight: 900;
+    letter-spacing: -3px;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .brand-tagline {
+    color: var(--light);
+    font-size: 26px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 420mm;
+    letter-spacing: -0.2px;
+  }
+
+  /* ── Accent stripe ───────────────────────── */
+  .stripe {
+    height: 10px;
+    background: linear-gradient(90deg, var(--leaf) 0%, var(--light) 50%, var(--leaf) 100%);
+    flex-shrink: 0;
+  }
+
+  /* ── Middle white section ───────────────── */
+  .middle {
+    flex: 1;
+    padding: 22mm 25mm 18mm;
+    display: flex;
+    flex-direction: column;
+    gap: 14mm;
+    align-items: center;
+  }
+
+  .pillars {
+    display: flex;
+    gap: 10mm;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pillar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4mm;
+  }
+
+  .pillar-icon {
+    width: 70px;
+    height: 70px;
+    background: var(--dark);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    flex-shrink: 0;
+  }
+
+  .pillar-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .pillar-desc {
+    font-size: 14px;
+    color: #557a4a;
+    line-height: 1.4;
+  }
+
+  /* ── Divider ────────────────────────────── */
+  .divider {
+    width: 100%;
+    height: 1.5px;
+    background: var(--light);
+    flex-shrink: 0;
+  }
+
+  /* ── Bottom CTA section ─────────────────── */
+  .bottom {
+    background: var(--soft);
+    padding: 18mm 25mm 20mm;
+    display: flex;
+    align-items: center;
+    gap: 20mm;
+    flex-shrink: 0;
+  }
+
+  .qr-block {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5mm;
+  }
+
+  .qr-border {
+    padding: 5mm;
+    background: var(--white);
+    border: 3px solid var(--dark);
+    border-radius: 12px;
+  }
+
+  .qr-img {
+    width: 50mm;
+    height: 50mm;
+    display: block;
+  }
+
+  .qr-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--dark);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  .cta-text {
+    flex: 1;
+  }
+
+  .cta-heading {
+    font-size: 46px;
+    font-weight: 900;
+    color: var(--dark);
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 5mm;
+  }
+
+  .cta-body {
+    font-size: 18px;
+    color: #3a5a30;
+    line-height: 1.5;
+    margin-bottom: 5mm;
+  }
+
+  .cta-url {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--mid);
+    text-decoration: none;
+    letter-spacing: -0.3px;
+  }
+
+  .cta-free-badge {
+    display: inline-block;
+    background: var(--dark);
+    color: var(--light);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    vertical-align: middle;
+    text-transform: uppercase;
+  }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .page { box-shadow: none; }
+  }
+
+  /* Screen preview scaling */
+  @media screen {
+    .page {
+      transform: scale(0.21);
+      transform-origin: top left;
+    }
+    body {
+      min-height: calc(841mm * 0.21 + 60px);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Top green section -->
+  <div class="top">
+    <svg class="big-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="90" fill="#1a4710"/>
+      <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+      <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+      <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+      <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+
+    <div class="brand-lockup">
+      <div class="brand-name">NestBook</div>
+      <div class="brand-tagline">Booking software made for<br>B&amp;Bs and independent guest&nbsp;houses</div>
+    </div>
+  </div>
+
+  <div class="stripe"></div>
+
+  <!-- Middle features section -->
+  <div class="middle">
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-icon">📅</div>
+        <div class="pillar-title">Booking calendar</div>
+        <div class="pillar-desc">Visual room view — all bookings at a glance</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">🌐</div>
+        <div class="pillar-title">Direct booking widget</div>
+        <div class="pillar-desc">Commission-free bookings on your own website</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">👤</div>
+        <div class="pillar-title">Guest records</div>
+        <div class="pillar-desc">Full history, contacts and stay details</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">📨</div>
+        <div class="pillar-title">Auto confirmations</div>
+        <div class="pillar-desc">Instant professional emails to every guest</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom CTA -->
+  <div class="bottom">
+    <div class="qr-block">
+      <div class="qr-border">
+        <img class="qr-img"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=1a4710&bgcolor=ffffff&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
+          alt="Scan to register free"
+          width="189" height="189">
+      </div>
+      <div class="qr-label">Scan to start free</div>
+    </div>
+
+    <div class="cta-text">
+      <div class="cta-heading">30 days free.<br>No card needed.</div>
+      <div class="cta-body">Start your free trial in minutes. Flat €29/month after that — no commissions, no contracts. Cancel any time.</div>
+      <a class="cta-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+      <span class="cta-free-badge">Free trial</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

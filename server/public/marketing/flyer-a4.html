@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — A4 Flyer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:   #1a4710;
+    --mid:    #2f771b;
+    --light:  #d9f0cc;
+    --leaf:   #3a9122;
+    --white:  #ffffff;
+    --soft:   #f0faf0;
+    --text:   #1a2e14;
+    --muted:  #557a4a;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .page {
+    width: 210mm;
+    height: 297mm;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.18);
+  }
+
+  /* ── Header band ────────────────────────── */
+  .header {
+    background: var(--dark);
+    padding: 12mm 14mm 10mm;
+    flex-shrink: 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8mm;
+  }
+
+  .brand-logo {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    color: var(--white);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .headline {
+    color: var(--white);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    max-width: 145mm;
+    margin-bottom: 4mm;
+  }
+
+  .subheadline {
+    color: var(--light);
+    font-size: 13.5px;
+    font-weight: 400;
+    line-height: 1.5;
+    max-width: 140mm;
+  }
+
+  /* ── Green accent stripe ────────────────── */
+  .stripe {
+    height: 6px;
+    background: linear-gradient(90deg, var(--leaf), var(--light));
+    flex-shrink: 0;
+  }
+
+  /* ── Body ───────────────────────────────── */
+  .body {
+    flex: 1;
+    padding: 9mm 14mm 8mm;
+    display: flex;
+    flex-direction: column;
+    gap: 7mm;
+  }
+
+  .section-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 3mm;
+  }
+
+  /* ── Feature grid ───────────────────────── */
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+  }
+
+  .feature {
+    background: var(--soft);
+    border: 1.5px solid var(--light);
+    border-radius: 8px;
+    padding: 5mm 5.5mm;
+    display: flex;
+    gap: 3.5mm;
+    align-items: flex-start;
+  }
+
+  .feature-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--dark);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    margin-top: 1px;
+  }
+
+  .feature-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+    line-height: 1.2;
+  }
+
+  .feature-desc {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  /* ── Pricing callout ────────────────────── */
+  .pricing-band {
+    background: var(--dark);
+    border-radius: 10px;
+    padding: 5mm 7mm;
+    display: flex;
+    align-items: center;
+    gap: 6mm;
+  }
+
+  .pricing-text { flex: 1; }
+
+  .pricing-headline {
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .pricing-sub {
+    color: var(--light);
+    font-size: 10.5px;
+    line-height: 1.4;
+  }
+
+  .pricing-price {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .price-amount {
+    color: var(--light);
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  .price-period {
+    color: rgba(217,240,204,0.65);
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  /* ── Testimonial ────────────────────────── */
+  .testimonial {
+    border-left: 4px solid var(--leaf);
+    padding: 3.5mm 5mm;
+    background: var(--soft);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .testimonial-text {
+    font-size: 11px;
+    color: var(--text);
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 2.5mm;
+  }
+
+  .testimonial-author {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--mid);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── CTA + QR ───────────────────────────── */
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 8mm;
+    background: var(--light);
+    border-radius: 10px;
+    padding: 5.5mm 7mm;
+  }
+
+  .qr-block {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2mm;
+  }
+
+  .qr-img {
+    width: 28mm;
+    height: 28mm;
+    border: 2px solid var(--dark);
+    border-radius: 6px;
+    display: block;
+  }
+
+  .qr-label {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: var(--dark);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cta-text { flex: 1; }
+
+  .cta-heading {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--dark);
+    line-height: 1.2;
+    margin-bottom: 2.5mm;
+  }
+
+  .cta-body {
+    font-size: 10.5px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 3mm;
+  }
+
+  .cta-url {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--mid);
+    text-decoration: none;
+  }
+
+  /* ── Footer ─────────────────────────────── */
+  .footer {
+    background: var(--dark);
+    padding: 4mm 14mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .footer-left {
+    color: var(--light);
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .footer-right {
+    color: rgba(217,240,204,0.55);
+    font-size: 9px;
+  }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="90" fill="#1a4710"/>
+        <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+        <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+        <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+        <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NestBook</span>
+    </div>
+
+    <div class="headline">Booking software made for&nbsp;B&amp;Bs and guest&nbsp;houses</div>
+    <div class="subheadline">Stop managing bookings on spreadsheets and sticky notes. NestBook gives independent property owners a professional booking system — without the complexity or cost of the big platforms.</div>
+  </div>
+
+  <div class="stripe"></div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <div>
+      <div class="section-label">Everything you need</div>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">📅</div>
+          <div>
+            <div class="feature-title">Booking calendar</div>
+            <div class="feature-desc">Visual room calendar — see all bookings at a glance. Click any date to create or manage a stay.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🌐</div>
+          <div>
+            <div class="feature-title">Direct booking widget</div>
+            <div class="feature-desc">Embed on your own website. Guests book and pay directly — no commission fees.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">👤</div>
+          <div>
+            <div class="feature-title">Guest records</div>
+            <div class="feature-desc">Full guest history, contact details, and stay records — all in one place.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📨</div>
+          <div>
+            <div class="feature-title">Automatic emails</div>
+            <div class="feature-desc">Booking confirmations sent instantly. Professional-looking, no work required.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏠</div>
+          <div>
+            <div class="feature-title">Room management</div>
+            <div class="feature-desc">Set rates, amenities, capacity, and maintenance status per room.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📱</div>
+          <div>
+            <div class="feature-title">Works on any device</div>
+            <div class="feature-desc">Phone, tablet, desktop — your dashboard is always with you, online or offline.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="pricing-band">
+      <div class="pricing-text">
+        <div class="pricing-headline">Flat monthly price. No commissions.</div>
+        <div class="pricing-sub">No percentage cut on your bookings. No hidden fees.<br>Cancel any time. 30-day free trial — no card required.</div>
+      </div>
+      <div class="pricing-price">
+        <div class="price-amount">€29</div>
+        <div class="price-period">/ month</div>
+      </div>
+    </div>
+
+    <!-- Testimonial -->
+    <div class="testimonial">
+      <div class="testimonial-text">"We switched from a paper diary to NestBook in an afternoon. Now I can check availability from my phone while I'm at the market. It's saved us hours every week."</div>
+      <div class="testimonial-author">Marie-Claire D. — 6-room chambre d'hôtes, Dordogne</div>
+    </div>
+
+    <!-- CTA + QR -->
+    <div class="cta-row">
+      <div class="qr-block">
+        <img class="qr-img"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
+          alt="Scan to register"
+          width="106" height="106">
+        <div class="qr-label">Scan to start free</div>
+      </div>
+      <div class="cta-text">
+        <div class="cta-heading">Start your free<br>30-day trial today</div>
+        <div class="cta-body">No credit card. No contract. Full access from day one. Set up in under 10 minutes.</div>
+        <a class="cta-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">nestbook.io &nbsp;·&nbsp; hello@nestbook.io</div>
+    <div class="footer-right">Property management for independent hospitality</div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Business Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:  #1a4710;
+    --mid:   #2f771b;
+    --light: #d9f0cc;
+    --leaf:  #3a9122;
+    --white: #ffffff;
+    --soft:  #f0faf0;
+    --text:  #1a2e14;
+    --muted: #557a4a;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #d0d0d0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    gap: 30px;
+    min-height: 100vh;
+  }
+
+  .print-note {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #664d03;
+    font-family: system-ui, sans-serif;
+    max-width: 620px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* Print guide: 2-up per row */
+  .sheet {
+    width: 210mm;
+    background: var(--white);
+    padding: 12mm;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .sheet-label {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    margin-bottom: 8mm;
+    font-family: system-ui, sans-serif;
+  }
+
+  /* Row of 2 cards */
+  .card-row {
+    display: flex;
+    gap: 6mm;
+    margin-bottom: 6mm;
+  }
+
+  /* ── Card: 85mm × 54mm standard ─────────── */
+  .card {
+    width: 85mm;
+    height: 54mm;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 4mm;
+    position: relative;
+  }
+
+  /* ─ Front face ─ */
+  .card-front {
+    background: var(--dark);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 5mm 6mm 4.5mm;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Decorative arc */
+  .card-front::after {
+    content: '';
+    position: absolute;
+    width: 70mm;
+    height: 70mm;
+    border-radius: 50%;
+    border: 12mm solid rgba(255,255,255,0.045);
+    bottom: -38mm;
+    right: -25mm;
+    pointer-events: none;
+  }
+
+  .card-brand {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: auto;
+  }
+
+  .card-logo {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+
+  .card-name {
+    color: var(--white);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  .card-tagline {
+    color: var(--light);
+    font-size: 8.5px;
+    font-weight: 400;
+    line-height: 1.4;
+    margin-bottom: 3mm;
+    opacity: 0.85;
+  }
+
+  .card-url {
+    color: var(--light);
+    font-size: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0;
+  }
+
+  /* ─ Back face ─ */
+  .card-back {
+    background: var(--soft);
+    border: 1.5px solid var(--light);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4mm 5mm;
+    gap: 2mm;
+  }
+
+  .back-qr-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+    width: 100%;
+  }
+
+  .back-qr {
+    width: 22mm;
+    height: 22mm;
+    border: 1.5px solid var(--dark);
+    border-radius: 3mm;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  .back-cta {
+    flex: 1;
+  }
+
+  .back-cta-heading {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--dark);
+    line-height: 1.2;
+    margin-bottom: 1.5mm;
+  }
+
+  .back-cta-sub {
+    font-size: 7.5px;
+    color: var(--muted);
+    line-height: 1.4;
+    margin-bottom: 2mm;
+  }
+
+  .back-url {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: var(--mid);
+    text-decoration: none;
+  }
+
+  .back-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 1mm;
+  }
+
+  .back-logo-small {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+  }
+
+  .back-brand-small {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  /* ─ Name card variant ─ */
+  .card-name-variant .card-front {
+    background: var(--white);
+    border: 1.5px solid var(--light);
+  }
+
+  .card-name-variant .nv-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    margin-bottom: auto;
+  }
+
+  .card-name-variant .nv-brand-col {}
+
+  .card-name-variant .nv-name {
+    color: var(--dark);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  .card-name-variant .nv-tag {
+    color: var(--mid);
+    font-size: 8px;
+    font-weight: 500;
+  }
+
+  .nv-person {
+    margin-bottom: 2mm;
+  }
+
+  .nv-person-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1px;
+  }
+
+  .nv-person-title {
+    font-size: 8.5px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .nv-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5px;
+  }
+
+  .nv-contact-line {
+    font-size: 8px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .nv-contact-line strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ── Section headings on sheet ──────────── */
+  .section-head {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #aaa;
+    margin: 4mm 0 3mm;
+    font-family: system-ui, sans-serif;
+  }
+
+  .cut-line {
+    border: none;
+    border-top: 1px dashed #ddd;
+    margin: 4mm 0;
+  }
+
+  @media print {
+    body { background: none; padding: 0; gap: 0; }
+    .print-note { display: none; }
+    .sheet { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="print-note">
+  <strong>Print instructions:</strong> Print this page at A4 size, no scaling. Cut along the card outlines. Standard business card size: 85 × 54 mm. Each row shows front + back — print double-sided or use as single-sided.
+</div>
+
+<!-- Sheet of cards -->
+<div class="sheet">
+  <div class="sheet-label">NestBook Business Cards — Print at A4, no scaling</div>
+
+  <!-- ── Brand cards — Front ─────────────── -->
+  <div class="section-head">Brand card — Front</div>
+  <div class="card-row">
+    <!-- Card front × 2 -->
+    <div class="card">
+      <div class="card-front">
+        <div class="card-brand">
+          <svg class="card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="90" fill="#1a4710"/>
+            <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+            <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+            <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+            <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+            <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+          <span class="card-name">NestBook</span>
+        </div>
+        <div class="card-tagline">Booking software for B&amp;Bs<br>and independent guest houses</div>
+        <a class="card-url" href="https://nestbook.io">nestbook.io</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-front">
+        <div class="card-brand">
+          <svg class="card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="90" fill="#1a4710"/>
+            <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+            <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+            <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+            <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+            <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+          <span class="card-name">NestBook</span>
+        </div>
+        <div class="card-tagline">Booking software for B&amp;Bs<br>and independent guest houses</div>
+        <a class="card-url" href="https://nestbook.io">nestbook.io</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Brand cards — Back ─────────────── -->
+  <div class="section-head">Brand card — Back</div>
+  <div class="card-row">
+    <div class="card">
+      <div class="card-back">
+        <div class="back-qr-wrap">
+          <img class="back-qr"
+            src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
+            alt="Scan to register"
+            width="83" height="83">
+          <div class="back-cta">
+            <div class="back-cta-heading">Start your<br>free 30-day trial</div>
+            <div class="back-cta-sub">No card required. No commissions. Cancel any time.</div>
+            <a class="back-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-back">
+        <div class="back-qr-wrap">
+          <img class="back-qr"
+            src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
+            alt="Scan to register"
+            width="83" height="83">
+          <div class="back-cta">
+            <div class="back-cta-heading">Start your<br>free 30-day trial</div>
+            <div class="back-cta-sub">No card required. No commissions. Cancel any time.</div>
+            <a class="back-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="cut-line">
+
+  <!-- ── Name card variant — Front ─────────────── -->
+  <div class="section-head">Personal / name card variant — Front (fill in name &amp; email before printing)</div>
+  <div class="card-row">
+    <div class="card card-name-variant">
+      <div class="card-front">
+        <div class="nv-top">
+          <svg class="card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="90" fill="#1a4710"/>
+            <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+            <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+            <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+            <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+            <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+            <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+          <div class="nv-brand-col">
+            <div class="nv-name" style="color:var(--dark)">NestBook</div>
+            <div class="nv-tag">nestbook.io</div>
+          </div>
+        </div>
+        <div class="nv-person">
+          <div class="nv-person-name">Your Name Here</div>
+          <div class="nv-person-title">Founder / Account Manager</div>
+        </div>
+        <div class="nv-contact">
+          <div class="nv-contact-line"><strong>E</strong> hello@nestbook.io</div>
+          <div class="nv-contact-line"><strong>W</strong> nestbook.io</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blank / cut guide -->
+    <div class="card">
+      <div class="card-back" style="border-style: dashed; background: #fafafa;">
+        <div style="font-size:9px; color:#bbb; text-align:center; font-family:system-ui,sans-serif;">
+          Cut guide<br>85 × 54 mm
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
