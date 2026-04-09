@@ -68,10 +68,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://nestbook.io/blog/five-things-gite-owners-wish-they-knew.html</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://nestbook.io/blog/why-small-bbs-are-switching-to-booking-software.html</loc>
     <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.85</priority>
   </url>
 
 </urlset>
