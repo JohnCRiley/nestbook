@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NestBook — Business Cards</title>
+<title>NestBook — Business Card</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -21,288 +21,223 @@
     --muted: #557a4a;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 15mm;
-  }
+  @page { size: A4 portrait; margin: 12mm; }
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background: #d0d0d0;
+    padding: 30px 24px;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 30px 20px;
-    gap: 30px;
-    min-height: 100vh;
+    gap: 20px;
   }
 
   .print-note {
-    background: #fff3cd;
-    border: 1px solid #ffc107;
+    background: #fff;
+    border: 1px solid #ddd;
     border-radius: 6px;
     padding: 10px 16px;
     font-size: 12px;
-    color: #664d03;
+    color: #555;
     font-family: system-ui, sans-serif;
-    max-width: 620px;
+    max-width: 640px;
     text-align: center;
     line-height: 1.5;
   }
 
-  /* Print guide: 2-up per row */
+  /* A4 print sheet containing the cards */
   .sheet {
-    width: 210mm;
+    width: 186mm;   /* A4 - 2×12mm margins */
     background: var(--white);
-    padding: 12mm;
-    box-shadow: 0 4px 30px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+    padding: 10mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+  }
+
+  .sheet-section {
+    margin-bottom: 8mm;
   }
 
   .sheet-label {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #999;
-    margin-bottom: 8mm;
+    color: #aaa;
+    margin-bottom: 4mm;
     font-family: system-ui, sans-serif;
   }
 
-  /* Row of 2 cards */
   .card-row {
     display: flex;
-    gap: 6mm;
-    margin-bottom: 6mm;
+    gap: 5mm;
+    flex-wrap: wrap;
   }
 
-  /* ── Card: 85mm × 54mm standard ─────────── */
+  /* Standard business card: 85mm × 55mm */
   .card {
     width: 85mm;
-    height: 54mm;
+    height: 55mm;
     flex-shrink: 0;
     overflow: hidden;
-    border-radius: 4mm;
-    position: relative;
+    border-radius: 3.5mm;
   }
 
-  /* ─ Front face ─ */
+  /* ── FRONT ────────────────────────────────── */
   .card-front {
-    background: var(--dark);
     width: 100%;
     height: 100%;
+    background: var(--dark);
+    padding: 7mm 7mm 6mm;
     display: flex;
     flex-direction: column;
-    padding: 5mm 6mm 4.5mm;
     position: relative;
     overflow: hidden;
   }
 
-  /* Decorative arc */
+  /* Subtle arc decoration */
   .card-front::after {
     content: '';
     position: absolute;
-    width: 70mm;
-    height: 70mm;
+    width: 90mm;
+    height: 90mm;
     border-radius: 50%;
-    border: 12mm solid rgba(255,255,255,0.045);
-    bottom: -38mm;
-    right: -25mm;
+    border: 14mm solid rgba(255,255,255,0.045);
+    bottom: -55mm;
+    right: -35mm;
     pointer-events: none;
   }
 
-  .card-brand {
+  .cf-brand {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     margin-bottom: auto;
+    position: relative;
+    z-index: 1;
   }
 
-  .card-logo {
-    width: 26px;
-    height: 26px;
+  .cf-logo {
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
   }
 
-  .card-name {
+  .cf-name {
     color: var(--white);
-    font-size: 17px;
-    font-weight: 800;
+    font-size: 19px;
+    font-weight: 900;
     letter-spacing: -0.3px;
   }
 
-  .card-tagline {
+  .cf-tagline {
     color: var(--light);
     font-size: 8.5px;
     font-weight: 400;
-    line-height: 1.4;
+    line-height: 1.45;
     margin-bottom: 3mm;
     opacity: 0.85;
+    position: relative;
+    z-index: 1;
+    max-width: 60mm;
   }
 
-  .card-url {
+  .cf-url {
     color: var(--light);
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 700;
     text-decoration: none;
-    letter-spacing: 0;
+    position: relative;
+    z-index: 1;
   }
 
-  /* ─ Back face ─ */
+  /* ── BACK ─────────────────────────────────── */
   .card-back {
-    background: var(--soft);
-    border: 1.5px solid var(--light);
     width: 100%;
     height: 100%;
+    background: var(--soft);
+    border: 1.5px solid var(--light);
+    padding: 6mm 7mm;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4mm 5mm;
-    gap: 2mm;
+    justify-content: space-between;
   }
 
-  .back-qr-wrap {
+  .cb-top {
     display: flex;
     align-items: center;
-    gap: 4mm;
-    width: 100%;
-  }
-
-  .back-qr {
-    width: 22mm;
-    height: 22mm;
-    border: 1.5px solid var(--dark);
-    border-radius: 3mm;
-    flex-shrink: 0;
-    display: block;
-  }
-
-  .back-cta {
-    flex: 1;
-  }
-
-  .back-cta-heading {
-    font-size: 10px;
-    font-weight: 800;
-    color: var(--dark);
-    line-height: 1.2;
-    margin-bottom: 1.5mm;
-  }
-
-  .back-cta-sub {
-    font-size: 7.5px;
-    color: var(--muted);
-    line-height: 1.4;
-    margin-bottom: 2mm;
-  }
-
-  .back-url {
-    font-size: 8.5px;
-    font-weight: 700;
-    color: var(--mid);
-    text-decoration: none;
-  }
-
-  .back-logo-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 1mm;
-  }
-
-  .back-logo-small {
-    width: 16px;
-    height: 16px;
-    opacity: 0.6;
-  }
-
-  .back-brand-small {
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--muted);
-    opacity: 0.7;
-  }
-
-  /* ─ Name card variant ─ */
-  .card-name-variant .card-front {
-    background: var(--white);
-    border: 1.5px solid var(--light);
-  }
-
-  .card-name-variant .nv-top {
-    display: flex;
-    align-items: flex-start;
     gap: 5px;
-    margin-bottom: auto;
   }
 
-  .card-name-variant .nv-brand-col {}
-
-  .card-name-variant .nv-name {
-    color: var(--dark);
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.3px;
+  .cb-logo-mini {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.65;
   }
 
-  .card-name-variant .nv-tag {
-    color: var(--mid);
-    font-size: 8px;
-    font-weight: 500;
-  }
-
-  .nv-person {
-    margin-bottom: 2mm;
-  }
-
-  .nv-person-name {
-    font-size: 12px;
+  .cb-brand-mini {
+    font-size: 10px;
     font-weight: 700;
-    color: var(--text);
-    margin-bottom: 1px;
+    color: var(--muted);
   }
 
-  .nv-person-title {
+  .cb-person {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5mm;
+  }
+
+  .cb-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.2px;
+    margin-bottom: 0.5mm;
+  }
+
+  .cb-slogan {
     font-size: 8.5px;
     color: var(--muted);
-    font-weight: 500;
+    font-style: italic;
+    line-height: 1.35;
+    max-width: 68mm;
   }
 
-  .nv-contact {
+  .cb-contact {
     display: flex;
     flex-direction: column;
     gap: 1.5px;
   }
 
-  .nv-contact-line {
-    font-size: 8px;
+  .cb-contact-line {
+    font-size: 8.5px;
     color: var(--muted);
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
+    line-height: 1.3;
   }
 
-  .nv-contact-line strong {
+  .cb-contact-icon {
+    width: 12px;
+    text-align: center;
+    opacity: 0.6;
+    font-style: normal;
+  }
+
+  .cb-contact-val {
     color: var(--text);
     font-weight: 600;
   }
 
-  /* ── Section headings on sheet ──────────── */
-  .section-head {
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #aaa;
-    margin: 4mm 0 3mm;
-    font-family: system-ui, sans-serif;
-  }
-
-  .cut-line {
-    border: none;
+  /* ── Divider ─── */
+  .cut-guide {
+    width: 100%;
+    height: 1px;
     border-top: 1px dashed #ddd;
     margin: 4mm 0;
   }
@@ -317,151 +252,149 @@
 <body>
 
 <div class="print-note">
-  <strong>Print instructions:</strong> Print this page at A4 size, no scaling. Cut along the card outlines. Standard business card size: 85 × 54 mm. Each row shows front + back — print double-sided or use as single-sided.
+  <strong>Business cards — print at A4, no scaling.</strong> Standard size 85 × 55 mm. Print on 350–400 gsm card. Cut along the outlines. For double-sided: print sheet 1 (fronts), flip and print sheet 2 (backs).
 </div>
 
-<!-- Sheet of cards -->
 <div class="sheet">
-  <div class="sheet-label">NestBook Business Cards — Print at A4, no scaling</div>
 
-  <!-- ── Brand cards — Front ─────────────── -->
-  <div class="section-head">Brand card — Front</div>
-  <div class="card-row">
-    <!-- Card front × 2 -->
-    <div class="card">
-      <div class="card-front">
-        <div class="card-brand">
-          <svg class="card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-            <rect width="512" height="512" rx="90" fill="#1a4710"/>
-            <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
-            <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
-            <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
-            <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
-            <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
-          </svg>
-          <span class="card-name">NestBook</span>
-        </div>
-        <div class="card-tagline">Booking software for B&amp;Bs<br>and independent guest houses</div>
-        <a class="card-url" href="https://nestbook.io">nestbook.io</a>
-      </div>
-    </div>
+  <!-- ─── FRONTS ─────────────────────────────────── -->
+  <div class="sheet-section">
+    <div class="sheet-label">Front — print first</div>
+    <div class="card-row">
 
-    <div class="card">
-      <div class="card-front">
-        <div class="card-brand">
-          <svg class="card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-            <rect width="512" height="512" rx="90" fill="#1a4710"/>
-            <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
-            <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
-            <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
-            <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
-            <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
-          </svg>
-          <span class="card-name">NestBook</span>
+      <div class="card">
+        <div class="card-front">
+          <div class="cf-brand">
+            <svg class="cf-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <rect width="512" height="512" rx="90" fill="#1a4710"/>
+              <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+              <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+              <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+              <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+            <span class="cf-name">NestBook</span>
+          </div>
+          <div class="cf-tagline">Simple booking software for<br>B&amp;Bs and independent guest houses</div>
+          <a class="cf-url" href="https://nestbook.io">nestbook.io</a>
         </div>
-        <div class="card-tagline">Booking software for B&amp;Bs<br>and independent guest houses</div>
-        <a class="card-url" href="https://nestbook.io">nestbook.io</a>
       </div>
+
+      <div class="card">
+        <div class="card-front">
+          <div class="cf-brand">
+            <svg class="cf-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <rect width="512" height="512" rx="90" fill="#1a4710"/>
+              <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+              <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+              <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+              <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+            <span class="cf-name">NestBook</span>
+          </div>
+          <div class="cf-tagline">Simple booking software for<br>B&amp;Bs and independent guest houses</div>
+          <a class="cf-url" href="https://nestbook.io">nestbook.io</a>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ── Brand cards — Back ─────────────── -->
-  <div class="section-head">Brand card — Back</div>
-  <div class="card-row">
-    <div class="card">
-      <div class="card-back">
-        <div class="back-qr-wrap">
-          <img class="back-qr"
-            src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
-            alt="Scan to register"
-            width="83" height="83">
-          <div class="back-cta">
-            <div class="back-cta-heading">Start your<br>free 30-day trial</div>
-            <div class="back-cta-sub">No card required. No commissions. Cancel any time.</div>
-            <a class="back-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+  <div class="cut-guide"></div>
+
+  <!-- ─── BACKS ──────────────────────────────────── -->
+  <div class="sheet-section">
+    <div class="sheet-label">Back — flip and print second</div>
+    <div class="card-row">
+
+      <div class="card">
+        <div class="card-back">
+          <div class="cb-top">
+            <svg class="cb-logo-mini" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <rect width="512" height="512" rx="90" fill="#1a4710"/>
+              <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+              <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+              <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+              <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+            <span class="cb-brand-mini">NestBook</span>
+          </div>
+          <div class="cb-person">
+            <div class="cb-name">John Riley</div>
+            <div class="cb-slogan">Simple booking for small properties</div>
+          </div>
+          <div class="cb-contact">
+            <div class="cb-contact-line">
+              <span class="cb-contact-icon">✉</span>
+              <span class="cb-contact-val">hello@nestbook.io</span>
+            </div>
+            <div class="cb-contact-line">
+              <span class="cb-contact-icon">🌐</span>
+              <span class="cb-contact-val">nestbook.io</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-back">
-        <div class="back-qr-wrap">
-          <img class="back-qr"
-            src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
-            alt="Scan to register"
-            width="83" height="83">
-          <div class="back-cta">
-            <div class="back-cta-heading">Start your<br>free 30-day trial</div>
-            <div class="back-cta-sub">No card required. No commissions. Cancel any time.</div>
-            <a class="back-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+      <div class="card">
+        <div class="card-back">
+          <div class="cb-top">
+            <svg class="cb-logo-mini" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <rect width="512" height="512" rx="90" fill="#1a4710"/>
+              <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+              <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+              <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+              <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+              <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+            <span class="cb-brand-mini">NestBook</span>
+          </div>
+          <div class="cb-person">
+            <div class="cb-name">John Riley</div>
+            <div class="cb-slogan">Simple booking for small properties</div>
+          </div>
+          <div class="cb-contact">
+            <div class="cb-contact-line">
+              <span class="cb-contact-icon">✉</span>
+              <span class="cb-contact-val">hello@nestbook.io</span>
+            </div>
+            <div class="cb-contact-line">
+              <span class="cb-contact-icon">🌐</span>
+              <span class="cb-contact-val">nestbook.io</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <hr class="cut-line">
-
-  <!-- ── Name card variant — Front ─────────────── -->
-  <div class="section-head">Personal / name card variant — Front (fill in name &amp; email before printing)</div>
-  <div class="card-row">
-    <div class="card card-name-variant">
-      <div class="card-front">
-        <div class="nv-top">
-          <svg class="card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-            <rect width="512" height="512" rx="90" fill="#1a4710"/>
-            <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
-            <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
-            <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
-            <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
-            <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
-            <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
-          </svg>
-          <div class="nv-brand-col">
-            <div class="nv-name" style="color:var(--dark)">NestBook</div>
-            <div class="nv-tag">nestbook.io</div>
-          </div>
-        </div>
-        <div class="nv-person">
-          <div class="nv-person-name">Your Name Here</div>
-          <div class="nv-person-title">Founder / Account Manager</div>
-        </div>
-        <div class="nv-contact">
-          <div class="nv-contact-line"><strong>E</strong> hello@nestbook.io</div>
-          <div class="nv-contact-line"><strong>W</strong> nestbook.io</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Blank / cut guide -->
-    <div class="card">
-      <div class="card-back" style="border-style: dashed; background: #fafafa;">
-        <div style="font-size:9px; color:#bbb; text-align:center; font-family:system-ui,sans-serif;">
-          Cut guide<br>85 × 54 mm
-        </div>
-      </div>
     </div>
   </div>
 
 </div>
-
 </body>
 </html>

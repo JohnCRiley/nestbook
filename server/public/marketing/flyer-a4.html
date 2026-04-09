@@ -11,28 +11,24 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --dark:   #1a4710;
-    --mid:    #2f771b;
-    --light:  #d9f0cc;
-    --leaf:   #3a9122;
-    --white:  #ffffff;
-    --soft:   #f0faf0;
-    --text:   #1a2e14;
-    --muted:  #557a4a;
+    --dark:  #1a4710;
+    --mid:   #2f771b;
+    --light: #d9f0cc;
+    --leaf:  #3a9122;
+    --white: #ffffff;
+    --soft:  #f0faf0;
+    --text:  #1a2e14;
+    --muted: #557a4a;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
+  @page { size: A4 portrait; margin: 0; }
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    background: #e0e0e0;
+    background: #ccc;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    padding: 20px;
+    padding: 24px;
     min-height: 100vh;
   }
 
@@ -43,237 +39,247 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 4px 40px rgba(0,0,0,0.18);
+    box-shadow: 0 4px 40px rgba(0,0,0,0.2);
   }
 
-  /* ── Header band ────────────────────────── */
+  /* ── Header ── */
   .header {
     background: var(--dark);
-    padding: 12mm 14mm 10mm;
+    padding: 14mm 16mm 12mm;
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    width: 200mm;
+    height: 200mm;
+    border-radius: 50%;
+    border: 30mm solid rgba(255,255,255,0.04);
+    top: -120mm;
+    right: -80mm;
   }
 
   .brand {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 8mm;
+    margin-bottom: 10mm;
   }
 
-  .brand-logo {
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-  }
+  .logo { width: 50px; height: 50px; }
 
   .brand-name {
     color: var(--white);
-    font-size: 28px;
-    font-weight: 800;
+    font-size: 32px;
+    font-weight: 900;
     letter-spacing: -0.5px;
   }
 
   .headline {
     color: var(--white);
-    font-size: 30px;
-    font-weight: 800;
-    line-height: 1.15;
+    font-size: 33px;
+    font-weight: 900;
+    line-height: 1.12;
     letter-spacing: -0.5px;
-    max-width: 145mm;
     margin-bottom: 4mm;
+    position: relative;
+    z-index: 1;
   }
 
   .subheadline {
     color: var(--light);
-    font-size: 13.5px;
-    font-weight: 400;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.55;
     max-width: 140mm;
+    opacity: 0.9;
   }
 
-  /* ── Green accent stripe ────────────────── */
   .stripe {
     height: 6px;
     background: linear-gradient(90deg, var(--leaf), var(--light));
     flex-shrink: 0;
   }
 
-  /* ── Body ───────────────────────────────── */
+  /* ── Body ── */
   .body {
     flex: 1;
-    padding: 9mm 14mm 8mm;
+    padding: 11mm 16mm 10mm;
     display: flex;
     flex-direction: column;
-    gap: 7mm;
+    gap: 9mm;
   }
 
   .section-label {
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 700;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--mid);
-    margin-bottom: 3mm;
+    margin-bottom: 4mm;
   }
 
-  /* ── Feature grid ───────────────────────── */
+  /* ── Feature bullets ── */
   .features {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4mm;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5mm;
   }
 
   .feature {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+    padding: 4mm 5mm;
     background: var(--soft);
     border: 1.5px solid var(--light);
     border-radius: 8px;
-    padding: 5mm 5.5mm;
-    display: flex;
-    gap: 3.5mm;
-    align-items: flex-start;
   }
 
-  .feature-icon {
-    width: 28px;
-    height: 28px;
+  .feat-icon {
+    width: 34px;
+    height: 34px;
     background: var(--dark);
-    border-radius: 7px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 16px;
     flex-shrink: 0;
-    font-size: 14px;
-    margin-top: 1px;
   }
 
-  .feature-title {
-    font-size: 11.5px;
+  .feat-body {}
+
+  .feat-title {
+    font-size: 12px;
     font-weight: 700;
     color: var(--text);
-    margin-bottom: 2px;
-    line-height: 1.2;
+    margin-bottom: 1.5px;
   }
 
-  .feature-desc {
+  .feat-desc {
     font-size: 10px;
     color: var(--muted);
-    line-height: 1.45;
+    line-height: 1.4;
   }
 
-  /* ── Pricing callout ────────────────────── */
-  .pricing-band {
+  /* ── Pricing ── */
+  .pricing {
     background: var(--dark);
     border-radius: 10px;
-    padding: 5mm 7mm;
+    padding: 5.5mm 7mm;
     display: flex;
     align-items: center;
     gap: 6mm;
   }
 
-  .pricing-text { flex: 1; }
+  .pricing-copy { flex: 1; }
 
   .pricing-headline {
     color: var(--white);
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 14.5px;
+    font-weight: 800;
     margin-bottom: 2px;
   }
 
   .pricing-sub {
     color: var(--light);
-    font-size: 10.5px;
-    line-height: 1.4;
+    font-size: 10px;
+    line-height: 1.45;
+    opacity: 0.85;
   }
 
-  .pricing-price {
+  .pricing-tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     text-align: right;
     flex-shrink: 0;
   }
 
-  .price-amount {
-    color: var(--light);
-    font-size: 28px;
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -1px;
+  .tier {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    justify-content: flex-end;
   }
 
-  .price-period {
-    color: rgba(217,240,204,0.65);
-    font-size: 10px;
-    font-weight: 500;
-  }
-
-  /* ── Testimonial ────────────────────────── */
-  .testimonial {
-    border-left: 4px solid var(--leaf);
-    padding: 3.5mm 5mm;
-    background: var(--soft);
-    border-radius: 0 8px 8px 0;
-  }
-
-  .testimonial-text {
-    font-size: 11px;
-    color: var(--text);
-    font-style: italic;
-    line-height: 1.5;
-    margin-bottom: 2.5mm;
-  }
-
-  .testimonial-author {
-    font-size: 9.5px;
-    font-weight: 700;
-    color: var(--mid);
+  .tier-name {
+    color: rgba(217,240,204,0.6);
+    font-size: 9px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
-  /* ── CTA + QR ───────────────────────────── */
-  .cta-row {
+  .tier-price {
+    color: var(--light);
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  .tier-price.free { color: #7dde5a; font-size: 13px; }
+
+  /* ── QR CTA ── */
+  .cta {
     display: flex;
     align-items: center;
     gap: 8mm;
     background: var(--light);
     border-radius: 10px;
-    padding: 5.5mm 7mm;
+    padding: 6mm 8mm;
   }
 
-  .qr-block {
+  .qr-wrap {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2mm;
+    gap: 2.5mm;
   }
 
-  .qr-img {
-    width: 28mm;
-    height: 28mm;
-    border: 2px solid var(--dark);
-    border-radius: 6px;
+  .qr-box {
+    width: 30mm;
+    height: 30mm;
+    background: var(--dark);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .qr-box img {
+    width: 100%;
+    height: 100%;
     display: block;
   }
 
-  .qr-label {
-    font-size: 8.5px;
+  .qr-caption {
+    font-size: 8px;
     font-weight: 700;
     color: var(--dark);
-    text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    text-align: center;
   }
 
-  .cta-text { flex: 1; }
+  .cta-copy { flex: 1; }
 
-  .cta-heading {
-    font-size: 17px;
-    font-weight: 800;
+  .cta-headline {
+    font-size: 18px;
+    font-weight: 900;
     color: var(--dark);
-    line-height: 1.2;
+    line-height: 1.15;
+    letter-spacing: -0.3px;
     margin-bottom: 2.5mm;
   }
 
-  .cta-body {
+  .cta-sub {
     font-size: 10.5px;
     color: var(--text);
     line-height: 1.5;
@@ -281,31 +287,29 @@
   }
 
   .cta-url {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 800;
     color: var(--mid);
     text-decoration: none;
+    letter-spacing: -0.2px;
   }
 
-  /* ── Footer ─────────────────────────────── */
+  /* ── Footer ── */
   .footer {
     background: var(--dark);
-    padding: 4mm 14mm;
+    padding: 4mm 16mm;
     display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
     flex-shrink: 0;
   }
 
-  .footer-left {
+  .footer-url {
     color: var(--light);
-    font-size: 10px;
-    font-weight: 600;
-  }
-
-  .footer-right {
-    color: rgba(217,240,204,0.55);
-    font-size: 9px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    text-decoration: none;
   }
 
   @media print {
@@ -315,13 +319,11 @@
 </style>
 </head>
 <body>
-
 <div class="page">
 
-  <!-- Header -->
   <div class="header">
     <div class="brand">
-      <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
         <rect width="512" height="512" rx="90" fill="#1a4710"/>
         <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
         <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
@@ -337,107 +339,98 @@
       </svg>
       <span class="brand-name">NestBook</span>
     </div>
-
-    <div class="headline">Booking software made for&nbsp;B&amp;Bs and guest&nbsp;houses</div>
-    <div class="subheadline">Stop managing bookings on spreadsheets and sticky notes. NestBook gives independent property owners a professional booking system — without the complexity or cost of the big platforms.</div>
+    <div class="headline">Booking software built<br>for B&amp;Bs and guest houses</div>
+    <div class="subheadline">Stop juggling spreadsheets and sticky notes. NestBook gives independent property owners a professional booking system — simple, affordable, and yours to keep.</div>
   </div>
 
   <div class="stripe"></div>
 
-  <!-- Body -->
   <div class="body">
 
     <div>
       <div class="section-label">Everything you need</div>
       <div class="features">
         <div class="feature">
-          <div class="feature-icon">📅</div>
-          <div>
-            <div class="feature-title">Booking calendar</div>
-            <div class="feature-desc">Visual room calendar — see all bookings at a glance. Click any date to create or manage a stay.</div>
+          <div class="feat-icon">📅</div>
+          <div class="feat-body">
+            <div class="feat-title">Visual booking calendar</div>
+            <div class="feat-desc">See every room's availability at a glance. Create, edit and manage stays in seconds.</div>
           </div>
         </div>
         <div class="feature">
-          <div class="feature-icon">🌐</div>
-          <div>
-            <div class="feature-title">Direct booking widget</div>
-            <div class="feature-desc">Embed on your own website. Guests book and pay directly — no commission fees.</div>
+          <div class="feat-icon">🌐</div>
+          <div class="feat-body">
+            <div class="feat-title">Commission-free booking widget</div>
+            <div class="feat-desc">Embed on your own website. Guests book and pay you directly — no middleman.</div>
           </div>
         </div>
         <div class="feature">
-          <div class="feature-icon">👤</div>
-          <div>
-            <div class="feature-title">Guest records</div>
-            <div class="feature-desc">Full guest history, contact details, and stay records — all in one place.</div>
+          <div class="feat-icon">👤</div>
+          <div class="feat-body">
+            <div class="feat-title">Guest records and history</div>
+            <div class="feat-desc">Every guest's contact details and stay history, always at your fingertips.</div>
           </div>
         </div>
         <div class="feature">
-          <div class="feature-icon">📨</div>
-          <div>
-            <div class="feature-title">Automatic emails</div>
-            <div class="feature-desc">Booking confirmations sent instantly. Professional-looking, no work required.</div>
+          <div class="feat-icon">📨</div>
+          <div class="feat-body">
+            <div class="feat-title">Automatic confirmation emails</div>
+            <div class="feat-desc">Professional booking confirmations sent the moment a reservation is made.</div>
           </div>
         </div>
         <div class="feature">
-          <div class="feature-icon">🏠</div>
-          <div>
-            <div class="feature-title">Room management</div>
-            <div class="feature-desc">Set rates, amenities, capacity, and maintenance status per room.</div>
-          </div>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">📱</div>
-          <div>
-            <div class="feature-title">Works on any device</div>
-            <div class="feature-desc">Phone, tablet, desktop — your dashboard is always with you, online or offline.</div>
+          <div class="feat-icon">📱</div>
+          <div class="feat-body">
+            <div class="feat-title">Works on every device</div>
+            <div class="feat-desc">Phone, tablet, or desktop. Install as an app or open any browser — always in sync.</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Pricing -->
-    <div class="pricing-band">
-      <div class="pricing-text">
-        <div class="pricing-headline">Flat monthly price. No commissions.</div>
-        <div class="pricing-sub">No percentage cut on your bookings. No hidden fees.<br>Cancel any time. 30-day free trial — no card required.</div>
+    <div class="pricing">
+      <div class="pricing-copy">
+        <div class="pricing-headline">Flat price. No commissions. Start free.</div>
+        <div class="pricing-sub">No percentage cut on bookings. No hidden fees.<br>30-day free trial — no credit card required.</div>
       </div>
-      <div class="pricing-price">
-        <div class="price-amount">€29</div>
-        <div class="price-period">/ month</div>
+      <div class="pricing-tiers">
+        <div class="tier">
+          <span class="tier-name">Starter</span>
+          <span class="tier-price free">Free</span>
+        </div>
+        <div class="tier">
+          <span class="tier-name">Pro</span>
+          <span class="tier-price">€29<span style="font-size:10px;font-weight:500;opacity:0.6">/mo</span></span>
+        </div>
+        <div class="tier">
+          <span class="tier-name">Multi</span>
+          <span class="tier-price">€79<span style="font-size:10px;font-weight:500;opacity:0.6">/mo</span></span>
+        </div>
       </div>
     </div>
 
-    <!-- Testimonial -->
-    <div class="testimonial">
-      <div class="testimonial-text">"We switched from a paper diary to NestBook in an afternoon. Now I can check availability from my phone while I'm at the market. It's saved us hours every week."</div>
-      <div class="testimonial-author">Marie-Claire D. — 6-room chambre d'hôtes, Dordogne</div>
-    </div>
-
-    <!-- CTA + QR -->
-    <div class="cta-row">
-      <div class="qr-block">
-        <img class="qr-img"
-          src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&color=1a4710&bgcolor=f0faf0&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister"
-          alt="Scan to register"
-          width="106" height="106">
-        <div class="qr-label">Scan to start free</div>
+    <!-- QR CTA -->
+    <div class="cta">
+      <div class="qr-wrap">
+        <div class="qr-box">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=d9f0cc&bgcolor=1a4710&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="QR code" width="113" height="113">
+        </div>
+        <div class="qr-caption">Scan to sign up free</div>
       </div>
-      <div class="cta-text">
-        <div class="cta-heading">Start your free<br>30-day trial today</div>
-        <div class="cta-body">No credit card. No contract. Full access from day one. Set up in under 10 minutes.</div>
+      <div class="cta-copy">
+        <div class="cta-headline">Start your free<br>30-day trial today</div>
+        <div class="cta-sub">No credit card. No contract. Full access from day one. Set up in under 10 minutes.</div>
         <a class="cta-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
       </div>
     </div>
 
   </div>
 
-  <!-- Footer -->
   <div class="footer">
-    <div class="footer-left">nestbook.io &nbsp;·&nbsp; hello@nestbook.io</div>
-    <div class="footer-right">Property management for independent hospitality</div>
+    <a class="footer-url" href="https://nestbook.io">nestbook.io</a>
   </div>
 
 </div>
-
 </body>
 </html>

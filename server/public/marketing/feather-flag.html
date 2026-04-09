@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Feather / Flutter Flag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:  #1a4710;
+    --mid:   #2f771b;
+    --light: #d9f0cc;
+    --leaf:  #3a9122;
+    --white: #ffffff;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #aaa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 24px;
+    min-height: 100vh;
+    gap: 14px;
+  }
+
+  .screen-note {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #555;
+    font-family: system-ui, sans-serif;
+    max-width: 640px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* Feather flag: 600 × 1800px on screen.
+     Physical size: supply at 600dpi to printer for ~25cm × 75cm
+     or scale artwork to final flag dimensions (typically 50cm × 150cm). */
+
+  .flag-wrap {
+    /* Feather flags taper at the top — simulate with clip-path */
+    position: relative;
+    width: 600px;
+    height: 1800px;
+    flex-shrink: 0;
+  }
+
+  .flag {
+    width: 600px;
+    height: 1800px;
+    background: var(--dark);
+    /* Feather/flutter flag shape: tapers to a point at top-right */
+    clip-path: polygon(
+      0% 0%,          /* top-left */
+      72% 0%,         /* top — flag narrows here */
+      100% 8%,        /* tip curves down on right */
+      85% 22%,        /* right edge curves in */
+      100% 40%,       /* billows out right mid */
+      88% 58%,        /* curves back in */
+      100% 74%,       /* billows again */
+      90% 88%,        /* curves in near bottom */
+      100% 100%,      /* bottom-right */
+      0% 100%         /* bottom-left */
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Decorative texture ─────────── */
+  .flag::before {
+    content: '';
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    border: 80px solid rgba(255,255,255,0.04);
+    top: -300px;
+    right: -300px;
+    pointer-events: none;
+  }
+
+  .flag::after {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    border: 60px solid rgba(255,255,255,0.03);
+    bottom: -200px;
+    left: -200px;
+    pointer-events: none;
+  }
+
+  /* ── Logo area ──────────────────── */
+  .flag-logo-section {
+    padding: 50px 50px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .flag-logo {
+    width: 90px;
+    height: 90px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  }
+
+  .flag-brand {
+    color: var(--white);
+    font-size: 62px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+
+  /* ── Stripe ─────────────────────── */
+  .flag-stripe {
+    width: 82%;
+    height: 7px;
+    background: linear-gradient(90deg, var(--leaf), var(--light));
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Text lines ─────────────────── */
+  .flag-lines {
+    flex: 1;
+    padding: 40px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .flag-line {
+    color: var(--white);
+    font-size: 68px;
+    font-weight: 900;
+    line-height: 1.0;
+    letter-spacing: -2px;
+    max-width: 440px;
+  }
+
+  .flag-line.accent {
+    color: var(--light);
+    font-size: 52px;
+    letter-spacing: -1.5px;
+  }
+
+  .flag-line.small {
+    color: rgba(217,240,204,0.75);
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -1px;
+  }
+
+  .flag-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--leaf);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+  }
+
+  /* ── Bottom stripe ──────────────── */
+  .flag-bottom-stripe {
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(90deg, var(--leaf), var(--light), var(--leaf));
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── URL footer ─────────────────── */
+  .flag-url-section {
+    padding: 30px 50px 55px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .flag-url {
+    color: var(--light);
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    text-decoration: none;
+    line-height: 1;
+    display: block;
+  }
+
+  .flag-url-sub {
+    color: rgba(217,240,204,0.5);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    margin-top: 8px;
+  }
+
+  /* ── Pole sleeve indicator (print guide) ── */
+  .pole-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 26px;
+    background: rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .pole-text {
+    color: rgba(255,255,255,0.35);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-family: system-ui, sans-serif;
+    user-select: none;
+  }
+
+  @media print {
+    body { background: none; padding: 0; gap: 0; }
+    .screen-note { display: none; }
+    .flag-wrap { page-break-inside: avoid; }
+    .pole-indicator { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="screen-note">
+  <strong>Feather / flutter flag</strong> — 600 × 1800 px artwork (approx. 25 cm × 75 cm at 60 dpi or scale to your printer's spec). The left edge is the pole sleeve. Supply artwork at full resolution to your flag printer. Print on double-sided fabric for best results.
+</div>
+
+<div class="flag-wrap">
+  <div class="flag">
+
+    <!-- Pole sleeve indicator -->
+    <div class="pole-indicator">
+      <span class="pole-text">Pole sleeve</span>
+    </div>
+
+    <!-- Logo -->
+    <div class="flag-logo-section" style="padding-left:60px">
+      <svg class="flag-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="90" fill="#1a4710"/>
+        <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+        <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+        <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+        <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <div class="flag-brand">NestBook</div>
+    </div>
+
+    <div class="flag-stripe"></div>
+
+    <!-- Text lines — short, punchy, readable from 5 metres -->
+    <div class="flag-lines" style="padding-left:60px">
+      <div class="flag-line">Booking<br>software</div>
+      <div class="flag-line">for your<br>B&amp;B</div>
+      <div class="flag-line accent"><span class="flag-dot"></span>Commission‑free</div>
+      <div class="flag-line accent"><span class="flag-dot"></span>Start for free</div>
+      <div class="flag-line small">30-day trial · no card needed</div>
+    </div>
+
+    <div class="flag-bottom-stripe"></div>
+
+    <!-- URL -->
+    <div class="flag-url-section" style="padding-left:60px">
+      <a class="flag-url" href="https://nestbook.io">nestbook.io</a>
+      <div class="flag-url-sub">Try it free today</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
