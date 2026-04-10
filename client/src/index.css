@@ -222,11 +222,11 @@ a { text-decoration: none; }
   }
 
   /* Footer — hide all text, show only logout icon */
-  .footer-label,
-  .footer-property-row,
-  .footer-type,
-  .sidebar-user,
-  .sidebar-util-btn { display: none; }
+  .sidebar .footer-label,
+  .sidebar .footer-property-row,
+  .sidebar .footer-type,
+  .sidebar .sidebar-user,
+  .sidebar .sidebar-util-btn { display: none; }
 
   .sidebar-footer {
     padding: 12px 0;

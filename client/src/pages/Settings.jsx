@@ -172,8 +172,8 @@ export default function Settings() {
   // ── Embed snippet ──────────────────────────────────────────────────────────
   const embedSnippet = `<!-- NestBook Booking Widget -->
 <script
-  src="https://widget.nestbook.app/embed.js"
-  data-property="1"
+  src="https://nestbook.io/widget.js"
+  data-property-id="1"
   data-lang="${form?.locale ?? 'en'}"
   data-currency="${form?.currency ?? 'EUR'}"
   async>

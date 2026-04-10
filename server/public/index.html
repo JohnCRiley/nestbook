@@ -744,6 +744,89 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
+/* ── Hamburger button ─────────────────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.hamburger:hover { background: var(--soft); }
+.hamburger span {
+  display: block;
+  height: 2px;
+  background: var(--dark);
+  border-radius: 2px;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Mobile nav dropdown ──────────────────────────────────────────────────── */
+.mobile-nav {
+  display: none;
+  flex-direction: column;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  padding: 12px 0 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.mobile-nav.open { display: flex; }
+.mobile-nav .mobile-nav-link {
+  padding: 11px 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.12s, background 0.12s;
+}
+.mobile-nav .mobile-nav-link:hover { color: var(--dark); background: var(--soft); }
+.mobile-nav .mobile-nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 16px;
+}
+.mobile-nav .mobile-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px 0;
+}
+.mobile-nav .mobile-lang-row {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+  flex-wrap: wrap;
+}
+.mobile-nav .mobile-lang-btn {
+  background: var(--soft);
+  border: 1px solid var(--border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: inherit;
+  transition: all 0.12s;
+}
+.mobile-nav .mobile-lang-btn.active,
+.mobile-nav .mobile-lang-btn:hover {
+  background: var(--dark);
+  color: #fff;
+  border-color: var(--dark);
+}
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .hero-inner         { grid-template-columns: 1fr; }
@@ -755,6 +838,10 @@ img { display: block; max-width: 100%; }
   .pricing-card.highlight { transform: none; }
   .footer-inner       { grid-template-columns: 1fr 1fr; }
   .nav-links          { display: none; }
+}
+@media (max-width: 767px) {
+  .nav-right          { display: none; }
+  .hamburger          { display: flex; }
 }
 @media (max-width: 600px) {
   .features-grid { grid-template-columns: 1fr; }
@@ -797,8 +884,33 @@ img { display: block; max-width: 100%; }
       <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
     </div>
 
+    <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+      <span></span><span></span><span></span>
+    </button>
+
   </div>
 </header>
+
+<!-- Mobile nav dropdown (shown when hamburger is open) -->
+<nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+  <a href="#features"      class="mobile-nav-link" data-i18n="nav.features">Features</a>
+  <a href="#pricing"       class="mobile-nav-link" data-i18n="nav.pricing">Pricing</a>
+  <a href="#languages"     class="mobile-nav-link" data-i18n="nav.languages">Languages</a>
+  <a href="/blog/"         class="mobile-nav-link" data-i18n="nav.blog">Blog</a>
+  <a href="/widget-test.html" class="mobile-nav-link" data-i18n="nav.demo">Live demo</a>
+  <div class="mobile-nav-divider"></div>
+  <div class="mobile-nav-actions">
+    <a href="/app/login"    class="btn btn-outline" data-i18n="nav.signin" style="justify-content:center">Sign in</a>
+    <a href="/app/register" class="btn btn-primary" data-i18n="nav.try"    style="justify-content:center">Try free</a>
+  </div>
+  <div class="mobile-nav-lang-row mobile-lang-row">
+    <button class="mobile-lang-btn active" data-mobile-lang="en">EN</button>
+    <button class="mobile-lang-btn" data-mobile-lang="fr">FR</button>
+    <button class="mobile-lang-btn" data-mobile-lang="es">ES</button>
+    <button class="mobile-lang-btn" data-mobile-lang="de">DE</button>
+    <button class="mobile-lang-btn" data-mobile-lang="nl">NL</button>
+  </div>
+</nav>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  HERO                                                                     -->
@@ -1939,9 +2051,12 @@ function applyLang(lang) {
     setMeta('og:locale', t['meta.locale'], true);
   }
 
-  // Update active lang button
+  // Update active lang buttons (desktop + mobile)
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  document.querySelectorAll('[data-mobile-lang]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.mobileLang === lang);
   });
 
   // Store selection
@@ -1952,6 +2067,38 @@ function applyLang(lang) {
 document.querySelectorAll('.lang-btn').forEach((btn) => {
   btn.addEventListener('click', () => applyLang(btn.dataset.lang));
 });
+
+// ── Hamburger menu ─────────────────────────────────────────────────────────
+(function () {
+  const btn     = document.getElementById('hamburger');
+  const mobileNav = document.getElementById('mobile-nav');
+  if (!btn || !mobileNav) return;
+
+  btn.addEventListener('click', () => {
+    const isOpen = mobileNav.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+    btn.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  // Close when a link is clicked
+  mobileNav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      mobileNav.classList.remove('open');
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Mobile lang buttons mirror the main applyLang function
+  mobileNav.querySelectorAll('[data-mobile-lang]').forEach((mbtn) => {
+    mbtn.addEventListener('click', () => {
+      applyLang(mbtn.dataset.mobileLang);
+      mobileNav.querySelectorAll('[data-mobile-lang]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.mobileLang === mbtn.dataset.mobileLang);
+      });
+    });
+  });
+})();
 
 // ── Init with stored preference ────────────────────────────────────────────
 (function () {
