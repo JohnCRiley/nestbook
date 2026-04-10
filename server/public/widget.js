@@ -220,9 +220,15 @@
   }
 
   // ── API calls ──────────────────────────────────────────────────────────────
+  // All widget API calls use /api/widget/* — public endpoints that require no
+  // authentication, so the widget works from any external website.
   async function apiFetch(path, opts) {
     const res = await fetch(API_BASE + path, opts);
-    if (!res.ok) throw new Error('API error ' + res.status);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('[NestBook widget] API error', res.status, path, body);
+      throw new Error('API error ' + res.status);
+    }
     return res.json();
   }
 
@@ -232,14 +238,15 @@
     render();
     try {
       const [rooms, bookings] = await Promise.all([
-        apiFetch('/api/rooms?property_id=' + PROPERTY_ID),
-        apiFetch('/api/bookings?property_id=' + PROPERTY_ID),
+        apiFetch('/api/widget/rooms?property_id=' + PROPERTY_ID),
+        apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
       ]);
       S.allRooms       = rooms;
       S.allBookings    = bookings;
       S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
       S.step           = 2;
-    } catch (_) {
+    } catch (err) {
+      console.error('[NestBook widget] loadAvailability failed:', err);
       S.error = T.errServer;
     }
     S.loading = false;
@@ -252,7 +259,7 @@
     render();
     try {
       // 1. Create (or register) the guest
-      const guest = await apiFetch('/api/guests', {
+      const guest = await apiFetch('/api/widget/guests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -266,7 +273,7 @@
       // 2. Create the booking
       const nights    = nightsBetween(S.checkIn, S.checkOut);
       const totalPrice = S.selectedRoom.price_per_night * nights;
-      const booking = await apiFetch('/api/bookings', {
+      const booking = await apiFetch('/api/widget/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -284,7 +291,8 @@
       });
       S.bookingRef = booking.id;
       S.step       = 5;
-    } catch (_) {
+    } catch (err) {
+      console.error('[NestBook widget] confirmBooking failed:', err);
       S.error = T.errServer;
     }
     S.loading = false;
