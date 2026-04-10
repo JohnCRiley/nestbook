@@ -30,7 +30,7 @@ export default function Users() {
       });
       if (res.ok) {
         setRows(r => r.map(u => u.id === userId ? { ...u, plan } : u));
-        showToast(`Plan updated to ${plan}.`);
+        showToast('Plan updated successfully. Ask the user to refresh their browser to see the changes.');
       } else {
         const d = await res.json();
         showToast(d.error || 'Failed to update plan.', 'error');
@@ -49,7 +49,7 @@ export default function Users() {
           ? { ...u, plan: 'pro', sub_notes: 'Complimentary', stripe_subscription_id: null, cancel_at_period_end: 0 }
           : u
         ));
-        showToast(`${name} comped as Pro.`);
+        showToast('Plan updated successfully. Ask the user to refresh their browser to see the changes.');
       } else {
         const d = await res.json();
         showToast(d.error || 'Failed to comp account.', 'error');

@@ -8,7 +8,6 @@ const CURRENCY_SYMBOL = { EUR: '€', GBP: '£', USD: '$', CHF: '₣' };
 const LocaleContext = createContext(null);
 
 export function LocaleProvider({ children }) {
-  const [locale,   setLocale]   = useState('en');
   const [property, setProperty] = useState(null);
 
   useEffect(() => {
@@ -19,10 +18,13 @@ export function LocaleProvider({ children }) {
       .then(([first]) => {
         if (!first) return;
         setProperty(first);
-        setLocale(first.locale ?? 'en');
       })
       .catch(() => {});
   }, []);
+
+  // Derive locale directly from property so calling setProperty() anywhere
+  // (e.g. after saving Settings) updates the language instantly without a refresh.
+  const locale = property?.locale ?? 'en';
 
   function t(key) {
     return (LANGS[locale] ?? LANGS.en)?.[key] ?? LANGS.en?.[key] ?? key;

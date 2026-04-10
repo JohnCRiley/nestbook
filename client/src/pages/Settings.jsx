@@ -3,7 +3,7 @@ import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useKiosk } from '../hooks/useKiosk.js';
 
@@ -38,6 +38,7 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
+  const { setProperty: setContextProperty } = useLocale();
   const { user } = useAuth();
   const { kiosk, setKioskMode } = useKiosk();
 
@@ -134,6 +135,7 @@ export default function Settings() {
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const updated = await res.json();
       setProperty(updated);
+      setContextProperty(updated); // update locale/currency in context instantly
       showToast('Property settings saved successfully.');
     } catch (err) {
       showToast('Failed to save settings. Please try again.', 'error');
