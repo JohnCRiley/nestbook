@@ -11,7 +11,7 @@
 #   3. Adds a cron job to run the backup every day at 2:00am
 #   4. Runs an immediate first backup to confirm everything works
 #
-# Database location: /opt/nestbook/server/db/nestbook.db
+# Database location: /opt/nestbook/server/nestbook.db
 # Backups stored at: /root/backups/nestbook/
 # Cron schedule:     Daily at 02:00 (server local time)
 # Retention:         Last 30 backups

@@ -2,7 +2,7 @@
 # =============================================================================
 # NestBook — SQLite database backup script
 #
-# Database location: /opt/nestbook/server/db/nestbook.db
+# Database location: /opt/nestbook/server/nestbook.db
 #
 # This script is intended to be run by cron (see setup-backups.sh).
 # It can also be run manually at any time:
@@ -16,7 +16,7 @@
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_FILE="/opt/nestbook/server/db/nestbook.db"
+DB_FILE="/opt/nestbook/server/nestbook.db"
 BACKUP_DIR="/root/backups/nestbook"
 LOG_FILE="/var/log/nestbook-backup.log"
 KEEP_LAST=30
