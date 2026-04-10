@@ -89,6 +89,7 @@ Add these lines to the file:
 ```
 Host ssh.nestbook.io
     ProxyCommand cloudflared access ssh --hostname %h
+    AddressFamily inet
     User root
     IdentityFile ~/.ssh/id_rsa
 ```
@@ -97,6 +98,10 @@ Save and close Notepad.
 
 > **Note:** Replace `~/.ssh/id_rsa` with the path to your actual private key,
 > e.g. `C:/Users/YourName/.ssh/id_nestbook` if you use a named key file.
+>
+> **`AddressFamily inet`** forces SSH to use IPv4 only. This prevents a common
+> Windows issue where cloudflared's local proxy listener binds to `::1` (IPv6)
+> and the connection is blocked by the local firewall or network policy.
 
 ---
 
@@ -172,6 +177,84 @@ If you haven't added your Windows SSH public key to the server yet:
       ControlPersist 10m
   ```
 
+### IPv6 errors — `connect to host ::1`, `Network unreachable`, or connection blocked
+
+On Windows, cloudflared's local proxy listener sometimes binds to `::1` (IPv6
+loopback) instead of `127.0.0.1`. If your machine or network blocks IPv6, the
+connection fails silently or with a `Network unreachable` error.
+
+**Fix 1 — `AddressFamily inet` in SSH config (try this first)**
+
+Make sure your `~/.ssh/config` entry includes `AddressFamily inet`:
+
+```
+Host ssh.nestbook.io
+    ProxyCommand cloudflared access ssh --hostname %h
+    AddressFamily inet
+    User root
+    IdentityFile ~/.ssh/id_rsa
+```
+
+This tells the SSH client to only use IPv4, which forces the ProxyCommand
+invocation to stay on the IPv4 stack.
+
+---
+
+**Fix 2 — Local port-forward mode (most reliable)**
+
+Instead of a ProxyCommand, run cloudflared as a background TCP tunnel that
+forwards a local IPv4 port to the remote SSH service:
+
+1. Open a terminal and run:
+   ```powershell
+   cloudflared access tcp --hostname ssh.nestbook.io --url 127.0.0.1:2222
+   ```
+   Leave this terminal open — it holds the tunnel.
+
+2. In a second terminal, connect via the local port:
+   ```powershell
+   ssh -p 2222 root@127.0.0.1
+   ```
+
+   Or add a dedicated entry to `~/.ssh/config` so `ssh nestbook-local` works:
+   ```
+   Host nestbook-local
+       HostName 127.0.0.1
+       Port 2222
+       User root
+       IdentityFile ~/.ssh/id_rsa
+   ```
+
+Because `127.0.0.1` is an explicit IPv4 address, this completely bypasses the
+IPv6 binding issue.
+
+---
+
+**Fix 3 — Prefer IPv4 system-wide via Windows registry (last resort)**
+
+This does not disable IPv6 — it only tells Windows to prefer IPv4 when both
+are available. Safe to apply and easily reversed.
+
+1. Open PowerShell **as Administrator** and run:
+   ```powershell
+   New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" `
+     -Name DisabledComponents -PropertyType DWord -Value 0x20 -Force
+   ```
+
+2. Restart your machine for the change to take effect.
+
+   | `DisabledComponents` value | Effect |
+   |---|---|
+   | `0x00` (default) | IPv6 fully enabled, preferred over IPv4 |
+   | `0x20` | Prefer IPv4 over IPv6 (recommended fix) |
+   | `0xFF` | Disable IPv6 completely (not recommended) |
+
+3. To revert: set the value back to `0x00`, or delete the key:
+   ```powershell
+   Remove-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" `
+     -Name DisabledComponents
+   ```
+
 ---
 
 ## Quick reference
@@ -179,6 +262,7 @@ If you haven't added your Windows SSH public key to the server yet:
 | Task | Command |
 |---|---|
 | Connect to server | `ssh ssh.nestbook.io` |
+| Connect (IPv4 port-forward mode) | `cloudflared access tcp --hostname ssh.nestbook.io --url 127.0.0.1:2222` then `ssh -p 2222 root@127.0.0.1` |
 | Copy a file to server | `scp myfile.txt ssh.nestbook.io:/root/` |
 | Copy a file from server | `scp ssh.nestbook.io:/root/file.txt .` |
 | Check tunnel is alive | `ssh ssh.nestbook.io systemctl is-active cloudflared` |
