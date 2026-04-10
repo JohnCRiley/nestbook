@@ -157,5 +157,15 @@ export function initSchema() {
     db.exec(`ALTER TABLE users ADD COLUMN discount_code TEXT`);
   } catch { /* already exists */ }
 
+  // email_verified defaults to 1 so existing users are considered verified;
+  // new registrations set it to 0 explicitly until they click the link.
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN email_verification_token TEXT`);
+  } catch { /* already exists */ }
+
   console.log('✓ Database schema ready.');
 }

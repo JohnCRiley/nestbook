@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
+import PasswordInput from './PasswordInput.jsx';
 
 export default function ResetStaffPasswordModal({ user, onClose }) {
   const [newPassword,     setNewPassword]     = useState('');
@@ -76,8 +77,7 @@ export default function ResetStaffPasswordModal({ user, onClose }) {
 
               <div className="form-group">
                 <label className="form-label">New Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   className="form-control"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -89,8 +89,7 @@ export default function ResetStaffPasswordModal({ user, onClose }) {
 
               <div className="form-group">
                 <label className="form-label">Confirm Password</label>
-                <input
-                  type="password"
+                <PasswordInput
                   className="form-control"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

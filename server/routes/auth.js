@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import db from '../db/database.js';
-import { sendWelcomeEmail } from '../email/emailService.js';
+import { sendWelcomeEmail, sendVerificationEmail } from '../email/emailService.js';
 
 export const authRouter = Router();
 
@@ -32,7 +33,7 @@ authRouter.post('/login', (req, res) => {
 
   res.json({
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role, property_id: user.property_id },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, property_id: user.property_id, email_verified: !!user.email_verified },
   });
 });
 
@@ -70,9 +71,12 @@ authRouter.post('/register', (req, res) => {
       ? db.prepare('SELECT code FROM discount_codes WHERE code = ? AND active = 1').get(upperCode)?.code
       : null;
 
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
     const user = db.prepare(
-      `INSERT INTO users (property_id, name, email, password_hash, role, discount_code) VALUES (?, ?, ?, ?, 'owner', ?)`
-    ).run(prop.lastInsertRowid, name, normalEmail, hash, validCode ?? null);
+      `INSERT INTO users (property_id, name, email, password_hash, role, discount_code, email_verified, email_verification_token)
+       VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
+    ).run(prop.lastInsertRowid, name, normalEmail, hash, validCode ?? null, verificationToken);
 
     db.exec('COMMIT');
 
@@ -84,7 +88,7 @@ authRouter.post('/register', (req, res) => {
 
     res.status(201).json({
       token,
-      user: { id: user.lastInsertRowid, name, email: normalEmail, role: 'owner', property_id: prop.lastInsertRowid },
+      user: { id: user.lastInsertRowid, name, email: normalEmail, role: 'owner', property_id: prop.lastInsertRowid, email_verified: false },
     });
 
     // Fire-and-forget — must not delay the registration response
@@ -92,9 +96,34 @@ authRouter.post('/register', (req, res) => {
       { name, email: normalEmail },
       { name: propertyName, type: propertyType }
     ).catch(() => {});
+
+    sendVerificationEmail(
+      { name, email: normalEmail },
+      verificationToken
+    ).catch(() => {});
   } catch (err) {
     db.exec('ROLLBACK');
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
+});
+
+// ── GET /api/auth/verify-email?token=xxx ─────────────────────────────────
+authRouter.get('/verify-email', (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ error: 'Token is required.' });
+
+  const user = db.prepare(
+    'SELECT id FROM users WHERE email_verification_token = ?'
+  ).get(token);
+
+  if (!user) {
+    return res.status(400).json({ error: 'Invalid or expired verification link.' });
+  }
+
+  db.prepare(
+    'UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?'
+  ).run(user.id);
+
+  res.json({ success: true });
 });

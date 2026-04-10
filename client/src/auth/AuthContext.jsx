@@ -22,8 +22,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  function updateUser(updates) {
+    const updated = { ...user, ...updates };
+    localStorage.setItem('nb_user', JSON.stringify(updated));
+    setUser(updated);
+  }
+
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ token, user, login, logout, updateUser, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

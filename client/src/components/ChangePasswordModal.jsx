@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
+import PasswordInput from './PasswordInput.jsx';
 
 export default function ChangePasswordModal({ onClose }) {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -78,21 +79,21 @@ export default function ChangePasswordModal({ onClose }) {
 
               <div className="form-group">
                 <label className="form-label">Current Password</label>
-                <input name="currentPassword" type="password" className="form-control"
+                <PasswordInput name="currentPassword" className="form-control"
                   value={form.currentPassword} onChange={handleChange}
                   required autoFocus placeholder="Your current password" />
               </div>
 
               <div className="form-group">
                 <label className="form-label">New Password</label>
-                <input name="newPassword" type="password" className="form-control"
+                <PasswordInput name="newPassword" className="form-control"
                   value={form.newPassword} onChange={handleChange}
                   required placeholder="Min. 8 characters" />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Confirm New Password</label>
-                <input name="confirmPassword" type="password" className="form-control"
+                <PasswordInput name="confirmPassword" className="form-control"
                   value={form.confirmPassword} onChange={handleChange}
                   required placeholder="Repeat new password" />
               </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 
 const PROPERTY_TYPES = [
   { value: '',            label: 'Select a type…' },
@@ -101,12 +102,12 @@ export default function Register() {
           <div className="auth-field-row">
             <div className="auth-field">
               <label className="auth-label" htmlFor="reg-password">Password</label>
-              <input id="reg-password" type="password" className="auth-input" value={form.password}
+              <PasswordInput id="reg-password" className="auth-input" value={form.password}
                 onChange={set('password')} placeholder="At least 8 characters" required />
             </div>
             <div className="auth-field">
               <label className="auth-label" htmlFor="confirm">Confirm password</label>
-              <input id="confirm" type="password" className="auth-input" value={form.confirmPassword}
+              <PasswordInput id="confirm" className="auth-input" value={form.confirmPassword}
                 onChange={set('confirmPassword')} placeholder="••••••••" required />
             </div>
           </div>

@@ -388,6 +388,59 @@ export async function sendContactEmail({ name, email, message }) {
 }
 
 /**
+ * Send an email verification link to a newly-registered user.
+ * @param {object} user  — { name, email }
+ * @param {string} token — 64-char hex verification token
+ */
+export async function sendVerificationEmail(user, token) {
+  if (!resend) return;
+  if (!user?.email) return;
+
+  const link = `https://nestbook.io/app/verify-email?token=${token}`;
+
+  const html = shell(`
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      Verify your email address
+    </h1>
+    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">
+      Hi ${user.name},
+    </p>
+    <p style="margin:0 0 28px;font-size:0.95rem;color:#374151;line-height:1.6;">
+      Thanks for signing up for NestBook. Please verify your email address to confirm your account.
+    </p>
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <a href="${link}"
+         style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
+                padding:13px 32px;border-radius:8px;font-size:0.9rem;font-weight:600;">
+        Verify email address
+      </a>
+    </div>
+
+    <p style="margin:0 0 16px;font-size:0.82rem;color:#6b7280;line-height:1.6;">
+      If the button doesn't work, copy and paste this link into your browser:<br>
+      <a href="${link}" style="color:#1a4710;word-break:break-all;">${link}</a>
+    </p>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
+    <p style="margin:0;font-size:0.75rem;color:#9ca3af;text-align:center;">
+      If you didn't create a NestBook account, you can safely ignore this email.
+    </p>`);
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      user.email,
+      subject: 'Verify your NestBook email address',
+      html,
+    });
+    console.log(`[email] Verification email sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send verification email:', err.message);
+  }
+}
+
+/**
  * Send a welcome email to a newly-registered owner.
  * @param {object} user     — { name, email }
  * @param {object} property — { name, type, ... }

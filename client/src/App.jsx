@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './auth/AuthContext.jsx';
+import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { LocaleProvider } from './i18n/LocaleContext.jsx';
 import ProtectedRoute   from './components/ProtectedRoute.jsx';
 import Sidebar          from './components/Sidebar.jsx';
@@ -14,15 +15,41 @@ import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
+import VerifyEmail      from './pages/VerifyEmail.jsx';
 import AdminRoute         from './admin/AdminRoute.jsx';
 import AdminLayout        from './admin/AdminLayout.jsx';
 import SuperAdminLogin    from './admin/SuperAdminLogin.jsx';
+
+function EmailVerifyBanner() {
+  const { user } = useAuth();
+  const [dismissed, setDismissed] = useState(false);
+
+  // Only show for users who explicitly have email_verified === false
+  // (new registrations). Existing/undefined values don't trigger the banner.
+  if (dismissed || !user || user.email_verified !== false) return null;
+
+  return (
+    <div className="verify-email-banner">
+      <span>
+        Please verify your email address. Check your inbox for a verification link from NestBook.
+      </span>
+      <button
+        className="verify-email-banner-dismiss"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
 
 function AppLayout() {
   return (
     <div className="layout">
       <Sidebar />
       <main className="main-content">
+        <EmailVerifyBanner />
         <Routes>
           <Route path="/"          element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -44,10 +71,11 @@ export default function App() {
       <BrowserRouter basename="/app">
       <LocaleProvider>
         <Routes>
-          <Route path="/login"    element={<Login          />} />
-          <Route path="/register" element={<Register       />} />
-          <Route path="/success"  element={<PaymentSuccess />} />
-          <Route path="/cancel"   element={<PaymentCancel  />} />
+          <Route path="/login"        element={<Login          />} />
+          <Route path="/register"     element={<Register       />} />
+          <Route path="/verify-email" element={<VerifyEmail    />} />
+          <Route path="/success"      element={<PaymentSuccess />} />
+          <Route path="/cancel"       element={<PaymentCancel  />} />
           <Route path="/super-admin/login" element={<SuperAdminLogin />} />
           <Route path="/super-admin/*" element={
             <AdminRoute>

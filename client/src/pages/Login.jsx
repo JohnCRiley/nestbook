@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 
 const KIOSK_KEY = 'nb_kiosk';
 
@@ -82,9 +83,8 @@ export default function Login() {
               <label className="auth-label" htmlFor="password">Password</label>
               <a href="#" className="auth-forgot">Forgot password?</a>
             </div>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               className="auth-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

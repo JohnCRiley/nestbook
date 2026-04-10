@@ -2261,6 +2261,65 @@ a { text-decoration: none; }
   text-align: center;
 }
 
+/* ── Password input with show/hide toggle ───────────────────────────────── */
+.pw-wrap {
+  position: relative;
+}
+.pw-wrap input {
+  padding-right: 38px;
+  width: 100%;
+}
+.pw-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.pw-toggle:hover { color: var(--text-secondary); }
+
+/* ── Email verify banner ─────────────────────────────────────────────────── */
+/* Negative margins cancel main-content's padding so the banner runs edge-to-edge */
+.verify-email-banner {
+  background: #fffbeb;
+  border-bottom: 1.5px solid #f59e0b;
+  /* match main-content desktop padding: 36px top, 40px sides */
+  margin: -36px -40px 28px;
+  padding: 11px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+.verify-email-banner-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #b45309;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.verify-email-banner-dismiss:hover { color: #92400e; }
+/* Tablet (56px sidebar) — main-content padding unchanged */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .verify-email-banner { margin: -36px -40px 28px; padding: 11px 40px; }
+}
+/* Mobile — main-content has padding-left/right: 20px */
+@media (max-width: 767px) {
+  .verify-email-banner { margin: -80px -20px 24px; padding: 11px 20px; }
+}
+
 /* ── Sidebar user + logout ───────────────────────────────────────────────── */
 .sidebar-user {
   padding: 10px 0 0;
