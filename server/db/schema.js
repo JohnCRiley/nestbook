@@ -164,6 +164,10 @@ export function initSchema() {
   } catch { /* already exists */ }
 
   try {
+    db.exec(`ALTER TABLE users ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  try {
     db.exec(`ALTER TABLE users ADD COLUMN email_verification_token TEXT`);
   } catch { /* already exists */ }
 

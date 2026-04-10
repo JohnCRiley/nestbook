@@ -148,14 +148,22 @@ export default function Settings() {
     setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleCancelSubscription = async () => {
-    if (!window.confirm('Cancel your subscription? You\'ll keep access until the end of your current billing period.')) return;
+    const accessUntil = sub?.current_period_end ? fmtDate(sub.current_period_end) : null;
+    const confirmMsg = accessUntil
+      ? `Cancel your subscription? You'll keep full access until ${accessUntil}, then revert to the free plan.`
+      : `Cancel your subscription? You'll keep access until the end of your current billing period.`;
+    if (!window.confirm(confirmMsg)) return;
     setCancelling(true);
     try {
       const res = await apiFetch('/api/stripe/cancel-subscription', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         setSub(s => ({ ...s, cancel_at_period_end: 1 }));
-        showToast('Subscription will cancel at the end of your billing period.');
+        const endDate = data.cancel_at ? fmtDate(data.cancel_at) : accessUntil;
+        showToast(endDate
+          ? `Subscription cancelled. You have full access until ${endDate}.`
+          : 'Subscription will cancel at the end of your billing period.'
+        );
       } else {
         showToast(data.error || 'Failed to cancel subscription.', 'error');
       }

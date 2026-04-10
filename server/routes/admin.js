@@ -37,7 +37,7 @@ adminRouter.get('/signups', (req, res) => {
 adminRouter.get('/users', (req, res) => {
   const rows = db.prepare(`
     SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
-           u.discount_code,
+           u.discount_code, u.suspended,
            p.name as property_name, p.country,
            s.stripe_customer_id, s.stripe_subscription_id,
            s.status as sub_status, s.current_period_end,
@@ -287,6 +287,70 @@ adminRouter.get('/revenue', (req, res) => {
   }
 
   res.json({ planCounts, signupsByMonth: months });
+});
+
+// ── POST /api/admin/users/:id/suspend ────────────────────────────────────────
+// Blocks the user from logging in. Does not cancel their subscription.
+adminRouter.post('/users/:id/suspend', (req, res) => {
+  const userId = Number(req.params.id);
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  db.prepare('UPDATE users SET suspended = 1 WHERE id = ?').run(userId);
+  res.json({ success: true });
+});
+
+// ── POST /api/admin/users/:id/unsuspend ──────────────────────────────────────
+adminRouter.post('/users/:id/unsuspend', (req, res) => {
+  const userId = Number(req.params.id);
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  db.prepare('UPDATE users SET suspended = 0 WHERE id = ?').run(userId);
+  res.json({ success: true });
+});
+
+// ── DELETE /api/admin/users/:id ───────────────────────────────────────────────
+// GDPR account deletion: cancels Stripe sub, wipes all user data from the DB.
+adminRouter.delete('/users/:id', async (req, res) => {
+  const userId = Number(req.params.id);
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  // Cancel any active Stripe subscription immediately (best effort)
+  if (stripe && user.property_id) {
+    const sub = db.prepare('SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ?').get(userId);
+    if (sub?.stripe_subscription_id) {
+      try {
+        await stripe.subscriptions.cancel(sub.stripe_subscription_id);
+      } catch (err) {
+        console.warn('[admin/delete] Stripe cancel failed:', err.message);
+      }
+    }
+  }
+
+  // Wipe all data in dependency order
+  db.exec('BEGIN');
+  try {
+    if (user.property_id) {
+      // Delete bookings for this property (no cascade set on bookings)
+      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(user.property_id);
+      // Delete guests that no longer have any bookings
+      db.prepare(`
+        DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings)
+      `).run();
+      // Rooms cascade-delete when property is deleted (ON DELETE CASCADE)
+      db.prepare('DELETE FROM properties WHERE id = ?').run(user.property_id);
+    }
+    db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    db.exec('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    db.exec('ROLLBACK');
+    console.error('[admin/delete]', err.message);
+    res.status(500).json({ error: 'Failed to delete account.' });
+  }
 });
 
 // ── GET /api/admin/geography ──────────────────────────────────────────────────

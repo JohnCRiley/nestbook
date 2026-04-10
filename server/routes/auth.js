@@ -25,6 +25,10 @@ authRouter.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
 
+  if (user.suspended) {
+    return res.status(403).json({ error: 'This account has been suspended. Please contact support.' });
+  }
+
   const token = jwt.sign(
     { userId: user.id, role: user.role, propertyId: user.property_id },
     JWT_SECRET,

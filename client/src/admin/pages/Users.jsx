@@ -5,6 +5,7 @@ export default function Users() {
   const [rows,         setRows]         = useState([]);
   const [busy,         setBusy]         = useState({});   // { `${id}_action`: true }
   const [refundTarget, setRefundTarget] = useState(null); // { id, name, email } | null
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name, email } | null
   const [toast,        setToast]        = useState(null);
 
   useEffect(() => {
@@ -74,6 +75,33 @@ export default function Users() {
     setBusyKey(userId, 'cancel', false);
   }
 
+  async function toggleSuspend(userId, name, isSuspended) {
+    const action   = isSuspended ? 'unsuspend' : 'suspend';
+    const verb     = isSuspended ? 'Unsuspend' : 'Suspend';
+    const confirm  = isSuspended
+      ? `Unsuspend ${name}? They will be able to log in again.`
+      : `Suspend ${name}? They will be blocked from logging in immediately.`;
+    if (!window.confirm(confirm)) return;
+    setBusyKey(userId, 'suspend', true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}/${action}`, { method: 'POST' });
+      if (res.ok) {
+        setRows(r => r.map(u => u.id === userId ? { ...u, suspended: isSuspended ? 0 : 1 } : u));
+        showToast(`${name} has been ${isSuspended ? 'unsuspended' : 'suspended'}.`);
+      } else {
+        const d = await res.json();
+        showToast(d.error || `Failed to ${action} account.`, 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    setBusyKey(userId, 'suspend', false);
+  }
+
+  function handleDeleteSuccess(userId, name) {
+    setRows(r => r.filter(u => u.id !== userId));
+    setDeleteTarget(null);
+    showToast(`${name}'s account and all data have been permanently deleted.`);
+  }
+
   return (
     <>
       <div className="page-header">
@@ -96,9 +124,14 @@ export default function Users() {
           </thead>
           <tbody>
             {rows.map(u => (
-              <tr key={u.id}>
+              <tr key={u.id} style={u.suspended ? { opacity: 0.6, background: '#fef2f2' } : {}}>
                 <td>
-                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{u.name}</div>
+                  <div style={{ fontWeight: 600, color: '#0f172a' }}>
+                    {u.name}
+                    {!!u.suspended && (
+                      <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 6 }}>SUSPENDED</span>
+                    )}
+                  </div>
                   <div className="admin-muted" style={{ fontSize: '0.8rem' }}>{u.email}</div>
                 </td>
                 <td>
@@ -160,6 +193,21 @@ export default function Users() {
                         Refund
                       </button>
                     ) : null}
+                    <button
+                      className={`sa-btn ${u.suspended ? 'sa-btn-comp' : 'sa-btn-cancel'}`}
+                      disabled={!!busy[`${u.id}_suspend`]}
+                      onClick={() => toggleSuspend(u.id, u.name, !!u.suspended)}
+                      title={u.suspended ? 'Unsuspend account — restore login access' : 'Suspend account — block login'}
+                    >
+                      {busy[`${u.id}_suspend`] ? '…' : u.suspended ? 'Unsuspend' : 'Suspend'}
+                    </button>
+                    <button
+                      className="sa-btn sa-btn-delete"
+                      onClick={() => setDeleteTarget({ id: u.id, name: u.name, email: u.email })}
+                      title="Permanently delete account and all data (GDPR)"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -177,10 +225,83 @@ export default function Users() {
         />
       )}
 
+      {deleteTarget && (
+        <DeleteModal
+          user={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => handleDeleteSuccess(deleteTarget.id, deleteTarget.name)}
+          onError={(msg) => showToast(msg, 'error')}
+        />
+      )}
+
       {toast && (
         <div className={`sa-toast sa-toast-${toast.type}`}>{toast.msg}</div>
       )}
     </>
+  );
+}
+
+// ── Delete / GDPR modal ───────────────────────────────────────────────────────
+
+function DeleteModal({ user, onClose, onSuccess, onError }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDelete() {
+    setLoading(true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        onSuccess();
+      } else {
+        onError(data.error || 'Delete failed.');
+        setLoading(false);
+      }
+    } catch {
+      onError('Network error.');
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 440 }}>
+        <div className="modal-header">
+          <h2>Delete account</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div style={{
+            background: '#fef2f2', border: '1px solid #fecaca',
+            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+            fontSize: '0.875rem', color: '#991b1b',
+          }}>
+            <strong>This cannot be undone.</strong> All data for this account will be
+            permanently deleted: property, rooms, bookings, guest records, and
+            subscription. Any active Stripe subscription will be cancelled immediately.
+          </div>
+          <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 4 }}>
+            You are about to delete:
+          </p>
+          <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', marginBottom: 20 }}>
+            {user.name} — {user.email}
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button className="btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button
+              style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
+                       padding: '8px 18px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              {loading ? 'Deleting…' : 'Delete permanently'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

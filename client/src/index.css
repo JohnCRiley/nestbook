@@ -2937,6 +2937,14 @@ a { text-decoration: none; }
 .sa-btn-refund:hover:not(:disabled) {
   background: #bbf7d0;
 }
+.sa-btn-delete {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+.sa-btn-delete:hover:not(:disabled) {
+  background: #fecaca;
+}
 
 /* Toast notification */
 .sa-toast {
