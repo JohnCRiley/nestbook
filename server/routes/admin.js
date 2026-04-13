@@ -330,16 +330,16 @@ adminRouter.delete('/users/:id', async (req, res) => {
   }
 
   // Wipe all data in dependency order
-  db.exec('BEGIN');
   try {
+    db.exec('BEGIN');
     if (user.property_id) {
-      // Delete bookings for this property (no cascade set on bookings)
+      // Delete bookings first — no ON DELETE CASCADE on bookings.property_id
       db.prepare('DELETE FROM bookings WHERE property_id = ?').run(user.property_id);
-      // Delete guests that no longer have any bookings
-      db.prepare(`
-        DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings)
-      `).run();
-      // Rooms cascade-delete when property is deleted (ON DELETE CASCADE)
+      // Clean up guests that are now orphaned (no remaining bookings)
+      db.prepare(
+        'DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings WHERE guest_id IS NOT NULL)'
+      ).run();
+      // Rooms cascade-delete automatically when property is deleted
       db.prepare('DELETE FROM properties WHERE id = ?').run(user.property_id);
     }
     db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
@@ -347,7 +347,7 @@ adminRouter.delete('/users/:id', async (req, res) => {
     db.exec('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    db.exec('ROLLBACK');
+    try { db.exec('ROLLBACK'); } catch (_) {}
     console.error('[admin/delete]', err.message);
     res.status(500).json({ error: 'Failed to delete account.' });
   }

@@ -26,7 +26,7 @@ authRouter.post('/login', (req, res) => {
   }
 
   if (user.suspended) {
-    return res.status(403).json({ error: 'This account has been suspended. Please contact support.' });
+    return res.status(403).json({ error: 'Your account has been suspended. Please contact support@nestbook.io' });
   }
 
   const token = jwt.sign(

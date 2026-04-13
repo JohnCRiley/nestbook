@@ -84,6 +84,7 @@ export default function Settings() {
   const [resetTarget,     setResetTarget]     = useState(null);   // user object | null
   const [sub,             setSub]             = useState(null);   // subscription info
   const [cancelling,      setCancelling]      = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // Feature toggles live in local state only (no backend yet — persist later)
   const [features, setFeatures] = useState(() =>
@@ -148,11 +149,8 @@ export default function Settings() {
     setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleCancelSubscription = async () => {
+    setShowCancelModal(false);
     const accessUntil = sub?.current_period_end ? fmtDate(sub.current_period_end) : null;
-    const confirmMsg = accessUntil
-      ? `Cancel your subscription? You'll keep full access until ${accessUntil}, then revert to the free plan.`
-      : `Cancel your subscription? You'll keep access until the end of your current billing period.`;
-    if (!window.confirm(confirmMsg)) return;
     setCancelling(true);
     try {
       const res = await apiFetch('/api/stripe/cancel-subscription', { method: 'POST' });
@@ -161,7 +159,7 @@ export default function Settings() {
         setSub(s => ({ ...s, cancel_at_period_end: 1 }));
         const endDate = data.cancel_at ? fmtDate(data.cancel_at) : accessUntil;
         showToast(endDate
-          ? `Subscription cancelled. You have full access until ${endDate}.`
+          ? `Subscription cancelled. You'll have ${PLAN_LABELS[sub?.plan] ?? 'Pro'} access until ${endDate}.`
           : 'Subscription will cancel at the end of your billing period.'
         );
       } else {
@@ -373,7 +371,7 @@ export default function Settings() {
                       className="btn-secondary"
                       style={{ alignSelf: 'flex-start', color: '#dc2626', borderColor: '#fca5a5' }}
                       disabled={cancelling}
-                      onClick={handleCancelSubscription}
+                      onClick={() => setShowCancelModal(true)}
                     >
                       {cancelling ? 'Cancelling…' : 'Cancel subscription'}
                     </button>
@@ -420,6 +418,15 @@ export default function Settings() {
       </PlanGate>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
+      {showCancelModal && (
+        <CancelSubscriptionModal
+          plan={PLAN_LABELS[sub?.plan] ?? 'Pro'}
+          renewalDate={sub?.current_period_end ? fmtDate(sub.current_period_end) : null}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={handleCancelSubscription}
+        />
+      )}
+
       {showInvite && (
         <InviteStaffModal
           onClose={() => setShowInvite(false)}
@@ -488,6 +495,45 @@ function EmbedSection({ snippet, t }) {
           <div className="embed-step">
             <span className="embed-step-num">3</span>
             <span>{t('embedStep3')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CancelSubscriptionModal ───────────────────────────────────────────────────
+
+function CancelSubscriptionModal({ plan, renewalDate, onClose, onConfirm }) {
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-header">
+          <h2>Cancel subscription</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ fontSize: '0.95rem', color: '#374151', marginBottom: 16 }}>
+            Are you sure you want to cancel?
+            {renewalDate
+              ? <> You'll keep <strong>{plan}</strong> access until <strong>{renewalDate}</strong>. After that you'll move to the free plan.</>
+              : <> You'll keep access until the end of your current billing period, then move to the free plan.</>
+            }
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button className="btn-secondary" onClick={onClose}>
+              Keep subscription
+            </button>
+            <button
+              style={{
+                background: '#dc2626', color: '#fff', border: 'none',
+                borderRadius: 6, padding: '8px 18px', fontWeight: 600,
+                fontSize: '0.875rem', cursor: 'pointer',
+              }}
+              onClick={onConfirm}
+            >
+              Cancel subscription
+            </button>
           </div>
         </div>
       </div>
