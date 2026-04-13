@@ -11,7 +11,16 @@ function canAccess(userId, role, propId) {
   const pid = Number(propId);
   if (!pid) return false;
   if (role === 'owner') {
-    return !!db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId);
+    if (db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId)) {
+      return true;
+    }
+    // Fallback: legacy users whose property predates the owner_id column.
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    if (Number(u?.property_id) === pid) {
+      db.prepare('UPDATE properties SET owner_id = ? WHERE id = ? AND owner_id IS NULL').run(userId, pid);
+      return true;
+    }
+    return false;
   }
   const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
   return Number(u?.property_id) === pid;

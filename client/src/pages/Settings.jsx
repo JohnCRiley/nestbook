@@ -388,20 +388,11 @@ export default function Settings() {
                     </div>
                   )}
 
-                  {sub?.cancel_at_period_end ? (
+                  {sub?.cancel_at_period_end && (
                     <div style={{ fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 12px' }}>
                       Your subscription is scheduled to cancel. You'll keep access until your billing period ends.
                     </div>
-                  ) : sub?.plan && sub.plan !== 'free' && sub?.notes !== 'Complimentary' ? (
-                    <button
-                      className="btn-secondary"
-                      style={{ alignSelf: 'flex-start', color: '#dc2626', borderColor: '#fca5a5' }}
-                      disabled={cancelling}
-                      onClick={() => setShowCancelModal(true)}
-                    >
-                      {cancelling ? 'Cancelling…' : 'Cancel subscription'}
-                    </button>
-                  ) : null}
+                  )}
                 </div>
               </div>
             </div>
@@ -483,34 +474,57 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Cancel NestBook — delete account accordion */}
+          {/* Cancel NestBook — destructive actions accordion */}
           {user?.role === 'owner' && (
-            <div className="settings-card" style={{ borderColor: '#fecaca' }}>
+            <div className="danger-zone-card">
               <button
-                className="delete-account-toggle"
+                className="danger-zone-toggle"
                 onClick={() => setDeleteAccountOpen((o) => !o)}
+                aria-expanded={deleteAccountOpen}
               >
                 <span>Cancel NestBook</span>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                  {deleteAccountOpen ? '▲' : '▼'}
-                </span>
+                <span className="danger-zone-chevron">{deleteAccountOpen ? '▲' : '▼'}</span>
               </button>
+
               {deleteAccountOpen && (
-                <div style={{ padding: '0 20px 20px' }}>
-                  <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>
-                    Deleting your account will permanently remove your property, all rooms, bookings,
-                    guest records and subscription data. Any active subscription will be cancelled immediately.
-                    This cannot be undone.
-                  </p>
-                  <button
-                    style={{
-                      background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
-                      padding: '9px 20px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
-                    }}
-                    onClick={() => setShowDeleteAccount(true)}
-                  >
-                    Delete my account permanently
-                  </button>
+                <div className="danger-zone-body">
+
+                  {/* Cancel subscription */}
+                  {sub?.plan && sub.plan !== 'free' && !sub?.cancel_at_period_end && sub?.notes !== 'Complimentary' && (
+                    <div className="danger-zone-row">
+                      <div>
+                        <div className="danger-zone-row-title">Cancel subscription</div>
+                        <div className="danger-zone-row-desc">
+                          Stop billing at the end of your current period. Your account and data are kept.
+                        </div>
+                      </div>
+                      <button
+                        className="btn-danger-outline"
+                        disabled={cancelling}
+                        onClick={() => setShowCancelModal(true)}
+                      >
+                        {cancelling ? 'Cancelling…' : 'Cancel subscription'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Delete account */}
+                  <div className="danger-zone-row">
+                    <div>
+                      <div className="danger-zone-row-title">Delete account permanently</div>
+                      <div className="danger-zone-row-desc">
+                        Removes all properties, rooms, bookings, guest records and cancels any active subscription.
+                        This <strong>cannot be undone</strong>.
+                      </div>
+                    </div>
+                    <button
+                      className="btn-danger"
+                      onClick={() => setShowDeleteAccount(true)}
+                    >
+                      Delete account
+                    </button>
+                  </div>
+
                 </div>
               )}
             </div>

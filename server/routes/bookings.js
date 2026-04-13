@@ -9,7 +9,17 @@ function canAccessProperty(userId, role, propId) {
   const pid = Number(propId);
   if (!pid) return false;
   if (role === 'owner') {
-    return !!db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId);
+    if (db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId)) {
+      return true;
+    }
+    // Fallback: legacy users whose property predates the owner_id column.
+    // Check via users.property_id and backfill owner_id so future calls skip this.
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    if (Number(u?.property_id) === pid) {
+      db.prepare('UPDATE properties SET owner_id = ? WHERE id = ? AND owner_id IS NULL').run(userId, pid);
+      return true;
+    }
+    return false;
   }
   const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
   return Number(u?.property_id) === pid;
@@ -17,7 +27,11 @@ function canAccessProperty(userId, role, propId) {
 
 function getUserPropertyIds(userId, role) {
   if (role === 'owner') {
-    return db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId).map(p => p.id);
+    const ids = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId).map(p => p.id);
+    if (ids.length) return ids;
+    // Fallback for pre-migration owners
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    return u?.property_id ? [Number(u.property_id)] : [];
   }
   const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
   return u?.property_id ? [Number(u.property_id)] : [];

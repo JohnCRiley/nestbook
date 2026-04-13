@@ -35,21 +35,21 @@ export default function Bookings() {
   useEffect(() => {
     if (!property?.id) return;
     Promise.all([
-      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
-      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.json()),
-      apiFetch('/api/guests').then((r) => r.json()),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
     ]).then(([b, r, g]) => {
-      setBookings(b);
-      setRooms(r);
-      setGuests(g);
+      setBookings(Array.isArray(b) ? b : []);
+      setRooms(Array.isArray(r) ? r : []);
+      setGuests(Array.isArray(g) ? g : []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [property?.id]);
 
   const refreshBookings = () =>
     apiFetch(`/api/bookings?property_id=${property?.id}`)
-      .then((r) => r.json())
-      .then(setBookings);
+      .then((r) => r.ok ? r.json() : [])
+      .then((b) => setBookings(Array.isArray(b) ? b : []));
 
   // ── Filtering ──────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {

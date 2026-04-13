@@ -26,19 +26,21 @@ export default function Rooms() {
   useEffect(() => {
     if (!property?.id) return;
     Promise.all([
-      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.json()),
-      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
-      apiFetch('/api/guests').then((r) => r.json()),
+      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
     ]).then(([r, b, g]) => {
-      setRooms(r);
-      setBookings(b);
-      setGuests(g);
+      setRooms(Array.isArray(r) ? r : []);
+      setBookings(Array.isArray(b) ? b : []);
+      setGuests(Array.isArray(g) ? g : []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [property?.id]);
 
   const refreshRooms = () =>
-    apiFetch(`/api/rooms?property_id=${property?.id}`).then((r) => r.json()).then(setRooms);
+    apiFetch(`/api/rooms?property_id=${property?.id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((r) => setRooms(Array.isArray(r) ? r : []));
 
   // ── Active booking per room (covers today) ─────────────────────────────────
   // "Active" = non-cancelled, check_in <= today < check_out

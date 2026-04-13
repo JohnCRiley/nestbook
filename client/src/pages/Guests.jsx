@@ -22,13 +22,13 @@ export default function Guests() {
   useEffect(() => {
     if (!property?.id) return;
     Promise.all([
-      apiFetch('/api/guests').then((r) => r.json()),
-      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
+      apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
     ]).then(([g, b]) => {
-      setGuests(g);
-      setBookings(b);
+      setGuests(Array.isArray(g) ? g : []);
+      setBookings(Array.isArray(b) ? b : []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, [property?.id]);
 
   // ── Booking counts per guest ───────────────────────────────────────────────

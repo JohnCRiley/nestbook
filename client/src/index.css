@@ -3055,21 +3055,112 @@ a { text-decoration: none; }
   .property-banner { margin: -80px -20px 16px; padding: 7px 20px; }
 }
 
-/* ── Delete account accordion (Settings) ────────────────────────────────── */
-.delete-account-toggle {
+/* ── Danger zone accordion (Settings — "Cancel NestBook") ────────────────── */
+.danger-zone-card {
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.danger-zone-toggle {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: transparent;
   border: none;
-  padding: 12px 0;
+  padding: 16px 20px;
   cursor: pointer;
   font-size: 0.875rem;
+  font-weight: 600;
   color: #dc2626;
-  font-weight: 500;
+  text-align: left;
 }
 
-.delete-account-toggle:hover {
-  color: #b91c1c;
+.danger-zone-toggle:hover {
+  background: #fff5f5;
 }
+
+.danger-zone-chevron {
+  font-size: 0.75rem;
+  color: #f87171;
+  flex-shrink: 0;
+}
+
+.danger-zone-body {
+  border-top: 1px solid #fee2e2;
+  padding: 4px 0 8px;
+}
+
+.danger-zone-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #fef2f2;
+}
+
+.danger-zone-row:last-child {
+  border-bottom: none;
+}
+
+.danger-zone-row-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.danger-zone-row-desc {
+  font-size: 0.80rem;
+  color: #64748b;
+  line-height: 1.55;
+  max-width: 340px;
+}
+
+.btn-danger-outline {
+  flex-shrink: 0;
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-danger-outline:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.btn-danger-outline:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-danger {
+  flex-shrink: 0;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* Keep old class as no-op so any lingering references don't break layout */
+.delete-account-toggle { display: none; }
