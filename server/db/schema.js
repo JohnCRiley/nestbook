@@ -171,5 +171,23 @@ export function initSchema() {
     db.exec(`ALTER TABLE users ADD COLUMN email_verification_token TEXT`);
   } catch { /* already exists */ }
 
+  // Multi-property support: owner_id on properties links each property to its owner.
+  // users.property_id now means "currently active property" for multi-property owners.
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN owner_id INTEGER REFERENCES users(id)`);
+  } catch { /* already exists */ }
+
+  // Backfill owner_id for all existing properties from the users.property_id relationship.
+  // Each property is owned by the user (role='owner') whose property_id points to it.
+  db.exec(`
+    UPDATE properties
+    SET owner_id = (
+      SELECT u.id FROM users u
+      WHERE u.property_id = properties.id AND u.role = 'owner'
+      LIMIT 1
+    )
+    WHERE owner_id IS NULL
+  `);
+
   console.log('✓ Database schema ready.');
 }

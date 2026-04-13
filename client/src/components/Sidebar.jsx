@@ -34,7 +34,7 @@ export default function Sidebar() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const plan      = usePlan();
-  const { property } = useLocale();
+  const { property, properties, switchProperty } = useLocale();
   const t = useT();
   const { kiosk, isFullscreen, enterFullscreen, exitFullscreen } = useKiosk();
   const { canInstall, triggerInstall } = useInstallPrompt();
@@ -134,6 +134,27 @@ export default function Sidebar() {
                 </span>
               </div>
               <div className="footer-type">{property.type}</div>
+
+              {/* Property switcher — Multi plan only, only when >1 property exists */}
+              {plan === 'multi' && properties.length > 1 && (
+                <div className="property-switcher">
+                  {properties.map((p) => (
+                    <button
+                      key={p.id}
+                      className={`property-switch-item${p.id === property.id ? ' active' : ''}`}
+                      onClick={() => switchProperty(p)}
+                    >
+                      <span className="property-switch-name">{p.name}</span>
+                      {p.id === property.id && <span className="property-switch-check">✓</span>}
+                    </button>
+                  ))}
+                  {properties.length < 5 && (
+                    <NavLink to="/settings" className="property-add-link">
+                      + Add property
+                    </NavLink>
+                  )}
+                </div>
+              )}
             </>
           )}
 

@@ -21,7 +21,7 @@ const BADGE_CLASS = {
 
 export default function Dashboard() {
   const t = useT();
-  const { fmtCurrency } = useLocale();
+  const { fmtCurrency, property } = useLocale();
 
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -30,14 +30,15 @@ export default function Dashboard() {
   const today = localToday();
 
   useEffect(() => {
-    apiFetch('/api/bookings?property_id=1')
+    if (!property?.id) return;
+    apiFetch(`/api/bookings?property_id=${property.id}`)
       .then((r) => {
         if (!r.ok) throw new Error(`API error ${r.status}`);
         return r.json();
       })
       .then((data) => { setBookings(data); setLoading(false); })
       .catch((err) => { setError(err.message); setLoading(false); });
-  }, []);
+  }, [property?.id]);
 
   // ── Derived data ───────────────────────────────────────────────────────────
 

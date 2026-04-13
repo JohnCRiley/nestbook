@@ -3,6 +3,7 @@ import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale } from '../../i18n/LocaleContext.jsx';
 
+
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
   { value: 'phone',       label: 'Phone' },
@@ -29,7 +30,7 @@ const EMPTY_FORM = {
  * Pass `initialValues` to pre-fill fields (e.g. from a calendar cell click).
  */
 export default function NewBookingModal({ rooms, guests, onClose, onSuccess, initialValues }) {
-  const { currencySymbol } = useLocale();
+  const { currencySymbol, property } = useLocale();
   const [form,       setForm]       = useState({ ...EMPTY_FORM, ...initialValues });
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
@@ -74,7 +75,7 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id:    1,
+          property_id:    property?.id ?? 1,
           room_id:        Number(form.room_id),
           guest_id:       Number(form.guest_id),
           check_in_date:  form.check_in_date,

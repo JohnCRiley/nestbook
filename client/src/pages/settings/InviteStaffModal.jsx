@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { useLocale } from '../../i18n/LocaleContext.jsx';
 
 export default function InviteStaffModal({ onClose, onSuccess }) {
+  const { property } = useLocale();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'reception' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -35,7 +37,7 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id: 1,
+          property_id: property?.id ?? 1,
           name:        form.name.trim(),
           email:       form.email.trim(),
           password:    form.password,

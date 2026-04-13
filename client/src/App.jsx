@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
-import { LocaleProvider } from './i18n/LocaleContext.jsx';
+import { LocaleProvider, useLocale } from './i18n/LocaleContext.jsx';
 import ProtectedRoute   from './components/ProtectedRoute.jsx';
 import Sidebar          from './components/Sidebar.jsx';
 import Login            from './pages/Login.jsx';
@@ -44,12 +44,24 @@ function EmailVerifyBanner() {
   );
 }
 
+// Shows "Viewing: [Property Name]" only when the user has more than one property.
+function PropertyBanner() {
+  const { property, properties } = useLocale();
+  if (!property || properties.length <= 1) return null;
+  return (
+    <div className="property-banner">
+      Viewing: <strong>{property.name}</strong>
+    </div>
+  );
+}
+
 function AppLayout() {
   return (
     <div className="layout">
       <Sidebar />
       <main className="main-content">
         <EmailVerifyBanner />
+        <PropertyBanner />
         <Routes>
           <Route path="/"          element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />

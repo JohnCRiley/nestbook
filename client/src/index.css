@@ -2974,3 +2974,102 @@ a { text-decoration: none; }
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ── Property switcher (sidebar) ─────────────────────────────────────────── */
+.property-switcher {
+  margin: 8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.property-switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.70);
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.property-switch-item:hover {
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+}
+
+.property-switch-item.active {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  font-weight: 600;
+}
+
+.property-switch-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.property-switch-check {
+  font-size: 0.70rem;
+  color: var(--accent);
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.property-add-link {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.property-add-link:hover {
+  color: rgba(255,255,255,0.80);
+}
+
+/* ── Property banner (top of main content when >1 property) ──────────────── */
+.property-banner {
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  color: #78350f;
+  font-size: 0.80rem;
+  padding: 7px 40px;
+  margin: -36px -40px 24px;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .property-banner { margin: -36px -24px 20px; padding: 7px 24px; }
+}
+
+@media (max-width: 767px) {
+  .property-banner { margin: -80px -20px 16px; padding: 7px 20px; }
+}
+
+/* ── Delete account accordion (Settings) ────────────────────────────────── */
+.delete-account-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  padding: 12px 0;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.delete-account-toggle:hover {
+  color: #b91c1c;
+}

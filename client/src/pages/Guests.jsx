@@ -3,12 +3,13 @@ import { initials, phoneFlag, phoneCountry } from '../utils/guestHelpers.js';
 import GuestPanel    from './guests/GuestPanel.jsx';
 import NewGuestModal from './guests/NewGuestModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Guests() {
   const t = useT();
+  const { property } = useLocale();
 
   const [guests,          setGuests]          = useState([]);
   const [bookings,        setBookings]        = useState([]);
@@ -19,15 +20,16 @@ export default function Guests() {
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!property?.id) return;
     Promise.all([
       apiFetch('/api/guests').then((r) => r.json()),
-      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
     ]).then(([g, b]) => {
       setGuests(g);
       setBookings(b);
       setLoading(false);
     });
-  }, []);
+  }, [property?.id]);
 
   // ── Booking counts per guest ───────────────────────────────────────────────
   const bookingsByGuest = useMemo(() => {

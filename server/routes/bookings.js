@@ -4,6 +4,25 @@ import { sendBookingConfirmation } from '../email/emailService.js';
 
 export const bookingsRouter = Router();
 
+// ── Ownership helpers ─────────────────────────────────────────────────────────
+function canAccessProperty(userId, role, propId) {
+  const pid = Number(propId);
+  if (!pid) return false;
+  if (role === 'owner') {
+    return !!db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId);
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return Number(u?.property_id) === pid;
+}
+
+function getUserPropertyIds(userId, role) {
+  if (role === 'owner') {
+    return db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId).map(p => p.id);
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return u?.property_id ? [Number(u.property_id)] : [];
+}
+
 // Enriched SELECT — joins guest and room info so the caller doesn't need
 // to do extra lookups. Useful for the calendar and booking list views.
 const ENRICHED_SELECT = `
@@ -32,7 +51,7 @@ const ENRICHED_SELECT = `
   LEFT JOIN rooms  r ON b.room_id   = r.id
 `;
 
-// ── GET /api/bookings ─────────────────────────────────────────────────────
+// ── GET /api/bookings ─────────────────────────────────────────────────────────
 // Query params (all optional):
 //   property_id  — filter by property
 //   status       — filter by status (confirmed | arriving | checked_out | cancelled)
@@ -43,16 +62,30 @@ bookingsRouter.get('/', (req, res) => {
   try {
     const { property_id, status, room_id, from, to } = req.query;
     const conditions = [];
-    const params = [];
+    const params     = [];
 
-    if (property_id) { conditions.push('b.property_id = ?');    params.push(property_id); }
-    if (status)      { conditions.push('b.status = ?');          params.push(status); }
-    if (room_id)     { conditions.push('b.room_id = ?');         params.push(room_id); }
-    if (from)        { conditions.push('b.check_in_date >= ?');  params.push(from); }
-    if (to)          { conditions.push('b.check_out_date <= ?'); params.push(to); }
+    if (property_id) {
+      if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+      conditions.push('b.property_id = ?');
+      params.push(property_id);
+    } else {
+      // Scope to all of the user's accessible properties
+      const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+      if (!propIds.length) return res.json([]);
+      const placeholders = propIds.map(() => '?').join(',');
+      conditions.push(`b.property_id IN (${placeholders})`);
+      params.push(...propIds);
+    }
+
+    if (status)  { conditions.push('b.status = ?');          params.push(status); }
+    if (room_id) { conditions.push('b.room_id = ?');         params.push(room_id); }
+    if (from)    { conditions.push('b.check_in_date >= ?');  params.push(from); }
+    if (to)      { conditions.push('b.check_out_date <= ?'); params.push(to); }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
-    const rows = db.prepare(`${ENRICHED_SELECT} ${where} ORDER BY b.check_in_date`).all(...params);
+    const rows  = db.prepare(`${ENRICHED_SELECT} ${where} ORDER BY b.check_in_date`).all(...params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -83,6 +116,9 @@ bookingsRouter.post('/', (req, res) => {
       return res.status(400).json({
         error: 'property_id, room_id, guest_id, check_in_date and check_out_date are required'
       });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
     }
 
     if (check_out_date <= check_in_date) {

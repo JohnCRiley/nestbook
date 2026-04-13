@@ -12,7 +12,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 export default function Rooms() {
   const today = localToday();
   const t = useT();
-  const { currencySymbol } = useLocale();
+  const { currencySymbol, property } = useLocale();
 
   const [rooms,         setRooms]         = useState([]);
   const [bookings,      setBookings]      = useState([]);
@@ -24,9 +24,10 @@ export default function Rooms() {
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!property?.id) return;
     Promise.all([
-      apiFetch('/api/rooms?property_id=1').then((r) => r.json()),
-      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
+      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.json()),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
       apiFetch('/api/guests').then((r) => r.json()),
     ]).then(([r, b, g]) => {
       setRooms(r);
@@ -34,10 +35,10 @@ export default function Rooms() {
       setGuests(g);
       setLoading(false);
     });
-  }, []);
+  }, [property?.id]);
 
   const refreshRooms = () =>
-    apiFetch('/api/rooms?property_id=1').then((r) => r.json()).then(setRooms);
+    apiFetch(`/api/rooms?property_id=${property?.id}`).then((r) => r.json()).then(setRooms);
 
   // ── Active booking per room (covers today) ─────────────────────────────────
   // "Active" = non-cancelled, check_in <= today < check_out
@@ -116,7 +117,7 @@ export default function Rooms() {
   const handleBookingSuccess = () => {
     setBookingValues(null);
     // Refresh bookings so active-room state updates
-    apiFetch('/api/bookings?property_id=1').then((r) => r.json()).then(setBookings);
+    apiFetch(`/api/bookings?property_id=${property?.id}`).then((r) => r.json()).then(setBookings);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────

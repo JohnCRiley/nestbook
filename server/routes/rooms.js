@@ -3,18 +3,48 @@ import db from '../db/database.js';
 
 export const roomsRouter = Router();
 
-// ── GET /api/rooms?property_id=1&status=available ─────────────────────────
+// ── Ownership helper (mirrors properties.js) ──────────────────────────────
+function canAccessProperty(userId, role, propId) {
+  const pid = Number(propId);
+  if (!pid) return false;
+  if (role === 'owner') {
+    return !!db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId);
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return Number(u?.property_id) === pid;
+}
+
+function getUserPropertyIds(userId, role) {
+  if (role === 'owner') {
+    return db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId).map(p => p.id);
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return u?.property_id ? [Number(u.property_id)] : [];
+}
+
+// ── GET /api/rooms?property_id=X&status=available ────────────────────────────
 roomsRouter.get('/', (req, res) => {
   try {
     const { property_id, status } = req.query;
-    const conditions = [];
-    const params = [];
 
-    if (property_id) { conditions.push('property_id = ?'); params.push(property_id); }
-    if (status)      { conditions.push('status = ?');      params.push(status); }
+    if (property_id) {
+      if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+      const conditions = ['property_id = ?'];
+      const params     = [property_id];
+      if (status) { conditions.push('status = ?'); params.push(status); }
+      return res.json(
+        db.prepare(`SELECT * FROM rooms WHERE ${conditions.join(' AND ')} ORDER BY id`).all(...params)
+      );
+    }
 
-    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
-    const rows = db.prepare(`SELECT * FROM rooms ${where} ORDER BY id`).all(...params);
+    // No filter: return rooms for all of the user's accessible properties
+    const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+    if (!propIds.length) return res.json([]);
+    const placeholders = propIds.map(() => '?').join(',');
+    const rows = db.prepare(`SELECT * FROM rooms WHERE property_id IN (${placeholders}) ORDER BY id`)
+      .all(...propIds);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -32,13 +62,16 @@ roomsRouter.get('/:id', (req, res) => {
   }
 });
 
-// ── POST /api/rooms ───────────────────────────────────────────────────────
+// ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
     const { property_id, name, type, price_per_night, capacity, amenities, status } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
     }
 
     const result = db.prepare(`

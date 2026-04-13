@@ -15,7 +15,7 @@ const parseAmenities = (str) =>
   (str ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
 export default function NewRoomModal({ onClose, onSuccess }) {
-  const { currencySymbol } = useLocale();
+  const { currencySymbol, property } = useLocale();
   const [form,       setForm]       = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
@@ -37,7 +37,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id:     1,
+          property_id:     property?.id ?? 1,
           name:            form.name.trim(),
           type:            form.type,
           price_per_night: Number(form.price_per_night),

@@ -3,7 +3,7 @@ import { localToday }  from '../utils/format.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -109,6 +109,7 @@ export default function Calendar() {
   const today   = localToday();
   const todayDate = parseDate(today);
   const t = useT();
+  const { property } = useLocale();
 
   const DAY_NAMES   = t('dayNames');
   const MONTH_NAMES = t('monthNames');
@@ -137,9 +138,10 @@ export default function Calendar() {
 
   // ── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!property?.id) return;
     Promise.all([
-      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
-      apiFetch('/api/rooms?property_id=1').then((r) => r.json()),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
+      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.json()),
       apiFetch('/api/guests').then((r) => r.json()),
     ]).then(([b, r, g]) => {
       setBookings(b);
@@ -147,12 +149,12 @@ export default function Calendar() {
       setGuests(g);
       setLoading(false);
     });
-  }, []);
+  }, [property?.id]);
 
   const refreshBookings = useCallback(() =>
-    apiFetch('/api/bookings?property_id=1')
+    apiFetch(`/api/bookings?property_id=${property?.id}`)
       .then((r) => r.json())
-      .then(setBookings), []);
+      .then(setBookings), [property?.id]);
 
   // ── Days derived from anchor (7-day desktop or 3-day mobile) ─────────────
   const days = useMemo(() => {

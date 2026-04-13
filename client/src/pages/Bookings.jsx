@@ -11,6 +11,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 export default function Bookings() {
   const today = localToday();
   const t = useT();
+  const { property } = useLocale();
 
   const FILTERS = [
     { key: 'all',         label: t('filters')[0] },
@@ -32,9 +33,10 @@ export default function Bookings() {
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!property?.id) return;
     Promise.all([
-      apiFetch('/api/bookings?property_id=1').then((r) => r.json()),
-      apiFetch('/api/rooms?property_id=1').then((r) => r.json()),
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.json()),
+      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.json()),
       apiFetch('/api/guests').then((r) => r.json()),
     ]).then(([b, r, g]) => {
       setBookings(b);
@@ -42,10 +44,10 @@ export default function Bookings() {
       setGuests(g);
       setLoading(false);
     });
-  }, []);
+  }, [property?.id]);
 
   const refreshBookings = () =>
-    apiFetch('/api/bookings?property_id=1')
+    apiFetch(`/api/bookings?property_id=${property?.id}`)
       .then((r) => r.json())
       .then(setBookings);
 

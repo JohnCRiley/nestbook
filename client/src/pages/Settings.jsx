@@ -5,6 +5,7 @@ import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { usePlan } from '../hooks/usePlan.js';
 import { useKiosk } from '../hooks/useKiosk.js';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
@@ -38,8 +39,9 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
-  const { setProperty: setContextProperty } = useLocale();
-  const { user } = useAuth();
+  const { setProperty: setContextProperty, properties, addPropertyToList, property: activeProperty } = useLocale();
+  const { user, logout } = useAuth();
+  const plan = usePlan();
   const { kiosk, setKioskMode } = useKiosk();
 
   const FEATURES = [
@@ -82,9 +84,12 @@ export default function Settings() {
   const [toast,       setToast]       = useState(null);   // { msg, type }
   const [showInvite,      setShowInvite]      = useState(false);
   const [resetTarget,     setResetTarget]     = useState(null);   // user object | null
-  const [sub,             setSub]             = useState(null);   // subscription info
-  const [cancelling,      setCancelling]      = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [sub,               setSub]               = useState(null);   // subscription info
+  const [cancelling,        setCancelling]        = useState(false);
+  const [showCancelModal,   setShowCancelModal]   = useState(false);
+  const [showAddProperty,   setShowAddProperty]   = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   // Feature toggles live in local state only (no backend yet — persist later)
   const [features, setFeatures] = useState(() =>
@@ -93,9 +98,10 @@ export default function Settings() {
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!activeProperty?.id) return;
     Promise.all([
-      apiFetch('/api/properties/1').then((r) => r.json()),
-      apiFetch('/api/users?property_id=1').then((r) => r.json()),
+      apiFetch(`/api/properties/${activeProperty.id}`).then((r) => r.json()),
+      apiFetch(`/api/users?property_id=${activeProperty.id}`).then((r) => r.json()),
       apiFetch('/api/stripe/subscription').then((r) => r.json()).catch(() => null),
     ]).then(([p, u, s]) => {
       setProperty(p);
@@ -113,7 +119,7 @@ export default function Settings() {
       setUsers(u);
       if (s && !s.error) setSub(s);
     });
-  }, []);
+  }, [activeProperty?.id]);
 
   // ── Toast helper ───────────────────────────────────────────────────────────
   const showToast = useCallback((msg, type = 'success') => {
@@ -128,7 +134,7 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await apiFetch('/api/properties/1', {
+      const res = await apiFetch(`/api/properties/${activeProperty?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -175,6 +181,26 @@ export default function Settings() {
     setUsers((prev) => [...prev, newUser]);
     setShowInvite(false);
     showToast(`${newUser.name} has been added as ${newUser.role}.`);
+  };
+
+  const handleAddProperty = async (formData) => {
+    try {
+      const res = await apiFetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addPropertyToList(data);
+        setShowAddProperty(false);
+        showToast(`${data.name} has been added.`);
+      } else {
+        showToast(data.error || 'Failed to add property.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    }
   };
 
   // ── Embed snippet ──────────────────────────────────────────────────────────
@@ -381,6 +407,54 @@ export default function Settings() {
             </div>
           )}
 
+          {/* Multi-property management — Multi plan only */}
+          {user?.role === 'owner' && plan === 'multi' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>Properties</h2>
+                <p>{properties.length} of 5 properties used</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {properties.map((p) => (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 0', borderBottom: '1px solid #f1f5f9',
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'capitalize' }}>{p.type}</div>
+                      </div>
+                      {p.id === activeProperty?.id && (
+                        <span style={{
+                          fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7',
+                          color: '#166534', padding: '2px 10px', borderRadius: 12,
+                        }}>Active</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {properties.length < 5 && (
+                  showAddProperty ? (
+                    <AddPropertyForm
+                      onSave={handleAddProperty}
+                      onCancel={() => setShowAddProperty(false)}
+                    />
+                  ) : (
+                    <button
+                      className="btn-secondary"
+                      style={{ marginTop: 14 }}
+                      onClick={() => setShowAddProperty(true)}
+                    >
+                      + Add another property
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Access & Roles */}
           <div className="settings-card">
             <div className="settings-card-header">
@@ -408,6 +482,39 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {/* Cancel NestBook — delete account accordion */}
+          {user?.role === 'owner' && (
+            <div className="settings-card" style={{ borderColor: '#fecaca' }}>
+              <button
+                className="delete-account-toggle"
+                onClick={() => setDeleteAccountOpen((o) => !o)}
+              >
+                <span>Cancel NestBook</span>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  {deleteAccountOpen ? '▲' : '▼'}
+                </span>
+              </button>
+              {deleteAccountOpen && (
+                <div style={{ padding: '0 20px 20px' }}>
+                  <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>
+                    Deleting your account will permanently remove your property, all rooms, bookings,
+                    guest records and subscription data. Any active subscription will be cancelled immediately.
+                    This cannot be undone.
+                  </p>
+                  <button
+                    style={{
+                      background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
+                      padding: '9px 20px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
+                    }}
+                    onClick={() => setShowDeleteAccount(true)}
+                  >
+                    Delete my account permanently
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
       </div>
@@ -438,6 +545,14 @@ export default function Settings() {
         <ResetStaffPasswordModal
           user={resetTarget}
           onClose={() => setResetTarget(null)}
+        />
+      )}
+
+      {showDeleteAccount && (
+        <DeleteAccountModal
+          onClose={() => setShowDeleteAccount(false)}
+          onSuccess={() => { logout(); localStorage.clear(); window.location.href = '/?deleted=1'; }}
+          onError={(msg) => showToast(msg, 'error')}
         />
       )}
 
@@ -495,6 +610,130 @@ function EmbedSection({ snippet, t }) {
           <div className="embed-step">
             <span className="embed-step-num">3</span>
             <span>{t('embedStep3')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── AddPropertyForm ───────────────────────────────────────────────────────────
+
+const PROPERTY_TYPES_LIST = [
+  { value: 'bnb',        label: 'B&B' },
+  { value: 'gite',       label: 'Gîte / Holiday Cottage' },
+  { value: 'guesthouse', label: 'Guest House' },
+  { value: 'hotel',      label: 'Small Hotel' },
+  { value: 'other',      label: 'Other' },
+];
+
+function AddPropertyForm({ onSave, onCancel }) {
+  const [form, setForm] = useState({ name: '', type: 'bnb' });
+  const [saving, setSaving] = useState(false);
+  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="form-group" style={{ marginBottom: 0 }}>
+        <label className="form-label" style={{ fontSize: '0.82rem' }}>Property name *</label>
+        <input
+          name="name" className="form-control" autoFocus required
+          value={form.name} onChange={handleChange}
+          placeholder="e.g. La Maison du Soleil"
+          style={{ marginTop: 4 }}
+        />
+      </div>
+      <div className="form-group" style={{ marginBottom: 0 }}>
+        <label className="form-label" style={{ fontSize: '0.82rem' }}>Type</label>
+        <select name="type" className="form-control" value={form.type} onChange={handleChange} style={{ marginTop: 4 }}>
+          {PROPERTY_TYPES_LIST.map((tp) => (
+            <option key={tp.value} value={tp.value}>{tp.label}</option>
+          ))}
+        </select>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button type="submit" className="btn-primary" disabled={saving} style={{ fontSize: '0.85rem' }}>
+          {saving ? 'Saving…' : 'Save property'}
+        </button>
+        <button type="button" className="btn-secondary" onClick={onCancel} style={{ fontSize: '0.85rem' }}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ── DeleteAccountModal ────────────────────────────────────────────────────────
+
+function DeleteAccountModal({ onClose, onSuccess, onError }) {
+  const [confirmText, setConfirmText] = useState('');
+  const [loading,     setLoading]     = useState(false);
+
+  async function handleDelete() {
+    if (confirmText !== 'DELETE') return;
+    setLoading(true);
+    try {
+      const res  = await apiFetch('/api/auth/account', { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        onSuccess();
+      } else {
+        onError(data.error || 'Delete failed.');
+        setLoading(false);
+      }
+    } catch {
+      onError('Network error.');
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 440 }}>
+        <div className="modal-header">
+          <h2>Delete account</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div style={{
+            background: '#fef2f2', border: '1px solid #fecaca',
+            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+            fontSize: '0.875rem', color: '#991b1b',
+          }}>
+            <strong>This cannot be undone.</strong> All your property data, bookings, guest
+            records and subscription will be permanently deleted.
+          </div>
+          <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 8 }}>
+            Type <strong>DELETE</strong> to confirm:
+          </p>
+          <input
+            className="form-control"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="DELETE"
+            autoFocus
+          />
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+            <button
+              style={{
+                background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
+                padding: '8px 18px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
+                opacity: confirmText !== 'DELETE' ? 0.45 : 1,
+              }}
+              onClick={handleDelete}
+              disabled={loading || confirmText !== 'DELETE'}
+            >
+              {loading ? 'Deleting…' : 'Delete permanently'}
+            </button>
           </div>
         </div>
       </div>
