@@ -30,7 +30,12 @@ export default function Dashboard() {
   const today = localToday();
 
   useEffect(() => {
-    if (!property?.id) return;
+    if (!property?.id) {
+      // property is null — either still loading or genuinely missing.
+      // Keep the loading screen for up to 5 s, then surface an error.
+      const timer = setTimeout(() => setLoading(false), 5000);
+      return () => clearTimeout(timer);
+    }
     apiFetch(`/api/bookings?property_id=${property.id}`)
       .then((r) => {
         if (!r.ok) throw new Error(`API error ${r.status}`);
@@ -73,6 +78,7 @@ export default function Dashboard() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return <div className="loading-screen">{t('loadingDashboard')}</div>;
+  if (!property) return <div className="loading-screen" style={{ color: '#dc2626' }}>Could not load property data. Please refresh or contact support.</div>;
   if (error)   return <div className="loading-screen" style={{ color: '#dc2626' }}>Error: {error}</div>;
 
   return (

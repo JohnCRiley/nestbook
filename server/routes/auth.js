@@ -84,6 +84,10 @@ authRouter.post('/register', (req, res) => {
        VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
     ).run(prop.lastInsertRowid, name, normalEmail, hash, validCode ?? null, verificationToken);
 
+    // Link the property back to its owner now that we have the user ID.
+    db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?')
+      .run(user.lastInsertRowid, prop.lastInsertRowid);
+
     db.exec('COMMIT');
 
     const token = jwt.sign(

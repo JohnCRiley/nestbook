@@ -22,8 +22,21 @@ function canAccess(userId, role, propId) {
 propertiesRouter.get('/', (req, res) => {
   try {
     if (req.user.role === 'owner') {
-      const rows = db.prepare('SELECT * FROM properties WHERE owner_id = ? ORDER BY id')
+      let rows = db.prepare('SELECT * FROM properties WHERE owner_id = ? ORDER BY id')
         .all(req.user.userId);
+
+      // Fallback for owners whose property pre-dates the owner_id migration:
+      // if nothing found via owner_id, locate via users.property_id and backfill.
+      if (rows.length === 0) {
+        const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(req.user.userId);
+        if (u?.property_id) {
+          db.prepare('UPDATE properties SET owner_id = ? WHERE id = ? AND owner_id IS NULL')
+            .run(req.user.userId, u.property_id);
+          const prop = db.prepare('SELECT * FROM properties WHERE id = ?').get(u.property_id);
+          rows = prop ? [prop] : [];
+        }
+      }
+
       return res.json(rows);
     }
     // Reception staff — return their single assigned property

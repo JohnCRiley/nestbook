@@ -16,9 +16,10 @@ export function LocaleProvider({ children }) {
     if (!localStorage.getItem('nb_token')) return;
     apiFetch('/api/properties')
       .then((r) => r.json())
-      .then((props) => {
-        if (!Array.isArray(props) || !props.length) return;
+      .then((data) => {
+        const props = Array.isArray(data) ? data : [];
         setProperties(props);
+        if (!props.length) return;
         // Restore the last-used property from localStorage, fall back to first.
         const savedId = Number(localStorage.getItem('nb_active_property'));
         const active  = props.find((p) => p.id === savedId) ?? props[0];
