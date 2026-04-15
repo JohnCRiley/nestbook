@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
@@ -42,6 +42,7 @@ export default function Sidebar() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tabletExpanded, setTabletExpanded] = useState(false);
+  const sidebarRef = useRef(null);
 
   // Close mobile menu and tablet expanded on route change
   useEffect(() => { setMobileOpen(false); setTabletExpanded(false); }, [location.pathname]);
@@ -57,6 +58,18 @@ export default function Sidebar() {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
+
+  // Close tablet expanded panel on click outside the sidebar element
+  useEffect(() => {
+    if (!tabletExpanded) return;
+    const handler = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setTabletExpanded(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [tabletExpanded]);
 
   const isReceptionKiosk = kiosk && user?.role === 'reception';
   const navItems = isReceptionKiosk
@@ -91,17 +104,16 @@ export default function Sidebar() {
         />
       )}
 
-      {/* ── Tablet expanded overlay backdrop ─────────────────────────────── */}
+      {/* ── Tablet expanded overlay backdrop (visual dim only — close is handled by mousedown listener) */}
       {tabletExpanded && (
-        <div
-          className="sidebar-overlay sidebar-tablet-overlay"
-          onClick={() => setTabletExpanded(false)}
-          aria-hidden="true"
-        />
+        <div className="sidebar-overlay sidebar-tablet-overlay" aria-hidden="true" />
       )}
 
       {/* ── Sidebar ───────────────────────────────────────────────────────── */}
-      <aside className={`sidebar${mobileOpen ? ' sidebar--mobile-open' : ''}${tabletExpanded ? ' sidebar--tablet-expanded' : ''}`}>
+      <aside
+        ref={sidebarRef}
+        className={`sidebar${mobileOpen ? ' sidebar--mobile-open' : ''}${tabletExpanded ? ' sidebar--tablet-expanded' : ''}`}
+      >
 
         {/* Close button — visible on mobile only */}
         <button
@@ -170,7 +182,7 @@ export default function Sidebar() {
                     <button
                       key={p.id}
                       className={`property-switch-item${p.id === property.id ? ' active' : ''}`}
-                      onClick={() => switchProperty(p)}
+                      onClick={() => { switchProperty(p); setTabletExpanded(false); }}
                     >
                       <span className="property-switch-name">{p.name}</span>
                       {p.id === property.id && <span className="property-switch-check">✓</span>}
