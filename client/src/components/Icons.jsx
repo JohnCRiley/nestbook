@@ -66,3 +66,13 @@ export const IconLogout = () => icon(<>
   <polyline points="16 17 21 12 16 7" />
   <line x1="21" y1="12" x2="9" y2="12" />
 </>);
+
+export const IconBuildings = () => icon(<>
+  <rect x="2"  y="7"  width="9" height="14" rx="1" />
+  <rect x="13" y="3"  width="9" height="18" rx="1" />
+  <line x1="6"  y1="11" x2="6"  y2="11" strokeWidth="2" strokeLinecap="round" />
+  <line x1="6"  y1="15" x2="6"  y2="15" strokeWidth="2" strokeLinecap="round" />
+  <line x1="17" y1="7"  x2="17" y2="7"  strokeWidth="2" strokeLinecap="round" />
+  <line x1="17" y1="11" x2="17" y2="11" strokeWidth="2" strokeLinecap="round" />
+  <line x1="17" y1="15" x2="17" y2="15" strokeWidth="2" strokeLinecap="round" />
+</>);

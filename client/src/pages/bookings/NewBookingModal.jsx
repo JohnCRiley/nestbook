@@ -24,16 +24,25 @@ const EMPTY_FORM = {
   total_price:    '',
 };
 
+const EMPTY_GUEST = { first_name: '', last_name: '', email: '', phone: '' };
+
 /**
  * Modal form for creating a new booking.
  * Total price auto-calculates from room rate × nights whenever room or dates change.
  * Pass `initialValues` to pre-fill fields (e.g. from a calendar cell click).
  */
-export default function NewBookingModal({ rooms, guests, onClose, onSuccess, initialValues }) {
+export default function NewBookingModal({ rooms, guests: initialGuests, onClose, onSuccess, initialValues }) {
   const { currencySymbol, property } = useLocale();
   const [form,       setForm]       = useState({ ...EMPTY_FORM, ...initialValues });
+  const [guests,     setGuests]     = useState(initialGuests);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
+
+  // New guest inline form
+  const [showNewGuest,   setShowNewGuest]   = useState(false);
+  const [newGuest,       setNewGuest]       = useState(EMPTY_GUEST);
+  const [savingGuest,    setSavingGuest]    = useState(false);
+  const [newGuestError,  setNewGuestError]  = useState(null);
 
   // ── Auto-calculate total price ─────────────────────────────────────────────
   useEffect(() => {
@@ -53,6 +62,41 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ── Create new guest inline ────────────────────────────────────────────────
+  const handleSaveNewGuest = async () => {
+    if (!newGuest.first_name.trim() || !newGuest.last_name.trim()) {
+      setNewGuestError('First name and last name are required.');
+      return;
+    }
+    setSavingGuest(true);
+    setNewGuestError(null);
+    try {
+      const res = await apiFetch('/api/guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: newGuest.first_name.trim(),
+          last_name:  newGuest.last_name.trim(),
+          email:      newGuest.email.trim() || null,
+          phone:      newGuest.phone.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Server error ${res.status}`);
+      }
+      const created = await res.json();
+      setGuests((prev) => [...prev, created]);
+      setForm((prev) => ({ ...prev, guest_id: String(created.id) }));
+      setShowNewGuest(false);
+      setNewGuest(EMPTY_GUEST);
+    } catch (err) {
+      setNewGuestError(err.message);
+    } finally {
+      setSavingGuest(false);
+    }
   };
 
   // ── Submit ─────────────────────────────────────────────────────────────────
@@ -151,23 +195,100 @@ export default function NewBookingModal({ rooms, guests, onClose, onSuccess, ini
               {/* Guest */}
               <div className="form-group span-2">
                 <label className="form-label">Guest *</label>
-                <select
-                  name="guest_id"
-                  className="form-control"
-                  value={form.guest_id}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select a guest…</option>
-                  {guests.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.first_name} {g.last_name}
-                      {g.email ? ` — ${g.email}` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <select
+                    name="guest_id"
+                    className="form-control"
+                    value={form.guest_id}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') {
+                        setShowNewGuest(true);
+                      } else {
+                        handleChange(e);
+                        setShowNewGuest(false);
+                      }
+                    }}
+                    required
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">Select a guest…</option>
+                    <option value="__new__">+ Add new guest…</option>
+                    {guests.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.first_name} {g.last_name}
+                        {g.email ? ` — ${g.email}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 {selectedGuest?.notes && (
                   <div className="form-hint">Note: {selectedGuest.notes}</div>
+                )}
+
+                {/* Inline new guest form */}
+                {showNewGuest && (
+                  <div className="new-guest-inline">
+                    <div className="new-guest-inline-title">New Guest</div>
+                    {newGuestError && (
+                      <div className="form-error" style={{ marginBottom: 8 }}>{newGuestError}</div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                      <div>
+                        <label className="form-label">First Name *</label>
+                        <input
+                          className="form-control"
+                          value={newGuest.first_name}
+                          onChange={(e) => setNewGuest((p) => ({ ...p, first_name: e.target.value }))}
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Last Name *</label>
+                        <input
+                          className="form-control"
+                          value={newGuest.last_name}
+                          onChange={(e) => setNewGuest((p) => ({ ...p, last_name: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Email</label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          value={newGuest.email}
+                          onChange={(e) => setNewGuest((p) => ({ ...p, email: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Phone</label>
+                        <input
+                          className="form-control"
+                          value={newGuest.phone}
+                          onChange={(e) => setNewGuest((p) => ({ ...p, phone: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+                        onClick={handleSaveNewGuest}
+                        disabled={savingGuest}
+                      >
+                        {savingGuest ? 'Saving…' : 'Save Guest'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+                        onClick={() => { setShowNewGuest(false); setNewGuest(EMPTY_GUEST); setNewGuestError(null); }}
+                        disabled={savingGuest}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
 

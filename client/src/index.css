@@ -169,6 +169,8 @@ a { text-decoration: none; }
 .mobile-topbar    { display: none; }
 .sidebar-overlay  { display: none; }
 .sidebar-close-btn { display: none; }
+/* Buildings tray button hidden outside tablet range */
+.sidebar-tray-prop-btn { display: none; }
 
 /* ─── Responsive — Tablet (768px–1023px) — icon-only collapsed sidebar ──── */
 @media (min-width: 768px) and (max-width: 1023px) {
@@ -221,12 +223,13 @@ a { text-decoration: none; }
     pointer-events: none;
   }
 
-  /* Footer — hide all text, show only logout icon */
+  /* Footer — hide all text, show only logout icon + buildings btn */
   .sidebar .footer-label,
   .sidebar .footer-property-row,
   .sidebar .footer-type,
   .sidebar .sidebar-user,
-  .sidebar .sidebar-util-btn { display: none; }
+  .sidebar .sidebar-util-btn,
+  .sidebar .property-switcher { display: none; }
 
   .sidebar-footer {
     padding: 12px 0;
@@ -244,6 +247,65 @@ a { text-decoration: none; }
     margin-top: 6px;
   }
   .logout-label { display: none; }
+
+  /* Buildings icon button for tablet — opens property overlay */
+  .sidebar-tray-prop-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.65);
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .sidebar-tray-prop-btn:hover {
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+  }
+
+  /* When tablet sidebar is expanded: show as full-width overlay */
+  .sidebar--tablet-expanded {
+    width: 240px;
+    z-index: 350;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.35);
+  }
+  .sidebar--tablet-expanded .footer-label,
+  .sidebar--tablet-expanded .footer-property-row,
+  .sidebar--tablet-expanded .footer-type,
+  .sidebar--tablet-expanded .sidebar-user,
+  .sidebar--tablet-expanded .sidebar-util-btn,
+  .sidebar--tablet-expanded .property-switcher { display: revert; }
+  .sidebar--tablet-expanded .sidebar-footer {
+    align-items: stretch;
+    padding: 16px 20px;
+  }
+  .sidebar--tablet-expanded .sidebar-logout-btn {
+    width: 100%;
+    height: auto;
+    padding: 8px 12px;
+    margin-top: 10px;
+    justify-content: flex-start;
+  }
+  .sidebar--tablet-expanded .logout-label { display: inline; }
+  .sidebar--tablet-expanded .nav-section-label { display: block; }
+  .sidebar--tablet-expanded .nav-link { padding: 10px 20px; justify-content: flex-start; gap: 11px; }
+  .sidebar--tablet-expanded .nav-link-label { display: inline; }
+  .sidebar--tablet-expanded .sidebar-brand { padding: 24px 20px 20px; justify-content: flex-start; }
+  .sidebar--tablet-expanded .brand-label,
+  .sidebar--tablet-expanded .brand-sub { display: block; }
+  .sidebar--tablet-expanded .sidebar-tray-prop-btn { display: none; }
+
+  /* Tablet overlay backdrop */
+  .sidebar-tablet-overlay {
+    display: block;
+    z-index: 340;
+    background: rgba(0,0,0,0.40);
+  }
 }
 
 /* ─── Responsive — Mobile (< 768px) — hamburger + slide-in overlay ───────── */
@@ -997,12 +1059,12 @@ a { text-decoration: none; }
 }
 
 .form-error {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--light-green);
+  border: 1px solid rgba(47,119,27,0.25);
   border-radius: 6px;
   padding: 10px 14px;
   font-size: 0.83rem;
-  color: #dc2626;
+  color: var(--accent-dark);
   margin-bottom: 16px;
 }
 
@@ -2151,12 +2213,12 @@ a { text-decoration: none; }
 }
 
 .auth-error {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--light-green);
+  border: 1px solid rgba(47,119,27,0.25);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.875rem;
-  color: #dc2626;
+  color: var(--accent-dark);
   margin-bottom: 16px;
 }
 
@@ -2288,8 +2350,8 @@ a { text-decoration: none; }
 /* ── Email verify banner ─────────────────────────────────────────────────── */
 /* Negative margins cancel main-content's padding so the banner runs edge-to-edge */
 .verify-email-banner {
-  background: #fffbeb;
-  border-bottom: 1.5px solid #f59e0b;
+  background: var(--light-green);
+  border-bottom: 1.5px solid rgba(47,119,27,0.20);
   /* match main-content desktop padding: 36px top, 40px sides */
   margin: -36px -40px 28px;
   padding: 11px 40px;
@@ -2298,19 +2360,19 @@ a { text-decoration: none; }
   justify-content: space-between;
   gap: 12px;
   font-size: 0.875rem;
-  color: #92400e;
+  color: var(--accent-dark);
 }
 .verify-email-banner-dismiss {
   background: none;
   border: none;
   cursor: pointer;
-  color: #b45309;
+  color: var(--accent);
   font-size: 1rem;
   line-height: 1;
   padding: 2px 4px;
   flex-shrink: 0;
 }
-.verify-email-banner-dismiss:hover { color: #92400e; }
+.verify-email-banner-dismiss:hover { color: var(--accent-dark); }
 /* Tablet (56px sidebar) — main-content padding unchanged */
 @media (min-width: 768px) and (max-width: 1023px) {
   .verify-email-banner { margin: -36px -40px 28px; padding: 11px 40px; }
@@ -2392,12 +2454,12 @@ a { text-decoration: none; }
 
 /* ── Pricing page ────────────────────────────────────────────────────────── */
 .pricing-error {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--light-green);
+  border: 1px solid rgba(47,119,27,0.25);
   border-radius: 8px;
   padding: 10px 16px;
   font-size: 0.875rem;
-  color: #dc2626;
+  color: var(--accent-dark);
   margin-bottom: 20px;
 }
 
@@ -3038,9 +3100,9 @@ a { text-decoration: none; }
 
 /* ── Property banner (top of main content when >1 property) ──────────────── */
 .property-banner {
-  background: #fef3c7;
-  border-bottom: 1px solid #fde68a;
-  color: #78350f;
+  background: var(--light-green);
+  border-bottom: 1px solid rgba(47,119,27,0.20);
+  color: var(--accent-dark);
   font-size: 0.80rem;
   padding: 7px 40px;
   margin: -36px -40px 24px;
@@ -3055,12 +3117,13 @@ a { text-decoration: none; }
   .property-banner { margin: -80px -20px 16px; padding: 7px 20px; }
 }
 
-/* ── Danger zone accordion (Settings — "Cancel NestBook") ────────────────── */
+/* ── Danger zone accordion (Settings — "Manage Subscription") ────────────── */
 .danger-zone-card {
-  border: 1px solid #fca5a5;
+  border: 1px solid rgba(47,119,27,0.20);
   border-radius: 10px;
   background: #fff;
   overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .danger-zone-toggle {
@@ -3068,28 +3131,28 @@ a { text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: transparent;
+  background: var(--light-green);
   border: none;
-  padding: 16px 20px;
+  padding: 14px 20px;
   cursor: pointer;
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #dc2626;
+  font-weight: 700;
+  color: var(--accent-dark);
   text-align: left;
 }
 
 .danger-zone-toggle:hover {
-  background: #fff5f5;
+  background: #cce8bc;
 }
 
 .danger-zone-chevron {
   font-size: 0.75rem;
-  color: #f87171;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 .danger-zone-body {
-  border-top: 1px solid #fee2e2;
+  border-top: 1px solid rgba(47,119,27,0.15);
   padding: 4px 0 8px;
 }
 
@@ -3164,3 +3227,74 @@ a { text-decoration: none; }
 
 /* Keep old class as no-op so any lingering references don't break layout */
 .delete-account-toggle { display: none; }
+
+/* ── Dashboard info / error box ─────────────────────────────────────────── */
+.db-info-box {
+  background: var(--light-green);
+  border: 1px solid rgba(47,119,27,0.20);
+  border-radius: 10px;
+  padding: 16px 22px;
+  font-size: 0.9rem;
+  color: var(--accent-dark);
+  margin-bottom: 24px;
+}
+
+/* ── Dashboard available-rooms popover ──────────────────────────────────── */
+.db-available-btn {
+  background: white;
+}
+.db-available-btn:hover {
+  background: var(--light-green);
+}
+
+.db-room-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 200px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  z-index: 200;
+  padding: 10px 0;
+}
+
+.db-room-popover-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 0 14px 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.db-room-popover-item {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  padding: 6px 14px;
+  transition: background 0.1s;
+}
+.db-room-popover-item:hover {
+  background: var(--page-bg);
+}
+
+/* ── Inline new guest form (inside NewBookingModal) ─────────────────────── */
+.new-guest-inline {
+  margin-top: 10px;
+  padding: 14px 16px;
+  background: var(--page-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.new-guest-inline-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}

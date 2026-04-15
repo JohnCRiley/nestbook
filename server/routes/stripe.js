@@ -167,8 +167,8 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
       line_items: [{ price: PLAN_PRICES[plan], quantity: 1 }],
       customer_email: user.email,
       metadata:   { userId: String(user.id) },
-      success_url: `${clientUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${clientUrl}/cancel`,
+      success_url: `https://nestbook.io/app/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:  `https://nestbook.io/app/pricing`,
       ...(discounts.length ? { discounts } : {}),
     });
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { localToday } from '../utils/format.js';
 import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../utils/bookingConstants.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
@@ -12,6 +13,7 @@ export default function Bookings() {
   const today = localToday();
   const t = useT();
   const { property } = useLocale();
+  const location = useLocation();
 
   const FILTERS = [
     { key: 'all',         label: t('filters')[0] },
@@ -29,7 +31,7 @@ export default function Bookings() {
   const [activeFilter,   setActiveFilter]   = useState('all');
   const [search,         setSearch]         = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [showNewModal,   setShowNewModal]   = useState(false);
+  const [showNewModal,   setShowNewModal]   = useState(() => !!location.state?.openModal);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   useEffect(() => {

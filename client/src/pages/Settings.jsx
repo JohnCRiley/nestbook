@@ -474,7 +474,7 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Cancel NestBook — destructive actions accordion */}
+          {/* Manage Subscription — destructive actions accordion */}
           {user?.role === 'owner' && (
             <div className="danger-zone-card">
               <button
@@ -482,7 +482,7 @@ export default function Settings() {
                 onClick={() => setDeleteAccountOpen((o) => !o)}
                 aria-expanded={deleteAccountOpen}
               >
-                <span>Cancel NestBook</span>
+                <span>Manage Subscription</span>
                 <span className="danger-zone-chevron">{deleteAccountOpen ? '▲' : '▼'}</span>
               </button>
 

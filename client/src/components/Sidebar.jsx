@@ -15,6 +15,7 @@ import {
   IconSettings,
   IconPricing,
   IconLogout,
+  IconBuildings,
 } from './Icons.jsx';
 
 const ALL_NAV_ITEMS = [
@@ -40,9 +41,10 @@ export default function Sidebar() {
   const { canInstall, triggerInstall } = useInstallPrompt();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [tabletExpanded, setTabletExpanded] = useState(false);
 
-  // Close mobile menu on route change
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  // Close mobile menu and tablet expanded on route change
+  useEffect(() => { setMobileOpen(false); setTabletExpanded(false); }, [location.pathname]);
 
   // Close mobile menu on Escape
   useEffect(() => {
@@ -84,8 +86,17 @@ export default function Sidebar() {
         />
       )}
 
+      {/* ── Tablet expanded overlay backdrop ─────────────────────────────── */}
+      {tabletExpanded && (
+        <div
+          className="sidebar-overlay sidebar-tablet-overlay"
+          onClick={() => setTabletExpanded(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── Sidebar ───────────────────────────────────────────────────────── */}
-      <aside className={`sidebar${mobileOpen ? ' sidebar--mobile-open' : ''}`}>
+      <aside className={`sidebar${mobileOpen ? ' sidebar--mobile-open' : ''}${tabletExpanded ? ' sidebar--tablet-expanded' : ''}`}>
 
         {/* Close button — visible on mobile only */}
         <button
@@ -124,6 +135,18 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div className="sidebar-footer">
+          {/* Buildings button — shown only in tablet icon-tray mode, opens property switcher */}
+          {plan === 'multi' && properties.length > 1 && !isReceptionKiosk && (
+            <button
+              className="sidebar-tray-prop-btn"
+              onClick={() => setTabletExpanded((v) => !v)}
+              data-tooltip="Properties"
+              title="Switch property"
+            >
+              <IconBuildings />
+            </button>
+          )}
+
           {property && !isReceptionKiosk && (
             <>
               <div className="footer-label">{t('propertyLabel')}</div>
