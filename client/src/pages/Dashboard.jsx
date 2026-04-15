@@ -145,14 +145,10 @@ export default function Dashboard() {
 
   if (loading) return <div className="loading-screen">{t('loadingDashboard')}</div>;
   if (!property) return (
-    <div className="db-info-box">
-      Could not load property data. Please refresh or contact support.
-    </div>
+    <div className="db-info-box">{t('propLoadError')}</div>
   );
   if (error) return (
-    <div className="db-info-box">
-      Could not load dashboard data. Please refresh the page.
-    </div>
+    <div className="db-info-box">{t('dashboardLoadError')}</div>
   );
 
   return (
@@ -160,7 +156,7 @@ export default function Dashboard() {
       {/* ── Upgrade toast ──────────────────────────────────────────────────── */}
       {upgradeToast && (
         <div className="toast toast-success" style={{ pointerEvents: 'auto' }}>
-          Payment successful — your plan has been upgraded!
+          {t('upgradeSuccess')}
         </div>
       )}
 
@@ -210,10 +206,10 @@ export default function Dashboard() {
             title="Click to see available room names"
           >
             <div className="sb-value" style={{ color: 'var(--accent-dark)' }}>{availableRooms.length}</div>
-            <div className="sb-label">Available Tonight</div>
+            <div className="sb-label">{t('availableTonight')}</div>
             {showAvailablePopover && availableRooms.length > 0 && (
               <div className="db-room-popover" onClick={(e) => e.stopPropagation()}>
-                <div className="db-room-popover-title">Available rooms tonight</div>
+                <div className="db-room-popover-title">{t('availableRoomsTonight')}</div>
                 {availableRooms.map((r) => (
                   <div key={r.id} className="db-room-popover-item">
                     <div className="db-room-popover-info">
@@ -238,7 +234,7 @@ export default function Dashboard() {
             )}
             {showAvailablePopover && availableRooms.length === 0 && (
               <div className="db-room-popover" onClick={(e) => e.stopPropagation()}>
-                <div className="db-room-popover-title">All rooms occupied tonight</div>
+                <div className="db-room-popover-title">{t('allRoomsOccupied')}</div>
               </div>
             )}
           </button>
@@ -247,12 +243,12 @@ export default function Dashboard() {
             <div className="sb-value" style={{ color: occupancyRate > 70 ? '#92400e' : 'var(--accent-dark)' }}>
               {occupancyRate}%
             </div>
-            <div className="sb-label">Occupancy Rate</div>
+            <div className="sb-label">{t('occupancyRate')}</div>
           </div>
           {/* Total rooms */}
           <div className="stat-bar-item" style={{ flex: 1 }}>
             <div className="sb-value" style={{ color: 'var(--accent-dark)' }}>{rooms.length}</div>
-            <div className="sb-label">Total Rooms</div>
+            <div className="sb-label">{t('totalRooms')}</div>
           </div>
         </div>
       )}

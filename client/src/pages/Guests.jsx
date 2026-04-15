@@ -128,7 +128,7 @@ export default function Guests() {
         </div>
         {search && (
           <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)' }}>
-            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+            {t('searchResults')(filtered.length)}
           </span>
         )}
       </div>
@@ -137,7 +137,7 @@ export default function Guests() {
       <div className="guest-grid">
         {filtered.length === 0 ? (
           <div className="guests-empty">
-            {search ? `No guests matching "${search}"` : t('noGuests')}
+            {search ? t('noGuestsSearch')(search) : t('noGuests')}
           </div>
         ) : (
           filtered.map((guest) => (
@@ -175,7 +175,7 @@ export default function Guests() {
         <div className="modal-overlay">
           <div className="modal" role="dialog" aria-label="Guest saved" style={{ maxWidth: 420 }}>
             <div className="modal-header">
-              <h2>Guest added</h2>
+              <h2>{t('guestAdded')}</h2>
             </div>
             <div className="modal-body" style={{ textAlign: 'center', padding: '28px 32px' }}>
               <div style={{ fontSize: '2rem', marginBottom: 12 }}>✓</div>
@@ -183,7 +183,7 @@ export default function Guests() {
                 {newGuestCreated.first_name} {newGuestCreated.last_name} has been saved.
               </div>
               <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 24 }}>
-                What would you like to do next?
+                {t('whatNext')}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button
@@ -193,14 +193,14 @@ export default function Guests() {
                     state: { openModal: true, prefillGuestId: newGuestCreated.id },
                   })}
                 >
-                  Create a booking for this guest
+                  {t('createBookingGuest')}
                 </button>
                 <button
                   className="btn-secondary"
                   style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
                   onClick={() => { setNewGuestCreated(null); navigate('/dashboard'); }}
                 >
-                  Return to dashboard
+                  {t('returnDashboard')}
                 </button>
               </div>
             </div>
@@ -214,6 +214,7 @@ export default function Guests() {
 // ── GuestCard ─────────────────────────────────────────────────────────────────
 
 function GuestCard({ guest, bookingCount, isActive, onClick }) {
+  const t = useT();
   const flag = phoneFlag(guest.phone);
 
   return (
@@ -234,7 +235,7 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
         </div>
         {guest.email
           ? <div className="guest-card-email">{guest.email}</div>
-          : <div className="guest-card-email" style={{ fontStyle: 'italic' }}>No email</div>
+          : <div className="guest-card-email" style={{ fontStyle: 'italic' }}>{t('noEmail')}</div>
         }
         {guest.phone && (
           <div className="guest-card-phone">{guest.phone}</div>
@@ -245,7 +246,7 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
       <div className="guest-card-right">
         <div className="guest-stay-count">
           <span className="sc-num">{bookingCount}</span>
-          {bookingCount === 1 ? 'stay' : 'stays'}
+          {t('stayWord')(bookingCount).replace(/^\d+\s*/, '')}
         </div>
       </div>
     </div>

@@ -39,7 +39,7 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
-  const { setProperty: setContextProperty, properties, addPropertyToList, removePropertyFromList, property: activeProperty } = useLocale();
+  const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty } = useLocale();
   const { user, logout } = useAuth();
   const plan = usePlan();
   const { kiosk, setKioskMode } = useKiosk();
@@ -144,9 +144,10 @@ export default function Settings() {
       const updated = await res.json();
       setProperty(updated);
       setContextProperty(updated); // update locale/currency in context instantly
-      showToast('Property settings saved successfully.');
+      updatePropertyInList(updated); // keep properties list in sync (fixes NL multi-prop)
+      showToast(t('saved'));
     } catch (err) {
-      showToast('Failed to save settings. Please try again.', 'error');
+      showToast('Failed to save settings.', 'error');
     } finally {
       setSaving(false);
     }
@@ -216,14 +217,14 @@ export default function Settings() {
 <div id="nestbook-widget"></div>`;
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (!form) return <div className="loading-screen">Loading settings…</div>;
+  if (!form) return <div className="loading-screen">{t('loadingDashboard')}</div>;
 
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-header">
         <h1>{t('settings')}</h1>
-        <div className="page-date">Manage your property configuration and account</div>
+        <div className="page-date">{t('settingsSubtitle')}</div>
       </div>
 
       {/* ── Two-column layout ─────────────────────────────────────────────── */}
@@ -234,7 +235,7 @@ export default function Settings() {
           <div className="settings-card">
             <div className="settings-card-header">
               <h2>{t('propDetails')}</h2>
-              <p>Basic information about your property</p>
+              <p>{t('propBasicInfo')}</p>
             </div>
             <div className="settings-card-body">
               <div className="settings-form">
@@ -260,12 +261,12 @@ export default function Settings() {
                 </FormField>
 
                 <div className="settings-form-row">
-                  <FormField label="City / Town">
+                  <FormField label={t('cityLabel')}>
                     <input name="city" className="form-control"
                       value={form.city} onChange={handleFormChange}
                       placeholder="Roussillon" />
                   </FormField>
-                  <FormField label="Country">
+                  <FormField label={t('countryLabel')}>
                     <input name="country" className="form-control"
                       value={form.country} onChange={handleFormChange}
                       placeholder="France" />
@@ -292,7 +293,7 @@ export default function Settings() {
                       ))}
                     </select>
                   </FormField>
-                  <FormField label="Language">
+                  <FormField label={t('languageLabel')}>
                     <select name="locale" className="form-control"
                       value={form.locale} onChange={handleFormChange}>
                       {LOCALES.map((l) => (
@@ -304,7 +305,7 @@ export default function Settings() {
 
                 <div className="settings-save-row">
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving…' : t('saveChanges')}
+                    {saving ? t('saving') : t('saveChanges')}
                   </button>
                 </div>
 
@@ -319,7 +320,7 @@ export default function Settings() {
           <div className="settings-card">
             <div className="settings-card-header">
               <h2>{t('features')}</h2>
-              <p>Enable or disable functionality for your property</p>
+              <p>{t('featuresSubtitle')}</p>
             </div>
             <div className="settings-card-body" style={{ padding: '0 20px' }}>
               <div className="toggle-list">
@@ -340,14 +341,14 @@ export default function Settings() {
           {user?.role === 'owner' && (
             <div className="settings-card">
               <div className="settings-card-header">
-                <h2>Reception kiosk mode</h2>
-                <p>When enabled, reception staff automatically enter fullscreen on login</p>
+                <h2>{t('kioskModeTitle')}</h2>
+                <p>{t('kioskModeSubtitle')}</p>
               </div>
               <div className="settings-card-body" style={{ padding: '0 20px' }}>
                 <div className="toggle-list">
                   <ToggleRow
-                    label="Kiosk mode"
-                    desc="Locks reception view to Calendar and Bookings in fullscreen"
+                    label={t('kioskModeLabel')}
+                    desc={t('kioskModeDesc')}
                     checked={kiosk}
                     onChange={() => setKioskMode(!kiosk)}
                   />
@@ -360,13 +361,13 @@ export default function Settings() {
           {user?.role === 'owner' && (
             <div className="settings-card">
               <div className="settings-card-header">
-                <h2>Subscription</h2>
-                <p>Your current plan and billing details</p>
+                <h2>{t('subscriptionTitle')}</h2>
+                <p>{t('subscriptionSubtitle')}</p>
               </div>
               <div className="settings-card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Current plan</span>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('currentPlanLabel')}</span>
                     <span style={{
                       fontWeight: 700, fontSize: '0.85rem',
                       color: sub?.plan === 'free' ? '#64748b' : '#166534',
@@ -374,7 +375,7 @@ export default function Settings() {
                       padding: '2px 10px', borderRadius: 20,
                     }}>
                       {PLAN_LABELS[sub?.plan ?? user?.plan ?? 'free']}
-                      {sub?.notes === 'Complimentary' ? ' (Complimentary)' : ''}
+                      {sub?.notes === 'Complimentary' ? ` ${t('complimentary')}` : ''}
                     </span>
                   </div>
 
@@ -382,16 +383,16 @@ export default function Settings() {
                     <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
                       {sub.cancel_at_period_end
                         ? <span style={{ color: '#dc2626' }}>
-                            Cancels on {fmtDate(sub.current_period_end)}
+                            {t('cancelsOn')} {fmtDate(sub.current_period_end)}
                           </span>
-                        : <>Next billing date: <strong style={{ color: '#0f172a' }}>{fmtDate(sub.current_period_end)}</strong></>
+                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{fmtDate(sub.current_period_end)}</strong></>
                       }
                     </div>
                   )}
 
                   {sub?.cancel_at_period_end && (
                     <div style={{ fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 12px' }}>
-                      Your subscription is scheduled to cancel. You'll keep access until your billing period ends.
+                      {t('subCancelScheduled')}
                     </div>
                   )}
                 </div>
@@ -403,8 +404,8 @@ export default function Settings() {
           {user?.role === 'owner' && plan === 'multi' && (
             <div className="settings-card">
               <div className="settings-card-header">
-                <h2>Properties</h2>
-                <p>{properties.length} of 5 properties used</p>
+                <h2>{t('propertiesTitle')}</h2>
+                <p>{properties.length} of 5 {t('propertiesTitle').toLowerCase()}</p>
               </div>
               <div className="settings-card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -423,15 +424,15 @@ export default function Settings() {
                           <span style={{
                             fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7',
                             color: '#166534', padding: '2px 10px', borderRadius: 12,
-                          }}>Active</span>
+                          }}>{t('activeLabel')}</span>
                         )}
                         {properties.length > 1 && (
                           <button
                             className="prop-remove-btn"
                             onClick={() => setRemovePropertyTarget(p)}
-                            title={`Remove ${p.name}`}
+                            title={`${t('removeBtn')} ${p.name}`}
                           >
-                            Remove
+                            {t('removeBtn')}
                           </button>
                         )}
                       </div>
@@ -451,7 +452,7 @@ export default function Settings() {
                       style={{ marginTop: 14 }}
                       onClick={() => setShowAddProperty(true)}
                     >
-                      + Add another property
+                      {t('addAnotherProperty')}
                     </button>
                   )
                 )}
@@ -463,7 +464,7 @@ export default function Settings() {
           <div className="settings-card">
             <div className="settings-card-header">
               <h2>{t('access')}</h2>
-              <p>Staff accounts with access to this property</p>
+              <p>{t('staffSubtitle')}</p>
             </div>
             <div className="settings-card-body">
               <div className="user-list">
@@ -480,7 +481,7 @@ export default function Settings() {
               <div style={{ marginTop: 14 }}>
                 <PlanGate requiredPlan="pro">
                   <button className="btn-secondary" onClick={() => setShowInvite(true)}>
-                    + Invite Staff Member
+                    {t('inviteStaff')}
                   </button>
                 </PlanGate>
               </div>
@@ -495,7 +496,7 @@ export default function Settings() {
                 onClick={() => setDeleteAccountOpen((o) => !o)}
                 aria-expanded={deleteAccountOpen}
               >
-                <span>Manage Subscription</span>
+                <span>{t('manageSubscription')}</span>
                 <span className="danger-zone-chevron">{deleteAccountOpen ? '▲' : '▼'}</span>
               </button>
 
@@ -506,9 +507,9 @@ export default function Settings() {
                   {sub?.plan && sub.plan !== 'free' && !sub?.cancel_at_period_end && sub?.notes !== 'Complimentary' && (
                     <div className="danger-zone-row">
                       <div>
-                        <div className="danger-zone-row-title">Cancel subscription</div>
+                        <div className="danger-zone-row-title">{t('cancelSubTitle')}</div>
                         <div className="danger-zone-row-desc">
-                          Stop billing at the end of your current period. Your account and data are kept.
+                          {t('cancelSubDesc')}
                         </div>
                       </div>
                       <button
@@ -516,7 +517,7 @@ export default function Settings() {
                         disabled={cancelling}
                         onClick={() => setShowCancelModal(true)}
                       >
-                        {cancelling ? 'Cancelling…' : 'Cancel subscription'}
+                        {cancelling ? t('cancelling') : t('cancelSubTitle')}
                       </button>
                     </div>
                   )}
@@ -524,17 +525,16 @@ export default function Settings() {
                   {/* Delete account */}
                   <div className="danger-zone-row">
                     <div>
-                      <div className="danger-zone-row-title">Delete account permanently</div>
+                      <div className="danger-zone-row-title">{t('deleteAccountTitle')}</div>
                       <div className="danger-zone-row-desc">
-                        Removes all properties, rooms, bookings, guest records and cancels any active subscription.
-                        This <strong>cannot be undone</strong>.
+                        {t('deleteAccountDesc')}
                       </div>
                     </div>
                     <button
                       className="btn-danger"
                       onClick={() => setShowDeleteAccount(true)}
                     >
-                      Delete account
+                      {t('deleteAccountBtn')}
                     </button>
                   </div>
 
@@ -668,6 +668,7 @@ const PROPERTY_TYPES_LIST = [
 ];
 
 function AddPropertyForm({ onSave, onCancel }) {
+  const t = useT();
   const [form, setForm] = useState({ name: '', type: 'bnb' });
   const [saving, setSaving] = useState(false);
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -683,7 +684,7 @@ function AddPropertyForm({ onSave, onCancel }) {
   return (
     <form onSubmit={handleSubmit} style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.82rem' }}>Property name *</label>
+        <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('propNameLabel')} *</label>
         <input
           name="name" className="form-control" autoFocus required
           value={form.name} onChange={handleChange}
@@ -692,7 +693,7 @@ function AddPropertyForm({ onSave, onCancel }) {
         />
       </div>
       <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.82rem' }}>Type</label>
+        <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('typeLabel')}</label>
         <select name="type" className="form-control" value={form.type} onChange={handleChange} style={{ marginTop: 4 }}>
           {PROPERTY_TYPES_LIST.map((tp) => (
             <option key={tp.value} value={tp.value}>{tp.label}</option>
@@ -701,10 +702,10 @@ function AddPropertyForm({ onSave, onCancel }) {
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <button type="submit" className="btn-primary" disabled={saving} style={{ fontSize: '0.85rem' }}>
-          {saving ? 'Saving…' : 'Save property'}
+          {saving ? t('saving') : t('saveProperty')}
         </button>
         <button type="button" className="btn-secondary" onClick={onCancel} style={{ fontSize: '0.85rem' }}>
-          Cancel
+          {t('cancel')}
         </button>
       </div>
     </form>
@@ -714,6 +715,7 @@ function AddPropertyForm({ onSave, onCancel }) {
 // ── DeleteAccountModal ────────────────────────────────────────────────────────
 
 function DeleteAccountModal({ onClose, onSuccess, onError }) {
+  const t = useT();
   const [confirmText, setConfirmText] = useState('');
   const [loading,     setLoading]     = useState(false);
 
@@ -739,7 +741,7 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 440 }}>
         <div className="modal-header">
-          <h2>Delete account</h2>
+          <h2>{t('deleteAccountMoTitle')}</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
@@ -748,11 +750,10 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
             borderRadius: 8, padding: '12px 16px', marginBottom: 16,
             fontSize: '0.875rem', color: '#991b1b',
           }}>
-            <strong>This cannot be undone.</strong> All your property data, bookings, guest
-            records and subscription will be permanently deleted.
+            <strong>{t('deleteCannotUndo')}</strong> {t('deleteDataWarning')}
           </div>
           <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 8 }}>
-            Type <strong>DELETE</strong> to confirm:
+            {t('typeDeleteConfirm')}
           </p>
           <input
             className="form-control"
@@ -762,7 +763,7 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
             autoFocus
           />
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-            <button className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+            <button className="btn-secondary" onClick={onClose} disabled={loading}>{t('cancel')}</button>
             <button
               style={{
                 background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
@@ -772,7 +773,7 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
               onClick={handleDelete}
               disabled={loading || confirmText !== 'DELETE'}
             >
-              {loading ? 'Deleting…' : 'Delete permanently'}
+              {loading ? t('deleting') : t('deletePermanently')}
             </button>
           </div>
         </div>
@@ -784,24 +785,26 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
 // ── CancelSubscriptionModal ───────────────────────────────────────────────────
 
 function CancelSubscriptionModal({ plan, renewalDate, onClose, onConfirm }) {
+  const t = useT();
   return (
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ maxWidth: 420 }}>
         <div className="modal-header">
-          <h2>Cancel subscription</h2>
+          <h2>{t('cancelSubMoTitle')}</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
           <p style={{ fontSize: '0.95rem', color: '#374151', marginBottom: 16 }}>
-            Are you sure you want to cancel?
+            {t('cancelSubConfirm')}
+            {' '}
             {renewalDate
-              ? <> You'll keep <strong>{plan}</strong> access until <strong>{renewalDate}</strong>. After that you'll move to the free plan.</>
-              : <> You'll keep access until the end of your current billing period, then move to the free plan.</>
+              ? t('cancelSubWithDate')(plan, renewalDate)
+              : t('cancelSubNoDate')
             }
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button className="btn-secondary" onClick={onClose}>
-              Keep subscription
+              {t('keepSubscription')}
             </button>
             <button
               style={{
@@ -811,7 +814,7 @@ function CancelSubscriptionModal({ plan, renewalDate, onClose, onConfirm }) {
               }}
               onClick={onConfirm}
             >
-              Cancel subscription
+              {t('confirmCancelSub')}
             </button>
           </div>
         </div>
@@ -823,6 +826,7 @@ function CancelSubscriptionModal({ plan, renewalDate, onClose, onConfirm }) {
 // ── RemovePropertyModal ───────────────────────────────────────────────────────
 
 function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
+  const t = useT();
   const [confirmText, setConfirmText] = useState('');
   const [loading,     setLoading]     = useState(false);
 
@@ -850,7 +854,7 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" style={{ maxWidth: 460 }}>
         <div className="modal-header">
-          <h2>Remove property</h2>
+          <h2>{t('removePropertyTitle')}</h2>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
@@ -859,12 +863,11 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
             borderRadius: 8, padding: '12px 16px', marginBottom: 16,
             fontSize: '0.875rem', color: '#991b1b', lineHeight: 1.55,
           }}>
-            <strong>Are you sure you want to remove {prop.name}?</strong>
-            {' '}All rooms, bookings and guest records for this property will be permanently deleted.
-            This <strong>cannot be undone</strong>.
+            <strong>{prop.name}</strong>
+            {' — '}{t('deleteDataWarning')}
           </div>
           <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: 8 }}>
-            Type <strong>{prop.name}</strong> to confirm:
+            {t('typeDeleteConfirm').replace('DELETE', prop.name)}
           </p>
           <input
             className="form-control"
@@ -874,7 +877,7 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
             autoFocus
           />
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
-            <button className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+            <button className="btn-secondary" onClick={onClose} disabled={loading}>{t('cancel')}</button>
             <button
               style={{
                 background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
@@ -885,7 +888,7 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
               onClick={handleRemove}
               disabled={loading || !confirmed}
             >
-              {loading ? 'Removing…' : 'Remove property'}
+              {loading ? t('removing') : t('removePropertyBtn')}
             </button>
           </div>
         </div>
@@ -942,9 +945,9 @@ function UserRow({ user, t, isOwner, onResetPassword }) {
         <button
           className="btn-ghost-sm"
           onClick={onResetPassword}
-          title="Reset password"
+          title={t('resetPasswordBtn')}
         >
-          Reset password
+          {t('resetPasswordBtn')}
         </button>
       )}
     </div>

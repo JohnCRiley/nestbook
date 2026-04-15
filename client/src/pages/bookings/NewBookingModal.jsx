@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { useLocale } from '../../i18n/LocaleContext.jsx';
+import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
 
 const SOURCE_OPTIONS = [
@@ -34,6 +34,7 @@ const EMPTY_GUEST = { first_name: '', last_name: '', email: '', phone: '' };
  */
 export default function NewBookingModal({ rooms, guests: initialGuests, onClose, onSuccess, initialValues }) {
   const { currencySymbol, property } = useLocale();
+  const t = useT();
   const navigate = useNavigate();
   const [form,       setForm]       = useState({ ...EMPTY_FORM, ...initialValues });
   const [guests,     setGuests]     = useState(initialGuests);
@@ -69,7 +70,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
   // ── Create new guest inline ────────────────────────────────────────────────
   const handleSaveNewGuest = async () => {
     if (!newGuest.first_name.trim() || !newGuest.last_name.trim()) {
-      setNewGuestError('First name and last name are required.');
+      setNewGuestError(t('nameRequired'));
       return;
     }
     setSavingGuest(true);
@@ -107,11 +108,11 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
     setError(null);
 
     if (!form.room_id || !form.guest_id || !form.check_in_date || !form.check_out_date) {
-      setError('Please fill in all required fields.');
+      setError(t('requiredFields'));
       return;
     }
     if (form.check_out_date <= form.check_in_date) {
-      setError('Check-out must be after check-in.');
+      setError(t('checkoutAfterCheckin'));
       return;
     }
 
@@ -161,7 +162,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
         {/* Header */}
         <div className="modal-header">
-          <h2>New Booking</h2>
+          <h2>{t('moNewTitle')}</h2>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
@@ -174,7 +175,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
               {/* Room */}
               <div className="form-group span-2">
-                <label className="form-label">Room *</label>
+                <label className="form-label">{t('moRoomLbl')} *</label>
                 <select
                   name="room_id"
                   className="form-control"
@@ -182,13 +183,12 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select a room…</option>
+                  <option value="">{t('selectRoom')}</option>
                   {rooms
                     .filter((r) => r.status !== 'maintenance')
                     .map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} ({r.type}) — {currencySymbol}{r.price_per_night}/night · up to {r.capacity}{' '}
-                        {r.capacity === 1 ? 'guest' : 'guests'}
+                        {r.name} ({r.type}) — {currencySymbol}{r.price_per_night}{t('perNight')} · {t('guestWord')(r.capacity)}
                       </option>
                     ))}
                 </select>
@@ -197,14 +197,14 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
               {/* Guest */}
               <div className="form-group span-2">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <label className="form-label" style={{ margin: 0 }}>Guest *</label>
+                  <label className="form-label" style={{ margin: 0 }}>{t('moGuestLbl')} *</label>
                   <button
                     type="button"
                     className="btn-new-guest-inline"
                     onClick={() => navigate('/guests?newguest=true')}
-                    title="Add a new guest first, then return to create the booking"
+                    title={t('newGuestTitle')}
                   >
-                    + New Guest
+                    {t('newGuest')}
                   </button>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -223,8 +223,8 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                     required
                     style={{ flex: 1 }}
                   >
-                    <option value="">Select a guest…</option>
-                    <option value="__new__">+ Add new guest inline…</option>
+                    <option value="">{t('selectGuest')}</option>
+                    <option value="__new__">{t('addGuestInline')}</option>
                     {guests.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.first_name} {g.last_name}
@@ -240,13 +240,13 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                 {/* Inline new guest form */}
                 {showNewGuest && (
                   <div className="new-guest-inline">
-                    <div className="new-guest-inline-title">New Guest</div>
+                    <div className="new-guest-inline-title">{t('newGuestTitle')}</div>
                     {newGuestError && (
                       <div className="form-error" style={{ marginBottom: 8 }}>{newGuestError}</div>
                     )}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                       <div>
-                        <label className="form-label">First Name *</label>
+                        <label className="form-label">{t('firstName')} *</label>
                         <input
                           className="form-control"
                           value={newGuest.first_name}
@@ -255,7 +255,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                         />
                       </div>
                       <div>
-                        <label className="form-label">Last Name *</label>
+                        <label className="form-label">{t('lastName')} *</label>
                         <input
                           className="form-control"
                           value={newGuest.last_name}
@@ -263,7 +263,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                         />
                       </div>
                       <div>
-                        <label className="form-label">Email</label>
+                        <label className="form-label">{t('moEmailLbl')}</label>
                         <input
                           type="email"
                           className="form-control"
@@ -272,7 +272,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                         />
                       </div>
                       <div>
-                        <label className="form-label">Phone</label>
+                        <label className="form-label">{t('moPhoneLbl')}</label>
                         <input
                           className="form-control"
                           value={newGuest.phone}
@@ -288,7 +288,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                         onClick={handleSaveNewGuest}
                         disabled={savingGuest}
                       >
-                        {savingGuest ? 'Saving…' : 'Save Guest'}
+                        {savingGuest ? t('saving') : t('saveGuest')}
                       </button>
                       <button
                         type="button"
@@ -306,7 +306,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
               {/* Check-in */}
               <div className="form-group">
-                <label className="form-label">Check-in *</label>
+                <label className="form-label">{t('moCinLbl')} *</label>
                 <input
                   type="date"
                   name="check_in_date"
@@ -319,7 +319,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
               {/* Check-out */}
               <div className="form-group">
-                <label className="form-label">Check-out *</label>
+                <label className="form-label">{t('moCoutLbl')} *</label>
                 <input
                   type="date"
                   name="check_out_date"
@@ -330,13 +330,13 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                   required
                 />
                 {nightsCount && (
-                  <div className="form-hint">{nightsCount} {nightsCount === 1 ? 'night' : 'nights'}</div>
+                  <div className="form-hint">{t('nightWord')(nightsCount)}</div>
                 )}
               </div>
 
               {/* Number of guests */}
               <div className="form-group">
-                <label className="form-label">Number of Guests</label>
+                <label className="form-label">{t('moGuestsLbl')}</label>
                 <input
                   type="number"
                   name="num_guests"
@@ -347,13 +347,13 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                   onChange={handleChange}
                 />
                 {selectedRoom && (
-                  <div className="form-hint">Max capacity: {selectedRoom.capacity}</div>
+                  <div className="form-hint">{t('capacity')}: {selectedRoom.capacity}</div>
                 )}
               </div>
 
               {/* Source */}
               <div className="form-group">
-                <label className="form-label">Booking Source</label>
+                <label className="form-label">{t('bookingSourceLabel')}</label>
                 <select
                   name="source"
                   className="form-control"
@@ -368,7 +368,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
               {/* Total price */}
               <div className="form-group span-2">
-                <label className="form-label">Total Price ({currencySymbol})</label>
+                <label className="form-label">{t('totalPriceLabel')} ({currencySymbol})</label>
                 <input
                   type="number"
                   name="total_price"
@@ -377,7 +377,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                   min="0"
                   step="0.01"
                   onChange={handleChange}
-                  placeholder="Auto-calculated from room rate"
+                  placeholder={t('autoCalcHint')}
                 />
                 {selectedRoom && nightsCount && (
                   <div className="form-hint">
@@ -389,14 +389,14 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
               {/* Notes */}
               <div className="form-group span-2">
-                <label className="form-label">Notes</label>
+                <label className="form-label">{t('moNotesLbl')}</label>
                 <textarea
                   name="notes"
                   className="form-control"
                   value={form.notes}
                   onChange={handleChange}
                   rows={3}
-                  placeholder="Special requests, late arrival, etc."
+                  placeholder={t('notesPlaceholder')}
                   style={{ resize: 'vertical' }}
                 />
               </div>
@@ -407,10 +407,10 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
           {/* Footer */}
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose} disabled={submitting}>
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Creating…' : 'Create Booking'}
+              {submitting ? t('creating') : t('createBooking')}
             </button>
           </div>
         </form>

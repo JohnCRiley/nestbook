@@ -157,8 +157,8 @@ export default function Sidebar() {
             <button
               className="sidebar-tray-prop-btn"
               onClick={() => setTabletExpanded((v) => !v)}
-              data-tooltip="Properties"
-              title="Switch property"
+              data-tooltip={t('propertiesBtn')}
+              title={t('propertiesBtn')}
             >
               <IconBuildings />
             </button>
@@ -190,7 +190,7 @@ export default function Sidebar() {
                   ))}
                   {properties.length < 5 && (
                     <NavLink to="/settings" className="property-add-link">
-                      + Add property
+                      {t('addProperty')}
                     </NavLink>
                   )}
                 </div>
@@ -205,24 +205,24 @@ export default function Sidebar() {
 
           {/* Fullscreen controls */}
           {!isFullscreen ? (
-            <button className="sidebar-util-btn" onClick={enterFullscreen} title="Enter fullscreen">
-              ⛶ Enter fullscreen
+            <button className="sidebar-util-btn" onClick={enterFullscreen} title={t('enterFullscreen')}>
+              ⛶ {t('enterFullscreen')}
             </button>
           ) : (
-            <button className="sidebar-util-btn sidebar-util-btn--subtle" onClick={exitFullscreen} title="Exit fullscreen">
-              ✕ Exit fullscreen
+            <button className="sidebar-util-btn sidebar-util-btn--subtle" onClick={exitFullscreen} title={t('exitFullscreen')}>
+              ✕ {t('exitFullscreen')}
             </button>
           )}
 
           {/* Install prompt */}
           {canInstall && (
             <button className="sidebar-util-btn sidebar-util-btn--subtle" onClick={triggerInstall}>
-              ↓ Install NestBook app
+              {t('installApp')}
             </button>
           )}
 
           <button className="sidebar-util-btn" onClick={() => setShowChangePassword(true)}>
-            Change password
+            {t('changePassword')}
           </button>
 
           {!isReceptionKiosk && (

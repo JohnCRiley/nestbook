@@ -3,7 +3,7 @@ import { initials, phoneFlag, phoneCountry, fmtDate, fmtPrice } from '../../util
 import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { useLocale } from '../../i18n/LocaleContext.jsx';
+import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
 /**
  * Slide-in panel showing full guest details, booking history, and an edit form.
@@ -71,6 +71,7 @@ function PanelHeader({ guest, onClose }) {
 
 function ViewMode({ guest, bookings, onEdit }) {
   const { currencySymbol } = useLocale();
+  const t = useT();
   const sorted = [...bookings].sort((a, b) => (b.check_in_date > a.check_in_date ? 1 : -1));
   const totalSpend = bookings.reduce((s, b) => s + (b.total_price || 0), 0);
 
@@ -78,27 +79,27 @@ function ViewMode({ guest, bookings, onEdit }) {
     <>
       {/* Contact details */}
       <div className="panel-section">
-        <div className="panel-section-title">Contact</div>
-        <PanelRow label="Email" value={guest.email  || '—'} />
-        <PanelRow label="Phone" value={guest.phone  || '—'} />
-        {guest.notes && <PanelRow label="Notes" value={guest.notes} />}
+        <div className="panel-section-title">{t('sectionContact')}</div>
+        <PanelRow label={t('labelEmail')} value={guest.email  || '—'} />
+        <PanelRow label={t('labelPhone')} value={guest.phone  || '—'} />
+        {guest.notes && <PanelRow label={t('sectionNotes')} value={guest.notes} />}
       </div>
 
       {/* Stay summary */}
       <div className="panel-section">
-        <div className="panel-section-title">Stay Summary</div>
+        <div className="panel-section-title">{t('sectionStaySummary')}</div>
         <div className="panel-price-callout">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div className="panel-price-main">{fmtPrice(totalSpend, currencySymbol)}</div>
-              <div className="panel-price-detail">total across all bookings</div>
+              <div className="panel-price-detail">{t('totalAllBookings')}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--accent-dark)' }}>
                 {bookings.length}
               </div>
               <div style={{ fontSize: '0.78rem', opacity: 0.75 }}>
-                {bookings.length === 1 ? 'booking' : 'bookings'}
+                {t('bookingWord')(bookings.length).replace(/^\d+\s*/, '')}
               </div>
             </div>
           </div>
@@ -107,9 +108,9 @@ function ViewMode({ guest, bookings, onEdit }) {
 
       {/* Booking history */}
       <div className="panel-section">
-        <div className="panel-section-title">Booking History</div>
+        <div className="panel-section-title">{t('sectionBookingHistory')}</div>
         {sorted.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>No bookings yet</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{t('noBookingsYet')}</div>
         ) : (
           sorted.map((b) => <HistoryRow key={b.id} booking={b} />)
         )}
@@ -117,7 +118,7 @@ function ViewMode({ guest, bookings, onEdit }) {
 
       {/* Edit action */}
       <div className="panel-actions">
-        <button className="btn-panel-primary" onClick={onEdit}>Edit Guest Details</button>
+        <button className="btn-panel-primary" onClick={onEdit}>{t('editGuestDetails')}</button>
       </div>
     </>
   );
@@ -126,6 +127,7 @@ function ViewMode({ guest, bookings, onEdit }) {
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
 function EditMode({ guest, onCancel, onSaved }) {
+  const t = useT();
   const [form, setForm] = useState({
     first_name: guest.first_name ?? '',
     last_name:  guest.last_name  ?? '',
@@ -142,7 +144,7 @@ function EditMode({ guest, onCancel, onSaved }) {
 
   const handleSave = async () => {
     if (!form.first_name.trim() || !form.last_name.trim()) {
-      setError('First and last name are required.');
+      setError(t('nameRequired'));
       return;
     }
     setSaving(true);
@@ -165,7 +167,7 @@ function EditMode({ guest, onCancel, onSaved }) {
   return (
     <>
       <div className="panel-section">
-        <div className="panel-section-title">Edit Guest Details</div>
+        <div className="panel-section-title">{t('editGuestDetails')}</div>
 
         {error && (
           <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>
@@ -173,13 +175,13 @@ function EditMode({ guest, onCancel, onSaved }) {
 
         <div className="panel-edit-form">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label="First Name" name="first_name" value={form.first_name} onChange={handleChange} />
-            <Field label="Last Name"  name="last_name"  value={form.last_name}  onChange={handleChange} />
+            <Field label={t('firstName')} name="first_name" value={form.first_name} onChange={handleChange} />
+            <Field label={t('lastName')}  name="last_name"  value={form.last_name}  onChange={handleChange} />
           </div>
-          <Field label="Email" name="email" value={form.email} onChange={handleChange} type="email" />
-          <Field label="Phone" name="phone" value={form.phone} onChange={handleChange} type="tel" />
+          <Field label={t('labelEmail')} name="email" value={form.email} onChange={handleChange} type="email" />
+          <Field label={t('labelPhone')} name="phone" value={form.phone} onChange={handleChange} type="tel" />
           <div className="panel-field">
-            <label className="panel-field-label">Notes</label>
+            <label className="panel-field-label">{t('sectionNotes')}</label>
             <textarea
               name="notes"
               className="panel-field-input panel-field-textarea"
@@ -192,11 +194,11 @@ function EditMode({ guest, onCancel, onSaved }) {
 
       <div className="panel-actions">
         <button className="btn-panel-primary" onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? t('saving') : t('saveChanges')}
         </button>
         <button className="btn-secondary" onClick={onCancel} disabled={saving}
           style={{ border: '1.5px solid var(--border)' }}>
-          Cancel
+          {t('cancel')}
         </button>
       </div>
     </>
@@ -207,6 +209,7 @@ function EditMode({ guest, onCancel, onSaved }) {
 
 function HistoryRow({ booking: b }) {
   const { currencySymbol } = useLocale();
+  const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   return (
     <div className="history-row">
@@ -216,7 +219,7 @@ function HistoryRow({ booking: b }) {
       <div className="history-meta">
         <span>{b.room_name ?? `Room #${b.room_id}`}</span>
         <span>·</span>
-        <span>{nights} {nights === 1 ? 'night' : 'nights'}</span>
+        <span>{t('nightWord')(nights)}</span>
         <span>·</span>
         <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
           {BADGE_LABEL[b.status] ?? b.status}

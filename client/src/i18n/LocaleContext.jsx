@@ -42,6 +42,12 @@ export function LocaleProvider({ children }) {
     setProperties((prev) => [...prev, newProp]);
   }
 
+  // Called after saving an existing property in Settings (e.g. locale/name change).
+  // Keeps the properties list in sync so switching back to this property uses the updated data.
+  function updatePropertyInList(updatedProp) {
+    setProperties((prev) => prev.map((p) => (p.id === updatedProp.id ? updatedProp : p)));
+  }
+
   // Called after successfully deleting a property in Settings.
   // Removes it from the list; if it was active, switches to the first remaining property.
   function removePropertyFromList(deletedId, remaining) {
@@ -79,6 +85,7 @@ export function LocaleProvider({ children }) {
       properties,
       switchProperty,
       addPropertyToList,
+      updatePropertyInList,
       removePropertyFromList,
       currency,
       currencySymbol,

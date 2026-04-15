@@ -1,6 +1,6 @@
 import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween } from '../../utils/format.js';
-import { useLocale } from '../../i18n/LocaleContext.jsx';
+import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
 /**
  * Slide-in panel showing full details for a selected booking.
@@ -8,6 +8,7 @@ import { useLocale } from '../../i18n/LocaleContext.jsx';
  */
 export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEdit }) {
   const { fmtCurrency } = useLocale();
+  const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
 
@@ -38,35 +39,35 @@ export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEd
 
             {/* Guest contact */}
             <div className="panel-section">
-              <div className="panel-section-title">Guest</div>
-              <PanelRow label="Name"  value={`${b.guest_first_name} ${b.guest_last_name}`} />
-              <PanelRow label="Email" value={b.guest_email  ?? '—'} />
-              <PanelRow label="Phone" value={b.guest_phone  ?? '—'} />
+              <div className="panel-section-title">{t('sectionGuest')}</div>
+              <PanelRow label={t('labelName')}  value={`${b.guest_first_name} ${b.guest_last_name}`} />
+              <PanelRow label={t('labelEmail')} value={b.guest_email  ?? '—'} />
+              <PanelRow label={t('labelPhone')} value={b.guest_phone  ?? '—'} />
             </div>
 
             {/* Booking details */}
             <div className="panel-section">
-              <div className="panel-section-title">Booking</div>
-              <PanelRow label="Room"      value={`${b.room_name ?? '—'} (${b.room_type ?? ''})`} />
-              <PanelRow label="Check-in"  value={formatDateMedium(b.check_in_date)} />
-              <PanelRow label="Check-out" value={formatDateMedium(b.check_out_date)} />
-              <PanelRow label="Duration"  value={`${nights} ${nights === 1 ? 'night' : 'nights'}`} />
-              <PanelRow label="Guests"    value={`${b.num_guests} ${b.num_guests === 1 ? 'guest' : 'guests'}`} />
-              <PanelRow label="Source"    value={SOURCE_LABELS[b.source] ?? b.source} />
-              <PanelRow label="Created"   value={b.created_at ? formatDateMedium(b.created_at.slice(0, 10)) : '—'} />
+              <div className="panel-section-title">{t('sectionBooking')}</div>
+              <PanelRow label={t('labelRoom')}     value={`${b.room_name ?? '—'} (${b.room_type ?? ''})`} />
+              <PanelRow label={t('moCinLbl')}      value={formatDateMedium(b.check_in_date)} />
+              <PanelRow label={t('moCoutLbl')}     value={formatDateMedium(b.check_out_date)} />
+              <PanelRow label={t('labelDuration')} value={t('nightWord')(nights)} />
+              <PanelRow label={t('labelGuests')}   value={t('guestWord')(b.num_guests)} />
+              <PanelRow label={t('labelSource')}   value={SOURCE_LABELS[b.source] ?? b.source} />
+              <PanelRow label={t('labelCreated')}  value={b.created_at ? formatDateMedium(b.created_at.slice(0, 10)) : '—'} />
             </div>
 
             {/* Notes */}
             {b.notes && (
               <div className="panel-section">
-                <div className="panel-section-title">Notes</div>
+                <div className="panel-section-title">{t('sectionNotes')}</div>
                 <div className="panel-notes">{b.notes}</div>
               </div>
             )}
 
             {/* Pricing */}
             <div className="panel-section">
-              <div className="panel-section-title">Pricing</div>
+              <div className="panel-section-title">{t('sectionPricing')}</div>
               <div className="panel-price-callout">
                 <div className="panel-price-main">{fmtCurrency(b.total_price)}</div>
                 {perNight && (
@@ -105,6 +106,7 @@ function PanelRow({ label, value }) {
 }
 
 function StatusActions({ status, bookingId, onStatusUpdate, onEdit }) {
+  const t = useT();
   // Show contextual action buttons based on current booking status.
   if (status === 'arriving') {
     return (
@@ -113,11 +115,11 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit }) {
           className="btn-panel-primary"
           onClick={() => onStatusUpdate(bookingId, 'checked_out')}
         >
-          Mark as Checked Out
+          {t('markCheckedOut')}
         </button>
         {onEdit && (
           <button className="btn-panel-secondary" onClick={onEdit}>
-            Edit booking →
+            {t('editBookingLink')}
           </button>
         )}
       </div>
@@ -131,21 +133,21 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit }) {
           className="btn-panel-primary"
           onClick={() => onStatusUpdate(bookingId, 'arriving')}
         >
-          Check In Guest
+          {t('checkInGuest')}
         </button>
         <button
           className="btn-panel-danger"
           onClick={() => {
-            if (window.confirm('Cancel this booking?')) {
+            if (window.confirm(t('cancelBookingConfirm'))) {
               onStatusUpdate(bookingId, 'cancelled');
             }
           }}
         >
-          Cancel Booking
+          {t('cancelBookingBtn')}
         </button>
         {onEdit && (
           <button className="btn-panel-secondary" onClick={onEdit}>
-            Edit booking →
+            {t('editBookingLink')}
           </button>
         )}
       </div>
@@ -157,7 +159,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit }) {
     return (
       <div className="panel-actions">
         <button className="btn-panel-secondary" onClick={onEdit}>
-          Edit booking →
+          {t('editBookingLink')}
         </button>
       </div>
     );

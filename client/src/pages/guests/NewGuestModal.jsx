@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { useT } from '../../i18n/LocaleContext.jsx';
 
 const EMPTY = { first_name: '', last_name: '', email: '', phone: '', notes: '' };
 
 export default function NewGuestModal({ onClose, onSuccess }) {
+  const t = useT();
   const [form,       setForm]       = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
@@ -14,7 +16,7 @@ export default function NewGuestModal({ onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.first_name.trim() || !form.last_name.trim()) {
-      setError('First and last name are required.');
+      setError(t('nameRequired'));
       return;
     }
     setSubmitting(true);
@@ -51,7 +53,7 @@ export default function NewGuestModal({ onClose, onSuccess }) {
       <div className="modal" role="dialog" aria-label="New guest">
 
         <div className="modal-header">
-          <h2>New Guest</h2>
+          <h2>{t('newGuestTitle')}</h2>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
 
@@ -61,37 +63,37 @@ export default function NewGuestModal({ onClose, onSuccess }) {
 
             <div className="form-grid">
               <div className="form-group">
-                <label className="form-label">First Name *</label>
+                <label className="form-label">{t('firstName')} *</label>
                 <input name="first_name" className="form-control"
                   value={form.first_name} onChange={handleChange} required autoFocus />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Last Name *</label>
+                <label className="form-label">{t('lastName')} *</label>
                 <input name="last_name" className="form-control"
                   value={form.last_name} onChange={handleChange} required />
               </div>
 
               <div className="form-group span-2">
-                <label className="form-label">Email</label>
+                <label className="form-label">{t('moEmailLbl')}</label>
                 <input name="email" type="email" className="form-control"
                   value={form.email} onChange={handleChange}
                   placeholder="guest@example.com" />
               </div>
 
               <div className="form-group span-2">
-                <label className="form-label">Phone</label>
+                <label className="form-label">{t('moPhoneLbl')}</label>
                 <input name="phone" type="tel" className="form-control"
                   value={form.phone} onChange={handleChange}
                   placeholder="+33 6 12 34 56 78" />
-                <span className="form-hint">Include country code for flag detection</span>
+                <span className="form-hint">{t('phoneHint')}</span>
               </div>
 
               <div className="form-group span-2">
-                <label className="form-label">Notes</label>
+                <label className="form-label">{t('sectionNotes')}</label>
                 <textarea name="notes" className="form-control"
                   value={form.notes} onChange={handleChange}
-                  rows={3} placeholder="Dietary requirements, preferences, VIP…"
+                  rows={3} placeholder={t('notesPlaceholderGuest')}
                   style={{ resize: 'vertical' }} />
               </div>
             </div>
@@ -99,10 +101,10 @@ export default function NewGuestModal({ onClose, onSuccess }) {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose} disabled={submitting}>
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Adding…' : 'Add Guest'}
+              {submitting ? t('adding') : t('addGuest')}
             </button>
           </div>
         </form>
