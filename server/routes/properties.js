@@ -151,19 +151,65 @@ propertiesRouter.put('/:id', (req, res) => {
 });
 
 // ── DELETE /api/properties/:id ────────────────────────────────────────────────
-// Cannot delete your only property.
+// Owners only. Cannot delete your last property.
+// Deletes in FK order: bookings → rooms → property.
+// Nullifies staff property_id refs before deletion.
+// Returns the updated properties list.
 propertiesRouter.delete('/:id', (req, res) => {
   try {
-    if (!canAccess(req.user.userId, req.user.role, req.params.id)) {
+    const pid = Number(req.params.id);
+
+    // Only owners can delete properties
+    if (req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'Only account owners can remove properties.' });
+    }
+
+    if (!canAccess(req.user.userId, req.user.role, pid)) {
       return res.status(404).json({ error: 'Property not found.' });
     }
+
+    // Prevent deleting last property
     const count = db.prepare('SELECT COUNT(*) as n FROM properties WHERE owner_id = ?')
       .get(req.user.userId).n;
     if (count <= 1) {
-      return res.status(400).json({ error: 'Cannot delete your only property.' });
+      return res.status(400).json({
+        error: 'You cannot delete your only property. If you want to close your account, use the Manage Subscription option in settings.',
+      });
     }
-    db.prepare('DELETE FROM properties WHERE id = ?').run(req.params.id);
-    res.status(204).end();
+
+    // Delete in FK order inside a transaction
+    db.transaction(() => {
+      // Nullify staff users who are assigned to this property
+      db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(pid);
+
+      // Delete bookings for all rooms in this property
+      const roomIds = db.prepare('SELECT id FROM rooms WHERE property_id = ?').all(pid).map((r) => r.id);
+      if (roomIds.length) {
+        const placeholders = roomIds.map(() => '?').join(',');
+        db.prepare(`DELETE FROM bookings WHERE room_id IN (${placeholders})`).run(...roomIds);
+      }
+
+      // Delete rooms
+      db.prepare('DELETE FROM rooms WHERE property_id = ?').run(pid);
+
+      // Delete the property itself
+      db.prepare('DELETE FROM properties WHERE id = ?').run(pid);
+    })();
+
+    // If this was the owner's active property, switch them to another one
+    const owner = db.prepare('SELECT property_id FROM users WHERE id = ?').get(req.user.userId);
+    if (Number(owner?.property_id) === pid) {
+      const next = db.prepare('SELECT id FROM properties WHERE owner_id = ? ORDER BY id LIMIT 1')
+        .get(req.user.userId);
+      if (next) {
+        db.prepare('UPDATE users SET property_id = ? WHERE id = ?').run(next.id, req.user.userId);
+      }
+    }
+
+    // Return the remaining properties list
+    const remaining = db.prepare('SELECT * FROM properties WHERE owner_id = ? ORDER BY id')
+      .all(req.user.userId);
+    res.json({ deleted_id: pid, properties: remaining });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

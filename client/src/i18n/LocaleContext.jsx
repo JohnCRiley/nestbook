@@ -42,6 +42,19 @@ export function LocaleProvider({ children }) {
     setProperties((prev) => [...prev, newProp]);
   }
 
+  // Called after successfully deleting a property in Settings.
+  // Removes it from the list; if it was active, switches to the first remaining property.
+  function removePropertyFromList(deletedId, remaining) {
+    setProperties(remaining);
+    if (property?.id === deletedId) {
+      const next = remaining[0] ?? null;
+      if (next) {
+        setProperty(next);
+        localStorage.setItem('nb_active_property', String(next.id));
+      }
+    }
+  }
+
   // Derive locale directly from property so calling setProperty() anywhere
   // (e.g. after saving Settings) updates the language instantly without a refresh.
   const locale = property?.locale ?? 'en';
@@ -66,6 +79,7 @@ export function LocaleProvider({ children }) {
       properties,
       switchProperty,
       addPropertyToList,
+      removePropertyFromList,
       currency,
       currencySymbol,
       fmtCurrency,

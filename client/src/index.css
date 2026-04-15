@@ -3234,6 +3234,25 @@ a { text-decoration: none; }
 /* Keep old class as no-op so any lingering references don't break layout */
 .delete-account-toggle { display: none; }
 
+/* ── Remove property button (Settings — property list row) ─────────────────── */
+.prop-remove-btn {
+  background: transparent;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.prop-remove-btn:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
 /* ── Dashboard info / error box ─────────────────────────────────────────── */
 .db-info-box {
   background: var(--light-green);

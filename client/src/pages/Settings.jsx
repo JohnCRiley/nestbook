@@ -39,7 +39,7 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
-  const { setProperty: setContextProperty, properties, addPropertyToList, property: activeProperty } = useLocale();
+  const { setProperty: setContextProperty, properties, addPropertyToList, removePropertyFromList, property: activeProperty } = useLocale();
   const { user, logout } = useAuth();
   const plan = usePlan();
   const { kiosk, setKioskMode } = useKiosk();
@@ -87,9 +87,10 @@ export default function Settings() {
   const [sub,               setSub]               = useState(null);   // subscription info
   const [cancelling,        setCancelling]        = useState(false);
   const [showCancelModal,   setShowCancelModal]   = useState(false);
-  const [showAddProperty,   setShowAddProperty]   = useState(false);
-  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
-  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [showAddProperty,      setShowAddProperty]      = useState(false);
+  const [showDeleteAccount,    setShowDeleteAccount]    = useState(false);
+  const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
+  const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
 
   // Feature toggles live in local state only (no backend yet — persist later)
   const [features, setFeatures] = useState(() =>
@@ -411,17 +412,29 @@ export default function Settings() {
                     <div key={p.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '10px 0', borderBottom: '1px solid #f1f5f9',
+                      gap: 12,
                     }}>
-                      <div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</div>
                         <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'capitalize' }}>{p.type}</div>
                       </div>
-                      {p.id === activeProperty?.id && (
-                        <span style={{
-                          fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7',
-                          color: '#166534', padding: '2px 10px', borderRadius: 12,
-                        }}>Active</span>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        {p.id === activeProperty?.id && (
+                          <span style={{
+                            fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7',
+                            color: '#166534', padding: '2px 10px', borderRadius: 12,
+                          }}>Active</span>
+                        )}
+                        {properties.length > 1 && (
+                          <button
+                            className="prop-remove-btn"
+                            onClick={() => setRemovePropertyTarget(p)}
+                            title={`Remove ${p.name}`}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -572,6 +585,19 @@ export default function Settings() {
 
       {toast && (
         <div className={`toast toast-${toast.type}`}>{toast.msg}</div>
+      )}
+
+      {removePropertyTarget && (
+        <RemovePropertyModal
+          property={removePropertyTarget}
+          onClose={() => setRemovePropertyTarget(null)}
+          onSuccess={(deletedId, remaining) => {
+            removePropertyFromList(deletedId, remaining);
+            setRemovePropertyTarget(null);
+            showToast(`${removePropertyTarget.name} has been removed.`);
+          }}
+          onError={(msg) => showToast(msg, 'error')}
+        />
       )}
     </>
   );
@@ -786,6 +812,80 @@ function CancelSubscriptionModal({ plan, renewalDate, onClose, onConfirm }) {
               onClick={onConfirm}
             >
               Cancel subscription
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── RemovePropertyModal ───────────────────────────────────────────────────────
+
+function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
+  const [confirmText, setConfirmText] = useState('');
+  const [loading,     setLoading]     = useState(false);
+
+  const confirmed = confirmText.trim() === prop.name.trim();
+
+  async function handleRemove() {
+    if (!confirmed) return;
+    setLoading(true);
+    try {
+      const res  = await apiFetch(`/api/properties/${prop.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        onSuccess(data.deleted_id, data.properties);
+      } else {
+        onError(data.error || 'Could not remove property.');
+        setLoading(false);
+      }
+    } catch {
+      onError('Network error.');
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" role="dialog" style={{ maxWidth: 460 }}>
+        <div className="modal-header">
+          <h2>Remove property</h2>
+          <button className="modal-close-btn" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div style={{
+            background: '#fef2f2', border: '1px solid #fecaca',
+            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
+            fontSize: '0.875rem', color: '#991b1b', lineHeight: 1.55,
+          }}>
+            <strong>Are you sure you want to remove {prop.name}?</strong>
+            {' '}All rooms, bookings and guest records for this property will be permanently deleted.
+            This <strong>cannot be undone</strong>.
+          </div>
+          <p style={{ fontSize: '0.875rem', color: '#374151', marginBottom: 8 }}>
+            Type <strong>{prop.name}</strong> to confirm:
+          </p>
+          <input
+            className="form-control"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={prop.name}
+            autoFocus
+          />
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+            <button
+              style={{
+                background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
+                padding: '8px 18px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
+                opacity: confirmed ? 1 : 0.4,
+                transition: 'opacity 0.15s',
+              }}
+              onClick={handleRemove}
+              disabled={loading || !confirmed}
+            >
+              {loading ? 'Removing…' : 'Remove property'}
             </button>
           </div>
         </div>
