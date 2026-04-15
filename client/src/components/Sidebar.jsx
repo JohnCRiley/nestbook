@@ -46,9 +46,14 @@ export default function Sidebar() {
   // Close mobile menu and tablet expanded on route change
   useEffect(() => { setMobileOpen(false); setTabletExpanded(false); }, [location.pathname]);
 
-  // Close mobile menu on Escape
+  // Close mobile menu and tablet expanded on Escape
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') setMobileOpen(false); };
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        setMobileOpen(false);
+        setTabletExpanded(false);
+      }
+    };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);

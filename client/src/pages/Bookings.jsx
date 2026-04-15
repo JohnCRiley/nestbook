@@ -220,6 +220,9 @@ export default function Bookings() {
         <NewBookingModal
           rooms={rooms}
           guests={guests}
+          initialValues={location.state?.prefillGuestId
+            ? { guest_id: String(location.state.prefillGuestId) }
+            : undefined}
           onClose={() => setShowNewModal(false)}
           onSuccess={handleNewBookingSuccess}
         />

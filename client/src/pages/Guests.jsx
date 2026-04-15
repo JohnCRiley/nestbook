@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { initials, phoneFlag, phoneCountry } from '../utils/guestHelpers.js';
 import GuestPanel    from './guests/GuestPanel.jsx';
 import NewGuestModal from './guests/NewGuestModal.jsx';
@@ -10,13 +11,16 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 export default function Guests() {
   const t = useT();
   const { property } = useLocale();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [guests,          setGuests]          = useState([]);
   const [bookings,        setBookings]        = useState([]);
   const [loading,         setLoading]         = useState(true);
   const [search,          setSearch]          = useState('');
   const [selectedGuest,   setSelectedGuest]   = useState(null);
-  const [showNewModal,    setShowNewModal]     = useState(false);
+  const [showNewModal,    setShowNewModal]     = useState(() => searchParams.get('newguest') === 'true');
+  const [newGuestCreated, setNewGuestCreated] = useState(null); // triggers "next step" modal
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -83,7 +87,7 @@ export default function Guests() {
   const handleNewGuestSuccess = (created) => {
     setGuests((prev) => [...prev, created]);
     setShowNewModal(false);
-    setSelectedGuest(created);  // open the new guest's panel immediately
+    setNewGuestCreated(created); // show "what next?" modal instead of opening detail panel
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -164,6 +168,44 @@ export default function Guests() {
           onClose={() => setShowNewModal(false)}
           onSuccess={handleNewGuestSuccess}
         />
+      )}
+
+      {/* ── Post-save "what next?" modal ──────────────────────────────────── */}
+      {newGuestCreated && (
+        <div className="modal-overlay">
+          <div className="modal" role="dialog" aria-label="Guest saved" style={{ maxWidth: 420 }}>
+            <div className="modal-header">
+              <h2>Guest added</h2>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center', padding: '28px 32px' }}>
+              <div style={{ fontSize: '2rem', marginBottom: 12 }}>✓</div>
+              <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 6 }}>
+                {newGuestCreated.first_name} {newGuestCreated.last_name} has been saved.
+              </div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 24 }}>
+                What would you like to do next?
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
+                  onClick={() => navigate('/bookings', {
+                    state: { openModal: true, prefillGuestId: newGuestCreated.id },
+                  })}
+                >
+                  Create a booking for this guest
+                </button>
+                <button
+                  className="btn-secondary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
+                  onClick={() => { setNewGuestCreated(null); navigate('/dashboard'); }}
+                >
+                  Return to dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

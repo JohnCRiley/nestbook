@@ -155,7 +155,7 @@ export default function Dashboard() {
             </button>
             <button
               className="btn-primary"
-              onClick={() => navigate('/guests')}
+              onClick={() => navigate('/guests?newguest=true')}
               title="Add a new guest first, then create a booking"
             >
               + New Guest

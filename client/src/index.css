@@ -3043,6 +3043,8 @@ a { text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow: hidden;
+  max-width: 200px;
 }
 
 .property-switch-item {
@@ -3058,6 +3060,10 @@ a { text-decoration: none; }
   cursor: pointer;
   text-align: left;
   transition: background 0.15s, color 0.15s;
+  width: 100%;
+  min-width: 0;
+  max-width: 200px;
+  box-sizing: border-box;
 }
 
 .property-switch-item:hover {
@@ -3279,6 +3285,24 @@ a { text-decoration: none; }
 }
 .db-room-popover-item:hover {
   background: var(--page-bg);
+}
+
+/* ── "+ New Guest" button label in booking modal ────────────────────────── */
+.btn-new-guest-inline {
+  background: var(--light-green);
+  color: var(--accent-dark);
+  border: 1px solid rgba(47,119,27,0.25);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.btn-new-guest-inline:hover {
+  background: #cce8bc;
 }
 
 /* ── Inline new guest form (inside NewBookingModal) ─────────────────────── */

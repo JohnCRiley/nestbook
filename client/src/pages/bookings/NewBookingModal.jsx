@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale } from '../../i18n/LocaleContext.jsx';
@@ -33,6 +34,7 @@ const EMPTY_GUEST = { first_name: '', last_name: '', email: '', phone: '' };
  */
 export default function NewBookingModal({ rooms, guests: initialGuests, onClose, onSuccess, initialValues }) {
   const { currencySymbol, property } = useLocale();
+  const navigate = useNavigate();
   const [form,       setForm]       = useState({ ...EMPTY_FORM, ...initialValues });
   const [guests,     setGuests]     = useState(initialGuests);
   const [submitting, setSubmitting] = useState(false);
@@ -194,7 +196,17 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
 
               {/* Guest */}
               <div className="form-group span-2">
-                <label className="form-label">Guest *</label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <label className="form-label" style={{ margin: 0 }}>Guest *</label>
+                  <button
+                    type="button"
+                    className="btn-new-guest-inline"
+                    onClick={() => navigate('/guests?newguest=true')}
+                    title="Add a new guest first, then return to create the booking"
+                  >
+                    + New Guest
+                  </button>
+                </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <select
                     name="guest_id"
@@ -212,7 +224,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                     style={{ flex: 1 }}
                   >
                     <option value="">Select a guest…</option>
-                    <option value="__new__">+ Add new guest…</option>
+                    <option value="__new__">+ Add new guest inline…</option>
                     {guests.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.first_name} {g.last_name}
