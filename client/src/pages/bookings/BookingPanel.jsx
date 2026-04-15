@@ -6,7 +6,7 @@ import { useLocale } from '../../i18n/LocaleContext.jsx';
  * Slide-in panel showing full details for a selected booking.
  * Appears from the right; closed by clicking the backdrop or the × button.
  */
-export default function BookingPanel({ booking: b, onClose, onStatusUpdate }) {
+export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEdit }) {
   const { fmtCurrency } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
@@ -85,6 +85,7 @@ export default function BookingPanel({ booking: b, onClose, onStatusUpdate }) {
           status={b.status}
           bookingId={b.id}
           onStatusUpdate={onStatusUpdate}
+          onEdit={onEdit}
         />
 
       </aside>
@@ -103,7 +104,7 @@ function PanelRow({ label, value }) {
   );
 }
 
-function StatusActions({ status, bookingId, onStatusUpdate }) {
+function StatusActions({ status, bookingId, onStatusUpdate, onEdit }) {
   // Show contextual action buttons based on current booking status.
   if (status === 'arriving') {
     return (
@@ -114,6 +115,11 @@ function StatusActions({ status, bookingId, onStatusUpdate }) {
         >
           Mark as Checked Out
         </button>
+        {onEdit && (
+          <button className="btn-panel-secondary" onClick={onEdit}>
+            Edit booking →
+          </button>
+        )}
       </div>
     );
   }
@@ -137,10 +143,25 @@ function StatusActions({ status, bookingId, onStatusUpdate }) {
         >
           Cancel Booking
         </button>
+        {onEdit && (
+          <button className="btn-panel-secondary" onClick={onEdit}>
+            Edit booking →
+          </button>
+        )}
       </div>
     );
   }
 
-  // checked_out or cancelled — no further actions
+  // checked_out or cancelled — show edit link if provided
+  if (onEdit) {
+    return (
+      <div className="panel-actions">
+        <button className="btn-panel-secondary" onClick={onEdit}>
+          Edit booking →
+        </button>
+      </div>
+    );
+  }
+
   return null;
 }

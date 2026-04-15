@@ -9,6 +9,8 @@ import {
   nightsBetween,
   addDays,
 } from '../utils/format.js';
+import BookingPanel from './bookings/BookingPanel.jsx';
+import NewBookingModal from './bookings/NewBookingModal.jsx';
 
 // ── Badge config (duplicated from Bookings so Dashboard has no cross-dep) ─────
 const BADGE_CLASS = {
@@ -26,12 +28,15 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [bookings, setBookings] = useState([]);
-  const [rooms,    setRooms]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState(null);
-  const [upgradeToast, setUpgradeToast] = useState(false);
+  const [bookings,       setBookings]       = useState([]);
+  const [rooms,          setRooms]          = useState([]);
+  const [guests,         setGuests]         = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [error,          setError]          = useState(null);
+  const [upgradeToast,   setUpgradeToast]   = useState(false);
   const [showAvailablePopover, setShowAvailablePopover] = useState(false);
+  const [selectedBooking,      setSelectedBooking]      = useState(null);
+  const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null); // room object for new booking modal
 
   const today = localToday();
 
@@ -53,7 +58,7 @@ export default function Dashboard() {
     setTimeout(() => setUpgradeToast(false), 5000);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Fetch bookings + rooms ─────────────────────────────────────────────────
+  // ── Fetch bookings + rooms + guests ───────────────────────────────────────
   useEffect(() => {
     if (!property?.id) {
       const timer = setTimeout(() => setLoading(false), 5000);
@@ -62,10 +67,12 @@ export default function Dashboard() {
     Promise.all([
       apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/guests?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
     ])
-      .then(([b, r]) => {
+      .then(([b, r, g]) => {
         setBookings(Array.isArray(b) ? b : []);
         setRooms(Array.isArray(r) ? r : []);
+        setGuests(Array.isArray(g) ? g : []);
         setLoading(false);
       })
       .catch((err) => { setError(err.message); setLoading(false); });
@@ -113,6 +120,26 @@ export default function Dashboard() {
     checked_out: t('checkedOut'),
     cancelled:   t('cancelled'),
   };
+
+  // ── Status update handler (mirrors Bookings.jsx pattern) ──────────────────
+  function handleStatusUpdate(bookingId, newStatus) {
+    const existing = bookings.find((b) => b.id === bookingId);
+    if (!existing) return;
+
+    const updated = { ...existing, status: newStatus };
+
+    apiFetch(`/api/bookings/${bookingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    })
+      .then((r) => r.json())
+      .then((saved) => {
+        setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
+        setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+      })
+      .catch(() => {});
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -188,7 +215,24 @@ export default function Dashboard() {
               <div className="db-room-popover" onClick={(e) => e.stopPropagation()}>
                 <div className="db-room-popover-title">Available rooms tonight</div>
                 {availableRooms.map((r) => (
-                  <div key={r.id} className="db-room-popover-item">{r.name}</div>
+                  <div key={r.id} className="db-room-popover-item">
+                    <div className="db-room-popover-info">
+                      <span className="db-room-popover-name">{r.name}</span>
+                      <span className="db-room-popover-meta">
+                        {r.type}{r.capacity ? ` · ${r.capacity} guests` : ''}
+                      </span>
+                    </div>
+                    <button
+                      className="btn-primary db-room-book-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAvailablePopover(false);
+                        setBookingRoomFilter(r);
+                      }}
+                    >
+                      + New Booking
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -244,6 +288,7 @@ export default function Dashboard() {
                   </span>
                 }
                 nightWord={t('nightWord')}
+                onClick={() => setSelectedBooking(b)}
               />
             ))
           )}
@@ -272,12 +317,40 @@ export default function Dashboard() {
                   </>
                 }
                 nightWord={t('nightWord')}
+                onClick={() => setSelectedBooking(b)}
               />
             ))
           )}
         </div>
 
       </div>
+
+      {/* ── Booking detail panel ────────────────────────────────────────── */}
+      {selectedBooking && (
+        <BookingPanel
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onStatusUpdate={handleStatusUpdate}
+          onEdit={() => {
+            setSelectedBooking(null);
+            navigate('/bookings', { state: { highlightId: selectedBooking.id } });
+          }}
+        />
+      )}
+
+      {/* ── New booking modal (from Available Tonight room) ─────────────── */}
+      {bookingRoomFilter && (
+        <NewBookingModal
+          rooms={rooms}
+          guests={guests}
+          initialValues={{ room_id: String(bookingRoomFilter.id) }}
+          onClose={() => setBookingRoomFilter(null)}
+          onSuccess={(newBooking) => {
+            setBookings((prev) => [...prev, newBooking]);
+            setBookingRoomFilter(null);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -293,10 +366,16 @@ function StatCard({ value, label }) {
   );
 }
 
-function BookingRow({ booking: b, right, nightWord }) {
+function BookingRow({ booking: b, right, nightWord, onClick }) {
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   return (
-    <div className="booking-row">
+    <div
+      className={`booking-row${onClick ? ' booking-row--clickable' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+    >
       <div className="booking-guest">
         <div className="guest-name">{b.guest_first_name} {b.guest_last_name}</div>
         <div className="booking-meta">

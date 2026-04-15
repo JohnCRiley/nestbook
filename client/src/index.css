@@ -493,6 +493,8 @@ a { text-decoration: none; }
 
 .booking-row:last-child { border-bottom: none; }
 .booking-row:hover      { background: #f9fbf8; }
+.booking-row--clickable { cursor: pointer; }
+.booking-row--clickable:hover { background: var(--light-green); }
 
 .booking-guest { flex: 1; min-width: 0; }
 
@@ -961,6 +963,21 @@ a { text-decoration: none; }
   font-family: inherit;
 }
 .btn-panel-danger:hover { background: #fee2e2; }
+
+.btn-panel-secondary {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  font-family: inherit;
+  text-align: center;
+}
+.btn-panel-secondary:hover { background: var(--page-bg); color: var(--text-primary); }
 
 /* ─── New booking modal ──────────────────────────────────────────────────── */
 @keyframes fadeInUp {
@@ -3297,6 +3314,10 @@ a { text-decoration: none; }
 }
 
 .db-room-popover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   font-size: 0.875rem;
   color: var(--text-primary);
   padding: 6px 14px;
@@ -3304,6 +3325,25 @@ a { text-decoration: none; }
 }
 .db-room-popover-item:hover {
   background: var(--page-bg);
+}
+.db-room-popover-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.db-room-popover-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.db-room-popover-meta {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.db-room-book-btn {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  white-space: nowrap;
 }
 
 /* ── "+ New Guest" button label in booking modal ────────────────────────── */
