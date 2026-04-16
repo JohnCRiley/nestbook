@@ -164,7 +164,7 @@ export const LANGS = {
     planStarterName:     'Starter',
     planStarterDesc:     'Everything you need to get started.',
     planStarterCta:      'Your current plan',
-    planStarterFeatures: ['1 property', 'Up to 10 rooms', 'Booking calendar', 'Guest records', 'Basic reporting', 'Email support'],
+    planStarterFeatures: ['1 property', 'Up to 3 rooms', 'Booking calendar', 'Guest records', 'Basic reporting', 'Email support'],
     planProName:         'Pro',
     planProDesc:         'For growing properties that need more.',
     planProCta:          'Upgrade to Pro',
@@ -337,6 +337,9 @@ export const LANGS = {
     checksOut:            'checks out',
     checkoutError:        'Could not start checkout. Please try again.',
     serverConnectError:   'Could not connect to server. Is it running?',
+    amenitiesHint:        'Comma-separated list',
+    roomNameRequired:     'Room name is required.',
+    priceRequired:        'A valid price per night is required.',
   },
 
   fr: {
@@ -497,7 +500,7 @@ export const LANGS = {
     planStarterName:     'Starter',
     planStarterDesc:     'Tout ce dont vous avez besoin pour commencer.',
     planStarterCta:      'Votre formule actuelle',
-    planStarterFeatures: ['1 h\u00e9bergement', "Jusqu\u2019\u00e0 10 chambres", 'Calendrier de r\u00e9servation', 'Fiches clients', 'Rapports de base', 'Assistance par e-mail'],
+    planStarterFeatures: ['1 h\u00e9bergement', "Jusqu\u2019\u00e0 3 chambres", 'Calendrier de r\u00e9servation', 'Fiches clients', 'Rapports de base', 'Assistance par e-mail'],
     planProName:         'Pro',
     planProDesc:         'Pour les h\u00e9bergements en croissance qui ont besoin de plus.',
     planProCta:          'Passer \u00e0 Pro',
@@ -670,6 +673,9 @@ export const LANGS = {
     checksOut:            'part le',
     checkoutError:        'Impossible de démarrer le paiement. Veuillez réessayer.',
     serverConnectError:   'Impossible de se connecter au serveur. Est-il en cours d\'exécution\u00a0?',
+    amenitiesHint:        'Liste séparée par des virgules',
+    roomNameRequired:     'Le nom de la chambre est obligatoire.',
+    priceRequired:        'Un prix par nuit valide est requis.',
   },
 
   es: {
@@ -830,7 +836,7 @@ export const LANGS = {
     planStarterName:     'Starter',
     planStarterDesc:     'Todo lo que necesitas para empezar.',
     planStarterCta:      'Tu plan actual',
-    planStarterFeatures: ['1 alojamiento', 'Hasta 10 habitaciones', 'Calendario de reservas', 'Fichas de hu\u00e9spedes', 'Informes b\u00e1sicos', 'Asistencia por correo'],
+    planStarterFeatures: ['1 alojamiento', 'Hasta 3 habitaciones', 'Calendario de reservas', 'Fichas de hu\u00e9spedes', 'Informes b\u00e1sicos', 'Asistencia por correo'],
     planProName:         'Pro',
     planProDesc:         'Para alojamientos en crecimiento que necesitan m\u00e1s.',
     planProCta:          'Pasarse a Pro',
@@ -1003,6 +1009,9 @@ export const LANGS = {
     checksOut:            'sale el',
     checkoutError:        'No se pudo iniciar el pago. Inténtelo de nuevo.',
     serverConnectError:   'No se puede conectar con el servidor. ¿Está en funcionamiento?',
+    amenitiesHint:        'Lista separada por comas',
+    roomNameRequired:     'El nombre de la habitación es obligatorio.',
+    priceRequired:        'Se requiere un precio por noche válido.',
   },
 
   de: {
@@ -1163,7 +1172,7 @@ export const LANGS = {
     planStarterName:     'Starter',
     planStarterDesc:     'Alles, was Sie f\u00fcr den Einstieg brauchen.',
     planStarterCta:      'Ihr aktueller Plan',
-    planStarterFeatures: ['1 Unterkunft', 'Bis zu 10 Zimmer', 'Buchungskalender', 'G\u00e4stekartei', 'Grundberichte', 'E-Mail-Support'],
+    planStarterFeatures: ['1 Unterkunft', 'Bis zu 3 Zimmer', 'Buchungskalender', 'G\u00e4stekartei', 'Grundberichte', 'E-Mail-Support'],
     planProName:         'Pro',
     planProDesc:         'F\u00fcr wachsende Unterk\u00fcnfte, die mehr ben\u00f6tigen.',
     planProCta:          'Zu Pro wechseln',
@@ -1336,6 +1345,9 @@ export const LANGS = {
     checksOut:            'reist ab am',
     checkoutError:        'Bezahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.',
     serverConnectError:   'Verbindung zum Server nicht möglich. Läuft er?',
+    amenitiesHint:        'Kommagetrennte Liste',
+    roomNameRequired:     'Zimmername ist erforderlich.',
+    priceRequired:        'Ein gültiger Preis pro Nacht ist erforderlich.',
   },
 
   nl: {
@@ -1496,7 +1508,7 @@ export const LANGS = {
     planStarterName:     'Starter',
     planStarterDesc:     'Alles wat u nodig heeft om te beginnen.',
     planStarterCta:      'Uw huidige abonnement',
-    planStarterFeatures: ['1 accommodatie', 'Tot 10 kamers', 'Boekingskalender', 'Gastendossiers', 'Basisrapportage', 'E-mailondersteuning'],
+    planStarterFeatures: ['1 accommodatie', 'Tot 3 kamers', 'Boekingskalender', 'Gastendossiers', 'Basisrapportage', 'E-mailondersteuning'],
     planProName:         'Pro',
     planProDesc:         'Voor groeiende accommodaties die meer nodig hebben.',
     planProCta:          'Upgraden naar Pro',
@@ -1669,5 +1681,8 @@ export const LANGS = {
     checksOut:            'vertrekt op',
     checkoutError:        'Betaling kon niet worden gestart. Probeer het opnieuw.',
     serverConnectError:   'Kan geen verbinding maken met de server. Draait hij?',
+    amenitiesHint:        'Kommagescheiden lijst',
+    roomNameRequired:     'Kamernaam is verplicht.',
+    priceRequired:        'Een geldige prijs per nacht is vereist.',
   },
 };

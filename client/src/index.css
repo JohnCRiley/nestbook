@@ -3349,29 +3349,21 @@ a { text-decoration: none; }
 
 /* ── "+ New Guest" button label in booking modal ────────────────────────── */
 .btn-new-guest-inline {
-  background: var(--light-green);
-  color: var(--accent-dark);
-  border: 1px solid rgba(47,119,27,0.25);
+  background: #1a4710;
+  color: #fff;
+  border: none;
   border-radius: 6px;
-  padding: 3px 10px;
-  font-size: 0.72rem;
+  padding: 8px 16px;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   transition: background 0.12s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .btn-new-guest-inline:hover {
-  background: #cce8bc;
-}
-
-/* ── Inline new guest form (inside NewBookingModal) ─────────────────────── */
-.new-guest-inline {
-  margin-top: 10px;
-  padding: 14px 16px;
-  background: var(--page-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: #245e16;
 }
 
 /* ── Modal mobile override ───────────────────────────────────────────────── */
@@ -3381,13 +3373,4 @@ a { text-decoration: none; }
     max-height: calc(100vh - 60px);
     border-radius: 12px 12px 0 0;
   }
-}
-
-.new-guest-inline-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
 }

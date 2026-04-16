@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { formatAmenity } from './RoomPanel.jsx';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { useLocale } from '../../i18n/LocaleContext.jsx';
+import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
@@ -14,8 +14,12 @@ const EMPTY = {
 const parseAmenities = (str) =>
   (str ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
+/** Capitalise first letter. */
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export default function NewRoomModal({ onClose, onSuccess }) {
   const { currencySymbol, property } = useLocale();
+  const t = useT();
   const [form,       setForm]       = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
@@ -25,9 +29,9 @@ export default function NewRoomModal({ onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError('Room name is required.'); return; }
+    if (!form.name.trim()) { setError(t('roomNameRequired')); return; }
     if (!form.price_per_night || isNaN(Number(form.price_per_night))) {
-      setError('A valid price per night is required.');
+      setError(t('priceRequired'));
       return;
     }
     setSubmitting(true);
@@ -62,10 +66,10 @@ export default function NewRoomModal({ onClose, onSuccess }) {
   return (
     <div className="modal-overlay"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal" role="dialog" aria-label="Add room">
+      <div className="modal" role="dialog" aria-label={t('moRoomTitle')}>
 
         <div className="modal-header">
-          <h2>Add New Room</h2>
+          <h2>{t('moRoomTitle')}</h2>
           <button className="modal-close-btn" onClick={onClose}>✕</button>
         </div>
 
@@ -75,48 +79,48 @@ export default function NewRoomModal({ onClose, onSuccess }) {
 
             <div className="form-grid">
               <div className="form-group span-2">
-                <label className="form-label">Room Name *</label>
+                <label className="form-label">{t('roomNameLabel')} *</label>
                 <input name="name" className="form-control" value={form.name}
                   onChange={handleChange} required autoFocus
                   placeholder="e.g. La Suite Lavande" />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Type</label>
+                <label className="form-label">{t('typeLabel')}</label>
                 <select name="type" className="form-control" value={form.type} onChange={handleChange}>
-                  {ROOM_TYPES.map((t) => (
-                    <option key={t} value={t} style={{ textTransform: 'capitalize' }}>{t}</option>
+                  {ROOM_TYPES.map((rt) => (
+                    <option key={rt} value={rt}>{t(`roomType${capitalize(rt)}`)}</option>
                   ))}
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Status</label>
+                <label className="form-label">{t('status')}</label>
                 <select name="status" className="form-control" value={form.status} onChange={handleChange}>
-                  <option value="available">Available</option>
-                  <option value="maintenance">Maintenance</option>
+                  <option value="available">{t('available')}</option>
+                  <option value="maintenance">{t('maintenance')}</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Price / Night ({currencySymbol}) *</label>
+                <label className="form-label">{t('pricePerNightLabel')} ({currencySymbol}) *</label>
                 <input name="price_per_night" type="number" className="form-control"
                   value={form.price_per_night} onChange={handleChange}
                   min="0" step="0.01" placeholder="120" required />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Capacity (guests)</label>
+                <label className="form-label">{t('capacityGuestsLabel')}</label>
                 <input name="capacity" type="number" className="form-control"
                   value={form.capacity} onChange={handleChange} min="1" max="20" />
               </div>
 
               <div className="form-group span-2">
-                <label className="form-label">Amenities</label>
+                <label className="form-label">{t('amenities')}</label>
                 <input name="amenities" className="form-control"
                   value={form.amenities} onChange={handleChange}
                   placeholder="wifi, ensuite, balcony, parking, minibar…" />
-                <span className="form-hint">Comma-separated list</span>
+                <span className="form-hint">{t('amenitiesHint')}</span>
                 {amenityPreview.length > 0 && (
                   <div className="amenity-list" style={{ marginTop: 8 }}>
                     {amenityPreview.map((a) => (
@@ -130,10 +134,10 @@ export default function NewRoomModal({ onClose, onSuccess }) {
 
           <div className="modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose} disabled={submitting}>
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Adding…' : 'Add Room'}
+              {submitting ? t('adding') : t('moRoomTitle')}
             </button>
           </div>
         </form>
