@@ -19,7 +19,7 @@ export function initSchema() {
       check_in_time   TEXT    NOT NULL DEFAULT '15:00',
       check_out_time  TEXT    NOT NULL DEFAULT '11:00',
       currency        TEXT    NOT NULL DEFAULT 'EUR',
-      locale          TEXT    NOT NULL DEFAULT 'en' CHECK(locale IN ('en','fr','es','de')),
+      locale          TEXT    NOT NULL DEFAULT 'en' CHECK(locale IN ('en','fr','es','de','nl')),
       created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -188,6 +188,44 @@ export function initSchema() {
     )
     WHERE owner_id IS NULL
   `);
+
+  // Migration: add 'nl' to the locale CHECK constraint.
+  // SQLite can't ALTER a CHECK, so we rebuild the table if the old constraint is still in place.
+  // Detect by attempting to set locale='nl' on a dummy row — if it fails, rebuild.
+  try {
+    const testId = db.prepare(`SELECT id FROM properties LIMIT 1`).get()?.id;
+    if (testId != null) {
+      const current = db.prepare(`SELECT locale FROM properties WHERE id = ?`).get(testId)?.locale;
+      db.prepare(`UPDATE properties SET locale = 'nl' WHERE id = ?`).run(testId);
+      db.prepare(`UPDATE properties SET locale = ? WHERE id = ?`).run(current, testId);
+    }
+  } catch {
+    // Constraint blocks 'nl' — rebuild the table with FK checks disabled.
+    db.exec(`PRAGMA foreign_keys = OFF`);
+    db.exec(`
+      BEGIN;
+      CREATE TABLE properties_new (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        name            TEXT    NOT NULL,
+        type            TEXT    NOT NULL CHECK(type IN ('bnb','gite','guesthouse','hotel','other')),
+        address         TEXT,
+        city            TEXT,
+        country         TEXT,
+        check_in_time   TEXT    NOT NULL DEFAULT '15:00',
+        check_out_time  TEXT    NOT NULL DEFAULT '11:00',
+        currency        TEXT    NOT NULL DEFAULT 'EUR',
+        locale          TEXT    NOT NULL DEFAULT 'en' CHECK(locale IN ('en','fr','es','de','nl')),
+        owner_id        INTEGER REFERENCES users(id),
+        created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO properties_new SELECT id, name, type, address, city, country, check_in_time, check_out_time, currency, locale, owner_id, created_at FROM properties;
+      DROP TABLE properties;
+      ALTER TABLE properties_new RENAME TO properties;
+      COMMIT;
+    `);
+    db.exec(`PRAGMA foreign_keys = ON`);
+    console.log('✓ properties.locale constraint updated to include nl.');
+  }
 
   console.log('✓ Database schema ready.');
 }
