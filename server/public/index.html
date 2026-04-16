@@ -2047,8 +2047,8 @@ function applyLang(lang) {
     btn.classList.toggle('active', btn.dataset.mobileLang === lang);
   });
 
-  // Store selection
-  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+  // Store selection (nb-lang for the landing page itself; nestbook_lang for widget-test.html)
+  try { localStorage.setItem('nb-lang', lang); localStorage.setItem('nestbook_lang', lang); } catch (_) {}
 }
 
 // ── Wire up switcher buttons ───────────────────────────────────────────────

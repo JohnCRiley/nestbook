@@ -39,7 +39,7 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
-  const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty } = useLocale();
+  const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty, locale } = useLocale();
   const { user, logout } = useAuth();
   const plan = usePlan();
   const { kiosk, setKioskMode } = useKiosk();
@@ -147,7 +147,7 @@ export default function Settings() {
       updatePropertyInList(updated); // keep properties list in sync (fixes NL multi-prop)
       showToast(t('saved'));
     } catch (err) {
-      showToast('Failed to save settings.', 'error');
+      showToast(t('saveFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -158,23 +158,23 @@ export default function Settings() {
 
   const handleCancelSubscription = async () => {
     setShowCancelModal(false);
-    const accessUntil = sub?.current_period_end ? fmtDate(sub.current_period_end) : null;
+    const accessUntil = sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : null;
     setCancelling(true);
     try {
       const res = await apiFetch('/api/stripe/cancel-subscription', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         setSub(s => ({ ...s, cancel_at_period_end: 1 }));
-        const endDate = data.cancel_at ? fmtDate(data.cancel_at) : accessUntil;
+        const endDate = data.cancel_at ? fmtDate(data.cancel_at, locale) : accessUntil;
         showToast(endDate
-          ? `Subscription cancelled. You'll have ${PLAN_LABELS[sub?.plan] ?? 'Pro'} access until ${endDate}.`
-          : 'Subscription will cancel at the end of your billing period.'
+          ? t('cancelledSubToast')(PLAN_LABELS[sub?.plan] ?? 'Pro', endDate)
+          : t('cancelledSubNoDtToast')
         );
       } else {
-        showToast(data.error || 'Failed to cancel subscription.', 'error');
+        showToast(data.error || t('cancelSubError'), 'error');
       }
     } catch {
-      showToast('Network error.', 'error');
+      showToast(t('networkError'), 'error');
     }
     setCancelling(false);
   };
@@ -182,7 +182,7 @@ export default function Settings() {
   const handleInviteSuccess = (newUser) => {
     setUsers((prev) => [...prev, newUser]);
     setShowInvite(false);
-    showToast(`${newUser.name} has been added as ${newUser.role}.`);
+    showToast(t('staffAddedToast')(newUser.name, newUser.role));
   };
 
   const handleAddProperty = async (formData) => {
@@ -196,12 +196,12 @@ export default function Settings() {
       if (res.ok) {
         addPropertyToList(data);
         setShowAddProperty(false);
-        showToast(`${data.name} has been added.`);
+        showToast(t('propAddedToast')(data.name));
       } else {
-        showToast(data.error || 'Failed to add property.', 'error');
+        showToast(data.error || t('propAddError'), 'error');
       }
     } catch {
-      showToast('Network error.', 'error');
+      showToast(t('networkError'), 'error');
     }
   };
 
@@ -383,9 +383,9 @@ export default function Settings() {
                     <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
                       {sub.cancel_at_period_end
                         ? <span style={{ color: '#dc2626' }}>
-                            {t('cancelsOn')} {fmtDate(sub.current_period_end)}
+                            {t('cancelsOn')} {fmtDate(sub.current_period_end, locale)}
                           </span>
-                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{fmtDate(sub.current_period_end)}</strong></>
+                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{fmtDate(sub.current_period_end, locale)}</strong></>
                       }
                     </div>
                   )}
@@ -405,7 +405,7 @@ export default function Settings() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <h2>{t('propertiesTitle')}</h2>
-                <p>{properties.length} of 5 {t('propertiesTitle').toLowerCase()}</p>
+                <p>{t('propertiesOf5')(properties.length)}</p>
               </div>
               <div className="settings-card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -555,7 +555,7 @@ export default function Settings() {
       {showCancelModal && (
         <CancelSubscriptionModal
           plan={PLAN_LABELS[sub?.plan] ?? 'Pro'}
-          renewalDate={sub?.current_period_end ? fmtDate(sub.current_period_end) : null}
+          renewalDate={sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : null}
           onClose={() => setShowCancelModal(false)}
           onConfirm={handleCancelSubscription}
         />
@@ -594,7 +594,7 @@ export default function Settings() {
           onSuccess={(deletedId, remaining) => {
             removePropertyFromList(deletedId, remaining);
             setRemovePropertyTarget(null);
-            showToast(`${removePropertyTarget.name} has been removed.`);
+            showToast(t('propRemovedToast')(removePropertyTarget.name));
           }}
           onError={(msg) => showToast(msg, 'error')}
         />
@@ -899,9 +899,12 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function fmtDate(iso) {
+const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
+
+function fmtDate(iso, locale = 'en') {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const browserLocale = LOCALE_MAP[locale] || 'en-GB';
+  return new Date(iso).toLocaleDateString(browserLocale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function FormField({ label, children }) {

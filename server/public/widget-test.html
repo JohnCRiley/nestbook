@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NestBook Widget — Test Page</title>
+  <title>NestBook Widget — Live Demo</title>
   <style>
     body {
       font-family: Georgia, serif;
@@ -46,23 +46,57 @@
     }
     .room-card h3 { color: #1a4710; margin-bottom: 4px; }
     .room-card p { color: #888; font-size: 0.875rem; }
+    .lang-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .lang-bar button {
+      background: #d9f0cc;
+      border: 1.5px solid transparent;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #1a4710;
+      font-family: inherit;
+    }
+    .lang-bar button.active {
+      background: #1a4710;
+      color: #fff;
+    }
+    .lang-bar button:hover:not(.active) { border-color: #1a4710; }
+    @media (max-width: 600px) {
+      .rooms-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>🏡 Domaine des Lavandes</h1>
-  <p>Provençal gîte near Roussillon — a simulated property website to test the NestBook booking widget.</p>
+  <!-- Language picker -->
+  <div class="lang-bar" id="lang-bar">
+    <button data-lang="en" class="active">EN</button>
+    <button data-lang="fr">FR</button>
+    <button data-lang="es">ES</button>
+    <button data-lang="de">DE</button>
+    <button data-lang="nl">NL</button>
+  </div>
 
-  <div class="info">
+  <h1>🏡 Domaine des Lavandes</h1>
+  <p id="intro">Provençal gîte near Roussillon — a simulated property website to test the NestBook booking widget.</p>
+
+  <div class="info" id="info-box">
     ℹ️ This is a test page served by the NestBook server. The floating <strong>Book Now</strong> button in the bottom-right corner is the embeddable widget. Click it to try the full 4-step booking flow.
   </div>
 
   <div class="hero">
-    <h2>Your Escape in Provence</h2>
-    <p>Lavender fields, stone farmhouses and long summer evenings.<br>Book directly with us for the best rates.</p>
+    <h2 id="hero-heading">Your Escape in Provence</h2>
+    <p id="hero-sub">Lavender fields, stone farmhouses and long summer evenings.<br>Book directly with us for the best rates.</p>
   </div>
 
-  <h2>Our Rooms</h2>
+  <h2 id="rooms-heading">Our Rooms</h2>
   <div class="rooms-grid">
     <div class="room-card">
       <h3>La Suite Lavande</h3>
@@ -82,11 +116,97 @@
     </div>
   </div>
 
+  <script>
+  // ── Page translations ──────────────────────────────────────────────────────
+  const PAGE_STRINGS = {
+    en: {
+      title:      'NestBook Widget — Live Demo',
+      intro:      'Provençal gîte near Roussillon — a simulated property website to test the NestBook booking widget.',
+      infoHtml:   'ℹ️ This is a test page served by the NestBook server. The floating <strong>Book Now</strong> button in the bottom-right corner is the embeddable widget. Click it to try the full 4-step booking flow.',
+      heroHeading:'Your Escape in Provence',
+      heroSub:    'Lavender fields, stone farmhouses and long summer evenings.<br>Book directly with us for the best rates.',
+      roomsHeading:'Our Rooms',
+    },
+    fr: {
+      title:      'NestBook Widget — Démo en direct',
+      intro:      'Gîte provençal près de Roussillon — un site de propriété simulé pour tester le widget de réservation NestBook.',
+      infoHtml:   'ℹ️ Il s\'agit d\'une page de test servie par le serveur NestBook. Le bouton flottant <strong>Réserver</strong> en bas à droite est le widget intégrable. Cliquez dessus pour essayer le flux de réservation complet en 4 étapes.',
+      heroHeading:'Votre escapade en Provence',
+      heroSub:    'Champs de lavande, mas en pierre et longues soirées d\'été.<br>Réservez directement chez nous pour les meilleurs tarifs.',
+      roomsHeading:'Nos chambres',
+    },
+    es: {
+      title:      'NestBook Widget — Demo en vivo',
+      intro:      'Casa rural provenzal cerca de Roussillon — una web de propiedad simulada para probar el widget de reservas NestBook.',
+      infoHtml:   'ℹ️ Esta es una página de prueba servida por el servidor NestBook. El botón flotante <strong>Reservar</strong> en la esquina inferior derecha es el widget integrable. Haz clic para probar el flujo de reserva completo en 4 pasos.',
+      heroHeading:'Su escapada en Provenza',
+      heroSub:    'Campos de lavanda, masías de piedra y largas tardes de verano.<br>Reserve directamente con nosotros para obtener las mejores tarifas.',
+      roomsHeading:'Nuestras habitaciones',
+    },
+    de: {
+      title:      'NestBook Widget — Live-Demo',
+      intro:      'Provenzalisches Ferienhaus bei Roussillon — eine simulierte Unterkunftswebsite zum Testen des NestBook-Buchungs-Widgets.',
+      infoHtml:   'ℹ️ Dies ist eine Testseite des NestBook-Servers. Der schwebende <strong>Buchen</strong>-Button unten rechts ist das einbettbare Widget. Klicken Sie darauf, um den vollständigen 4-Schritte-Buchungsablauf zu testen.',
+      heroHeading:'Ihr Erholungsort in der Provence',
+      heroSub:    'Lavendelfelder, Steinhäuser und lange Sommerabende.<br>Buchen Sie direkt bei uns für die besten Preise.',
+      roomsHeading:'Unsere Zimmer',
+    },
+    nl: {
+      title:      'NestBook Widget — Live demo',
+      intro:      'Provençaals gîte bij Roussillon — een gesimuleerde accommodatiewebsite om de NestBook-boekingswidget te testen.',
+      infoHtml:   'ℹ️ Dit is een testpagina die wordt aangeboden door de NestBook-server. De zwevende <strong>Boek nu</strong>-knop rechtsonder is de insluitable widget. Klik erop om de volledige boekingsstroom in 4 stappen te testen.',
+      heroHeading:'Uw ontsnapping in de Provence',
+      heroSub:    'Lavendelvelden, stenen boerderijen en lange zomeravonden.<br>Boek direct bij ons voor de beste tarieven.',
+      roomsHeading:'Onze kamers',
+    },
+  };
+
+  // ── Apply page language ────────────────────────────────────────────────────
+  function applyPageLang(lang) {
+    const s = PAGE_STRINGS[lang] || PAGE_STRINGS.en;
+    document.title                            = s.title;
+    document.documentElement.lang            = lang;
+    document.getElementById('intro').textContent        = s.intro;
+    document.getElementById('info-box').innerHTML       = s.infoHtml;
+    document.getElementById('hero-heading').textContent = s.heroHeading;
+    document.getElementById('hero-sub').innerHTML       = s.heroSub;
+    document.getElementById('rooms-heading').textContent= s.roomsHeading;
+
+    // Update active button state
+    document.querySelectorAll('#lang-bar button').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+
+    // Persist choice so widget and landing page stay in sync
+    try { localStorage.setItem('nestbook_lang', lang); localStorage.setItem('nb-lang', lang); } catch (_) {}
+  }
+
+  // ── Wire up language buttons ───────────────────────────────────────────────
+  document.querySelectorAll('#lang-bar button').forEach((btn) => {
+    btn.addEventListener('click', function () {
+      applyPageLang(this.dataset.lang);
+      // Reload page so widget.js reinitialises with the new language
+      location.reload();
+    });
+  });
+
+  // ── On page load: apply stored language ───────────────────────────────────
+  (function () {
+    let lang = 'en';
+    try { lang = localStorage.getItem('nestbook_lang') || localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
+    if (lang !== 'en') applyPageLang(lang);
+    // Mark active button without reload on initial load
+    document.querySelectorAll('#lang-bar button').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+  })();
+  </script>
+
   <!-- ✅ This is the embed snippet — one line, works on any website -->
+  <!-- data-lang is intentionally omitted so widget.js reads nestbook_lang from localStorage -->
   <script
     src="/widget.js"
     data-property-id="1"
-    data-lang="en"
     data-currency="EUR"
     async>
   </script>

@@ -17,7 +17,8 @@
   // ── Config: read from the script tag immediately (before async callbacks) ──
   const SCRIPT      = document.currentScript;
   const PROPERTY_ID = SCRIPT.getAttribute('data-property-id') || '1';
-  const LANG        = SCRIPT.getAttribute('data-lang')        || 'en';
+  const LANG        = SCRIPT.getAttribute('data-lang') ||
+                      (function () { try { return localStorage.getItem('nestbook_lang') || 'en'; } catch (_) { return 'en'; } })();
   const CURRENCY    = SCRIPT.getAttribute('data-currency')    || 'EUR';
   // Derive API base from wherever the script itself is served from
   const API_BASE    = SCRIPT.src.replace(/\/widget\.js(\?.*)?$/, '');
