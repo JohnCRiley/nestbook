@@ -4,6 +4,7 @@ import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import { LOCALE_MAP } from '../utils/format.js';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -109,7 +110,7 @@ export default function Calendar() {
   const today   = localToday();
   const todayDate = parseDate(today);
   const t = useT();
-  const { property } = useLocale();
+  const { property, locale } = useLocale();
 
   const DAY_NAMES   = t('dayNames');
   const MONTH_NAMES = t('monthNames');
@@ -266,6 +267,8 @@ export default function Calendar() {
               selectedBookingId={selectedBooking?.id}
               onBookedClick={handleBookedClick}
               onEmptyClick={handleEmptyClick}
+              t={t}
+              locale={locale}
             />
           ))}
 
@@ -297,7 +300,7 @@ export default function Calendar() {
 
 // ── RoomRow ───────────────────────────────────────────────────────────────────
 
-function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick }) {
+function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale }) {
   const isMaintenance = room.status === 'maintenance';
 
   return (
@@ -305,7 +308,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
       {/* Room label */}
       <div className={`cal-room-label${isMaintenance ? ' cal-room-maintenance' : ''}`}>
         <div className="cal-room-name" title={room.name}>{room.name}</div>
-        <div className="cal-room-type">{room.type} · {room.capacity} guests</div>
+        <div className="cal-room-type">{room.type} · {t('guestWord')(room.capacity)}</div>
       </div>
 
       {/* Day cells */}
@@ -324,6 +327,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
               booking={booking}
               isSelected={selectedBookingId === booking.id}
               onClick={() => onBookedClick(booking)}
+              locale={locale ?? 'en'}
             />
           );
         }
@@ -342,7 +346,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
 
 // ── BookedCell ────────────────────────────────────────────────────────────────
 
-function BookedCell({ booking: b, isSelected, onClick }) {
+function BookedCell({ booking: b, isSelected, onClick, locale = 'en' }) {
   const statusClass =
     b.status === 'checked_out' ? 'is-checked-out' :
     b.status === 'arriving' && b.check_in_date === b.check_in_date ? 'is-booked' :
@@ -365,7 +369,7 @@ function BookedCell({ booking: b, isSelected, onClick }) {
     >
       <div className="cal-cell-inner">
         <div className="cal-guest-name">{b.guest_first_name}</div>
-        <div className="cal-booking-nights">→ {formatCheckOut(b.check_out_date)}</div>
+        <div className="cal-booking-nights">→ {formatCheckOut(b.check_out_date, locale)}</div>
       </div>
     </div>
   );
@@ -415,8 +419,8 @@ function Legend({ t }) {
 // ── Tiny helper ───────────────────────────────────────────────────────────────
 
 /** "2 Apr" — used in booked cell subtitle. */
-function formatCheckOut(dateStr) {
+function formatCheckOut(dateStr, locale = 'en') {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', { day: 'numeric', month: 'short' });
 }

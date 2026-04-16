@@ -1,4 +1,4 @@
-import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../../utils/bookingConstants.js';
+import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween } from '../../utils/format.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
@@ -7,10 +7,11 @@ import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
  * Appears from the right; closed by clicking the backdrop or the × button.
  */
 export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEdit }) {
-  const { fmtCurrency } = useLocale();
+  const { fmtCurrency, locale } = useLocale();
   const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
+  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
 
   return (
     <>
@@ -27,10 +28,10 @@ export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEd
           </div>
           <div style={{ marginBottom: 8 }}>
             <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-              {BADGE_LABEL[b.status] ?? b.status}
+              {statusLabel}
             </span>
           </div>
-          <div className="panel-booking-ref">Booking #{b.id}</div>
+          <div className="panel-booking-ref">{t('bookingRef')}{b.id}</div>
         </div>
 
         {/* ── Scrollable body ──────────────────────────────────────────── */}
@@ -49,12 +50,12 @@ export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEd
             <div className="panel-section">
               <div className="panel-section-title">{t('sectionBooking')}</div>
               <PanelRow label={t('labelRoom')}     value={`${b.room_name ?? '—'} (${b.room_type ?? ''})`} />
-              <PanelRow label={t('moCinLbl')}      value={formatDateMedium(b.check_in_date)} />
-              <PanelRow label={t('moCoutLbl')}     value={formatDateMedium(b.check_out_date)} />
+              <PanelRow label={t('moCinLbl')}      value={formatDateMedium(b.check_in_date, locale)} />
+              <PanelRow label={t('moCoutLbl')}     value={formatDateMedium(b.check_out_date, locale)} />
               <PanelRow label={t('labelDuration')} value={t('nightWord')(nights)} />
               <PanelRow label={t('labelGuests')}   value={t('guestWord')(b.num_guests)} />
               <PanelRow label={t('labelSource')}   value={SOURCE_LABELS[b.source] ?? b.source} />
-              <PanelRow label={t('labelCreated')}  value={b.created_at ? formatDateMedium(b.created_at.slice(0, 10)) : '—'} />
+              <PanelRow label={t('labelCreated')}  value={b.created_at ? formatDateMedium(b.created_at.slice(0, 10), locale) : '—'} />
             </div>
 
             {/* Notes */}
@@ -72,7 +73,7 @@ export default function BookingPanel({ booking: b, onClose, onStatusUpdate, onEd
                 <div className="panel-price-main">{fmtCurrency(b.total_price)}</div>
                 {perNight && (
                   <div className="panel-price-detail">
-                    {fmtCurrency(perNight)}/night × {nights} {nights === 1 ? 'night' : 'nights'}
+                    {fmtCurrency(perNight)}{t('perNight')} × {t('nightWord')(nights)}
                   </div>
                 )}
               </div>

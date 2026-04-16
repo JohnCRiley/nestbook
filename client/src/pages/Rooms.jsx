@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { localToday } from '../utils/format.js';
+import { localToday, LOCALE_MAP } from '../utils/format.js';
 import { StatusPill, formatAmenity } from './rooms/RoomPanel.jsx';
 import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
@@ -12,7 +12,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 export default function Rooms() {
   const today = localToday();
   const t = useT();
-  const { currencySymbol, property } = useLocale();
+  const { currencySymbol, property, locale } = useLocale();
 
   const [rooms,         setRooms]         = useState([]);
   const [bookings,      setBookings]      = useState([]);
@@ -160,6 +160,7 @@ export default function Rooms() {
             onBook={handleBook}
             t={t}
             currencySymbol={currencySymbol}
+            locale={locale}
           />
         ))}
       </div>
@@ -201,7 +202,7 @@ export default function Rooms() {
 
 // ── RoomCard ──────────────────────────────────────────────────────────────────
 
-function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, currencySymbol }) {
+function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, currencySymbol, locale }) {
   const amenities     = (room.amenities ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const stripeClass   = `stripe-${room.status}`;
   const isAvailable   = room.status === 'available' && !activeBooking;
@@ -251,7 +252,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
               <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
             ))}
             {amenities.length > 4 && (
-              <span className="amenity-tag">+{amenities.length - 4} more</span>
+              <span className="amenity-tag">{t('moreAmenities')(amenities.length - 4)}</span>
             )}
           </div>
         )}
@@ -263,7 +264,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
           <span>🛏</span>
           <span>
             <strong>{activeBooking.guest_first_name} {activeBooking.guest_last_name}</strong>
-            {' '}— checks out {formatCheckOut(activeBooking.check_out_date)}
+            {' '}— {t('checksOut')} {formatCheckOut(activeBooking.check_out_date, locale)}
           </span>
         </div>
       )}
@@ -312,8 +313,8 @@ function GuestIcon() {
 }
 
 /** "2 Apr" */
-function formatCheckOut(dateStr) {
+function formatCheckOut(dateStr, locale = 'en') {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', { day: 'numeric', month: 'short' });
 }

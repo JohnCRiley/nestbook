@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { localToday } from '../utils/format.js';
-import { BADGE_CLASS, BADGE_LABEL, SOURCE_LABELS } from '../utils/bookingConstants.js';
+import { localToday, LOCALE_MAP } from '../utils/format.js';
+import { BADGE_CLASS, SOURCE_LABELS } from '../utils/bookingConstants.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
@@ -12,7 +12,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 export default function Bookings() {
   const today = localToday();
   const t = useT();
-  const { property } = useLocale();
+  const { property, locale } = useLocale();
   const location = useLocation();
 
   const FILTERS = [
@@ -158,7 +158,7 @@ export default function Bookings() {
       <div className="booking-cards">
         {filtered.length === 0 ? (
           <div className="table-empty">
-            {search ? `No bookings matching "${search}"` : t('noBookingsFilter')}
+            {search ? t('noBookingsMatching')(search) : t('noBookingsFilter')}
           </div>
         ) : (
           filtered.map((b) => (
@@ -176,7 +176,7 @@ export default function Bookings() {
       <div className="table-wrap">
         {filtered.length === 0 ? (
           <div className="table-empty">
-            {search ? `No bookings matching "${search}"` : t('noBookingsFilter')}
+            {search ? t('noBookingsMatching')(search) : t('noBookingsFilter')}
           </div>
         ) : (
           <table className="bookings-table">
@@ -234,7 +234,9 @@ export default function Bookings() {
 // ── BookingRow ────────────────────────────────────────────────────────────────
 
 function BookingRow({ booking: b, isSelected, onClick }) {
-  const { fmtCurrency } = useLocale();
+  const { fmtCurrency, locale } = useLocale();
+  const t = useT();
+  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
   return (
     <tr
       className={isSelected ? 'row-selected' : ''}
@@ -250,10 +252,10 @@ function BookingRow({ booking: b, isSelected, onClick }) {
       <td>{b.room_name ?? '—'}</td>
 
       {/* Check-in */}
-      <td>{formatTableDate(b.check_in_date)}</td>
+      <td>{formatTableDate(b.check_in_date, locale)}</td>
 
       {/* Check-out */}
-      <td>{formatTableDate(b.check_out_date)}</td>
+      <td>{formatTableDate(b.check_out_date, locale)}</td>
 
       {/* Guests count */}
       <td style={{ textAlign: 'center' }}>{b.num_guests}</td>
@@ -267,13 +269,13 @@ function BookingRow({ booking: b, isSelected, onClick }) {
 
       {/* Price */}
       <td className="cell-price">
-        {b.total_price != null ? fmtCurrency(b.total_price) : <span className="cell-muted">TBC</span>}
+        {b.total_price != null ? fmtCurrency(b.total_price) : <span className="cell-muted">{t('tbc')}</span>}
       </td>
 
       {/* Status */}
       <td>
         <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-          {BADGE_LABEL[b.status] ?? b.status}
+          {statusLabel}
         </span>
       </td>
     </tr>
@@ -283,7 +285,9 @@ function BookingRow({ booking: b, isSelected, onClick }) {
 // ── BookingCard (mobile view) ─────────────────────────────────────────────────
 
 function BookingCard({ booking: b, isSelected, onClick }) {
-  const { fmtCurrency } = useLocale();
+  const { fmtCurrency, locale } = useLocale();
+  const t = useT();
+  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
   return (
     <div
       className={`booking-card${isSelected ? ' booking-card--selected' : ''}`}
@@ -292,12 +296,12 @@ function BookingCard({ booking: b, isSelected, onClick }) {
       <div className="bc-header">
         <span className="bc-name">{b.guest_first_name} {b.guest_last_name}</span>
         <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-          {BADGE_LABEL[b.status] ?? b.status}
+          {statusLabel}
         </span>
       </div>
       <div className="bc-room">{b.room_name ?? '—'}</div>
       <div className="bc-dates">
-        {formatTableDate(b.check_in_date)} → {formatTableDate(b.check_out_date)}
+        {formatTableDate(b.check_in_date, locale)} → {formatTableDate(b.check_out_date, locale)}
       </div>
       {b.total_price != null && (
         <div className="bc-price">{fmtCurrency(b.total_price)}</div>
@@ -309,10 +313,10 @@ function BookingCard({ booking: b, isSelected, onClick }) {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** "30 Mar 2026" for table cells */
-function formatTableDate(dateStr) {
+function formatTableDate(dateStr, locale = 'en') {
   if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }

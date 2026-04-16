@@ -24,7 +24,7 @@ const BADGE_CLASS = {
 
 export default function Dashboard() {
   const t = useT();
-  const { fmtCurrency, property } = useLocale();
+  const { fmtCurrency, property, locale } = useLocale();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -165,23 +165,23 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1>{greeting}</h1>
-            <div className="page-date">{formatDateLong(today)}</div>
+            <div className="page-date">{formatDateLong(today, locale)}</div>
           </div>
           {/* Quick action buttons */}
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button
               className="btn-secondary"
               onClick={() => navigate('/bookings', { state: { openModal: true } })}
-              title="New booking for a returning guest"
+              title={t('newBookingTooltip')}
             >
-              + New Booking
+              {t('newBooking')}
             </button>
             <button
               className="btn-primary"
               onClick={() => navigate('/guests?newguest=true')}
-              title="Add a new guest first, then create a booking"
+              title={t('newGuestTooltip')}
             >
-              + New Guest
+              {t('newGuest')}
             </button>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function Dashboard() {
                     <div className="db-room-popover-info">
                       <span className="db-room-popover-name">{r.name}</span>
                       <span className="db-room-popover-meta">
-                        {r.type}{r.capacity ? ` · ${r.capacity} guests` : ''}
+                        {r.type}{r.capacity ? ` · ${t('guestWord')(r.capacity)}` : ''}
                       </span>
                     </div>
                     <button
@@ -226,7 +226,7 @@ export default function Dashboard() {
                         setBookingRoomFilter(r);
                       }}
                     >
-                      + New Booking
+                      {t('newBooking')}
                     </button>
                   </div>
                 ))}
@@ -306,7 +306,7 @@ export default function Dashboard() {
                 badgeLabel={BADGE_LABEL}
                 right={
                   <>
-                    <span className="booking-date">{formatDateShort(b.check_in_date)}</span>
+                    <span className="booking-date">{formatDateShort(b.check_in_date, locale)}</span>
                     <span className={BADGE_CLASS[b.status] ?? 'badge'}>
                       {BADGE_LABEL[b.status] ?? b.status}
                     </span>

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { initials, phoneFlag, phoneCountry, fmtDate, fmtPrice } from '../../utils/guestHelpers.js';
-import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
+import { BADGE_CLASS } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+
 
 /**
  * Slide-in panel showing full guest details, booking history, and an edit form.
@@ -42,6 +43,8 @@ export default function GuestPanel({ guest, bookings, onClose, onGuestUpdated })
 function PanelHeader({ guest, onClose }) {
   const flag    = phoneFlag(guest.phone);
   const country = phoneCountry(guest.phone);
+  const t = useT();
+  const { locale } = useLocale();
 
   return (
     <div className="panel-header">
@@ -61,7 +64,7 @@ function PanelHeader({ guest, onClose }) {
         </div>
       </div>
       <div className="panel-booking-ref">
-        Guest #{guest.id} · Added {fmtDate(guest.created_at?.slice(0, 10))}
+        {t('guestRef')}{guest.id} · {t('addedOn')} {fmtDate(guest.created_at?.slice(0, 10), locale)}
       </div>
     </div>
   );
@@ -208,21 +211,22 @@ function EditMode({ guest, onCancel, onSaved }) {
 // ── HistoryRow ────────────────────────────────────────────────────────────────
 
 function HistoryRow({ booking: b }) {
-  const { currencySymbol } = useLocale();
+  const { currencySymbol, locale } = useLocale();
   const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
+  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
   return (
     <div className="history-row">
       <div className="history-dates">
-        {fmtDate(b.check_in_date)} → {fmtDate(b.check_out_date)}
+        {fmtDate(b.check_in_date, locale)} → {fmtDate(b.check_out_date, locale)}
       </div>
       <div className="history-meta">
-        <span>{b.room_name ?? `Room #${b.room_id}`}</span>
+        <span>{b.room_name ?? `${t('roomRef')}${b.room_id}`}</span>
         <span>·</span>
         <span>{t('nightWord')(nights)}</span>
         <span>·</span>
         <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
-          {BADGE_LABEL[b.status] ?? b.status}
+          {statusLabel}
         </span>
         <span className="history-price">{fmtPrice(b.total_price, currencySymbol)}</span>
       </div>

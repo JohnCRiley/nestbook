@@ -59,11 +59,13 @@ export function phoneCountry(phone) {
   return '';
 }
 
+const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
+
 /** "30 Mar 2026" from a YYYY-MM-DD string. */
-export function fmtDate(dateStr) {
+export function fmtDate(dateStr, locale = 'en') {
   if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }

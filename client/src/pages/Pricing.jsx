@@ -57,13 +57,13 @@ export default function Pricing() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Could not start checkout. Please try again.');
+        setError(data.error || t('checkoutError'));
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      setError('Could not connect to server. Is it running?');
+      setError(t('serverConnectError'));
     } finally {
       setLoading(null);
     }

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { BADGE_CLASS, BADGE_LABEL } from '../../utils/bookingConstants.js';
-import { nightsBetween } from '../../utils/format.js';
+import { BADGE_CLASS } from '../../utils/bookingConstants.js';
+import { nightsBetween, LOCALE_MAP } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
-import { useLocale } from '../../i18n/LocaleContext.jsx';
+import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const STATUS_OPTIONS = ['available', 'occupied', 'maintenance'];
@@ -12,10 +12,10 @@ const parseAmenities = (str) =>
   (str ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
 /** Format a YYYY-MM-DD string as "30 Mar 2026". */
-function fmtDate(dateStr) {
+function fmtDate(dateStr, locale = 'en') {
   if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
@@ -32,6 +32,8 @@ function upcomingBookings(bookings, today) {
 
 export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdated, onBook, onRoomDeleted }) {
   const [mode, setMode] = useState('view');
+  const t = useT();
+  const { locale } = useLocale();
 
   return (
     <>
@@ -44,11 +46,11 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
           <div className="panel-guest-name" style={{ marginBottom: 4 }}>{room.name}</div>
           <div className="panel-room-type-row">
             <StatusPill status={room.status} />
-            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem', textTransform: 'capitalize' }}>
-              {room.type}
+            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem' }}>
+              {t(`roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`)}
             </span>
           </div>
-          <div className="panel-booking-ref" style={{ marginTop: 8 }}>Room #{room.id}</div>
+          <div className="panel-booking-ref" style={{ marginTop: 8 }}>{t('roomRef')}{room.id}</div>
         </div>
 
         {/* Scrollable body */}
@@ -56,11 +58,11 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
           <div className="panel-body">
             {mode === 'view'
               ? <ViewMode room={room} bookings={bookings} today={today}
-                  onEdit={() => setMode('edit')} onBook={onBook} />
+                  onEdit={() => setMode('edit')} onBook={onBook} t={t} locale={locale} />
               : <EditMode room={room}
                   onCancel={() => setMode('view')}
                   onSaved={(updated) => { onRoomUpdated(updated); setMode('view'); }}
-                  onDeleted={() => onRoomDeleted(room.id)} />
+                  onDeleted={() => onRoomDeleted(room.id)} t={t} locale={locale} />
             }
           </div>
         </div>
@@ -72,22 +74,23 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
 
 // ── View mode ─────────────────────────────────────────────────────────────────
 
-function ViewMode({ room, bookings, today, onEdit, onBook }) {
+function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
   const { currencySymbol } = useLocale();
   const amenities = parseAmenities(room.amenities);
   const upcoming  = upcomingBookings(bookings, today);
+  const roomTypeKey = `roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`;
 
   return (
     <>
       {/* Details */}
       <div className="panel-section">
-        <div className="panel-section-title">Room Details</div>
-        <PanelRow label="Type"       value={<span style={{ textTransform: 'capitalize' }}>{room.type}</span>} />
-        <PanelRow label="Capacity"   value={`${room.capacity} ${room.capacity === 1 ? 'guest' : 'guests'}`} />
-        <PanelRow label="Price"      value={`${currencySymbol}${room.price_per_night}/night`} />
-        <PanelRow label="Status"     value={<StatusPill status={room.status} />} />
+        <div className="panel-section-title">{t('roomDetailsTitle')}</div>
+        <PanelRow label={t('typeLabel')}    value={t(roomTypeKey)} />
+        <PanelRow label={t('capacity')}     value={t('guestWord')(room.capacity)} />
+        <PanelRow label={t('priceLabel')}   value={`${currencySymbol}${room.price_per_night}${t('perNight')}`} />
+        <PanelRow label={t('status')}       value={<StatusPill status={room.status} t={t} />} />
         {amenities.length > 0 && (
-          <PanelRow label="Amenities" value={
+          <PanelRow label={t('amenities')} value={
             <div className="amenity-list" style={{ marginTop: 0 }}>
               {amenities.map((a) => <span key={a} className="amenity-tag">{formatAmenity(a)}</span>)}
             </div>
@@ -98,20 +101,20 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
       {/* Pricing callout */}
       <div className="panel-section">
         <div className="panel-price-callout">
-          <div className="panel-price-main">{currencySymbol}{room.price_per_night}<span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.75 }}>/night</span></div>
-          <div className="panel-price-detail">Capacity: {room.capacity} · {room.type}</div>
+          <div className="panel-price-main">{currencySymbol}{room.price_per_night}<span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.75 }}>{t('perNight')}</span></div>
+          <div className="panel-price-detail">{t('capacity')}: {room.capacity} · {t(roomTypeKey)}</div>
         </div>
       </div>
 
       {/* Upcoming schedule */}
       <div className="panel-section">
         <div className="panel-section-title">
-          Upcoming Schedule {upcoming.length > 0 && `(${upcoming.length})`}
+          {t('upcomingSchedule')} {upcoming.length > 0 && `(${upcoming.length})`}
         </div>
         {upcoming.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>No upcoming bookings</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.83rem' }}>{t('noUpcomingBookings')}</div>
         ) : (
-          upcoming.map((b) => <ScheduleRow key={b.id} booking={b} />)
+          upcoming.map((b) => <ScheduleRow key={b.id} booking={b} t={t} locale={locale} />)
         )}
       </div>
 
@@ -119,7 +122,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
       <div className="panel-actions">
         {room.status === 'available' && (
           <button className="btn-panel-primary" onClick={onBook}>
-            Book This Room
+            {t('bookThisRoom')}
           </button>
         )}
         <button
@@ -127,7 +130,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
           onClick={onEdit}
           style={{ border: '1.5px solid var(--border)' }}
         >
-          Edit Room
+          {t('editRoom')}
         </button>
       </div>
     </>
@@ -136,7 +139,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook }) {
 
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
-function EditMode({ room, onCancel, onSaved, onDeleted }) {
+function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
   const { currencySymbol } = useLocale();
   const [form, setForm] = useState({
     name:            room.name            ?? '',
@@ -155,9 +158,9 @@ function EditMode({ room, onCancel, onSaved, onDeleted }) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSave = async () => {
-    if (!form.name.trim()) { setError('Room name is required.'); return; }
+    if (!form.name.trim()) { setError(t('roomNameLabel') + ' is required.'); return; }
     if (!form.price_per_night || isNaN(Number(form.price_per_night))) {
-      setError('A valid price per night is required.');
+      setError(t('pricePerNightLabel') + ' is required.');
       return;
     }
     setSaving(true);
@@ -203,41 +206,41 @@ function EditMode({ room, onCancel, onSaved, onDeleted }) {
   return (
     <>
       <div className="panel-section">
-        <div className="panel-section-title">Edit Room</div>
+        <div className="panel-section-title">{t('editRoom')}</div>
 
         {error && <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>}
 
         <div className="panel-edit-form">
-          <Field label="Room Name" name="name" value={form.name} onChange={handleChange} />
+          <Field label={t('roomNameLabel')} name="name" value={form.name} onChange={handleChange} />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div className="panel-field">
-              <label className="panel-field-label">Type</label>
+              <label className="panel-field-label">{t('typeLabel')}</label>
               <select name="type" className="panel-field-input" value={form.type} onChange={handleChange}>
-                {ROOM_TYPES.map((t) => (
-                  <option key={t} value={t} style={{ textTransform: 'capitalize' }}>{t}</option>
+                {ROOM_TYPES.map((rt) => (
+                  <option key={rt} value={rt}>{t(`roomType${rt.charAt(0).toUpperCase() + rt.slice(1)}`)}</option>
                 ))}
               </select>
             </div>
             <div className="panel-field">
-              <label className="panel-field-label">Status</label>
+              <label className="panel-field-label">{t('status')}</label>
               <select name="status" className="panel-field-input" value={form.status} onChange={handleChange}>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s} style={{ textTransform: 'capitalize' }}>{s}</option>
-                ))}
+                <option value="available">{t('available')}</option>
+                <option value="occupied">{t('occupiedDot')}</option>
+                <option value="maintenance">{t('maintenance')}</option>
               </select>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <Field label={`Price / Night (${currencySymbol})`} name="price_per_night" value={form.price_per_night}
+            <Field label={`${t('pricePerNightLabel')} (${currencySymbol})`} name="price_per_night" value={form.price_per_night}
               onChange={handleChange} type="number" />
-            <Field label="Capacity (guests)" name="capacity" value={form.capacity}
+            <Field label={t('capacityGuestsLabel')} name="capacity" value={form.capacity}
               onChange={handleChange} type="number" min="1" max="20" />
           </div>
 
           <div className="panel-field">
-            <label className="panel-field-label">Amenities</label>
+            <label className="panel-field-label">{t('amenities')}</label>
             <input
               name="amenities"
               className="panel-field-input"
@@ -258,11 +261,11 @@ function EditMode({ room, onCancel, onSaved, onDeleted }) {
 
       <div className="panel-actions">
         <button className="btn-panel-primary" onClick={handleSave} disabled={saving || deleting}>
-          {saving ? 'Saving…' : 'Save Changes'}
+          {saving ? t('saving') : t('saveChanges')}
         </button>
         <button className="btn-secondary" onClick={onCancel} disabled={saving || deleting}
           style={{ border: '1.5px solid var(--border)' }}>
-          Cancel
+          {t('cancel')}
         </button>
       </div>
 
@@ -276,7 +279,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted }) {
             fontFamily: 'inherit',
           }}
         >
-          Delete this room
+          {t('deleteThisRoom')}
         </button>
       </div>
 
@@ -286,6 +289,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted }) {
           deleting={deleting}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteModal(false)}
+          t={t}
         />
       )}
     </>
@@ -294,7 +298,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted }) {
 
 // ── DeleteModal ───────────────────────────────────────────────────────────────
 
-function DeleteModal({ roomName, deleting, onConfirm, onCancel }) {
+function DeleteModal({ roomName, deleting, onConfirm, onCancel, t }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
@@ -306,10 +310,10 @@ function DeleteModal({ roomName, deleting, onConfirm, onCancel }) {
         maxWidth: 360, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
       }}>
         <h3 style={{ margin: '0 0 10px', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
-          Delete room?
+          {t('deleteRoomTitle')}
         </h3>
         <p style={{ margin: '0 0 22px', fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>
-          Are you sure you want to delete <strong>{roomName}</strong>? This cannot be undone.
+          {t('deleteRoomConfirm')(roomName)}
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button
@@ -321,7 +325,7 @@ function DeleteModal({ roomName, deleting, onConfirm, onCancel }) {
               fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={onConfirm}
@@ -332,7 +336,7 @@ function DeleteModal({ roomName, deleting, onConfirm, onCancel }) {
               fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            {deleting ? 'Deleting…' : 'Delete room'}
+            {deleting ? t('deleting') : t('deleteRoomBtn')}
           </button>
         </div>
       </div>
@@ -342,21 +346,22 @@ function DeleteModal({ roomName, deleting, onConfirm, onCancel }) {
 
 // ── ScheduleRow ───────────────────────────────────────────────────────────────
 
-function ScheduleRow({ booking: b }) {
+function ScheduleRow({ booking: b, t, locale }) {
   const { fmtCurrency } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
+  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
   return (
     <div className="schedule-row">
       <div className="schedule-guest">
         {b.guest_first_name} {b.guest_last_name}
       </div>
       <div className="schedule-meta">
-        <span>{fmtDate(b.check_in_date)} → {fmtDate(b.check_out_date)}</span>
+        <span>{fmtDate(b.check_in_date, locale)} → {fmtDate(b.check_out_date, locale)}</span>
         <span>·</span>
-        <span>{nights} {nights === 1 ? 'night' : 'nights'}</span>
+        <span>{t('nightWord')(nights)}</span>
         <span>·</span>
         <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
-          {BADGE_LABEL[b.status] ?? b.status}
+          {statusLabel}
         </span>
         <span className="schedule-price">{fmtCurrency(b.total_price)}</span>
       </div>
@@ -387,17 +392,19 @@ function Field({ label, name, value, onChange, type = 'text', min, max }) {
   );
 }
 
-export function StatusPill({ status }) {
+export function StatusPill({ status, t: tProp }) {
+  const tCtx = useT();
+  const t = tProp ?? tCtx;
   const cfg = {
-    available:   { cls: 'pill-available',   dot: 'dot-available',   label: 'Available'    },
-    occupied:    { cls: 'pill-occupied',     dot: 'dot-occupied',    label: 'Occupied'     },
-    maintenance: { cls: 'pill-maintenance',  dot: 'dot-maintenance', label: 'Maintenance'  },
-  }[status] ?? { cls: 'pill-maintenance', dot: 'dot-maintenance', label: status };
+    available:   { cls: 'pill-available',   dot: 'dot-available',   labelKey: 'available'    },
+    occupied:    { cls: 'pill-occupied',     dot: 'dot-occupied',    labelKey: 'occupiedDot'  },
+    maintenance: { cls: 'pill-maintenance',  dot: 'dot-maintenance', labelKey: 'maintenance'  },
+  }[status] ?? { cls: 'pill-maintenance', dot: 'dot-maintenance', labelKey: null };
 
   return (
     <span className={`status-pill ${cfg.cls}`}>
       <span className={`status-dot ${cfg.dot}`} />
-      {cfg.label}
+      {cfg.labelKey ? t(cfg.labelKey) : status}
     </span>
   );
 }

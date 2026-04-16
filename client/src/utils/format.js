@@ -4,6 +4,8 @@
  * to avoid UTC-midnight drift issues.
  */
 
+export const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
+
 /** Returns today as YYYY-MM-DD in local time. */
 export function localToday() {
   const d = new Date();
@@ -15,25 +17,25 @@ export function localToday() {
 }
 
 /** "30 Mar" */
-export function formatDateShort(dateStr) {
+export function formatDateShort(dateStr, locale = 'en') {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
     day: 'numeric', month: 'short',
   });
 }
 
 /** "30 Mar 2026" */
-export function formatDateMedium(dateStr) {
+export function formatDateMedium(dateStr, locale = 'en') {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 }
 
 /** "Monday, 30 March 2026" */
-export function formatDateLong(dateStr) {
+export function formatDateLong(dateStr, locale = 'en') {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', {
+  return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 }
