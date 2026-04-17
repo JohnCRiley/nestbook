@@ -1,16 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+
+const LIMIT = 25;
 
 export default function Users() {
   const [rows,         setRows]         = useState([]);
+  const [total,        setTotal]        = useState(0);
+  const [page,         setPage]         = useState(1);
+  const [totalPages,   setTotalPages]   = useState(0);
+  const [search,       setSearch]       = useState('');
   const [busy,         setBusy]         = useState({});   // { `${id}_action`: true }
   const [refundTarget, setRefundTarget] = useState(null); // { id, name, email } | null
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, name, email } | null
   const [toast,        setToast]        = useState(null);
 
+  // Debounced search
+  const debounceRef = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
-    apiFetch('/api/admin/users').then(r => r.json()).then(setRows).catch(() => {});
-  }, []);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(debounceRef.current);
+  }, [search]);
+
+  const fetchUsers = useCallback(() => {
+    const params = new URLSearchParams({ page, limit: LIMIT });
+    if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+    apiFetch(`/api/admin/users?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setRows(data); setTotal(data.length); setTotalPages(1);
+        } else {
+          setRows(data.users ?? []); setTotal(data.total ?? 0); setTotalPages(data.totalPages ?? 1);
+        }
+      })
+      .catch(() => {});
+  }, [page, debouncedSearch]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
@@ -100,13 +131,25 @@ export default function Users() {
     setRows(r => r.filter(u => u.id !== userId));
     setDeleteTarget(null);
     showToast(`${name}'s account and all data have been permanently deleted.`);
+    fetchUsers(); // re-fetch to update total + pagination
   }
 
   return (
     <>
       <div className="page-header">
         <h1>Users</h1>
-        <div className="page-date">{rows.length} users registered</div>
+        <div className="page-date">{total} users registered</div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Search by name or email…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e2e8f0',
+                   fontSize: '0.875rem', width: 280 }}
+        />
       </div>
 
       <div className="admin-card">
@@ -215,6 +258,23 @@ export default function Users() {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="pagination" style={{ marginTop: 16 }}>
+          <span className="pagination-info">
+            Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)} of {total}
+          </span>
+          <div className="pagination-controls">
+            <button className="pagination-btn" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>
+              Previous
+            </button>
+            <span className="pagination-page">Page {page} of {totalPages}</span>
+            <button className="pagination-btn" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {refundTarget && (
         <RefundModal

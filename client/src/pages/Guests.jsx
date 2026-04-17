@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { initials, phoneFlag, phoneCountry } from '../utils/guestHelpers.js';
+import { initials, phoneFlag } from '../utils/guestHelpers.js';
 import GuestPanel    from './guests/GuestPanel.jsx';
 import NewGuestModal from './guests/NewGuestModal.jsx';
+import Pagination    from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 
-// ── Main component ────────────────────────────────────────────────────────────
+const LIMIT = 20;
 
 export default function Guests() {
   const t = useT();
@@ -15,65 +16,72 @@ export default function Guests() {
   const [searchParams] = useSearchParams();
 
   const [guests,          setGuests]          = useState([]);
-  const [bookings,        setBookings]        = useState([]);
+  const [bookings,        setBookings]        = useState([]); // full list for panel
+  const [counts,          setCounts]          = useState({ total: 0, newThisMonth: 0 });
   const [loading,         setLoading]         = useState(true);
   const [search,          setSearch]          = useState('');
+  const [page,            setPage]            = useState(1);
+  const [total,           setTotal]           = useState(0);
+  const [totalPages,      setTotalPages]      = useState(0);
   const [selectedGuest,   setSelectedGuest]   = useState(null);
   const [showNewModal,    setShowNewModal]     = useState(() => searchParams.get('newguest') === 'true');
-  const [newGuestCreated, setNewGuestCreated] = useState(null); // triggers "next step" modal
+  const [newGuestCreated, setNewGuestCreated] = useState(null);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // Debounced search
+  const searchDebounceRef = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [search]);
+
+  // ── Fetch stats via /counts endpoint ────────────────────────────────────────
+  const fetchCounts = useCallback(() => {
+    apiFetch('/api/guests/counts')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data) setCounts(data); })
+      .catch(() => {});
+  }, []);
+
+  // ── Fetch paginated guests ────────────────────────────────────────────────────
+  const fetchGuests = useCallback(() => {
+    const params = new URLSearchParams({ page, limit: LIMIT });
+    if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+
+    setLoading(true);
+    apiFetch(`/api/guests?${params}`)
+      .then((r) => r.ok ? r.json() : { guests: [], total: 0, page: 1, totalPages: 0 })
+      .then(({ guests: rows, total: tot, totalPages: tp }) => {
+        setGuests(rows);
+        setTotal(tot);
+        setTotalPages(tp);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [page, debouncedSearch]);
+
+  // ── Fetch all bookings (plain array, for the guest detail panel) ─────────────
   useEffect(() => {
     if (!property?.id) return;
-    Promise.all([
-      apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
-      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
-    ]).then(([g, b]) => {
-      setGuests(Array.isArray(g) ? g : []);
-      setBookings(Array.isArray(b) ? b : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    apiFetch(`/api/bookings?property_id=${property.id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((rows) => setBookings(Array.isArray(rows) ? rows : []))
+      .catch(() => {});
   }, [property?.id]);
 
-  // ── Booking counts per guest ───────────────────────────────────────────────
-  const bookingsByGuest = useMemo(() => {
-    const map = {};
-    for (const b of bookings) {
-      if (!map[b.guest_id]) map[b.guest_id] = [];
-      map[b.guest_id].push(b);
-    }
-    return map;
-  }, [bookings]);
+  // ── Fetch guests + counts whenever deps change ───────────────────────────────
+  useEffect(() => { fetchGuests(); fetchCounts(); }, [fetchGuests, fetchCounts]);
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const stats = useMemo(() => {
-    const today     = new Date();
-    const monthStr  = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-    const newThisMonth = guests.filter(
-      (g) => g.created_at && g.created_at.startsWith(monthStr)
-    ).length;
-
-    // Derive country from phone, tally, pick the top one
-    const countryCounts = {};
-    for (const g of guests) {
-      const c = phoneCountry(g.phone);
-      if (c) countryCounts[c] = (countryCounts[c] ?? 0) + 1;
-    }
-    const topCountry = Object.entries(countryCounts)
-      .sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
-
-    return { total: guests.length, newThisMonth, topCountry };
-  }, [guests]);
-
-  // ── Filtered list ──────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return guests;
-    return guests.filter((g) =>
-      `${g.first_name} ${g.last_name}`.toLowerCase().includes(q) ||
-      (g.email ?? '').toLowerCase().includes(q)
-    );
-  }, [guests, search]);
+  // ── Booking counts per guest (for card badges) ────────────────────────────────
+  const bookingsByGuest = {};
+  for (const b of bookings) {
+    if (!bookingsByGuest[b.guest_id]) bookingsByGuest[b.guest_id] = [];
+    bookingsByGuest[b.guest_id].push(b);
+  }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCardClick = (guest) =>
@@ -85,21 +93,21 @@ export default function Guests() {
   };
 
   const handleNewGuestSuccess = (created) => {
-    setGuests((prev) => [...prev, created]);
     setShowNewModal(false);
-    setNewGuestCreated(created); // show "what next?" modal instead of opening detail panel
+    setNewGuestCreated(created);
+    // Refresh to show the new guest + updated counts
+    fetchGuests();
+    fetchCounts();
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">{t('loadingGuests')}</div>;
-
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
           <h1>{t('guests')}</h1>
-          <div className="page-date">{guests.length} {t('guestRecords')}</div>
+          <div className="page-date">{counts.total} {t('guestRecords')}</div>
         </div>
         <button className="btn-primary" onClick={() => setShowNewModal(true)}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
@@ -109,9 +117,8 @@ export default function Guests() {
 
       {/* ── Stat bar ─────────────────────────────────────────────────────── */}
       <div className="stat-bar">
-        <StatBarItem value={stats.total}        label={t('totalGuests')} />
-        <StatBarItem value={stats.newThisMonth} label={t('newThisMonth')} />
-        <StatBarItem value={stats.topCountry}   label={t('topCountry')} isText />
+        <StatBarItem value={counts.total}        label={t('totalGuests')} />
+        <StatBarItem value={counts.newThisMonth} label={t('newThisMonth')} />
       </div>
 
       {/* ── Search ───────────────────────────────────────────────────────── */}
@@ -126,31 +133,42 @@ export default function Guests() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        {search && (
+        {search && !loading && (
           <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)' }}>
-            {t('searchResults')(filtered.length)}
+            {t('searchResults')(total)}
           </span>
         )}
       </div>
 
       {/* ── Guest card grid ───────────────────────────────────────────────── */}
-      <div className="guest-grid">
-        {filtered.length === 0 ? (
-          <div className="guests-empty">
-            {search ? t('noGuestsSearch')(search) : t('noGuests')}
+      {loading ? (
+        <div className="loading-screen">{t('loadingGuests')}</div>
+      ) : guests.length === 0 ? (
+        <div className="guests-empty">
+          {search ? t('noGuestsSearch')(search) : t('noGuests')}
+        </div>
+      ) : (
+        <>
+          <div className="guest-grid">
+            {guests.map((guest) => (
+              <GuestCard
+                key={guest.id}
+                guest={guest}
+                bookingCount={(bookingsByGuest[guest.id] ?? []).length}
+                isActive={selectedGuest?.id === guest.id}
+                onClick={handleCardClick}
+              />
+            ))}
           </div>
-        ) : (
-          filtered.map((guest) => (
-            <GuestCard
-              key={guest.id}
-              guest={guest}
-              bookingCount={(bookingsByGuest[guest.id] ?? []).length}
-              isActive={selectedGuest?.id === guest.id}
-              onClick={handleCardClick}
-            />
-          ))
-        )}
-      </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={LIMIT}
+            onPage={setPage}
+          />
+        </>
+      )}
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedGuest && (
@@ -222,12 +240,9 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
       className={`guest-card${isActive ? ' active' : ''}`}
       onClick={() => onClick(guest)}
     >
-      {/* Avatar */}
       <div className="guest-avatar">
         {initials(guest.first_name, guest.last_name)}
       </div>
-
-      {/* Info */}
       <div className="guest-card-info">
         <div className="guest-card-name">
           {guest.first_name} {guest.last_name}
@@ -241,8 +256,6 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
           <div className="guest-card-phone">{guest.phone}</div>
         )}
       </div>
-
-      {/* Stay count badge */}
       <div className="guest-card-right">
         <div className="guest-stay-count">
           <span className="sc-num">{bookingCount}</span>
@@ -253,14 +266,10 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatBarItem({ value, label, isText }) {
+function StatBarItem({ value, label }) {
   return (
     <div className="stat-bar-item">
-      <div className="sb-value" style={isText ? { fontSize: '1rem', paddingTop: 5 } : {}}>
-        {value}
-      </div>
+      <div className="sb-value">{value}</div>
       <div className="sb-label">{label}</div>
     </div>
   );

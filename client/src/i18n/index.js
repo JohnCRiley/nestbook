@@ -340,6 +340,11 @@ export const LANGS = {
     amenitiesHint:        'Comma-separated list',
     roomNameRequired:     'Room name is required.',
     priceRequired:        'A valid price per night is required.',
+    // ── Pagination ────────────────────────────────────────────────────────────
+    prevPage:             'Previous',
+    nextPage:             'Next',
+    pageXofY:             (page, total) => `Page ${page} of ${total}`,
+    showingXtoYofZ:       (from, to, total) => `Showing ${from}–${to} of ${total}`,
   },
 
   fr: {
@@ -676,6 +681,11 @@ export const LANGS = {
     amenitiesHint:        'Liste séparée par des virgules',
     roomNameRequired:     'Le nom de la chambre est obligatoire.',
     priceRequired:        'Un prix par nuit valide est requis.',
+    // ── Pagination ────────────────────────────────────────────────────────────
+    prevPage:             'Précédent',
+    nextPage:             'Suivant',
+    pageXofY:             (page, total) => `Page ${page} sur ${total}`,
+    showingXtoYofZ:       (from, to, total) => `Affichage de ${from}–${to} sur ${total}`,
   },
 
   es: {
@@ -1012,6 +1022,11 @@ export const LANGS = {
     amenitiesHint:        'Lista separada por comas',
     roomNameRequired:     'El nombre de la habitación es obligatorio.',
     priceRequired:        'Se requiere un precio por noche válido.',
+    // ── Pagination ────────────────────────────────────────────────────────────
+    prevPage:             'Anterior',
+    nextPage:             'Siguiente',
+    pageXofY:             (page, total) => `Página ${page} de ${total}`,
+    showingXtoYofZ:       (from, to, total) => `Mostrando ${from}–${to} de ${total}`,
   },
 
   de: {
@@ -1348,6 +1363,11 @@ export const LANGS = {
     amenitiesHint:        'Kommagetrennte Liste',
     roomNameRequired:     'Zimmername ist erforderlich.',
     priceRequired:        'Ein gültiger Preis pro Nacht ist erforderlich.',
+    // ── Pagination ────────────────────────────────────────────────────────────
+    prevPage:             'Zurück',
+    nextPage:             'Weiter',
+    pageXofY:             (page, total) => `Seite ${page} von ${total}`,
+    showingXtoYofZ:       (from, to, total) => `Zeige ${from}–${to} von ${total}`,
   },
 
   nl: {
@@ -1684,5 +1704,10 @@ export const LANGS = {
     amenitiesHint:        'Kommagescheiden lijst',
     roomNameRequired:     'Kamernaam is verplicht.',
     priceRequired:        'Een geldige prijs per nacht is vereist.',
+    // ── Pagination ────────────────────────────────────────────────────────────
+    prevPage:             'Vorige',
+    nextPage:             'Volgende',
+    pageXofY:             (page, total) => `Pagina ${page} van ${total}`,
+    showingXtoYofZ:       (from, to, total) => `${from}–${to} van ${total} weergegeven`,
   },
 };

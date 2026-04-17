@@ -35,30 +35,52 @@ function getUserPropertyIds(userId, role) {
   return u?.property_id ? [Number(u.property_id)] : [];
 }
 
-// ── GET /api/rooms?property_id=X&status=available ────────────────────────────
+// ── GET /api/rooms?property_id=X&status=available&page=1&limit=20 ────────────
+// Query params (all optional):
+//   property_id  — filter by property (access-checked)
+//   status       — filter by status
+//   page / limit — when present returns paginated object {rooms,total,page,totalPages}
+//                  when absent returns plain array (backward compat)
 roomsRouter.get('/', (req, res) => {
   try {
-    const { property_id, status } = req.query;
+    const { property_id, status, page, limit } = req.query;
+    const conditions = [];
+    const params     = [];
 
     if (property_id) {
       if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
         return res.status(403).json({ error: 'Access denied.' });
       }
-      const conditions = ['property_id = ?'];
-      const params     = [property_id];
-      if (status) { conditions.push('status = ?'); params.push(status); }
-      return res.json(
-        db.prepare(`SELECT * FROM rooms WHERE ${conditions.join(' AND ')} ORDER BY id`).all(...params)
-      );
+      conditions.push('property_id = ?');
+      params.push(property_id);
+    } else {
+      const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+      if (!propIds.length) {
+        return page ? res.json({ rooms: [], total: 0, page: 1, totalPages: 0 }) : res.json([]);
+      }
+      const placeholders = propIds.map(() => '?').join(',');
+      conditions.push(`property_id IN (${placeholders})`);
+      params.push(...propIds);
     }
 
-    // No filter: return rooms for all of the user's accessible properties
-    const propIds = getUserPropertyIds(req.user.userId, req.user.role);
-    if (!propIds.length) return res.json([]);
-    const placeholders = propIds.map(() => '?').join(',');
-    const rows = db.prepare(`SELECT * FROM rooms WHERE property_id IN (${placeholders}) ORDER BY id`)
-      .all(...propIds);
-    res.json(rows);
+    if (status) { conditions.push('status = ?'); params.push(status); }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    if (page) {
+      const pageNum   = Math.max(1, Number(page));
+      const pageLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+      const offset    = (pageNum - 1) * pageLimit;
+
+      const total = db.prepare(`SELECT COUNT(*) as n FROM rooms ${where}`).get(...params).n;
+      const rows  = db.prepare(
+        `SELECT * FROM rooms ${where} ORDER BY id LIMIT ? OFFSET ?`
+      ).all(...params, pageLimit, offset);
+
+      return res.json({ rooms: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+    }
+
+    res.json(db.prepare(`SELECT * FROM rooms ${where} ORDER BY id`).all(...params));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

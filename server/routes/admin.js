@@ -34,20 +34,52 @@ adminRouter.get('/signups', (req, res) => {
 
 // ── GET /api/admin/users ──────────────────────────────────────────────────────
 // Enriched with subscription data for plan management controls.
+// Query params: page (default 1), limit (default 25), search (name/email)
 adminRouter.get('/users', (req, res) => {
-  const rows = db.prepare(`
-    SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
-           u.discount_code, u.suspended,
-           p.name as property_name, p.country,
-           s.stripe_customer_id, s.stripe_subscription_id,
-           s.status as sub_status, s.current_period_end,
-           s.notes as sub_notes, s.cancel_at_period_end
-    FROM users u
-    LEFT JOIN properties p ON p.id = u.property_id
-    LEFT JOIN subscriptions s ON s.user_id = u.id
-    ORDER BY u.created_at DESC
-  `).all();
-  res.json(rows);
+  try {
+    const { page, limit, search } = req.query;
+    const conditions = [];
+    const params     = [];
+
+    if (search) {
+      const pattern = `%${search}%`;
+      conditions.push('(u.name LIKE ? OR u.email LIKE ?)');
+      params.push(pattern, pattern);
+    }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const BASE_SELECT = `
+      SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
+             u.discount_code, u.suspended,
+             p.name as property_name, p.country,
+             s.stripe_customer_id, s.stripe_subscription_id,
+             s.status as sub_status, s.current_period_end,
+             s.notes as sub_notes, s.cancel_at_period_end
+      FROM users u
+      LEFT JOIN properties p ON p.id = u.property_id
+      LEFT JOIN subscriptions s ON s.user_id = u.id
+    `;
+
+    if (page) {
+      const pageNum   = Math.max(1, Number(page));
+      const pageLimit = Math.min(100, Math.max(1, Number(limit) || 25));
+      const offset    = (pageNum - 1) * pageLimit;
+
+      const total = db.prepare(
+        `SELECT COUNT(*) as n FROM users u LEFT JOIN properties p ON p.id = u.property_id ${where}`
+      ).get(...params).n;
+      const rows = db.prepare(
+        `${BASE_SELECT} ${where} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`
+      ).all(...params, pageLimit, offset);
+
+      return res.json({ users: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+    }
+
+    res.json(db.prepare(`${BASE_SELECT} ${where} ORDER BY u.created_at DESC`).all(...params));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── POST /api/admin/users/:id/set-plan ────────────────────────────────────────
@@ -247,17 +279,47 @@ adminRouter.delete('/discount-codes/:id', async (req, res) => {
 });
 
 // ── GET /api/admin/properties ─────────────────────────────────────────────────
+// Query params: page (default 1), limit (default 25), search (name/country)
 adminRouter.get('/properties', (req, res) => {
-  const rows = db.prepare(`
-    SELECT p.id, p.name, p.type, p.country, p.created_at,
-           u.email as owner_email, u.plan,
-           (SELECT COUNT(*) FROM rooms    r WHERE r.property_id = p.id) as rooms_count,
-           (SELECT COUNT(*) FROM bookings b WHERE b.property_id = p.id) as bookings_count
-    FROM properties p
-    LEFT JOIN users u ON u.property_id = p.id AND u.role = 'owner'
-    ORDER BY p.created_at DESC
-  `).all();
-  res.json(rows);
+  try {
+    const { page, limit, search } = req.query;
+    const conditions = [];
+    const params     = [];
+
+    if (search) {
+      const pattern = `%${search}%`;
+      conditions.push('(p.name LIKE ? OR p.country LIKE ?)');
+      params.push(pattern, pattern);
+    }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const BASE_SELECT = `
+      SELECT p.id, p.name, p.type, p.country, p.created_at,
+             u.email as owner_email, u.plan,
+             (SELECT COUNT(*) FROM rooms    r WHERE r.property_id = p.id) as rooms_count,
+             (SELECT COUNT(*) FROM bookings b WHERE b.property_id = p.id) as bookings_count
+      FROM properties p
+      LEFT JOIN users u ON u.property_id = p.id AND u.role = 'owner'
+    `;
+
+    if (page) {
+      const pageNum   = Math.max(1, Number(page));
+      const pageLimit = Math.min(100, Math.max(1, Number(limit) || 25));
+      const offset    = (pageNum - 1) * pageLimit;
+
+      const total = db.prepare(`SELECT COUNT(*) as n FROM properties p ${where}`).get(...params).n;
+      const rows  = db.prepare(
+        `${BASE_SELECT} ${where} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`
+      ).all(...params, pageLimit, offset);
+
+      return res.json({ properties: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+    }
+
+    res.json(db.prepare(`${BASE_SELECT} ${where} ORDER BY p.created_at DESC`).all(...params));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── GET /api/admin/revenue ────────────────────────────────────────────────────

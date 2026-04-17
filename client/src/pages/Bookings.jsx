@@ -1,13 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { localToday, LOCALE_MAP } from '../utils/format.js';
 import { BADGE_CLASS, SOURCE_LABELS } from '../utils/bookingConstants.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
-import { apiFetch } from '../utils/apiFetch.js';
+import Pagination      from '../components/Pagination.jsx';
+import { apiFetch }    from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 
-// ── Main component ────────────────────────────────────────────────────────────
+const LIMIT = 20;
 
 export default function Bookings() {
   const today = localToday();
@@ -24,66 +25,84 @@ export default function Bookings() {
     { key: 'cancelled',   label: t('filters')[5] },
   ];
 
-  const [bookings,       setBookings]       = useState([]);
-  const [rooms,          setRooms]          = useState([]);
-  const [guests,         setGuests]         = useState([]);
-  const [loading,        setLoading]        = useState(true);
-  const [activeFilter,   setActiveFilter]   = useState('all');
-  const [search,         setSearch]         = useState('');
+  const [bookings,        setBookings]        = useState([]);
+  const [rooms,           setRooms]           = useState([]);
+  const [guests,          setGuests]          = useState([]);
+  const [counts,          setCounts]          = useState({ all: 0, arriving: 0, in_house: 0, confirmed: 0, checked_out: 0, cancelled: 0 });
+  const [loading,         setLoading]         = useState(true);
+  const [activeFilter,    setActiveFilter]    = useState('all');
+  const [search,          setSearch]          = useState('');
+  const [page,            setPage]            = useState(1);
+  const [total,           setTotal]           = useState(0);
+  const [totalPages,      setTotalPages]      = useState(0);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [showNewModal,   setShowNewModal]   = useState(() => !!location.state?.openModal);
+  const [showNewModal,    setShowNewModal]    = useState(() => !!location.state?.openModal);
 
-  // ── Data fetching ──────────────────────────────────────────────────────────
+  // Debounced search — only fires 350 ms after typing stops
+  const searchDebounceRef = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1); // Reset to first page on new search
+    }, 350);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [search]);
+
+  // ── Fetch filter counts (separate from paginated data) ──────────────────────
+  const fetchCounts = useCallback(() => {
+    if (!property?.id) return;
+    apiFetch(`/api/bookings/counts?property_id=${property.id}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data) setCounts(data); })
+      .catch(() => {});
+  }, [property?.id]);
+
+  // ── Fetch paginated bookings ─────────────────────────────────────────────────
+  const fetchBookings = useCallback(() => {
+    if (!property?.id) return;
+    const params = new URLSearchParams({
+      property_id: property.id,
+      page,
+      limit: LIMIT,
+    });
+    if (activeFilter !== 'all') params.set('filter', activeFilter);
+    if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+
+    setLoading(true);
+    apiFetch(`/api/bookings?${params}`)
+      .then((r) => r.ok ? r.json() : { bookings: [], total: 0, page: 1, totalPages: 0 })
+      .then(({ bookings: rows, total: tot, totalPages: tp }) => {
+        setBookings(rows);
+        setTotal(tot);
+        setTotalPages(tp);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [property?.id, page, activeFilter, debouncedSearch]);
+
+  // ── Initial load: rooms + guests (for modal) ─────────────────────────────────
   useEffect(() => {
     if (!property?.id) return;
     Promise.all([
-      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
-    ]).then(([b, r, g]) => {
-      setBookings(Array.isArray(b) ? b : []);
+    ]).then(([r, g]) => {
       setRooms(Array.isArray(r) ? r : []);
       setGuests(Array.isArray(g) ? g : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {});
   }, [property?.id]);
 
-  const refreshBookings = () =>
-    apiFetch(`/api/bookings?property_id=${property?.id}`)
-      .then((r) => r.ok ? r.json() : [])
-      .then((b) => setBookings(Array.isArray(b) ? b : []));
-
-  // ── Filtering ──────────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    return bookings
-      .filter((b) => {
-        switch (activeFilter) {
-          case 'arriving':    return b.status === 'arriving' && b.check_in_date === today;
-          case 'in_house':    return b.status === 'arriving' && b.check_in_date <  today;
-          case 'confirmed':   return b.status === 'confirmed';
-          case 'checked_out': return b.status === 'checked_out';
-          case 'cancelled':   return b.status === 'cancelled';
-          default:            return true;
-        }
-      })
-      .filter((b) => {
-        if (!search.trim()) return true;
-        const name = `${b.guest_first_name} ${b.guest_last_name}`.toLowerCase();
-        return name.includes(search.toLowerCase());
-      });
-  }, [bookings, activeFilter, search, today]);
-
-  // ── Filter counts ──────────────────────────────────────────────────────────
-  const counts = useMemo(() => ({
-    all:         bookings.length,
-    arriving:    bookings.filter((b) => b.status === 'arriving' && b.check_in_date === today).length,
-    in_house:    bookings.filter((b) => b.status === 'arriving' && b.check_in_date <  today).length,
-    confirmed:   bookings.filter((b) => b.status === 'confirmed').length,
-    checked_out: bookings.filter((b) => b.status === 'checked_out').length,
-    cancelled:   bookings.filter((b) => b.status === 'cancelled').length,
-  }), [bookings, today]);
+  // ── Fetch bookings + counts whenever deps change ─────────────────────────────
+  useEffect(() => { fetchBookings(); fetchCounts(); }, [fetchBookings, fetchCounts]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleFilterChange = (key) => {
+    setActiveFilter(key);
+    setPage(1);
+  };
+
   const handleRowClick = (booking) =>
     setSelectedBooking((prev) => (prev?.id === booking.id ? null : booking));
 
@@ -91,33 +110,32 @@ export default function Bookings() {
 
   const handleNewBookingSuccess = () => {
     setShowNewModal(false);
-    refreshBookings();
+    fetchBookings();
+    fetchCounts();
   };
 
   const handleStatusUpdate = (bookingId, newStatus) => {
     apiFetch(`/api/bookings/${bookingId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      // Merge the new status into the current selected booking fields
       body: JSON.stringify({ ...selectedBooking, status: newStatus }),
     })
       .then((r) => r.json())
       .then((updated) => {
         setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
         setSelectedBooking(updated);
+        fetchCounts();
       });
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">{t('loadingBookings')}</div>;
-
   return (
     <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
           <h1>{t('bookings')}</h1>
-          <div className="page-date">{bookings.length} {t('totalReservations')}</div>
+          <div className="page-date">{total} {t('totalReservations')}</div>
         </div>
         <button className="btn-primary" onClick={() => setShowNewModal(true)}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
@@ -127,7 +145,6 @@ export default function Bookings() {
 
       {/* ── Controls: search + filters ────────────────────────────────────── */}
       <div className="controls-row">
-        {/* Search */}
         <div className="search-wrap">
           <SearchIcon />
           <input
@@ -139,72 +156,78 @@ export default function Bookings() {
           />
         </div>
 
-        {/* Filter pills */}
         <div className="filter-bar">
           {FILTERS.map(({ key, label }) => (
             <button
               key={key}
               className={`filter-btn${activeFilter === key ? ' active' : ''}`}
-              onClick={() => setActiveFilter(key)}
+              onClick={() => handleFilterChange(key)}
             >
               {label}
-              <span className="f-count">{counts[key]}</span>
+              <span className="f-count">{counts[key] ?? 0}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Mobile card list (hidden on tablet+desktop via CSS) ─────────── */}
-      <div className="booking-cards">
-        {filtered.length === 0 ? (
-          <div className="table-empty">
-            {search ? t('noBookingsMatching')(search) : t('noBookingsFilter')}
+      {/* ── Loading / empty ───────────────────────────────────────────────── */}
+      {loading ? (
+        <div className="loading-screen">{t('loadingBookings')}</div>
+      ) : bookings.length === 0 ? (
+        <div className="table-empty">
+          {search.trim() ? t('noBookingsMatching')(search.trim()) : t('noBookingsFilter')}
+        </div>
+      ) : (
+        <>
+          {/* ── Mobile card list ─────────────────────────────────────────── */}
+          <div className="booking-cards">
+            {bookings.map((b) => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                isSelected={selectedBooking?.id === b.id}
+                onClick={handleRowClick}
+              />
+            ))}
           </div>
-        ) : (
-          filtered.map((b) => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              isSelected={selectedBooking?.id === b.id}
-              onClick={handleRowClick}
-            />
-          ))
-        )}
-      </div>
 
-      {/* ── Desktop/tablet table (hidden on mobile via CSS) ───────────────── */}
-      <div className="table-wrap">
-        {filtered.length === 0 ? (
-          <div className="table-empty">
-            {search ? t('noBookingsMatching')(search) : t('noBookingsFilter')}
+          {/* ── Desktop table ────────────────────────────────────────────── */}
+          <div className="table-wrap">
+            <table className="bookings-table">
+              <thead>
+                <tr>
+                  <th>{t('thGuest')}</th>
+                  <th>{t('thRoom')}</th>
+                  <th>{t('thCheckIn')}</th>
+                  <th>{t('thCheckOut')}</th>
+                  <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
+                  <th>{t('thSource')}</th>
+                  <th>{t('thTotal')}</th>
+                  <th>{t('thStatus')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.map((b) => (
+                  <BookingRow
+                    key={b.id}
+                    booking={b}
+                    isSelected={selectedBooking?.id === b.id}
+                    onClick={handleRowClick}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <table className="bookings-table">
-            <thead>
-              <tr>
-                <th>{t('thGuest')}</th>
-                <th>{t('thRoom')}</th>
-                <th>{t('thCheckIn')}</th>
-                <th>{t('thCheckOut')}</th>
-                <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
-                <th>{t('thSource')}</th>
-                <th>{t('thTotal')}</th>
-                <th>{t('thStatus')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((b) => (
-                <BookingRow
-                  key={b.id}
-                  booking={b}
-                  isSelected={selectedBooking?.id === b.id}
-                  onClick={handleRowClick}
-                />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={LIMIT}
+            onPage={setPage}
+          />
+        </>
+      )}
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedBooking && (
@@ -242,37 +265,22 @@ function BookingRow({ booking: b, isSelected, onClick }) {
       className={isSelected ? 'row-selected' : ''}
       onClick={() => onClick(b)}
     >
-      {/* Guest */}
       <td>
         <div className="cell-guest-name">{b.guest_first_name} {b.guest_last_name}</div>
         <div className="cell-guest-id">#{b.id}</div>
       </td>
-
-      {/* Room */}
       <td>{b.room_name ?? '—'}</td>
-
-      {/* Check-in */}
       <td>{formatTableDate(b.check_in_date, locale)}</td>
-
-      {/* Check-out */}
       <td>{formatTableDate(b.check_out_date, locale)}</td>
-
-      {/* Guests count */}
       <td style={{ textAlign: 'center' }}>{b.num_guests}</td>
-
-      {/* Source */}
       <td>
         <span className={`source-chip source-${b.source}`}>
           {SOURCE_LABELS[b.source] ?? b.source}
         </span>
       </td>
-
-      {/* Price */}
       <td className="cell-price">
         {b.total_price != null ? fmtCurrency(b.total_price) : <span className="cell-muted">{t('tbc')}</span>}
       </td>
-
-      {/* Status */}
       <td>
         <span className={BADGE_CLASS[b.status] ?? 'badge'}>
           {statusLabel}
@@ -282,7 +290,7 @@ function BookingRow({ booking: b, isSelected, onClick }) {
   );
 }
 
-// ── BookingCard (mobile view) ─────────────────────────────────────────────────
+// ── BookingCard (mobile) ──────────────────────────────────────────────────────
 
 function BookingCard({ booking: b, isSelected, onClick }) {
   const { fmtCurrency, locale } = useLocale();
@@ -295,9 +303,7 @@ function BookingCard({ booking: b, isSelected, onClick }) {
     >
       <div className="bc-header">
         <span className="bc-name">{b.guest_first_name} {b.guest_last_name}</span>
-        <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-          {statusLabel}
-        </span>
+        <span className={BADGE_CLASS[b.status] ?? 'badge'}>{statusLabel}</span>
       </div>
       <div className="bc-room">{b.room_name ?? '—'}</div>
       <div className="bc-dates">
@@ -312,7 +318,6 @@ function BookingCard({ booking: b, isSelected, onClick }) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** "30 Mar 2026" for table cells */
 function formatTableDate(dateStr, locale = 'en') {
   if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-').map(Number);

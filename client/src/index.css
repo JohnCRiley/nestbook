@@ -19,7 +19,7 @@
 
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body, #root      { height: 100%; }
+html, body, #root      { height: 100%; overflow: hidden; }
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--page-bg);
@@ -32,7 +32,8 @@ a { text-decoration: none; }
 /* ─── App layout ─────────────────────────────────────────────────────────── */
 .layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ─── Sidebar ────────────────────────────────────────────────────────────── */
@@ -162,7 +163,8 @@ a { text-decoration: none; }
   margin-left: 240px;
   flex: 1;
   padding: 36px 40px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 /* ─── Mobile top bar (hidden on tablet + desktop) ───────────────────────── */
@@ -350,6 +352,7 @@ a { text-decoration: none; }
     padding-top: calc(56px + 24px);
     padding-left: 20px;
     padding-right: 20px;
+    height: 100dvh;
   }
 
   /* Sidebar hidden off-screen by default */
@@ -2704,7 +2707,8 @@ a { text-decoration: none; }
 
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .admin-sidebar {
@@ -2714,6 +2718,8 @@ a { text-decoration: none; }
   display: flex;
   flex-direction: column;
   padding: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .admin-brand {
@@ -2793,6 +2799,7 @@ a { text-decoration: none; }
   flex: 1;
   padding: 32px 36px;
   background: #f8fafc;
+  height: 100vh;
   overflow-y: auto;
 }
 
@@ -3371,4 +3378,53 @@ a { text-decoration: none; }
 @media (max-width: 767px) {
   .modal-overlay { padding: 16px 8px; align-items: flex-start; }
   .modal { border-radius: 12px; }
+}
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--border);
+}
+.pagination-info {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pagination-page {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  min-width: 90px;
+  text-align: center;
+}
+.pagination-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s;
+}
+.pagination-btn:hover:not(:disabled) {
+  background: var(--light-green);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+.pagination-btn:disabled {
+  opacity: 0.38;
+  cursor: default;
 }

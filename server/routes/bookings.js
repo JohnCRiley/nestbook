@@ -65,16 +65,43 @@ const ENRICHED_SELECT = `
   LEFT JOIN rooms  r ON b.room_id   = r.id
 `;
 
+// ── GET /api/bookings/counts ──────────────────────────────────────────────────
+// Returns per-status counts for filter pill badges.
+// Must be defined BEFORE /:id so Express doesn't treat "counts" as an id param.
+bookingsRouter.get('/counts', (req, res) => {
+  try {
+    const { property_id } = req.query;
+    if (!property_id) return res.status(400).json({ error: 'property_id required' });
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const base = `FROM bookings b WHERE b.property_id = ?`;
+    res.json({
+      all:         db.prepare(`SELECT COUNT(*) as n ${base}`).get(property_id).n,
+      arriving:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'arriving' AND b.check_in_date = date('now')`).get(property_id).n,
+      in_house:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'arriving' AND b.check_in_date < date('now')`).get(property_id).n,
+      confirmed:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'confirmed'`).get(property_id).n,
+      checked_out: db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'checked_out'`).get(property_id).n,
+      cancelled:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled'`).get(property_id).n,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings ─────────────────────────────────────────────────────────
 // Query params (all optional):
 //   property_id  — filter by property
-//   status       — filter by status (confirmed | arriving | checked_out | cancelled)
+//   status       — raw status filter (for calendar/dashboard backward compat)
 //   room_id      — filter by room
-//   from         — bookings with check_in_date >= from  (YYYY-MM-DD)
-//   to           — bookings with check_out_date <= to
+//   from / to    — date range
+//   filter       — named tab filter: arriving | in_house | confirmed | checked_out | cancelled
+//   search       — guest name search
+//   page / limit — when present returns paginated object {bookings,total,page,totalPages}
+//                  when absent returns plain array (backward compat)
 bookingsRouter.get('/', (req, res) => {
   try {
-    const { property_id, status, room_id, from, to } = req.query;
+    const { property_id, status, room_id, from, to, filter, search, page, limit } = req.query;
     const conditions = [];
     const params     = [];
 
@@ -85,9 +112,10 @@ bookingsRouter.get('/', (req, res) => {
       conditions.push('b.property_id = ?');
       params.push(property_id);
     } else {
-      // Scope to all of the user's accessible properties
       const propIds = getUserPropertyIds(req.user.userId, req.user.role);
-      if (!propIds.length) return res.json([]);
+      if (!propIds.length) {
+        return page ? res.json({ bookings: [], total: 0, page: 1, totalPages: 0 }) : res.json([]);
+      }
       const placeholders = propIds.map(() => '?').join(',');
       conditions.push(`b.property_id IN (${placeholders})`);
       params.push(...propIds);
@@ -98,8 +126,39 @@ bookingsRouter.get('/', (req, res) => {
     if (from)    { conditions.push('b.check_in_date >= ?');  params.push(from); }
     if (to)      { conditions.push('b.check_out_date <= ?'); params.push(to); }
 
+    // Named filter tab — maps to status + optional date conditions (no user input in SQL)
+    if (filter && filter !== 'all') {
+      switch (filter) {
+        case 'arriving':    conditions.push("b.status = 'arriving' AND b.check_in_date = date('now')"); break;
+        case 'in_house':    conditions.push("b.status = 'arriving' AND b.check_in_date < date('now')"); break;
+        case 'confirmed':   conditions.push("b.status = 'confirmed'");   break;
+        case 'checked_out': conditions.push("b.status = 'checked_out'"); break;
+        case 'cancelled':   conditions.push("b.status = 'cancelled'");   break;
+      }
+    }
+
+    if (search) {
+      conditions.push("(g.first_name || ' ' || g.last_name) LIKE ?");
+      params.push(`%${search}%`);
+    }
+
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
-    const rows  = db.prepare(`${ENRICHED_SELECT} ${where} ORDER BY b.check_in_date`).all(...params);
+
+    if (page) {
+      const pageNum   = Math.max(1, Number(page));
+      const pageLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+      const offset    = (pageNum - 1) * pageLimit;
+
+      const countSql = `SELECT COUNT(*) as n FROM bookings b LEFT JOIN guests g ON b.guest_id = g.id LEFT JOIN rooms r ON b.room_id = r.id ${where}`;
+      const total = db.prepare(countSql).get(...params).n;
+      const rows  = db.prepare(
+        `${ENRICHED_SELECT} ${where} ORDER BY b.check_in_date DESC LIMIT ? OFFSET ?`
+      ).all(...params, pageLimit, offset);
+
+      return res.json({ bookings: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+    }
+
+    const rows = db.prepare(`${ENRICHED_SELECT} ${where} ORDER BY b.check_in_date`).all(...params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
