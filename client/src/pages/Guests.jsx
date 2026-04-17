@@ -216,6 +216,13 @@ export default function Guests() {
                 <button
                   className="btn-secondary"
                   style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
+                  onClick={() => { setNewGuestCreated(null); setShowNewModal(true); }}
+                >
+                  {t('addAnotherGuest')}
+                </button>
+                <button
+                  className="btn-secondary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
                   onClick={() => { setNewGuestCreated(null); navigate('/dashboard'); }}
                 >
                   {t('returnDashboard')}

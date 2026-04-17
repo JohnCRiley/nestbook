@@ -362,7 +362,8 @@
   background: #fff;
   border-radius: 14px;
   width: 100%;
-  max-width: 520px;
+  min-width: 320px;
+  max-width: 480px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -385,11 +386,19 @@
   gap: 12px;
   flex-shrink: 0;
 }
+.nb-hd-inner {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
 .nb-hd-title {
   color: #fff;
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: -0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nb-hd-brand {
   color: ${BRAND_LIGHT};
@@ -420,7 +429,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  flex: 0 0 auto;
   justify-content: center;
 }
 .nb-step-item {
@@ -494,6 +503,7 @@
   border: none;
   border-radius: 8px;
   padding: 10px 22px;
+  min-height: 44px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -508,6 +518,7 @@
   border: 1.5px solid #d1d5db;
   border-radius: 8px;
   padding: 9px 16px;
+  min-height: 44px;
   font-size: 0.875rem;
   color: #557a4a;
   font-weight: 500;
@@ -760,6 +771,33 @@
   letter-spacing: 0.5px;
   color: #8aab7f;
   margin-bottom: 12px;
+}
+
+/* ── Mobile responsive ── */
+@media (max-width: 540px) {
+  .nb-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .nb-modal {
+    max-width: 100%;
+    min-width: 0;
+    border-radius: 16px 16px 0 0;
+    max-height: 92vh;
+  }
+  .nb-step-label {
+    display: none;
+  }
+  .nb-date-grid,
+  .nb-field-row {
+    grid-template-columns: 1fr;
+  }
+  .nb-body {
+    padding: 16px 16px 12px;
+  }
+  .nb-ft {
+    padding: 12px 16px;
+  }
 }
 `;
     document.head.appendChild(style);
