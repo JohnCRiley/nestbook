@@ -34,10 +34,11 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
   const { currencySymbol, property } = useLocale();
   const t = useT();
   const navigate = useNavigate();
-  const [form,       setForm]       = useState({ ...EMPTY_FORM, ...initialValues });
-  const [guests]                    = useState(initialGuests);
-  const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState(null);
+  const [form,              setForm]              = useState({ ...EMPTY_FORM, ...initialValues });
+  const [guests]                                  = useState(initialGuests);
+  const [submitting,        setSubmitting]        = useState(false);
+  const [error,             setError]             = useState(null);
+  const [availabilityError, setAvailabilityError] = useState(null);
 
   // ── Auto-calculate total price ─────────────────────────────────────────────
   useEffect(() => {
@@ -52,6 +53,22 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
       setForm((prev) => ({ ...prev, total_price: room.price_per_night * nights }));
     }
   }, [form.room_id, form.check_in_date, form.check_out_date, rooms]);
+
+  // ── Availability pre-flight check ──────────────────────────────────────────
+  useEffect(() => {
+    setAvailabilityError(null);
+    if (!form.room_id || !form.check_in_date || !form.check_out_date) return;
+    if (form.check_out_date <= form.check_in_date) return;
+    const params = new URLSearchParams({
+      room_id:        form.room_id,
+      check_in_date:  form.check_in_date,
+      check_out_date: form.check_out_date,
+    });
+    apiFetch(`/api/bookings/check?${params}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data && !data.available) setAvailabilityError(t('roomNotAvailable')); })
+      .catch(() => {});
+  }, [form.room_id, form.check_in_date, form.check_out_date, t]);
 
   // ── Handle field changes ───────────────────────────────────────────────────
   const handleChange = (e) => {
@@ -126,7 +143,8 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
 
-            {error && <div className="form-error">{error}</div>}
+            {error             && <div className="form-error">{error}</div>}
+            {availabilityError && <div className="form-error">{availabilityError}</div>}
 
             <div className="form-grid">
 
@@ -290,7 +308,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
             <button type="button" className="btn-secondary" onClick={onClose} disabled={submitting}>
               {t('cancel')}
             </button>
-            <button type="submit" className="btn-primary" disabled={submitting}>
+            <button type="submit" className="btn-primary" disabled={submitting || !!availabilityError}>
               {submitting ? t('creating') : t('createBooking')}
             </button>
           </div>

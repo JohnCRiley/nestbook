@@ -83,6 +83,17 @@ widgetRouter.post('/bookings', (req, res) => {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
     }
 
+    const conflict = db.prepare(`
+      SELECT id FROM bookings
+      WHERE room_id = ?
+        AND status NOT IN ('cancelled', 'checked_out')
+        AND check_in_date < ?
+        AND check_out_date > ?
+    `).get(room_id, check_out_date, check_in_date);
+    if (conflict) {
+      return res.status(409).json({ error: 'This room is no longer available for the selected dates. Please choose different dates.' });
+    }
+
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,

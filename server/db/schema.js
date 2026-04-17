@@ -231,6 +231,7 @@ export function initSchema() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property  ON bookings(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin   ON bookings(check_in_date)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_status    ON bookings(status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_room      ON bookings(room_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rooms_property     ON rooms(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_guests_name        ON guests(last_name, first_name)`);
 

@@ -65,6 +65,21 @@ const ENRICHED_SELECT = `
   LEFT JOIN rooms  r ON b.room_id   = r.id
 `;
 
+const OVERLAP_ERROR = 'This room is already booked for the selected dates. Please choose different dates or a different room.';
+
+function hasOverlap(roomId, checkIn, checkOut, excludeId = null) {
+  const sql = `
+    SELECT id FROM bookings
+    WHERE room_id = ?
+      AND status NOT IN ('cancelled', 'checked_out')
+      AND check_in_date < ?
+      AND check_out_date > ?
+      ${excludeId ? 'AND id != ?' : ''}
+  `;
+  const args = excludeId ? [roomId, checkOut, checkIn, excludeId] : [roomId, checkOut, checkIn];
+  return !!db.prepare(sql).get(...args);
+}
+
 // ── GET /api/bookings/counts ──────────────────────────────────────────────────
 // Returns per-status counts for filter pill badges.
 // Must be defined BEFORE /:id so Express doesn't treat "counts" as an id param.
@@ -165,6 +180,22 @@ bookingsRouter.get('/', (req, res) => {
   }
 });
 
+// ── GET /api/bookings/check ───────────────────────────────────────────────
+// Pre-flight availability check used by NewBookingModal.
+// Query params: room_id, check_in_date, check_out_date, exclude_id (optional)
+bookingsRouter.get('/check', (req, res) => {
+  try {
+    const { room_id, check_in_date, check_out_date, exclude_id } = req.query;
+    if (!room_id || !check_in_date || !check_out_date) {
+      return res.status(400).json({ error: 'room_id, check_in_date and check_out_date are required' });
+    }
+    const conflict = hasOverlap(Number(room_id), check_in_date, check_out_date, exclude_id ? Number(exclude_id) : null);
+    res.json({ available: !conflict });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings/:id ─────────────────────────────────────────────────
 bookingsRouter.get('/:id', (req, res) => {
   try {
@@ -196,6 +227,10 @@ bookingsRouter.post('/', (req, res) => {
 
     if (check_out_date <= check_in_date) {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
+    }
+
+    if (hasOverlap(Number(room_id), check_in_date, check_out_date)) {
+      return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
     const result = db.prepare(`
@@ -237,6 +272,10 @@ bookingsRouter.put('/:id', (req, res) => {
 
     if (check_out_date <= check_in_date) {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
+    }
+
+    if (hasOverlap(Number(room_id), check_in_date, check_out_date, Number(req.params.id))) {
+      return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
     db.prepare(`
