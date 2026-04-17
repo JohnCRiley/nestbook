@@ -25,9 +25,15 @@ export default function Bookings() {
     { key: 'cancelled',   label: t('filters')[5] },
   ];
 
+  // If we arrived via "New Booking" on the dashboard, remember the intent but
+  // don't open the modal yet — wait until guests have loaded so the dropdown
+  // is populated when the modal first renders.
+  const autoOpenPending = useRef(!!location.state?.openModal);
+
   const [bookings,        setBookings]        = useState([]);
   const [rooms,           setRooms]           = useState([]);
   const [guests,          setGuests]          = useState([]);
+  const [guestsLoaded,    setGuestsLoaded]    = useState(false);
   const [counts,          setCounts]          = useState({ all: 0, arriving: 0, in_house: 0, confirmed: 0, checked_out: 0, cancelled: 0 });
   const [loading,         setLoading]         = useState(true);
   const [activeFilter,    setActiveFilter]    = useState('all');
@@ -36,7 +42,7 @@ export default function Bookings() {
   const [total,           setTotal]           = useState(0);
   const [totalPages,      setTotalPages]      = useState(0);
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [showNewModal,    setShowNewModal]    = useState(() => !!location.state?.openModal);
+  const [showNewModal,    setShowNewModal]    = useState(false);
 
   // Debounced search — only fires 350 ms after typing stops
   const searchDebounceRef = useRef(null);
@@ -91,8 +97,19 @@ export default function Bookings() {
     ]).then(([r, g]) => {
       setRooms(Array.isArray(r) ? r : []);
       setGuests(Array.isArray(g) ? g : []);
-    }).catch(() => {});
+      setGuestsLoaded(true);
+    }).catch(() => {
+      setGuestsLoaded(true); // unblock auto-open even on error
+    });
   }, [property?.id]);
+
+  // ── Auto-open modal once guests are loaded (dashboard "New Booking" flow) ─────
+  useEffect(() => {
+    if (guestsLoaded && autoOpenPending.current) {
+      autoOpenPending.current = false;
+      setShowNewModal(true);
+    }
+  }, [guestsLoaded]);
 
   // ── Fetch bookings + counts whenever deps change ─────────────────────────────
   useEffect(() => { fetchBookings(); fetchCounts(); }, [fetchBookings, fetchCounts]);
