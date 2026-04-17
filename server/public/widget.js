@@ -398,12 +398,7 @@
   color: rgba(255,255,255,0.9);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-}
-.nb-hd-logo-icon {
-  font-size: 1.1rem;
-  line-height: 1;
+  letter-spacing: 0.3px;
 }
 .nb-close {
   background: rgba(255,255,255,0.12);
@@ -1162,7 +1157,10 @@
 
     const topbar = el('div', 'nb-hd-topbar');
     const logo = el('span', 'nb-hd-logo');
-    const logoIcon = el('span', 'nb-hd-logo-icon'); logoIcon.appendChild(txt('🌿'));
+    const logoIcon = el('img', 'nb-hd-logo-icon');
+    logoIcon.src = '/icon.svg';
+    logoIcon.alt = 'NestBook';
+    logoIcon.style.cssText = 'width:20px;height:20px;border-radius:4px;';
     logo.appendChild(logoIcon); logo.appendChild(txt('NestBook'));
     const closeBtn = el('button', 'nb-close');
     closeBtn.setAttribute('aria-label', T.close);
