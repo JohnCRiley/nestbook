@@ -32,6 +32,7 @@ export default function Overview() {
         <div className="admin-card-header">
           <h2>Recent Signups</h2>
         </div>
+        <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
@@ -54,6 +55,7 @@ export default function Overview() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </>
   );

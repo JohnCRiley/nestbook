@@ -450,3 +450,108 @@ adminRouter.get('/geography', (req, res) => {
     percentage: total > 0 ? Math.round((r.count / total) * 100) : 0,
   })));
 });
+
+// ── GET /api/admin/mailing-list ───────────────────────────────────────────────
+// Returns filtered users for the mailing list / export tool.
+// Never exposes passwords or sensitive auth data.
+// Query params: plan, propertyType, country, language, status,
+//               registeredFrom (YYYY-MM-DD), registeredTo (YYYY-MM-DD),
+//               verifiedOnly, page (default 1), limit (default 50, max 5000 for export)
+adminRouter.get('/mailing-list', (req, res) => {
+  try {
+    const {
+      plan, propertyType, country, language, status,
+      registeredFrom, registeredTo, verifiedOnly,
+      page, limit,
+    } = req.query;
+
+    const conditions = [];
+    const params     = [];
+
+    if (plan && plan !== 'all') {
+      conditions.push('u.plan = ?');
+      params.push(plan);
+    }
+
+    if (propertyType && propertyType !== 'all') {
+      conditions.push('p.type = ?');
+      params.push(propertyType);
+    }
+
+    // Country — flexible LIKE match to handle free-text input
+    if (country && country !== 'all') {
+      if (country === 'other') {
+        conditions.push(
+          `(p.country IS NULL OR p.country = '' OR (p.country NOT LIKE '%UK%' AND p.country NOT LIKE '%United Kingdom%' AND p.country NOT LIKE '%France%' AND p.country NOT LIKE '%Spain%' AND p.country NOT LIKE '%Germany%' AND p.country NOT LIKE '%Deutschland%' AND p.country NOT LIKE '%Netherlands%' AND p.country NOT LIKE '%Nederland%'))`
+        );
+      } else {
+        const COUNTRY_PATTERNS = {
+          UK:          ['%UK%', '%United Kingdom%', '%Britain%'],
+          France:      ['%France%'],
+          Spain:       ['%Spain%', '%España%'],
+          Germany:     ['%Germany%', '%Deutschland%'],
+          Netherlands: ['%Netherlands%', '%Nederland%', '%Holland%'],
+        };
+        const patterns = COUNTRY_PATTERNS[country] ?? [`%${country}%`];
+        const likeClause = patterns.map(() => 'p.country LIKE ?').join(' OR ');
+        conditions.push(`(${likeClause})`);
+        params.push(...patterns);
+      }
+    }
+
+    if (language && language !== 'all') {
+      conditions.push('p.locale = ?');
+      params.push(language);
+    }
+
+    if (verifiedOnly === 'true') {
+      conditions.push('u.email_verified = 1');
+    }
+
+    if (registeredFrom) {
+      conditions.push("date(u.created_at) >= ?");
+      params.push(registeredFrom);
+    }
+    if (registeredTo) {
+      conditions.push("date(u.created_at) <= ?");
+      params.push(registeredTo);
+    }
+
+    // Status filter
+    if (status === 'active') {
+      conditions.push('u.suspended = 0');
+      conditions.push("(s.status = 'active' OR s.id IS NULL)");
+    } else if (status === 'suspended') {
+      conditions.push('u.suspended = 1');
+    } else if (status === 'cancelled') {
+      conditions.push("s.status = 'cancelled'");
+    }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const BASE_FROM = `
+      FROM users u
+      LEFT JOIN properties p ON p.id = u.property_id
+      LEFT JOIN subscriptions s ON s.user_id = u.id
+      ${where}
+    `;
+
+    const pageNum   = Math.max(1, Number(page) || 1);
+    const pageLimit = Math.min(5000, Math.max(1, Number(limit) || 50));
+    const offset    = (pageNum - 1) * pageLimit;
+
+    const total = db.prepare(`SELECT COUNT(*) as n ${BASE_FROM}`).get(...params).n;
+    const rows  = db.prepare(`
+      SELECT u.id, u.name, u.email, u.plan, u.created_at, u.email_verified,
+             u.suspended,
+             p.type AS property_type, p.country, p.locale AS language
+      ${BASE_FROM}
+      ORDER BY u.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(...params, pageLimit, offset);
+
+    res.json({ users: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

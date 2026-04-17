@@ -173,6 +173,7 @@ export default function AdminSettings() {
             No active discount codes yet.
           </div>
         ) : (
+          <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
@@ -220,6 +221,7 @@ export default function AdminSettings() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

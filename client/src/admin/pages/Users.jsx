@@ -9,10 +9,11 @@ export default function Users() {
   const [page,         setPage]         = useState(1);
   const [totalPages,   setTotalPages]   = useState(0);
   const [search,       setSearch]       = useState('');
-  const [busy,         setBusy]         = useState({});   // { `${id}_action`: true }
-  const [refundTarget, setRefundTarget] = useState(null); // { id, name, email } | null
-  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name, email } | null
+  const [busy,         setBusy]         = useState({});
+  const [refundTarget, setRefundTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [toast,        setToast]        = useState(null);
+  const [expandedCard, setExpandedCard] = useState(null); // user id expanded on mobile
 
   // Debounced search
   const debounceRef = useRef(null);
@@ -62,7 +63,7 @@ export default function Users() {
       });
       if (res.ok) {
         setRows(r => r.map(u => u.id === userId ? { ...u, plan } : u));
-        showToast('Plan updated successfully. Ask the user to refresh their browser to see the changes.');
+        showToast('Plan updated. Ask the user to refresh to see changes.');
       } else {
         const d = await res.json();
         showToast(d.error || 'Failed to update plan.', 'error');
@@ -81,7 +82,7 @@ export default function Users() {
           ? { ...u, plan: 'pro', sub_notes: 'Complimentary', stripe_subscription_id: null, cancel_at_period_end: 0 }
           : u
         ));
-        showToast('Plan updated successfully. Ask the user to refresh their browser to see the changes.');
+        showToast('Plan updated. Ask the user to refresh to see changes.');
       } else {
         const d = await res.json();
         showToast(d.error || 'Failed to comp account.', 'error');
@@ -107,9 +108,8 @@ export default function Users() {
   }
 
   async function toggleSuspend(userId, name, isSuspended) {
-    const action   = isSuspended ? 'unsuspend' : 'suspend';
-    const verb     = isSuspended ? 'Unsuspend' : 'Suspend';
-    const confirm  = isSuspended
+    const action  = isSuspended ? 'unsuspend' : 'suspend';
+    const confirm = isSuspended
       ? `Unsuspend ${name}? They will be able to log in again.`
       : `Suspend ${name}? They will be blocked from logging in immediately.`;
     if (!window.confirm(confirm)) return;
@@ -131,7 +131,56 @@ export default function Users() {
     setRows(r => r.filter(u => u.id !== userId));
     setDeleteTarget(null);
     showToast(`${name}'s account and all data have been permanently deleted.`);
-    fetchUsers(); // re-fetch to update total + pagination
+    fetchUsers();
+  }
+
+  // Action buttons — reused by both table row and mobile card
+  function ActionButtons({ u }) {
+    return (
+      <div className="sa-actions">
+        <button
+          className="sa-btn sa-btn-comp"
+          disabled={!!busy[`${u.id}_comp`]}
+          onClick={() => compAccount(u.id, u.name)}
+          title="Set to Pro complimentary (cancels Stripe sub)"
+        >
+          {busy[`${u.id}_comp`] ? '…' : 'Comp'}
+        </button>
+        {u.stripe_subscription_id && !u.cancel_at_period_end ? (
+          <button
+            className="sa-btn sa-btn-cancel"
+            disabled={!!busy[`${u.id}_cancel`]}
+            onClick={() => cancelSub(u.id, u.name)}
+            title="Cancel Stripe subscription at period end"
+          >
+            {busy[`${u.id}_cancel`] ? '…' : 'Cancel sub'}
+          </button>
+        ) : null}
+        {u.stripe_customer_id ? (
+          <button
+            className="sa-btn sa-btn-refund"
+            onClick={() => setRefundTarget({ id: u.id, name: u.name, email: u.email })}
+            title="Issue a refund via Stripe"
+          >
+            Refund
+          </button>
+        ) : null}
+        <button
+          className={`sa-btn ${u.suspended ? 'sa-btn-comp' : 'sa-btn-cancel'}`}
+          disabled={!!busy[`${u.id}_suspend`]}
+          onClick={() => toggleSuspend(u.id, u.name, !!u.suspended)}
+        >
+          {busy[`${u.id}_suspend`] ? '…' : u.suspended ? 'Unsuspend' : 'Suspend'}
+        </button>
+        <button
+          className="sa-btn sa-btn-delete"
+          onClick={() => setDeleteTarget({ id: u.id, name: u.name, email: u.email })}
+          title="Permanently delete account and all data (GDPR)"
+        >
+          Delete
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -148,117 +197,156 @@ export default function Users() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e2e8f0',
-                   fontSize: '0.875rem', width: 280 }}
+                   fontSize: '0.875rem', width: '100%', maxWidth: 320, boxSizing: 'border-box' }}
         />
       </div>
 
-      <div className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name / Email</th>
-              <th>Role</th>
-              <th>Plan</th>
-              <th>Property</th>
-              <th>Discount</th>
-              <th>Joined</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(u => (
-              <tr key={u.id} style={u.suspended ? { opacity: 0.6, background: '#fef2f2' } : {}}>
-                <td>
-                  <div style={{ fontWeight: 600, color: '#0f172a' }}>
-                    {u.name}
-                    {!!u.suspended && (
-                      <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 6 }}>SUSPENDED</span>
-                    )}
-                  </div>
-                  <div className="admin-muted" style={{ fontSize: '0.8rem' }}>{u.email}</div>
-                </td>
-                <td>
-                  <span className={`role-badge role-${u.role}`}>
-                    {u.role === 'owner' ? 'Owner' : 'Reception'}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <select
-                      className="sa-plan-select"
-                      value={u.plan ?? 'free'}
-                      disabled={!!busy[`${u.id}_plan`]}
-                      onChange={e => setPlan(u.id, e.target.value)}
-                    >
-                      <option value="free">Free</option>
-                      <option value="pro">Pro</option>
-                      <option value="multi">Multi</option>
-                    </select>
-                    {u.sub_notes === 'Complimentary' && (
-                      <span className="sa-badge sa-badge-comp">COMP</span>
-                    )}
-                    {u.cancel_at_period_end ? (
-                      <span className="sa-badge sa-badge-cancel">Cancelling</span>
-                    ) : null}
-                  </div>
-                </td>
-                <td>{u.property_name ?? '—'}</td>
-                <td className="admin-muted" style={{ fontSize: '0.8rem' }}>
-                  {u.discount_code ?? '—'}
-                </td>
-                <td className="admin-muted">{fmtDate(u.created_at)}</td>
-                <td>
-                  <div className="sa-actions">
-                    <button
-                      className="sa-btn sa-btn-comp"
-                      disabled={!!busy[`${u.id}_comp`]}
-                      onClick={() => compAccount(u.id, u.name)}
-                      title="Set to Pro complimentary (cancels Stripe sub)"
-                    >
-                      {busy[`${u.id}_comp`] ? '…' : 'Comp'}
-                    </button>
-                    {u.stripe_subscription_id && !u.cancel_at_period_end ? (
-                      <button
-                        className="sa-btn sa-btn-cancel"
-                        disabled={!!busy[`${u.id}_cancel`]}
-                        onClick={() => cancelSub(u.id, u.name)}
-                        title="Cancel Stripe subscription at period end"
-                      >
-                        {busy[`${u.id}_cancel`] ? '…' : 'Cancel sub'}
-                      </button>
-                    ) : null}
-                    {u.stripe_customer_id ? (
-                      <button
-                        className="sa-btn sa-btn-refund"
-                        onClick={() => setRefundTarget({ id: u.id, name: u.name, email: u.email })}
-                        title="Issue a refund via Stripe"
-                      >
-                        Refund
-                      </button>
-                    ) : null}
-                    <button
-                      className={`sa-btn ${u.suspended ? 'sa-btn-comp' : 'sa-btn-cancel'}`}
-                      disabled={!!busy[`${u.id}_suspend`]}
-                      onClick={() => toggleSuspend(u.id, u.name, !!u.suspended)}
-                      title={u.suspended ? 'Unsuspend account — restore login access' : 'Suspend account — block login'}
-                    >
-                      {busy[`${u.id}_suspend`] ? '…' : u.suspended ? 'Unsuspend' : 'Suspend'}
-                    </button>
-                    <button
-                      className="sa-btn sa-btn-delete"
-                      onClick={() => setDeleteTarget({ id: u.id, name: u.name, email: u.email })}
-                      title="Permanently delete account and all data (GDPR)"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+      {/* ── Desktop / Tablet table ─────────────────────────────────────────── */}
+      <div className="admin-card admin-user-table-wrap">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name / Email</th>
+                <th>Role</th>
+                <th>Plan</th>
+                <th>Property</th>
+                <th>Discount</th>
+                <th>Joined</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map(u => (
+                <tr key={u.id} style={u.suspended ? { opacity: 0.6, background: '#fef2f2' } : {}}>
+                  <td>
+                    <div style={{ fontWeight: 600, color: '#0f172a' }}>
+                      {u.name}
+                      {!!u.suspended && (
+                        <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 6 }}>SUSPENDED</span>
+                      )}
+                    </div>
+                    <div className="admin-muted" style={{ fontSize: '0.8rem' }}>{u.email}</div>
+                  </td>
+                  <td>
+                    <span className={`role-badge role-${u.role}`}>
+                      {u.role === 'owner' ? 'Owner' : 'Reception'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <select
+                        className="sa-plan-select"
+                        value={u.plan ?? 'free'}
+                        disabled={!!busy[`${u.id}_plan`]}
+                        onChange={e => setPlan(u.id, e.target.value)}
+                      >
+                        <option value="free">Free</option>
+                        <option value="pro">Pro</option>
+                        <option value="multi">Multi</option>
+                      </select>
+                      {u.sub_notes === 'Complimentary' && (
+                        <span className="sa-badge sa-badge-comp">COMP</span>
+                      )}
+                      {u.cancel_at_period_end ? (
+                        <span className="sa-badge sa-badge-cancel">Cancelling</span>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td>{u.property_name ?? '—'}</td>
+                  <td className="admin-muted" style={{ fontSize: '0.8rem' }}>
+                    {u.discount_code ?? '—'}
+                  </td>
+                  <td className="admin-muted">{fmtDate(u.created_at)}</td>
+                  <td>
+                    <ActionButtons u={u} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* ── Mobile card layout ─────────────────────────────────────────────── */}
+      <div className="admin-user-cards">
+        {rows.map(u => (
+          <div
+            key={u.id}
+            className="admin-user-card"
+            style={u.suspended ? { opacity: 0.7, borderColor: '#fecaca' } : {}}
+          >
+            <div className="admin-user-card-main">
+              <div>
+                <div className="admin-user-card-name">
+                  {u.name}
+                  {!!u.suspended && (
+                    <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 6 }}>SUSPENDED</span>
+                  )}
+                </div>
+                <div className="admin-user-card-email">{u.email}</div>
+              </div>
+              <PlanBadge plan={u.plan} />
+            </div>
+
+            <div className="admin-user-card-meta">
+              <span>{u.property_name ?? 'No property'}</span>
+              <span>·</span>
+              <span>{fmtDate(u.created_at)}</span>
+              {u.sub_notes === 'Complimentary' && (
+                <span className="sa-badge sa-badge-comp">COMP</span>
+              )}
+              {u.cancel_at_period_end ? (
+                <span className="sa-badge sa-badge-cancel">Cancelling</span>
+              ) : null}
+            </div>
+
+            {/* Plan selector always visible on card */}
+            <div className="admin-user-card-plan">
+              <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Plan:</span>
+              <select
+                className="sa-plan-select"
+                value={u.plan ?? 'free'}
+                disabled={!!busy[`${u.id}_plan`]}
+                onChange={e => setPlan(u.id, e.target.value)}
+                style={{ flex: 1, padding: '5px 8px', fontSize: '0.85rem' }}
+              >
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="multi">Multi</option>
+              </select>
+            </div>
+
+            {expandedCard === u.id ? (
+              <div className="admin-user-card-details">
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: 8 }}>
+                  <strong>Role:</strong> {u.role} ·
+                  <strong> Discount:</strong> {u.discount_code ?? '—'}
+                </div>
+                <div className="admin-user-card-actions">
+                  <ActionButtons u={u} />
+                </div>
+                <button
+                  className="admin-user-card-expand"
+                  style={{ marginTop: 10 }}
+                  onClick={() => setExpandedCard(null)}
+                >
+                  Show less ▲
+                </button>
+              </div>
+            ) : (
+              <button
+                className="admin-user-card-expand"
+                onClick={() => setExpandedCard(u.id)}
+              >
+                Actions & details ▼
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Pagination ─────────────────────────────────────────────────────── */}
       {totalPages > 1 && (
         <div className="pagination" style={{ marginTop: 16 }}>
           <span className="pagination-info">
@@ -301,6 +389,16 @@ export default function Users() {
   );
 }
 
+// ── PlanBadge ─────────────────────────────────────────────────────────────────
+
+function PlanBadge({ plan }) {
+  return (
+    <span className={`sidebar-plan-badge sidebar-plan-badge-${plan ?? 'free'}`}>
+      {plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : 'Free'}
+    </span>
+  );
+}
+
 // ── Delete / GDPR modal ───────────────────────────────────────────────────────
 
 function DeleteModal({ user, onClose, onSuccess, onError }) {
@@ -309,7 +407,7 @@ function DeleteModal({ user, onClose, onSuccess, onError }) {
   async function handleDelete() {
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+      const res  = await apiFetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
         onSuccess();
@@ -368,7 +466,7 @@ function DeleteModal({ user, onClose, onSuccess, onError }) {
 // ── Refund modal ──────────────────────────────────────────────────────────────
 
 function RefundModal({ user, onClose, onSuccess, onError }) {
-  const [mode,    setMode]    = useState('full');   // 'full' | 'partial'
+  const [mode,    setMode]    = useState('full');
   const [amount,  setAmount]  = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -408,7 +506,7 @@ function RefundModal({ user, onClose, onSuccess, onError }) {
             Refund for <strong>{user.name}</strong> ({user.email})
           </p>
           <form onSubmit={submit}>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.9rem' }}>
                 <input type="radio" name="mode" checked={mode === 'full'} onChange={() => setMode('full')} />
                 Full refund
@@ -427,7 +525,7 @@ function RefundModal({ user, onClose, onSuccess, onError }) {
                   placeholder="e.g. 9.50"
                   value={amount}
                   onChange={e => setAmount(e.target.value)}
-                  style={{ marginTop: 6 }}
+                  style={{ marginTop: 6, width: '100%' }}
                   autoFocus
                 />
               </div>
