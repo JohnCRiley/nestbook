@@ -363,7 +363,7 @@
   border-radius: 14px;
   width: 100%;
   min-width: 320px;
-  max-width: 480px;
+  max-width: 520px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -376,37 +376,34 @@
   to   { opacity: 1; transform: none; }
 }
 
-/* Modal header */
+/* Modal header — two-row layout */
 .nb-hd {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Row 1: dark bar with logo + close */
+.nb-hd-topbar {
   background: ${BRAND_DARK};
-  padding: 16px 20px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
 }
-.nb-hd-inner {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-.nb-hd-title {
-  color: #fff;
-  font-size: 0.95rem;
+.nb-hd-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: -0.2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.nb-hd-brand {
-  color: ${BRAND_LIGHT};
-  font-size: 0.68rem;
-  font-weight: 600;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-top: 2px;
+}
+.nb-hd-logo-icon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 .nb-close {
   background: rgba(255,255,255,0.12);
@@ -415,7 +412,8 @@
   border-radius: 7px;
   width: 30px; height: 30px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -424,57 +422,14 @@
 }
 .nb-close:hover { background: rgba(255,255,255,0.22); }
 
-/* Step progress */
-.nb-steps {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  justify-content: center;
-}
-.nb-step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  position: relative;
-}
-.nb-step-item + .nb-step-item::before {
-  content: '';
-  position: absolute;
-  right: 100%;
-  top: 10px;
-  width: 8px;
-  height: 1px;
-  background: rgba(255,255,255,0.25);
-}
-.nb-step-dot {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.6);
-  font-size: 0.68rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-.nb-step-label {
-  font-size: 0.58rem;
-  color: rgba(255,255,255,0.45);
-  white-space: nowrap;
-  font-weight: 500;
-  letter-spacing: 0.2px;
-}
-.nb-step-item.nb-active .nb-step-dot {
+/* Row 2: title — full width, can wrap */
+.nb-hd-title-row {
   background: ${BRAND_LIGHT};
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 700;
   color: ${BRAND_DARK};
-}
-.nb-step-item.nb-active .nb-step-label { color: rgba(255,255,255,0.85); }
-.nb-step-item.nb-done .nb-step-dot {
-  background: rgba(255,255,255,0.35);
-  color: #fff;
+  line-height: 1.35;
 }
 
 /* Body */
@@ -784,9 +739,6 @@
     min-width: 0;
     border-radius: 16px 16px 0 0;
     max-height: 92vh;
-  }
-  .nb-step-label {
-    display: none;
   }
   .nb-date-grid,
   .nb-field-row {
@@ -1139,31 +1091,9 @@
     body.innerHTML   = '';
     footer.innerHTML = '';
 
-    // Update the header: step indicator (hidden on success) and title
-    const hd = modal.querySelector('.nb-hd');
-    // Clear old step indicator and title (keep close button)
-    const oldSteps = hd.querySelector('.nb-steps');
-    if (oldSteps) oldSteps.remove();
-    const oldTitle = hd.querySelector('.nb-hd-inner');
-    if (oldTitle) oldTitle.remove();
-
-    if (S.step < 5) {
-      const inner = el('div', 'nb-hd-inner');
-      inner.style.flex = '1';
-      const titleEl = el('div', 'nb-hd-title');
-      titleEl.appendChild(txt(STEP_LABELS[S.step - 1]));
-      const brand = el('div', 'nb-hd-brand'); brand.appendChild(txt('NestBook'));
-      inner.appendChild(titleEl); inner.appendChild(brand);
-      hd.insertBefore(inner, hd.querySelector('.nb-close'));
-      hd.insertBefore(renderStepIndicator(), inner);
-    } else {
-      const inner = el('div', 'nb-hd-inner');
-      inner.style.flex = '1';
-      const titleEl = el('div', 'nb-hd-title');
-      titleEl.appendChild(txt(T.successTitle));
-      inner.appendChild(titleEl);
-      hd.insertBefore(inner, hd.querySelector('.nb-close'));
-    }
+    // Update the title row
+    const titleRow = modal.querySelector('.nb-hd-title-row');
+    titleRow.textContent = S.step < 5 ? STEP_LABELS[S.step - 1] : T.successTitle;
 
     if (S.loading) {
       renderLoading(S.step === 1 ? T.checking : T.confirming);
@@ -1227,13 +1157,25 @@
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
 
-    // Header (contents filled by render())
-    const hd     = el('div', 'nb-hd');
+    // Header: two-row layout (topbar + title row)
+    const hd = el('div', 'nb-hd');
+
+    const topbar = el('div', 'nb-hd-topbar');
+    const logo = el('span', 'nb-hd-logo');
+    const logoIcon = el('span', 'nb-hd-logo-icon'); logoIcon.appendChild(txt('🌿'));
+    logo.appendChild(logoIcon); logo.appendChild(txt('NestBook'));
     const closeBtn = el('button', 'nb-close');
     closeBtn.setAttribute('aria-label', T.close);
-    closeBtn.appendChild(txt(T.close));
+    closeBtn.appendChild(txt('✕'));
     closeBtn.addEventListener('click', closeModal);
-    hd.appendChild(closeBtn);   // close is always last; render() inserts steps before it
+    topbar.appendChild(logo);
+    topbar.appendChild(closeBtn);
+
+    const titleRow = el('div', 'nb-hd-title-row');
+    // text set by render()
+
+    hd.appendChild(topbar);
+    hd.appendChild(titleRow);
 
     body   = el('div', 'nb-body');
     footer = el('div', 'nb-ft');
