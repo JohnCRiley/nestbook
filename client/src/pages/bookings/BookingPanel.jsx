@@ -72,6 +72,10 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
 function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, onStatusUpdate, onEdit }) {
   return (
     <>
+      {(b.status === 'confirmed' || b.status === 'arriving') && (
+        <StatusActions status={b.status} bookingId={b.id} onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t} prominent />
+      )}
+
       <div className="panel-section">
         <div className="panel-section-title">{t('sectionGuest')}</div>
         <PanelRow label={t('labelName')}  value={`${b.guest_first_name} ${b.guest_last_name}`} />
@@ -109,7 +113,17 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, onStatusUpdate,
         </div>
       </div>
 
-      <StatusActions status={b.status} bookingId={b.id} onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t} />
+      <div className="panel-actions">
+        <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
+        {b.status === 'confirmed' && (
+          <button className="btn-panel-danger" style={{ fontSize: '0.82rem', padding: '7px 12px' }} onClick={() => {
+            if (window.confirm(t('cancelBookingConfirm'))) onStatusUpdate(b.id, 'cancelled');
+          }}>
+            {t('cancelBookingBtn')}
+          </button>
+        )}
+      </div>
+
     </>
   );
 }
@@ -278,39 +292,55 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
 
 // ── Status action buttons ─────────────────────────────────────────────────────
 
-function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t }) {
+function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent }) {
+  const wrapStyle = prominent
+    ? { padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', marginBottom: 0 }
+    : {};
+
   if (status === 'arriving') {
     return (
-      <div className="panel-actions">
-        <button className="btn-panel-primary" onClick={() => onStatusUpdate(bookingId, 'checked_out')}>
-          {t('markCheckedOut')}
+      <div className="panel-actions" style={wrapStyle}>
+        <button
+          className="btn-panel-primary"
+          style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
+          onClick={() => onStatusUpdate(bookingId, 'checked_out')}
+        >
+          {t('checkOutBtn')}
         </button>
-        <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
+        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>}
       </div>
     );
   }
 
   if (status === 'confirmed') {
     return (
-      <div className="panel-actions">
-        <button className="btn-panel-primary" onClick={() => onStatusUpdate(bookingId, 'arriving')}>
-          {t('checkInGuest')}
+      <div className="panel-actions" style={wrapStyle}>
+        <button
+          className="btn-panel-primary"
+          style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
+          onClick={() => onStatusUpdate(bookingId, 'arriving')}
+        >
+          {t('checkInBtn')}
         </button>
         <button className="btn-panel-danger" onClick={() => {
           if (window.confirm(t('cancelBookingConfirm'))) onStatusUpdate(bookingId, 'cancelled');
         }}>
           {t('cancelBookingBtn')}
         </button>
+        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>}
+      </div>
+    );
+  }
+
+  if (!prominent) {
+    return (
+      <div className="panel-actions">
         <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
       </div>
     );
   }
 
-  return (
-    <div className="panel-actions">
-      <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
-    </div>
-  );
+  return null;
 }
 
 function PanelRow({ label, value }) {

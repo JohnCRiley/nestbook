@@ -197,6 +197,36 @@ export default function Dashboard() {
         <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
       </div>
 
+      {/* ── Action banners ─────────────────────────────────────────────── */}
+      {arrivalsToday.filter((b) => b.status === 'confirmed').length > 0 && (
+        <div style={{
+          background: '#d9f0cc', border: '1.5px solid #4ade80', borderRadius: 10,
+          padding: '12px 18px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontWeight: 600, color: '#1a4710', fontSize: '0.95rem' }}>
+            {t('arrivalsBanner')(arrivalsToday.filter((b) => b.status === 'confirmed').length)}
+          </span>
+          <span style={{ color: '#1a4710', fontWeight: 700, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+            {t('checkThemIn')}
+          </span>
+        </div>
+      )}
+      {departuresToday.filter((b) => b.status === 'arriving').length > 0 && (
+        <div style={{
+          background: '#fef9c3', border: '1.5px solid #fbbf24', borderRadius: 10,
+          padding: '12px 18px', marginBottom: 14,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontWeight: 600, color: '#92400e', fontSize: '0.95rem' }}>
+            {t('departuresBanner')(departuresToday.filter((b) => b.status === 'arriving').length)}
+          </span>
+          <span style={{ color: '#92400e', fontWeight: 700, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+            {t('checkThemOut')}
+          </span>
+        </div>
+      )}
+
       {/* ── Flagged bookings warning ───────────────────────────────────── */}
       {flaggedBookings.length > 0 && (
         <div style={{
@@ -295,7 +325,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ── Two-column sections ─────────────────────────────────────────── */}
+      {/* ── Arrivals + Departures ───────────────────────────────────────── */}
       <div className="dashboard-grid">
 
         {/* Today's Arrivals */}
@@ -311,40 +341,24 @@ export default function Dashboard() {
               <BookingRow
                 key={b.id}
                 booking={b}
-                badgeLabel={BADGE_LABEL}
                 right={
-                  <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-                    {BADGE_LABEL[b.status] ?? b.status}
-                  </span>
-                }
-                nightWord={t('nightWord')}
-                onClick={() => setSelectedBooking(b)}
-              />
-            ))
-          )}
-        </div>
-
-        {/* Upcoming — Next 7 Days */}
-        <div className="section-card">
-          <div className="section-head">
-            <h2>{t('upcomingTitle')}</h2>
-            <span className="count-pill">{upcoming.length}</span>
-          </div>
-          {upcoming.length === 0 ? (
-            <div className="empty-state">{t('noUpcoming7Days')}</div>
-          ) : (
-            upcoming.map((b) => (
-              <BookingRow
-                key={b.id}
-                booking={b}
-                badgeLabel={BADGE_LABEL}
-                right={
-                  <>
-                    <span className="booking-date">{formatDateShort(b.check_in_date, locale)}</span>
+                  b.status === 'confirmed' ? (
+                    <button
+                      className="btn-checkin"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`))) {
+                          handleStatusUpdate(b.id, 'arriving');
+                        }
+                      }}
+                    >
+                      {t('checkInBtn')}
+                    </button>
+                  ) : (
                     <span className={BADGE_CLASS[b.status] ?? 'badge'}>
                       {BADGE_LABEL[b.status] ?? b.status}
                     </span>
-                  </>
+                  )
                 }
                 nightWord={t('nightWord')}
                 onClick={() => setSelectedBooking(b)}
@@ -353,6 +367,73 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Today's Departures */}
+        <div className="section-card">
+          <div className="section-head">
+            <h2>{t('todayDeparturesTitle')}</h2>
+            <span className="count-pill">{departuresToday.length}</span>
+          </div>
+          {departuresToday.length === 0 ? (
+            <div className="empty-state">{t('noDeparturesToday')}</div>
+          ) : (
+            departuresToday.map((b) => (
+              <BookingRow
+                key={b.id}
+                booking={b}
+                right={
+                  b.status === 'arriving' ? (
+                    <button
+                      className="btn-checkout"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(t('checkOutConfirm')(`${b.guest_first_name} ${b.guest_last_name}`))) {
+                          handleStatusUpdate(b.id, 'checked_out');
+                        }
+                      }}
+                    >
+                      {t('checkOutBtn')}
+                    </button>
+                  ) : (
+                    <span className={BADGE_CLASS[b.status] ?? 'badge'}>
+                      {BADGE_LABEL[b.status] ?? b.status}
+                    </span>
+                  )
+                }
+                nightWord={t('nightWord')}
+                onClick={() => setSelectedBooking(b)}
+              />
+            ))
+          )}
+        </div>
+
+      </div>
+
+      {/* ── Upcoming ───────────────────────────────────────────────────── */}
+      <div className="section-card" style={{ marginTop: 20 }}>
+        <div className="section-head">
+          <h2>{t('upcomingTitle')}</h2>
+          <span className="count-pill">{upcoming.length}</span>
+        </div>
+        {upcoming.length === 0 ? (
+          <div className="empty-state">{t('noUpcoming7Days')}</div>
+        ) : (
+          upcoming.map((b) => (
+            <BookingRow
+              key={b.id}
+              booking={b}
+              right={
+                <>
+                  <span className="booking-date">{formatDateShort(b.check_in_date, locale)}</span>
+                  <span className={BADGE_CLASS[b.status] ?? 'badge'}>
+                    {BADGE_LABEL[b.status] ?? b.status}
+                  </span>
+                </>
+              }
+              nightWord={t('nightWord')}
+              onClick={() => setSelectedBooking(b)}
+            />
+          ))
+        )}
       </div>
 
       {/* ── Booking detail panel ────────────────────────────────────────── */}

@@ -263,6 +263,7 @@ export default function Calendar() {
               room={room}
               days={days}
               today={today}
+              todayIso={today}
               bookings={bookings}
               selectedBookingId={selectedBooking?.id}
               onBookedClick={handleBookedClick}
@@ -300,7 +301,7 @@ export default function Calendar() {
 
 // ── RoomRow ───────────────────────────────────────────────────────────────────
 
-function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale }) {
+function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso }) {
   const isMaintenance = room.status === 'maintenance';
 
   return (
@@ -328,6 +329,8 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
               isSelected={selectedBookingId === booking.id}
               onClick={() => onBookedClick(booking)}
               locale={locale ?? 'en'}
+              todayIso={todayIso ?? today}
+              t={t}
             />
           );
         }
@@ -346,19 +349,19 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
 
 // ── BookedCell ────────────────────────────────────────────────────────────────
 
-function BookedCell({ booking: b, isSelected, onClick, locale = 'en' }) {
+function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, t }) {
   const statusClass =
-    b.status === 'checked_out' ? 'is-checked-out' :
-    b.status === 'arriving' && b.check_in_date === b.check_in_date ? 'is-booked' :
-    'is-booked';
+    b.status === 'checked_out' ? 'is-checked-out' : 'is-booked';
 
-  // Use a lighter shade on check-in day specifically
   const isArriving = b.status === 'arriving';
   const cellClass  = isArriving ? 'is-arriving' : statusClass;
 
   const style = isSelected
     ? { outline: '2px solid var(--accent-dark)', outlineOffset: '-2px', zIndex: 1 }
     : {};
+
+  const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
+  const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
   return (
     <div
@@ -368,7 +371,11 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en' }) {
       title={`${b.guest_first_name} ${b.guest_last_name} — ${b.room_name}\n${b.check_in_date} → ${b.check_out_date}`}
     >
       <div className="cal-cell-inner">
-        <div className="cal-guest-name">{b.guest_first_name}</div>
+        <div className="cal-guest-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {showCiBadge && <span className="cal-action-badge cal-ci-badge">{t ? t('calCiBadge') : 'CI'}</span>}
+          {showCoBadge && <span className="cal-action-badge cal-co-badge">{t ? t('calCoBadge') : 'CO'}</span>}
+          {b.guest_first_name}
+        </div>
         <div className="cal-booking-nights">→ {formatCheckOut(b.check_out_date, locale)}</div>
       </div>
     </div>

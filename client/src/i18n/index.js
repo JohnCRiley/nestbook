@@ -360,6 +360,19 @@ export const LANGS = {
     nextPage:             'Next',
     pageXofY:             (page, total) => `Page ${page} of ${total}`,
     showingXtoYofZ:       (from, to, total) => `Showing ${from}–${to} of ${total}`,
+    // ── Check-in / Check-out actions ─────────────────────────────────────────
+    checkInBtn:            '✓ Check In',
+    checkOutBtn:           '✓ Check Out',
+    checkInConfirm:        (name) => `Check in ${name}?`,
+    checkOutConfirm:       (name) => `Check out ${name}?`,
+    todayDeparturesTitle:  "Today's Departures",
+    noDeparturesToday:     'No departures scheduled for today',
+    arrivalsBanner:        (n) => n === 1 ? 'You have 1 arrival today' : `You have ${n} arrivals today`,
+    departuresBanner:      (n) => n === 1 ? 'You have 1 departure today' : `You have ${n} departures today`,
+    checkThemIn:           'Check them in →',
+    checkThemOut:          'Check them out →',
+    calCiBadge:            'CI',
+    calCoBadge:            'CO',
   },
 
   fr: {
@@ -716,6 +729,19 @@ export const LANGS = {
     nextPage:             'Suivant',
     pageXofY:             (page, total) => `Page ${page} sur ${total}`,
     showingXtoYofZ:       (from, to, total) => `Affichage de ${from}–${to} sur ${total}`,
+    // ── Check-in / Check-out actions ─────────────────────────────────────────
+    checkInBtn:            '✓ Enregistrer',
+    checkOutBtn:           '✓ Départ',
+    checkInConfirm:        (name) => `Enregistrer l'arrivée de ${name} ?`,
+    checkOutConfirm:       (name) => `Enregistrer le départ de ${name} ?`,
+    todayDeparturesTitle:  "Départs d'aujourd'hui",
+    noDeparturesToday:     "Aucun départ prévu aujourd'hui",
+    arrivalsBanner:        (n) => n === 1 ? "Vous avez 1 arrivée aujourd'hui" : `Vous avez ${n} arrivées aujourd'hui`,
+    departuresBanner:      (n) => n === 1 ? "Vous avez 1 départ aujourd'hui" : `Vous avez ${n} départs aujourd'hui`,
+    checkThemIn:           'Enregistrer →',
+    checkThemOut:          'Enregistrer le départ →',
+    calCiBadge:            'CI',
+    calCoBadge:            'CO',
   },
 
   es: {
@@ -1072,6 +1098,19 @@ export const LANGS = {
     nextPage:             'Siguiente',
     pageXofY:             (page, total) => `Página ${page} de ${total}`,
     showingXtoYofZ:       (from, to, total) => `Mostrando ${from}–${to} de ${total}`,
+    // ── Check-in / Check-out actions ─────────────────────────────────────────
+    checkInBtn:            '✓ Check In',
+    checkOutBtn:           '✓ Check Out',
+    checkInConfirm:        (name) => `¿Registrar entrada de ${name}?`,
+    checkOutConfirm:       (name) => `¿Registrar salida de ${name}?`,
+    todayDeparturesTitle:  'Salidas de hoy',
+    noDeparturesToday:     'No hay salidas programadas para hoy',
+    arrivalsBanner:        (n) => n === 1 ? 'Tiene 1 llegada hoy' : `Tiene ${n} llegadas hoy`,
+    departuresBanner:      (n) => n === 1 ? 'Tiene 1 salida hoy' : `Tiene ${n} salidas hoy`,
+    checkThemIn:           'Registrar entrada →',
+    checkThemOut:          'Registrar salida →',
+    calCiBadge:            'CI',
+    calCoBadge:            'CO',
   },
 
   de: {
@@ -1428,6 +1467,19 @@ export const LANGS = {
     nextPage:             'Weiter',
     pageXofY:             (page, total) => `Seite ${page} von ${total}`,
     showingXtoYofZ:       (from, to, total) => `Zeige ${from}–${to} von ${total}`,
+    // ── Check-in / Check-out actions ─────────────────────────────────────────
+    checkInBtn:            '✓ Einchecken',
+    checkOutBtn:           '✓ Auschecken',
+    checkInConfirm:        (name) => `${name} einchecken?`,
+    checkOutConfirm:       (name) => `${name} auschecken?`,
+    todayDeparturesTitle:  'Heutige Abreisen',
+    noDeparturesToday:     'Keine Abreisen für heute geplant',
+    arrivalsBanner:        (n) => n === 1 ? 'Sie haben heute 1 Ankunft' : `Sie haben heute ${n} Ankünfte`,
+    departuresBanner:      (n) => n === 1 ? 'Sie haben heute 1 Abreise' : `Sie haben heute ${n} Abreisen`,
+    checkThemIn:           'Einchecken →',
+    checkThemOut:          'Auschecken →',
+    calCiBadge:            'CI',
+    calCoBadge:            'CO',
   },
 
   nl: {
@@ -1784,5 +1836,18 @@ export const LANGS = {
     nextPage:             'Volgende',
     pageXofY:             (page, total) => `Pagina ${page} van ${total}`,
     showingXtoYofZ:       (from, to, total) => `${from}–${to} van ${total} weergegeven`,
+    // ── Check-in / Check-out actions ─────────────────────────────────────────
+    checkInBtn:            '✓ Inchecken',
+    checkOutBtn:           '✓ Uitchecken',
+    checkInConfirm:        (name) => `${name} inchecken?`,
+    checkOutConfirm:       (name) => `${name} uitchecken?`,
+    todayDeparturesTitle:  'Vertrekken vandaag',
+    noDeparturesToday:     'Geen vertrekken gepland voor vandaag',
+    arrivalsBanner:        (n) => n === 1 ? 'U heeft vandaag 1 aankomst' : `U heeft vandaag ${n} aankomsten`,
+    departuresBanner:      (n) => n === 1 ? 'U heeft vandaag 1 vertrek' : `U heeft vandaag ${n} vertrekken`,
+    checkThemIn:           'Inchecken →',
+    checkThemOut:          'Uitchecken →',
+    calCiBadge:            'CI',
+    calCoBadge:            'CO',
   },
 };
