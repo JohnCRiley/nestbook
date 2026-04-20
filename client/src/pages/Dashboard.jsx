@@ -111,6 +111,8 @@ export default function Dashboard() {
     ? Math.round((occupiedRoomIds.size / activeRooms.length) * 100)
     : 0;
 
+  const flaggedBookings = bookings.filter((b) => b.flagged && b.status !== 'cancelled');
+
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
 
@@ -194,6 +196,38 @@ export default function Dashboard() {
         <StatCard value={departuresToday.length}    label={t('departures')} />
         <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
       </div>
+
+      {/* ── Flagged bookings warning ───────────────────────────────────── */}
+      {flaggedBookings.length > 0 && (
+        <div style={{
+          background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 10,
+          padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⚠️</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>
+              {t('flaggedBookingsTitle')} ({flaggedBookings.length})
+            </div>
+            {flaggedBookings.map((b) => (
+              <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: '0.875rem', color: '#7f1d1d' }}>
+                  #{b.id} — {b.guest_first_name} {b.guest_last_name} · {b.check_in_date}
+                </span>
+                <button
+                  className="btn-secondary"
+                  style={{ fontSize: '0.78rem', padding: '3px 10px' }}
+                  onClick={() => setSelectedBooking(b)}
+                >
+                  {t('reviewBooking')}
+                </button>
+              </div>
+            ))}
+            <div style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: 4 }}>
+              {t('flaggedBookingWarning')}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Room availability bar ───────────────────────────────────────── */}
       {rooms.length > 0 && (
@@ -325,11 +359,13 @@ export default function Dashboard() {
       {selectedBooking && (
         <BookingPanel
           booking={selectedBooking}
+          rooms={rooms}
+          guests={guests}
           onClose={() => setSelectedBooking(null)}
           onStatusUpdate={handleStatusUpdate}
-          onEdit={() => {
-            setSelectedBooking(null);
-            navigate('/bookings', { state: { highlightId: selectedBooking.id } });
+          onSave={(updated) => {
+            setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
+            setSelectedBooking(updated);
           }}
         />
       )}

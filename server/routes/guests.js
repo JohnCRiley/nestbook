@@ -8,9 +8,9 @@ export const guestsRouter = Router();
 // Must be defined BEFORE /:id so Express doesn't treat "counts" as an id.
 guestsRouter.get('/counts', (req, res) => {
   try {
-    const total = db.prepare(`SELECT COUNT(*) as n FROM guests`).get().n;
+    const total = db.prepare(`SELECT COUNT(*) as n FROM guests WHERE deleted = 0`).get().n;
     const newThisMonth = db.prepare(
-      `SELECT COUNT(*) as n FROM guests WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`
+      `SELECT COUNT(*) as n FROM guests WHERE deleted = 0 AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`
     ).get().n;
     res.json({ total, newThisMonth });
   } catch (err) {
@@ -28,6 +28,8 @@ guestsRouter.get('/', (req, res) => {
     const { search, page, limit } = req.query;
     const conditions = [];
     const params     = [];
+
+    conditions.push('deleted = 0');
 
     if (search) {
       const pattern = `%${search}%`;
@@ -103,6 +105,37 @@ guestsRouter.put('/:id', (req, res) => {
       WHERE id = ?
     `).run(first_name, last_name, email, phone, notes, req.params.id);
 
+    res.json(db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PUT /api/guests/:id/anonymise ─────────────────────────────────────────
+// GDPR right to erasure: wipe PII but keep booking history (guest row preserved).
+guestsRouter.put('/:id/anonymise', (req, res) => {
+  try {
+    const existing = db.prepare('SELECT id FROM guests WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Guest not found' });
+    db.prepare(`
+      UPDATE guests
+      SET first_name = 'Deleted', last_name = 'Guest',
+          email = NULL, phone = NULL, notes = NULL, deleted = 1
+      WHERE id = ?
+    `).run(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PUT /api/guests/:id/blacklist ─────────────────────────────────────────
+// Toggle blacklisted flag. Returns the updated guest record.
+guestsRouter.put('/:id/blacklist', (req, res) => {
+  try {
+    const guest = db.prepare('SELECT id, blacklisted FROM guests WHERE id = ?').get(req.params.id);
+    if (!guest) return res.status(404).json({ error: 'Guest not found' });
+    db.prepare(`UPDATE guests SET blacklisted = ? WHERE id = ?`).run(guest.blacklisted ? 0 : 1, req.params.id);
     res.json(db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id));
   } catch (err) {
     res.status(500).json({ error: err.message });

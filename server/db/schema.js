@@ -227,6 +227,51 @@ export function initSchema() {
     console.log('✓ properties.locale constraint updated to include nl.');
   }
 
+  // Migration: make bookings.room_id nullable so rooms can be deleted while preserving history
+  const bookingRoomCol = db.prepare(`PRAGMA table_info(bookings)`).all().find((c) => c.name === 'room_id');
+  if (bookingRoomCol && bookingRoomCol.notnull) {
+    db.exec(`PRAGMA foreign_keys = OFF`);
+    db.exec(`
+      BEGIN;
+      CREATE TABLE bookings_v2 (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id     INTEGER NOT NULL REFERENCES properties(id),
+        room_id         INTEGER REFERENCES rooms(id),
+        guest_id        INTEGER NOT NULL REFERENCES guests(id),
+        check_in_date   TEXT    NOT NULL,
+        check_out_date  TEXT    NOT NULL,
+        num_guests      INTEGER NOT NULL DEFAULT 1,
+        status          TEXT    NOT NULL DEFAULT 'confirmed'
+                                CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
+        source          TEXT    NOT NULL DEFAULT 'direct'
+                                CHECK(source IN ('direct','phone','email','booking_com','airbnb','other')),
+        notes           TEXT,
+        total_price     REAL,
+        created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO bookings_v2 SELECT * FROM bookings;
+      DROP TABLE bookings;
+      ALTER TABLE bookings_v2 RENAME TO bookings;
+      COMMIT;
+    `);
+    db.exec(`PRAGMA foreign_keys = ON`);
+    console.log('✓ bookings.room_id is now nullable.');
+  }
+
+  // Migration: guest soft-delete and blacklist flags
+  try {
+    db.exec(`ALTER TABLE guests ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE guests ADD COLUMN blacklisted INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  // Migration: flagged column on bookings (set when blacklisted guest books via widget)
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN flagged INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
   // Performance indexes for paginated list queries
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property  ON bookings(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin   ON bookings(check_in_date)`);

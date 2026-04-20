@@ -131,6 +131,12 @@ export default function Bookings() {
     fetchCounts();
   };
 
+  const handleBookingSaved = (updated) => {
+    setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    setSelectedBooking(updated);
+    fetchCounts();
+  };
+
   const handleStatusUpdate = (bookingId, newStatus) => {
     apiFetch(`/api/bookings/${bookingId}`, {
       method: 'PUT',
@@ -250,8 +256,11 @@ export default function Bookings() {
       {selectedBooking && (
         <BookingPanel
           booking={selectedBooking}
+          rooms={rooms}
+          guests={guests}
           onClose={handlePanelClose}
           onStatusUpdate={handleStatusUpdate}
+          onSave={handleBookingSaved}
         />
       )}
 

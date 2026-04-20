@@ -94,11 +94,19 @@ widgetRouter.post('/bookings', (req, res) => {
       return res.status(409).json({ error: 'This room is no longer available for the selected dates. Please choose different dates.' });
     }
 
+    // Flag the booking if the guest's email matches a blacklisted guest
+    const guestData = db.prepare('SELECT email, blacklisted FROM guests WHERE id = ?').get(guest_id);
+    let flagged = guestData?.blacklisted ? 1 : 0;
+    if (!flagged && guestData?.email) {
+      const bl = db.prepare('SELECT id FROM guests WHERE email = ? AND blacklisted = 1').get(guestData.email);
+      if (bl) flagged = 1;
+    }
+
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         num_guests, status, source, notes, total_price, flagged)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
@@ -107,6 +115,7 @@ widgetRouter.post('/bookings', (req, res) => {
       source       ?? 'direct',
       notes        ?? null,
       total_price  ?? null,
+      flagged,
     );
 
     const newBooking = db.prepare(`

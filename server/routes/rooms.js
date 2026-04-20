@@ -161,10 +161,24 @@ roomsRouter.put('/:id', (req, res) => {
 });
 
 // ── DELETE /api/rooms/:id ─────────────────────────────────────────────────
+// ?force=true  — skip the warning and delete even when the room has bookings.
+// Without force, returns 409 { booking_count } so the UI can warn the user.
 roomsRouter.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM rooms WHERE id = ?').run(req.params.id);
-    if (result.changes === 0) return res.status(404).json({ error: 'Room not found' });
+    const rid = Number(req.params.id);
+    const room = db.prepare('SELECT id FROM rooms WHERE id = ?').get(rid);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const bookingCount = db.prepare(
+      `SELECT COUNT(*) as n FROM bookings WHERE room_id = ? AND status != 'cancelled'`
+    ).get(rid).n;
+
+    if (!req.query.force && bookingCount > 0) {
+      return res.status(409).json({ booking_count: bookingCount });
+    }
+
+    db.prepare(`UPDATE bookings SET room_id = NULL WHERE room_id = ?`).run(rid);
+    db.prepare('DELETE FROM rooms WHERE id = ?').run(rid);
     res.status(204).end();
   } catch (err) {
     res.status(500).json({ error: err.message });

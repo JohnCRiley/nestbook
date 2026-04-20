@@ -180,6 +180,32 @@ bookingsRouter.get('/', (req, res) => {
   }
 });
 
+// ── GET /api/bookings/booked-rooms ───────────────────────────────────────
+// Returns array of room_ids with overlapping active bookings — used by
+// NewBookingModal to hide unavailable rooms from the dropdown.
+bookingsRouter.get('/booked-rooms', (req, res) => {
+  try {
+    const { property_id, check_in_date, check_out_date } = req.query;
+    if (!property_id || !check_in_date || !check_out_date) {
+      return res.status(400).json({ error: 'property_id, check_in_date and check_out_date are required' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const rows = db.prepare(`
+      SELECT DISTINCT room_id FROM bookings
+      WHERE property_id = ?
+        AND room_id IS NOT NULL
+        AND status NOT IN ('cancelled', 'checked_out')
+        AND check_in_date < ?
+        AND check_out_date > ?
+    `).all(property_id, check_out_date, check_in_date);
+    res.json(rows.map((r) => r.room_id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings/check ───────────────────────────────────────────────
 // Pre-flight availability check used by NewBookingModal.
 // Query params: room_id, check_in_date, check_out_date, exclude_id (optional)

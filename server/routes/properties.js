@@ -177,24 +177,19 @@ propertiesRouter.delete('/:id', (req, res) => {
       });
     }
 
-    // Delete in FK order inside a transaction
-    db.transaction(() => {
-      // Nullify staff users who are assigned to this property
+    // Delete in FK order (node:sqlite has no .transaction(); use manual BEGIN/COMMIT)
+    try {
+      db.exec('BEGIN');
       db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(pid);
-
-      // Delete bookings for all rooms in this property
-      const roomIds = db.prepare('SELECT id FROM rooms WHERE property_id = ?').all(pid).map((r) => r.id);
-      if (roomIds.length) {
-        const placeholders = roomIds.map(() => '?').join(',');
-        db.prepare(`DELETE FROM bookings WHERE room_id IN (${placeholders})`).run(...roomIds);
-      }
-
-      // Delete rooms
+      db.prepare('UPDATE bookings SET room_id = NULL WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM rooms WHERE property_id = ?').run(pid);
-
-      // Delete the property itself
       db.prepare('DELETE FROM properties WHERE id = ?').run(pid);
-    })();
+      db.exec('COMMIT');
+    } catch (e) {
+      try { db.exec('ROLLBACK'); } catch {}
+      throw e;
+    }
 
     // If this was the owner's active property, switch them to another one
     const owner = db.prepare('SELECT property_id FROM users WHERE id = ?').get(req.user.userId);

@@ -92,6 +92,12 @@ export default function Guests() {
     setSelectedGuest(updated);
   };
 
+  const handleGuestDeleted = (id) => {
+    setGuests((prev) => prev.filter((g) => g.id !== id));
+    setSelectedGuest(null);
+    fetchCounts();
+  };
+
   const handleNewGuestSuccess = (created) => {
     setShowNewModal(false);
     setNewGuestCreated(created);
@@ -177,6 +183,7 @@ export default function Guests() {
           bookings={bookingsByGuest[selectedGuest.id] ?? []}
           onClose={() => setSelectedGuest(null)}
           onGuestUpdated={handleGuestUpdated}
+          onGuestDeleted={handleGuestDeleted}
         />
       )}
 
@@ -254,6 +261,14 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
         <div className="guest-card-name">
           {guest.first_name} {guest.last_name}
           {flag && <span className="guest-flag">{flag}</span>}
+          {guest.blacklisted ? (
+            <span style={{
+              marginLeft: 6, fontSize: '0.68rem', fontWeight: 700, color: '#dc2626',
+              background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '1px 5px',
+            }}>
+              ⚠️ {t('blacklistedBadge')}
+            </span>
+          ) : null}
         </div>
         {guest.email
           ? <div className="guest-card-email">{guest.email}</div>

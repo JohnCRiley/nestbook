@@ -151,6 +151,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
   });
   const [saving,          setSaving]          = useState(false);
   const [deleting,        setDeleting]        = useState(false);
+  const [deleteBookingCount, setDeleteBookingCount] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error,           setError]           = useState(null);
 
@@ -187,11 +188,28 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
     }
   };
 
+  const handleDeleteClick = async () => {
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/rooms/${room.id}`, { method: 'DELETE' });
+      if (res.status === 409) {
+        const data = await res.json();
+        setDeleteBookingCount(data.booking_count ?? 0);
+        setShowDeleteModal(true);
+        return;
+      }
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      onDeleted();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     setError(null);
     try {
-      const res = await apiFetch(`/api/rooms/${room.id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/rooms/${room.id}?force=true`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       onDeleted();
     } catch (err) {
@@ -271,7 +289,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
 
       <div style={{ padding: '0 0 8px' }}>
         <button
-          onClick={() => setShowDeleteModal(true)}
+          onClick={handleDeleteClick}
           disabled={saving || deleting}
           style={{
             background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem',
@@ -286,6 +304,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
       {showDeleteModal && (
         <DeleteModal
           roomName={room.name}
+          bookingCount={deleteBookingCount}
           deleting={deleting}
           onConfirm={handleDelete}
           onCancel={() => setShowDeleteModal(false)}
@@ -298,7 +317,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
 
 // ── DeleteModal ───────────────────────────────────────────────────────────────
 
-function DeleteModal({ roomName, deleting, onConfirm, onCancel, t }) {
+function DeleteModal({ roomName, bookingCount, deleting, onConfirm, onCancel, t }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
@@ -307,13 +326,13 @@ function DeleteModal({ roomName, deleting, onConfirm, onCancel, t }) {
     }}>
       <div style={{
         background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
-        maxWidth: 360, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+        maxWidth: 380, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
       }}>
         <h3 style={{ margin: '0 0 10px', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
           {t('deleteRoomTitle')}
         </h3>
         <p style={{ margin: '0 0 22px', fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>
-          {t('deleteRoomConfirm')(roomName)}
+          {bookingCount > 0 ? t('deleteRoomWithBookings')(bookingCount) : t('deleteRoomConfirm')(roomName)}
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button

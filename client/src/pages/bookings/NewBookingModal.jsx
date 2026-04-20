@@ -39,6 +39,7 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
   const [submitting,        setSubmitting]        = useState(false);
   const [error,             setError]             = useState(null);
   const [availabilityError, setAvailabilityError] = useState(null);
+  const [bookedRoomIds,     setBookedRoomIds]     = useState(new Set());
 
   // ── Auto-calculate total price ─────────────────────────────────────────────
   useEffect(() => {
@@ -54,7 +55,23 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
     }
   }, [form.room_id, form.check_in_date, form.check_out_date, rooms]);
 
-  // ── Availability pre-flight check ──────────────────────────────────────────
+  // ── Fetch booked room IDs when dates change (for dropdown filtering) ──────────
+  useEffect(() => {
+    setBookedRoomIds(new Set());
+    if (!form.check_in_date || !form.check_out_date || !property?.id) return;
+    if (form.check_out_date <= form.check_in_date) return;
+    const params = new URLSearchParams({
+      property_id:    property.id,
+      check_in_date:  form.check_in_date,
+      check_out_date: form.check_out_date,
+    });
+    apiFetch(`/api/bookings/booked-rooms?${params}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((ids) => setBookedRoomIds(new Set(ids)))
+      .catch(() => {});
+  }, [form.check_in_date, form.check_out_date, property?.id]);
+
+  // ── Availability pre-flight check for the selected room ────────────────────
   useEffect(() => {
     setAvailabilityError(null);
     if (!form.room_id || !form.check_in_date || !form.check_out_date) return;
@@ -151,22 +168,32 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
               {/* Room */}
               <div className="form-group span-2">
                 <label className="form-label">{t('moRoomLbl')} *</label>
-                <select
-                  name="room_id"
-                  className="form-control"
-                  value={form.room_id}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">{t('selectRoom')}</option>
-                  {rooms
-                    .filter((r) => r.status !== 'maintenance')
-                    .map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name} ({r.type}) — {currencySymbol}{r.price_per_night}{t('perNight')} · {t('guestWord')(r.capacity)}
-                      </option>
-                    ))}
-                </select>
+                {(() => {
+                  const datesSet = form.check_in_date && form.check_out_date && form.check_out_date > form.check_in_date;
+                  const availableRooms = rooms.filter((r) =>
+                    r.status !== 'maintenance' && (!datesSet || !bookedRoomIds.has(r.id))
+                  );
+                  return availableRooms.length === 0 && datesSet ? (
+                    <div className="form-hint" style={{ color: '#dc2626', marginTop: 6 }}>
+                      {t('noRoomsForDates')}
+                    </div>
+                  ) : (
+                    <select
+                      name="room_id"
+                      className="form-control"
+                      value={form.room_id}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">{t('selectRoom')}</option>
+                      {availableRooms.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name} ({r.type}) — {currencySymbol}{r.price_per_night}{t('perNight')} · {t('guestWord')(r.capacity)}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
               </div>
 
               {/* Guest */}
@@ -182,10 +209,11 @@ export default function NewBookingModal({ rooms, guests: initialGuests, onClose,
                     style={{ flex: 1 }}
                   >
                     <option value="">{t('selectGuest')}</option>
-                    {guests.map((g) => (
+                    {guests.filter((g) => !g.deleted).map((g) => (
                       <option key={g.id} value={g.id}>
-                        {g.first_name} {g.last_name}
+                        {g.blacklisted ? '⚠️ ' : ''}{g.first_name} {g.last_name}
                         {g.email ? ` — ${g.email}` : ''}
+                        {g.blacklisted ? ` (${t('blacklistedBadge')})` : ''}
                       </option>
                     ))}
                   </select>
