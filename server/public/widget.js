@@ -15,7 +15,7 @@
   'use strict';
 
   // ── Config: read from the script tag immediately (before async callbacks) ──
-  const SCRIPT      = document.currentScript;
+  const SCRIPT      = document.currentScript || document.querySelector('script[src*="widget.js"]');
   const PROPERTY_ID = SCRIPT.getAttribute('data-property-id') || '1';
   const LANG        = SCRIPT.getAttribute('data-lang') ||
                       (function () { try { return localStorage.getItem('nestbook_lang') || 'en'; } catch (_) { return 'en'; } })();
