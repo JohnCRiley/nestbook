@@ -166,8 +166,9 @@ roomsRouter.put('/:id', (req, res) => {
 roomsRouter.delete('/:id', (req, res) => {
   try {
     const rid = Number(req.params.id);
-    const room = db.prepare('SELECT id FROM rooms WHERE id = ?').get(rid);
+    const room = db.prepare('SELECT id, is_demo FROM rooms WHERE id = ?').get(rid);
     if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (room.is_demo) return res.status(403).json({ error: 'Demo rooms cannot be deleted.' });
 
     const bookingCount = db.prepare(
       `SELECT COUNT(*) as n FROM bookings WHERE room_id = ? AND status != 'cancelled'`

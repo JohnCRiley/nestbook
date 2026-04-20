@@ -288,17 +288,26 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
       </div>
 
       <div style={{ padding: '0 0 8px' }}>
-        <button
-          onClick={handleDeleteClick}
-          disabled={saving || deleting}
-          style={{
-            background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem',
-            cursor: 'pointer', padding: '6px 0', textDecoration: 'underline',
-            fontFamily: 'inherit',
-          }}
-        >
-          {t('deleteThisRoom')}
-        </button>
+        {room.is_demo ? (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontSize: '0.78rem', color: 'var(--text-muted)',
+          }}>
+            🔒 {t('demoRoomLocked')}
+          </span>
+        ) : (
+          <button
+            onClick={handleDeleteClick}
+            disabled={saving || deleting}
+            style={{
+              background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem',
+              cursor: 'pointer', padding: '6px 0', textDecoration: 'underline',
+              fontFamily: 'inherit',
+            }}
+          >
+            {t('deleteThisRoom')}
+          </button>
+        )}
       </div>
 
       {showDeleteModal && (

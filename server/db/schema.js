@@ -272,6 +272,11 @@ export function initSchema() {
     db.exec(`ALTER TABLE bookings ADD COLUMN flagged INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  // Migration: is_demo flag on rooms — demo rooms cannot be deleted via the app
+  try {
+    db.exec(`ALTER TABLE rooms ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
   // Performance indexes for paginated list queries
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property  ON bookings(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin   ON bookings(check_in_date)`);
