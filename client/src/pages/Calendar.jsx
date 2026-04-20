@@ -87,21 +87,35 @@ function mobileDayLabel(days, monthNames) {
 // ── Cell state resolver ───────────────────────────────────────────────────────
 
 /**
- * For a given room + day, find the booking (if any) that covers that day,
- * then return a descriptor used to render and style the cell.
+ * For a given room + day, return the active booking (if any) that blocks the cell,
+ * or a historical (checked_out) booking for faded display.
  *
  * "Covers" means: check_in_date <= day < check_out_date
- * (guests leave on check-out day so that cell is free for the next arrival).
+ * Returns: { booking, historical: bool } | null
  */
 function cellInfo(bookings, roomId, dayIso) {
-  const booking = bookings.find(
+  // Active booking — blocks the cell and prevents new bookings
+  const active = bookings.find(
     (b) =>
       b.room_id === roomId &&
       b.status !== 'cancelled' &&
+      b.status !== 'checked_out' &&
       b.check_in_date <= dayIso &&
       b.check_out_date > dayIso
   );
-  return booking ?? null;
+  if (active) return { booking: active, historical: false };
+
+  // Historical checked-out booking — show faded, cell is available
+  const historical = bookings.find(
+    (b) =>
+      b.room_id === roomId &&
+      b.status === 'checked_out' &&
+      b.check_in_date <= dayIso &&
+      b.check_out_date > dayIso
+  );
+  if (historical) return { booking: historical, historical: true };
+
+  return null;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -314,23 +328,33 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
 
       {/* Day cells */}
       {days.map((day) => {
-        const iso     = toIso(day);
-        const booking = isMaintenance ? null : cellInfo(bookings, room.id, iso);
+        const iso    = toIso(day);
+        const info   = isMaintenance ? null : cellInfo(bookings, room.id, iso);
 
         if (isMaintenance) {
           return <div key={iso} className="cal-cell is-maintenance" />;
         }
 
-        if (booking) {
+        if (info && !info.historical) {
           return (
             <BookedCell
               key={iso}
-              booking={booking}
-              isSelected={selectedBookingId === booking.id}
-              onClick={() => onBookedClick(booking)}
+              booking={info.booking}
+              isSelected={selectedBookingId === info.booking.id}
+              onClick={() => onBookedClick(info.booking)}
               locale={locale ?? 'en'}
               todayIso={todayIso ?? today}
               t={t}
+            />
+          );
+        }
+
+        if (info && info.historical) {
+          return (
+            <HistoricalCell
+              key={iso}
+              booking={info.booking}
+              onClick={() => onEmptyClick(room.id, iso)}
             />
           );
         }
@@ -397,6 +421,24 @@ function EmptyCell({ isPast, onClick }) {
           <span className="cal-empty-hint">+</span>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── HistoricalCell ────────────────────────────────────────────────────────────
+
+function HistoricalCell({ booking: b, onClick }) {
+  return (
+    <div
+      className="cal-cell is-checked-out cal-cell-historical"
+      onClick={onClick}
+      title={`${b.guest_first_name} ${b.guest_last_name} — checked out\nClick to book`}
+    >
+      <div className="cal-cell-inner">
+        <div className="cal-guest-name" style={{ textDecoration: 'line-through', opacity: 0.5 }}>
+          {b.guest_first_name}
+        </div>
+      </div>
     </div>
   );
 }

@@ -100,10 +100,15 @@ export default function Dashboard() {
     (b) => b.status === 'confirmed' && b.check_in_date > today && b.check_in_date <= in7Days
   );
 
-  // Room stats
+  // Room stats — only confirmed/arriving bookings occupy a room
   const occupiedRoomIds = new Set(
     bookings
-      .filter((b) => b.status !== 'cancelled' && b.check_in_date <= today && b.check_out_date > today)
+      .filter((b) =>
+        b.status !== 'cancelled' &&
+        b.status !== 'checked_out' &&
+        b.check_in_date <= today &&
+        b.check_out_date > today
+      )
       .map((b) => b.room_id)
   );
   const maintenanceRooms  = rooms.filter((r) => r.status === 'maintenance');

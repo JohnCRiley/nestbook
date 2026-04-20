@@ -1423,6 +1423,15 @@ a { text-decoration: none; }
   color: var(--text-muted);
 }
 
+.cal-cell.cal-cell-historical {
+  cursor: pointer;
+  opacity: 0.6;
+}
+.cal-cell.cal-cell-historical:hover {
+  opacity: 0.85;
+  background: #cbd5e1;
+}
+
 .cal-cell.is-arriving .cal-guest-name { color: var(--accent-dark); }
 .cal-cell.is-arriving .cal-booking-nights { color: var(--accent); }
 
