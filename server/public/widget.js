@@ -23,6 +23,7 @@
   // Derive API base from wherever the script itself is served from
   const API_BASE    = SCRIPT.src.replace(/\/widget\.js(\?.*)?$/, '');
   const CUR_SYMBOL  = ({ EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' })[CURRENCY] || '€';
+  const DEMO_MODE   = SCRIPT.getAttribute('data-demo') === 'true';
   const BRAND       = SCRIPT.getAttribute('data-color') || '#2f771b';
   const BRAND_DARK  = '#1a4710';
   const BRAND_LIGHT = '#d9f0cc';
@@ -53,6 +54,7 @@
       errDates: 'Check-out must be after check-in.',
       errServer: 'Something went wrong. Please try again.',
       checking: 'Checking availability…',
+      demoNote: 'Demo mode — no real booking was made',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -78,6 +80,7 @@
       errDates: 'La date de départ doit être postérieure à l\'arrivée.',
       errServer: 'Une erreur est survenue. Veuillez réessayer.',
       checking: 'Vérification de la disponibilité…',
+      demoNote: 'Mode démo — aucune vraie réservation n\'a été effectuée',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -103,6 +106,7 @@
       errDates: 'La fecha de salida debe ser posterior a la llegada.',
       errServer: 'Algo salió mal. Por favor, inténtelo de nuevo.',
       checking: 'Comprobando disponibilidad…',
+      demoNote: 'Modo demo — no se ha realizado ninguna reserva real',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -128,6 +132,7 @@
       errDates: 'Vertrekdatum moet na aankomstdatum liggen.',
       errServer: 'Er is iets misgegaan. Probeer het opnieuw.',
       checking: 'Beschikbaarheid controleren…',
+      demoNote: 'Demo modus — er is geen echte reservering gemaakt',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -153,6 +158,7 @@
       errDates: 'Abreise muss nach Anreise liegen.',
       errServer: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
       checking: 'Verfügbarkeit wird geprüft…',
+      demoNote: 'Demo-Modus — keine echte Buchung wurde vorgenommen',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -171,6 +177,7 @@
     bookingRef:     null,
     loading:        false,
     error:          null,
+    isDemo:         false,
   };
 
   // ── Date helpers ───────────────────────────────────────────────────────────
@@ -239,14 +246,21 @@
     S.error   = null;
     render();
     try {
-      const [rooms, bookings] = await Promise.all([
-        apiFetch('/api/widget/rooms?property_id=' + PROPERTY_ID),
-        apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
-      ]);
-      S.allRooms       = rooms;
-      S.allBookings    = bookings;
-      S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
-      S.step           = 2;
+      if (DEMO_MODE) {
+        const rooms      = await apiFetch('/api/widget/demo/rooms');
+        S.allRooms       = rooms;
+        S.allBookings    = [];
+        S.availableRooms = rooms.filter((r) => r.capacity >= S.numGuests);
+      } else {
+        const [rooms, bookings] = await Promise.all([
+          apiFetch('/api/widget/rooms?property_id=' + PROPERTY_ID),
+          apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
+        ]);
+        S.allRooms       = rooms;
+        S.allBookings    = bookings;
+        S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
+      }
+      S.step = 2;
     } catch (err) {
       console.error('[NestBook widget] loadAvailability failed:', err);
       S.error = T.errServer;
@@ -260,39 +274,56 @@
     S.error   = null;
     render();
     try {
-      // 1. Create (or register) the guest
-      const guest = await apiFetch('/api/widget/guests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          first_name: S.guest.firstName.trim(),
-          last_name:  S.guest.lastName.trim(),
-          email:      S.guest.email.trim()  || null,
-          phone:      S.guest.phone.trim()  || null,
-          notes:      S.guest.notes.trim()  || null,
-        }),
-      });
-      // 2. Create the booking
-      const nights    = nightsBetween(S.checkIn, S.checkOut);
-      const totalPrice = S.selectedRoom.price_per_night * nights;
-      const booking = await apiFetch('/api/widget/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          property_id:    Number(PROPERTY_ID),
-          room_id:        S.selectedRoom.id,
-          guest_id:       guest.id,
-          check_in_date:  S.checkIn,
-          check_out_date: S.checkOut,
-          num_guests:     S.numGuests,
-          status:         'confirmed',
-          source:         'direct',
-          notes:          S.guest.notes.trim() || null,
-          total_price:    totalPrice,
-        }),
-      });
-      S.bookingRef = booking.id;
-      S.step       = 5;
+      if (DEMO_MODE) {
+        // Demo: skip guest creation, return a fake ref without touching the DB
+        const booking = await apiFetch('/api/widget/demo/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            room_name:      S.selectedRoom.name,
+            check_in_date:  S.checkIn,
+            check_out_date: S.checkOut,
+            num_guests:     S.numGuests,
+          }),
+        });
+        S.bookingRef = booking.id; // e.g. "DEMO-2847"
+        S.isDemo     = true;
+        S.step       = 5;
+      } else {
+        // 1. Create (or register) the guest
+        const guest = await apiFetch('/api/widget/guests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: S.guest.firstName.trim(),
+            last_name:  S.guest.lastName.trim(),
+            email:      S.guest.email.trim()  || null,
+            phone:      S.guest.phone.trim()  || null,
+            notes:      S.guest.notes.trim()  || null,
+          }),
+        });
+        // 2. Create the booking
+        const nights     = nightsBetween(S.checkIn, S.checkOut);
+        const totalPrice = S.selectedRoom.price_per_night * nights;
+        const booking = await apiFetch('/api/widget/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id:    Number(PROPERTY_ID),
+            room_id:        S.selectedRoom.id,
+            guest_id:       guest.id,
+            check_in_date:  S.checkIn,
+            check_out_date: S.checkOut,
+            num_guests:     S.numGuests,
+            status:         'confirmed',
+            source:         'direct',
+            notes:          S.guest.notes.trim() || null,
+            total_price:    totalPrice,
+          }),
+        });
+        S.bookingRef = booking.id;
+        S.step       = 5;
+      }
     } catch (err) {
       console.error('[NestBook widget] confirmBooking failed:', err);
       S.error = T.errServer;
@@ -713,6 +744,16 @@
   color: #8aab7f;
   margin-top: 8px;
 }
+.nb-demo-note {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 0.72rem;
+  color: #8aab7f;
+  background: #f3f7f2;
+  border: 1px solid #d9ead3;
+  border-radius: 6px;
+  padding: 5px 12px;
+}
 
 /* Section heading inside body */
 .nb-section-title {
@@ -1057,7 +1098,14 @@
       : ''));
 
     wrap.appendChild(icon); wrap.appendChild(title); wrap.appendChild(msg);
-    wrap.appendChild(ref); if (S.guest.email) wrap.appendChild(sub);
+    wrap.appendChild(ref); if (S.guest.email && !S.isDemo) wrap.appendChild(sub);
+
+    if (S.isDemo) {
+      const demoNote = el('p', 'nb-demo-note');
+      demoNote.appendChild(txt(T.demoNote || 'Demo mode — no real booking was made'));
+      wrap.appendChild(demoNote);
+    }
+
     body.appendChild(wrap);
 
     // Footer: close
@@ -1111,7 +1159,7 @@
     Object.assign(S, {
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
-      bookingRef: null, loading: false, error: null,
+      bookingRef: null, loading: false, error: null, isDemo: false,
     });
     backdrop.style.display = 'flex';
     document.body.style.overflow = 'hidden';

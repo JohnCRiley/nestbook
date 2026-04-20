@@ -230,6 +230,8 @@ export function initSchema() {
   // Migration: make bookings.room_id nullable so rooms can be deleted while preserving history
   const bookingRoomCol = db.prepare(`PRAGMA table_info(bookings)`).all().find((c) => c.name === 'room_id');
   if (bookingRoomCol && bookingRoomCol.notnull) {
+    // Check whether 'flagged' column exists yet — it may have been added before this rebuild runs
+    const hasFlagged = db.prepare(`PRAGMA table_info(bookings)`).all().some((c) => c.name === 'flagged');
     db.exec(`PRAGMA foreign_keys = OFF`);
     db.exec(`
       BEGIN;
@@ -247,9 +249,11 @@ export function initSchema() {
                                 CHECK(source IN ('direct','phone','email','booking_com','airbnb','other')),
         notes           TEXT,
         total_price     REAL,
-        created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+        created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+        flagged         INTEGER NOT NULL DEFAULT 0
       );
-      INSERT INTO bookings_v2 SELECT * FROM bookings;
+      INSERT INTO bookings_v2 SELECT id, property_id, room_id, guest_id, check_in_date, check_out_date,
+        num_guests, status, source, notes, total_price, created_at${hasFlagged ? ', flagged' : ', 0'} FROM bookings;
       DROP TABLE bookings;
       ALTER TABLE bookings_v2 RENAME TO bookings;
       COMMIT;

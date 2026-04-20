@@ -32,6 +32,19 @@
       color: #1a4710;
       margin-bottom: 24px;
     }
+    .demo-badge {
+      display: inline-block;
+      background: #1a4710;
+      color: #d9f0cc;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      padding: 3px 8px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
     .rooms-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -85,10 +98,11 @@
   </div>
 
   <h1>🏡 Domaine des Lavandes</h1>
-  <p id="intro">Provençal gîte near Roussillon — a simulated property website to test the NestBook booking widget.</p>
+  <p id="intro">Provençal gîte near Roussillon — experience the NestBook booking widget live.</p>
 
   <div class="info" id="info-box">
-    ℹ️ This is a test page served by the NestBook server. The floating <strong>Book Now</strong> button in the bottom-right corner is the embeddable widget. Click it to try the full 4-step booking flow.
+    <span class="demo-badge" id="demo-label">Live Demo</span>
+    <span id="info-text">Click the <strong>Book Now</strong> button in the bottom-right corner to try the full 4-step booking flow. <strong>No real booking will be made.</strong></span>
   </div>
 
   <div class="hero">
@@ -97,22 +111,22 @@
   </div>
 
   <h2 id="rooms-heading">Our Rooms</h2>
-  <div class="rooms-grid">
+  <div class="rooms-grid" id="rooms-grid">
     <div class="room-card">
-      <h3>La Suite Lavande</h3>
-      <p>Suite · 2 guests · €180/night · WiFi, En-suite, Balcony, Minibar</p>
+      <h3>Chambre Lavande</h3>
+      <p id="room-lavande">Double · 2 guests · €95/night · WiFi, En-suite, Balcony</p>
     </div>
     <div class="room-card">
-      <h3>La Chambre Mistral</h3>
-      <p>Double · 2 guests · €120/night · WiFi, En-suite</p>
+      <h3>Chambre Mistral</h3>
+      <p id="room-mistral">Twin · 2 guests · €85/night · WiFi, En-suite</p>
     </div>
     <div class="room-card">
-      <h3>La Chambre Garrigue</h3>
-      <p>Double · 2 guests · €110/night · WiFi, En-suite</p>
+      <h3>Suite Provence</h3>
+      <p id="room-provence">Suite · 4 guests · €145/night · WiFi, En-suite, Terrace, Minibar</p>
     </div>
     <div class="room-card">
-      <h3>L'Appartement</h3>
-      <p>Apartment · 4 guests · €220/night · WiFi, Kitchenette, Terrace, Parking</p>
+      <h3>Chambre Olivier</h3>
+      <p id="room-olivier">Single · 1 guest · €65/night · WiFi</p>
     </div>
   </div>
 
@@ -120,57 +134,87 @@
   // ── Page translations ──────────────────────────────────────────────────────
   const PAGE_STRINGS = {
     en: {
-      title:      'NestBook Widget — Live Demo',
-      intro:      'Provençal gîte near Roussillon — a simulated property website to test the NestBook booking widget.',
-      infoHtml:   'ℹ️ This is a test page served by the NestBook server. The floating <strong>Book Now</strong> button in the bottom-right corner is the embeddable widget. Click it to try the full 4-step booking flow.',
-      heroHeading:'Your Escape in Provence',
-      heroSub:    'Lavender fields, stone farmhouses and long summer evenings.<br>Book directly with us for the best rates.',
+      title:       'NestBook Widget — Live Demo',
+      intro:       'Provençal gîte near Roussillon — experience the NestBook booking widget live.',
+      demoLabel:   'Live Demo',
+      infoText:    'Click the <strong>Book Now</strong> button in the bottom-right corner to try the full 4-step booking flow. <strong>No real booking will be made.</strong>',
+      heroHeading: 'Your Escape in Provence',
+      heroSub:     'Lavender fields, stone farmhouses and long summer evenings.<br>Book directly with us for the best rates.',
       roomsHeading:'Our Rooms',
+      roomLavande: 'Double · 2 guests · €95/night · WiFi, En-suite, Balcony',
+      roomMistral: 'Twin · 2 guests · €85/night · WiFi, En-suite',
+      roomProvence:'Suite · 4 guests · €145/night · WiFi, En-suite, Terrace, Minibar',
+      roomOlivier: 'Single · 1 guest · €65/night · WiFi',
     },
     fr: {
-      title:      'NestBook Widget — Démo en direct',
-      intro:      'Gîte provençal près de Roussillon — un site de propriété simulé pour tester le widget de réservation NestBook.',
-      infoHtml:   'ℹ️ Il s\'agit d\'une page de test servie par le serveur NestBook. Le bouton flottant <strong>Réserver</strong> en bas à droite est le widget intégrable. Cliquez dessus pour essayer le flux de réservation complet en 4 étapes.',
-      heroHeading:'Votre escapade en Provence',
-      heroSub:    'Champs de lavande, mas en pierre et longues soirées d\'été.<br>Réservez directement chez nous pour les meilleurs tarifs.',
+      title:       'NestBook Widget — Démo en direct',
+      intro:       'Gîte provençal près de Roussillon — découvrez le widget de réservation NestBook en direct.',
+      demoLabel:   'Démo live',
+      infoText:    'Cliquez sur le bouton <strong>Réserver</strong> en bas à droite pour essayer le flux de réservation complet en 4 étapes. <strong>Aucune vraie réservation ne sera effectuée.</strong>',
+      heroHeading: 'Votre escapade en Provence',
+      heroSub:     'Champs de lavande, mas en pierre et longues soirées d\'été.<br>Réservez directement chez nous pour les meilleurs tarifs.',
       roomsHeading:'Nos chambres',
+      roomLavande: 'Double · 2 personnes · 95 €/nuit · WiFi, Salle de bain privée, Balcon',
+      roomMistral: 'Twin · 2 personnes · 85 €/nuit · WiFi, Salle de bain privée',
+      roomProvence:'Suite · 4 personnes · 145 €/nuit · WiFi, Salle de bain privée, Terrasse, Minibar',
+      roomOlivier: 'Simple · 1 personne · 65 €/nuit · WiFi',
     },
     es: {
-      title:      'NestBook Widget — Demo en vivo',
-      intro:      'Casa rural provenzal cerca de Roussillon — una web de propiedad simulada para probar el widget de reservas NestBook.',
-      infoHtml:   'ℹ️ Esta es una página de prueba servida por el servidor NestBook. El botón flotante <strong>Reservar</strong> en la esquina inferior derecha es el widget integrable. Haz clic para probar el flujo de reserva completo en 4 pasos.',
-      heroHeading:'Su escapada en Provenza',
-      heroSub:    'Campos de lavanda, masías de piedra y largas tardes de verano.<br>Reserve directamente con nosotros para obtener las mejores tarifas.',
+      title:       'NestBook Widget — Demo en vivo',
+      intro:       'Casa rural provenzal cerca de Roussillon — experimente el widget de reservas NestBook en directo.',
+      demoLabel:   'Demo en vivo',
+      infoText:    'Haz clic en el botón <strong>Reservar</strong> en la esquina inferior derecha para probar el flujo de reserva completo en 4 pasos. <strong>No se realizará ninguna reserva real.</strong>',
+      heroHeading: 'Su escapada en Provenza',
+      heroSub:     'Campos de lavanda, masías de piedra y largas tardes de verano.<br>Reserve directamente con nosotros para obtener las mejores tarifas.',
       roomsHeading:'Nuestras habitaciones',
+      roomLavande: 'Doble · 2 huéspedes · €95/noche · WiFi, Baño privado, Balcón',
+      roomMistral: 'Twin · 2 huéspedes · €85/noche · WiFi, Baño privado',
+      roomProvence:'Suite · 4 huéspedes · €145/noche · WiFi, Baño privado, Terraza, Minibar',
+      roomOlivier: 'Individual · 1 huésped · €65/noche · WiFi',
     },
     de: {
-      title:      'NestBook Widget — Live-Demo',
-      intro:      'Provenzalisches Ferienhaus bei Roussillon — eine simulierte Unterkunftswebsite zum Testen des NestBook-Buchungs-Widgets.',
-      infoHtml:   'ℹ️ Dies ist eine Testseite des NestBook-Servers. Der schwebende <strong>Buchen</strong>-Button unten rechts ist das einbettbare Widget. Klicken Sie darauf, um den vollständigen 4-Schritte-Buchungsablauf zu testen.',
-      heroHeading:'Ihr Erholungsort in der Provence',
-      heroSub:    'Lavendelfelder, Steinhäuser und lange Sommerabende.<br>Buchen Sie direkt bei uns für die besten Preise.',
+      title:       'NestBook Widget — Live-Demo',
+      intro:       'Provenzalisches Ferienhaus bei Roussillon — erleben Sie das NestBook-Buchungs-Widget live.',
+      demoLabel:   'Live-Demo',
+      infoText:    'Klicken Sie auf den <strong>Buchen</strong>-Button unten rechts, um den vollständigen 4-Schritte-Buchungsablauf zu testen. <strong>Es wird keine echte Buchung vorgenommen.</strong>',
+      heroHeading: 'Ihr Erholungsort in der Provence',
+      heroSub:     'Lavendelfelder, Steinhäuser und lange Sommerabende.<br>Buchen Sie direkt bei uns für die besten Preise.',
       roomsHeading:'Unsere Zimmer',
+      roomLavande: 'Doppelzimmer · 2 Gäste · €95/Nacht · WLAN, Eigenes Bad, Balkon',
+      roomMistral: 'Zweibettzimmer · 2 Gäste · €85/Nacht · WLAN, Eigenes Bad',
+      roomProvence:'Suite · 4 Gäste · €145/Nacht · WLAN, Eigenes Bad, Terrasse, Minibar',
+      roomOlivier: 'Einzelzimmer · 1 Gast · €65/Nacht · WLAN',
     },
     nl: {
-      title:      'NestBook Widget — Live demo',
-      intro:      'Provençaals gîte bij Roussillon — een gesimuleerde accommodatiewebsite om de NestBook-boekingswidget te testen.',
-      infoHtml:   'ℹ️ Dit is een testpagina die wordt aangeboden door de NestBook-server. De zwevende <strong>Boek nu</strong>-knop rechtsonder is de insluitable widget. Klik erop om de volledige boekingsstroom in 4 stappen te testen.',
-      heroHeading:'Uw ontsnapping in de Provence',
-      heroSub:    'Lavendelvelden, stenen boerderijen en lange zomeravonden.<br>Boek direct bij ons voor de beste tarieven.',
+      title:       'NestBook Widget — Live demo',
+      intro:       'Provençaals gîte bij Roussillon — ervaar de NestBook-boekingswidget live.',
+      demoLabel:   'Live demo',
+      infoText:    'Klik op de <strong>Boek nu</strong>-knop rechtsonder om de volledige boekingsstroom in 4 stappen te proberen. <strong>Er wordt geen echte reservering gemaakt.</strong>',
+      heroHeading: 'Uw ontsnapping in de Provence',
+      heroSub:     'Lavendelvelden, stenen boerderijen en lange zomeravonden.<br>Boek direct bij ons voor de beste tarieven.',
       roomsHeading:'Onze kamers',
+      roomLavande: 'Tweepersoonskamer · 2 personen · €95/nacht · WiFi, Eigen badkamer, Balkon',
+      roomMistral: 'Tweepersoonskamer met twee bedden · 2 personen · €85/nacht · WiFi, Eigen badkamer',
+      roomProvence:'Suite · 4 personen · €145/nacht · WiFi, Eigen badkamer, Terras, Minibar',
+      roomOlivier: 'Eenpersoonskamer · 1 persoon · €65/nacht · WiFi',
     },
   };
 
   // ── Apply page language ────────────────────────────────────────────────────
   function applyPageLang(lang) {
     const s = PAGE_STRINGS[lang] || PAGE_STRINGS.en;
-    document.title                            = s.title;
-    document.documentElement.lang            = lang;
-    document.getElementById('intro').textContent        = s.intro;
-    document.getElementById('info-box').innerHTML       = s.infoHtml;
-    document.getElementById('hero-heading').textContent = s.heroHeading;
-    document.getElementById('hero-sub').innerHTML       = s.heroSub;
-    document.getElementById('rooms-heading').textContent= s.roomsHeading;
+    document.title                                            = s.title;
+    document.documentElement.lang                            = lang;
+    document.getElementById('intro').textContent             = s.intro;
+    document.getElementById('demo-label').textContent        = s.demoLabel;
+    document.getElementById('info-text').innerHTML           = s.infoText;
+    document.getElementById('hero-heading').textContent      = s.heroHeading;
+    document.getElementById('hero-sub').innerHTML            = s.heroSub;
+    document.getElementById('rooms-heading').textContent     = s.roomsHeading;
+    document.getElementById('room-lavande').textContent      = s.roomLavande;
+    document.getElementById('room-mistral').textContent      = s.roomMistral;
+    document.getElementById('room-provence').textContent     = s.roomProvence;
+    document.getElementById('room-olivier').textContent      = s.roomOlivier;
 
     // Update active button state
     document.querySelectorAll('#lang-bar button').forEach((btn) => {
@@ -202,12 +246,13 @@
   })();
   </script>
 
-  <!-- ✅ This is the embed snippet — one line, works on any website -->
-  <!-- data-lang is intentionally omitted so widget.js reads nestbook_lang from localStorage -->
+  <!-- NestBook booking widget — demo mode enabled -->
+  <!-- data-demo="true": shows all rooms as available, booking is not saved to DB -->
   <script
     src="/widget.js"
     data-property-id="1"
     data-currency="EUR"
+    data-demo="true"
     async>
   </script>
 

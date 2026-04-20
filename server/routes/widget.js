@@ -6,6 +6,16 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { sendBookingConfirmation } from '../email/emailService.js';
 
+// ── Demo mode rooms (static, never blocked, no DB dependency) ─────────────────
+// These match the Domaine des Lavandes demo property rooms shown on widget-test.html.
+// The demo booking endpoint returns a fake ref and never writes to the DB.
+const DEMO_ROOMS = [
+  { id: 'D1', property_id: 0, name: 'Chambre Lavande',  type: 'double', price_per_night: 95,  capacity: 2, amenities: 'wifi,ensuite,balcony',        status: 'available' },
+  { id: 'D2', property_id: 0, name: 'Chambre Mistral',  type: 'twin',   price_per_night: 85,  capacity: 2, amenities: 'wifi,ensuite',                 status: 'available' },
+  { id: 'D3', property_id: 0, name: 'Suite Provence',   type: 'suite',  price_per_night: 145, capacity: 4, amenities: 'wifi,ensuite,terrace,minibar', status: 'available' },
+  { id: 'D4', property_id: 0, name: 'Chambre Olivier',  type: 'single', price_per_night: 65,  capacity: 1, amenities: 'wifi',                         status: 'available' },
+];
+
 export const widgetRouter = Router();
 
 // ── GET /api/widget/rooms?property_id=X ──────────────────────────────────────
@@ -139,4 +149,19 @@ widgetRouter.post('/bookings', (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── GET /api/widget/demo/rooms ────────────────────────────────────────────────
+// Always returns all 4 demo rooms as available — no auth, no DB query.
+// Used by widget-test.html in demo mode so visitor bookings never block rooms.
+widgetRouter.get('/demo/rooms', (_req, res) => {
+  res.json(DEMO_ROOMS);
+});
+
+// ── POST /api/widget/demo/bookings ────────────────────────────────────────────
+// Accepts a booking payload, returns a realistic confirmation with a fake
+// reference number, but NEVER writes to the database.
+widgetRouter.post('/demo/bookings', (_req, res) => {
+  const ref = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
+  res.status(201).json({ id: ref, demo: true, status: 'cancelled' });
 });

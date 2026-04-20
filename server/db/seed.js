@@ -73,14 +73,88 @@ function ensureAdminTestData() {
   console.log('  ✓ Admin test properties created (5 extra properties)');
 }
 
+// ── Reseed the demo property rooms and future bookings ───────────────────────
+// Replaces all rooms and bookings for the given property with a fresh set.
+// Does NOT touch any other property, user, or guest record.
+function reseedDemoProperty(propertyId) {
+  console.log(`\n  Reseeding demo property (id ${propertyId})…`);
+
+  db.exec('BEGIN');
+  try {
+    // Wipe existing bookings and rooms for this property only
+    db.prepare('DELETE FROM bookings WHERE property_id = ?').run(propertyId);
+    db.prepare('DELETE FROM rooms    WHERE property_id = ?').run(propertyId);
+
+    // Insert 4 canonical demo rooms with is_demo = 1
+    const insertRoom = db.prepare(`
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, is_demo)
+      VALUES (?, ?, ?, ?, ?, ?, 'available', 1)
+    `);
+
+    const demoRooms = [
+      ['Chambre Lavande', 'double',  95,  2, 'wifi,ensuite,balcony'],
+      ['Chambre Mistral', 'twin',    85,  2, 'wifi,ensuite'],
+      ['Suite Provence',  'suite',   145, 4, 'wifi,ensuite,terrace,minibar'],
+      ['Chambre Olivier', 'single',  65,  1, 'wifi'],
+    ];
+
+    const roomIds = demoRooms.map(([name, type, price, cap, amenities]) =>
+      insertRoom.run(propertyId, name, type, price, cap, amenities).lastInsertRowid
+    );
+    // roomIds[0]=Lavande, [1]=Mistral, [2]=Provence, [3]=Olivier
+
+    // Insert demo guests (fresh — do not rely on existing guest records)
+    const insertGuest = db.prepare(`
+      INSERT INTO guests (first_name, last_name, email, phone)
+      VALUES (?, ?, ?, ?)
+    `);
+    const guestIds = [
+      insertGuest.run('Sophie',       'Martin',  'sophie.martin@email.fr',    '+33 6 12 34 56 78').lastInsertRowid,
+      insertGuest.run('Jean-Pierre',  'Moreau',  'jp.moreau@email.fr',        '+33 6 98 76 54 32').lastInsertRowid,
+      insertGuest.run('Claire',       'Bonnet',  'claire.bonnet@email.fr',    '+33 6 45 67 89 01').lastInsertRowid,
+      insertGuest.run('Marcel',       'Dupont',  'marcel.dupont@email.fr',    '+33 6 23 45 67 89').lastInsertRowid,
+    ];
+
+    // Insert 4 future bookings spread over the next 2 months
+    const insertBooking = db.prepare(`
+      INSERT INTO bookings
+        (property_id, room_id, guest_id, check_in_date, check_out_date,
+         num_guests, status, source, total_price)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const futureBookings = [
+      // [room_idx, guest_idx, check_in,    check_out,   guests, status,     source,  price]
+      [0, 0, '2026-05-02', '2026-05-06', 2, 'confirmed', 'direct',      4 * 95],
+      [2, 1, '2026-05-10', '2026-05-14', 3, 'confirmed', 'booking_com', 4 * 145],
+      [1, 2, '2026-05-22', '2026-05-25', 2, 'confirmed', 'email',       3 * 85],
+      [0, 3, '2026-06-07', '2026-06-12', 2, 'confirmed', 'direct',      5 * 95],
+    ];
+
+    futureBookings.forEach(([ri, gi, checkIn, checkOut, numGuests, status, source, price]) => {
+      insertBooking.run(propertyId, roomIds[ri], guestIds[gi], checkIn, checkOut, numGuests, status, source, price);
+    });
+
+    db.exec('COMMIT');
+    console.log(`  ✓ ${demoRooms.length} rooms inserted (is_demo = 1)`);
+    console.log(`  ✓ ${futureBookings.length} future bookings inserted`);
+  } catch (err) {
+    db.exec('ROLLBACK');
+    console.error('  ✗ Reseed failed — rolled back.', err);
+    throw err;
+  }
+}
+
 // ── Guard ───────────────────────────────────────────────────────────────────
 const { count } = db.prepare('SELECT COUNT(*) AS count FROM properties').get();
 if (count > 0) {
   // Ensure demo user and admin test data are present even on an already-seeded database.
-  const prop = db.prepare('SELECT id FROM properties LIMIT 1').get();
+  let prop = db.prepare("SELECT id FROM properties WHERE name = 'Domaine des Lavandes'").get();
+  if (!prop) prop = db.prepare('SELECT id FROM properties ORDER BY id LIMIT 1').get();
   ensureDemoUser(prop.id);
   ensureAdminTestData();
-  console.log('Database already contains data — skipping main seed.');
+  reseedDemoProperty(prop.id);
+  console.log('\n✓ Demo property reseeded. All other accounts untouched.');
   process.exit(0);
 }
 
@@ -103,25 +177,22 @@ try {
 
   // ── 2. Rooms ──────────────────────────────────────────────────────────────
   const insertRoom = db.prepare(`
-    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, is_demo)
+    VALUES (?, ?, ?, ?, ?, ?, 'available', 1)
   `);
 
   const rooms = [
-    // [name,                  type,        price, capacity, amenities,                          status]
-    ['La Suite Lavande',      'suite',       180,    2, 'wifi,ensuite,balcony,minibar',          'available'],
-    ['La Chambre Mistral',    'double',      120,    2, 'wifi,ensuite',                          'available'],
-    ['La Chambre Garrigue',   'double',      110,    2, 'wifi,ensuite',                          'available'],
-    ['Le Nid',                'single',       75,    1, 'wifi',                                  'available'],
-    ["L'Appartement",         'apartment',   220,    4, 'wifi,kitchenette,terrace,parking',      'available'],
-    ['La Chambre Familiale',  'twin',        155,    4, 'wifi,ensuite',                          'maintenance'],
+    // [name,              type,     price, capacity, amenities]
+    ['Chambre Lavande', 'double',  95,  2, 'wifi,ensuite,balcony'],
+    ['Chambre Mistral', 'twin',    85,  2, 'wifi,ensuite'],
+    ['Suite Provence',  'suite',   145, 4, 'wifi,ensuite,terrace,minibar'],
+    ['Chambre Olivier', 'single',  65,  1, 'wifi'],
   ];
 
-  const roomIds = rooms.map(([name, type, price, capacity, amenities, status]) =>
-    insertRoom.run(propertyId, name, type, price, capacity, amenities, status).lastInsertRowid
+  const roomIds = rooms.map(([name, type, price, capacity, amenities]) =>
+    insertRoom.run(propertyId, name, type, price, capacity, amenities).lastInsertRowid
   );
-  // roomIds[0] = Suite Lavande, [1] = Mistral, [2] = Garrigue,
-  // [3] = Le Nid, [4] = Appartement, [5] = Familiale
+  // roomIds[0]=Lavande, [1]=Mistral, [2]=Provence, [3]=Olivier
 
   // ── 3. Guests ─────────────────────────────────────────────────────────────
   const insertGuest = db.prepare(`
@@ -145,28 +216,24 @@ try {
   // guestIds[0]=Sophie, [1]=James, [2]=Hans, [3]=Marie, [4]=Carlos, [5]=Anna
 
   // ── 4. Bookings ───────────────────────────────────────────────────────────
-  // Today is 2026-03-30. Dates are spread around that anchor point.
+  // Future bookings spread across the next 2 months (from 2026-04-20).
   const insertBooking = db.prepare(`
     INSERT INTO bookings
       (property_id, room_id, guest_id, check_in_date, check_out_date,
-       num_guests, status, source, notes, total_price)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       num_guests, status, source, total_price)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const bookings = [
-    // [room_idx, guest_idx, check_in,    check_out,   guests, status,        source,       notes,                    price]
-    [1, 0, '2026-03-20', '2026-03-23', 2, 'checked_out', 'direct',      null,                                          360],
-    [2, 2, '2026-03-22', '2026-03-26', 2, 'checked_out', 'booking_com', null,                                          440],
-    [0, 1, '2026-03-28', '2026-04-02', 2, 'arriving',    'direct',      'Champagne on arrival requested',              900],
-    [3, 3, '2026-03-30', '2026-04-01', 1, 'arriving',    'phone',       null,                                          150],
-    [4, 4, '2026-04-05', '2026-04-10', 3, 'confirmed',   'airbnb',      'Late check-in agreed',                       1100],
-    [5, 5, '2026-04-08', '2026-04-12', 4, 'confirmed',   'email',       null,                                          620],
-    [1, 0, '2026-04-15', '2026-04-18', 2, 'confirmed',   'direct',      'Repeat guest — same room as last time',       360],
-    [0, 2, '2026-04-01', '2026-04-05', 2, 'cancelled',   'booking_com', 'Guest cancelled — full refund issued',        720],
+    // [room_idx, guest_idx, check_in,    check_out,   guests, status,     source,       price]
+    [0, 0, '2026-05-02', '2026-05-06', 2, 'confirmed', 'direct',      4 * 95],
+    [2, 1, '2026-05-10', '2026-05-14', 3, 'confirmed', 'booking_com', 4 * 145],
+    [1, 2, '2026-05-22', '2026-05-25', 2, 'confirmed', 'email',       3 * 85],
+    [0, 3, '2026-06-07', '2026-06-12', 2, 'confirmed', 'direct',      5 * 95],
   ];
 
-  bookings.forEach(([ri, gi, checkIn, checkOut, numGuests, status, source, notes, price]) => {
-    insertBooking.run(propertyId, roomIds[ri], guestIds[gi], checkIn, checkOut, numGuests, status, source, notes, price);
+  bookings.forEach(([ri, gi, checkIn, checkOut, numGuests, status, source, price]) => {
+    insertBooking.run(propertyId, roomIds[ri], guestIds[gi], checkIn, checkOut, numGuests, status, source, price);
   });
 
   // ── 5. Users ──────────────────────────────────────────────────────────────
@@ -190,11 +257,11 @@ try {
   ensureAdminTestData();
 
   console.log('✓ Seed complete:');
-  console.log(`  1 property   (id ${propertyId})`);
-  console.log(`  ${roomIds.length} rooms`);
+  console.log(`  1 property  (id ${propertyId})`);
+  console.log(`  ${roomIds.length} rooms (is_demo = 1)`);
   console.log(`  ${guestIds.length} guests`);
-  console.log(`  ${bookings.length} bookings`);
-  console.log('  2 users');
+  console.log(`  ${bookings.length} future bookings`);
+  console.log('  2 users + demo account');
 
 } catch (err) {
   db.exec('ROLLBACK');
