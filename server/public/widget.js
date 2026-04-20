@@ -213,6 +213,7 @@
       const blocked = bookings.some((b) =>
         b.room_id === room.id &&
         b.status !== 'cancelled' &&
+        b.status !== 'checked_out' &&
         b.check_in_date < checkOut &&
         b.check_out_date > checkIn
       );
