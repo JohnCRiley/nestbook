@@ -4,6 +4,7 @@ import { BADGE_CLASS } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 
 /**
@@ -170,57 +171,26 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
         </button>
       </div>
 
-      {showDeleteConfirm && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-          zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
-            maxWidth: 400, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-          }}>
-            <h3 style={{ margin: '0 0 10px', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
-              {t('deleteGuestTitle')}
-            </h3>
-            <p style={{ margin: '0 0 22px', fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>
-              {t('deleteGuestConfirm')(`${guest.first_name} ${guest.last_name}`)}
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-                style={{
-                  padding: '8px 16px', borderRadius: 7, border: '1.5px solid #e2e8f0',
-                  background: '#fff', color: '#334155', fontSize: '0.85rem',
-                  fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                {t('cancel')}
-              </button>
-              <button
-                disabled={deleting}
-                onClick={async () => {
-                  setDeleting(true);
-                  try {
-                    const res = await apiFetch(`/api/guests/${guest.id}/anonymise`, { method: 'PUT' });
-                    if (res.ok && onGuestDeleted) onGuestDeleted(guest.id);
-                  } finally {
-                    setDeleting(false);
-                    setShowDeleteConfirm(false);
-                  }
-                }}
-                style={{
-                  padding: '8px 16px', borderRadius: 7, border: 'none',
-                  background: '#dc2626', color: '#fff', fontSize: '0.85rem',
-                  fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                {deleting ? t('deleting') : t('deleteGuestBtn')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title={t('deleteGuestTitle')}
+        message={t('deleteGuestConfirm')(`${guest.first_name} ${guest.last_name}`)}
+        confirmLabel={deleting ? t('deleting') : t('deleteGuestBtn')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        busy={deleting}
+        onConfirm={async () => {
+          setDeleting(true);
+          try {
+            const res = await apiFetch(`/api/guests/${guest.id}/anonymise`, { method: 'PUT' });
+            if (res.ok && onGuestDeleted) onGuestDeleted(guest.id);
+          } finally {
+            setDeleting(false);
+            setShowDeleteConfirm(false);
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </>
   );
 }

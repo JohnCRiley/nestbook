@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 export default function AdminSettings() {
   const [codes,   setCodes]   = useState([]);
@@ -8,7 +9,8 @@ export default function AdminSettings() {
   const [form,    setForm]    = useState({
     code: '', discount_percent: '', duration: 'once', duration_months: '', max_uses: '',
   });
-  const [creating, setCreating] = useState(false);
+  const [creating,         setCreating]         = useState(false);
+  const [pendingDeactivate, setPendingDeactivate] = useState(null); // { id, code }
 
   useEffect(() => {
     apiFetch('/api/admin/discount-codes').then(r => r.json()).then(setCodes).catch(() => {});
@@ -59,7 +61,7 @@ export default function AdminSettings() {
   }
 
   async function deactivate(id, code) {
-    if (!window.confirm(`Deactivate code "${code}"? This cannot be undone.`)) return;
+    setPendingDeactivate(null);
     setBusy(b => ({ ...b, [`del_${id}`]: true }));
     try {
       const res = await apiFetch(`/api/admin/discount-codes/${id}`, { method: 'DELETE' });
@@ -212,7 +214,7 @@ export default function AdminSettings() {
                     <button
                       className="sa-btn sa-btn-cancel"
                       disabled={!!busy[`del_${c.id}`]}
-                      onClick={() => deactivate(c.id, c.code)}
+                      onClick={() => setPendingDeactivate({ id: c.id, code: c.code })}
                     >
                       {busy[`del_${c.id}`] ? '…' : 'Deactivate'}
                     </button>
@@ -228,6 +230,17 @@ export default function AdminSettings() {
       {toast && (
         <div className={`sa-toast sa-toast-${toast.type}`}>{toast.msg}</div>
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingDeactivate}
+        title="Deactivate discount code"
+        message={`Deactivate code "${pendingDeactivate?.code}"? This cannot be undone.`}
+        confirmLabel="Deactivate"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => deactivate(pendingDeactivate.id, pendingDeactivate.code)}
+        onCancel={() => setPendingDeactivate(null)}
+      />
     </>
   );
 }

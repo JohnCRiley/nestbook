@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const LIMIT = 25;
 
@@ -10,9 +11,10 @@ export default function Users() {
   const [totalPages,   setTotalPages]   = useState(0);
   const [search,       setSearch]       = useState('');
   const [busy,         setBusy]         = useState({});
-  const [refundTarget, setRefundTarget] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [toast,        setToast]        = useState(null);
+  const [refundTarget,   setRefundTarget]   = useState(null);
+  const [deleteTarget,   setDeleteTarget]   = useState(null);
+  const [toast,          setToast]          = useState(null);
+  const [pendingConfirm, setPendingConfirm] = useState(null); // { title, message, onConfirm }
   const [expandedCard, setExpandedCard] = useState(null); // user id expanded on mobile
 
   // Debounced search
@@ -73,7 +75,6 @@ export default function Users() {
   }
 
   async function compAccount(userId, name) {
-    if (!window.confirm(`Set ${name}'s account to Pro (Complimentary) and cancel any Stripe subscription?`)) return;
     setBusyKey(userId, 'comp', true);
     try {
       const res = await apiFetch(`/api/admin/users/${userId}/comp`, { method: 'POST' });
@@ -92,7 +93,6 @@ export default function Users() {
   }
 
   async function cancelSub(userId, name) {
-    if (!window.confirm(`Cancel ${name}'s Stripe subscription at period end?`)) return;
     setBusyKey(userId, 'cancel', true);
     try {
       const res = await apiFetch(`/api/admin/users/${userId}/cancel-subscription`, { method: 'POST' });
@@ -108,11 +108,7 @@ export default function Users() {
   }
 
   async function toggleSuspend(userId, name, isSuspended) {
-    const action  = isSuspended ? 'unsuspend' : 'suspend';
-    const confirm = isSuspended
-      ? `Unsuspend ${name}? They will be able to log in again.`
-      : `Suspend ${name}? They will be blocked from logging in immediately.`;
-    if (!window.confirm(confirm)) return;
+    const action = isSuspended ? 'unsuspend' : 'suspend';
     setBusyKey(userId, 'suspend', true);
     try {
       const res = await apiFetch(`/api/admin/users/${userId}/${action}`, { method: 'POST' });
@@ -141,7 +137,12 @@ export default function Users() {
         <button
           className="sa-btn sa-btn-comp"
           disabled={!!busy[`${u.id}_comp`]}
-          onClick={() => compAccount(u.id, u.name)}
+          onClick={() => setPendingConfirm({
+            title: 'Comp account',
+            message: `Set ${u.name}'s account to Pro (Complimentary) and cancel any Stripe subscription?`,
+            variant: 'warning',
+            action: () => compAccount(u.id, u.name),
+          })}
           title="Set to Pro complimentary (cancels Stripe sub)"
         >
           {busy[`${u.id}_comp`] ? '…' : 'Comp'}
@@ -150,7 +151,12 @@ export default function Users() {
           <button
             className="sa-btn sa-btn-cancel"
             disabled={!!busy[`${u.id}_cancel`]}
-            onClick={() => cancelSub(u.id, u.name)}
+            onClick={() => setPendingConfirm({
+              title: 'Cancel subscription',
+              message: `Cancel ${u.name}'s Stripe subscription at period end?`,
+              variant: 'danger',
+              action: () => cancelSub(u.id, u.name),
+            })}
             title="Cancel Stripe subscription at period end"
           >
             {busy[`${u.id}_cancel`] ? '…' : 'Cancel sub'}
@@ -168,7 +174,14 @@ export default function Users() {
         <button
           className={`sa-btn ${u.suspended ? 'sa-btn-comp' : 'sa-btn-cancel'}`}
           disabled={!!busy[`${u.id}_suspend`]}
-          onClick={() => toggleSuspend(u.id, u.name, !!u.suspended)}
+          onClick={() => setPendingConfirm({
+            title: u.suspended ? 'Unsuspend account' : 'Suspend account',
+            message: u.suspended
+              ? `Unsuspend ${u.name}? They will be able to log in again.`
+              : `Suspend ${u.name}? They will be blocked from logging in immediately.`,
+            variant: u.suspended ? 'warning' : 'danger',
+            action: () => toggleSuspend(u.id, u.name, !!u.suspended),
+          })}
         >
           {busy[`${u.id}_suspend`] ? '…' : u.suspended ? 'Unsuspend' : 'Suspend'}
         </button>
@@ -385,6 +398,17 @@ export default function Users() {
       {toast && (
         <div className={`sa-toast sa-toast-${toast.type}`}>{toast.msg}</div>
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingConfirm}
+        title={pendingConfirm?.title ?? ''}
+        message={pendingConfirm?.message ?? ''}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        variant={pendingConfirm?.variant ?? 'warning'}
+        onConfirm={() => { const fn = pendingConfirm.action; setPendingConfirm(null); fn(); }}
+        onCancel={() => setPendingConfirm(null)}
+      />
     </>
   );
 }

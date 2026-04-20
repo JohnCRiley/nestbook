@@ -3,6 +3,7 @@ import { BADGE_CLASS } from '../../utils/bookingConstants.js';
 import { nightsBetween, LOCALE_MAP } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const STATUS_OPTIONS = ['available', 'occupied', 'maintenance'];
@@ -310,65 +311,20 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
         )}
       </div>
 
-      {showDeleteModal && (
-        <DeleteModal
-          roomName={room.name}
-          bookingCount={deleteBookingCount}
-          deleting={deleting}
-          onConfirm={handleDelete}
-          onCancel={() => setShowDeleteModal(false)}
-          t={t}
-        />
-      )}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title={t('deleteRoomTitle')}
+        message={deleteBookingCount > 0
+          ? t('deleteRoomWithBookings')(deleteBookingCount)
+          : t('deleteRoomConfirm')(room.name)}
+        confirmLabel={deleting ? t('deleting') : t('deleteRoomBtn')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        busy={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </>
-  );
-}
-
-// ── DeleteModal ───────────────────────────────────────────────────────────────
-
-function DeleteModal({ roomName, bookingCount, deleting, onConfirm, onCancel, t }) {
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-      zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px',
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
-        maxWidth: 380, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-      }}>
-        <h3 style={{ margin: '0 0 10px', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>
-          {t('deleteRoomTitle')}
-        </h3>
-        <p style={{ margin: '0 0 22px', fontSize: '0.875rem', color: '#475569', lineHeight: 1.6 }}>
-          {bookingCount > 0 ? t('deleteRoomWithBookings')(bookingCount) : t('deleteRoomConfirm')(roomName)}
-        </p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button
-            onClick={onCancel}
-            disabled={deleting}
-            style={{
-              padding: '8px 16px', borderRadius: 7, border: '1.5px solid #e2e8f0',
-              background: '#fff', color: '#334155', fontSize: '0.85rem',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {t('cancel')}
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={deleting}
-            style={{
-              padding: '8px 16px', borderRadius: 7, border: 'none',
-              background: '#dc2626', color: '#fff', fontSize: '0.85rem',
-              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {deleting ? t('deleting') : t('deleteRoomBtn')}
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 

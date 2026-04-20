@@ -590,6 +590,80 @@ a { text-decoration: none; }
 .cal-ci-badge { background: #16a34a; color: white; }
 .cal-co-badge { background: #d97706; color: white; }
 
+/* ─── ConfirmModal ───────────────────────────────────────────────────────── */
+.cm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: cm-fade 0.14s ease;
+}
+@keyframes cm-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.cm-card {
+  background: #fff;
+  border-radius: 14px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+  animation: cm-slide 0.16s ease;
+}
+@keyframes cm-slide {
+  from { transform: translateY(-10px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0)     scale(1);    opacity: 1; }
+}
+.cm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  color: #fff;
+}
+.cm-icon  { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
+.cm-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+.cm-body  { padding: 22px 22px 20px; }
+.cm-message {
+  margin: 0 0 22px;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.65;
+}
+.cm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.cm-btn-cancel {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.cm-btn-cancel:hover:not(:disabled) { background: #f8fafc; }
+.cm-btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+.cm-btn-confirm {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: none;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.1s;
+}
+.cm-btn-confirm:hover:not(:disabled) { opacity: 0.88; }
+.cm-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ─── Empty state ────────────────────────────────────────────────────────── */
 .empty-state {
   padding: 32px 20px;

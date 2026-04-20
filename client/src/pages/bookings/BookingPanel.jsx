@@ -3,6 +3,7 @@ import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -70,10 +71,17 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, onStatusUpdate, onEdit }) {
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   return (
     <>
       {(b.status === 'confirmed' || b.status === 'arriving') && (
-        <StatusActions status={b.status} bookingId={b.id} onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t} prominent />
+        <StatusActions
+          status={b.status} bookingId={b.id}
+          onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t}
+          prominent
+          onCancelClick={() => setShowCancelConfirm(true)}
+        />
       )}
 
       <div className="panel-section">
@@ -116,14 +124,26 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, onStatusUpdate,
       <div className="panel-actions">
         <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
         {b.status === 'confirmed' && (
-          <button className="btn-panel-danger" style={{ fontSize: '0.82rem', padding: '7px 12px' }} onClick={() => {
-            if (window.confirm(t('cancelBookingConfirm'))) onStatusUpdate(b.id, 'cancelled');
-          }}>
+          <button
+            className="btn-panel-danger"
+            style={{ fontSize: '0.82rem', padding: '7px 12px' }}
+            onClick={() => setShowCancelConfirm(true)}
+          >
             {t('cancelBookingBtn')}
           </button>
         )}
       </div>
 
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        title={t('cancelBookingBtn')}
+        message={t('cancelBookingConfirm')}
+        confirmLabel={t('cancelBookingBtn')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onConfirm={() => { setShowCancelConfirm(false); onStatusUpdate(b.id, 'cancelled'); }}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
     </>
   );
 }
@@ -292,7 +312,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
 
 // ── Status action buttons ─────────────────────────────────────────────────────
 
-function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent }) {
+function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick }) {
   const wrapStyle = prominent
     ? { padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', marginBottom: 0 }
     : {};
@@ -322,9 +342,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
         >
           {t('checkInBtn')}
         </button>
-        <button className="btn-panel-danger" onClick={() => {
-          if (window.confirm(t('cancelBookingConfirm'))) onStatusUpdate(bookingId, 'cancelled');
-        }}>
+        <button className="btn-panel-danger" onClick={onCancelClick}>
           {t('cancelBookingBtn')}
         </button>
         {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>}

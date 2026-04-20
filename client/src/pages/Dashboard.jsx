@@ -11,6 +11,7 @@ import {
 } from '../utils/format.js';
 import BookingPanel from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
+import ConfirmModal from '../components/ConfirmModal.jsx';
 
 // ── Badge config (duplicated from Bookings so Dashboard has no cross-dep) ─────
 const BADGE_CLASS = {
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const [showAvailablePopover, setShowAvailablePopover] = useState(false);
   const [selectedBooking,      setSelectedBooking]      = useState(null);
   const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null); // room object for new booking modal
+  const [pendingConfirm,       setPendingConfirm]       = useState(null); // { title, message, confirmLabel, variant, action }
 
   const today = localToday();
 
@@ -347,9 +349,13 @@ export default function Dashboard() {
                       className="btn-checkin"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`))) {
-                          handleStatusUpdate(b.id, 'arriving');
-                        }
+                        setPendingConfirm({
+                          title: t('checkInBtn'),
+                          message: t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`),
+                          confirmLabel: t('checkInBtn'),
+                          variant: 'success',
+                          action: () => handleStatusUpdate(b.id, 'arriving'),
+                        });
                       }}
                     >
                       {t('checkInBtn')}
@@ -386,9 +392,13 @@ export default function Dashboard() {
                       className="btn-checkout"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(t('checkOutConfirm')(`${b.guest_first_name} ${b.guest_last_name}`))) {
-                          handleStatusUpdate(b.id, 'checked_out');
-                        }
+                        setPendingConfirm({
+                          title: t('checkOutBtn'),
+                          message: t('checkOutConfirm')(`${b.guest_first_name} ${b.guest_last_name}`),
+                          confirmLabel: t('checkOutBtn'),
+                          variant: 'warning',
+                          action: () => handleStatusUpdate(b.id, 'checked_out'),
+                        });
                       }}
                     >
                       {t('checkOutBtn')}
@@ -464,6 +474,17 @@ export default function Dashboard() {
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingConfirm}
+        title={pendingConfirm?.title ?? ''}
+        message={pendingConfirm?.message ?? ''}
+        confirmLabel={pendingConfirm?.confirmLabel ?? ''}
+        cancelLabel={t('cancel')}
+        variant={pendingConfirm?.variant ?? 'warning'}
+        onConfirm={() => { pendingConfirm.action(); setPendingConfirm(null); }}
+        onCancel={() => setPendingConfirm(null)}
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
+import ConfirmModal from '../components/ConfirmModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -552,14 +553,16 @@ export default function Settings() {
       </PlanGate>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
-      {showCancelModal && (
-        <CancelSubscriptionModal
-          plan={PLAN_LABELS[sub?.plan] ?? 'Pro'}
-          renewalDate={sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : null}
-          onClose={() => setShowCancelModal(false)}
-          onConfirm={handleCancelSubscription}
-        />
-      )}
+      <ConfirmModal
+        isOpen={showCancelModal}
+        title={t('cancelSubMoTitle')}
+        message={`${t('cancelSubConfirm')} ${sub?.current_period_end ? t('cancelSubWithDate')(PLAN_LABELS[sub?.plan] ?? 'Pro', fmtDate(sub.current_period_end, locale)) : t('cancelSubNoDate')}`}
+        confirmLabel={t('confirmCancelSub')}
+        cancelLabel={t('keepSubscription')}
+        variant="danger"
+        onConfirm={handleCancelSubscription}
+        onCancel={() => setShowCancelModal(false)}
+      />
 
       {showInvite && (
         <InviteStaffModal
@@ -774,47 +777,6 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
               disabled={loading || confirmText !== 'DELETE'}
             >
               {loading ? t('deleting') : t('deletePermanently')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── CancelSubscriptionModal ───────────────────────────────────────────────────
-
-function CancelSubscriptionModal({ plan, renewalDate, onClose, onConfirm }) {
-  const t = useT();
-  return (
-    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 420 }}>
-        <div className="modal-header">
-          <h2>{t('cancelSubMoTitle')}</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
-          <p style={{ fontSize: '0.95rem', color: '#374151', marginBottom: 16 }}>
-            {t('cancelSubConfirm')}
-            {' '}
-            {renewalDate
-              ? t('cancelSubWithDate')(plan, renewalDate)
-              : t('cancelSubNoDate')
-            }
-          </p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button className="btn-secondary" onClick={onClose}>
-              {t('keepSubscription')}
-            </button>
-            <button
-              style={{
-                background: '#dc2626', color: '#fff', border: 'none',
-                borderRadius: 6, padding: '8px 18px', fontWeight: 600,
-                fontSize: '0.875rem', cursor: 'pointer',
-              }}
-              onClick={onConfirm}
-            >
-              {t('confirmCancelSub')}
             </button>
           </div>
         </div>
