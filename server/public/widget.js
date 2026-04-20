@@ -24,6 +24,18 @@
   const API_BASE    = SCRIPT.src.replace(/\/widget\.js(\?.*)?$/, '');
   const CUR_SYMBOL  = ({ EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' })[CURRENCY] || '€';
   const DEMO_MODE   = SCRIPT.getAttribute('data-demo') === 'true';
+
+  // ── Demo-mode rooms (client-side only — no API call needed) ───────────────
+  // When DEMO_MODE is true the widget uses these hardcoded rooms and generates
+  // a fake booking reference without touching the database at all.
+  // This means demo mode works even before a server restart loads the new routes.
+  const DEMO_ROOMS_DATA = DEMO_MODE ? [
+    { id: 'D1', name: 'Chambre Lavande', type: 'double', price_per_night: 95,  capacity: 2, amenities: 'wifi,ensuite,balcony',        status: 'available' },
+    { id: 'D2', name: 'Chambre Mistral', type: 'twin',   price_per_night: 85,  capacity: 2, amenities: 'wifi,ensuite',                 status: 'available' },
+    { id: 'D3', name: 'Suite Provence',  type: 'suite',  price_per_night: 145, capacity: 4, amenities: 'wifi,ensuite,terrace,minibar', status: 'available' },
+    { id: 'D4', name: 'Chambre Olivier', type: 'single', price_per_night: 65,  capacity: 1, amenities: 'wifi',                         status: 'available' },
+  ] : null;
+
   const BRAND       = SCRIPT.getAttribute('data-color') || '#2f771b';
   const BRAND_DARK  = '#1a4710';
   const BRAND_LIGHT = '#d9f0cc';
@@ -247,18 +259,22 @@
     render();
     try {
       if (DEMO_MODE) {
-        const rooms      = await apiFetch('/api/widget/demo/rooms');
-        S.allRooms       = rooms;
+        // Demo: use client-side static rooms — no API call, works without server restart
+        S.allRooms       = DEMO_ROOMS_DATA;
         S.allBookings    = [];
-        S.availableRooms = rooms.filter((r) => r.capacity >= S.numGuests);
+        S.availableRooms = DEMO_ROOMS_DATA.filter((r) => r.capacity >= S.numGuests);
+        console.log('[NestBook widget] Demo mode: loaded', S.availableRooms.length, 'available rooms (client-side)');
       } else {
+        console.log('[NestBook widget] Fetching rooms for property', PROPERTY_ID);
         const [rooms, bookings] = await Promise.all([
           apiFetch('/api/widget/rooms?property_id=' + PROPERTY_ID),
           apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
         ]);
+        console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length);
         S.allRooms       = rooms;
         S.allBookings    = bookings;
         S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
+        console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
       }
       S.step = 2;
     } catch (err) {
@@ -275,20 +291,11 @@
     render();
     try {
       if (DEMO_MODE) {
-        // Demo: skip guest creation, return a fake ref without touching the DB
-        const booking = await apiFetch('/api/widget/demo/bookings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            room_name:      S.selectedRoom.name,
-            check_in_date:  S.checkIn,
-            check_out_date: S.checkOut,
-            num_guests:     S.numGuests,
-          }),
-        });
-        S.bookingRef = booking.id; // e.g. "DEMO-2847"
+        // Demo: generate a fake reference client-side — zero API calls, zero DB writes
+        S.bookingRef = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
         S.isDemo     = true;
         S.step       = 5;
+        console.log('[NestBook widget] Demo booking complete, ref:', S.bookingRef);
       } else {
         // 1. Create (or register) the guest
         const guest = await apiFetch('/api/widget/guests', {
