@@ -1176,6 +1176,11 @@ img { display: block; max-width: 100%; }
         <div class="feature-title" data-i18n="features.i18n.title">5 Languages Built In</div>
         <div class="feature-desc" data-i18n="features.i18n.desc">The dashboard and the guest-facing booking widget both work in English, French, Spanish and German — no plugins needed.</div>
       </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title" data-i18n="features.reports.title">Financial Reports &amp; Exports</div>
+        <div class="feature-desc" data-i18n="features.reports.desc">Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1319,7 +1324,9 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.pro.f3">White-label booking widget</li>
           <li data-i18n="pricing.pro.f4">Staff accounts (up to 5)</li>
           <li data-i18n="pricing.pro.f5">Email booking confirmations</li>
-          <li data-i18n="pricing.pro.f6">Revenue reports</li>
+          <li data-i18n="pricing.pro.f6">📊 Revenue reports &amp; financial exports</li>
+          <li data-i18n="pricing.pro.f8">📥 Guest contact list exports</li>
+          <li data-i18n="pricing.pro.f9">💰 Tax calculation tools</li>
           <li data-i18n="pricing.pro.f7">Priority support</li>
         </ul>
         <a href="/app/register" class="btn btn-white" style="width:100%; justify-content:center" data-i18n="pricing.pro.cta">Start 30-day free trial</a>
@@ -1335,6 +1342,8 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.multi.f2">Everything in Pro</li>
           <li data-i18n="pricing.multi.f3">Unlimited staff accounts</li>
           <li data-i18n="pricing.multi.f4">Cross-property calendar view</li>
+          <li data-i18n="pricing.multi.f5">📊 Reports across all properties</li>
+          <li data-i18n="pricing.multi.f6">📥 Combined or per-property exports</li>
         </ul>
         <a href="/app/register" class="btn btn-primary" style="width:100%; justify-content:center" data-i18n="pricing.multi.cta">Get started</a>
       </div>
@@ -1461,8 +1470,10 @@ const I18N = {
     'features.offline.desc': 'Check guests in and manage bookings even without internet. Everything syncs when you reconnect.',
     'features.roles.title':  'Owner & Staff Roles',
     'features.roles.desc':   'Invite reception staff with limited access. Owners keep full control over settings, pricing and reports.',
-    'features.i18n.title':   '5 Languages Built In',
-    'features.i18n.desc':    'The dashboard and the guest-facing booking widget both work in English, French, Spanish, German and Dutch — no plugins needed.',
+    'features.i18n.title':    '5 Languages Built In',
+    'features.i18n.desc':     'The dashboard and the guest-facing booking widget both work in English, French, Spanish, German and Dutch — no plugins needed.',
+    'features.reports.title': 'Financial Reports & Exports',
+    'features.reports.desc':  'Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.',
     'langs.badge':   'Made for Europe',
     'langs.heading': 'One app, five languages',
     'langs.sub':     'Whether your guests book in English, your staff prefer French, or your Dutch owner wants everything in Nederlands — NestBook switches instantly.',
@@ -1503,7 +1514,9 @@ const I18N = {
     'pricing.pro.f3': 'White-label booking widget',
     'pricing.pro.f4': 'Staff accounts (up to 5)',
     'pricing.pro.f5': 'Email booking confirmations',
-    'pricing.pro.f6': 'Revenue reports',
+    'pricing.pro.f6': '📊 Revenue reports & financial exports',
+    'pricing.pro.f8': '📥 Guest contact list exports',
+    'pricing.pro.f9': '💰 Tax calculation tools',
     'pricing.pro.f7': 'Priority support',
     'pricing.pro.cta': 'Start 30-day free trial',
     'pricing.multi.tier':   'Multi-property',
@@ -1512,6 +1525,8 @@ const I18N = {
     'pricing.multi.f2': 'Everything in Pro',
     'pricing.multi.f3': 'Unlimited staff accounts',
     'pricing.multi.f4': 'Cross-property calendar view',
+    'pricing.multi.f5': '📊 Reports across all properties',
+    'pricing.multi.f6': '📥 Combined or per-property exports',
     'pricing.multi.cta': 'Get started',
     'cta.heading': 'Ready to simplify your bookings?',
     'cta.sub':     'Join hundreds of small property owners across Europe who\'ve ditched the spreadsheet and the paper diary.',
@@ -1575,8 +1590,10 @@ const I18N = {
     'features.offline.desc': 'Enregistrez les arrivées et gérez les réservations même sans internet. Tout se synchronise à la reconnexion.',
     'features.roles.title':  'Rôles propriétaire & personnel',
     'features.roles.desc':   'Invitez le personnel de réception avec un accès limité. Le propriétaire garde le contrôle total des paramètres et des rapports.',
-    'features.i18n.title':   '5 langues intégrées',
-    'features.i18n.desc':    'Le tableau de bord et le widget de réservation fonctionnent en anglais, français, espagnol, allemand et néerlandais — sans plugin.',
+    'features.i18n.title':    '5 langues intégrées',
+    'features.i18n.desc':     'Le tableau de bord et le widget de réservation fonctionnent en anglais, français, espagnol, allemand et néerlandais — sans plugin.',
+    'features.reports.title': 'Rapports financiers & exports',
+    'features.reports.desc':  'Générez des rapports de revenus, exportez vos données en CSV ou PDF et téléchargez votre liste de contacts clients — filtrés par période et propriété.',
     'langs.badge':   'Fait pour l\'Europe',
     'langs.heading': 'Une appli, cinq langues',
     'langs.sub':     'Que vos hôtes réservent en anglais, votre personnel préfère le français ou votre comptable veut l\'allemand — NestBook bascule instantanément.',
@@ -1617,7 +1634,9 @@ const I18N = {
     'pricing.pro.f3': 'Widget sans logo NestBook',
     'pricing.pro.f4': 'Comptes personnel (jusqu\'à 5)',
     'pricing.pro.f5': 'Confirmations de réservation par e-mail',
-    'pricing.pro.f6': 'Rapports de revenus',
+    'pricing.pro.f6': '📊 Rapports de revenus & exports financiers',
+    'pricing.pro.f8': '📥 Export de la liste contacts clients',
+    'pricing.pro.f9': '💰 Calcul de la TVA',
     'pricing.pro.f7': 'Support prioritaire',
     'pricing.pro.cta': 'Essai gratuit 30 jours',
     'pricing.multi.tier':   'Multi-propriétés',
@@ -1626,6 +1645,8 @@ const I18N = {
     'pricing.multi.f2': 'Tout ce qui est inclus dans Pro',
     'pricing.multi.f3': 'Comptes personnel illimités',
     'pricing.multi.f4': 'Vue calendrier inter-propriétés',
+    'pricing.multi.f5': '📊 Rapports pour toutes les propriétés',
+    'pricing.multi.f6': '📥 Exports combinés ou par propriété',
     'pricing.multi.cta': 'Commencer',
     'cta.heading': 'Prêt à simplifier vos réservations ?',
     'cta.sub':     'Rejoignez des centaines de petits hébergeurs en Europe qui ont abandonné le tableur et l\'agenda papier.',
@@ -1689,8 +1710,10 @@ const I18N = {
     'features.offline.desc': 'Registra llegadas y gestiona reservas aunque no tengas internet. Todo se sincroniza al reconectarte.',
     'features.roles.title':  'Roles propietario y personal',
     'features.roles.desc':   'Invita al personal de recepción con acceso limitado. El propietario mantiene el control total de la configuración y los informes.',
-    'features.i18n.title':   '5 idiomas incluidos',
-    'features.i18n.desc':    'El panel y el widget de reservas funcionan en inglés, francés, español, alemán y neerlandés — sin plugins.',
+    'features.i18n.title':    '5 idiomas incluidos',
+    'features.i18n.desc':     'El panel y el widget de reservas funcionan en inglés, francés, español, alemán y neerlandés — sin plugins.',
+    'features.reports.title': 'Informes financieros y exportaciones',
+    'features.reports.desc':  'Genera informes de ingresos, exporta datos a CSV o PDF y descarga tu lista de contactos de huéspedes — todo filtrado por fechas y propiedad.',
     'langs.badge':   'Hecho para Europa',
     'langs.heading': 'Una app, cinco idiomas',
     'langs.sub':     'Tanto si tus huéspedes reservan en inglés, tu personal prefiere el francés o tu contable quiere el alemán — NestBook cambia al instante.',
@@ -1731,7 +1754,9 @@ const I18N = {
     'pricing.pro.f3': 'Widget sin logo NestBook',
     'pricing.pro.f4': 'Cuentas de personal (hasta 5)',
     'pricing.pro.f5': 'Confirmaciones de reserva por correo',
-    'pricing.pro.f6': 'Informes de ingresos',
+    'pricing.pro.f6': '📊 Informes de ingresos y exportaciones',
+    'pricing.pro.f8': '📥 Exportación de contactos de huéspedes',
+    'pricing.pro.f9': '💰 Herramientas de cálculo de impuestos',
     'pricing.pro.f7': 'Soporte prioritario',
     'pricing.pro.cta': 'Prueba gratis 30 días',
     'pricing.multi.tier':   'Multi-propiedad',
@@ -1740,6 +1765,8 @@ const I18N = {
     'pricing.multi.f2': 'Todo lo del plan Pro',
     'pricing.multi.f3': 'Cuentas de personal ilimitadas',
     'pricing.multi.f4': 'Vista de calendario entre propiedades',
+    'pricing.multi.f5': '📊 Informes de todas las propiedades',
+    'pricing.multi.f6': '📥 Exportaciones combinadas o por propiedad',
     'pricing.multi.cta': 'Empezar',
     'cta.heading': '¿Listo para simplificar tus reservas?',
     'cta.sub':     'Únete a cientos de pequeños propietarios de toda Europa que han dejado atrás la hoja de cálculo y la agenda de papel.',
@@ -1803,8 +1830,10 @@ const I18N = {
     'features.offline.desc': 'Checken Sie Gäste auch ohne Internet ein und verwalten Sie Buchungen. Alles synchronisiert sich beim Wiederverbinden.',
     'features.roles.title':  'Eigentümer- und Mitarbeiterrollen',
     'features.roles.desc':   'Laden Sie Empfangsmitarbeiter mit eingeschränktem Zugriff ein. Eigentümer behalten die volle Kontrolle über Einstellungen und Berichte.',
-    'features.i18n.title':   '5 Sprachen integriert',
-    'features.i18n.desc':    'Dashboard und Buchungs-Widget funktionieren auf Englisch, Französisch, Spanisch, Deutsch und Niederländisch — keine Plugins erforderlich.',
+    'features.i18n.title':    '5 Sprachen integriert',
+    'features.i18n.desc':     'Dashboard und Buchungs-Widget funktionieren auf Englisch, Französisch, Spanisch, Deutsch und Niederländisch — keine Plugins erforderlich.',
+    'features.reports.title': 'Finanzberichte & Exporte',
+    'features.reports.desc':  'Erstellen Sie Umsatzberichte, exportieren Sie Buchungsdaten als CSV oder PDF und laden Sie Ihre Gästekontaktliste herunter — gefiltert nach Zeitraum und Unterkunft.',
     'langs.badge':   'Für Europa gemacht',
     'langs.heading': 'Eine App, fünf Sprachen',
     'langs.sub':     'Ob Ihre Gäste auf Englisch buchen, Ihr Personal Französisch bevorzugt oder Ihr Buchhalter Deutsch möchte — NestBook wechselt sofort.',
@@ -1845,7 +1874,9 @@ const I18N = {
     'pricing.pro.f3': 'White-Label-Buchungs-Widget',
     'pricing.pro.f4': 'Mitarbeiterkonten (bis zu 5)',
     'pricing.pro.f5': 'E-Mail-Buchungsbestätigungen',
-    'pricing.pro.f6': 'Umsatzberichte',
+    'pricing.pro.f6': '📊 Umsatzberichte & Finanzexporte',
+    'pricing.pro.f8': '📥 Gästekontaktliste exportieren',
+    'pricing.pro.f9': '💰 Steuerberechnungstools',
     'pricing.pro.f7': 'Prioritäts-Support',
     'pricing.pro.cta': '30 Tage kostenlos testen',
     'pricing.multi.tier':   'Mehrobjekt',
@@ -1854,6 +1885,8 @@ const I18N = {
     'pricing.multi.f2': 'Alles aus Pro',
     'pricing.multi.f3': 'Unbegrenzte Mitarbeiterkonten',
     'pricing.multi.f4': 'Objektübergreifende Kalenderansicht',
+    'pricing.multi.f5': '📊 Berichte für alle Unterkünfte',
+    'pricing.multi.f6': '📥 Kombinierte oder einzelne Exporte',
     'pricing.multi.cta': 'Jetzt starten',
     'cta.heading': 'Bereit, Ihre Buchungen zu vereinfachen?',
     'cta.sub':     'Schließen Sie sich Hunderten von kleinen Unterkunftsbetreibern in Europa an, die Tabelle und Papierkalender hinter sich gelassen haben.',
@@ -1917,8 +1950,10 @@ const I18N = {
     'features.offline.desc': 'Slechte verbinding? NestBook blijft werken en synchroniseert wanneer u weer online bent.',
     'features.roles.title':  'Eigenaar en personeelsrollen',
     'features.roles.desc':   'Geef receptiepersoneel een eigen eenvoudige weergave. Houd beheerdersinstellingen voor uzelf.',
-    'features.i18n.title':   '5 talen ingebouwd',
-    'features.i18n.desc':    'Schakel met één klik tussen Nederlands, Engels, Frans, Spaans en Duits.',
+    'features.i18n.title':    '5 talen ingebouwd',
+    'features.i18n.desc':     'Schakel met één klik tussen Nederlands, Engels, Frans, Spaans en Duits.',
+    'features.reports.title': 'Financiële rapporten & exports',
+    'features.reports.desc':  'Genereer omzetrapporten, exporteer boekingsgegevens naar CSV of PDF en download uw gastencontactlijst — gefilterd op datumbereik en accommodatie.',
     'langs.badge':   'Spreekt u NestBook?',
     'langs.heading': 'Gemaakt voor Europese accommodatie-eigenaren',
     'langs.sub':     'Of u nu een B&B in de Achterhoek beheert, een gîte in de Provence, een casa rural in Andalusië of een Pension in Beieren — NestBook spreekt uw taal.',
@@ -1959,7 +1994,9 @@ const I18N = {
     'pricing.pro.f3': 'White-label boekingswidget',
     'pricing.pro.f4': 'Personeelsaccounts (tot 5)',
     'pricing.pro.f5': 'E-mailbevestigingen voor gasten',
-    'pricing.pro.f6': 'Omzetrapportages',
+    'pricing.pro.f6': '📊 Omzetrapporten & financiële exports',
+    'pricing.pro.f8': '📥 Export gastencontactlijst',
+    'pricing.pro.f9': '💰 BTW-berekeningshulpmiddelen',
     'pricing.pro.f7': 'Prioriteitsondersteuning',
     'pricing.pro.cta': '30 dagen gratis proberen',
     'pricing.multi.tier':   'Meerdere accommodaties',
@@ -1968,6 +2005,8 @@ const I18N = {
     'pricing.multi.f2': 'Alles uit Pro',
     'pricing.multi.f3': 'Onbeperkte personeelsaccounts',
     'pricing.multi.f4': 'Gedeelde kalenderweergave',
+    'pricing.multi.f5': '📊 Rapporten voor alle accommodaties',
+    'pricing.multi.f6': '📥 Gecombineerde of per-accommodatie exports',
     'pricing.multi.cta': 'Aan de slag',
     'cta.heading': 'Klaar om uw reserveringen te vereenvoudigen?',
     'cta.sub':     'Sluit u aan bij duizenden kleine accommodatie-eigenaren die de papieren agenda hebben ingeruild voor iets beters.',
