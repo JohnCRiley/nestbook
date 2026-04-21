@@ -12,6 +12,7 @@ import {
   IconBookings,
   IconGuests,
   IconRooms,
+  IconReports,
   IconSettings,
   IconPricing,
   IconLogout,
@@ -24,6 +25,7 @@ const ALL_NAV_ITEMS = [
   { to: '/bookings',  key: 'bookings',  Icon: IconBookings  },
   { to: '/guests',    key: 'guests',    Icon: IconGuests    },
   { to: '/rooms',     key: 'rooms',     Icon: IconRooms     },
+  { to: '/reports',   key: 'reports',   Icon: IconReports   },
   { to: '/settings',  key: 'settings',  Icon: IconSettings  },
   { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];

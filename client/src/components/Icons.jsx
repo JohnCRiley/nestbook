@@ -67,6 +67,12 @@ export const IconLogout = () => icon(<>
   <line x1="21" y1="12" x2="9" y2="12" />
 </>);
 
+export const IconReports = () => icon(<>
+  <rect x="3"  y="15" width="4" height="6" rx="1" />
+  <rect x="10" y="9"  width="4" height="12" rx="1" />
+  <rect x="17" y="3"  width="4" height="18" rx="1" />
+</>);
+
 export const IconBuildings = () => icon(<>
   <rect x="2"  y="7"  width="9" height="14" rx="1" />
   <rect x="13" y="3"  width="9" height="18" rx="1" />

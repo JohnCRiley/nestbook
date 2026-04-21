@@ -11,6 +11,7 @@ import Calendar         from './pages/Calendar.jsx';
 import Bookings         from './pages/Bookings.jsx';
 import Guests           from './pages/Guests.jsx';
 import Rooms            from './pages/Rooms.jsx';
+import Reports          from './pages/Reports.jsx';
 import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
@@ -70,6 +71,7 @@ function AppLayout() {
           <Route path="/bookings"  element={<Bookings  />} />
           <Route path="/guests"    element={<Guests    />} />
           <Route path="/rooms"     element={<Rooms     />} />
+          <Route path="/reports"   element={<Reports   />} />
           <Route path="/settings"  element={<Settings  />} />
           <Route path="/pricing"   element={<Pricing   />} />
         </Routes>
