@@ -46,10 +46,7 @@ export default function NewGuestModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+    <div className="modal-overlay">
       <div className="modal" role="dialog" aria-label="New guest">
 
         <div className="modal-header">

@@ -18,6 +18,8 @@ export const SOURCE_LABELS = {
   direct:      'Direct',
   phone:       'Phone',
   email:       'Email',
+  walk_in:     'Walk-in',
+  website:     'Website',
   booking_com: 'Booking.com',
   airbnb:      'Airbnb',
   other:       'Other',

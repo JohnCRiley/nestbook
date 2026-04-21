@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { initials, phoneFlag } from '../utils/guestHelpers.js';
 import GuestPanel    from './guests/GuestPanel.jsx';
 import NewGuestModal from './guests/NewGuestModal.jsx';
@@ -12,20 +12,19 @@ const LIMIT = 20;
 export default function Guests() {
   const t = useT();
   const { property } = useLocale();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [guests,          setGuests]          = useState([]);
-  const [bookings,        setBookings]        = useState([]); // full list for panel
-  const [counts,          setCounts]          = useState({ total: 0, newThisMonth: 0 });
-  const [loading,         setLoading]         = useState(true);
-  const [search,          setSearch]          = useState('');
-  const [page,            setPage]            = useState(1);
-  const [total,           setTotal]           = useState(0);
-  const [totalPages,      setTotalPages]      = useState(0);
-  const [selectedGuest,   setSelectedGuest]   = useState(null);
-  const [showNewModal,    setShowNewModal]     = useState(() => searchParams.get('newguest') === 'true');
-  const [newGuestCreated, setNewGuestCreated] = useState(null);
+  const [guests,        setGuests]        = useState([]);
+  const [bookings,      setBookings]      = useState([]); // full list for panel
+  const [counts,        setCounts]        = useState({ total: 0, newThisMonth: 0 });
+  const [loading,       setLoading]       = useState(true);
+  const [search,        setSearch]        = useState('');
+  const [page,          setPage]          = useState(1);
+  const [total,         setTotal]         = useState(0);
+  const [totalPages,    setTotalPages]    = useState(0);
+  const [selectedGuest, setSelectedGuest] = useState(null);
+  const [showNewModal,  setShowNewModal]  = useState(() => searchParams.get('newguest') === 'true');
+  const [successToast,  setSuccessToast]  = useState(null);
 
   // Debounced search
   const searchDebounceRef = useRef(null);
@@ -100,8 +99,8 @@ export default function Guests() {
 
   const handleNewGuestSuccess = (created) => {
     setShowNewModal(false);
-    setNewGuestCreated(created);
-    // Refresh to show the new guest + updated counts
+    setSuccessToast(t('guestAddedToast')(`${created.first_name} ${created.last_name}`));
+    setTimeout(() => setSuccessToast(null), 3500);
     fetchGuests();
     fetchCounts();
   };
@@ -195,49 +194,9 @@ export default function Guests() {
         />
       )}
 
-      {/* ── Post-save "what next?" modal ──────────────────────────────────── */}
-      {newGuestCreated && (
-        <div className="modal-overlay">
-          <div className="modal" role="dialog" aria-label="Guest saved" style={{ maxWidth: 420 }}>
-            <div className="modal-header">
-              <h2>{t('guestAdded')}</h2>
-            </div>
-            <div className="modal-body" style={{ textAlign: 'center', padding: '28px 32px' }}>
-              <div style={{ fontSize: '2rem', marginBottom: 12 }}>✓</div>
-              <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 6 }}>
-                {newGuestCreated.first_name} {newGuestCreated.last_name} has been saved.
-              </div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 24 }}>
-                {t('whatNext')}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button
-                  className="btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
-                  onClick={() => navigate('/bookings', {
-                    state: { openModal: true, prefillGuestId: newGuestCreated.id },
-                  })}
-                >
-                  {t('createBookingGuest')}
-                </button>
-                <button
-                  className="btn-secondary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
-                  onClick={() => { setNewGuestCreated(null); setShowNewModal(true); }}
-                >
-                  {t('addAnotherGuest')}
-                </button>
-                <button
-                  className="btn-secondary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '11px 16px' }}
-                  onClick={() => { setNewGuestCreated(null); navigate('/dashboard'); }}
-                >
-                  {t('returnDashboard')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ── Success toast ─────────────────────────────────────────────────── */}
+      {successToast && (
+        <div className="sa-toast sa-toast-success">{successToast}</div>
       )}
     </>
   );
