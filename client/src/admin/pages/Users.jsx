@@ -107,6 +107,21 @@ export default function Users() {
     setBusyKey(userId, 'cancel', false);
   }
 
+  async function verifyEmail(userId, name) {
+    setBusyKey(userId, 'verify', true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}/verify-email`, { method: 'POST' });
+      if (res.ok) {
+        setRows(r => r.map(u => u.id === userId ? { ...u, email_verified: 1 } : u));
+        showToast(`${name}'s email has been verified.`);
+      } else {
+        const d = await res.json();
+        showToast(d.error || 'Failed to verify email.', 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    setBusyKey(userId, 'verify', false);
+  }
+
   async function toggleSuspend(userId, name, isSuspended) {
     const action = isSuspended ? 'unsuspend' : 'suspend';
     setBusyKey(userId, 'suspend', true);
@@ -169,6 +184,16 @@ export default function Users() {
             title="Issue a refund via Stripe"
           >
             Refund
+          </button>
+        ) : null}
+        {!u.email_verified ? (
+          <button
+            className="sa-btn sa-btn-comp"
+            disabled={!!busy[`${u.id}_verify`]}
+            onClick={() => verifyEmail(u.id, u.name)}
+            title="Mark email as verified (bypasses verification link)"
+          >
+            {busy[`${u.id}_verify`] ? '…' : 'Verify email'}
           </button>
         ) : null}
         <button
@@ -239,7 +264,12 @@ export default function Users() {
                         <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 6 }}>SUSPENDED</span>
                       )}
                     </div>
-                    <div className="admin-muted" style={{ fontSize: '0.8rem' }}>{u.email}</div>
+                    <div className="admin-muted" style={{ fontSize: '0.8rem' }}>
+                      {u.email}
+                      {!u.email_verified && (
+                        <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 6 }}>unverified</span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <span className={`role-badge role-${u.role}`}>

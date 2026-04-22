@@ -51,7 +51,7 @@ adminRouter.get('/users', (req, res) => {
 
     const BASE_SELECT = `
       SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
-             u.discount_code, u.suspended,
+             u.discount_code, u.suspended, u.email_verified,
              p.name as property_name, p.country,
              s.stripe_customer_id, s.stripe_subscription_id,
              s.status as sub_status, s.current_period_end,
@@ -349,6 +349,16 @@ adminRouter.get('/revenue', (req, res) => {
   }
 
   res.json({ planCounts, signupsByMonth: months });
+});
+
+// ── POST /api/admin/users/:id/verify-email ───────────────────────────────────
+// Manually marks a user's email as verified. Useful for test/demo accounts.
+adminRouter.post('/users/:id/verify-email', (req, res) => {
+  const userId = Number(req.params.id);
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(userId);
+  res.json({ success: true });
 });
 
 // ── POST /api/admin/users/:id/suspend ────────────────────────────────────────
