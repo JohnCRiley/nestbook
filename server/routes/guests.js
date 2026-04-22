@@ -70,6 +70,60 @@ guestsRouter.get('/:id', (req, res) => {
   }
 });
 
+// ── POST /api/guests/import ───────────────────────────────────────────────
+// Bulk-import guests from a pre-parsed JSON array. Pro/Multi plan required.
+// Body: { rows: [{ first_name, last_name, email?, phone?, notes? }, …] }
+// Returns: { imported, skipped, errors }
+guestsRouter.post('/import', (req, res) => {
+  try {
+    const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+    if (!user || (user.plan !== 'pro' && user.plan !== 'multi')) {
+      return res.status(403).json({ error: 'Pro or Multi plan required.' });
+    }
+
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'No rows provided.' });
+    }
+    if (rows.length > 500) {
+      return res.status(400).json({ error: 'Maximum 500 rows per import.' });
+    }
+
+    let imported = 0, skipped = 0, errors = 0;
+
+    const insertStmt = db.prepare(`
+      INSERT INTO guests (first_name, last_name, email, phone, notes)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    const run = db.transaction(() => {
+      for (const row of rows) {
+        try {
+          const fn = row.first_name?.trim();
+          const ln = row.last_name?.trim();
+          if (!fn || !ln) { errors++; continue; }
+
+          const email = row.email?.trim() || null;
+          if (email) {
+            const existing = db.prepare(
+              'SELECT id FROM guests WHERE email = ? AND deleted = 0'
+            ).get(email);
+            if (existing) { skipped++; continue; }
+          }
+
+          insertStmt.run(fn, ln, email, row.phone?.trim() || null, row.notes?.trim() || null);
+          imported++;
+        } catch { errors++; }
+      }
+    });
+
+    run();
+    res.json({ imported, skipped, errors });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/guests ──────────────────────────────────────────────────────
 guestsRouter.post('/', (req, res) => {
   try {

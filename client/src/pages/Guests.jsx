@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { initials, phoneFlag } from '../utils/guestHelpers.js';
-import GuestPanel    from './guests/GuestPanel.jsx';
-import NewGuestModal from './guests/NewGuestModal.jsx';
-import Pagination    from '../components/Pagination.jsx';
+import GuestPanel         from './guests/GuestPanel.jsx';
+import NewGuestModal      from './guests/NewGuestModal.jsx';
+import ImportGuestsModal  from './guests/ImportGuestsModal.jsx';
+import Pagination         from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import { usePlan } from '../hooks/usePlan.js';
 
 const LIMIT = 20;
 
 export default function Guests() {
   const t = useT();
+  const plan = usePlan();
   const { property } = useLocale();
   const [searchParams] = useSearchParams();
 
@@ -23,8 +26,9 @@ export default function Guests() {
   const [total,         setTotal]         = useState(0);
   const [totalPages,    setTotalPages]    = useState(0);
   const [selectedGuest, setSelectedGuest] = useState(null);
-  const [showNewModal,  setShowNewModal]  = useState(() => searchParams.get('newguest') === 'true');
-  const [successToast,  setSuccessToast]  = useState(null);
+  const [showNewModal,    setShowNewModal]    = useState(() => searchParams.get('newguest') === 'true');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [successToast,    setSuccessToast]    = useState(null);
 
   // Debounced search
   const searchDebounceRef = useRef(null);
@@ -114,6 +118,11 @@ export default function Guests() {
           <h1>{t('guests')}</h1>
           <div className="page-date">{counts.total} {t('guestRecords')}</div>
         </div>
+        {(plan === 'pro' || plan === 'multi') && (
+          <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
+            {t('importGuestsBtn')}
+          </button>
+        )}
         <button className="btn-primary" onClick={() => setShowNewModal(true)}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
           {t('newGuest').replace('+ ', '')}
@@ -191,6 +200,14 @@ export default function Guests() {
         <NewGuestModal
           onClose={() => setShowNewModal(false)}
           onSuccess={handleNewGuestSuccess}
+        />
+      )}
+
+      {/* ── Import guests modal ──────────────────────────────────────────── */}
+      {showImportModal && (
+        <ImportGuestsModal
+          onClose={() => setShowImportModal(false)}
+          onImported={() => { fetchGuests(); fetchCounts(); }}
         />
       )}
 

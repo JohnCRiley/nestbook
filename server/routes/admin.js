@@ -451,6 +451,112 @@ adminRouter.get('/geography', (req, res) => {
   })));
 });
 
+// ── GET /api/admin/bi ────────────────────────────────────────────────────────
+// Full business intelligence dashboard data: MRR, growth, churn, trials, etc.
+adminRouter.get('/bi', (req, res) => {
+  try {
+    // Current plan distribution
+    const planRows = db.prepare(`
+      SELECT plan, COUNT(*) as count FROM users GROUP BY plan
+    `).all();
+    const proCount   = planRows.find(p => p.plan === 'pro')?.count   ?? 0;
+    const multiCount = planRows.find(p => p.plan === 'multi')?.count ?? 0;
+    const freeCount  = planRows.find(p => p.plan === 'free')?.count  ?? 0;
+    const mrr        = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
+
+    // Active paid subscriptions
+    const activeSubscriptions = db.prepare(`
+      SELECT COUNT(*) as n FROM subscriptions WHERE status = 'active' AND plan IN ('pro','multi')
+    `).get().n;
+
+    // Signups by plan per month — last 12 months
+    const signupsByMonth = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+      const key = d.toISOString().slice(0, 7);
+      const rows = db.prepare(`
+        SELECT plan, COUNT(*) as count FROM users
+        WHERE strftime('%Y-%m', created_at) = ?
+        GROUP BY plan
+      `).all(key);
+      signupsByMonth.push({
+        month: key,
+        free:  rows.find(r => r.plan === 'free')?.count  ?? 0,
+        pro:   rows.find(r => r.plan === 'pro')?.count   ?? 0,
+        multi: rows.find(r => r.plan === 'multi')?.count ?? 0,
+      });
+    }
+
+    // MRR trend — last 6 months (cumulative active paid subs created up to that month)
+    const mrrTrend = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+      const key = d.toISOString().slice(0, 7);
+      const rows = db.prepare(`
+        SELECT plan, COUNT(*) as count FROM subscriptions
+        WHERE status = 'active' AND plan IN ('pro','multi')
+        AND strftime('%Y-%m', created_at) <= ?
+        GROUP BY plan
+      `).all(key);
+      const p = rows.find(r => r.plan === 'pro')?.count   ?? 0;
+      const m = rows.find(r => r.plan === 'multi')?.count ?? 0;
+      mrrTrend.push({ month: key, pro: p, multi: m, mrr: p * PLAN_MRR.pro + m * PLAN_MRR.multi });
+    }
+
+    // Conversions in last 30 days (new paid subs)
+    const newPaidLast30  = db.prepare(`
+      SELECT COUNT(*) as n FROM subscriptions
+      WHERE plan IN ('pro','multi') AND status = 'active'
+      AND datetime(created_at) >= datetime('now','-30 days')
+    `).get().n;
+    const newUsersLast30 = db.prepare(`
+      SELECT COUNT(*) as n FROM users
+      WHERE datetime(created_at) >= datetime('now','-30 days')
+    `).get().n;
+    const conversionRate = newUsersLast30 > 0 ? Math.round((newPaidLast30 / newUsersLast30) * 100) : 0;
+
+    // Churn — total cancelled subscriptions
+    const churned = db.prepare(`
+      SELECT COUNT(*) as n FROM subscriptions WHERE status = 'cancelled'
+    `).get().n;
+
+    // Net new revenue this month
+    const newThisMonth = db.prepare(`
+      SELECT plan, COUNT(*) as count FROM subscriptions
+      WHERE status = 'active' AND plan IN ('pro','multi')
+      AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now')
+      GROUP BY plan
+    `).all();
+    const newProThisMonth   = newThisMonth.find(r => r.plan === 'pro')?.count   ?? 0;
+    const newMultiThisMonth = newThisMonth.find(r => r.plan === 'multi')?.count ?? 0;
+    const netNewRevenue     = newProThisMonth * PLAN_MRR.pro + newMultiThisMonth * PLAN_MRR.multi;
+
+    // Trials / subscriptions ending in next 7 days
+    const trialsEndingSoon = db.prepare(`
+      SELECT COUNT(*) as n FROM subscriptions
+      WHERE status = 'active' AND plan IN ('pro','multi')
+      AND current_period_end IS NOT NULL
+      AND date(current_period_end) BETWEEN date('now') AND date('now','+7 days')
+    `).get().n;
+
+    // Failed payments
+    const failedPayments = db.prepare(`
+      SELECT COUNT(*) as n FROM subscriptions WHERE status = 'past_due'
+    `).get().n;
+
+    res.json({
+      mrr, proCount, multiCount, freeCount,
+      activeSubscriptions,
+      signupsByMonth, mrrTrend,
+      conversionRate, newPaidLast30, newUsersLast30,
+      churned, trialsEndingSoon, failedPayments,
+      netNewRevenue, newProThisMonth, newMultiThisMonth,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/admin/mailing-list ───────────────────────────────────────────────
 // Returns filtered users for the mailing list / export tool.
 // Never exposes passwords or sensitive auth data.

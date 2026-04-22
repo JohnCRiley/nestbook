@@ -342,9 +342,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
         >
           {t('checkInBtn')}
         </button>
-        <button className="btn-panel-danger" onClick={onCancelClick}>
-          {t('cancelBookingBtn')}
-        </button>
+        {!prominent && <button className="btn-panel-danger" onClick={onCancelClick}>{t('cancelBookingBtn')}</button>}
         {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>}
       </div>
     );
