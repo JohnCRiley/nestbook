@@ -174,7 +174,7 @@ img { display: block; max-width: 100%; }
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1001;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -775,16 +775,43 @@ img { display: block; max-width: 100%; }
 .hamburger.open span:nth-child(2) { opacity: 0; }
 .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-/* ── Mobile nav dropdown ──────────────────────────────────────────────────── */
+/* ── Mobile nav overlay (fixed, slides from under the navbar) ─────────────── */
 .mobile-nav {
-  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
   flex-direction: column;
   background: #fff;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   padding: 12px 0 16px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  /* hidden state */
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.mobile-nav.open { display: flex; }
+.mobile-nav.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+#mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+#mobile-nav-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
 .mobile-nav .mobile-nav-link {
   padding: 11px 24px;
   font-size: 0.9rem;
@@ -845,9 +872,11 @@ img { display: block; max-width: 100%; }
 @media (max-width: 767px) {
   .nav-right          { display: none; }
   .hamburger          { display: flex; }
+  /* Single column features — also resets the desktop centering rule */
+  .features-grid      { grid-template-columns: 1fr; }
+  .features-grid .feature-card:last-child:nth-child(3n+1) { grid-column: 1; }
 }
 @media (max-width: 600px) {
-  .features-grid { grid-template-columns: 1fr; }
   .lang-cards    { grid-template-columns: 1fr 1fr; }
   .footer-inner  { grid-template-columns: 1fr; }
   .section { padding: 60px 0; }
@@ -2100,24 +2129,42 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
 
 // ── Hamburger menu ─────────────────────────────────────────────────────────
 (function () {
-  const btn     = document.getElementById('hamburger');
+  const btn       = document.getElementById('hamburger');
   const mobileNav = document.getElementById('mobile-nav');
   if (!btn || !mobileNav) return;
 
+  // Create backdrop element
+  const backdrop = document.createElement('div');
+  backdrop.id = 'mobile-nav-backdrop';
+  document.body.appendChild(backdrop);
+
+  function openMenu() {
+    mobileNav.classList.add('open');
+    backdrop.classList.add('open');
+    btn.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    mobileNav.classList.remove('open');
+    backdrop.classList.remove('open');
+    btn.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
   btn.addEventListener('click', () => {
-    const isOpen = mobileNav.classList.toggle('open');
-    btn.classList.toggle('open', isOpen);
-    btn.setAttribute('aria-expanded', String(isOpen));
+    mobileNav.classList.contains('open') ? closeMenu() : openMenu();
   });
 
-  // Close when a link is clicked
+  // Close when a nav link is clicked
   mobileNav.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => {
-      mobileNav.classList.remove('open');
-      btn.classList.remove('open');
-      btn.setAttribute('aria-expanded', 'false');
-    });
+    link.addEventListener('click', closeMenu);
   });
+
+  // Close when backdrop is clicked
+  backdrop.addEventListener('click', closeMenu);
 
   // Mobile lang buttons mirror the main applyLang function
   mobileNav.querySelectorAll('[data-mobile-lang]').forEach((mbtn) => {
