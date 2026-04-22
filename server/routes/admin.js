@@ -557,6 +557,121 @@ adminRouter.get('/bi', (req, res) => {
   }
 });
 
+// ── GET /api/admin/export ─────────────────────────────────────────────────────
+// Accountant export data. Query params: from (YYYY-MM-DD), to (YYYY-MM-DD)
+// Returns: { subscriptions, monthlySummary, customerList }
+adminRouter.get('/export', (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) return res.status(400).json({ error: 'from and to are required' });
+
+    const PLAN_AMOUNT = { pro: 19, multi: 39 };
+
+    // Per-subscription rows created in the date range
+    const subRows = db.prepare(`
+      SELECT
+        s.id, s.stripe_subscription_id, s.plan, s.status,
+        s.created_at, s.current_period_end, s.cancel_at_period_end,
+        u.name, u.email,
+        p.country
+      FROM subscriptions s
+      JOIN users u ON u.id = s.user_id
+      LEFT JOIN properties p ON p.owner_id = s.user_id
+      WHERE s.plan IN ('pro','multi')
+        AND date(s.created_at) BETWEEN date(?) AND date(?)
+      ORDER BY s.created_at ASC
+    `).all(from, to);
+
+    const subscriptions = subRows.map(r => ({
+      id:             r.id,
+      stripeId:       r.stripe_subscription_id,
+      plan:           r.plan,
+      status:         r.status,
+      createdAt:      r.created_at,
+      periodEnd:      r.current_period_end,
+      name:           r.name,
+      email:          r.email,
+      country:        r.country ?? '',
+      amount:         PLAN_AMOUNT[r.plan] ?? 0,
+    }));
+
+    // Monthly summary: for each calendar month between from → to,
+    // count new subs, cancellations, total active at end of month, MRR
+    const monthlySummary = [];
+    const fromDate = new Date(from);
+    const toDate   = new Date(to);
+    fromDate.setDate(1);
+    let cur = new Date(fromDate);
+    while (cur <= toDate) {
+      const key = cur.toISOString().slice(0, 7);
+
+      const newSubs = db.prepare(`
+        SELECT plan, COUNT(*) as count FROM subscriptions
+        WHERE plan IN ('pro','multi') AND strftime('%Y-%m', created_at) = ?
+        GROUP BY plan
+      `).all(key);
+
+      const cancelled = db.prepare(`
+        SELECT COUNT(*) as n FROM subscriptions
+        WHERE status = 'cancelled' AND strftime('%Y-%m', created_at) = ?
+      `).get(key).n;
+
+      const activeRows = db.prepare(`
+        SELECT plan, COUNT(*) as count FROM subscriptions
+        WHERE status = 'active' AND plan IN ('pro','multi')
+          AND strftime('%Y-%m', created_at) <= ?
+        GROUP BY plan
+      `).all(key);
+
+      const proNew   = newSubs.find(r => r.plan === 'pro')?.count   ?? 0;
+      const multiNew = newSubs.find(r => r.plan === 'multi')?.count ?? 0;
+      const proAct   = activeRows.find(r => r.plan === 'pro')?.count   ?? 0;
+      const multiAct = activeRows.find(r => r.plan === 'multi')?.count ?? 0;
+      const mrr      = proAct * PLAN_AMOUNT.pro + multiAct * PLAN_AMOUNT.multi;
+      const revenue  = proNew * PLAN_AMOUNT.pro + multiNew * PLAN_AMOUNT.multi;
+
+      monthlySummary.push({
+        month:       key,
+        newPro:      proNew,
+        newMulti:    multiNew,
+        cancelled,
+        activePro:   proAct,
+        activeMulti: multiAct,
+        mrr,
+        revenue,
+      });
+
+      cur.setMonth(cur.getMonth() + 1);
+    }
+
+    // Customer list: all currently paying customers (active pro/multi) with country etc.
+    const custRows = db.prepare(`
+      SELECT
+        u.name, u.email, u.plan, u.created_at as userCreated,
+        s.created_at as subStart,
+        p.country
+      FROM subscriptions s
+      JOIN users u ON u.id = s.user_id
+      LEFT JOIN properties p ON p.owner_id = s.user_id
+      WHERE s.status = 'active' AND s.plan IN ('pro','multi')
+      ORDER BY s.created_at ASC
+    `).all();
+
+    const customerList = custRows.map(r => ({
+      name:     r.name,
+      email:    r.email,
+      country:  r.country ?? '',
+      plan:     r.plan,
+      amount:   PLAN_AMOUNT[r.plan] ?? 0,
+      subStart: r.subStart,
+    }));
+
+    res.json({ subscriptions, monthlySummary, customerList });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/admin/mailing-list ───────────────────────────────────────────────
 // Returns filtered users for the mailing list / export tool.
 // Never exposes passwords or sensitive auth data.

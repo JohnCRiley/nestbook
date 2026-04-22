@@ -3401,6 +3401,91 @@ a { text-decoration: none; }
   line-height: 1;
 }
 
+/* ── Accountant Exports accordion ──────────────────────────────────────────── */
+.acct-accordion {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.acct-accordion-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background 0.15s;
+}
+.acct-accordion-toggle:hover { background: var(--bg-hover, #f8fafc); }
+.acct-accordion-chevron {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.acct-accordion-chevron.open { transform: rotate(180deg); }
+.acct-accordion-body {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.acct-range-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+.acct-range-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.acct-range-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.acct-select { min-width: 200px; }
+.acct-export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.acct-export-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.acct-export-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.acct-export-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+.acct-export-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 /* Toast notification */
 .sa-toast {
   position: fixed;
