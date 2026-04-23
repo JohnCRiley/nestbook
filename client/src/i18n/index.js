@@ -507,6 +507,19 @@ export const LANGS = {
     reportCopyEmails:      'Copy email list',
     reportEmailsCopied:    'Emails copied!',
     reportApplyFilters:    'Apply filters',
+    // ── Deposit management ────────────────────────────────────────────────────
+    depositPill:           'Deposit required',
+    depositRequestedPill:  'Deposit requested',
+    depositPaidPill:       'Deposit paid',
+    requestDepositBtn:     'Request deposit',
+    markDepositPaidBtn:    'Mark as paid',
+    depositPaidOn:         'Paid on',
+    depositGateTitle:      'Deposit not received',
+    depositGateMsg:        'This booking has an unpaid deposit. How would you like to proceed?',
+    markPaidAndCheckIn:    'Mark deposit as paid & check in',
+    checkInWithoutDeposit: 'Check in without deposit',
+    depositRequestSent:    'Deposit request sent',
+    depositMarkedPaid:     'Deposit marked as paid',
   },
 
   fr: {
@@ -980,6 +993,19 @@ export const LANGS = {
     reportCopyEmails:      "Copier la liste d'emails",
     reportEmailsCopied:    'Emails copi\u00e9s\u00a0!',
     reportApplyFilters:    'Appliquer les filtres',
+    // ── Deposit management ────────────────────────────────────────────────────
+    depositPill:           'Acompte requis',
+    depositRequestedPill:  'Acompte demandé',
+    depositPaidPill:       'Acompte payé',
+    requestDepositBtn:     'Demander l\'acompte',
+    markDepositPaidBtn:    'Marquer comme payé',
+    depositPaidOn:         'Payé le',
+    depositGateTitle:      'Acompte non reçu',
+    depositGateMsg:        'Cette réservation a un acompte impayé. Comment souhaitez-vous procéder ?',
+    markPaidAndCheckIn:    'Marquer comme payé et enregistrer l\'arrivée',
+    checkInWithoutDeposit: 'Enregistrer l\'arrivée sans acompte',
+    depositRequestSent:    'Demande d\'acompte envoyée',
+    depositMarkedPaid:     'Acompte marqué comme payé',
   },
 
   es: {
@@ -1453,6 +1479,19 @@ export const LANGS = {
     reportCopyEmails:      'Copiar lista de emails',
     reportEmailsCopied:    '\u00a1Emails copiados!',
     reportApplyFilters:    'Aplicar filtros',
+    // ── Deposit management ────────────────────────────────────────────────────
+    depositPill:           'Depósito requerido',
+    depositRequestedPill:  'Depósito solicitado',
+    depositPaidPill:       'Depósito pagado',
+    requestDepositBtn:     'Solicitar depósito',
+    markDepositPaidBtn:    'Marcar como pagado',
+    depositPaidOn:         'Pagado el',
+    depositGateTitle:      'Depósito no recibido',
+    depositGateMsg:        'Esta reserva tiene un depósito pendiente. ¿Cómo desea proceder?',
+    markPaidAndCheckIn:    'Marcar depósito como pagado y hacer check-in',
+    checkInWithoutDeposit: 'Hacer check-in sin depósito',
+    depositRequestSent:    'Solicitud de depósito enviada',
+    depositMarkedPaid:     'Depósito marcado como pagado',
   },
 
   de: {
@@ -1926,6 +1965,19 @@ export const LANGS = {
     reportCopyEmails:      'E-Mail-Liste kopieren',
     reportEmailsCopied:    'E-Mails kopiert!',
     reportApplyFilters:    'Filter anwenden',
+    // ── Deposit management ────────────────────────────────────────────────────
+    depositPill:           'Anzahlung erforderlich',
+    depositRequestedPill:  'Anzahlung angefordert',
+    depositPaidPill:       'Anzahlung bezahlt',
+    requestDepositBtn:     'Anzahlung anfordern',
+    markDepositPaidBtn:    'Als bezahlt markieren',
+    depositPaidOn:         'Bezahlt am',
+    depositGateTitle:      'Anzahlung nicht erhalten',
+    depositGateMsg:        'Diese Buchung hat eine ausstehende Anzahlung. Wie möchten Sie vorgehen?',
+    markPaidAndCheckIn:    'Anzahlung als bezahlt markieren & einchecken',
+    checkInWithoutDeposit: 'Ohne Anzahlung einchecken',
+    depositRequestSent:    'Anzahlungsanforderung gesendet',
+    depositMarkedPaid:     'Anzahlung als bezahlt markiert',
   },
 
   nl: {
@@ -2429,5 +2481,18 @@ export const LANGS = {
     reportCopyEmails:      'E-maillijst kopi\u00ebren',
     reportEmailsCopied:    'E-mails gekopi\u00eberd!',
     reportApplyFilters:    'Filters toepassen',
+    // ── Deposit management ────────────────────────────────────────────────────
+    depositPill:           'Aanbetaling vereist',
+    depositRequestedPill:  'Aanbetaling gevraagd',
+    depositPaidPill:       'Aanbetaling betaald',
+    requestDepositBtn:     'Aanbetaling aanvragen',
+    markDepositPaidBtn:    'Markeer als betaald',
+    depositPaidOn:         'Betaald op',
+    depositGateTitle:      'Aanbetaling niet ontvangen',
+    depositGateMsg:        'Deze boeking heeft een openstaande aanbetaling. Hoe wilt u verdergaan?',
+    markPaidAndCheckIn:    'Aanbetaling als betaald markeren & inchecken',
+    checkInWithoutDeposit: 'Inchecken zonder aanbetaling',
+    depositRequestSent:    'Aanbetalingsverzoek verzonden',
+    depositMarkedPaid:     'Aanbetaling gemarkeerd als betaald',
   },
 };

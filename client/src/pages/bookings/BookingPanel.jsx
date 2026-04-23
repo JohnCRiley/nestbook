@@ -4,6 +4,7 @@ import { formatDateMedium, nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+import DepositPill from '../../components/DepositPill.jsx';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -54,6 +55,7 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
                 property={property} currencySymbol={currencySymbol}
                 onStatusUpdate={onStatusUpdate}
                 onEdit={() => setMode('edit')}
+                onBookingUpdated={onSave}
               />
             ) : (
               <EditMode
@@ -73,17 +75,129 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
 
 // ── View mode ─────────────────────────────────────────────────────────────────
 
-function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, currencySymbol, onStatusUpdate, onEdit }) {
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, currencySymbol, onStatusUpdate, onEdit, onBookingUpdated }) {
+  const [showCancelConfirm,  setShowCancelConfirm]  = useState(false);
+  const [depositGateOpen,    setDepositGateOpen]    = useState(false);
+  const [depositAction,      setDepositAction]      = useState(null); // { bookingId, newStatus }
+  const [depositWorking,     setDepositWorking]     = useState(false);
+  const [toast,              setToast]              = useState(null);
+
+  const depositRequired = !!property?.require_deposit;
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleRequestDeposit = async () => {
+    setDepositWorking(true);
+    try {
+      const res = await apiFetch(`/api/bookings/${b.id}/request-deposit`, { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+      showToast(t('depositRequestSent'));
+    } catch {
+      // silent
+    } finally {
+      setDepositWorking(false);
+    }
+  };
+
+  const handleMarkDepositPaid = async () => {
+    setDepositWorking(true);
+    try {
+      const res = await apiFetch(`/api/bookings/${b.id}/mark-deposit-paid`, { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+      showToast(t('depositMarkedPaid'));
+    } catch {
+      // silent
+    } finally {
+      setDepositWorking(false);
+    }
+  };
+
+  // Intercept check-in: if deposit required but unpaid, show deposit gate
+  const handleCheckIn = () => {
+    if (depositRequired && !b.deposit_paid) {
+      setDepositAction({ bookingId: b.id, newStatus: 'arriving' });
+      setDepositGateOpen(true);
+    } else {
+      onStatusUpdate(b.id, 'arriving');
+    }
+  };
 
   return (
     <>
+      {/* ── Deposit strip ─────────────────────────────────────────────────── */}
+      {depositRequired && (b.status === 'confirmed' || b.status === 'arriving') && (
+        <div style={{
+          padding: '10px 22px', borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <DepositPill booking={b} property={property} />
+            {b.deposit_paid && b.deposit_paid_at && (
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                {t('depositPaidOn')} {formatDateMedium(b.deposit_paid_at.slice(0, 10), locale)}
+              </span>
+            )}
+          </div>
+          {!b.deposit_paid && (
+            <div style={{ display: 'flex', gap: 6 }}>
+              {!b.deposit_requested_at && (
+                <button
+                  className="btn-panel-secondary"
+                  style={{ fontSize: '0.78rem', padding: '5px 10px' }}
+                  onClick={handleRequestDeposit}
+                  disabled={depositWorking}
+                >
+                  {t('requestDepositBtn')}
+                </button>
+              )}
+              <button
+                className="btn-panel-primary"
+                style={{ fontSize: '0.78rem', padding: '5px 10px' }}
+                onClick={handleMarkDepositPaid}
+                disabled={depositWorking}
+              >
+                {t('markDepositPaidBtn')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Breakfast strip ───────────────────────────────────────────────── */}
+      {property?.breakfast_included && (
+        <div style={{
+          padding: '8px 22px', borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: '0.82rem', color: '#166534', fontWeight: 600,
+        }}>
+          🍳 {t('fBreakfast')}
+        </div>
+      )}
+
+      {toast && (
+        <div style={{
+          margin: '10px 22px 0', padding: '7px 12px',
+          background: '#f0faf0', border: '1px solid #86efac',
+          borderRadius: 6, fontSize: '0.82rem', color: '#166534', fontWeight: 600,
+        }}>
+          {toast}
+        </div>
+      )}
+
       {(b.status === 'confirmed' || b.status === 'arriving') && (
         <StatusActions
           status={b.status} bookingId={b.id}
           onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t}
           prominent
           onCancelClick={() => setShowCancelConfirm(true)}
+          onCheckIn={handleCheckIn}
         />
       )}
 
@@ -122,23 +236,6 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             </div>
           )}
         </div>
-        {property?.breakfast_included ? (
-          <div style={{
-            marginTop: 10, display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: '0.82rem', color: '#166534', fontWeight: 600,
-          }}>
-            🍳 {t('fBreakfast')}
-          </div>
-        ) : null}
-        {property?.require_deposit && property?.deposit_amount ? (
-          <div style={{
-            marginTop: 6, fontSize: '0.82rem', color: '#92400e',
-            background: '#fffbeb', border: '1px solid #fde68a',
-            borderRadius: 6, padding: '6px 10px',
-          }}>
-            💰 Deposit required: {currencySymbol}{Number(property.deposit_amount).toFixed(2)}
-          </div>
-        ) : null}
       </div>
 
       <div className="panel-actions">
@@ -164,6 +261,53 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         onConfirm={() => { setShowCancelConfirm(false); onStatusUpdate(b.id, 'cancelled'); }}
         onCancel={() => setShowCancelConfirm(false)}
       />
+
+      {/* ── Deposit gate modal ─────────────────────────────────────────────── */}
+      {depositGateOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
+            maxWidth: 400, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 10, color: '#111827' }}>
+              {t('depositGateTitle')}
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 22, lineHeight: 1.55 }}>
+              {t('depositGateMsg')}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                className="btn-panel-primary"
+                onClick={() => {
+                  setDepositGateOpen(false);
+                  handleMarkDepositPaid().then(() => onStatusUpdate(depositAction.bookingId, depositAction.newStatus));
+                }}
+              >
+                {t('markPaidAndCheckIn')}
+              </button>
+              <button
+                className="btn-panel-secondary"
+                onClick={() => {
+                  setDepositGateOpen(false);
+                  onStatusUpdate(depositAction.bookingId, depositAction.newStatus);
+                }}
+              >
+                {t('checkInWithoutDeposit')}
+              </button>
+              <button
+                className="btn-secondary"
+                style={{ border: '1.5px solid var(--border)', marginTop: 2 }}
+                onClick={() => setDepositGateOpen(false)}
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -332,7 +476,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
 
 // ── Status action buttons ─────────────────────────────────────────────────────
 
-function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick }) {
+function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick, onCheckIn }) {
   const wrapStyle = prominent
     ? { padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', marginBottom: 0 }
     : {};
@@ -358,7 +502,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
         <button
           className="btn-panel-primary"
           style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
-          onClick={() => onStatusUpdate(bookingId, 'arriving')}
+          onClick={onCheckIn ?? (() => onStatusUpdate(bookingId, 'arriving'))}
         >
           {t('checkInBtn')}
         </button>

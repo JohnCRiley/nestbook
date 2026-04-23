@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/database.js';
-import { sendBookingConfirmation } from '../email/emailService.js';
+import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation } from '../email/emailService.js';
 
 export const bookingsRouter = Router();
 
@@ -53,6 +53,10 @@ const ENRICHED_SELECT = `
     b.notes,
     b.total_price,
     b.created_at,
+    b.flagged,
+    b.deposit_paid,
+    b.deposit_requested_at,
+    b.deposit_paid_at,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -316,6 +320,50 @@ bookingsRouter.put('/:id', (req, res) => {
     );
 
     res.json(db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/request-deposit ────────────────────────────────
+bookingsRouter.post('/:id/request-deposit', (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const now = new Date().toISOString();
+    db.prepare(`UPDATE bookings SET deposit_requested_at = ? WHERE id = ?`).run(now, req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
+    sendDepositRequest(updated, property).catch(() => {});
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/mark-deposit-paid ──────────────────────────────
+bookingsRouter.post('/:id/mark-deposit-paid', (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const now = new Date().toISOString();
+    db.prepare(`UPDATE bookings SET deposit_paid = 1, deposit_paid_at = ? WHERE id = ?`).run(now, req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
+    sendDepositConfirmation(updated, property).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -285,6 +285,19 @@ export function initSchema() {
     db.exec(`ALTER TABLE rooms ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  // Migration: booking-level deposit tracking
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN deposit_paid INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN deposit_requested_at TEXT`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN deposit_paid_at TEXT`);
+  } catch { /* already exists */ }
+
   // Migration: property-level breakfast and deposit settings
   try {
     db.exec(`ALTER TABLE properties ADD COLUMN breakfast_included INTEGER NOT NULL DEFAULT 0`);

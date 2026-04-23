@@ -38,6 +38,14 @@ const T = {
     depositRequired:      'Deposit required',
     questions:            'Questions? Reply to this email and we\'ll get back to you.',
     poweredBy:            'Powered by NestBook',
+    depositRequestSubject:    'Deposit request for your booking',
+    depositRequestHeading:    'Deposit Request',
+    depositRequestBody:       'To secure your booking, a deposit payment is required.',
+    depositPaymentInstr:      'Please arrange payment at your earliest convenience. Contact us if you have any questions.',
+    depositConfirmSubject:    'Your deposit has been received',
+    depositConfirmHeading:    'Deposit Received',
+    depositConfirmBody:       'We have received your deposit payment. Your booking is now fully secured.',
+    depositConfirmDetails:    'Deposit amount',
     welcomeSubject:    'Welcome to NestBook — your account is ready',
     welcomeHeading:    'Welcome to NestBook!',
     welcomeIntro:      'Your property management account is set up and ready to go.',
@@ -67,6 +75,14 @@ const T = {
     depositRequired:      'Acompte requis',
     questions:            'Des questions ? Répondez à cet e-mail, nous vous répondrons rapidement.',
     poweredBy:            'Propulsé par NestBook',
+    depositRequestSubject:    'Demande d\'acompte pour votre réservation',
+    depositRequestHeading:    'Demande d\'acompte',
+    depositRequestBody:       'Pour sécuriser votre réservation, un acompte est requis.',
+    depositPaymentInstr:      'Veuillez procéder au règlement dès que possible. N\'hésitez pas à nous contacter pour toute question.',
+    depositConfirmSubject:    'Votre acompte a bien été reçu',
+    depositConfirmHeading:    'Acompte reçu',
+    depositConfirmBody:       'Nous avons bien reçu votre acompte. Votre réservation est désormais entièrement sécurisée.',
+    depositConfirmDetails:    'Montant de l\'acompte',
     welcomeSubject:    'Bienvenue sur NestBook — votre compte est prêt',
     welcomeHeading:    'Bienvenue sur NestBook !',
     welcomeIntro:      'Votre compte de gestion de propriété est configuré et prêt à l\'emploi.',
@@ -96,6 +112,14 @@ const T = {
     depositRequired:      'Depósito requerido',
     questions:            '¿Preguntas? Responda a este correo y le contestaremos pronto.',
     poweredBy:            'Con tecnología de NestBook',
+    depositRequestSubject:    'Solicitud de depósito para su reserva',
+    depositRequestHeading:    'Solicitud de depósito',
+    depositRequestBody:       'Para asegurar su reserva, es necesario un pago de depósito.',
+    depositPaymentInstr:      'Por favor, realice el pago lo antes posible. Contáctenos si tiene alguna pregunta.',
+    depositConfirmSubject:    'Su depósito ha sido recibido',
+    depositConfirmHeading:    'Depósito recibido',
+    depositConfirmBody:       'Hemos recibido su pago de depósito. Su reserva está ahora completamente asegurada.',
+    depositConfirmDetails:    'Importe del depósito',
     welcomeSubject:    'Bienvenido a NestBook — su cuenta está lista',
     welcomeHeading:    '¡Bienvenido a NestBook!',
     welcomeIntro:      'Su cuenta de gestión de alojamiento está configurada y lista para usar.',
@@ -125,6 +149,14 @@ const T = {
     depositRequired:      'Anzahlung erforderlich',
     questions:            'Fragen? Antworten Sie auf diese E-Mail, wir helfen Ihnen gerne.',
     poweredBy:            'Bereitgestellt von NestBook',
+    depositRequestSubject:    'Anzahlungsanforderung für Ihre Buchung',
+    depositRequestHeading:    'Anzahlungsanforderung',
+    depositRequestBody:       'Um Ihre Buchung zu sichern, ist eine Anzahlung erforderlich.',
+    depositPaymentInstr:      'Bitte überweisen Sie den Betrag so bald wie möglich. Bei Fragen stehen wir Ihnen gerne zur Verfügung.',
+    depositConfirmSubject:    'Ihre Anzahlung ist eingegangen',
+    depositConfirmHeading:    'Anzahlung erhalten',
+    depositConfirmBody:       'Wir haben Ihre Anzahlung erhalten. Ihre Buchung ist nun vollständig gesichert.',
+    depositConfirmDetails:    'Anzahlungsbetrag',
     welcomeSubject:    'Willkommen bei NestBook — Ihr Konto ist bereit',
     welcomeHeading:    'Willkommen bei NestBook!',
     welcomeIntro:      'Ihr Unterkunftsverwaltungskonto ist eingerichtet und einsatzbereit.',
@@ -154,6 +186,14 @@ const T = {
     depositRequired:      'Aanbetaling vereist',
     questions:            'Vragen? Beantwoord deze e-mail en we helpen u graag.',
     poweredBy:            'Aangedreven door NestBook',
+    depositRequestSubject:    'Aanbetalingsverzoek voor uw boeking',
+    depositRequestHeading:    'Aanbetalingsverzoek',
+    depositRequestBody:       'Om uw boeking te bevestigen, is een aanbetaling vereist.',
+    depositPaymentInstr:      'Wij verzoeken u vriendelijk de betaling zo spoedig mogelijk te voldoen. Neem contact met ons op als u vragen heeft.',
+    depositConfirmSubject:    'Uw aanbetaling is ontvangen',
+    depositConfirmHeading:    'Aanbetaling ontvangen',
+    depositConfirmBody:       'We hebben uw aanbetaling ontvangen. Uw boeking is nu volledig bevestigd.',
+    depositConfirmDetails:    'Aanbetalingsbedrag',
     welcomeSubject:    'Welkom bij NestBook — uw account is klaar',
     welcomeHeading:    'Welkom bij NestBook!',
     welcomeIntro:      'Uw accommodatiebeheeraccount is ingesteld en klaar voor gebruik.',
@@ -378,6 +418,106 @@ export async function sendBookingConfirmation(booking, property) {
     console.log(`[email] Booking confirmation sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send booking confirmation:', err.message);
+  }
+}
+
+/**
+ * Send a deposit request email to the guest.
+ */
+export async function sendDepositRequest(booking, property) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const locale  = property?.locale ?? 'en';
+  const subject = `${t(locale, 'depositRequestSubject')} — ${property?.name ?? 'NestBook'}`;
+
+  const addressParts = [property?.address, property?.city, property?.country].filter(Boolean).join(', ');
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+    </tr>`;
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      ${t(locale, 'depositRequestHeading')}
+    </h1>
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+      ${t(locale, 'dear')} ${booking.guest_first_name},<br>
+      ${t(locale, 'depositRequestBody')}
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#fffbeb;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #fde68a;">
+      <tr>
+        ${row(t(locale, 'room'),       booking.room_name ?? '—')}
+        ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
+        ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
+        ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
+        ${property?.deposit_amount ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#92400e;font-weight:700;">${fmtDepositAmount(property.deposit_amount, property.currency)}</span>`) : ''}
+        ${addressParts ? row(t(locale, 'address'), addressParts) : ''}
+      </tr>
+    </table>
+
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
+      ${t(locale, 'depositPaymentInstr')}
+    </p>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">${t(locale, 'poweredBy')}</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    console.log(`[email] Deposit request sent → ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[email] Failed to send deposit request:', err.message);
+  }
+}
+
+/**
+ * Send a deposit confirmation email to the guest.
+ */
+export async function sendDepositConfirmation(booking, property) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const locale  = property?.locale ?? 'en';
+  const subject = `${t(locale, 'depositConfirmSubject')} — ${property?.name ?? 'NestBook'}`;
+
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+    </tr>`;
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      ${t(locale, 'depositConfirmHeading')} ✓
+    </h1>
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+      ${t(locale, 'dear')} ${booking.guest_first_name},<br>
+      ${t(locale, 'depositConfirmBody')}
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+      <tr>
+        ${row(t(locale, 'room'),       booking.room_name ?? '—')}
+        ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
+        ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
+        ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
+        ${property?.deposit_amount ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#166534;font-weight:700;">${fmtDepositAmount(property.deposit_amount, property.currency)}</span>`) : ''}
+      </tr>
+    </table>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">${t(locale, 'poweredBy')}</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    console.log(`[email] Deposit confirmation sent → ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[email] Failed to send deposit confirmation:', err.message);
   }
 }
 

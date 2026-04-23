@@ -12,6 +12,7 @@ import {
 import BookingPanel from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
+import DepositPill from '../components/DepositPill.jsx';
 
 // ── Badge config (duplicated from Bookings so Dashboard has no cross-dep) ─────
 const BADGE_CLASS = {
@@ -37,8 +38,9 @@ export default function Dashboard() {
   const [upgradeToast,   setUpgradeToast]   = useState(false);
   const [showAvailablePopover, setShowAvailablePopover] = useState(false);
   const [selectedBooking,      setSelectedBooking]      = useState(null);
-  const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null); // room object for new booking modal
-  const [pendingConfirm,       setPendingConfirm]       = useState(null); // { title, message, confirmLabel, variant, action }
+  const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null);
+  const [pendingConfirm,       setPendingConfirm]       = useState(null);
+  const [depositGate,          setDepositGate]          = useState(null); // { bookingId }
 
   const today = localToday();
 
@@ -148,6 +150,16 @@ export default function Dashboard() {
         setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
       })
       .catch(() => {});
+  }
+
+  async function handleMarkDepositPaid(bookingId) {
+    try {
+      const res = await apiFetch(`/api/bookings/${bookingId}/mark-deposit-paid`, { method: 'POST' });
+      if (!res.ok) return;
+      const updated = await res.json();
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...updated } : b)));
+      setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...updated } : prev));
+    } catch { /* silent */ }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -348,19 +360,24 @@ export default function Dashboard() {
               <BookingRow
                 key={b.id}
                 booking={b}
+                property={property}
                 right={
                   b.status === 'confirmed' ? (
                     <button
                       className="btn-checkin"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setPendingConfirm({
-                          title: t('checkInBtn'),
-                          message: t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`),
-                          confirmLabel: t('checkInBtn'),
-                          variant: 'success',
-                          action: () => handleStatusUpdate(b.id, 'arriving'),
-                        });
+                        if (property?.require_deposit && !b.deposit_paid) {
+                          setDepositGate({ bookingId: b.id });
+                        } else {
+                          setPendingConfirm({
+                            title: t('checkInBtn'),
+                            message: t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`),
+                            confirmLabel: t('checkInBtn'),
+                            variant: 'success',
+                            action: () => handleStatusUpdate(b.id, 'arriving'),
+                          });
+                        }
                       }}
                     >
                       {t('checkInBtn')}
@@ -391,6 +408,7 @@ export default function Dashboard() {
               <BookingRow
                 key={b.id}
                 booking={b}
+                property={property}
                 right={
                   b.status === 'arriving' ? (
                     <button
@@ -436,9 +454,11 @@ export default function Dashboard() {
             <BookingRow
               key={b.id}
               booking={b}
+              property={property}
               right={
                 <>
                   <span className="booking-date">{formatDateShort(b.check_in_date, locale)}</span>
+                  <DepositPill booking={b} property={property} />
                   <span className={BADGE_CLASS[b.status] ?? 'badge'}>
                     {BADGE_LABEL[b.status] ?? b.status}
                   </span>
@@ -490,6 +510,55 @@ export default function Dashboard() {
         onConfirm={() => { pendingConfirm.action(); setPendingConfirm(null); }}
         onCancel={() => setPendingConfirm(null)}
       />
+
+      {/* ── Deposit gate modal ─────────────────────────────────────────────── */}
+      {depositGate && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
+            maxWidth: 400, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 10, color: '#111827' }}>
+              {t('depositGateTitle')}
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 22, lineHeight: 1.55 }}>
+              {t('depositGateMsg')}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  const id = depositGate.bookingId;
+                  setDepositGate(null);
+                  handleMarkDepositPaid(id).then(() => handleStatusUpdate(id, 'arriving'));
+                }}
+              >
+                {t('markPaidAndCheckIn')}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  const id = depositGate.bookingId;
+                  setDepositGate(null);
+                  handleStatusUpdate(id, 'arriving');
+                }}
+              >
+                {t('checkInWithoutDeposit')}
+              </button>
+              <button
+                className="btn-secondary"
+                style={{ border: '1.5px solid var(--border)', marginTop: 2 }}
+                onClick={() => setDepositGate(null)}
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -505,7 +574,7 @@ function StatCard({ value, label }) {
   );
 }
 
-function BookingRow({ booking: b, right, nightWord, onClick }) {
+function BookingRow({ booking: b, property, right, nightWord, onClick }) {
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   return (
     <div
@@ -516,7 +585,16 @@ function BookingRow({ booking: b, right, nightWord, onClick }) {
       onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
     >
       <div className="booking-guest">
-        <div className="guest-name">{b.guest_first_name} {b.guest_last_name}</div>
+        <div className="guest-name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {b.guest_first_name} {b.guest_last_name}
+          {property?.breakfast_included && (
+            <span style={{
+              fontSize: '0.65rem', fontWeight: 700, color: '#166534',
+              background: '#dcfce7', border: '1px solid #bbf7d0',
+              borderRadius: 3, padding: '1px 5px',
+            }}>🍳</span>
+          )}
+        </div>
         <div className="booking-meta">
           {b.room_name} &middot; {nightWord(nights)}
         </div>
