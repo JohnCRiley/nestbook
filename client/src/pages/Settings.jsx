@@ -40,7 +40,7 @@ const LOCALES = [
 
 export default function Settings() {
   const t = useT();
-  const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty, locale } = useLocale();
+  const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty, locale, currencySymbol } = useLocale();
   const { user, logout } = useAuth();
   const plan = usePlan();
   const { kiosk, setKioskMode } = useKiosk();
@@ -57,18 +57,6 @@ export default function Settings() {
       label:   t('fEmail'),
       desc:    t('fEmailSub'),
       default: true,
-    },
-    {
-      key:     'breakfast',
-      label:   t('fBreakfast'),
-      desc:    t('fBreakfastSub'),
-      default: false,
-    },
-    {
-      key:     'deposit',
-      label:   t('fDeposit'),
-      desc:    t('fDepositSub'),
-      default: false,
     },
     {
       key:     'offline',
@@ -93,7 +81,7 @@ export default function Settings() {
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
 
-  // Feature toggles live in local state only (no backend yet — persist later)
+  // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
     Object.fromEntries(FEATURES.map((f) => [f.key, f.default]))
   );
@@ -108,15 +96,18 @@ export default function Settings() {
     ]).then(([p, u, s]) => {
       setProperty(p);
       setForm({
-        name:           p.name           ?? '',
-        type:           p.type           ?? 'bnb',
-        address:        p.address        ?? '',
-        city:           p.city           ?? '',
-        country:        p.country        ?? '',
-        check_in_time:  p.check_in_time  ?? '15:00',
-        check_out_time: p.check_out_time ?? '11:00',
-        currency:       p.currency       ?? 'EUR',
-        locale:         p.locale         ?? 'en',
+        name:               p.name               ?? '',
+        type:               p.type               ?? 'bnb',
+        address:            p.address            ?? '',
+        city:               p.city               ?? '',
+        country:            p.country            ?? '',
+        check_in_time:      p.check_in_time      ?? '15:00',
+        check_out_time:     p.check_out_time     ?? '11:00',
+        currency:           p.currency           ?? 'EUR',
+        locale:             p.locale             ?? 'en',
+        breakfast_included: p.breakfast_included ? 1 : 0,
+        require_deposit:    p.require_deposit    ? 1 : 0,
+        deposit_amount:     p.deposit_amount     ?? 0,
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -334,6 +325,38 @@ export default function Settings() {
                     onChange={() => handleFeatureToggle(f.key)}
                   />
                 ))}
+                {form && (
+                  <>
+                    <ToggleRow
+                      label={t('fBreakfast')}
+                      desc={t('fBreakfastSub')}
+                      checked={!!form.breakfast_included}
+                      onChange={() => setForm((p) => ({ ...p, breakfast_included: p.breakfast_included ? 0 : 1 }))}
+                    />
+                    <ToggleRow
+                      label={t('fDeposit')}
+                      desc={t('fDepositSub')}
+                      checked={!!form.require_deposit}
+                      onChange={() => setForm((p) => ({ ...p, require_deposit: p.require_deposit ? 0 : 1 }))}
+                    />
+                    {!!form.require_deposit && (
+                      <div style={{ padding: '4px 0 14px 0' }}>
+                        <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                          Deposit amount ({currencySymbol})
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          step="0.01"
+                          value={form.deposit_amount}
+                          onChange={(e) => setForm((p) => ({ ...p, deposit_amount: e.target.value }))}
+                          style={{ marginTop: 4, maxWidth: 160 }}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

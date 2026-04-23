@@ -137,13 +137,25 @@ propertiesRouter.put('/:id', (req, res) => {
     if (!canAccess(req.user.userId, req.user.role, req.params.id)) {
       return res.status(404).json({ error: 'Property not found.' });
     }
-    const { name, type, address, city, country, check_in_time, check_out_time, currency, locale } = req.body;
+    const {
+      name, type, address, city, country,
+      check_in_time, check_out_time, currency, locale,
+      breakfast_included, require_deposit, deposit_amount,
+    } = req.body;
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
-          check_in_time = ?, check_out_time = ?, currency = ?, locale = ?
+          check_in_time = ?, check_out_time = ?, currency = ?, locale = ?,
+          breakfast_included = ?, require_deposit = ?, deposit_amount = ?
       WHERE id = ?
-    `).run(name, type, address, city, country, check_in_time, check_out_time, currency, locale, req.params.id);
+    `).run(
+      name, type, address, city, country,
+      check_in_time, check_out_time, currency, locale,
+      breakfast_included ? 1 : 0,
+      require_deposit    ? 1 : 0,
+      parseFloat(deposit_amount) || 0,
+      req.params.id,
+    );
     res.json(db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id));
   } catch (err) {
     res.status(500).json({ error: err.message });

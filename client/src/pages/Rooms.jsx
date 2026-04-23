@@ -180,6 +180,7 @@ export default function Rooms() {
               t={t}
               currencySymbol={currencySymbol}
               locale={locale}
+              breakfastIncluded={!!property?.breakfast_included}
             />
           ))}
         </div>
@@ -229,7 +230,7 @@ export default function Rooms() {
 
 // ── RoomCard ──────────────────────────────────────────────────────────────────
 
-function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, currencySymbol, locale }) {
+function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, currencySymbol, locale, breakfastIncluded }) {
   const amenities     = (room.amenities ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const stripeClass   = `stripe-${room.status}`;
   const isAvailable   = room.status === 'available' && !activeBooking;
@@ -271,6 +272,18 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
             {t('guestWord')(room.capacity)}
           </span>
         </div>
+
+        {/* Breakfast badge */}
+        {breakfastIncluded && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            fontSize: '0.72rem', fontWeight: 600, color: '#166534',
+            background: '#dcfce7', border: '1px solid #bbf7d0',
+            borderRadius: 4, padding: '2px 7px', marginBottom: 6,
+          }}>
+            🍳 {t('fBreakfast')}
+          </div>
+        )}
 
         {/* Amenities */}
         {amenities.length > 0 && (

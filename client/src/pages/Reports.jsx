@@ -448,6 +448,15 @@ function ReportsContent() {
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 14 }}>
                     {t('reportSummaryTitle')}
                   </div>
+                  {property?.require_deposit && property?.deposit_amount ? (
+                    <div style={{
+                      marginBottom: 14, padding: '8px 12px', borderRadius: 6,
+                      background: '#fffbeb', border: '1px solid #fde68a',
+                      fontSize: '0.84rem', color: '#92400e', fontWeight: 500,
+                    }}>
+                      💰 Deposit required per booking: {fmtMoney(property.deposit_amount)}
+                    </div>
+                  ) : null}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                     {[
                       [t('reportSumBookings'),  summary.totalBookings],

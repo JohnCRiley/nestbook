@@ -19,7 +19,7 @@ const SOURCE_OPTIONS = [
 const STATUS_OPTIONS = ['confirmed', 'arriving', 'checked_out', 'cancelled'];
 
 export default function BookingPanel({ booking: b, rooms = [], guests = [], onClose, onStatusUpdate, onSave }) {
-  const { fmtCurrency, locale } = useLocale();
+  const { fmtCurrency, locale, property, currencySymbol } = useLocale();
   const t = useT();
   const [mode, setMode] = useState('view');
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
@@ -51,6 +51,7 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
               <ViewMode
                 b={b} nights={nights} perNight={perNight}
                 fmtCurrency={fmtCurrency} locale={locale} t={t}
+                property={property} currencySymbol={currencySymbol}
                 onStatusUpdate={onStatusUpdate}
                 onEdit={() => setMode('edit')}
               />
@@ -72,7 +73,7 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
 
 // ── View mode ─────────────────────────────────────────────────────────────────
 
-function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, onStatusUpdate, onEdit }) {
+function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, currencySymbol, onStatusUpdate, onEdit }) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   return (
@@ -121,6 +122,23 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, onStatusUpdate,
             </div>
           )}
         </div>
+        {property?.breakfast_included ? (
+          <div style={{
+            marginTop: 10, display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: '0.82rem', color: '#166534', fontWeight: 600,
+          }}>
+            🍳 {t('fBreakfast')}
+          </div>
+        ) : null}
+        {property?.require_deposit && property?.deposit_amount ? (
+          <div style={{
+            marginTop: 6, fontSize: '0.82rem', color: '#92400e',
+            background: '#fffbeb', border: '1px solid #fde68a',
+            borderRadius: 6, padding: '6px 10px',
+          }}>
+            💰 Deposit required: {currencySymbol}{Number(property.deposit_amount).toFixed(2)}
+          </div>
+        ) : null}
       </div>
 
       <div className="panel-actions">

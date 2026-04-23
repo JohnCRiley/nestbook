@@ -285,6 +285,19 @@ export function initSchema() {
     db.exec(`ALTER TABLE rooms ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  // Migration: property-level breakfast and deposit settings
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN breakfast_included INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN require_deposit INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN deposit_amount REAL NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
   // Migration: expand bookings.source CHECK to include walk_in and website
   const bookingSourceSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
   if (!bookingSourceSql.includes('walk_in')) {
