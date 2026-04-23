@@ -8,13 +8,16 @@ import Pagination         from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
+import usePageSize from '../hooks/usePageSize.js';
 
-const LIMIT = 20;
+// toolbar(72) + stat-bar(82) + search(56) + pagination(48) + padding(72) + buffer(8)
+const RESERVED = 338;
 
 export default function Guests() {
   const t = useT();
   const plan = usePlan();
   const { property } = useLocale();
+  const pageSize = usePageSize(56, RESERVED);
   const [searchParams] = useSearchParams();
 
   const [guests,        setGuests]        = useState([]);
@@ -50,9 +53,18 @@ export default function Guests() {
       .catch(() => {});
   }, []);
 
+  // Reset to page 1 when viewport size changes the page size
+  const prevPageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (prevPageSizeRef.current !== pageSize) {
+      prevPageSizeRef.current = pageSize;
+      setPage(1);
+    }
+  }, [pageSize]);
+
   // ── Fetch paginated guests ────────────────────────────────────────────────────
   const fetchGuests = useCallback(() => {
-    const params = new URLSearchParams({ page, limit: LIMIT });
+    const params = new URLSearchParams({ page, limit: pageSize });
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
 
     setLoading(true);
@@ -65,7 +77,7 @@ export default function Guests() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [page, debouncedSearch]);
+  }, [page, pageSize, debouncedSearch]);
 
   // ── Fetch all bookings (plain array, for the guest detail panel) ─────────────
   useEffect(() => {
@@ -178,7 +190,7 @@ export default function Guests() {
             page={page}
             totalPages={totalPages}
             total={total}
-            limit={LIMIT}
+            limit={pageSize}
             onPage={setPage}
           />
         </>

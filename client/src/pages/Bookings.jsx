@@ -7,14 +7,17 @@ import NewBookingModal from './bookings/NewBookingModal.jsx';
 import Pagination      from '../components/Pagination.jsx';
 import { apiFetch }    from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import usePageSize     from '../hooks/usePageSize.js';
 
-const LIMIT = 20;
+// toolbar(72) + controls+filters(56) + thead(48) + pagination(48) + padding(72) + buffer(4)
+const RESERVED = 300;
 
 export default function Bookings() {
   const today = localToday();
   const t = useT();
   const { property, locale } = useLocale();
   const location = useLocation();
+  const pageSize = usePageSize(56, RESERVED);
 
   const FILTERS = [
     { key: 'all',         label: t('filters')[0] },
@@ -65,13 +68,22 @@ export default function Bookings() {
       .catch(() => {});
   }, [property?.id]);
 
+  // Reset to page 1 when viewport size changes the page size
+  const prevPageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (prevPageSizeRef.current !== pageSize) {
+      prevPageSizeRef.current = pageSize;
+      setPage(1);
+    }
+  }, [pageSize]);
+
   // ── Fetch paginated bookings ─────────────────────────────────────────────────
   const fetchBookings = useCallback(() => {
     if (!property?.id) return;
     const params = new URLSearchParams({
       property_id: property.id,
       page,
-      limit: LIMIT,
+      limit: pageSize,
     });
     if (activeFilter !== 'all') params.set('filter', activeFilter);
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
@@ -86,7 +98,7 @@ export default function Bookings() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [property?.id, page, activeFilter, debouncedSearch]);
+  }, [property?.id, page, pageSize, activeFilter, debouncedSearch]);
 
   // ── Initial load: rooms + guests (for modal) ─────────────────────────────────
   useEffect(() => {
@@ -246,7 +258,7 @@ export default function Bookings() {
             page={page}
             totalPages={totalPages}
             total={total}
-            limit={LIMIT}
+            limit={pageSize}
             onPage={setPage}
           />
         </>

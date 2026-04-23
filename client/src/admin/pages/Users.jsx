@@ -1,10 +1,13 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+import usePageSize from '../../hooks/usePageSize.js';
 
-const LIMIT = 25;
+// page-header(64) + search(52) + pagination(48) + padding(72) + buffer(44)
+const RESERVED = 280;
 
 export default function Users() {
+  const pageSize = usePageSize(52, RESERVED);
   const [rows,         setRows]         = useState([]);
   const [total,        setTotal]        = useState(0);
   const [page,         setPage]         = useState(1);
@@ -16,6 +19,14 @@ export default function Users() {
   const [toast,          setToast]          = useState(null);
   const [pendingConfirm, setPendingConfirm] = useState(null); // { title, message, onConfirm }
   const [expandedCard, setExpandedCard] = useState(null); // user id expanded on mobile
+
+  const prevPageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (prevPageSizeRef.current !== pageSize) {
+      prevPageSizeRef.current = pageSize;
+      setPage(1);
+    }
+  }, [pageSize]);
 
   // Debounced search
   const debounceRef = useRef(null);
@@ -30,7 +41,7 @@ export default function Users() {
   }, [search]);
 
   const fetchUsers = useCallback(() => {
-    const params = new URLSearchParams({ page, limit: LIMIT });
+    const params = new URLSearchParams({ page, limit: pageSize });
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
     apiFetch(`/api/admin/users?${params}`)
       .then(r => r.json())
@@ -42,7 +53,7 @@ export default function Users() {
         }
       })
       .catch(() => {});
-  }, [page, debouncedSearch]);
+  }, [page, pageSize, debouncedSearch]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -390,17 +401,17 @@ export default function Users() {
       </div>
 
       {/* ── Pagination ─────────────────────────────────────────────────────── */}
-      {totalPages > 1 && (
+      {total > 0 && (
         <div className="pagination" style={{ marginTop: 16 }}>
           <span className="pagination-info">
-            Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)} of {total}
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
           </span>
           <div className="pagination-controls">
             <button className="pagination-btn" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>
               Previous
             </button>
-            <span className="pagination-page">Page {page} of {totalPages}</span>
-            <button className="pagination-btn" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+            <span className="pagination-page">Page {page} of {totalPages || 1}</span>
+            <button className="pagination-btn" onClick={() => setPage(p => p + 1)} disabled={page >= (totalPages || 1)}>
               Next
             </button>
           </div>

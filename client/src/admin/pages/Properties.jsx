@@ -1,18 +1,29 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+import usePageSize from '../../hooks/usePageSize.js';
 
 const TYPE_LABELS = {
   bnb: 'B&B', gite: 'Gîte', guesthouse: 'Guest House', hotel: 'Hotel', other: 'Other',
 };
 
-const LIMIT = 25;
+// page-header(64) + search(52) + pagination(48) + padding(72) + buffer(24)
+const RESERVED = 260;
 
 export default function Properties() {
+  const pageSize = usePageSize(48, RESERVED);
   const [rows,       setRows]       = useState([]);
   const [total,      setTotal]      = useState(0);
   const [page,       setPage]       = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [search,     setSearch]     = useState('');
+
+  const prevPageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (prevPageSizeRef.current !== pageSize) {
+      prevPageSizeRef.current = pageSize;
+      setPage(1);
+    }
+  }, [pageSize]);
 
   // Debounced search
   const debounceRef = useRef(null);
@@ -27,7 +38,7 @@ export default function Properties() {
   }, [search]);
 
   const fetchProperties = useCallback(() => {
-    const params = new URLSearchParams({ page, limit: LIMIT });
+    const params = new URLSearchParams({ page, limit: pageSize });
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
     apiFetch(`/api/admin/properties?${params}`)
       .then(r => r.json())
@@ -39,7 +50,7 @@ export default function Properties() {
         }
       })
       .catch(() => {});
-  }, [page, debouncedSearch]);
+  }, [page, pageSize, debouncedSearch]);
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
@@ -92,17 +103,17 @@ export default function Properties() {
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {total > 0 && (
         <div className="pagination" style={{ marginTop: 16 }}>
           <span className="pagination-info">
-            Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)} of {total}
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
           </span>
           <div className="pagination-controls">
             <button className="pagination-btn" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>
               Previous
             </button>
-            <span className="pagination-page">Page {page} of {totalPages}</span>
-            <button className="pagination-btn" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+            <span className="pagination-page">Page {page} of {totalPages || 1}</span>
+            <button className="pagination-btn" onClick={() => setPage(p => p + 1)} disabled={page >= (totalPages || 1)}>
               Next
             </button>
           </div>

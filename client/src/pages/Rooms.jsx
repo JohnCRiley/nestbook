@@ -1,11 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { localToday, LOCALE_MAP } from '../utils/format.js';
 import { StatusPill, formatAmenity } from './rooms/RoomPanel.jsx';
 import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
+import Pagination from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import usePageSize from '../hooks/usePageSize.js';
+
+// toolbar(72) + stat-bar(82) + pagination(48) + padding(72) + buffer(-14)
+const RESERVED = 260;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -13,6 +18,7 @@ export default function Rooms() {
   const today = localToday();
   const t = useT();
   const { currencySymbol, property, locale } = useLocale();
+  const pageSize = usePageSize(140, RESERVED);
 
   const [rooms,         setRooms]         = useState([]);
   const [bookings,      setBookings]      = useState([]);
@@ -21,6 +27,15 @@ export default function Rooms() {
   const [selectedRoom,  setSelectedRoom]  = useState(null);
   const [showNewRoom,   setShowNewRoom]   = useState(false);
   const [bookingValues, setBookingValues] = useState(null);   // pre-fill for booking modal
+  const [page,          setPage]          = useState(1);
+
+  const prevPageSizeRef = useRef(pageSize);
+  useEffect(() => {
+    if (prevPageSizeRef.current !== pageSize) {
+      prevPageSizeRef.current = pageSize;
+      setPage(1);
+    }
+  }, [pageSize]);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -76,6 +91,9 @@ export default function Rooms() {
     const available   = total - occupied - maintenance;
     return { total, available: Math.max(available, 0), occupied, maintenance };
   }, [rooms, activeByRoom]);
+
+  const totalRoomPages = Math.ceil(rooms.length / pageSize) || 1;
+  const pagedRooms = rooms.slice((page - 1) * pageSize, page * pageSize);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCardClick = (room) =>
@@ -149,7 +167,7 @@ export default function Rooms() {
 
       {/* ── Card grid ────────────────────────────────────────────────────── */}
       <div className="room-grid">
-        {rooms.map((room) => (
+        {pagedRooms.map((room) => (
           <RoomCard
             key={room.id}
             room={room}
@@ -164,6 +182,13 @@ export default function Rooms() {
           />
         ))}
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalRoomPages}
+        total={rooms.length}
+        limit={pageSize}
+        onPage={setPage}
+      />
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedRoom && (
