@@ -177,9 +177,10 @@ export function initSchema() {
     db.exec(`ALTER TABLE properties ADD COLUMN owner_id INTEGER REFERENCES users(id)`);
   } catch { /* already exists */ }
 
-  // Backfill owner_id for all existing properties from the users.property_id relationship.
-  // Each property is owned by the user (role='owner') whose property_id points to it.
-  db.exec(`
+  // Backfill owner_id for any properties where it is NULL.
+  // Finds the owner via users.property_id (the definitive link set at registration).
+  // Runs on every startup so it self-heals properties created with a NULL owner_id bug.
+  const healed = db.prepare(`
     UPDATE properties
     SET owner_id = (
       SELECT u.id FROM users u
@@ -187,7 +188,10 @@ export function initSchema() {
       LIMIT 1
     )
     WHERE owner_id IS NULL
-  `);
+  `).run();
+  if (healed.changes > 0) {
+    console.log(`✓ Healed owner_id for ${healed.changes} propert${healed.changes === 1 ? 'y' : 'ies'} with NULL owner_id.`);
+  }
 
   // Migration: add 'nl' to the locale CHECK constraint.
   // SQLite can't ALTER a CHECK, so we rebuild the table if the old constraint is still in place.

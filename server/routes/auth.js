@@ -65,57 +65,60 @@ authRouter.post('/register', (req, res) => {
 
   const hash = bcrypt.hashSync(password, 10);
 
-  db.exec('BEGIN');
+  // Validate discount code outside the transaction (read-only, safe to do first)
+  const upperCode = discountCode?.trim().toUpperCase() || null;
+  const validCode = upperCode
+    ? db.prepare('SELECT code FROM discount_codes WHERE code = ? AND active = 1').get(upperCode)?.code
+    : null;
+
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+
+  // Use db.transaction() so BEGIN/COMMIT/ROLLBACK is handled automatically.
+  // Number() wrapping guards against node:sqlite returning BigInt lastInsertRowid.
+  let propId, userId;
   try {
-    const prop = db.prepare(
-      `INSERT INTO properties (name, type) VALUES (?, ?)`
-    ).run(propertyName, propertyType);
+    const register = db.transaction(() => {
+      const prop = db.prepare(
+        `INSERT INTO properties (name, type) VALUES (?, ?)`
+      ).run(propertyName, propertyType);
+      propId = Number(prop.lastInsertRowid);
 
-    // Validate discount code if provided (store it; applied at checkout)
-    const upperCode = discountCode?.trim().toUpperCase() || null;
-    const validCode = upperCode
-      ? db.prepare('SELECT code FROM discount_codes WHERE code = ? AND active = 1').get(upperCode)?.code
-      : null;
+      const user = db.prepare(
+        `INSERT INTO users (property_id, name, email, password_hash, role, discount_code, email_verified, email_verification_token)
+         VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
+      ).run(propId, name, normalEmail, hash, validCode ?? null, verificationToken);
+      userId = Number(user.lastInsertRowid);
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
-    const user = db.prepare(
-      `INSERT INTO users (property_id, name, email, password_hash, role, discount_code, email_verified, email_verification_token)
-       VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
-    ).run(prop.lastInsertRowid, name, normalEmail, hash, validCode ?? null, verificationToken);
-
-    // Link the property back to its owner now that we have the user ID.
-    db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?')
-      .run(user.lastInsertRowid, prop.lastInsertRowid);
-
-    db.exec('COMMIT');
-
-    const token = jwt.sign(
-      { userId: user.lastInsertRowid, role: 'owner', propertyId: prop.lastInsertRowid },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES }
-    );
-
-    res.status(201).json({
-      token,
-      user: { id: user.lastInsertRowid, name, email: normalEmail, role: 'owner', property_id: prop.lastInsertRowid, email_verified: false },
+      // Link the property back to its owner now that we have the user ID.
+      db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?').run(userId, propId);
     });
-
-    // Fire-and-forget — must not delay the registration response
-    sendWelcomeEmail(
-      { name, email: normalEmail },
-      { name: propertyName, type: propertyType }
-    ).catch(() => {});
-
-    sendVerificationEmail(
-      { name, email: normalEmail },
-      verificationToken
-    ).catch(() => {});
+    register();
   } catch (err) {
-    db.exec('ROLLBACK');
     console.error('Register error:', err);
-    res.status(500).json({ error: 'Registration failed. Please try again.' });
+    return res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
+
+  const token = jwt.sign(
+    { userId, role: 'owner', propertyId: propId },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES }
+  );
+
+  res.status(201).json({
+    token,
+    user: { id: userId, name, email: normalEmail, role: 'owner', property_id: propId, email_verified: false },
+  });
+
+  // Fire-and-forget — must not delay the registration response
+  sendWelcomeEmail(
+    { name, email: normalEmail },
+    { name: propertyName, type: propertyType }
+  ).catch(() => {});
+
+  sendVerificationEmail(
+    { name, email: normalEmail },
+    verificationToken
+  ).catch(() => {});
 });
 
 // ── GET /api/auth/verify-email?token=xxx ─────────────────────────────────
