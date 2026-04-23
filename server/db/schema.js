@@ -63,7 +63,7 @@ export function initSchema() {
       status          TEXT    NOT NULL DEFAULT 'confirmed'
                               CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
       source          TEXT    NOT NULL DEFAULT 'direct'
-                              CHECK(source IN ('direct','phone','email','booking_com','airbnb','other')),
+                              CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
       notes           TEXT,
       total_price     REAL,
       created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -250,7 +250,7 @@ export function initSchema() {
         status          TEXT    NOT NULL DEFAULT 'confirmed'
                                 CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
         source          TEXT    NOT NULL DEFAULT 'direct'
-                                CHECK(source IN ('direct','phone','email','booking_com','airbnb','other')),
+                                CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
         notes           TEXT,
         total_price     REAL,
         created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -284,6 +284,39 @@ export function initSchema() {
   try {
     db.exec(`ALTER TABLE rooms ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
+
+  // Migration: expand bookings.source CHECK to include walk_in and website
+  const bookingSourceSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
+  if (!bookingSourceSql.includes('walk_in')) {
+    db.exec(`PRAGMA foreign_keys = OFF`);
+    db.exec(`
+      BEGIN;
+      CREATE TABLE bookings_src (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id     INTEGER NOT NULL REFERENCES properties(id),
+        room_id         INTEGER REFERENCES rooms(id),
+        guest_id        INTEGER NOT NULL REFERENCES guests(id),
+        check_in_date   TEXT    NOT NULL,
+        check_out_date  TEXT    NOT NULL,
+        num_guests      INTEGER NOT NULL DEFAULT 1,
+        status          TEXT    NOT NULL DEFAULT 'confirmed'
+                                CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
+        source          TEXT    NOT NULL DEFAULT 'direct'
+                                CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
+        notes           TEXT,
+        total_price     REAL,
+        created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+        flagged         INTEGER NOT NULL DEFAULT 0
+      );
+      INSERT INTO bookings_src SELECT id, property_id, room_id, guest_id, check_in_date, check_out_date,
+        num_guests, status, source, notes, total_price, created_at, flagged FROM bookings;
+      DROP TABLE bookings;
+      ALTER TABLE bookings_src RENAME TO bookings;
+      COMMIT;
+    `);
+    db.exec(`PRAGMA foreign_keys = ON`);
+    console.log('✓ bookings.source constraint updated to include walk_in and website.');
+  }
 
   // Performance indexes for paginated list queries
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property  ON bookings(property_id)`);

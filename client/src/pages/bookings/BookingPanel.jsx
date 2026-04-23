@@ -9,6 +9,8 @@ const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
   { value: 'phone',       label: 'Phone' },
   { value: 'email',       label: 'Email' },
+  { value: 'walk_in',     label: 'Walk-in' },
+  { value: 'website',     label: 'Website' },
   { value: 'booking_com', label: 'Booking.com' },
   { value: 'airbnb',      label: 'Airbnb' },
   { value: 'other',       label: 'Other' },
