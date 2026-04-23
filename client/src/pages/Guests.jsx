@@ -10,8 +10,8 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import usePageSize from '../hooks/usePageSize.js';
 
-// toolbar + stat-bar + search + padding (pagination pinned by flex scaffold)
-const RESERVED = 200;
+// toolbar + stat-bar + search + padding
+const RESERVED = 120;
 
 export default function Guests() {
   const t = useT();
@@ -123,7 +123,7 @@ export default function Guests() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="page-scaffold">
+    <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
@@ -166,7 +166,6 @@ export default function Guests() {
         )}
       </div>
 
-      <div className="page-scaffold-body">
       {/* ── Guest card grid ───────────────────────────────────────────────── */}
       {loading ? (
         <div className="loading-screen">{t('loadingGuests')}</div>
@@ -189,7 +188,6 @@ export default function Guests() {
           </div>
         </>
       )}
-      </div>
 
       <Pagination
         page={page}
@@ -230,7 +228,7 @@ export default function Guests() {
       {successToast && (
         <div className="sa-toast sa-toast-success">{successToast}</div>
       )}
-    </div>
+    </>
   );
 }
 

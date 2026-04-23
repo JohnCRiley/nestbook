@@ -9,8 +9,8 @@ import { apiFetch }    from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import usePageSize     from '../hooks/usePageSize.js';
 
-// toolbar + controls/filters + thead + padding (pagination pinned by flex scaffold)
-const RESERVED = 200;
+// toolbar + controls/filters + thead + padding
+const RESERVED = 120;
 
 export default function Bookings() {
   const today = localToday();
@@ -165,7 +165,7 @@ export default function Bookings() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="page-scaffold">
+    <>
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
@@ -205,7 +205,6 @@ export default function Bookings() {
         </div>
       </div>
 
-      <div className="page-scaffold-body">
       {/* ── Loading / empty ───────────────────────────────────────────────── */}
       {loading ? (
         <div className="loading-screen">{t('loadingBookings')}</div>
@@ -257,7 +256,6 @@ export default function Bookings() {
 
         </>
       )}
-      </div>
 
       <Pagination
         page={page}
@@ -291,7 +289,7 @@ export default function Bookings() {
           onSuccess={handleNewBookingSuccess}
         />
       )}
-    </div>
+    </>
   );
 }
 
