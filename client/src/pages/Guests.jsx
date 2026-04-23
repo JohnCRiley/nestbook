@@ -10,8 +10,8 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import usePageSize from '../hooks/usePageSize.js';
 
-// toolbar(72) + stat-bar(82) + search(56) + pagination(48) + padding(72) + buffer(8)
-const RESERVED = 338;
+// toolbar + stat-bar + search + padding (pagination pinned by flex scaffold)
+const RESERVED = 200;
 
 export default function Guests() {
   const t = useT();
@@ -123,7 +123,7 @@ export default function Guests() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <>
+    <div className="page-scaffold">
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
@@ -166,6 +166,7 @@ export default function Guests() {
         )}
       </div>
 
+      <div className="page-scaffold-body">
       {/* ── Guest card grid ───────────────────────────────────────────────── */}
       {loading ? (
         <div className="loading-screen">{t('loadingGuests')}</div>
@@ -186,15 +187,17 @@ export default function Guests() {
               />
             ))}
           </div>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            limit={pageSize}
-            onPage={setPage}
-          />
         </>
       )}
+      </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={pageSize}
+        onPage={setPage}
+      />
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedGuest && (
@@ -227,7 +230,7 @@ export default function Guests() {
       {successToast && (
         <div className="sa-toast sa-toast-success">{successToast}</div>
       )}
-    </>
+    </div>
   );
 }
 

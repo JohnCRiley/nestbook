@@ -6,8 +6,8 @@ const TYPE_LABELS = {
   bnb: 'B&B', gite: 'Gîte', guesthouse: 'Guest House', hotel: 'Hotel', other: 'Other',
 };
 
-// page-header(64) + search(52) + pagination(48) + padding(72) + buffer(24)
-const RESERVED = 260;
+// page-header + search + padding (pagination pinned by flex scaffold)
+const RESERVED = 180;
 
 export default function Properties() {
   const pageSize = usePageSize(48, RESERVED);
@@ -55,7 +55,7 @@ export default function Properties() {
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
   return (
-    <>
+    <div className="page-scaffold">
       <div className="page-header">
         <h1>Properties</h1>
         <div className="page-date">{total} properties on the platform</div>
@@ -72,6 +72,7 @@ export default function Properties() {
         />
       </div>
 
+      <div className="page-scaffold-body">
       <div className="admin-card">
         <table className="admin-table">
           <thead>
@@ -102,8 +103,9 @@ export default function Properties() {
           </tbody>
         </table>
       </div>
+      </div>
 
-      {total > 0 && (
+      {total > 0 && totalPages > 1 && (
         <div className="pagination" style={{ marginTop: 16 }}>
           <span className="pagination-info">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
@@ -119,7 +121,7 @@ export default function Properties() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

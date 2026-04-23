@@ -9,8 +9,8 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import usePageSize from '../hooks/usePageSize.js';
 
-// toolbar(72) + stat-bar(82) + pagination(48) + padding(72) + buffer(-14)
-const RESERVED = 260;
+// toolbar + stat-bar + padding (pagination pinned by flex scaffold)
+const RESERVED = 200;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -141,10 +141,8 @@ export default function Rooms() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  if (loading) return <div className="loading-screen">{t('loadingRooms')}</div>;
-
   return (
-    <>
+    <div className="page-scaffold">
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
@@ -165,22 +163,28 @@ export default function Rooms() {
         <StatBarItem value={stats.maintenance} label={t('maintenance')}      accent="#94a3b8" />
       </div>
 
-      {/* ── Card grid ────────────────────────────────────────────────────── */}
-      <div className="room-grid">
-        {pagedRooms.map((room) => (
-          <RoomCard
-            key={room.id}
-            room={room}
-            activeBooking={activeByRoom[room.id] ?? null}
-            isSelected={selectedRoom?.id === room.id}
-            today={today}
-            onClick={handleCardClick}
-            onBook={handleBook}
-            t={t}
-            currencySymbol={currencySymbol}
-            locale={locale}
-          />
-        ))}
+      <div className="page-scaffold-body">
+        {/* ── Card grid ──────────────────────────────────────────────────── */}
+        {loading ? (
+          <div className="loading-screen">{t('loadingRooms')}</div>
+        ) : (
+          <div className="room-grid">
+            {pagedRooms.map((room) => (
+              <RoomCard
+                key={room.id}
+                room={room}
+                activeBooking={activeByRoom[room.id] ?? null}
+                isSelected={selectedRoom?.id === room.id}
+                today={today}
+                onClick={handleCardClick}
+                onBook={handleBook}
+                t={t}
+                currencySymbol={currencySymbol}
+                locale={locale}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <Pagination
         page={page}
@@ -221,7 +225,7 @@ export default function Rooms() {
           onSuccess={handleBookingSuccess}
         />
       )}
-    </>
+    </div>
   );
 }
 

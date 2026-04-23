@@ -3881,6 +3881,35 @@ a { text-decoration: none; }
   cursor: default;
 }
 
+/* ─── Paginated page scaffold ────────────────────────────────────────────── */
+/* Flex column wrapper: static chrome stacks at top, body scrolls, pagination
+   pins to bottom. Prevents pagination from being pushed off-screen. */
+.page-scaffold {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 72px); /* main-content padding: 36px × 2 */
+  min-height: 0;
+}
+.page-scaffold-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+/* Admin main uses 32px × 2 = 64px padding */
+.admin-main .page-scaffold {
+  height: calc(100vh - 64px);
+}
+/* Tablet admin: 24px × 2 = 48px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .admin-main .page-scaffold { height: calc(100vh - 48px); }
+}
+/* Mobile app: topbar(56px) + pad-top(24px) + pad-bottom(36px) = 116px */
+@media (max-width: 767px) {
+  .page-scaffold { height: calc(100dvh - 116px); }
+  /* Admin mobile: auto height (layout scrolls normally) */
+  .admin-main .page-scaffold { height: auto; flex: 1; min-height: 0; }
+}
+
 /* ══════════════════════════════════════════════════════════════════════════════
    Super Admin — Responsive Layout
    ══════════════════════════════════════════════════════════════════════════════ */

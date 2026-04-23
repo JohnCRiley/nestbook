@@ -3,8 +3,8 @@ import { saApiFetch as apiFetch } from '../saApiFetch.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import usePageSize from '../../hooks/usePageSize.js';
 
-// page-header(64) + search(52) + pagination(48) + padding(72) + buffer(44)
-const RESERVED = 280;
+// page-header + search + padding (pagination pinned by flex scaffold)
+const RESERVED = 180;
 
 export default function Users() {
   const pageSize = usePageSize(52, RESERVED);
@@ -233,7 +233,7 @@ export default function Users() {
   }
 
   return (
-    <>
+    <div className="page-scaffold">
       <div className="page-header">
         <h1>Users</h1>
         <div className="page-date">{total} users registered</div>
@@ -250,6 +250,7 @@ export default function Users() {
         />
       </div>
 
+      <div className="page-scaffold-body">
       {/* ── Desktop / Tablet table ─────────────────────────────────────────── */}
       <div className="admin-card admin-user-table-wrap">
         <div className="admin-table-wrap">
@@ -399,9 +400,10 @@ export default function Users() {
           </div>
         ))}
       </div>
+      </div>
 
       {/* ── Pagination ─────────────────────────────────────────────────────── */}
-      {total > 0 && (
+      {total > 0 && totalPages > 1 && (
         <div className="pagination" style={{ marginTop: 16 }}>
           <span className="pagination-info">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
@@ -450,7 +452,7 @@ export default function Users() {
         onConfirm={() => { const fn = pendingConfirm.action; setPendingConfirm(null); fn(); }}
         onCancel={() => setPendingConfirm(null)}
       />
-    </>
+    </div>
   );
 }
 

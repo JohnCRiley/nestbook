@@ -2,7 +2,7 @@ import { useT } from '../i18n/LocaleContext.jsx';
 
 /**
  * Reusable pagination bar.
- * Always renders when total > 0 so page layout height stays stable.
+ * Returns null when all items fit on one page — no chrome when not needed.
  *
  * Props:
  *   page        {number}   — current 1-based page number
@@ -14,9 +14,8 @@ import { useT } from '../i18n/LocaleContext.jsx';
 export default function Pagination({ page, totalPages, total, limit, onPage }) {
   const t = useT();
 
-  if (!total) return null;
+  if (!total || totalPages <= 1) return null;
 
-  const tp   = totalPages || 1;
   const from = Math.min((page - 1) * limit + 1, total);
   const to   = Math.min(page * limit, total);
 
@@ -37,13 +36,13 @@ export default function Pagination({ page, totalPages, total, limit, onPage }) {
         </button>
         <span className="pagination-page">
           {typeof t('pageXofY') === 'function'
-            ? t('pageXofY')(page, tp)
-            : `${page} / ${tp}`}
+            ? t('pageXofY')(page, totalPages)
+            : `${page} / ${totalPages}`}
         </span>
         <button
           className="pagination-btn"
           onClick={() => onPage(page + 1)}
-          disabled={page >= tp}
+          disabled={page >= totalPages}
         >
           {t('nextPage')}
         </button>

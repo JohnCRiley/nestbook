@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useLayoutEffect, useCallback } from 'react';
 
 /**
  * Calculates how many rows fit in the available viewport height.
@@ -18,7 +18,7 @@ export default function usePageSize(rowHeight, reservedHeight, min = 5, max = 50
 
   const [pageSize, setPageSize] = useState(calc);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPageSize(calc());
     const ro = new ResizeObserver(() => setPageSize(calc()));
     ro.observe(document.documentElement);
