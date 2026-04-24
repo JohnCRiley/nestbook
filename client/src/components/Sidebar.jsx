@@ -30,7 +30,8 @@ const ALL_NAV_ITEMS = [
   { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];
 
-const KIOSK_NAV_KEYS = new Set(['calendar', 'bookings']);
+const KIOSK_NAV_KEYS     = new Set(['calendar', 'bookings']);
+const RECEPTION_NAV_KEYS = new Set(['dashboard', 'calendar', 'bookings', 'guests', 'rooms']);
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -76,7 +77,9 @@ export default function Sidebar() {
   const isReceptionKiosk = kiosk && user?.role === 'reception';
   const navItems = isReceptionKiosk
     ? ALL_NAV_ITEMS.filter((i) => KIOSK_NAV_KEYS.has(i.key))
-    : ALL_NAV_ITEMS;
+    : user?.role === 'reception'
+      ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key))
+      : ALL_NAV_ITEMS;
 
   function handleLogout() {
     logout();

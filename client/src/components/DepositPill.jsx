@@ -1,7 +1,7 @@
 import { useT } from '../i18n/LocaleContext.jsx';
 
 const pillBase = {
-  display: 'inline-flex', alignItems: 'center', gap: 4,
+  display: 'inline-flex', alignItems: 'center',
   fontSize: '0.72rem', fontWeight: 700,
   borderRadius: 4, padding: '2px 8px',
 };
@@ -13,23 +13,23 @@ export default function DepositPill({ booking, property }) {
 
   if (booking.deposit_paid) {
     return (
-      <span style={{ ...pillBase, background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>
-        💰 {t('depositPaidPill')}
+      <span style={{ ...pillBase, background: '#d9f0cc', color: '#1a4710', border: '1px solid #86efac' }}>
+        {t('depositPaidPill')}
       </span>
     );
   }
 
   if (booking.deposit_requested_at) {
     return (
-      <span style={{ ...pillBase, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
-        💰 {t('depositRequestedPill')}
+      <span style={{ ...pillBase, background: '#fed7aa', color: '#9a3412', border: '1px solid #fdba74' }}>
+        {t('depositRequestedPill')}
       </span>
     );
   }
 
   return (
-    <span style={{ ...pillBase, background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' }}>
-      💰 {t('depositPill')}
+    <span style={{ ...pillBase, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}>
+      {t('depositPill')}
     </span>
   );
 }

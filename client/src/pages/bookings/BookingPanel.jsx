@@ -171,13 +171,14 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Breakfast strip ───────────────────────────────────────────────── */}
-      {property?.breakfast_included && (
+      {!!property?.breakfast_included && (
         <div style={{
           padding: '8px 22px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: '0.82rem', color: '#166534', fontWeight: 600,
+          fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
+          background: '#d9f0cc',
         }}>
-          🍳 {t('fBreakfast')}
+          {t('fBreakfast')}
         </div>
       )}
 

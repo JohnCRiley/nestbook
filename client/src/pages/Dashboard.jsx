@@ -587,12 +587,12 @@ function BookingRow({ booking: b, property, right, nightWord, onClick }) {
       <div className="booking-guest">
         <div className="guest-name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {b.guest_first_name} {b.guest_last_name}
-          {property?.breakfast_included && (
+          {!!property?.breakfast_included && (
             <span style={{
-              fontSize: '0.65rem', fontWeight: 700, color: '#166534',
-              background: '#dcfce7', border: '1px solid #bbf7d0',
+              fontSize: '0.65rem', fontWeight: 700, color: '#1a4710',
+              background: '#d9f0cc', border: '1px solid #86efac',
               borderRadius: 3, padding: '1px 5px',
-            }}>🍳</span>
+            }}>Breakfast included</span>
           )}
         </div>
         <div className="booking-meta">

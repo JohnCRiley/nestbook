@@ -276,12 +276,12 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
         {/* Breakfast badge */}
         {breakfastIncluded && (
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: '0.72rem', fontWeight: 600, color: '#166534',
-            background: '#dcfce7', border: '1px solid #bbf7d0',
+            display: 'inline-flex', alignItems: 'center',
+            fontSize: '0.72rem', fontWeight: 600, color: '#1a4710',
+            background: '#d9f0cc', border: '1px solid #86efac',
             borderRadius: 4, padding: '2px 7px', marginBottom: 6,
           }}>
-            🍳 {t('fBreakfast')}
+            {t('fBreakfast')}
           </div>
         )}
 
