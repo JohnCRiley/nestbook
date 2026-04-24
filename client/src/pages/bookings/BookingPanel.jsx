@@ -174,7 +174,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <DepositPill booking={b} property={property} />
-            {b.deposit_paid && b.deposit_paid_at && (
+            {!!b.deposit_paid && b.deposit_paid_at && (
               <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
                 {t('depositPaidOn')} {formatDateMedium(b.deposit_paid_at.slice(0, 10), locale)}
               </span>
@@ -600,7 +600,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
 
   const [editing,   setEditing]   = useState(false);
   const [bfMorning, setBfMorning] = useState(defaultMorning);
-  const [bfGuests,  setBfGuests]  = useState(b.num_guests || 1);
+  const [bfGuests,  setBfGuests]  = useState(parseInt(b.num_guests, 10) || 1);
   const [bfPrice,   setBfPrice]   = useState(parseFloat(property?.breakfast_price) || 0);
   const [saving,    setSaving]    = useState(false);
 
@@ -609,7 +609,9 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
   const servings     = bfMorning <= maxMorning
     ? Math.max(1, nightsBetween(addDays(bfMorning, -1), b.check_out_date))
     : 0;
-  const previewTotal = bfGuests * servings * bfPrice;
+  const bfGuestsNum  = parseInt(bfGuests, 10) || 1;
+  const bfPriceNum   = parseFloat(bfPrice) || 0;
+  const previewTotal = bfGuestsNum * servings * bfPriceNum;
 
   const handleAdd = async () => {
     setSaving(true);
@@ -620,7 +622,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
         ...b,
         breakfast_added: 1,
         breakfast_start_date: addDays(bfMorning, -1),
-        breakfast_guests: bfGuests,
+        breakfast_guests: bfGuestsNum,
       }),
     });
     if (res.ok) {
@@ -651,7 +653,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
   if (b.breakfast_added) {
     const storedStart = b.breakfast_start_date || b.check_in_date;
     const morningDate = addDays(storedStart, 1);
-    const guests      = b.breakfast_guests || b.num_guests || 1;
+    const guests      = parseInt(b.breakfast_guests, 10) || parseInt(b.num_guests, 10) || 1;
     return (
       <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)', background: '#f0fdf4' }}>
         {!editing ? (
@@ -673,6 +675,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
         ) : (
           <AddBreakfastForm
             b={b} bfMorning={bfMorning} bfGuests={bfGuests} bfPrice={bfPrice}
+            bfGuestsNum={bfGuestsNum} bfPriceNum={bfPriceNum}
             servings={servings} previewTotal={previewTotal}
             minMorning={minMorning} maxMorning={maxMorning}
             currencySymbol={currencySymbol} fmtCurrency={fmtCurrency}
@@ -699,6 +702,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
       ) : (
         <AddBreakfastForm
           b={b} bfMorning={bfMorning} bfGuests={bfGuests} bfPrice={bfPrice}
+          bfGuestsNum={bfGuestsNum} bfPriceNum={bfPriceNum}
           servings={servings} previewTotal={previewTotal}
           minMorning={minMorning} maxMorning={maxMorning}
           currencySymbol={currencySymbol} fmtCurrency={fmtCurrency}
@@ -711,7 +715,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
   );
 }
 
-function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, servings, previewTotal, minMorning, maxMorning, currencySymbol, fmtCurrency, locale, t, saving, onMorningChange, onGuestsChange, onPriceChange, onSave, onCancel }) {
+function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPriceNum, servings, previewTotal, minMorning, maxMorning, currencySymbol, fmtCurrency, locale, t, saving, onMorningChange, onGuestsChange, onPriceChange, onSave, onCancel }) {
   return (
     <div style={{ fontSize: '0.85rem' }}>
       <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>{t('bfAddTitle')}</div>
@@ -756,7 +760,7 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, servings, previewTo
       </div>
       {servings > 0 && (
         <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: 10, background: '#f0fdf4', padding: '5px 8px', borderRadius: 5 }}>
-          {t('bfPreviewCalc')(servings, bfGuests, `${currencySymbol}${bfPrice.toFixed(2)}`, fmtCurrency(previewTotal))}
+          {t('bfPreviewCalc')(servings, bfGuestsNum, `${currencySymbol}${bfPriceNum.toFixed(2)}`, fmtCurrency(previewTotal))}
         </div>
       )}
       <div style={{ display: 'flex', gap: 6 }}>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { nightsBetween } from '../../utils/format.js';
+import { nightsBetween, addDays } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
@@ -18,19 +18,15 @@ const EMPTY = {
   firstName: '', lastName: '', email: '', phone: '',
   checkIn: '', checkOut: '',
   roomId: '',
-  numGuests: 1, source: 'direct', totalPrice: '', notes: '',
-  breakfastAdded: false,
+  numGuests: 1, source: 'direct', notes: '',
+  breakfastType: 'none',   // 'none' | 'free' | 'paid'
+  bfMorning: '',            // YYYY-MM-DD first morning served
+  bfGuests: 1,
+  bfPrice: '',              // price per person per morning
 };
 
-/**
- * New booking modal — redesigned with smart guest search, sectioned layout,
- * and inline new-guest creation.
- *
- * Props unchanged for callers: rooms, onClose, onSuccess, initialValues.
- * `guests` prop is accepted but unused (kept for backward compat).
- */
 export default function NewBookingModal({ rooms, onClose, onSuccess, initialValues }) {
-  const { currencySymbol, property } = useLocale();
+  const { currencySymbol, property, fmtCurrency } = useLocale();
   const t = useT();
 
   const [form, setForm] = useState({
@@ -45,7 +41,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const [selectedGuestName, setSelectedGuestName] = useState('');
   const [suggestions,       setSuggestions]       = useState([]);
   const [showSuggestions,   setShowSuggestions]   = useState(false);
-  const searchDebounce  = useRef(null);
+  const searchDebounce   = useRef(null);
   const lastNameInputRef = useRef(null);
   const suggestionsRef   = useRef(null);
 
@@ -54,9 +50,9 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const [availabilityError, setAvailabilityError] = useState(null);
 
   // ── Submit state ───────────────────────────────────────────────────────────
-  const [submitting,    setSubmitting]    = useState(false);
-  const [error,         setError]         = useState(null);
-  const [showDiscard,   setShowDiscard]   = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [error,       setError]       = useState(null);
+  const [showDiscard, setShowDiscard] = useState(false);
 
   // ── Last name search — debounced ───────────────────────────────────────────
   useEffect(() => {
@@ -85,7 +81,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     if (!showSuggestions) return;
     const close = (e) => {
       if (
-        suggestionsRef.current  && !suggestionsRef.current.contains(e.target) &&
+        suggestionsRef.current   && !suggestionsRef.current.contains(e.target) &&
         lastNameInputRef.current && !lastNameInputRef.current.contains(e.target)
       ) setShowSuggestions(false);
     };
@@ -133,23 +129,23 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       .catch(() => {});
   }, [form.roomId, form.checkIn, form.checkOut, t]);
 
-  // ── Auto-calculate total price ─────────────────────────────────────────────
+  // ── Keep bfMorning inside valid range when dates or type change ────────────
   useEffect(() => {
-    const room = rooms.find(r => r.id === Number(form.roomId));
-    if (room && form.checkIn && form.checkOut && form.checkOut > form.checkIn) {
-      setForm(prev => ({
-        ...prev,
-        totalPrice: room.price_per_night * nightsBetween(form.checkIn, form.checkOut),
-      }));
-    }
-  }, [form.roomId, form.checkIn, form.checkOut, rooms]);
+    if (form.breakfastType !== 'paid' || !form.checkIn) return;
+    const minMorning = addDays(form.checkIn, 1);
+    const maxMorning = form.checkOut;
+    setForm(prev => {
+      if (!prev.bfMorning || prev.bfMorning < minMorning) return { ...prev, bfMorning: minMorning };
+      if (maxMorning && prev.bfMorning > maxMorning)      return { ...prev, bfMorning: maxMorning };
+      return prev;
+    });
+  }, [form.breakfastType, form.checkIn, form.checkOut]);
 
   // ── Field change handler ───────────────────────────────────────────────────
   function set(field) {
     return (e) => {
       const val = e.target.value;
       setForm(prev => ({ ...prev, [field]: val }));
-      // Editing guest name/contact after a selection → deselect the existing guest
       if (['firstName', 'lastName', 'email', 'phone'].includes(field) && guestId) {
         setGuestId(null);
         setSelectedGuestName('');
@@ -170,6 +166,28 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     setSuggestions([]);
     setShowSuggestions(false);
   }
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const datesValid        = !!(form.checkIn && form.checkOut && form.checkOut > form.checkIn);
+  const nightsCount       = datesValid ? nightsBetween(form.checkIn, form.checkOut) : null;
+  const selectedRoom      = rooms.find(r => r.id === Number(form.roomId));
+  const availableRooms    = datesValid
+    ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
+    : [];
+  const roomPricePerNight = selectedRoom?.price_per_night ?? 0;
+  const roomSubtotal      = nightsCount ? nightsCount * roomPricePerNight : 0;
+  const bfMinMorning      = form.checkIn  ? addDays(form.checkIn, 1) : '';
+  const bfMaxMorning      = form.checkOut || '';
+  const bfMorningOk       = form.breakfastType === 'paid' && !!form.bfMorning
+      && (!bfMinMorning || form.bfMorning >= bfMinMorning)
+      && (!bfMaxMorning || form.bfMorning <= bfMaxMorning);
+  const bfServings        = bfMorningOk
+      ? Math.max(1, nightsBetween(addDays(form.bfMorning, -1), form.checkOut))
+      : 0;
+  const bfPriceNum        = parseFloat(form.bfPrice) || 0;
+  const bfGuestsNum       = parseInt(form.bfGuests, 10) || 1;
+  const bfSubtotal        = form.breakfastType === 'paid' ? bfGuestsNum * bfServings * bfPriceNum : 0;
+  const totalPrice        = roomSubtotal + bfSubtotal;
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   async function handleSubmit(e) {
@@ -192,7 +210,6 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     setSubmitting(true);
     let resolvedGuestId = guestId;
 
-    // Create new guest inline if no existing guest was selected
     if (!resolvedGuestId) {
       try {
         const res = await apiFetch('/api/guests', {
@@ -217,23 +234,35 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       }
     }
 
-    // Create the booking
+    const bfStartDate = form.breakfastType === 'paid'
+      ? addDays(form.bfMorning, -1)
+      : form.breakfastType === 'free'
+      ? form.checkIn
+      : null;
+    const bfGuestCount = form.breakfastType === 'paid'
+      ? bfGuestsNum
+      : form.breakfastType === 'free'
+      ? (parseInt(form.numGuests, 10) || 1)
+      : 0;
+
     try {
       const res = await apiFetch('/api/bookings', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id:    property?.id ?? 1,
-          room_id:        Number(form.roomId),
-          guest_id:       resolvedGuestId,
-          check_in_date:  form.checkIn,
-          check_out_date: form.checkOut,
-          num_guests:     Number(form.numGuests),
-          source:         form.source,
-          notes:          form.notes || null,
-          total_price:    form.totalPrice !== '' ? Number(form.totalPrice) : null,
-          status:         'confirmed',
-          breakfast_added: form.breakfastAdded ? 1 : 0,
+          property_id:          property?.id ?? 1,
+          room_id:              Number(form.roomId),
+          guest_id:             resolvedGuestId,
+          check_in_date:        form.checkIn,
+          check_out_date:       form.checkOut,
+          num_guests:           Number(form.numGuests),
+          source:               form.source,
+          notes:                form.notes || null,
+          total_price:          totalPrice > 0 ? totalPrice : null,
+          status:               'confirmed',
+          breakfast_added:      form.breakfastType !== 'none' ? 1 : 0,
+          breakfast_start_date: bfStartDate,
+          breakfast_guests:     bfGuestCount,
         }),
       });
       if (!res.ok) {
@@ -247,17 +276,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     }
   }
 
-  // ── Derived values ─────────────────────────────────────────────────────────
-  const datesValid   = !!(form.checkIn && form.checkOut && form.checkOut > form.checkIn);
-  const nightsCount  = datesValid ? nightsBetween(form.checkIn, form.checkOut) : null;
-  const selectedRoom = rooms.find(r => r.id === Number(form.roomId));
-  const availableRooms = datesValid
-    ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
-    : [];
-
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    // NO onClick on overlay — backdrop does not close this modal
     <div className="modal-overlay">
       <div className="modal modal--new-booking" role="dialog" aria-label={t('moNewTitle')}>
 
@@ -431,6 +451,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     </select>
                   )}
                 </div>
+
+                {/* ── Breakfast options ──────────────────────────────────── */}
                 {selectedRoom?.breakfast_included ? (
                   <div className="form-group span-2" style={{ marginTop: 8 }}>
                     <span style={{
@@ -443,17 +465,121 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     </span>
                   </div>
                 ) : selectedRoom ? (
-                  <div className="form-group span-2" style={{ marginTop: 4 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <div className="form-group span-2" style={{ marginTop: 6 }}>
+
+                    {/* Option A: Complimentary */}
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 10 }}>
                       <input
                         type="checkbox"
-                        checked={!!form.breakfastAdded}
-                        onChange={(e) => setForm(prev => ({ ...prev, breakfastAdded: e.target.checked }))}
+                        checked={form.breakfastType === 'free'}
+                        onChange={(e) => setForm(prev => ({
+                          ...prev,
+                          breakfastType: e.target.checked ? 'free' : 'none',
+                        }))}
+                        style={{ marginTop: 3, flexShrink: 0 }}
                       />
-                      <span className="form-label" style={{ marginBottom: 0 }}>{t('addBreakfastLabel')}</span>
+                      <div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1f2937' }}>
+                          {t('nbBfComplimentaryLabel')}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 1 }}>
+                          {t('nbBfComplimentaryHint')}
+                        </div>
+                      </div>
                     </label>
+
+                    {/* Option B: Paid */}
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={form.breakfastType === 'paid'}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setForm(prev => ({
+                            ...prev,
+                            breakfastType: checked ? 'paid' : 'none',
+                            bfMorning: checked && prev.checkIn ? addDays(prev.checkIn, 1) : prev.bfMorning,
+                            bfGuests:  parseInt(prev.numGuests, 10) || 1,
+                            bfPrice:   checked && !prev.bfPrice
+                              ? (parseFloat(property?.breakfast_price) || '')
+                              : prev.bfPrice,
+                          }));
+                        }}
+                        style={{ marginTop: 3, flexShrink: 0 }}
+                      />
+                      <div style={{ width: '100%' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1f2937' }}>
+                          {t('nbBfPaidLabel')}
+                        </div>
+
+                        {/* Paid breakfast details — expands when checked */}
+                        {form.breakfastType === 'paid' && datesValid && (
+                          <div style={{
+                            marginTop: 8, padding: '10px 12px',
+                            background: '#f0fdf4', borderRadius: 6,
+                            border: '1px solid #86efac',
+                          }}>
+                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 8 }}>
+                              {t('bfMorningHint')}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+                                  {t('bfAddFrom')}
+                                </div>
+                                <input
+                                  type="date"
+                                  className="form-control"
+                                  value={form.bfMorning}
+                                  min={bfMinMorning}
+                                  max={bfMaxMorning}
+                                  onChange={(e) => setForm(prev => ({ ...prev, bfMorning: e.target.value }))}
+                                />
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+                                  {t('bfGuestCountLabel')}
+                                </div>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={form.bfGuests}
+                                  min={1}
+                                  max={parseInt(form.numGuests, 10) || 20}
+                                  onChange={(e) => setForm(prev => ({ ...prev, bfGuests: parseInt(e.target.value, 10) || 1 }))}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+                                {t('bfPricePerPersonDay')} ({currencySymbol})
+                              </div>
+                              <input
+                                type="number"
+                                className="form-control"
+                                value={form.bfPrice}
+                                min={0}
+                                step={0.01}
+                                style={{ maxWidth: 120 }}
+                                onChange={(e) => setForm(prev => ({ ...prev, bfPrice: e.target.value }))}
+                              />
+                            </div>
+                            {bfServings > 0 && bfPriceNum > 0 && (
+                              <div style={{
+                                marginTop: 8, fontSize: '0.8rem', color: '#166534',
+                                background: '#d9f0cc', padding: '5px 8px', borderRadius: 5,
+                              }}>
+                                {t('bfPreviewCalc')(bfServings, bfGuestsNum, `${currencySymbol}${bfPriceNum.toFixed(2)}`, fmtCurrency(bfSubtotal))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+
                   </div>
                 ) : null}
+
               </div>
             </div>
 
@@ -494,24 +620,44 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                   </select>
                 </div>
 
-                {/* Total price */}
-                <div className="form-group span-2">
-                  <label className="form-label">{t('totalPriceLabel')} ({currencySymbol})</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={form.totalPrice}
-                    min="0"
-                    step="0.01"
-                    onChange={set('totalPrice')}
-                    placeholder={t('autoCalcHint')}
-                  />
-                  {selectedRoom && nightsCount && (
-                    <span className="form-hint">
-                      {currencySymbol}{selectedRoom.price_per_night} × {nightsCount} = {currencySymbol}{selectedRoom.price_per_night * nightsCount}
-                    </span>
-                  )}
-                </div>
+                {/* Price breakdown — shown once room + dates are selected */}
+                {selectedRoom && nightsCount && (
+                  <div className="form-group span-2">
+                    <div style={{
+                      background: '#f8fafc', border: '1px solid var(--border)',
+                      borderRadius: 8, overflow: 'hidden', fontSize: '0.85rem',
+                    }}>
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                      }}>
+                        <span style={{ color: '#64748b' }}>
+                          {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${roomPricePerNight.toFixed(2)}`)}
+                        </span>
+                        <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
+                      </div>
+                      {form.breakfastType === 'paid' && bfSubtotal > 0 && (
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                          background: '#f0fdf4',
+                        }}>
+                          <span style={{ color: '#166534' }}>
+                            {t('nbPriceBreakdownBf')(bfGuestsNum, bfServings, `${currencySymbol}${bfPriceNum.toFixed(2)}`)}
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#166534' }}>{fmtCurrency(bfSubtotal)}</span>
+                        </div>
+                      )}
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        padding: '9px 12px',
+                      }}>
+                        <span style={{ fontWeight: 700, color: '#1a4710' }}>{t('coTotalDue')}</span>
+                        <span style={{ fontWeight: 800, color: '#1a4710', fontSize: '1rem' }}>{fmtCurrency(totalPrice)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Notes */}
                 <div className="form-group span-2">
