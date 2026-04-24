@@ -58,6 +58,8 @@ const ENRICHED_SELECT = `
     b.deposit_requested_at,
     b.deposit_paid_at,
     b.breakfast_added,
+    b.breakfast_start_date,
+    b.breakfast_guests,
     b.payment_method,
     b.checked_out_at,
     g.first_name   AS guest_first_name,
@@ -247,7 +249,8 @@ bookingsRouter.post('/', (req, res) => {
     const {
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
-      num_guests, status, source, notes, total_price, breakfast_added
+      num_guests, status, source, notes, total_price, breakfast_added,
+      breakfast_start_date, breakfast_guests
     } = req.body;
 
     if (!property_id || !room_id || !guest_id || !check_in_date || !check_out_date) {
@@ -270,8 +273,9 @@ bookingsRouter.post('/', (req, res) => {
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price, breakfast_added)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         num_guests, status, source, notes, total_price, breakfast_added,
+         breakfast_start_date, breakfast_guests)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
@@ -280,7 +284,9 @@ bookingsRouter.post('/', (req, res) => {
       source          ?? 'direct',
       notes           ?? null,
       total_price     ?? null,
-      breakfast_added ? 1 : 0
+      breakfast_added ? 1 : 0,
+      breakfast_start_date ?? null,
+      breakfast_guests     ?? 0
     );
 
     const newBooking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(result.lastInsertRowid);
@@ -303,6 +309,7 @@ bookingsRouter.put('/:id', (req, res) => {
     const {
       room_id, guest_id, check_in_date, check_out_date,
       num_guests, status, source, notes, total_price, breakfast_added,
+      breakfast_start_date, breakfast_guests,
       payment_method, checked_out_at,
     } = req.body;
 
@@ -318,13 +325,16 @@ bookingsRouter.put('/:id', (req, res) => {
       UPDATE bookings
       SET room_id = ?, guest_id = ?, check_in_date = ?, check_out_date = ?,
           num_guests = ?, status = ?, source = ?, notes = ?, total_price = ?,
-          breakfast_added = ?, payment_method = ?,
+          breakfast_added = ?, breakfast_start_date = ?, breakfast_guests = ?,
+          payment_method = ?,
           checked_out_at = COALESCE(?, checked_out_at)
       WHERE id = ?
     `).run(
       room_id, guest_id, check_in_date, check_out_date,
       num_guests, status, source, notes, total_price,
       breakfast_added ? 1 : 0,
+      breakfast_start_date ?? null,
+      breakfast_guests ?? 0,
       payment_method ?? null,
       checked_out_at ?? null,
       req.params.id

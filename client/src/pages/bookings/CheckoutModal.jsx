@@ -31,12 +31,13 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
   const pricePerNight   = b.price_per_night ?? 0;
   const roomSubtotal    = nights * pricePerNight;
 
-  const breakfastFree   = !!(property?.breakfast_included || b.room_breakfast_included);
+  const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
   const bfPricePerPerson = parseFloat(property?.breakfast_price) || 0;
-  const breakfastSubtotal = breakfastCharged
-    ? (b.num_guests || 1) * nights * bfPricePerPerson
-    : 0;
+  const bfStartDate      = b.breakfast_start_date || b.check_in_date;
+  const bfDays           = breakfastCharged ? nightsBetween(bfStartDate, b.check_out_date) : 0;
+  const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
+  const breakfastSubtotal = breakfastCharged ? bfGuests * bfDays * bfPricePerPerson : 0;
 
   const depositPaid     = !!b.deposit_paid;
   const depositAmount   = parseFloat(property?.deposit_amount) || 0;
@@ -103,12 +104,10 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
                 />
               )}
               {breakfastCharged && (
-                <>
-                  <LineRow
-                    label={`${t('addBreakfastLabel')} (${b.num_guests || 1} × ${nights} × ${currencySymbol}${bfPricePerPerson.toFixed(2)})`}
-                    value={fmtCurrency(breakfastSubtotal)}
-                  />
-                </>
+                <LineRow
+                  label={`${t('fBreakfast')} (${bfGuests} × ${bfDays} × ${currencySymbol}${bfPricePerPerson.toFixed(2)})`}
+                  value={fmtCurrency(breakfastSubtotal)}
+                />
               )}
               {b.notes && (
                 <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 6, padding: '6px 0 2px', borderTop: '1px solid #f1f5f9' }}>
@@ -251,6 +250,8 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
           breakfastCharged={breakfastCharged}
           breakfastSubtotal={breakfastSubtotal}
           bfPricePerPerson={bfPricePerPerson}
+          breakfastGuests={bfGuests}
+          breakfastDays={bfDays}
           depositPaid={depositPaid}
           depositAmount={depositAmount}
           totalDue={totalDue}

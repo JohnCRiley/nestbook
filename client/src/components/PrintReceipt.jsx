@@ -203,6 +203,7 @@ export default function PrintReceipt({
   booking: b, property,
   nights, pricePerNight, roomSubtotal,
   breakfastFree, breakfastCharged, breakfastSubtotal, bfPricePerPerson,
+  breakfastGuests, breakfastDays,
   depositPaid, depositAmount, totalDue,
   paymentMethod,
   onClose,
@@ -232,7 +233,7 @@ export default function PrintReceipt({
     breakfastComplimentary: t('coComplimentary'),
     breakfastCharged,
     breakfastChargeLine: breakfastCharged
-      ? `${t('addBreakfastLabel')} (${b.num_guests || 1} × ${nights} × ${fc(bfPricePerPerson, symbol)})`
+      ? `${t('fBreakfast')} (${breakfastGuests ?? (b.num_guests || 1)} × ${breakfastDays ?? nights} × ${fc(bfPricePerPerson, symbol)})`
       : '',
     breakfastSubtotalFmt: fc(breakfastSubtotal, symbol),
     depositPaidLine: depositPaid && depositAmount > 0,

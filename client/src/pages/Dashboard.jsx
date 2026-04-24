@@ -434,6 +434,7 @@ export default function Dashboard() {
                 }
                 nightWord={t('nightWord')}
                 showDue
+                showBreakfast
                 onClick={() => setSelectedBooking(b)}
               />
             ))
@@ -441,6 +442,9 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* ── Breakfast service list ─────────────────────────────────────── */}
+      <BreakfastServiceList bookings={bookings} property={property} t={t} />
 
       {/* ── Upcoming ───────────────────────────────────────────────────── */}
       <div className="section-card" style={{ marginTop: 20 }}>
@@ -582,15 +586,33 @@ function calcDue(b, property) {
   const bfFree     = !!(property?.breakfast_included || b.room_breakfast_included);
   const bfCharged  = !!b.breakfast_added && !bfFree;
   const bfPrice    = parseFloat(property?.breakfast_price) || 0;
-  const bfSub      = bfCharged ? (b.num_guests || 1) * nights * bfPrice : 0;
+  const bfStart    = b.breakfast_start_date || b.check_in_date;
+  const bfDays     = bfCharged ? nightsBetween(bfStart, b.check_out_date) : 0;
+  const bfGuests   = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
+  const bfSub      = bfCharged ? bfGuests * bfDays * bfPrice : 0;
   const depDeduct  = b.deposit_paid ? (parseFloat(property?.deposit_amount) || 0) : 0;
   return Math.max(0, room + bfSub - depDeduct);
 }
 
-function BookingRow({ booking: b, property, right, nightWord, onClick, showDue }) {
+function bfStatusBadge(b, property, t) {
+  if (property?.breakfast_included || b.room_breakfast_included) {
+    return { text: t('bfStatusIncluded'), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+  }
+  if (b.breakfast_added && b.breakfast_start_date) {
+    return { text: t('bfStatusFrom')(b.breakfast_start_date), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+  }
+  if (b.breakfast_added) {
+    return { text: t('bfStatusIncluded'), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+  }
+  return null;
+}
+
+function BookingRow({ booking: b, property, right, nightWord, onClick, showDue, showBreakfast }) {
   const { fmtCurrency } = useLocale();
+  const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const due = showDue ? calcDue(b, property) : null;
+  const bfBadge = showBreakfast ? bfStatusBadge(b, property, t) : null;
   return (
     <div
       className={`booking-row${onClick ? ' booking-row--clickable' : ''}`}
@@ -602,12 +624,12 @@ function BookingRow({ booking: b, property, right, nightWord, onClick, showDue }
       <div className="booking-guest">
         <div className="guest-name" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {b.guest_first_name} {b.guest_last_name}
-          {(!!property?.breakfast_included || !!b.room_breakfast_included) && (
+          {bfBadge && (
             <span style={{
-              fontSize: '0.65rem', fontWeight: 700, color: '#1a4710',
-              background: '#d9f0cc', border: '1px solid #86efac',
+              fontSize: '0.65rem', fontWeight: 700, color: bfBadge.color,
+              background: bfBadge.bg, border: `1px solid ${bfBadge.border}`,
               borderRadius: 3, padding: '1px 5px',
-            }}>Breakfast included</span>
+            }}>{bfBadge.text}</span>
           )}
         </div>
         <div className="booking-meta">
@@ -615,11 +637,88 @@ function BookingRow({ booking: b, property, right, nightWord, onClick, showDue }
         </div>
         {due != null && (
           <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a4710', marginTop: 2 }}>
-            Due on checkout: {fmtCurrency(due)}
+            {t('coTotalDue')}: {fmtCurrency(due)}
           </div>
         )}
       </div>
       <div className="booking-right">{right}</div>
+    </div>
+  );
+}
+
+function BreakfastServiceList({ bookings, property, t }) {
+  const today = localToday();
+  const inHouse = bookings.filter((b) =>
+    b.status === 'arriving' &&
+    b.check_in_date <= today &&
+    b.check_out_date > today
+  );
+
+  if (inHouse.length === 0) return null;
+
+  const covers = inHouse.reduce((sum, b) => {
+    if (property?.breakfast_included || b.room_breakfast_included) {
+      return sum + (b.num_guests || 1);
+    }
+    if (b.breakfast_added) {
+      return sum + (b.breakfast_guests || b.num_guests || 1);
+    }
+    return sum;
+  }, 0);
+
+  return (
+    <div className="section-card" style={{ marginTop: 20 }}>
+      <div className="section-head">
+        <h2>{t('bfServiceTitle')}</h2>
+        <span className="count-pill">{covers}</span>
+      </div>
+      {covers === 0 ? (
+        <div className="empty-state">{t('bfNoCovers')}</div>
+      ) : (
+        <>
+          {inHouse.map((b) => {
+            const bfFree = !!(property?.breakfast_included || b.room_breakfast_included);
+            const bfAdded = !!b.breakfast_added;
+            let status, covers;
+            if (bfFree) {
+              status = t('bfStatusIncluded');
+              covers = b.num_guests || 1;
+            } else if (bfAdded) {
+              status = b.breakfast_start_date
+                ? t('bfStatusFrom')(b.breakfast_start_date)
+                : t('bfStatusIncluded');
+              covers = b.breakfast_guests || b.num_guests || 1;
+            } else {
+              status = t('bfStatusNone');
+              covers = 0;
+            }
+            return (
+              <div key={b.id} className="booking-row" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="booking-guest">
+                  <div className="guest-name">{b.guest_first_name} {b.guest_last_name}</div>
+                  <div className="booking-meta">{b.room_name}</div>
+                </div>
+                <div className="booking-right" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {covers > 0 && (
+                    <span style={{
+                      fontSize: '0.78rem', fontWeight: 700,
+                      color: '#1a4710', background: '#d9f0cc',
+                      border: '1px solid #86efac', borderRadius: 3, padding: '2px 7px',
+                    }}>{covers}x</span>
+                  )}
+                  <span style={{
+                    fontSize: '0.78rem', color: covers > 0 ? '#166534' : '#6b7280',
+                    fontWeight: covers > 0 ? 600 : 400,
+                  }}>{status}</span>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a4710', borderTop: '1.5px solid #d9f0cc' }}>
+            {t('bfCovers')(covers)}
+          </div>
+        </>
+      )}
     </div>
   );
 }

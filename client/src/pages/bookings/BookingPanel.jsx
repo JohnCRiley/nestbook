@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
-import { formatDateMedium, nightsBetween } from '../../utils/format.js';
+import { formatDateMedium, nightsBetween, localToday } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
@@ -196,7 +196,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Breakfast strip ───────────────────────────────────────────────── */}
-      {(!!property?.breakfast_included || !!b.room_breakfast_included) && (
+      {(!!property?.breakfast_included || !!b.room_breakfast_included) ? (
         <div style={{
           padding: '8px 22px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', gap: 6,
@@ -204,11 +204,15 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           background: '#d9f0cc',
         }}>
           {t('fBreakfast')}
-          {!!b.breakfast_added && (
-            <span style={{ fontWeight: 400, fontSize: '0.78rem', color: '#2d6a1f', marginLeft: 4 }}>
-              — {t('breakfastAddedNote')}
-            </span>
-          )}
+        </div>
+      ) : !!b.breakfast_added && (
+        <div style={{
+          padding: '8px 22px', borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
+          background: '#d9f0cc',
+        }}>
+          {t('bfBadgeFrom')(b.breakfast_start_date || b.check_in_date)}
         </div>
       )}
 
@@ -230,6 +234,16 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           onCancelClick={() => setShowCancelConfirm(true)}
           onCheckIn={handleCheckIn}
           onCheckOut={() => setShowCheckout(true)}
+        />
+      )}
+
+      {/* ── Mid-stay breakfast management ──────────────────────────────────── */}
+      {b.status === 'arriving' && !property?.breakfast_included && !b.room_breakfast_included && (
+        <AddBreakfastSection
+          b={b} property={property}
+          onBookingUpdated={onBookingUpdated}
+          t={t} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} locale={locale}
+          showToast={showToast}
         />
       )}
 
@@ -331,7 +345,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpBfFree   = !!(property?.breakfast_included || b.room_breakfast_included);
         const rpBfChg    = !!b.breakfast_added && !rpBfFree;
         const rpBfPrice  = parseFloat(property?.breakfast_price) || 0;
-        const rpBfSub    = rpBfChg ? (b.num_guests || 1) * rpNights * rpBfPrice : 0;
+        const rpBfStart  = b.breakfast_start_date || b.check_in_date;
+        const rpBfDays   = rpBfChg ? nightsBetween(rpBfStart, b.check_out_date) : 0;
+        const rpBfGuests = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
+        const rpBfSub    = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
         const rpDepPaid  = !!b.deposit_paid;
         const rpDepAmt   = parseFloat(property?.deposit_amount) || 0;
         const rpTotal    = Math.max(0, rpRoom + rpBfSub - (rpDepPaid ? rpDepAmt : 0));
@@ -341,6 +358,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             nights={rpNights} pricePerNight={rpRate} roomSubtotal={rpRoom}
             breakfastFree={rpBfFree} breakfastCharged={rpBfChg}
             breakfastSubtotal={rpBfSub} bfPricePerPerson={rpBfPrice}
+            breakfastGuests={rpBfGuests} breakfastDays={rpBfDays}
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
             totalDue={rpTotal} paymentMethod={b.payment_method}
             onClose={() => setShowReprint(false)}
@@ -560,6 +578,182 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
   );
 }
 
+// ── AddBreakfastSection ───────────────────────────────────────────────────────
+
+function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, currencySymbol, showToast }) {
+  const today      = localToday();
+  const defaultBfDate = today <= b.check_out_date ? today : b.check_in_date;
+
+  const [editing,  setEditing]  = useState(false);
+  const [bfDate,   setBfDate]   = useState(defaultBfDate);
+  const [bfGuests, setBfGuests] = useState(b.num_guests || 1);
+  const [bfPrice,  setBfPrice]  = useState(parseFloat(property?.breakfast_price) || 0);
+  const [saving,   setSaving]   = useState(false);
+
+  const days         = bfDate < b.check_out_date ? nightsBetween(bfDate, b.check_out_date) : 0;
+  const previewTotal = bfGuests * days * bfPrice;
+
+  const handleAdd = async () => {
+    setSaving(true);
+    const res = await apiFetch(`/api/bookings/${b.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...b,
+        breakfast_added: 1,
+        breakfast_start_date: bfDate,
+        breakfast_guests: bfGuests,
+      }),
+    });
+    if (res.ok) {
+      onBookingUpdated(await res.json());
+      setEditing(false);
+      showToast(t('bfSavedToast'));
+    }
+    setSaving(false);
+  };
+
+  const handleRemove = async () => {
+    const res = await apiFetch(`/api/bookings/${b.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...b,
+        breakfast_added: 0,
+        breakfast_start_date: null,
+        breakfast_guests: 0,
+      }),
+    });
+    if (res.ok) {
+      onBookingUpdated(await res.json());
+      showToast(t('bfRemovedToast'));
+    }
+  };
+
+  if (b.breakfast_added) {
+    const startDate = b.breakfast_start_date || b.check_in_date;
+    const guests    = b.breakfast_guests || b.num_guests || 1;
+    return (
+      <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)', background: '#f0fdf4' }}>
+        {!editing ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+            <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
+              {t('bfAddedFromInfo')(startDate, guests)}
+            </span>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #86efac', background: '#fff', color: '#166534', cursor: 'pointer', fontFamily: 'inherit' }}
+                onClick={() => { setEditing(true); setBfDate(startDate); setBfGuests(guests); }}
+              >{t('bfModify')}</button>
+              <button
+                style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
+                onClick={handleRemove}
+              >{t('bfRemove')}</button>
+            </div>
+          </div>
+        ) : (
+          <AddBreakfastForm
+            b={b} bfDate={bfDate} bfGuests={bfGuests} bfPrice={bfPrice}
+            days={days} previewTotal={previewTotal}
+            currencySymbol={currencySymbol} fmtCurrency={fmtCurrency} today={today} t={t}
+            saving={saving}
+            onDateChange={setBfDate} onGuestsChange={setBfGuests} onPriceChange={setBfPrice}
+            onSave={handleAdd} onCancel={() => setEditing(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)' }}>
+      {!editing ? (
+        <button
+          style={{
+            fontSize: '0.82rem', padding: '6px 14px', borderRadius: 6,
+            border: '1.5px solid #86efac', background: '#f0fdf4',
+            color: '#166534', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+          }}
+          onClick={() => setEditing(true)}
+        >{t('bfAddTitle')}</button>
+      ) : (
+        <AddBreakfastForm
+          b={b} bfDate={bfDate} bfGuests={bfGuests} bfPrice={bfPrice}
+          days={days} previewTotal={previewTotal}
+          currencySymbol={currencySymbol} fmtCurrency={fmtCurrency} today={today} t={t}
+          saving={saving}
+          onDateChange={setBfDate} onGuestsChange={setBfGuests} onPriceChange={setBfPrice}
+          onSave={handleAdd} onCancel={() => setEditing(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddBreakfastForm({ b, bfDate, bfGuests, bfPrice, days, previewTotal, currencySymbol, fmtCurrency, today, t, saving, onDateChange, onGuestsChange, onPriceChange, onSave, onCancel }) {
+  return (
+    <div style={{ fontSize: '0.85rem' }}>
+      <div style={{ fontWeight: 600, color: '#166534', marginBottom: 10 }}>{t('bfAddTitle')}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+        <div>
+          <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>{t('bfAddFrom')}</div>
+          <input
+            type="date"
+            className="panel-field-input"
+            value={bfDate}
+            min={today}
+            max={b.check_out_date}
+            onChange={(e) => onDateChange(e.target.value)}
+          />
+        </div>
+        <div>
+          <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>{t('bfGuestCountLabel')}</div>
+          <input
+            type="number"
+            className="panel-field-input"
+            value={bfGuests}
+            min={1}
+            max={b.num_guests || 1}
+            onChange={(e) => onGuestsChange(Number(e.target.value))}
+          />
+        </div>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+          {t('bfPricePerPersonDay')} ({currencySymbol})
+        </div>
+        <input
+          type="number"
+          className="panel-field-input"
+          value={bfPrice}
+          min={0}
+          step={0.01}
+          onChange={(e) => onPriceChange(parseFloat(e.target.value) || 0)}
+          style={{ maxWidth: 120 }}
+        />
+      </div>
+      {days > 0 && (
+        <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: 10, background: '#f0fdf4', padding: '5px 8px', borderRadius: 5 }}>
+          {t('bfPreviewCalc')(bfGuests, days, `${currencySymbol}${bfPrice.toFixed(2)}`, fmtCurrency(previewTotal))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          className="btn-panel-primary"
+          style={{ fontSize: '0.82rem', padding: '7px 14px' }}
+          onClick={onSave}
+          disabled={saving || days <= 0}
+        >{saving ? t('saving') : t('bfAddBtn')}</button>
+        <button
+          className="btn-secondary"
+          style={{ fontSize: '0.82rem', padding: '7px 12px', border: '1.5px solid var(--border)' }}
+          onClick={onCancel}
+        >{t('cancel')}</button>
+      </div>
+    </div>
+  );
+}
+
 // ── EstimatedTotal ────────────────────────────────────────────────────────────
 
 function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t }) {
@@ -568,7 +762,10 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t })
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
   const bfPrice          = parseFloat(property?.breakfast_price) || 0;
-  const breakfastSub     = breakfastCharged ? (b.num_guests || 1) * nights * bfPrice : 0;
+  const bfStartDate      = b.breakfast_start_date || b.check_in_date;
+  const bfDays           = breakfastCharged ? nightsBetween(bfStartDate, b.check_out_date) : 0;
+  const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
+  const breakfastSub     = breakfastCharged ? bfGuests * bfDays * bfPrice : 0;
   const depositPaid      = !!b.deposit_paid;
   const depositAmount    = parseFloat(property?.deposit_amount) || 0;
   const total            = Math.max(0, roomSubtotal + breakfastSub - (depositPaid ? depositAmount : 0));
@@ -581,7 +778,12 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t })
       <div style={{ fontSize: '0.85rem' }}>
         <ERow label={`${currencySymbol}${pricePerNight.toFixed(2)} × ${t('nightWord')(nights)}`} value={fmtCurrency(roomSubtotal)} />
         {breakfastFree && <ERow label={t('fBreakfast')} value={t('coComplimentary')} valueColor="#166534" />}
-        {breakfastCharged && <ERow label={`${t('addBreakfastLabel')} (${b.num_guests || 1} × ${nights} × ${currencySymbol}${bfPrice.toFixed(2)})`} value={fmtCurrency(breakfastSub)} />}
+        {breakfastCharged && (
+          <ERow
+            label={`${t('fBreakfast')} (${bfGuests} × ${bfDays} × ${currencySymbol}${bfPrice.toFixed(2)})`}
+            value={fmtCurrency(breakfastSub)}
+          />
+        )}
         {depositPaid && depositAmount > 0 && <ERow label={t('coLessDeposit')} value={`-${fmtCurrency(depositAmount)}`} valueColor="#166534" />}
         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #1a4710', marginTop: 6, paddingTop: 6 }}>
           <span style={{ fontWeight: 700, color: '#1a4710' }}>{t('coTotalDue')}</span>

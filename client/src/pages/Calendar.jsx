@@ -387,6 +387,8 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
   const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
+  const showBfBadge = !!b.breakfast_start_date;
+
   return (
     <div
       className={`cal-cell ${cellClass}`}
@@ -395,9 +397,16 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
       title={`${b.guest_first_name} ${b.guest_last_name} — ${b.room_name}\n${b.check_in_date} → ${b.check_out_date}`}
     >
       <div className="cal-cell-inner">
-        <div className="cal-guest-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div className="cal-guest-name" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
           {showCiBadge && <span className="cal-action-badge cal-ci-badge">{t ? t('calCiBadge') : 'CI'}</span>}
           {showCoBadge && <span className="cal-action-badge cal-co-badge">{t ? t('calCoBadge') : 'CO'}</span>}
+          {showBfBadge && (
+            <span style={{
+              fontSize: '0.6rem', fontWeight: 700, color: '#166534',
+              background: '#d9f0cc', borderRadius: 2, padding: '0 3px',
+              lineHeight: '1.4',
+            }}>{t ? t('bfCalBadge') : 'Bkfst'}</span>
+          )}
           {b.guest_first_name}
         </div>
         <div className="cal-booking-nights">→ {formatCheckOut(b.check_out_date, locale)}</div>
