@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
-import { formatDateMedium, nightsBetween, localToday } from '../../utils/format.js';
+import { formatDateMedium, nightsBetween, localToday, addDays } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
@@ -21,15 +21,25 @@ const SOURCE_OPTIONS = [
 
 const STATUS_OPTIONS = ['confirmed', 'arriving', 'checked_out', 'cancelled'];
 
-export default function BookingPanel({ booking: b, rooms = [], guests = [], onClose, onStatusUpdate, onSave }) {
+export default function BookingPanel({ booking: initialBooking, rooms = [], guests = [], onClose, onStatusUpdate, onSave }) {
   const { fmtCurrency, locale, property, currencySymbol } = useLocale();
   const t = useT();
   const [mode, setMode] = useState('view');
+  const [localBooking, setLocalBooking] = useState(initialBooking);
+
+  // Keep local state in sync when a *different* booking is opened
+  useEffect(() => { setLocalBooking(initialBooking); setMode('view'); }, [initialBooking.id]);
+
+  // Handle any booking update: update local state immediately + notify parent list
+  const handleBookingUpdated = useCallback((updated) => {
+    setLocalBooking(updated);
+    if (onSave) onSave(updated);
+  }, [onSave]);
+
+  const b = localBooking;
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
   const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
-
-  useEffect(() => { setMode('view'); }, [b.id]);
 
   return (
     <>
@@ -57,13 +67,13 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
                 property={property} currencySymbol={currencySymbol}
                 onStatusUpdate={onStatusUpdate}
                 onEdit={() => setMode('edit')}
-                onBookingUpdated={onSave}
+                onBookingUpdated={handleBookingUpdated}
               />
             ) : (
               <EditMode
                 b={b} rooms={rooms} guests={guests}
                 onCancel={() => setMode('view')}
-                onSaved={(updated) => { if (onSave) onSave(updated); setMode('view'); }}
+                onSaved={(updated) => { handleBookingUpdated(updated); setMode('view'); }}
                 t={t}
               />
             )}
@@ -212,7 +222,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
           background: '#d9f0cc',
         }}>
-          {t('bfBadgeFrom')(b.breakfast_start_date || b.check_in_date)}
+          {t('bfBadgeFrom')(formatDateMedium(addDays(b.breakfast_start_date || b.check_in_date, 1), locale))}
         </div>
       )}
 
@@ -346,7 +356,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpBfChg    = !!b.breakfast_added && !rpBfFree;
         const rpBfPrice  = parseFloat(property?.breakfast_price) || 0;
         const rpBfStart  = b.breakfast_start_date || b.check_in_date;
-        const rpBfDays   = rpBfChg ? nightsBetween(rpBfStart, b.check_out_date) : 0;
+        const rpBfDays   = rpBfChg ? Math.max(1, nightsBetween(rpBfStart, b.check_out_date)) : 0;
         const rpBfGuests = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
         const rpBfSub    = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
         const rpDepPaid  = !!b.deposit_paid;
@@ -580,18 +590,26 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
 
 // ── AddBreakfastSection ───────────────────────────────────────────────────────
 
-function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, currencySymbol, showToast }) {
-  const today      = localToday();
-  const defaultBfDate = today <= b.check_out_date ? today : b.check_in_date;
+function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, currencySymbol, locale, showToast }) {
+  // bfMorning = morning date (the first morning breakfast is served)
+  // stored breakfast_start_date = addDays(bfMorning, -1) — one night before the morning
+  const minMorning  = addDays(b.check_in_date, 1);          // earliest first morning
+  const maxMorning  = b.check_out_date;                     // latest = departure morning
+  const tomorrow    = addDays(localToday(), 1);
+  const defaultMorning = tomorrow > maxMorning ? maxMorning : tomorrow < minMorning ? minMorning : tomorrow;
 
-  const [editing,  setEditing]  = useState(false);
-  const [bfDate,   setBfDate]   = useState(defaultBfDate);
-  const [bfGuests, setBfGuests] = useState(b.num_guests || 1);
-  const [bfPrice,  setBfPrice]  = useState(parseFloat(property?.breakfast_price) || 0);
-  const [saving,   setSaving]   = useState(false);
+  const [editing,   setEditing]   = useState(false);
+  const [bfMorning, setBfMorning] = useState(defaultMorning);
+  const [bfGuests,  setBfGuests]  = useState(b.num_guests || 1);
+  const [bfPrice,   setBfPrice]   = useState(parseFloat(property?.breakfast_price) || 0);
+  const [saving,    setSaving]    = useState(false);
 
-  const days         = bfDate < b.check_out_date ? nightsBetween(bfDate, b.check_out_date) : 0;
-  const previewTotal = bfGuests * days * bfPrice;
+  // servings = Math.max(1, nightsBetween(stored_date, checkout))
+  // stored_date = morning - 1 day
+  const servings     = bfMorning <= maxMorning
+    ? Math.max(1, nightsBetween(addDays(bfMorning, -1), b.check_out_date))
+    : 0;
+  const previewTotal = bfGuests * servings * bfPrice;
 
   const handleAdd = async () => {
     setSaving(true);
@@ -601,12 +619,12 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
       body: JSON.stringify({
         ...b,
         breakfast_added: 1,
-        breakfast_start_date: bfDate,
+        breakfast_start_date: addDays(bfMorning, -1),
         breakfast_guests: bfGuests,
       }),
     });
     if (res.ok) {
-      onBookingUpdated(await res.json());
+      if (onBookingUpdated) onBookingUpdated(await res.json());
       setEditing(false);
       showToast(t('bfSavedToast'));
     }
@@ -625,25 +643,26 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
       }),
     });
     if (res.ok) {
-      onBookingUpdated(await res.json());
+      if (onBookingUpdated) onBookingUpdated(await res.json());
       showToast(t('bfRemovedToast'));
     }
   };
 
   if (b.breakfast_added) {
-    const startDate = b.breakfast_start_date || b.check_in_date;
-    const guests    = b.breakfast_guests || b.num_guests || 1;
+    const storedStart = b.breakfast_start_date || b.check_in_date;
+    const morningDate = addDays(storedStart, 1);
+    const guests      = b.breakfast_guests || b.num_guests || 1;
     return (
       <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)', background: '#f0fdf4' }}>
         {!editing ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
             <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
-              {t('bfAddedFromInfo')(startDate, guests)}
+              {t('bfAddedFromInfo')(formatDateMedium(morningDate, locale), guests)}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
               <button
                 style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #86efac', background: '#fff', color: '#166534', cursor: 'pointer', fontFamily: 'inherit' }}
-                onClick={() => { setEditing(true); setBfDate(startDate); setBfGuests(guests); }}
+                onClick={() => { setEditing(true); setBfMorning(morningDate); setBfGuests(guests); }}
               >{t('bfModify')}</button>
               <button
                 style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -653,11 +672,12 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
           </div>
         ) : (
           <AddBreakfastForm
-            b={b} bfDate={bfDate} bfGuests={bfGuests} bfPrice={bfPrice}
-            days={days} previewTotal={previewTotal}
-            currencySymbol={currencySymbol} fmtCurrency={fmtCurrency} today={today} t={t}
-            saving={saving}
-            onDateChange={setBfDate} onGuestsChange={setBfGuests} onPriceChange={setBfPrice}
+            b={b} bfMorning={bfMorning} bfGuests={bfGuests} bfPrice={bfPrice}
+            servings={servings} previewTotal={previewTotal}
+            minMorning={minMorning} maxMorning={maxMorning}
+            currencySymbol={currencySymbol} fmtCurrency={fmtCurrency}
+            locale={locale} t={t} saving={saving}
+            onMorningChange={setBfMorning} onGuestsChange={setBfGuests} onPriceChange={setBfPrice}
             onSave={handleAdd} onCancel={() => setEditing(false)}
           />
         )}
@@ -678,11 +698,12 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
         >{t('bfAddTitle')}</button>
       ) : (
         <AddBreakfastForm
-          b={b} bfDate={bfDate} bfGuests={bfGuests} bfPrice={bfPrice}
-          days={days} previewTotal={previewTotal}
-          currencySymbol={currencySymbol} fmtCurrency={fmtCurrency} today={today} t={t}
-          saving={saving}
-          onDateChange={setBfDate} onGuestsChange={setBfGuests} onPriceChange={setBfPrice}
+          b={b} bfMorning={bfMorning} bfGuests={bfGuests} bfPrice={bfPrice}
+          servings={servings} previewTotal={previewTotal}
+          minMorning={minMorning} maxMorning={maxMorning}
+          currencySymbol={currencySymbol} fmtCurrency={fmtCurrency}
+          locale={locale} t={t} saving={saving}
+          onMorningChange={setBfMorning} onGuestsChange={setBfGuests} onPriceChange={setBfPrice}
           onSave={handleAdd} onCancel={() => setEditing(false)}
         />
       )}
@@ -690,20 +711,21 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
   );
 }
 
-function AddBreakfastForm({ b, bfDate, bfGuests, bfPrice, days, previewTotal, currencySymbol, fmtCurrency, today, t, saving, onDateChange, onGuestsChange, onPriceChange, onSave, onCancel }) {
+function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, servings, previewTotal, minMorning, maxMorning, currencySymbol, fmtCurrency, locale, t, saving, onMorningChange, onGuestsChange, onPriceChange, onSave, onCancel }) {
   return (
     <div style={{ fontSize: '0.85rem' }}>
-      <div style={{ fontWeight: 600, color: '#166534', marginBottom: 10 }}>{t('bfAddTitle')}</div>
+      <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>{t('bfAddTitle')}</div>
+      <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 10 }}>{t('bfMorningHint')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
         <div>
           <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>{t('bfAddFrom')}</div>
           <input
             type="date"
             className="panel-field-input"
-            value={bfDate}
-            min={today}
-            max={b.check_out_date}
-            onChange={(e) => onDateChange(e.target.value)}
+            value={bfMorning}
+            min={minMorning}
+            max={maxMorning}
+            onChange={(e) => onMorningChange(e.target.value)}
           />
         </div>
         <div>
@@ -732,9 +754,9 @@ function AddBreakfastForm({ b, bfDate, bfGuests, bfPrice, days, previewTotal, cu
           style={{ maxWidth: 120 }}
         />
       </div>
-      {days > 0 && (
+      {servings > 0 && (
         <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: 10, background: '#f0fdf4', padding: '5px 8px', borderRadius: 5 }}>
-          {t('bfPreviewCalc')(bfGuests, days, `${currencySymbol}${bfPrice.toFixed(2)}`, fmtCurrency(previewTotal))}
+          {t('bfPreviewCalc')(servings, bfGuests, `${currencySymbol}${bfPrice.toFixed(2)}`, fmtCurrency(previewTotal))}
         </div>
       )}
       <div style={{ display: 'flex', gap: 6 }}>
@@ -742,7 +764,7 @@ function AddBreakfastForm({ b, bfDate, bfGuests, bfPrice, days, previewTotal, cu
           className="btn-panel-primary"
           style={{ fontSize: '0.82rem', padding: '7px 14px' }}
           onClick={onSave}
-          disabled={saving || days <= 0}
+          disabled={saving || servings <= 0}
         >{saving ? t('saving') : t('bfAddBtn')}</button>
         <button
           className="btn-secondary"
@@ -763,7 +785,7 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t })
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
   const bfPrice          = parseFloat(property?.breakfast_price) || 0;
   const bfStartDate      = b.breakfast_start_date || b.check_in_date;
-  const bfDays           = breakfastCharged ? nightsBetween(bfStartDate, b.check_out_date) : 0;
+  const bfDays           = breakfastCharged ? Math.max(1, nightsBetween(bfStartDate, b.check_out_date)) : 0;
   const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
   const breakfastSub     = breakfastCharged ? bfGuests * bfDays * bfPrice : 0;
   const depositPaid      = !!b.deposit_paid;

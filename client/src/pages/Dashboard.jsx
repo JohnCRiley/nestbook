@@ -6,6 +6,7 @@ import {
   localToday,
   formatDateLong,
   formatDateShort,
+  formatDateMedium,
   nightsBetween,
   addDays,
 } from '../utils/format.js';
@@ -587,19 +588,20 @@ function calcDue(b, property) {
   const bfCharged  = !!b.breakfast_added && !bfFree;
   const bfPrice    = parseFloat(property?.breakfast_price) || 0;
   const bfStart    = b.breakfast_start_date || b.check_in_date;
-  const bfDays     = bfCharged ? nightsBetween(bfStart, b.check_out_date) : 0;
+  const bfDays     = bfCharged ? Math.max(1, nightsBetween(bfStart, b.check_out_date)) : 0;
   const bfGuests   = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
   const bfSub      = bfCharged ? bfGuests * bfDays * bfPrice : 0;
   const depDeduct  = b.deposit_paid ? (parseFloat(property?.deposit_amount) || 0) : 0;
   return Math.max(0, room + bfSub - depDeduct);
 }
 
-function bfStatusBadge(b, property, t) {
+function bfStatusBadge(b, property, t, locale) {
   if (property?.breakfast_included || b.room_breakfast_included) {
     return { text: t('bfStatusIncluded'), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
   }
   if (b.breakfast_added && b.breakfast_start_date) {
-    return { text: t('bfStatusFrom')(b.breakfast_start_date), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+    const morningDate = formatDateMedium(addDays(b.breakfast_start_date, 1), locale);
+    return { text: t('bfStatusFrom')(morningDate), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
   }
   if (b.breakfast_added) {
     return { text: t('bfStatusIncluded'), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
@@ -608,11 +610,11 @@ function bfStatusBadge(b, property, t) {
 }
 
 function BookingRow({ booking: b, property, right, nightWord, onClick, showDue, showBreakfast }) {
-  const { fmtCurrency } = useLocale();
+  const { fmtCurrency, locale } = useLocale();
   const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const due = showDue ? calcDue(b, property) : null;
-  const bfBadge = showBreakfast ? bfStatusBadge(b, property, t) : null;
+  const bfBadge = showBreakfast ? bfStatusBadge(b, property, t, locale) : null;
   return (
     <div
       className={`booking-row${onClick ? ' booking-row--clickable' : ''}`}
@@ -647,6 +649,7 @@ function BookingRow({ booking: b, property, right, nightWord, onClick, showDue, 
 }
 
 function BreakfastServiceList({ bookings, property, t }) {
+  const { locale } = useLocale();
   const today = localToday();
   const inHouse = bookings.filter((b) =>
     b.status === 'arriving' &&
@@ -685,7 +688,7 @@ function BreakfastServiceList({ bookings, property, t }) {
               covers = b.num_guests || 1;
             } else if (bfAdded) {
               status = b.breakfast_start_date
-                ? t('bfStatusFrom')(b.breakfast_start_date)
+                ? t('bfStatusFrom')(formatDateMedium(addDays(b.breakfast_start_date, 1), locale))
                 : t('bfStatusIncluded');
               covers = b.breakfast_guests || b.num_guests || 1;
             } else {

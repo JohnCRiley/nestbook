@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { localToday }  from '../utils/format.js';
+import { localToday, addDays as addDaysStr } from '../utils/format.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
@@ -296,6 +296,10 @@ export default function Calendar() {
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
           onStatusUpdate={handlePanelStatusUpdate}
+          onSave={(updated) => {
+            setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+            setSelectedBooking(updated);
+          }}
         />
       )}
 
@@ -344,6 +348,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
               onClick={() => onBookedClick(info.booking)}
               locale={locale ?? 'en'}
               todayIso={todayIso ?? today}
+              cellDate={iso}
               t={t}
             />
           );
@@ -373,7 +378,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
 
 // ── BookedCell ────────────────────────────────────────────────────────────────
 
-function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, t }) {
+function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t }) {
   const statusClass =
     b.status === 'checked_out' ? 'is-checked-out' : 'is-booked';
 
@@ -387,7 +392,8 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
   const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
-  const showBfBadge = !!b.breakfast_start_date;
+  const firstBfMorning = b.breakfast_start_date ? addDaysStr(b.breakfast_start_date, 1) : null;
+  const showBfBadge    = !!firstBfMorning && !!cellDate && cellDate >= firstBfMorning;
 
   return (
     <div
