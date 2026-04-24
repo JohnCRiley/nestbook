@@ -58,6 +58,8 @@ const ENRICHED_SELECT = `
     b.deposit_requested_at,
     b.deposit_paid_at,
     b.breakfast_added,
+    b.payment_method,
+    b.checked_out_at,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -300,7 +302,8 @@ bookingsRouter.put('/:id', (req, res) => {
 
     const {
       room_id, guest_id, check_in_date, check_out_date,
-      num_guests, status, source, notes, total_price, breakfast_added
+      num_guests, status, source, notes, total_price, breakfast_added,
+      payment_method, checked_out_at,
     } = req.body;
 
     if (check_out_date <= check_in_date) {
@@ -315,12 +318,15 @@ bookingsRouter.put('/:id', (req, res) => {
       UPDATE bookings
       SET room_id = ?, guest_id = ?, check_in_date = ?, check_out_date = ?,
           num_guests = ?, status = ?, source = ?, notes = ?, total_price = ?,
-          breakfast_added = ?
+          breakfast_added = ?, payment_method = ?,
+          checked_out_at = COALESCE(?, checked_out_at)
       WHERE id = ?
     `).run(
       room_id, guest_id, check_in_date, check_out_date,
       num_guests, status, source, notes, total_price,
       breakfast_added ? 1 : 0,
+      payment_method ?? null,
+      checked_out_at ?? null,
       req.params.id
     );
 

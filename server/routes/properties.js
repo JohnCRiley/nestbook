@@ -140,13 +140,14 @@ propertiesRouter.put('/:id', (req, res) => {
     const {
       name, type, address, city, country,
       check_in_time, check_out_time, currency, locale,
-      breakfast_included, require_deposit, deposit_amount,
+      breakfast_included, require_deposit, deposit_amount, breakfast_price,
     } = req.body;
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
           check_in_time = ?, check_out_time = ?, currency = ?, locale = ?,
-          breakfast_included = ?, require_deposit = ?, deposit_amount = ?
+          breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
+          breakfast_price = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -154,6 +155,7 @@ propertiesRouter.put('/:id', (req, res) => {
       breakfast_included ? 1 : 0,
       require_deposit    ? 1 : 0,
       parseFloat(deposit_amount) || 0,
+      parseFloat(breakfast_price) || 0,
       req.params.id,
     );
     res.json(db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id));

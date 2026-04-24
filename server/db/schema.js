@@ -321,6 +321,19 @@ export function initSchema() {
     db.exec(`ALTER TABLE properties ADD COLUMN deposit_amount REAL NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN breakfast_price REAL NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
+  // Migration: checkout tracking on bookings
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN payment_method TEXT`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN checked_out_at TEXT`);
+  } catch { /* already exists */ }
+
   // Migration: expand bookings.source CHECK to include walk_in and website
   const bookingSourceSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
   if (!bookingSourceSql.includes('walk_in')) {

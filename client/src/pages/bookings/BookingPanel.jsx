@@ -5,6 +5,8 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import DepositPill from '../../components/DepositPill.jsx';
+import CheckoutModal from './CheckoutModal.jsx';
+import PrintReceipt from '../../components/PrintReceipt.jsx';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -78,9 +80,11 @@ export default function BookingPanel({ booking: b, rooms = [], guests = [], onCl
 function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, currencySymbol, onStatusUpdate, onEdit, onBookingUpdated }) {
   const [showCancelConfirm,  setShowCancelConfirm]  = useState(false);
   const [depositGateOpen,    setDepositGateOpen]    = useState(false);
-  const [depositAction,      setDepositAction]      = useState(null); // { bookingId, newStatus }
+  const [depositAction,      setDepositAction]      = useState(null);
   const [depositWorking,     setDepositWorking]     = useState(false);
   const [toast,              setToast]              = useState(null);
+  const [showCheckout,       setShowCheckout]       = useState(false);
+  const [showReprint,        setShowReprint]        = useState(false);
 
   const depositRequired = !!property?.require_deposit;
 
@@ -126,6 +130,27 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       setDepositGateOpen(true);
     } else {
       onStatusUpdate(b.id, 'arriving');
+    }
+  };
+
+  // Checkout via modal
+  const handleCheckoutConfirm = async (paymentMethod) => {
+    const now = new Date().toISOString();
+    const res = await apiFetch(`/api/bookings/${b.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...b,
+        status: 'checked_out',
+        payment_method: paymentMethod,
+        checked_out_at: now,
+      }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+      setShowCheckout(false);
+      showToast(t('coCheckedOutToast'));
     }
   };
 
@@ -204,6 +229,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           prominent
           onCancelClick={() => setShowCancelConfirm(true)}
           onCheckIn={handleCheckIn}
+          onCheckOut={() => setShowCheckout(true)}
         />
       )}
 
@@ -244,6 +270,25 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         </div>
       </div>
 
+      {/* Estimated total breakdown */}
+      <EstimatedTotal b={b} nights={nights} property={property} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} t={t} />
+
+      {/* Reprint receipt for checked-out bookings */}
+      {b.status === 'checked_out' && b.payment_method && (
+        <div style={{ padding: '0 22px 10px' }}>
+          <button
+            onClick={() => setShowReprint(true)}
+            style={{
+              background: 'none', border: '1px solid var(--border)',
+              borderRadius: 6, padding: '6px 14px', fontSize: '0.82rem',
+              color: '#374151', cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {t('coReprintReceipt')}
+          </button>
+        </div>
+      )}
+
       <div className="panel-actions">
         <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
         {b.status === 'confirmed' && (
@@ -267,6 +312,41 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         onConfirm={() => { setShowCancelConfirm(false); onStatusUpdate(b.id, 'cancelled'); }}
         onCancel={() => setShowCancelConfirm(false)}
       />
+
+      {/* ── Checkout summary modal ────────────────────────────────────────── */}
+      {showCheckout && (
+        <CheckoutModal
+          booking={b}
+          property={property}
+          onConfirm={handleCheckoutConfirm}
+          onCancel={() => setShowCheckout(false)}
+        />
+      )}
+
+      {/* ── Reprint receipt ───────────────────────────────────────────────── */}
+      {showReprint && (() => {
+        const rpNights   = nightsBetween(b.check_in_date, b.check_out_date);
+        const rpRate     = b.price_per_night ?? 0;
+        const rpRoom     = rpNights * rpRate;
+        const rpBfFree   = !!(property?.breakfast_included || b.room_breakfast_included);
+        const rpBfChg    = !!b.breakfast_added && !rpBfFree;
+        const rpBfPrice  = parseFloat(property?.breakfast_price) || 0;
+        const rpBfSub    = rpBfChg ? (b.num_guests || 1) * rpNights * rpBfPrice : 0;
+        const rpDepPaid  = !!b.deposit_paid;
+        const rpDepAmt   = parseFloat(property?.deposit_amount) || 0;
+        const rpTotal    = Math.max(0, rpRoom + rpBfSub - (rpDepPaid ? rpDepAmt : 0));
+        return (
+          <PrintReceipt
+            booking={b} property={property}
+            nights={rpNights} pricePerNight={rpRate} roomSubtotal={rpRoom}
+            breakfastFree={rpBfFree} breakfastCharged={rpBfChg}
+            breakfastSubtotal={rpBfSub} bfPricePerPerson={rpBfPrice}
+            depositPaid={rpDepPaid} depositAmount={rpDepAmt}
+            totalDue={rpTotal} paymentMethod={b.payment_method}
+            onClose={() => setShowReprint(false)}
+          />
+        );
+      })()}
 
       {/* ── Deposit gate modal ─────────────────────────────────────────────── */}
       {depositGateOpen && (
@@ -480,9 +560,50 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
   );
 }
 
+// ── EstimatedTotal ────────────────────────────────────────────────────────────
+
+function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t }) {
+  const pricePerNight    = b.price_per_night ?? 0;
+  const roomSubtotal     = nights * pricePerNight;
+  const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
+  const breakfastCharged = !!b.breakfast_added && !breakfastFree;
+  const bfPrice          = parseFloat(property?.breakfast_price) || 0;
+  const breakfastSub     = breakfastCharged ? (b.num_guests || 1) * nights * bfPrice : 0;
+  const depositPaid      = !!b.deposit_paid;
+  const depositAmount    = parseFloat(property?.deposit_amount) || 0;
+  const total            = Math.max(0, roomSubtotal + breakfastSub - (depositPaid ? depositAmount : 0));
+
+  if (!pricePerNight && !breakfastCharged && !depositPaid) return null;
+
+  return (
+    <div className="panel-section">
+      <div className="panel-section-title">{t('coEstimatedTotal')}</div>
+      <div style={{ fontSize: '0.85rem' }}>
+        <ERow label={`${currencySymbol}${pricePerNight.toFixed(2)} × ${t('nightWord')(nights)}`} value={fmtCurrency(roomSubtotal)} />
+        {breakfastFree && <ERow label={t('fBreakfast')} value={t('coComplimentary')} valueColor="#166534" />}
+        {breakfastCharged && <ERow label={`${t('addBreakfastLabel')} (${b.num_guests || 1} × ${nights} × ${currencySymbol}${bfPrice.toFixed(2)})`} value={fmtCurrency(breakfastSub)} />}
+        {depositPaid && depositAmount > 0 && <ERow label={t('coLessDeposit')} value={`-${fmtCurrency(depositAmount)}`} valueColor="#166534" />}
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #1a4710', marginTop: 6, paddingTop: 6 }}>
+          <span style={{ fontWeight: 700, color: '#1a4710' }}>{t('coTotalDue')}</span>
+          <span style={{ fontWeight: 800, color: '#1a4710', fontSize: '1.05rem' }}>{fmtCurrency(total)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ERow({ label, value, valueColor }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+      <span style={{ color: '#64748b' }}>{label}</span>
+      <span style={{ color: valueColor ?? '#1a2e14', fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
 // ── Status action buttons ─────────────────────────────────────────────────────
 
-function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick, onCheckIn }) {
+function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick, onCheckIn, onCheckOut }) {
   const wrapStyle = prominent
     ? { padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', marginBottom: 0 }
     : {};
@@ -493,7 +614,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
         <button
           className="btn-panel-primary"
           style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
-          onClick={() => onStatusUpdate(bookingId, 'checked_out')}
+          onClick={onCheckOut ?? (() => onStatusUpdate(bookingId, 'checked_out'))}
         >
           {t('checkOutBtn')}
         </button>

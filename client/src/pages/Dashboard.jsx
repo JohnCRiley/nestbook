@@ -433,6 +433,7 @@ export default function Dashboard() {
                   )
                 }
                 nightWord={t('nightWord')}
+                showDue
                 onClick={() => setSelectedBooking(b)}
               />
             ))
@@ -574,8 +575,22 @@ function StatCard({ value, label }) {
   );
 }
 
-function BookingRow({ booking: b, property, right, nightWord, onClick }) {
+function calcDue(b, property) {
+  const nights     = nightsBetween(b.check_in_date, b.check_out_date);
+  const rate       = b.price_per_night ?? 0;
+  const room       = nights * rate;
+  const bfFree     = !!(property?.breakfast_included || b.room_breakfast_included);
+  const bfCharged  = !!b.breakfast_added && !bfFree;
+  const bfPrice    = parseFloat(property?.breakfast_price) || 0;
+  const bfSub      = bfCharged ? (b.num_guests || 1) * nights * bfPrice : 0;
+  const depDeduct  = b.deposit_paid ? (parseFloat(property?.deposit_amount) || 0) : 0;
+  return Math.max(0, room + bfSub - depDeduct);
+}
+
+function BookingRow({ booking: b, property, right, nightWord, onClick, showDue }) {
+  const { fmtCurrency } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
+  const due = showDue ? calcDue(b, property) : null;
   return (
     <div
       className={`booking-row${onClick ? ' booking-row--clickable' : ''}`}
@@ -598,6 +613,11 @@ function BookingRow({ booking: b, property, right, nightWord, onClick }) {
         <div className="booking-meta">
           {b.room_name} &middot; {nightWord(nights)}
         </div>
+        {due != null && (
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a4710', marginTop: 2 }}>
+            Due on checkout: {fmtCurrency(due)}
+          </div>
+        )}
       </div>
       <div className="booking-right">{right}</div>
     </div>

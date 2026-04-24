@@ -108,6 +108,7 @@ export default function Settings() {
         breakfast_included: p.breakfast_included ? 1 : 0,
         require_deposit:    p.require_deposit    ? 1 : 0,
         deposit_amount:     p.deposit_amount     ?? 0,
+        breakfast_price:    p.breakfast_price    ?? 0,
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -333,6 +334,25 @@ export default function Settings() {
                       checked={!!form.breakfast_included}
                       onChange={() => setForm((p) => ({ ...p, breakfast_included: p.breakfast_included ? 0 : 1 }))}
                     />
+                    {!!form.breakfast_included && (
+                      <div style={{ padding: '4px 0 14px 0' }}>
+                        <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                          {t('breakfastPriceLabel')} ({currencySymbol})
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          step="0.01"
+                          value={form.breakfast_price}
+                          onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
+                          style={{ marginTop: 4, maxWidth: 160 }}
+                        />
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                          {t('breakfastPriceHint')}
+                        </div>
+                      </div>
+                    )}
                     <ToggleRow
                       label={t('fDeposit')}
                       desc={t('fDepositSub')}
