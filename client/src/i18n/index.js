@@ -520,6 +520,12 @@ export const LANGS = {
     checkInWithoutDeposit: 'Check in without deposit',
     depositRequestSent:    'Deposit request sent',
     depositMarkedPaid:     'Deposit marked as paid',
+    // ── Breakfast (room-level) ────────────────────────────────────────────────
+    breakfastIncludedLabel: 'Breakfast included',
+    roomBreakfastSubtitle:  'Advertise breakfast as included in the room rate',
+    breakfastIncludedNote:  'This room includes breakfast',
+    addBreakfastLabel:      'Add breakfast?',
+    breakfastAddedNote:     'Breakfast added by guest',
   },
 
   fr: {
@@ -1006,6 +1012,12 @@ export const LANGS = {
     checkInWithoutDeposit: 'Enregistrer l\'arrivée sans acompte',
     depositRequestSent:    'Demande d\'acompte envoyée',
     depositMarkedPaid:     'Acompte marqué comme payé',
+    // ── Breakfast (room-level) ────────────────────────────────────────────────
+    breakfastIncludedLabel: 'Petit-déjeuner inclus',
+    roomBreakfastSubtitle:  'Indiquer que le petit-déjeuner est inclus dans le tarif de la chambre',
+    breakfastIncludedNote:  'Cette chambre inclut le petit-déjeuner',
+    addBreakfastLabel:      'Ajouter le petit-déjeuner ?',
+    breakfastAddedNote:     'Petit-déjeuner ajouté par le client',
   },
 
   es: {
@@ -1492,6 +1504,12 @@ export const LANGS = {
     checkInWithoutDeposit: 'Hacer check-in sin depósito',
     depositRequestSent:    'Solicitud de depósito enviada',
     depositMarkedPaid:     'Depósito marcado como pagado',
+    // ── Breakfast (room-level) ────────────────────────────────────────────────
+    breakfastIncludedLabel: 'Desayuno incluido',
+    roomBreakfastSubtitle:  'Anunciar el desayuno como incluido en la tarifa de la habitación',
+    breakfastIncludedNote:  'Esta habitación incluye desayuno',
+    addBreakfastLabel:      '¿Añadir desayuno?',
+    breakfastAddedNote:     'Desayuno añadido por el huésped',
   },
 
   de: {
@@ -1978,6 +1996,12 @@ export const LANGS = {
     checkInWithoutDeposit: 'Ohne Anzahlung einchecken',
     depositRequestSent:    'Anzahlungsanforderung gesendet',
     depositMarkedPaid:     'Anzahlung als bezahlt markiert',
+    // ── Breakfast (room-level) ────────────────────────────────────────────────
+    breakfastIncludedLabel: 'Frühstück inbegriffen',
+    roomBreakfastSubtitle:  'Frühstück als im Zimmerpreis enthalten bewerben',
+    breakfastIncludedNote:  'Dieses Zimmer beinhaltet Frühstück',
+    addBreakfastLabel:      'Frühstück hinzufügen?',
+    breakfastAddedNote:     'Frühstück vom Gast hinzugefügt',
   },
 
   nl: {
@@ -2494,5 +2518,11 @@ export const LANGS = {
     checkInWithoutDeposit: 'Inchecken zonder aanbetaling',
     depositRequestSent:    'Aanbetalingsverzoek verzonden',
     depositMarkedPaid:     'Aanbetaling gemarkeerd als betaald',
+    // ── Breakfast (room-level) ────────────────────────────────────────────────
+    breakfastIncludedLabel: 'Ontbijt inbegrepen',
+    roomBreakfastSubtitle:  'Ontbijt adverteren als inbegrepen in de kamerprijs',
+    breakfastIncludedNote:  'Deze kamer biedt ontbijt',
+    addBreakfastLabel:      'Ontbijt toevoegen?',
+    breakfastAddedNote:     'Ontbijt toegevoegd door gast',
   },
 };

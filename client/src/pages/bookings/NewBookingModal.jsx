@@ -19,6 +19,7 @@ const EMPTY = {
   checkIn: '', checkOut: '',
   roomId: '',
   numGuests: 1, source: 'direct', totalPrice: '', notes: '',
+  breakfastAdded: false,
 };
 
 /**
@@ -232,6 +233,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
           notes:          form.notes || null,
           total_price:    form.totalPrice !== '' ? Number(form.totalPrice) : null,
           status:         'confirmed',
+          breakfast_added: form.breakfastAdded ? 1 : 0,
         }),
       });
       if (!res.ok) {
@@ -429,6 +431,29 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     </select>
                   )}
                 </div>
+                {selectedRoom?.breakfast_included ? (
+                  <div className="form-group span-2" style={{ marginTop: 8 }}>
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      fontSize: '0.8rem', fontWeight: 600, color: '#1a4710',
+                      background: '#d9f0cc', border: '1px solid #86efac',
+                      borderRadius: 4, padding: '4px 10px',
+                    }}>
+                      {t('breakfastIncludedNote')}
+                    </span>
+                  </div>
+                ) : selectedRoom ? (
+                  <div className="form-group span-2" style={{ marginTop: 4 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!form.breakfastAdded}
+                        onChange={(e) => setForm(prev => ({ ...prev, breakfastAdded: e.target.checked }))}
+                      />
+                      <span className="form-label" style={{ marginBottom: 0 }}>{t('addBreakfastLabel')}</span>
+                    </label>
+                  </div>
+                ) : null}
               </div>
             </div>
 

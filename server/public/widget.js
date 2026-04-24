@@ -67,6 +67,7 @@
       errServer: 'Something went wrong. Please try again.',
       checking: 'Checking availability…',
       demoNote: 'Demo mode — no real booking was made',
+      breakfastIncluded: 'Breakfast included',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -93,6 +94,7 @@
       errServer: 'Une erreur est survenue. Veuillez réessayer.',
       checking: 'Vérification de la disponibilité…',
       demoNote: 'Mode démo — aucune vraie réservation n\'a été effectuée',
+      breakfastIncluded: 'Petit-déjeuner inclus',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -119,6 +121,7 @@
       errServer: 'Algo salió mal. Por favor, inténtelo de nuevo.',
       checking: 'Comprobando disponibilidad…',
       demoNote: 'Modo demo — no se ha realizado ninguna reserva real',
+      breakfastIncluded: 'Desayuno incluido',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -145,6 +148,7 @@
       errServer: 'Er is iets misgegaan. Probeer het opnieuw.',
       checking: 'Beschikbaarheid controleren…',
       demoNote: 'Demo modus — er is geen echte reservering gemaakt',
+      breakfastIncluded: 'Ontbijt inbegrepen',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -171,6 +175,7 @@
       errServer: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
       checking: 'Verfügbarkeit wird geprüft…',
       demoNote: 'Demo-Modus — keine echte Buchung wurde vorgenommen',
+      breakfastIncluded: 'Frühstück inbegriffen',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -637,6 +642,13 @@
   color: #557a4a;
 }
 .nb-room.nb-selected .nb-tag { background: rgba(255,255,255,0.5); }
+.nb-breakfast {
+  display: inline-flex; align-items: center;
+  font-size: 0.65rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px;
+  background: #d9f0cc; border: 1px solid #86efac; color: #1a4710;
+  margin-bottom: 6px;
+}
 
 /* Summary (step 4) */
 .nb-summary {
@@ -939,6 +951,13 @@
         card.appendChild(hd);
         card.appendChild(caps);
         if (amenities.length > 0) card.appendChild(tags);
+
+        // Breakfast badge
+        if (room.breakfast_included) {
+          const bfBadge = el('div', 'nb-breakfast');
+          bfBadge.appendChild(txt(T.breakfastIncluded));
+          card.appendChild(bfBadge);
+        }
 
         card.addEventListener('click', () => {
           S.selectedRoom = room;

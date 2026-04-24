@@ -27,6 +27,38 @@ export default function Overview() {
         <StatCard label="New this week"     value={stats?.newThisWeek     ?? '—'} />
       </div>
 
+      {/* Marketing Materials */}
+      <div className="admin-card" style={{ marginTop: 28 }}>
+        <div className="admin-card-header">
+          <h2>Marketing Materials</h2>
+          <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>Open in browser · Ctrl+P to print</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '14px 0 4px' }}>
+          {[
+            { label: 'A4 Flyer',          href: '/marketing/flyer-a4.html' },
+            { label: 'A5 Handout',        href: '/marketing/handout-a5.html' },
+            { label: 'A-Frame Sign',      href: '/marketing/aframe.html' },
+            { label: 'Feather Flag',      href: '/marketing/feather-flag.html' },
+            { label: 'Business Card',     href: '/marketing/business-card.html' },
+          ].map(({ label, href }) => (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600,
+                background: '#f0fdf4', border: '1.5px solid #86efac', color: '#166534',
+                textDecoration: 'none',
+              }}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
+
       {/* Recent signups */}
       <div className="admin-card" style={{ marginTop: 28 }}>
         <div className="admin-card-header">

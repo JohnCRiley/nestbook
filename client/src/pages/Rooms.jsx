@@ -180,7 +180,7 @@ export default function Rooms() {
               t={t}
               currencySymbol={currencySymbol}
               locale={locale}
-              breakfastIncluded={!!property?.breakfast_included}
+              breakfastIncluded={!!property?.breakfast_included || !!room.breakfast_included}
             />
           ))}
         </div>

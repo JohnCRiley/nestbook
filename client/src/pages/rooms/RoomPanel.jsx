@@ -90,6 +90,18 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
         <PanelRow label={t('capacity')}     value={t('guestWord')(room.capacity)} />
         <PanelRow label={t('priceLabel')}   value={`${currencySymbol}${room.price_per_night}${t('perNight')}`} />
         <PanelRow label={t('status')}       value={<StatusPill status={room.status} t={t} />} />
+        {!!room.breakfast_included && (
+          <PanelRow label={t('breakfastIncludedLabel')} value={
+            <span style={{
+              display: 'inline-flex', alignItems: 'center',
+              fontSize: '0.72rem', fontWeight: 700, color: '#1a4710',
+              background: '#d9f0cc', border: '1px solid #86efac',
+              borderRadius: 4, padding: '2px 7px',
+            }}>
+              {t('fBreakfast')}
+            </span>
+          } />
+        )}
         {amenities.length > 0 && (
           <PanelRow label={t('amenities')} value={
             <div className="amenity-list" style={{ marginTop: 0 }}>
@@ -143,12 +155,13 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
 function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
   const { currencySymbol } = useLocale();
   const [form, setForm] = useState({
-    name:            room.name            ?? '',
-    type:            room.type            ?? 'double',
-    price_per_night: room.price_per_night ?? '',
-    capacity:        room.capacity        ?? 2,
-    amenities:       room.amenities       ?? '',
-    status:          room.status          ?? 'available',
+    name:               room.name               ?? '',
+    type:               room.type               ?? 'double',
+    price_per_night:    room.price_per_night    ?? '',
+    capacity:           room.capacity           ?? 2,
+    amenities:          room.amenities          ?? '',
+    status:             room.status             ?? 'available',
+    breakfast_included: room.breakfast_included ?? 0,
   });
   const [saving,          setSaving]          = useState(false);
   const [deleting,        setDeleting]        = useState(false);
@@ -172,13 +185,14 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id:    room.property_id,
-          name:           form.name.trim(),
-          type:           form.type,
-          price_per_night: Number(form.price_per_night),
-          capacity:       Number(form.capacity),
-          amenities:      form.amenities.trim() || null,
-          status:         form.status,
+          property_id:        room.property_id,
+          name:               form.name.trim(),
+          type:               form.type,
+          price_per_night:    Number(form.price_per_night),
+          capacity:           Number(form.capacity),
+          amenities:          form.amenities.trim() || null,
+          status:             form.status,
+          breakfast_included: form.breakfast_included ? 1 : 0,
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -256,6 +270,18 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
               onChange={handleChange} type="number" />
             <Field label={t('capacityGuestsLabel')} name="capacity" value={form.capacity}
               onChange={handleChange} type="number" min="1" max="20" />
+          </div>
+
+          <div className="panel-field">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!form.breakfast_included}
+                onChange={(e) => setForm((prev) => ({ ...prev, breakfast_included: e.target.checked ? 1 : 0 }))}
+              />
+              <span className="panel-field-label" style={{ marginBottom: 0 }}>{t('breakfastIncludedLabel')}</span>
+            </label>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>{t('roomBreakfastSubtitle')}</div>
           </div>
 
           <div className="panel-field">

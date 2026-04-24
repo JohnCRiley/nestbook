@@ -7,7 +7,7 @@ const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'
 
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
-  capacity: 2, amenities: '', status: 'available',
+  capacity: 2, amenities: '', status: 'available', breakfast_included: 0,
 };
 
 /** Parse amenities string → array, filtering blanks. */
@@ -41,13 +41,14 @@ export default function NewRoomModal({ onClose, onSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          property_id:     property?.id ?? 1,
-          name:            form.name.trim(),
-          type:            form.type,
-          price_per_night: Number(form.price_per_night),
-          capacity:        Number(form.capacity),
-          amenities:       form.amenities.trim() || null,
-          status:          form.status,
+          property_id:        property?.id ?? 1,
+          name:               form.name.trim(),
+          type:               form.type,
+          price_per_night:    Number(form.price_per_night),
+          capacity:           Number(form.capacity),
+          amenities:          form.amenities.trim() || null,
+          status:             form.status,
+          breakfast_included: form.breakfast_included ? 1 : 0,
         }),
       });
       if (!res.ok) {
@@ -113,6 +114,18 @@ export default function NewRoomModal({ onClose, onSuccess }) {
                 <label className="form-label">{t('capacityGuestsLabel')}</label>
                 <input name="capacity" type="number" className="form-control"
                   value={form.capacity} onChange={handleChange} min="1" max="20" />
+              </div>
+
+              <div className="form-group span-2">
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!form.breakfast_included}
+                    onChange={(e) => setForm((prev) => ({ ...prev, breakfast_included: e.target.checked ? 1 : 0 }))}
+                  />
+                  <span className="form-label" style={{ marginBottom: 0 }}>{t('breakfastIncludedLabel')}</span>
+                </label>
+                <span className="form-hint">{t('roomBreakfastSubtitle')}</span>
               </div>
 
               <div className="form-group span-2">

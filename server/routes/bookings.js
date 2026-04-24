@@ -57,13 +57,15 @@ const ENRICHED_SELECT = `
     b.deposit_paid,
     b.deposit_requested_at,
     b.deposit_paid_at,
+    b.breakfast_added,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
     g.phone        AS guest_phone,
     r.name         AS room_name,
     r.type         AS room_type,
-    r.price_per_night
+    r.price_per_night,
+    r.breakfast_included AS room_breakfast_included
   FROM bookings b
   LEFT JOIN guests g ON b.guest_id  = g.id
   LEFT JOIN rooms  r ON b.room_id   = r.id
@@ -243,7 +245,7 @@ bookingsRouter.post('/', (req, res) => {
     const {
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
-      num_guests, status, source, notes, total_price
+      num_guests, status, source, notes, total_price, breakfast_added
     } = req.body;
 
     if (!property_id || !room_id || !guest_id || !check_in_date || !check_out_date) {
@@ -266,16 +268,17 @@ bookingsRouter.post('/', (req, res) => {
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         num_guests, status, source, notes, total_price, breakfast_added)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
-      num_guests   ?? 1,
-      status       ?? 'confirmed',
-      source       ?? 'direct',
-      notes        ?? null,
-      total_price  ?? null
+      num_guests      ?? 1,
+      status          ?? 'confirmed',
+      source          ?? 'direct',
+      notes           ?? null,
+      total_price     ?? null,
+      breakfast_added ? 1 : 0
     );
 
     const newBooking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(result.lastInsertRowid);
@@ -297,7 +300,7 @@ bookingsRouter.put('/:id', (req, res) => {
 
     const {
       room_id, guest_id, check_in_date, check_out_date,
-      num_guests, status, source, notes, total_price
+      num_guests, status, source, notes, total_price, breakfast_added
     } = req.body;
 
     if (check_out_date <= check_in_date) {
@@ -311,11 +314,13 @@ bookingsRouter.put('/:id', (req, res) => {
     db.prepare(`
       UPDATE bookings
       SET room_id = ?, guest_id = ?, check_in_date = ?, check_out_date = ?,
-          num_guests = ?, status = ?, source = ?, notes = ?, total_price = ?
+          num_guests = ?, status = ?, source = ?, notes = ?, total_price = ?,
+          breakfast_added = ?
       WHERE id = ?
     `).run(
       room_id, guest_id, check_in_date, check_out_date,
       num_guests, status, source, notes, total_price,
+      breakfast_added ? 1 : 0,
       req.params.id
     );
 
