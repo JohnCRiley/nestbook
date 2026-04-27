@@ -14,6 +14,7 @@ import Rooms            from './pages/Rooms.jsx';
 import Reports          from './pages/Reports.jsx';
 import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
+import ActivityLog      from './pages/ActivityLog.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
@@ -96,7 +97,8 @@ function AppLayout() {
           <Route path="/bookings"  element={<Bookings  />} />
           <Route path="/guests"    element={<Guests    />} />
           <Route path="/rooms"     element={<Rooms     />} />
-          <Route path="/reports"   element={<Reports   />} />
+          <Route path="/reports"       element={<Reports      />} />
+          <Route path="/activity-log" element={<ActivityLog  />} />
           <Route path="/settings"  element={<Settings  />} />
           <Route path="/pricing"   element={<Pricing   />} />
         </Routes>

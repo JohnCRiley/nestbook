@@ -13,6 +13,7 @@ import {
   IconGuests,
   IconRooms,
   IconReports,
+  IconActivityLog,
   IconSettings,
   IconPricing,
   IconLogout,
@@ -25,7 +26,8 @@ const ALL_NAV_ITEMS = [
   { to: '/bookings',  key: 'bookings',  Icon: IconBookings  },
   { to: '/guests',    key: 'guests',    Icon: IconGuests    },
   { to: '/rooms',     key: 'rooms',     Icon: IconRooms     },
-  { to: '/reports',   key: 'reports',   Icon: IconReports   },
+  { to: '/reports',      key: 'reports',      Icon: IconReports      },
+  { to: '/activity-log', key: 'activityLog',  Icon: IconActivityLog, ownerOnly: true },
   { to: '/settings',  key: 'settings',  Icon: IconSettings  },
   { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];
@@ -79,7 +81,7 @@ export default function Sidebar() {
     ? ALL_NAV_ITEMS.filter((i) => KIOSK_NAV_KEYS.has(i.key))
     : user?.role === 'reception'
       ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key))
-      : ALL_NAV_ITEMS;
+      : ALL_NAV_ITEMS.filter((i) => !i.ownerOnly || user?.role === 'owner');
 
   function handleLogout() {
     logout();

@@ -376,6 +376,31 @@ export function initSchema() {
     console.log('✓ bookings.source constraint updated to include walk_in and website.');
   }
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp    TEXT    NOT NULL DEFAULT (datetime('now')),
+      property_id  INTEGER REFERENCES properties(id),
+      user_id      INTEGER REFERENCES users(id),
+      user_name    TEXT,
+      user_email   TEXT,
+      user_role    TEXT,
+      action       TEXT    NOT NULL,
+      category     TEXT    NOT NULL,
+      target_type  TEXT,
+      target_id    INTEGER,
+      target_name  TEXT,
+      detail       TEXT,
+      before_value TEXT,
+      after_value  TEXT,
+      ip_address   TEXT
+    )
+  `);
+
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_property  ON audit_log(property_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_category  ON audit_log(category)`);
+
   // Performance indexes for paginated list queries
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property  ON bookings(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin   ON bookings(check_in_date)`);

@@ -6,6 +6,7 @@ import Users         from './pages/Users.jsx';
 import Revenue       from './pages/Revenue.jsx';
 import AdminSettings from './pages/AdminSettings.jsx';
 import MailingList   from './pages/MailingList.jsx';
+import AuditLog      from './pages/AuditLog.jsx';
 import { clearSASession } from './saApiFetch.js';
 
 const NAV = [
@@ -13,6 +14,7 @@ const NAV = [
   { to: '/super-admin/properties',   label: 'Properties',               icon: <IconProperties /> },
   { to: '/super-admin/users',        label: 'Users',                    icon: <IconUsers /> },
   { to: '/super-admin/revenue',      label: 'Revenue',                  icon: <IconRevenue /> },
+  { to: '/super-admin/audit-log',    label: 'Audit Log',                icon: <IconAuditLog /> },
   { to: '/super-admin/mailing-list', label: 'Mailing List',             icon: <IconMail /> },
   { to: '/super-admin/settings',     label: 'Settings',                 icon: <IconSettings /> },
 ];
@@ -103,6 +105,7 @@ export default function AdminLayout() {
           <Route path="properties"        element={<Properties    />} />
           <Route path="users"             element={<Users         />} />
           <Route path="revenue"           element={<Revenue       />} />
+          <Route path="audit-log"         element={<AuditLog      />} />
           <Route path="mailing-list"      element={<MailingList   />} />
           <Route path="settings"          element={<AdminSettings />} />
         </Routes>
@@ -147,6 +150,17 @@ function IconRevenue() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="1" x2="12" y2="23"/>
       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  );
+}
+
+function IconAuditLog() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="6" x2="20" y2="6"/>
+      <line x1="4" y1="10" x2="14" y2="10"/>
+      <line x1="4" y1="14" x2="20" y2="14"/>
+      <line x1="4" y1="18" x2="12" y2="18"/>
     </svg>
   );
 }

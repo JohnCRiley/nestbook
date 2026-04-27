@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import db from '../db/database.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const usersRouter = Router();
+
+function actorFromReq(req) {
+  const u = db.prepare('SELECT name, email, role, property_id FROM users WHERE id = ?').get(req.user.userId);
+  return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role, propertyId: u?.property_id ?? null };
+}
 
 // Password hashes are never returned in API responses.
 const SAFE_SELECT = 'SELECT id, property_id, name, email, role, created_at FROM users';
@@ -67,9 +73,18 @@ usersRouter.post('/', (req, res) => {
       role ?? 'reception'
     );
 
-    res.status(201).json(
-      db.prepare(`${SAFE_SELECT} WHERE id = ?`).get(result.lastInsertRowid)
-    );
+    const created = db.prepare(`${SAFE_SELECT} WHERE id = ?`).get(result.lastInsertRowid);
+    res.status(201).json(created);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'USER_CREATED',
+      category: 'user',
+      targetType: 'user',
+      targetId: created.id,
+      targetName: `${created.name} (${created.email})`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -96,8 +111,17 @@ usersRouter.put('/me/password', (req, res) => {
 
     const hash = bcrypt.hashSync(newPassword, 10);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, user.id);
-
     res.json({ ok: true });
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'PASSWORD_CHANGED',
+      category: 'auth',
+      targetType: 'user',
+      targetId: user.id,
+      targetName: user.email,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -119,13 +143,22 @@ usersRouter.put('/:id/password', (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
 
-    const target = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
+    const target = db.prepare('SELECT id, email FROM users WHERE id = ?').get(req.params.id);
     if (!target) return res.status(404).json({ error: 'User not found.' });
 
     const hash = bcrypt.hashSync(newPassword, 10);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.params.id);
-
     res.json({ ok: true });
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'STAFF_PASSWORD_RESET',
+      category: 'auth',
+      targetType: 'user',
+      targetId: Number(req.params.id),
+      targetName: target.email ?? null,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

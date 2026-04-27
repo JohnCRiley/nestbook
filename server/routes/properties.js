@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const propertiesRouter = Router();
+
+function actorFromReq(req) {
+  const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
+  return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role };
+}
 
 // ── Ownership helper ──────────────────────────────────────────────────────────
 // Returns true if userId can read/write propId.
@@ -123,9 +129,19 @@ propertiesRouter.post('/', (req, res) => {
       req.user.userId
     );
 
-    res.status(201).json(
-      db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid)
-    );
+    const created = db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(created);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: created.id,
+      action: 'PROPERTY_CREATED',
+      category: 'property',
+      targetType: 'property',
+      targetId: created.id,
+      targetName: created.name,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -158,7 +174,19 @@ propertiesRouter.put('/:id', (req, res) => {
       parseFloat(breakfast_price) || 0,
       req.params.id,
     );
-    res.json(db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id));
+    const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: updated.id,
+      action: 'PROPERTY_UPDATED',
+      category: 'property',
+      targetType: 'property',
+      targetId: updated.id,
+      targetName: updated.name,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -219,6 +247,16 @@ propertiesRouter.delete('/:id', (req, res) => {
     const remaining = db.prepare('SELECT * FROM properties WHERE owner_id = ? ORDER BY id')
       .all(req.user.userId);
     res.json({ deleted_id: pid, properties: remaining });
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: pid,
+      action: 'PROPERTY_DELETED',
+      category: 'property',
+      targetType: 'property',
+      targetId: pid,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

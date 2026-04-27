@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation } from '../email/emailService.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const bookingsRouter = Router();
+
+function actorFromReq(req) {
+  const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
+  return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role };
+}
 
 // ── Ownership helpers ─────────────────────────────────────────────────────────
 function canAccessProperty(userId, role, propId) {
@@ -292,6 +298,19 @@ bookingsRouter.post('/', (req, res) => {
     const newBooking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(result.lastInsertRowid);
     res.status(201).json(newBooking);
 
+    const actor = actorFromReq(req);
+    logAction(db, {
+      ...actor,
+      propertyId: newBooking.property_id,
+      action: 'BOOKING_CREATED',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: newBooking.id,
+      targetName: `${newBooking.guest_first_name} ${newBooking.guest_last_name} — ${newBooking.room_name ?? ''}`,
+      detail: `${newBooking.check_in_date} → ${newBooking.check_out_date}`,
+      ipAddress: getIp(req),
+    });
+
     // Fire-and-forget — email must not delay or break the HTTP response
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(newBooking.property_id);
     sendBookingConfirmation(newBooking, property).catch(() => {});
@@ -303,7 +322,7 @@ bookingsRouter.post('/', (req, res) => {
 // ── PUT /api/bookings/:id ─────────────────────────────────────────────────
 bookingsRouter.put('/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT id FROM bookings WHERE id = ?').get(req.params.id);
+    const existing = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Booking not found' });
 
     const {
@@ -340,7 +359,31 @@ bookingsRouter.put('/:id', (req, res) => {
       req.params.id
     );
 
-    res.json(db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id));
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    const actor = actorFromReq(req);
+    const targetName = `${updated.guest_first_name} ${updated.guest_last_name} — ${updated.room_name ?? ''}`;
+    let auditAction = 'BOOKING_EDITED';
+    if (status && status !== existing.status) {
+      if (status === 'cancelled')   auditAction = 'BOOKING_CANCELLED';
+      else if (status === 'arriving')    auditAction = 'GUEST_CHECKED_IN';
+      else if (status === 'checked_out') auditAction = 'GUEST_CHECKED_OUT';
+    } else if (breakfast_added && !existing.breakfast_added) {
+      auditAction = 'BREAKFAST_ADDED';
+    }
+    logAction(db, {
+      ...actor,
+      propertyId: updated.property_id,
+      action: auditAction,
+      category: 'booking',
+      targetType: 'booking',
+      targetId: updated.id,
+      targetName,
+      beforeValue: { status: existing.status },
+      afterValue:  { status: updated.status },
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -360,6 +403,17 @@ bookingsRouter.post('/:id/request-deposit', (req, res) => {
 
     const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
     res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: booking.property_id,
+      action: 'DEPOSIT_REQUESTED',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name}`,
+      ipAddress: getIp(req),
+    });
 
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
     sendDepositRequest(updated, property).catch(() => {});
@@ -382,6 +436,17 @@ bookingsRouter.post('/:id/mark-deposit-paid', (req, res) => {
 
     const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
     res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: booking.property_id,
+      action: 'DEPOSIT_PAID',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name}`,
+      ipAddress: getIp(req),
+    });
 
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
     sendDepositConfirmation(updated, property).catch(() => {});

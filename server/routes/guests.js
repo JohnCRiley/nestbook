@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const guestsRouter = Router();
+
+function actorFromReq(req) {
+  const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
+  return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role, propertyId: req.user.propertyId ?? null };
+}
 
 // ── GET /api/guests/counts ────────────────────────────────────────────────
 // Returns { total, newThisMonth } — used by the Guests page stat bar.
@@ -119,6 +125,14 @@ guestsRouter.post('/import', (req, res) => {
 
     run();
     res.json({ imported, skipped, errors });
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'GUESTS_IMPORTED',
+      category: 'guest',
+      detail: `Imported ${imported}, skipped ${skipped}, errors ${errors}`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -138,9 +152,18 @@ guestsRouter.post('/', (req, res) => {
       VALUES (?, ?, ?, ?, ?)
     `).run(first_name, last_name, email ?? null, phone ?? null, notes ?? null);
 
-    res.status(201).json(
-      db.prepare('SELECT * FROM guests WHERE id = ?').get(result.lastInsertRowid)
-    );
+    const created = db.prepare('SELECT * FROM guests WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(created);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'GUEST_CREATED',
+      category: 'guest',
+      targetType: 'guest',
+      targetId: created.id,
+      targetName: `${created.first_name} ${created.last_name}`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -159,7 +182,18 @@ guestsRouter.put('/:id', (req, res) => {
       WHERE id = ?
     `).run(first_name, last_name, email, phone, notes, req.params.id);
 
-    res.json(db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id));
+    const updated = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'GUEST_UPDATED',
+      category: 'guest',
+      targetType: 'guest',
+      targetId: updated.id,
+      targetName: `${updated.first_name} ${updated.last_name}`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -171,6 +205,7 @@ guestsRouter.put('/:id/anonymise', (req, res) => {
   try {
     const existing = db.prepare('SELECT id FROM guests WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Guest not found' });
+    const before = db.prepare('SELECT first_name, last_name FROM guests WHERE id = ?').get(req.params.id);
     db.prepare(`
       UPDATE guests
       SET first_name = 'Deleted', last_name = 'Guest',
@@ -178,6 +213,16 @@ guestsRouter.put('/:id/anonymise', (req, res) => {
       WHERE id = ?
     `).run(req.params.id);
     res.json({ success: true });
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: 'GUEST_ANONYMISED',
+      category: 'guest',
+      targetType: 'guest',
+      targetId: Number(req.params.id),
+      targetName: before ? `${before.first_name} ${before.last_name}` : null,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -187,10 +232,22 @@ guestsRouter.put('/:id/anonymise', (req, res) => {
 // Toggle blacklisted flag. Returns the updated guest record.
 guestsRouter.put('/:id/blacklist', (req, res) => {
   try {
-    const guest = db.prepare('SELECT id, blacklisted FROM guests WHERE id = ?').get(req.params.id);
+    const guest = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
     if (!guest) return res.status(404).json({ error: 'Guest not found' });
-    db.prepare(`UPDATE guests SET blacklisted = ? WHERE id = ?`).run(guest.blacklisted ? 0 : 1, req.params.id);
-    res.json(db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id));
+    const newVal = guest.blacklisted ? 0 : 1;
+    db.prepare(`UPDATE guests SET blacklisted = ? WHERE id = ?`).run(newVal, req.params.id);
+    const updated = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      action: newVal ? 'GUEST_BLACKLISTED' : 'GUEST_UNBLACKLISTED',
+      category: 'guest',
+      targetType: 'guest',
+      targetId: guest.id,
+      targetName: `${guest.first_name} ${guest.last_name}`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -73,6 +73,13 @@ export const IconReports = () => icon(<>
   <rect x="17" y="3"  width="4" height="18" rx="1" />
 </>);
 
+export const IconActivityLog = () => icon(<>
+  <line x1="4"  y1="6"  x2="20" y2="6" />
+  <line x1="4"  y1="10" x2="14" y2="10" />
+  <line x1="4"  y1="14" x2="20" y2="14" />
+  <line x1="4"  y1="18" x2="12" y2="18" />
+</>);
+
 export const IconBuildings = () => icon(<>
   <rect x="2"  y="7"  width="9" height="14" rx="1" />
   <rect x="13" y="3"  width="9" height="18" rx="1" />

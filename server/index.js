@@ -19,6 +19,7 @@ import { adminRouter }               from './routes/admin.js';
 import { contactRouter }             from './routes/contact.js';
 import { widgetRouter }              from './routes/widget.js';
 import { reportsRouter }             from './routes/reports.js';
+import { activityLogRouter }         from './routes/activityLog.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -68,6 +69,7 @@ app.use('/api/guests',       guestsRouter);
 app.use('/api/bookings',     bookingsRouter);
 app.use('/api/users',        usersRouter);
 app.use('/api/reports',      reportsRouter);
+app.use('/api/activity-log', activityLogRouter);
 
 // ── React SPA catch-all — must be after all API routes ───────────────────────
 // Any /app/* path that isn't a static file is handed to React Router.

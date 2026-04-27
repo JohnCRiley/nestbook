@@ -786,3 +786,39 @@ adminRouter.get('/mailing-list', (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── GET /api/admin/audit-log ──────────────────────────────────────────────────
+// Cross-property activity log for super admins.
+// Query params: property_id, category, action, from, to, page, limit
+adminRouter.get('/audit-log', (req, res) => {
+  try {
+    const { property_id, category, action, from, to, page, limit } = req.query;
+
+    const conditions = [];
+    const params     = [];
+
+    if (property_id) { conditions.push('a.property_id = ?');     params.push(Number(property_id)); }
+    if (category)    { conditions.push('a.category = ?');         params.push(category); }
+    if (action)      { conditions.push('a.action = ?');           params.push(action); }
+    if (from)        { conditions.push("date(a.timestamp) >= ?"); params.push(from); }
+    if (to)          { conditions.push("date(a.timestamp) <= ?"); params.push(to); }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const pageNum   = Math.max(1, Number(page) || 1);
+    const pageLimit = Math.min(200, Math.max(1, Number(limit) || 50));
+    const offset    = (pageNum - 1) * pageLimit;
+
+    const total = db.prepare(`SELECT COUNT(*) as n FROM audit_log a ${where}`).get(...params).n;
+    const rows  = db.prepare(
+      `SELECT a.*, p.name as property_name
+       FROM audit_log a
+       LEFT JOIN properties p ON a.property_id = p.id
+       ${where} ORDER BY a.timestamp DESC LIMIT ? OFFSET ?`
+    ).all(...params, pageLimit, offset);
+
+    res.json({ logs: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

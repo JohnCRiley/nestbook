@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const roomsRouter = Router();
+
+function actorFromReq(req) {
+  const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
+  return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role };
+}
 
 // ── Ownership helper (mirrors properties.js) ──────────────────────────────
 function canAccessProperty(userId, role, propId) {
@@ -132,9 +138,19 @@ roomsRouter.post('/', (req, res) => {
       breakfast_included ? 1 : 0
     );
 
-    res.status(201).json(
-      db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid)
-    );
+    const created = db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(created);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: Number(property_id),
+      action: 'ROOM_CREATED',
+      category: 'room',
+      targetType: 'room',
+      targetId: created.id,
+      targetName: created.name,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -143,7 +159,7 @@ roomsRouter.post('/', (req, res) => {
 // ── PUT /api/rooms/:id ────────────────────────────────────────────────────
 roomsRouter.put('/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT id FROM rooms WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Room not found' });
 
     const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included } = req.body;
@@ -155,7 +171,21 @@ roomsRouter.put('/:id', (req, res) => {
       WHERE id = ?
     `).run(property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, req.params.id);
 
-    res.json(db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id));
+    const updated = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: updated.property_id,
+      action: 'ROOM_UPDATED',
+      category: 'room',
+      targetType: 'room',
+      targetId: updated.id,
+      targetName: updated.name,
+      beforeValue: { status: existing.status, price_per_night: existing.price_per_night },
+      afterValue:  { status: updated.status,  price_per_night: updated.price_per_night },
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -167,7 +197,7 @@ roomsRouter.put('/:id', (req, res) => {
 roomsRouter.delete('/:id', (req, res) => {
   try {
     const rid = Number(req.params.id);
-    const room = db.prepare('SELECT id, is_demo FROM rooms WHERE id = ?').get(rid);
+    const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
     if (!room) return res.status(404).json({ error: 'Room not found' });
     if (room.is_demo) return res.status(403).json({ error: 'Demo rooms cannot be deleted.' });
 
@@ -182,6 +212,17 @@ roomsRouter.delete('/:id', (req, res) => {
     db.prepare(`UPDATE bookings SET room_id = NULL WHERE room_id = ?`).run(rid);
     db.prepare('DELETE FROM rooms WHERE id = ?').run(rid);
     res.status(204).end();
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: room.property_id,
+      action: 'ROOM_DELETED',
+      category: 'room',
+      targetType: 'room',
+      targetId: room.id,
+      targetName: room.name,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

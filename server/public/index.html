@@ -1213,6 +1213,11 @@ img { display: block; max-width: 100%; }
         <div class="feature-title" data-i18n="features.reports.title">Financial Reports &amp; Exports</div>
         <div class="feature-desc" data-i18n="features.reports.desc">Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.</div>
       </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title" data-i18n="features.audit.title">Staff Activity Audit Log</div>
+        <div class="feature-desc" data-i18n="features.audit.desc">Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1359,6 +1364,7 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.pro.f6">Revenue reports &amp; financial exports</li>
           <li data-i18n="pricing.pro.f8">Guest contact list exports</li>
           <li data-i18n="pricing.pro.f9">Tax calculation tools</li>
+          <li data-i18n="pricing.pro.f10">Staff activity audit log</li>
           <li data-i18n="pricing.pro.f7">Priority support</li>
         </ul>
         <a href="/app/register" class="btn btn-white" style="width:100%; justify-content:center" data-i18n="pricing.pro.cta">Start 30-day free trial</a>
@@ -1506,6 +1512,8 @@ const I18N = {
     'features.i18n.desc':     'The dashboard and the guest-facing booking widget both work in English, French, Spanish, German and Dutch — no plugins needed.',
     'features.reports.title': 'Financial Reports & Exports',
     'features.reports.desc':  'Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.',
+    'features.audit.title':   'Staff Activity Audit Log',
+    'features.audit.desc':    'Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.',
     'langs.badge':   'Made for Europe',
     'langs.heading': 'One app, five languages',
     'langs.sub':     'Whether your guests book in English, your staff prefer French, or your Dutch owner wants everything in Nederlands — NestBook switches instantly.',
@@ -1549,6 +1557,7 @@ const I18N = {
     'pricing.pro.f6': 'Revenue reports & financial exports',
     'pricing.pro.f8': 'Guest contact list exports',
     'pricing.pro.f9': 'Tax calculation tools',
+    'pricing.pro.f10': 'Staff activity audit log',
     'pricing.pro.f7': 'Priority support',
     'pricing.pro.cta': 'Start 30-day free trial',
     'pricing.multi.tier':   'Multi-property',
@@ -1626,6 +1635,8 @@ const I18N = {
     'features.i18n.desc':     'Le tableau de bord et le widget de réservation fonctionnent en anglais, français, espagnol, allemand et néerlandais — sans plugin.',
     'features.reports.title': 'Rapports financiers & exports',
     'features.reports.desc':  'Générez des rapports de revenus, exportez vos données en CSV ou PDF et téléchargez votre liste de contacts clients — filtrés par période et propriété.',
+    'features.audit.title':   'Journal d\'activité du personnel',
+    'features.audit.desc':    'Chaque connexion, réservation, enregistrement, annulation et modification de paramètre est consigné avec un horodatage, le nom du personnel et l\'adresse IP.',
     'langs.badge':   'Fait pour l\'Europe',
     'langs.heading': 'Une appli, cinq langues',
     'langs.sub':     'Que vos hôtes réservent en anglais, votre personnel préfère le français ou votre comptable veut l\'allemand — NestBook bascule instantanément.',
@@ -1746,6 +1757,8 @@ const I18N = {
     'features.i18n.desc':     'El panel y el widget de reservas funcionan en inglés, francés, español, alemán y neerlandés — sin plugins.',
     'features.reports.title': 'Informes financieros y exportaciones',
     'features.reports.desc':  'Genera informes de ingresos, exporta datos a CSV o PDF y descarga tu lista de contactos de huéspedes — todo filtrado por fechas y propiedad.',
+    'features.audit.title':   'Registro de actividad del personal',
+    'features.audit.desc':    'Cada inicio de sesión, reserva, check-in, cancelación y cambio de configuración queda registrado con marca de tiempo, nombre del empleado y dirección IP.',
     'langs.badge':   'Hecho para Europa',
     'langs.heading': 'Una app, cinco idiomas',
     'langs.sub':     'Tanto si tus huéspedes reservan en inglés, tu personal prefiere el francés o tu contable quiere el alemán — NestBook cambia al instante.',
@@ -1866,6 +1879,8 @@ const I18N = {
     'features.i18n.desc':     'Dashboard und Buchungs-Widget funktionieren auf Englisch, Französisch, Spanisch, Deutsch und Niederländisch — keine Plugins erforderlich.',
     'features.reports.title': 'Finanzberichte & Exporte',
     'features.reports.desc':  'Erstellen Sie Umsatzberichte, exportieren Sie Buchungsdaten als CSV oder PDF und laden Sie Ihre Gästekontaktliste herunter — gefiltert nach Zeitraum und Unterkunft.',
+    'features.audit.title':   'Mitarbeiter-Aktivitätsprotokoll',
+    'features.audit.desc':    'Jede Anmeldung, Buchung, Check-in, Stornierung und Einstellungsänderung wird mit Zeitstempel, Mitarbeitername und IP-Adresse protokolliert.',
     'langs.badge':   'Für Europa gemacht',
     'langs.heading': 'Eine App, fünf Sprachen',
     'langs.sub':     'Ob Ihre Gäste auf Englisch buchen, Ihr Personal Französisch bevorzugt oder Ihr Buchhalter Deutsch möchte — NestBook wechselt sofort.',
@@ -1986,6 +2001,8 @@ const I18N = {
     'features.i18n.desc':     'Schakel met één klik tussen Nederlands, Engels, Frans, Spaans en Duits.',
     'features.reports.title': 'Financiële rapporten & exports',
     'features.reports.desc':  'Genereer omzetrapporten, exporteer boekingsgegevens naar CSV of PDF en download uw gastencontactlijst — gefilterd op datumbereik en accommodatie.',
+    'features.audit.title':   'Activiteitenlog van personeel',
+    'features.audit.desc':    'Elke login, boeking, check-in, annulering en instellingswijziging wordt vastgelegd met tijdstempel, personeelsnaam en IP-adres.',
     'langs.badge':   'Spreekt u NestBook?',
     'langs.heading': 'Gemaakt voor Europese accommodatie-eigenaren',
     'langs.sub':     'Of u nu een B&B in de Achterhoek beheert, een gîte in de Provence, een casa rural in Andalusië of een Pension in Beieren — NestBook spreekt uw taal.',

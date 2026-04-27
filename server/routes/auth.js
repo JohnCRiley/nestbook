@@ -6,6 +6,7 @@ import Stripe from 'stripe';
 import db from '../db/database.js';
 import { sendWelcomeEmail, sendVerificationEmail } from '../email/emailService.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const authRouter = Router();
 
@@ -24,6 +25,17 @@ authRouter.post('/login', (req, res) => {
     .get(email.toLowerCase().trim());
 
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    logAction(db, {
+      propertyId: user?.property_id ?? null,
+      userId: user?.id ?? null,
+      userName: user?.name ?? null,
+      userEmail: email.toLowerCase().trim(),
+      userRole: user?.role ?? null,
+      action: 'LOGIN_FAILED',
+      category: 'auth',
+      detail: 'Invalid email or password',
+      ipAddress: getIp(req),
+    });
     return res.status(401).json({ error: 'Invalid email or password.' });
   }
 
@@ -36,6 +48,17 @@ authRouter.post('/login', (req, res) => {
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES }
   );
+
+  logAction(db, {
+    propertyId: user.property_id,
+    userId: user.id,
+    userName: user.name,
+    userEmail: user.email,
+    userRole: user.role,
+    action: 'LOGIN',
+    category: 'auth',
+    ipAddress: getIp(req),
+  });
 
   res.json({
     token,
@@ -103,6 +126,20 @@ authRouter.post('/register', (req, res) => {
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES }
   );
+
+  logAction(db, {
+    propertyId: propId,
+    userId,
+    userName: name,
+    userEmail: normalEmail,
+    userRole: 'owner',
+    action: 'USER_REGISTERED',
+    category: 'auth',
+    targetType: 'property',
+    targetId: propId,
+    targetName: propertyName,
+    ipAddress: getIp(req),
+  });
 
   res.status(201).json({
     token,
