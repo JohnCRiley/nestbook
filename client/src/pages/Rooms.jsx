@@ -64,6 +64,7 @@ export default function Rooms() {
     for (const b of bookings) {
       if (
         b.status !== 'cancelled' &&
+        b.status !== 'checked_out' &&
         b.check_in_date <= today &&
         b.check_out_date > today
       ) {

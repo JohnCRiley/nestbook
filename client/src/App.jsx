@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { LocaleProvider, useLocale, useT } from './i18n/LocaleContext.jsx';
@@ -20,6 +20,30 @@ import VerifyEmail      from './pages/VerifyEmail.jsx';
 import AdminRoute         from './admin/AdminRoute.jsx';
 import AdminLayout        from './admin/AdminLayout.jsx';
 import SuperAdminLogin    from './admin/SuperAdminLogin.jsx';
+
+function OfflineBanner() {
+  const [offline, setOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const go = () => setOffline(false);
+    const stop = () => setOffline(true);
+    window.addEventListener('online',  go);
+    window.addEventListener('offline', stop);
+    return () => { window.removeEventListener('online', go); window.removeEventListener('offline', stop); };
+  }, []);
+  if (!offline) return null;
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+      background: '#1e293b', color: '#f1f5f9',
+      padding: '8px 16px', textAlign: 'center',
+      fontSize: '0.85rem', fontWeight: 600,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    }}>
+      <span>⚠</span>
+      <span>You are offline — changes will not be saved until your connection is restored.</span>
+    </div>
+  );
+}
 
 function EmailVerifyBanner() {
   const { user } = useAuth();
@@ -60,6 +84,7 @@ function PropertyBanner() {
 function AppLayout() {
   return (
     <div className="layout">
+      <OfflineBanner />
       <Sidebar />
       <main className="main-content">
         <EmailVerifyBanner />

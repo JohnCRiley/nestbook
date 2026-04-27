@@ -650,78 +650,104 @@ function BookingRow({ booking: b, property, right, nightWord, onClick, showDue, 
 
 function BreakfastServiceList({ bookings, property, t }) {
   const { locale } = useLocale();
-  const today = localToday();
-  const inHouse = bookings.filter((b) =>
-    b.status === 'arriving' &&
-    b.check_in_date <= today &&
-    b.check_out_date > today
-  );
+  const today    = localToday();
+  const tomorrow = addDays(today, 1);
 
-  if (inHouse.length === 0) return null;
+  function hasBfOnDay(b, day) {
+    if (property?.breakfast_included || b.room_breakfast_included) return true;
+    if (!b.breakfast_added) return false;
+    const firstMorning = b.breakfast_start_date
+      ? addDays(b.breakfast_start_date, 1)
+      : addDays(b.check_in_date, 1);
+    return firstMorning <= day;
+  }
 
-  const covers = inHouse.reduce((sum, b) => {
-    if (property?.breakfast_included || b.room_breakfast_included) {
-      return sum + (b.num_guests || 1);
-    }
-    if (b.breakfast_added) {
-      return sum + (b.breakfast_guests || b.num_guests || 1);
-    }
-    return sum;
-  }, 0);
+  function coversOnDay(b, day) {
+    if (!hasBfOnDay(b, day)) return 0;
+    if (property?.breakfast_included || b.room_breakfast_included) return b.num_guests || 1;
+    return b.breakfast_guests || b.num_guests || 1;
+  }
+
+  const inHouseToday    = bookings.filter(b =>
+    b.status === 'arriving' && b.check_in_date <= today    && b.check_out_date > today);
+  const inHouseTomorrow = bookings.filter(b =>
+    b.status !== 'cancelled' && b.check_in_date <= tomorrow && b.check_out_date > tomorrow);
+
+  const todayGuests    = inHouseToday.filter(b    => hasBfOnDay(b, today));
+  const tomorrowGuests = inHouseTomorrow.filter(b => hasBfOnDay(b, tomorrow));
+  const todayCovers    = todayGuests.reduce((s, b)    => s + coversOnDay(b, today),    0);
+  const tomorrowCovers = tomorrowGuests.reduce((s, b) => s + coversOnDay(b, tomorrow), 0);
+
+  if (inHouseToday.length === 0 && inHouseTomorrow.length === 0) return null;
+
+  function BfRow({ b, day }) {
+    const num = coversOnDay(b, day);
+    const bfFree = !!(property?.breakfast_included || b.room_breakfast_included);
+    const status = bfFree
+      ? t('bfStatusIncluded')
+      : b.breakfast_added
+        ? b.breakfast_start_date
+          ? t('bfStatusFrom')(formatDateMedium(addDays(b.breakfast_start_date, 1), locale))
+          : t('bfStatusIncluded')
+        : t('bfStatusNone');
+    return (
+      <div className="booking-row" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="booking-guest">
+          <div className="guest-name">{b.guest_first_name} {b.guest_last_name}</div>
+          <div className="booking-meta">{b.room_name}</div>
+        </div>
+        <div className="booking-right" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {num > 0 && (
+            <span style={{
+              fontSize: '0.78rem', fontWeight: 700, color: '#1a4710',
+              background: '#d9f0cc', border: '1px solid #86efac',
+              borderRadius: 3, padding: '2px 7px',
+            }}>{num}x</span>
+          )}
+          <span style={{
+            fontSize: '0.78rem', color: num > 0 ? '#166534' : '#6b7280',
+            fontWeight: num > 0 ? 600 : 400,
+          }}>{status}</span>
+        </div>
+      </div>
+    );
+  }
+
+  function BfPanel({ title, guests, covers, emptyKey, coversKey, day }) {
+    return (
+      <div className="section-card">
+        <div className="section-head">
+          <h2>{title}</h2>
+          <span className="count-pill">{covers}</span>
+        </div>
+        {guests.length === 0 ? (
+          <div className="empty-state">{t(emptyKey)}</div>
+        ) : (
+          <>
+            {guests.map(b => <BfRow key={b.id} b={b} day={day} />)}
+            <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a4710', borderTop: '1.5px solid #d9f0cc' }}>
+              {t(coversKey)(covers)}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="section-card" style={{ marginTop: 20 }}>
-      <div className="section-head">
-        <h2>{t('bfServiceTitle')}</h2>
-        <span className="count-pill">{covers}</span>
-      </div>
-      {covers === 0 ? (
-        <div className="empty-state">{t('bfNoCovers')}</div>
-      ) : (
-        <>
-          {inHouse.map((b) => {
-            const bfFree = !!(property?.breakfast_included || b.room_breakfast_included);
-            const bfAdded = !!b.breakfast_added;
-            let status, covers;
-            if (bfFree) {
-              status = t('bfStatusIncluded');
-              covers = b.num_guests || 1;
-            } else if (bfAdded) {
-              status = b.breakfast_start_date
-                ? t('bfStatusFrom')(formatDateMedium(addDays(b.breakfast_start_date, 1), locale))
-                : t('bfStatusIncluded');
-              covers = b.breakfast_guests || b.num_guests || 1;
-            } else {
-              status = t('bfStatusNone');
-              covers = 0;
-            }
-            return (
-              <div key={b.id} className="booking-row" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="booking-guest">
-                  <div className="guest-name">{b.guest_first_name} {b.guest_last_name}</div>
-                  <div className="booking-meta">{b.room_name}</div>
-                </div>
-                <div className="booking-right" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {covers > 0 && (
-                    <span style={{
-                      fontSize: '0.78rem', fontWeight: 700,
-                      color: '#1a4710', background: '#d9f0cc',
-                      border: '1px solid #86efac', borderRadius: 3, padding: '2px 7px',
-                    }}>{covers}x</span>
-                  )}
-                  <span style={{
-                    fontSize: '0.78rem', color: covers > 0 ? '#166534' : '#6b7280',
-                    fontWeight: covers > 0 ? 600 : 400,
-                  }}>{status}</span>
-                </div>
-              </div>
-            );
-          })}
-          <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a4710', borderTop: '1.5px solid #d9f0cc' }}>
-            {t('bfCovers')(covers)}
-          </div>
-        </>
-      )}
+    <div className="dashboard-grid" style={{ marginTop: 20 }}>
+      <BfPanel
+        title={t('bfServiceTitle')}
+        guests={todayGuests} covers={todayCovers}
+        emptyKey="bfNoCoversToday" coversKey="bfCovers"
+        day={today}
+      />
+      <BfPanel
+        title={t('bfTomorrowTitle')}
+        guests={tomorrowGuests} covers={tomorrowCovers}
+        emptyKey="bfNoTomorrowCovers" coversKey="bfCoversTomorrow"
+        day={tomorrow}
+      />
     </div>
   );
 }

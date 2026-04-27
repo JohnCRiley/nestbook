@@ -88,7 +88,6 @@ export default function Bookings() {
     if (activeFilter !== 'all') params.set('filter', activeFilter);
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
 
-    setLoading(true);
     apiFetch(`/api/bookings?${params}`)
       .then((r) => r.ok ? r.json() : { bookings: [], total: 0, page: 1, totalPages: 0 })
       .then(({ bookings: rows, total: tot, totalPages: tp }) => {
