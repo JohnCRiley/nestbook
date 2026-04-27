@@ -96,27 +96,25 @@ authRouter.post('/register', (req, res) => {
 
   const verificationToken = crypto.randomBytes(32).toString('hex');
 
-  // Use db.transaction() so BEGIN/COMMIT/ROLLBACK is handled automatically.
   // Number() wrapping guards against node:sqlite returning BigInt lastInsertRowid.
   let propId, userId;
   try {
-    const register = db.transaction(() => {
-      const prop = db.prepare(
-        `INSERT INTO properties (name, type) VALUES (?, ?)`
-      ).run(propertyName, propertyType);
-      propId = Number(prop.lastInsertRowid);
+    db.exec('BEGIN');
+    const prop = db.prepare(
+      `INSERT INTO properties (name, type) VALUES (?, ?)`
+    ).run(propertyName, propertyType);
+    propId = Number(prop.lastInsertRowid);
 
-      const user = db.prepare(
-        `INSERT INTO users (property_id, name, email, password_hash, role, discount_code, email_verified, email_verification_token)
-         VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
-      ).run(propId, name, normalEmail, hash, validCode ?? null, verificationToken);
-      userId = Number(user.lastInsertRowid);
+    const user = db.prepare(
+      `INSERT INTO users (property_id, name, email, password_hash, role, discount_code, email_verified, email_verification_token)
+       VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
+    ).run(propId, name, normalEmail, hash, validCode ?? null, verificationToken);
+    userId = Number(user.lastInsertRowid);
 
-      // Link the property back to its owner now that we have the user ID.
-      db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?').run(userId, propId);
-    });
-    register();
+    db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?').run(userId, propId);
+    db.exec('COMMIT');
   } catch (err) {
+    db.exec('ROLLBACK');
     console.error('Register error:', err);
     return res.status(500).json({ error: 'Registration failed. Please try again.' });
   }

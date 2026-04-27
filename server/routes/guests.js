@@ -102,14 +102,15 @@ guestsRouter.post('/import', (req, res) => {
       return res.status(400).json({ error: 'Maximum 500 rows per import.' });
     }
 
-    let imported = 0, skipped = 0, errors = 0;
-
     const insertStmt = db.prepare(`
       INSERT INTO guests (first_name, last_name, email, phone, notes)
       VALUES (?, ?, ?, ?, ?)
     `);
+    const checkDup = db.prepare('SELECT id FROM guests WHERE email = ? AND deleted = 0');
 
-    const run = db.transaction(() => {
+    let imported = 0, skipped = 0, errors = 0;
+    db.exec('BEGIN');
+    try {
       for (const row of rows) {
         try {
           const fn = row.first_name?.trim();
@@ -117,12 +118,7 @@ guestsRouter.post('/import', (req, res) => {
           if (!fn || !ln) { errors++; continue; }
 
           const email = row.email?.trim() || null;
-          if (email) {
-            const existing = db.prepare(
-              'SELECT id FROM guests WHERE email = ? AND deleted = 0'
-            ).get(email);
-            if (existing) { skipped++; continue; }
-          }
+          if (email && checkDup.get(email)) { skipped++; continue; }
 
           insertStmt.run(fn, ln, email, row.phone?.trim() || null, row.notes?.trim() || null);
           imported++;
@@ -131,9 +127,12 @@ guestsRouter.post('/import', (req, res) => {
           errors++;
         }
       }
-    });
+      db.exec('COMMIT');
+    } catch (txErr) {
+      db.exec('ROLLBACK');
+      throw txErr;
+    }
 
-    run();
     console.log('[guests/import] Done — imported:', imported, 'skipped:', skipped, 'errors:', errors);
     res.json({ imported, skipped, errors });
 
