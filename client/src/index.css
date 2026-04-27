@@ -183,8 +183,10 @@ a { text-decoration: none; }
   margin-left: 240px;
   flex: 1;
   padding: 36px 40px;
+  padding-bottom: max(36px, env(safe-area-inset-bottom));
   height: 100vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ─── Mobile top bar (hidden on tablet + desktop) ───────────────────────── */
@@ -372,6 +374,7 @@ a { text-decoration: none; }
     padding-top: calc(56px + 24px);
     padding-left: 20px;
     padding-right: 20px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
     height: 100dvh;
   }
 
@@ -3899,6 +3902,19 @@ a { text-decoration: none; }
 .pagination-btn:disabled {
   opacity: 0.38;
   cursor: default;
+}
+
+@media (max-width: 767px) {
+  .pagination {
+    position: sticky;
+    bottom: 0;
+    background: var(--page-bg);
+    margin-top: 16px;
+    padding: 12px 0;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    z-index: 10;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
