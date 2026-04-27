@@ -82,12 +82,19 @@ guestsRouter.get('/:id', (req, res) => {
 // Returns: { imported, skipped, errors }
 guestsRouter.post('/import', (req, res) => {
   try {
+    console.log('[guests/import] Request from userId:', req.user?.userId);
+
     const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+    console.log('[guests/import] User plan:', user?.plan);
+
     if (!user || (user.plan !== 'pro' && user.plan !== 'multi')) {
-      return res.status(403).json({ error: 'Pro or Multi plan required.' });
+      console.log('[guests/import] Plan gate rejected — plan is:', user?.plan);
+      return res.status(403).json({ error: 'Pro or Multi plan required to import guests.' });
     }
 
     const { rows } = req.body;
+    console.log('[guests/import] Received rows:', Array.isArray(rows) ? rows.length : 'not array', '— first row:', JSON.stringify(rows?.[0]));
+
     if (!Array.isArray(rows) || rows.length === 0) {
       return res.status(400).json({ error: 'No rows provided.' });
     }
@@ -119,11 +126,15 @@ guestsRouter.post('/import', (req, res) => {
 
           insertStmt.run(fn, ln, email, row.phone?.trim() || null, row.notes?.trim() || null);
           imported++;
-        } catch { errors++; }
+        } catch (rowErr) {
+          console.warn('[guests/import] Row insert error:', rowErr.message, '— row:', JSON.stringify(row));
+          errors++;
+        }
       }
     });
 
     run();
+    console.log('[guests/import] Done — imported:', imported, 'skipped:', skipped, 'errors:', errors);
     res.json({ imported, skipped, errors });
 
     logAction(db, {

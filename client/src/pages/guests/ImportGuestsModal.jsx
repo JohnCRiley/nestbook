@@ -115,9 +115,11 @@ export default function ImportGuestsModal({ onClose, onImported }) {
   // Step 5 — submit
   const handleImport = async () => {
     setSubmitting(true);
+    setFileError(null);
     const rows = dataRows.map(row =>
       Object.fromEntries(FIELDS.map(({ key }) => [key, mapping[key] != null ? row[Number(mapping[key])]?.trim() ?? '' : '']))
     );
+    console.log('[Import] Sending payload:', rows.length, 'rows. First row:', JSON.stringify(rows[0]));
     try {
       const res  = await apiFetch('/api/guests/import', {
         method:  'POST',
@@ -125,10 +127,12 @@ export default function ImportGuestsModal({ onClose, onImported }) {
         body:    JSON.stringify({ rows }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      console.log('[Import] API response status:', res.status, 'body:', JSON.stringify(data));
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setResult(data);
       setStep(5);
     } catch (err) {
+      console.error('[Import] Failed:', err.message);
       setFileError(err.message);
     } finally {
       setSubmitting(false);
@@ -254,16 +258,40 @@ export default function ImportGuestsModal({ onClose, onImported }) {
                   {t('importMoreRows')(dataRows.length - 5)}
                 </div>
               )}
+              {fileError && (
+                <div style={{
+                  marginTop: 16, padding: '10px 14px', borderRadius: 6,
+                  background: '#fef2f2', border: '1px solid #fca5a5', color: '#b91c1c',
+                  fontSize: '0.85rem', fontWeight: 500,
+                }}>
+                  {fileError}
+                </div>
+              )}
             </div>
           )}
 
           {/* ── Step 5: Result ───────────────────────────────────────────── */}
           {step === 5 && result && (
             <div className="import-step-body" style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 12 }}>✅</div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 16 }}>
-                {t('importDoneTitle')}
+              <div style={{ fontSize: '3rem', marginBottom: 12 }}>
+                {result.imported > 0 ? '✅' : '⚠️'}
               </div>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 16 }}>
+                {result.imported > 0 ? t('importDoneTitle') : t('importNoneTitle') ?? 'No guests were imported'}
+              </div>
+              {result.imported === 0 && (
+                <div style={{
+                  marginBottom: 16, padding: '10px 14px', borderRadius: 6,
+                  background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e',
+                  fontSize: '0.85rem', textAlign: 'left',
+                }}>
+                  {result.skipped > 0
+                    ? `All ${result.skipped} rows were skipped — guests with those email addresses already exist.`
+                    : result.errors > 0
+                      ? `All ${result.errors} rows had errors (missing first name or last name).`
+                      : 'No rows could be imported. Check that your file has valid data.'}
+                </div>
+              )}
               <div className="import-result-grid">
                 <div className="import-result-item">
                   <span className="import-result-num" style={{ color: '#10b981' }}>{result.imported}</span>
