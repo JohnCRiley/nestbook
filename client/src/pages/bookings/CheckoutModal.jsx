@@ -33,7 +33,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
 
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
-  const bfPricePerPerson = parseFloat(property?.breakfast_price) || 0;
+  const bfPricePerPerson = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
   const bfStartDate      = b.breakfast_start_date || b.check_in_date;
   const bfDays           = breakfastCharged ? Math.max(1, nightsBetween(bfStartDate, b.check_out_date)) : 0;
   const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);

@@ -343,6 +343,10 @@ export function initSchema() {
     db.exec(`ALTER TABLE bookings ADD COLUMN breakfast_guests INTEGER DEFAULT 0`);
   } catch { /* already exists */ }
 
+  try {
+    db.exec(`ALTER TABLE bookings ADD COLUMN breakfast_price_per_person REAL DEFAULT 0`);
+  } catch { /* already exists */ }
+
   // Migration: expand bookings.source CHECK to include walk_in and website
   const bookingSourceSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
   if (!bookingSourceSql.includes('walk_in')) {

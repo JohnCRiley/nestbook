@@ -258,11 +258,12 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
           num_guests:           Number(form.numGuests),
           source:               form.source,
           notes:                form.notes || null,
-          total_price:          totalPrice > 0 ? totalPrice : null,
-          status:               'confirmed',
-          breakfast_added:      form.breakfastType !== 'none' ? 1 : 0,
-          breakfast_start_date: bfStartDate,
-          breakfast_guests:     bfGuestCount,
+          total_price:                totalPrice > 0 ? totalPrice : null,
+          status:                     'confirmed',
+          breakfast_added:            form.breakfastType !== 'none' ? 1 : 0,
+          breakfast_start_date:       bfStartDate,
+          breakfast_guests:           bfGuestCount,
+          breakfast_price_per_person: form.breakfastType === 'paid' ? bfPriceNum : 0,
         }),
       });
       if (!res.ok) {
