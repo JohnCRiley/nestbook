@@ -3,22 +3,86 @@ import { saApiFetch as apiFetch } from '../saApiFetch.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import usePageSize from '../../hooks/usePageSize.js';
 
-// page-header + search + padding
-const RESERVED = 140;
+// page-header + search + filter bar + padding
+const RESERVED = 200;
+
+// ── Filter option lists ───────────────────────────────────────────────────────
+
+const PLAN_OPTIONS = [
+  { value: 'all',   label: 'All plans' },
+  { value: 'free',  label: 'Free' },
+  { value: 'pro',   label: 'Pro' },
+  { value: 'multi', label: 'Multi' },
+];
+const ROLE_OPTIONS = [
+  { value: 'all',           label: 'All roles' },
+  { value: 'owner',         label: 'Owner' },
+  { value: 'reception',     label: 'Receptionist' },
+  { value: 'charges_staff', label: 'Staff' },
+];
+const STATUS_OPTIONS = [
+  { value: 'all',       label: 'All statuses' },
+  { value: 'active',    label: 'Active' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+const DATE_OPTIONS = [
+  { value: 'all',    label: 'All time' },
+  { value: 'week',   label: 'This week' },
+  { value: 'month',  label: 'This month' },
+  { value: 'year',   label: 'This year' },
+  { value: 'custom', label: 'Custom range' },
+];
+const PROPERTY_OPTIONS = [
+  { value: 'all',        label: 'All types' },
+  { value: 'bnb',        label: 'B&B' },
+  { value: 'gite',       label: 'Gîte' },
+  { value: 'guesthouse', label: 'Guest House' },
+  { value: 'hotel',      label: 'Hotel' },
+  { value: 'other',      label: 'Other' },
+];
+
+const EMPTY_FILTERS = {
+  plan:        'all',
+  role:        'all',
+  status:      'all',
+  datePreset:  'all',
+  from:        '',
+  to:          '',
+  propertyType: 'all',
+};
+
+function getDateRange(preset, customFrom, customTo) {
+  if (preset === 'custom') return { from: customFrom, to: customTo };
+  if (preset === 'all') return { from: '', to: '' };
+  const today = new Date().toISOString().slice(0, 10);
+  if (preset === 'week') {
+    const d = new Date();
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    return { from: d.toISOString().slice(0, 10), to: today };
+  }
+  if (preset === 'month') return { from: today.slice(0, 7) + '-01', to: today };
+  if (preset === 'year') return { from: today.slice(0, 4) + '-01-01', to: today };
+  return { from: '', to: '' };
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function Users() {
   const pageSize = usePageSize(52, RESERVED);
-  const [rows,         setRows]         = useState([]);
-  const [total,        setTotal]        = useState(0);
-  const [page,         setPage]         = useState(1);
-  const [totalPages,   setTotalPages]   = useState(0);
-  const [search,       setSearch]       = useState('');
-  const [busy,         setBusy]         = useState({});
-  const [refundTarget,   setRefundTarget]   = useState(null);
-  const [deleteTarget,   setDeleteTarget]   = useState(null);
-  const [toast,          setToast]          = useState(null);
-  const [pendingConfirm, setPendingConfirm] = useState(null); // { title, message, onConfirm }
-  const [expandedCard, setExpandedCard] = useState(null); // user id expanded on mobile
+  const [rows,          setRows]          = useState([]);
+  const [total,         setTotal]         = useState(0);
+  const [page,          setPage]          = useState(1);
+  const [totalPages,    setTotalPages]    = useState(0);
+  const [search,        setSearch]        = useState('');
+  const [filters,       setFilters]       = useState(EMPTY_FILTERS);
+  const [busy,          setBusy]          = useState({});
+  const [refundTarget,  setRefundTarget]  = useState(null);
+  const [deleteTarget,  setDeleteTarget]  = useState(null);
+  const [toast,         setToast]         = useState(null);
+  const [pendingConfirm,setPendingConfirm]= useState(null);
+  const [expandedCard,  setExpandedCard]  = useState(null);
 
   const prevPageSizeRef = useRef(pageSize);
   useEffect(() => {
@@ -43,6 +107,13 @@ export default function Users() {
   const fetchUsers = useCallback(() => {
     const params = new URLSearchParams({ page, limit: pageSize });
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+    if (filters.plan !== 'all') params.set('plan', filters.plan);
+    if (filters.role !== 'all') params.set('role', filters.role);
+    if (filters.status !== 'all') params.set('status', filters.status);
+    if (filters.propertyType !== 'all') params.set('propertyType', filters.propertyType);
+    const { from, to } = getDateRange(filters.datePreset, filters.from, filters.to);
+    if (from) params.set('from', from);
+    if (to)   params.set('to',   to);
     apiFetch(`/api/admin/users?${params}`)
       .then(r => r.json())
       .then(data => {
@@ -53,9 +124,64 @@ export default function Users() {
         }
       })
       .catch(() => {});
-  }, [page, pageSize, debouncedSearch]);
+  }, [page, pageSize, debouncedSearch, filters]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  // ── Filter helpers ─────────────────────────────────────────────────────────
+
+  function handleFilterChange(field, value) {
+    setFilters(f => ({ ...f, [field]: value }));
+    setPage(1);
+  }
+
+  function clearAllFilters() {
+    setSearch('');
+    setFilters(EMPTY_FILTERS);
+    setPage(1);
+  }
+
+  function removePill(key) {
+    if (key === 'search') { setSearch(''); return; }
+    if (key === 'datePreset') {
+      setFilters(f => ({ ...f, datePreset: 'all', from: '', to: '' }));
+      setPage(1);
+      return;
+    }
+    handleFilterChange(key, 'all');
+  }
+
+  // Active filter pills
+  const activePills = [
+    ...(debouncedSearch.trim()
+      ? [{ key: 'search', label: `"${debouncedSearch.trim().slice(0, 24)}"` }]
+      : []),
+    ...(filters.plan !== 'all'
+      ? [{ key: 'plan', label: `Plan: ${PLAN_OPTIONS.find(o => o.value === filters.plan)?.label}` }]
+      : []),
+    ...(filters.role !== 'all'
+      ? [{ key: 'role', label: `Role: ${ROLE_OPTIONS.find(o => o.value === filters.role)?.label}` }]
+      : []),
+    ...(filters.status !== 'all'
+      ? [{ key: 'status', label: `Status: ${STATUS_OPTIONS.find(o => o.value === filters.status)?.label}` }]
+      : []),
+    ...(filters.datePreset !== 'all'
+      ? [{ key: 'datePreset', label: `Registered: ${DATE_OPTIONS.find(o => o.value === filters.datePreset)?.label}` }]
+      : []),
+    ...(filters.propertyType !== 'all'
+      ? [{ key: 'propertyType', label: `Type: ${PROPERTY_OPTIONS.find(o => o.value === filters.propertyType)?.label}` }]
+      : []),
+  ];
+
+  const fromIdx = (page - 1) * pageSize + 1;
+  const toIdx   = Math.min(page * pageSize, total);
+  const countLabel = total === 0
+    ? (activePills.length > 0 ? 'No users match filters' : '0 users registered')
+    : activePills.length > 0 || totalPages > 1
+      ? `Showing ${fromIdx}–${toIdx} of ${total} users`
+      : `${total} users registered`;
+
+  // ── Action helpers ─────────────────────────────────────────────────────────
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
@@ -156,7 +282,6 @@ export default function Users() {
     fetchUsers();
   }
 
-  // Action buttons — reused by both table row and mobile card
   function ActionButtons({ u }) {
     return (
       <div className="sa-actions">
@@ -232,22 +357,150 @@ export default function Users() {
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <>
       <div className="page-header">
         <h1>Users</h1>
-        <div className="page-date">{total} users registered</div>
+        <div className="page-date">{countLabel}</div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      {/* ── Search ───────────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 12 }}>
         <input
           type="text"
-          placeholder="Search by name or email…"
+          placeholder="Search by name, email or property..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #e2e8f0',
-                   fontSize: '0.875rem', width: '100%', maxWidth: 320, boxSizing: 'border-box' }}
+          style={{
+            padding: '8px 12px', borderRadius: 6, border: '1px solid #e2e8f0',
+            fontSize: '0.875rem', width: '100%', maxWidth: 380, boxSizing: 'border-box',
+          }}
         />
+      </div>
+
+      {/* ── Filter bar ───────────────────────────────────────────────────── */}
+      <div className="admin-card" style={{ marginBottom: 16 }}>
+        <div className="ml-filter-grid">
+          <div className="ml-filter-field">
+            <label className="ml-filter-label">Plan</label>
+            <select
+              className="ml-filter-select"
+              value={filters.plan}
+              onChange={e => handleFilterChange('plan', e.target.value)}
+            >
+              {PLAN_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div className="ml-filter-field">
+            <label className="ml-filter-label">Role</label>
+            <select
+              className="ml-filter-select"
+              value={filters.role}
+              onChange={e => handleFilterChange('role', e.target.value)}
+            >
+              {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div className="ml-filter-field">
+            <label className="ml-filter-label">Status</label>
+            <select
+              className="ml-filter-select"
+              value={filters.status}
+              onChange={e => handleFilterChange('status', e.target.value)}
+            >
+              {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div className="ml-filter-field">
+            <label className="ml-filter-label">Registered</label>
+            <select
+              className="ml-filter-select"
+              value={filters.datePreset}
+              onChange={e => handleFilterChange('datePreset', e.target.value)}
+            >
+              {DATE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div className="ml-filter-field">
+            <label className="ml-filter-label">Property Type</label>
+            <select
+              className="ml-filter-select"
+              value={filters.propertyType}
+              onChange={e => handleFilterChange('propertyType', e.target.value)}
+            >
+              {PROPERTY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Custom date range inputs */}
+        {filters.datePreset === 'custom' && (
+          <div style={{ display: 'flex', gap: 16, padding: '0 20px 16px', flexWrap: 'wrap' }}>
+            <div className="ml-filter-field">
+              <label className="ml-filter-label">From</label>
+              <input
+                type="date"
+                className="ml-filter-input"
+                value={filters.from}
+                onChange={e => handleFilterChange('from', e.target.value)}
+              />
+            </div>
+            <div className="ml-filter-field">
+              <label className="ml-filter-label">To</label>
+              <input
+                type="date"
+                className="ml-filter-input"
+                value={filters.to}
+                onChange={e => handleFilterChange('to', e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Active filter pills */}
+        {activePills.length > 0 && (
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', gap: 6,
+            padding: '0 20px 14px', alignItems: 'center',
+          }}>
+            {activePills.map(pill => (
+              <span
+                key={pill.key}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '3px 8px 3px 10px', borderRadius: 20,
+                  background: '#e0f2fe', color: '#0369a1',
+                  fontSize: '0.78rem', fontWeight: 600,
+                }}
+              >
+                {pill.label}
+                <button
+                  onClick={() => removePill(pill.key)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: '#0369a1', padding: '0 2px', fontSize: '0.85em', lineHeight: 1,
+                  }}
+                >✕</button>
+              </span>
+            ))}
+            <button
+              onClick={clearAllFilters}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: '#94a3b8', fontSize: '0.78rem', padding: '3px 4px',
+                textDecoration: 'underline',
+              }}
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Desktop / Tablet table ─────────────────────────────────────────── */}
@@ -284,7 +537,7 @@ export default function Users() {
                   </td>
                   <td>
                     <span className={`role-badge role-${u.role}`}>
-                      {u.role === 'owner' ? 'Owner' : 'Reception'}
+                      {u.role === 'owner' ? 'Owner' : u.role === 'charges_staff' ? 'Staff' : 'Reception'}
                     </span>
                   </td>
                   <td>
@@ -307,7 +560,14 @@ export default function Users() {
                       ) : null}
                     </div>
                   </td>
-                  <td>{u.property_name ?? '—'}</td>
+                  <td>
+                    <div>{u.property_name ?? '—'}</div>
+                    {u.property_type && (
+                      <div className="admin-muted" style={{ fontSize: '0.75rem' }}>
+                        {u.property_type}
+                      </div>
+                    )}
+                  </td>
                   <td className="admin-muted" style={{ fontSize: '0.8rem' }}>
                     {u.discount_code ?? '—'}
                   </td>
@@ -317,6 +577,13 @@ export default function Users() {
                   </td>
                 </tr>
               ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', color: '#94a3b8', padding: '32px 16px' }}>
+                    No users match the current filters.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -355,7 +622,6 @@ export default function Users() {
               ) : null}
             </div>
 
-            {/* Plan selector always visible on card */}
             <div className="admin-user-card-plan">
               <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Plan:</span>
               <select
@@ -398,13 +664,18 @@ export default function Users() {
             )}
           </div>
         ))}
+        {rows.length === 0 && (
+          <div style={{ textAlign: 'center', color: '#94a3b8', padding: '32px 16px', fontSize: '0.9rem' }}>
+            No users match the current filters.
+          </div>
+        )}
       </div>
 
       {/* ── Pagination ─────────────────────────────────────────────────────── */}
       {total > 0 && totalPages > 1 && (
         <div className="pagination" style={{ marginTop: 16 }}>
           <span className="pagination-info">
-            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
+            Showing {fromIdx}–{toIdx} of {total}
           </span>
           <div className="pagination-controls">
             <button className="pagination-btn" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>

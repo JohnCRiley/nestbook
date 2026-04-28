@@ -34,17 +34,46 @@ adminRouter.get('/signups', (req, res) => {
 
 // ── GET /api/admin/users ──────────────────────────────────────────────────────
 // Enriched with subscription data for plan management controls.
-// Query params: page (default 1), limit (default 25), search (name/email)
+// Query params: page, limit, search (name/email/property), plan, role,
+//               status (active/suspended/cancelled), propertyType, from, to
 adminRouter.get('/users', (req, res) => {
   try {
-    const { page, limit, search } = req.query;
+    const { page, limit, search, plan, role, status, propertyType, from, to } = req.query;
     const conditions = [];
     const params     = [];
 
     if (search) {
       const pattern = `%${search}%`;
-      conditions.push('(u.name LIKE ? OR u.email LIKE ?)');
-      params.push(pattern, pattern);
+      conditions.push('(u.name LIKE ? OR u.email LIKE ? OR p.name LIKE ?)');
+      params.push(pattern, pattern, pattern);
+    }
+    if (plan && plan !== 'all') {
+      conditions.push('u.plan = ?');
+      params.push(plan);
+    }
+    if (role && role !== 'all') {
+      conditions.push('u.role = ?');
+      params.push(role);
+    }
+    if (propertyType && propertyType !== 'all') {
+      conditions.push('p.type = ?');
+      params.push(propertyType);
+    }
+    if (from) {
+      conditions.push('date(u.created_at) >= ?');
+      params.push(from);
+    }
+    if (to) {
+      conditions.push('date(u.created_at) <= ?');
+      params.push(to);
+    }
+    if (status === 'active') {
+      conditions.push('u.suspended = 0');
+      conditions.push("(s.status = 'active' OR s.id IS NULL)");
+    } else if (status === 'suspended') {
+      conditions.push('u.suspended = 1');
+    } else if (status === 'cancelled') {
+      conditions.push("s.status = 'cancelled'");
     }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -52,7 +81,7 @@ adminRouter.get('/users', (req, res) => {
     const BASE_SELECT = `
       SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
              u.discount_code, u.suspended, u.email_verified,
-             p.name as property_name, p.country,
+             p.name as property_name, p.type as property_type, p.country,
              s.stripe_customer_id, s.stripe_subscription_id,
              s.status as sub_status, s.current_period_end,
              s.notes as sub_notes, s.cancel_at_period_end
@@ -61,15 +90,20 @@ adminRouter.get('/users', (req, res) => {
       LEFT JOIN subscriptions s ON s.user_id = u.id
     `;
 
+    const COUNT_FROM = `
+      FROM users u
+      LEFT JOIN properties p ON p.id = u.property_id
+      LEFT JOIN subscriptions s ON s.user_id = u.id
+      ${where}
+    `;
+
     if (page) {
       const pageNum   = Math.max(1, Number(page));
       const pageLimit = Math.min(100, Math.max(1, Number(limit) || 25));
       const offset    = (pageNum - 1) * pageLimit;
 
-      const total = db.prepare(
-        `SELECT COUNT(*) as n FROM users u LEFT JOIN properties p ON p.id = u.property_id ${where}`
-      ).get(...params).n;
-      const rows = db.prepare(
+      const total = db.prepare(`SELECT COUNT(*) as n ${COUNT_FROM}`).get(...params).n;
+      const rows  = db.prepare(
         `${BASE_SELECT} ${where} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`
       ).all(...params, pageLimit, offset);
 
