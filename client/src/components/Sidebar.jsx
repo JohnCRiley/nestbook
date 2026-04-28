@@ -34,7 +34,6 @@ const ALL_NAV_ITEMS = [
   { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];
 
-const KIOSK_NAV_KEYS     = new Set(['calendar', 'bookings']);
 const RECEPTION_NAV_KEYS = new Set(['dashboard', 'calendar', 'bookings', 'guests', 'rooms', 'charges']);
 
 export default function Sidebar() {
@@ -44,7 +43,7 @@ export default function Sidebar() {
   const plan      = usePlan();
   const { property, properties, switchProperty } = useLocale();
   const t = useT();
-  const { kiosk, isFullscreen, enterFullscreen, exitFullscreen } = useKiosk();
+  const { isFullscreen, enterFullscreen, exitFullscreen } = useKiosk();
   const { canInstall, triggerInstall } = useInstallPrompt();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -78,15 +77,12 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handler);
   }, [tabletExpanded]);
 
-  const isReceptionKiosk = kiosk && user?.role === 'reception';
-  const navItems = isReceptionKiosk
-    ? ALL_NAV_ITEMS.filter((i) => KIOSK_NAV_KEYS.has(i.key))
-    : user?.role === 'reception'
-      ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key) && (!i.multiOnly || plan === 'multi'))
-      : ALL_NAV_ITEMS.filter((i) =>
-          (!i.ownerOnly || user?.role === 'owner') &&
-          (!i.multiOnly || plan === 'multi')
-        );
+  const navItems = user?.role === 'reception'
+    ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key) && (!i.multiOnly || plan === 'multi'))
+    : ALL_NAV_ITEMS.filter((i) =>
+        (!i.ownerOnly || user?.role === 'owner') &&
+        (!i.multiOnly || plan === 'multi')
+      );
 
   function handleLogout() {
     logout();
@@ -165,7 +161,7 @@ export default function Sidebar() {
         {/* Footer */}
         <div className="sidebar-footer">
           {/* Buildings button — shown only in tablet icon-tray mode, opens property switcher */}
-          {plan === 'multi' && properties.length > 1 && !isReceptionKiosk && (
+          {plan === 'multi' && properties.length > 1 && (
             <button
               className="sidebar-tray-prop-btn"
               onClick={() => setTabletExpanded((v) => !v)}
@@ -176,7 +172,7 @@ export default function Sidebar() {
             </button>
           )}
 
-          {property && !isReceptionKiosk && (
+          {property && (
             <>
               <div className="footer-label">{t('propertyLabel')}</div>
               <div className="footer-property-row">
@@ -217,7 +213,7 @@ export default function Sidebar() {
 
           {/* Fullscreen controls */}
           {!isFullscreen ? (
-            <button className="sidebar-util-btn" onClick={enterFullscreen} title={t('enterFullscreen')}>
+            <button className="sidebar-util-btn" onClick={enterFullscreen} title={t('fullscreenTooltip')}>
               ⛶ {t('enterFullscreen')}
             </button>
           ) : (
@@ -237,12 +233,10 @@ export default function Sidebar() {
             {t('changePassword')}
           </button>
 
-          {!isReceptionKiosk && (
-            <button className="sidebar-logout-btn" onClick={handleLogout} title={t('signOut')}>
-              <IconLogout />
-              <span className="logout-label">{t('signOut')}</span>
-            </button>
-          )}
+          <button className="sidebar-logout-btn" onClick={handleLogout} title={t('signOut')}>
+            <IconLogout />
+            <span className="logout-label">{t('signOut')}</span>
+          </button>
         </div>
       </aside>
 

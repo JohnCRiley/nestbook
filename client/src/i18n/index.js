@@ -651,6 +651,8 @@ export const LANGS = {
     chargesStaffSelect:   'Select a room to add a charge',
     checkedInToast:       'Guest checked in successfully',
     bookingCancelledToast: 'Booking cancelled',
+    staffAccessInfo:      'Staff with the Receptionist role can access: Dashboard, Calendar, Bookings, Guests and Rooms. Settings, Reports and Activity Log are restricted to owners only.',
+    fullscreenTooltip:    'Full screen mode — or install NestBook as an app for the best experience',
   },
 
   fr: {
@@ -1267,6 +1269,8 @@ export const LANGS = {
     chargesStaffSelect:   'Sélectionnez une chambre pour ajouter un frais',
     checkedInToast:       'Client enregistré avec succès',
     bookingCancelledToast: 'Réservation annulée',
+    staffAccessInfo:      "Le personnel avec le rôle Réceptionniste peut accéder à : Tableau de bord, Calendrier, Réservations, Clients et Chambres. Les Paramètres, Rapports et Journal d'activité sont réservés aux propriétaires.",
+    fullscreenTooltip:    "Mode plein écran — ou installez NestBook comme application pour une meilleure expérience",
   },
 
   es: {
@@ -1883,6 +1887,8 @@ export const LANGS = {
     chargesStaffSelect:   'Seleccione una habitación para añadir un cargo',
     checkedInToast:       'Cliente registrado correctamente',
     bookingCancelledToast: 'Reserva cancelada',
+    staffAccessInfo:      'El personal con el rol Recepcionista puede acceder a: Panel, Calendario, Reservas, Huéspedes y Habitaciones. Los Ajustes, Informes y Registro de actividad están restringidos a propietarios.',
+    fullscreenTooltip:    'Modo pantalla completa — o instala NestBook como aplicación para la mejor experiencia',
   },
 
   de: {
@@ -2499,6 +2505,8 @@ export const LANGS = {
     chargesStaffSelect:   'Zimmer auswählen, um eine Belastung hinzuzufügen',
     checkedInToast:       'Gast erfolgreich eingecheckt',
     bookingCancelledToast: 'Buchung storniert',
+    staffAccessInfo:      'Personal mit der Rolle Rezeption kann auf Folgendes zugreifen: Dashboard, Kalender, Buchungen, Gäste und Zimmer. Einstellungen, Berichte und Aktivitätsprotokoll sind nur für Eigentümer zugänglich.',
+    fullscreenTooltip:    'Vollbildmodus — oder NestBook als App installieren für das beste Erlebnis',
   },
 
   nl: {
@@ -3145,5 +3153,7 @@ export const LANGS = {
     chargesStaffSelect:   'Selecteer een kamer om een kost toe te voegen',
     checkedInToast:       'Gast succesvol ingecheckt',
     bookingCancelledToast: 'Reservering geannuleerd',
+    staffAccessInfo:      'Personeel met de rol Receptionist heeft toegang tot: Dashboard, Kalender, Boekingen, Gasten en Kamers. Instellingen, Rapporten en Activiteitenlog zijn beperkt tot eigenaren.',
+    fullscreenTooltip:    'Volledig scherm — of installeer NestBook als app voor de beste ervaring',
   },
 };

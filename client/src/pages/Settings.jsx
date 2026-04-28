@@ -7,7 +7,6 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
-import { useKiosk } from '../hooks/useKiosk.js';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 
@@ -43,8 +42,6 @@ export default function Settings() {
   const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty, locale, currencySymbol } = useLocale();
   const { user, logout } = useAuth();
   const plan = usePlan();
-  const { kiosk, setKioskMode } = useKiosk();
-
   const FEATURES = [
     {
       key:     'widget',
@@ -389,26 +386,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Kiosk mode — owner only */}
-          {user?.role === 'owner' && (
-            <div className="settings-card">
-              <div className="settings-card-header">
-                <h2>{t('kioskModeTitle')}</h2>
-                <p>{t('kioskModeSubtitle')}</p>
-              </div>
-              <div className="settings-card-body" style={{ padding: '0 20px' }}>
-                <div className="toggle-list">
-                  <ToggleRow
-                    label={t('kioskModeLabel')}
-                    desc={t('kioskModeDesc')}
-                    checked={kiosk}
-                    onChange={() => setKioskMode(!kiosk)}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Subscription */}
           {user?.role === 'owner' && (
             <div className="settings-card">
@@ -638,6 +615,13 @@ export default function Settings() {
                     {t('inviteStaff')}
                   </button>
                 </PlanGate>
+              </div>
+              <div style={{
+                marginTop: 16, padding: '10px 14px',
+                background: '#f0f9ff', border: '1px solid #bae6fd',
+                borderRadius: 8, fontSize: '0.82rem', color: '#0c4a6e', lineHeight: 1.55,
+              }}>
+                ℹ️ {t('staffAccessInfo')}
               </div>
             </div>
           </div>
