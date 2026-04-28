@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState(null);
   const [upgradeToast,   setUpgradeToast]   = useState(false);
+  const [pageToast,      setPageToast]      = useState(null);
   const [chargesToday,   setChargesToday]   = useState(null);
   const [showAvailablePopover, setShowAvailablePopover] = useState(false);
   const [selectedBooking,      setSelectedBooking]      = useState(null);
@@ -141,6 +142,11 @@ export default function Dashboard() {
     cancelled:   t('cancelled'),
   };
 
+  const showPageToast = (msg) => {
+    setPageToast(msg);
+    setTimeout(() => setPageToast(null), 3000);
+  };
+
   // ── Status update handler (mirrors Bookings.jsx pattern) ──────────────────
   function handleStatusUpdate(bookingId, newStatus) {
     const existing = bookings.find((b) => b.id === bookingId);
@@ -156,7 +162,15 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then((saved) => {
         setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
-        setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+        if (newStatus === 'arriving') {
+          setSelectedBooking(null);
+          showPageToast(t('checkedInToast'));
+        } else if (newStatus === 'cancelled') {
+          setSelectedBooking(null);
+          showPageToast(t('bookingCancelledToast'));
+        } else {
+          setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+        }
       })
       .catch(() => {});
   }
@@ -188,6 +202,10 @@ export default function Dashboard() {
         <div className="toast toast-success" style={{ pointerEvents: 'auto' }}>
           {t('upgradeSuccess')}
         </div>
+      )}
+
+      {pageToast && (
+        <div className="toast toast-success">{pageToast}</div>
       )}
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -501,7 +519,12 @@ export default function Dashboard() {
           onStatusUpdate={handleStatusUpdate}
           onSave={(updated) => {
             setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
-            setSelectedBooking(updated);
+            if (updated.status === 'checked_out') {
+              setSelectedBooking(null);
+              showPageToast(t('coCheckedOutToast'));
+            } else {
+              setSelectedBooking(updated);
+            }
           }}
         />
       )}

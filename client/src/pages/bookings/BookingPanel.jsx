@@ -169,9 +169,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
     });
     if (res.ok) {
       const updated = await res.json();
-      if (onBookingUpdated) onBookingUpdated(updated);
       setShowCheckout(false);
-      showToast(t('coCheckedOutToast'));
+      if (onBookingUpdated) onBookingUpdated(updated);
     }
   };
 

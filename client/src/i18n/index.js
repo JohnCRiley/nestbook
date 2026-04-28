@@ -649,6 +649,8 @@ export const LANGS = {
     chargesCatEmpty:      'No categories yet.',
     chargesStaffTitle:    'Charge to Room',
     chargesStaffSelect:   'Select a room to add a charge',
+    checkedInToast:       'Guest checked in successfully',
+    bookingCancelledToast: 'Booking cancelled',
   },
 
   fr: {
@@ -1263,6 +1265,8 @@ export const LANGS = {
     chargesCatEmpty:      'Aucune catégorie.',
     chargesStaffTitle:    'Facturer à la chambre',
     chargesStaffSelect:   'Sélectionnez une chambre pour ajouter un frais',
+    checkedInToast:       'Client enregistré avec succès',
+    bookingCancelledToast: 'Réservation annulée',
   },
 
   es: {
@@ -1877,6 +1881,8 @@ export const LANGS = {
     chargesCatEmpty:      'Sin categorías.',
     chargesStaffTitle:    'Cargar a habitación',
     chargesStaffSelect:   'Seleccione una habitación para añadir un cargo',
+    checkedInToast:       'Cliente registrado correctamente',
+    bookingCancelledToast: 'Reserva cancelada',
   },
 
   de: {
@@ -2491,6 +2497,8 @@ export const LANGS = {
     chargesCatEmpty:      'Keine Kategorien.',
     chargesStaffTitle:    'Auf Zimmer buchen',
     chargesStaffSelect:   'Zimmer auswählen, um eine Belastung hinzuzufügen',
+    checkedInToast:       'Gast erfolgreich eingecheckt',
+    bookingCancelledToast: 'Buchung storniert',
   },
 
   nl: {
@@ -3135,5 +3143,7 @@ export const LANGS = {
     chargesCatEmpty:      'Nog geen categorieën.',
     chargesStaffTitle:    'Op kamer boeken',
     chargesStaffSelect:   'Selecteer een kamer om een kost toe te voegen',
+    checkedInToast:       'Gast succesvol ingecheckt',
+    bookingCancelledToast: 'Reservering geannuleerd',
   },
 };

@@ -150,6 +150,7 @@ export default function Calendar() {
 
   const [selectedBooking,  setSelectedBooking]  = useState(null);
   const [newModalValues,   setNewModalValues]   = useState(null);
+  const [pageToast,        setPageToast]        = useState(null);
 
   // ── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -195,6 +196,11 @@ export default function Calendar() {
     setNewModalValues({ room_id: String(roomId), check_in_date: dayIso, check_out_date: nextDay });
   };
 
+  const showPageToast = (msg) => {
+    setPageToast(msg);
+    setTimeout(() => setPageToast(null), 3000);
+  };
+
   const handlePanelStatusUpdate = (bookingId, newStatus) => {
     apiFetch(`/api/bookings/${bookingId}`, {
       method: 'PUT',
@@ -204,7 +210,15 @@ export default function Calendar() {
       .then((r) => r.json())
       .then((updated) => {
         setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-        setSelectedBooking(updated);
+        if (newStatus === 'arriving') {
+          setSelectedBooking(null);
+          showPageToast(t('checkedInToast'));
+        } else if (newStatus === 'cancelled') {
+          setSelectedBooking(null);
+          showPageToast(t('bookingCancelledToast'));
+        } else {
+          setSelectedBooking(updated);
+        }
       });
   };
 
@@ -222,6 +236,10 @@ export default function Calendar() {
 
   return (
     <>
+      {pageToast && (
+        <div className="toast toast-success">{pageToast}</div>
+      )}
+
       {/* ── Page toolbar ────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
@@ -298,7 +316,12 @@ export default function Calendar() {
           onStatusUpdate={handlePanelStatusUpdate}
           onSave={(updated) => {
             setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-            setSelectedBooking(updated);
+            if (updated.status === 'checked_out') {
+              setSelectedBooking(null);
+              showPageToast(t('coCheckedOutToast'));
+            } else {
+              setSelectedBooking(updated);
+            }
           }}
         />
       )}

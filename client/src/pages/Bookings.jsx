@@ -46,6 +46,7 @@ export default function Bookings() {
   const [totalPages,      setTotalPages]      = useState(0);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showNewModal,    setShowNewModal]    = useState(false);
+  const [pageToast,       setPageToast]       = useState(null);
 
   // Debounced search — only fires 350 ms after typing stops
   const searchDebounceRef = useRef(null);
@@ -125,6 +126,11 @@ export default function Bookings() {
   // ── Fetch bookings + counts whenever deps change ─────────────────────────────
   useEffect(() => { fetchBookings(); fetchCounts(); }, [fetchBookings, fetchCounts]);
 
+  const showPageToast = (msg) => {
+    setPageToast(msg);
+    setTimeout(() => setPageToast(null), 3000);
+  };
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleFilterChange = (key) => {
     setActiveFilter(key);
@@ -144,8 +150,13 @@ export default function Bookings() {
 
   const handleBookingSaved = (updated) => {
     setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-    setSelectedBooking(updated);
     fetchCounts();
+    if (updated.status === 'checked_out') {
+      setSelectedBooking(null);
+      showPageToast(t('coCheckedOutToast'));
+    } else {
+      setSelectedBooking(updated);
+    }
   };
 
   const handleStatusUpdate = (bookingId, newStatus) => {
@@ -157,14 +168,26 @@ export default function Bookings() {
       .then((r) => r.json())
       .then((updated) => {
         setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-        setSelectedBooking(updated);
         fetchCounts();
+        if (newStatus === 'arriving') {
+          setSelectedBooking(null);
+          showPageToast(t('checkedInToast'));
+        } else if (newStatus === 'cancelled') {
+          setSelectedBooking(null);
+          showPageToast(t('bookingCancelledToast'));
+        } else {
+          setSelectedBooking(updated);
+        }
       });
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
+      {pageToast && (
+        <div className="toast toast-success">{pageToast}</div>
+      )}
+
       {/* ── Page header ──────────────────────────────────────────────────── */}
       <div className="page-toolbar">
         <div className="page-header" style={{ marginBottom: 0 }}>
