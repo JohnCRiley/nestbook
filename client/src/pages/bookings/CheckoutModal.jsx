@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { nightsBetween } from '../../utils/format.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
+import { usePlan } from '../../hooks/usePlan.js';
+import { apiFetch } from '../../utils/apiFetch.js';
 import PrintReceipt from '../../components/PrintReceipt.jsx';
 
 const PAYMENT_METHODS = [
@@ -23,9 +25,19 @@ const PAYMENT_METHODS = [
 export default function CheckoutModal({ booking: b, property, onConfirm, onCancel }) {
   const t = useT();
   const { fmtCurrency, currencySymbol } = useLocale();
+  const plan = usePlan();
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [showReceipt,   setShowReceipt]   = useState(false);
   const [confirming,    setConfirming]    = useState(false);
+  const [roomCharges,   setRoomCharges]   = useState([]);
+
+  useEffect(() => {
+    if (plan !== 'multi') return;
+    apiFetch(`/api/charges/booking/${b.id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((charges) => setRoomCharges(Array.isArray(charges) ? charges.filter((c) => !c.voided_at) : []))
+      .catch(() => {});
+  }, [b.id, plan]);
 
   const nights          = nightsBetween(b.check_in_date, b.check_out_date);
   const pricePerNight   = b.price_per_night ?? 0;
@@ -43,7 +55,8 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
   const depositAmount   = parseFloat(property?.deposit_amount) || 0;
   const depositDeduction = depositPaid ? depositAmount : 0;
 
-  const subtotal    = roomSubtotal + breakfastSubtotal;
+  const chargesSubtotal = roomCharges.reduce((s, c) => s + c.amount, 0);
+  const subtotal    = roomSubtotal + breakfastSubtotal + chargesSubtotal;
   const totalDue    = Math.max(0, subtotal - depositDeduction);
   const outstanding = !depositPaid && depositAmount > 0 ? depositAmount : 0;
 
@@ -117,6 +130,26 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
             </Section>
           )}
 
+          {/* Room charges (Multi plan) */}
+          {plan === 'multi' && (
+            <Section title={t('chargesCheckoutTitle')}>
+              {roomCharges.length === 0 ? (
+                <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>{t('chargesCheckoutNone')}</div>
+              ) : (
+                roomCharges.map((c) => (
+                  <LineRow
+                    key={c.id}
+                    label={`${c.category_icon ? c.category_icon + ' ' : ''}${c.description || c.category_name || '—'}`}
+                    value={fmtCurrency(c.amount)}
+                  />
+                ))
+              )}
+              {roomCharges.length > 0 && (
+                <LineRow label={t('coSubtotal')} value={fmtCurrency(chargesSubtotal)} bold />
+              )}
+            </Section>
+          )}
+
           {/* Deposit */}
           {(depositPaid || outstanding > 0) && (
             <Section title={t('depositPill')}>
@@ -139,7 +172,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
 
           {/* Total */}
           <Section title={t('coTotal')}>
-            {breakfastCharged && (
+            {(breakfastCharged || chargesSubtotal > 0) && (
               <LineRow label={t('coSubtotal')} value={fmtCurrency(subtotal)} />
             )}
             {depositPaid && depositAmount > 0 && (
@@ -254,6 +287,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
           breakfastDays={bfDays}
           depositPaid={depositPaid}
           depositAmount={depositAmount}
+          roomCharges={roomCharges}
           totalDue={totalDue}
           paymentMethod={paymentMethod}
           onClose={() => setShowReceipt(false)}

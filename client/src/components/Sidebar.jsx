@@ -18,6 +18,7 @@ import {
   IconPricing,
   IconLogout,
   IconBuildings,
+  IconCharges,
 } from './Icons.jsx';
 
 const ALL_NAV_ITEMS = [
@@ -26,6 +27,7 @@ const ALL_NAV_ITEMS = [
   { to: '/bookings',  key: 'bookings',  Icon: IconBookings  },
   { to: '/guests',    key: 'guests',    Icon: IconGuests    },
   { to: '/rooms',     key: 'rooms',     Icon: IconRooms     },
+  { to: '/charges',   key: 'charges',   Icon: IconCharges,  multiOnly: true },
   { to: '/reports',      key: 'reports',      Icon: IconReports      },
   { to: '/activity-log', key: 'activityLog',  Icon: IconActivityLog, ownerOnly: true },
   { to: '/settings',  key: 'settings',  Icon: IconSettings  },
@@ -33,7 +35,7 @@ const ALL_NAV_ITEMS = [
 ];
 
 const KIOSK_NAV_KEYS     = new Set(['calendar', 'bookings']);
-const RECEPTION_NAV_KEYS = new Set(['dashboard', 'calendar', 'bookings', 'guests', 'rooms']);
+const RECEPTION_NAV_KEYS = new Set(['dashboard', 'calendar', 'bookings', 'guests', 'rooms', 'charges']);
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -80,8 +82,11 @@ export default function Sidebar() {
   const navItems = isReceptionKiosk
     ? ALL_NAV_ITEMS.filter((i) => KIOSK_NAV_KEYS.has(i.key))
     : user?.role === 'reception'
-      ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key))
-      : ALL_NAV_ITEMS.filter((i) => !i.ownerOnly || user?.role === 'owner');
+      ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key) && (!i.multiOnly || plan === 'multi'))
+      : ALL_NAV_ITEMS.filter((i) =>
+          (!i.ownerOnly || user?.role === 'owner') &&
+          (!i.multiOnly || plan === 'multi')
+        );
 
   function handleLogout() {
     logout();

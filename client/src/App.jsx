@@ -15,6 +15,7 @@ import Reports          from './pages/Reports.jsx';
 import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
 import ActivityLog      from './pages/ActivityLog.jsx';
+import Charges          from './pages/Charges.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
@@ -82,7 +83,55 @@ function PropertyBanner() {
   );
 }
 
+// Full-screen layout for charges_staff — no sidebar, just the charges page
+function ChargesStaffShell() {
+  const { user, logout } = useAuth();
+  const { property } = useLocale();
+  const t = useT();
+  return (
+    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+      <header style={{
+        background: '#1a4710', color: '#fff',
+        padding: '12px 24px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', gap: 16,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>NestBook</span>
+          {property?.name && (
+            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>
+              {property.name}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)' }}>{user?.name}</span>
+          <button
+            onClick={() => { logout(); window.location.href = '/app/login'; }}
+            style={{
+              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6,
+              color: '#fff', padding: '6px 14px', fontSize: '0.82rem',
+              fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {t('signOut')}
+          </button>
+        </div>
+      </header>
+      <div style={{ padding: '24px 16px', maxWidth: 960, margin: '0 auto' }}>
+        <Charges />
+      </div>
+    </div>
+  );
+}
+
 function AppLayout() {
+  const { user } = useAuth();
+
+  // charges_staff users get a stripped-down full-screen charges interface
+  if (user?.role === 'charges_staff') {
+    return <ChargesStaffShell />;
+  }
+
   return (
     <div className="layout">
       <OfflineBanner />
@@ -101,6 +150,7 @@ function AppLayout() {
           <Route path="/activity-log" element={<ActivityLog  />} />
           <Route path="/settings"  element={<Settings  />} />
           <Route path="/pricing"   element={<Pricing   />} />
+          <Route path="/charges"   element={<Charges   />} />
         </Routes>
       </main>
     </div>

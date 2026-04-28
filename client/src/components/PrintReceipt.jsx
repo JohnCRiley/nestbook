@@ -133,6 +133,14 @@ function buildReceiptHTML(d, format) {
 
   const divider = `<hr class="receipt-divider">`;
 
+  const chargeRows = (d.roomCharges ?? [])
+    .map((c) => row(`  ${c.category_icon ? c.category_icon + ' ' : ''}${c.description || c.category_name || ''}`, fc(c.amount, d.symbol), 'indent'))
+    .join('');
+
+  const chargesBlock = (d.roomCharges ?? []).length > 0
+    ? `${divider}<div class="section-label">${esc(d.chargesLabel)}</div>${chargeRows}`
+    : '';
+
   const extras = [
     d.breakfastFree
       ? row(`  ${d.breakfastLabel}`, d.breakfastComplimentary, 'indent')
@@ -174,6 +182,7 @@ function buildReceiptHTML(d, format) {
   <div class="receipt-row indent"><span class="label">${esc(d.checkInOut)}</span></div>
   ${row(`  ${d.nightsLine}`, d.roomSubtotalFmt, 'indent')}
   ${extras}
+  ${chargesBlock}
 
   ${divider}
 
@@ -204,7 +213,9 @@ export default function PrintReceipt({
   nights, pricePerNight, roomSubtotal,
   breakfastFree, breakfastCharged, breakfastSubtotal, bfPricePerPerson,
   breakfastGuests, breakfastDays,
-  depositPaid, depositAmount, totalDue,
+  depositPaid, depositAmount,
+  roomCharges,
+  totalDue,
   paymentMethod,
   onClose,
 }) {
@@ -239,6 +250,9 @@ export default function PrintReceipt({
     depositPaidLine: depositPaid && depositAmount > 0,
     depositLabel:  t('depositPaidPill'),
     depositFmt:    `-${fc(depositAmount, symbol)}`,
+    roomCharges:   Array.isArray(roomCharges) ? roomCharges : [],
+    chargesLabel:  'Room Charges',
+    symbol,
     totalDueFmt:   fc(totalDue, symbol),
     pmLabel: paymentMethod
       ? (PM_LABELS[paymentMethod]?.[locale] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod)
@@ -351,6 +365,23 @@ export default function PrintReceipt({
           )}
           {d.depositPaidLine && (
             <PreviewRow label={`  ${d.depositLabel}`} value={d.depositFmt} indent credit />
+          )}
+
+          {d.roomCharges.length > 0 && (
+            <>
+              <hr style={{ border: 'none', borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>
+                {d.chargesLabel}
+              </div>
+              {d.roomCharges.map((c) => (
+                <PreviewRow
+                  key={c.id}
+                  label={`  ${c.category_icon ? c.category_icon + ' ' : ''}${c.description || c.category_name || ''}`}
+                  value={fc(c.amount, symbol)}
+                  indent
+                />
+              ))}
+            </>
           )}
 
           <hr style={{ border: 'none', borderTop: '1px dashed #cbd5e1', margin: '10px 0' }} />

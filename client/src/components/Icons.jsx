@@ -80,6 +80,13 @@ export const IconActivityLog = () => icon(<>
   <line x1="4"  y1="18" x2="12" y2="18" />
 </>);
 
+export const IconCharges = () => icon(<>
+  <rect x="3" y="5" width="18" height="14" rx="2" />
+  <line x1="3"  y1="10" x2="21" y2="10" />
+  <line x1="7"  y1="15" x2="10" y2="15" />
+  <line x1="14" y1="15" x2="17" y2="15" />
+</>);
+
 export const IconBuildings = () => icon(<>
   <rect x="2"  y="7"  width="9" height="14" rx="1" />
   <rect x="13" y="3"  width="9" height="18" rx="1" />

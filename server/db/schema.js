@@ -421,5 +421,101 @@ export function initSchema() {
   ).run();
   if (advanced.changes > 0) console.log(`✓ Auto-advanced ${advanced.changes} past booking(s) to checked_out.`);
 
+  // Migration: add charges_staff role to users table
+  const usersSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='users'`).get()?.sql ?? '';
+  if (!usersSql.includes('charges_staff')) {
+    db.exec(`PRAGMA foreign_keys = OFF`);
+    db.exec(`
+      BEGIN;
+      CREATE TABLE users_v3 (
+        id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id              INTEGER REFERENCES properties(id),
+        name                     TEXT    NOT NULL,
+        email                    TEXT    NOT NULL UNIQUE,
+        password_hash            TEXT    NOT NULL,
+        role                     TEXT    NOT NULL DEFAULT 'reception'
+                                         CHECK(role IN ('owner','reception','charges_staff')),
+        plan                     TEXT    NOT NULL DEFAULT 'free'
+                                         CHECK(plan IN ('free','pro','multi')),
+        created_at               TEXT    NOT NULL DEFAULT (datetime('now')),
+        is_super_admin           INTEGER NOT NULL DEFAULT 0,
+        password_reset_token     TEXT,
+        password_reset_expires   TEXT,
+        discount_code            TEXT,
+        email_verified           INTEGER NOT NULL DEFAULT 1,
+        suspended                INTEGER NOT NULL DEFAULT 0,
+        email_verification_token TEXT
+      );
+      INSERT INTO users_v3 SELECT id, property_id, name, email, password_hash, role, plan, created_at,
+        is_super_admin, password_reset_token, password_reset_expires, discount_code,
+        email_verified, suspended, email_verification_token FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_v3 RENAME TO users;
+      COMMIT;
+    `);
+    db.exec(`PRAGMA foreign_keys = ON`);
+    console.log('✓ users.role constraint updated to include charges_staff.');
+  }
+
+  // Room Charges — service categories per property
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS service_categories (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      name        TEXT    NOT NULL,
+      color       TEXT    NOT NULL DEFAULT '#64748b',
+      icon        TEXT    NOT NULL DEFAULT '📌',
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Room Charges — individual charge line items
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS room_charges (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      booking_id  INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+      property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      category_id INTEGER REFERENCES service_categories(id),
+      description TEXT,
+      amount      REAL    NOT NULL,
+      charge_date TEXT    NOT NULL DEFAULT (date('now')),
+      charged_by  INTEGER REFERENCES users(id),
+      voided_at   TEXT,
+      voided_by   INTEGER REFERENCES users(id),
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_charges_booking  ON room_charges(booking_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_charges_property ON room_charges(property_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_charges_date     ON room_charges(charge_date)`);
+
+  // Seed default service categories for properties that have none yet
+  const propertiesWithoutCategories = db.prepare(`
+    SELECT p.id FROM properties p
+    WHERE NOT EXISTS (SELECT 1 FROM service_categories sc WHERE sc.property_id = p.id)
+  `).all();
+  if (propertiesWithoutCategories.length > 0) {
+    const seedCat = db.prepare(
+      `INSERT INTO service_categories (property_id, name, color, icon, sort_order) VALUES (?, ?, ?, ?, ?)`
+    );
+    const defaults = [
+      ['Food & Drink', '#f97316', '🍽️', 0],
+      ['Bar',          '#8b5cf6', '🍺', 1],
+      ['Laundry',      '#0ea5e9', '🧺', 2],
+      ['Spa & Wellness','#10b981','💆', 3],
+      ['Activities',   '#f59e0b', '⛷️', 4],
+      ['Transport',    '#6366f1', '🚗', 5],
+      ['Other',        '#64748b', '📌', 6],
+    ];
+    for (const { id } of propertiesWithoutCategories) {
+      for (const [name, color, icon, sort_order] of defaults) {
+        seedCat.run(id, name, color, icon, sort_order);
+      }
+    }
+    console.log(`✓ Seeded default service categories for ${propertiesWithoutCategories.length} propert${propertiesWithoutCategories.length === 1 ? 'y' : 'ies'}.`);
+  }
+
   console.log('✓ Database schema ready.');
 }

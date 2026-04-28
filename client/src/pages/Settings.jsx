@@ -80,6 +80,9 @@ export default function Settings() {
   const [showDeleteAccount,    setShowDeleteAccount]    = useState(false);
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
+  const [categories,    setCategories]    = useState([]);
+  const [newCatForm,    setNewCatForm]    = useState({ name: '', color: '#64748b', icon: '📌' });
+  const [catSaving,     setCatSaving]     = useState(false);
 
   // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
@@ -89,11 +92,15 @@ export default function Settings() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!activeProperty?.id) return;
+    const catFetch = plan === 'multi'
+      ? apiFetch(`/api/charges/categories`).then((r) => r.ok ? r.json() : []).catch(() => [])
+      : Promise.resolve([]);
     Promise.all([
       apiFetch(`/api/properties/${activeProperty.id}`).then((r) => r.json()),
       apiFetch(`/api/users?property_id=${activeProperty.id}`).then((r) => r.json()),
       apiFetch('/api/stripe/subscription').then((r) => r.json()).catch(() => null),
-    ]).then(([p, u, s]) => {
+      catFetch,
+    ]).then(([p, u, s, cats]) => {
       setProperty(p);
       setForm({
         name:               p.name               ?? '',
@@ -112,8 +119,9 @@ export default function Settings() {
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
+      setCategories(Array.isArray(cats) ? cats : []);
     });
-  }, [activeProperty?.id]);
+  }, [activeProperty?.id, plan]);
 
   // ── Toast helper ───────────────────────────────────────────────────────────
   const showToast = useCallback((msg, type = 'success') => {
@@ -500,6 +508,108 @@ export default function Settings() {
                     </button>
                   )
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Service Categories — Multi plan, owner only */}
+          {plan === 'multi' && user?.role === 'owner' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>{t('chargesCatTitle')}</h2>
+                <p>{t('chargesSubtitle')}</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 14 }}>
+                  {categories.length === 0 && (
+                    <div style={{ fontSize: '0.85rem', color: '#94a3b8', padding: '8px 0' }}>{t('chargesCatEmpty')}</div>
+                  )}
+                  {categories.map((cat) => (
+                    <div key={cat.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 10,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{
+                          display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+                          background: cat.color, flexShrink: 0,
+                        }} />
+                        <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{cat.icon} {cat.name}</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const res = await apiFetch(`/api/charges/categories/${cat.id}`, { method: 'DELETE' });
+                          if (res.ok) setCategories((prev) => prev.filter((c) => c.id !== cat.id));
+                        }}
+                        style={{
+                          background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer',
+                          fontSize: '0.8rem', fontFamily: 'inherit', padding: '2px 6px', borderRadius: 4,
+                        }}
+                      >
+                        {t('chargesCatDelete')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 2, minWidth: 120 }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                      {t('chargesCatName')}
+                    </label>
+                    <input
+                      value={newCatForm.name}
+                      onChange={(e) => setNewCatForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="e.g. Room Service"
+                      className="form-control"
+                      style={{ fontSize: '0.85rem', padding: '6px 10px' }}
+                    />
+                  </div>
+                  <div style={{ width: 80 }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                      {t('chargesCatIcon')}
+                    </label>
+                    <input
+                      value={newCatForm.icon}
+                      onChange={(e) => setNewCatForm((f) => ({ ...f, icon: e.target.value }))}
+                      placeholder="🍽️"
+                      className="form-control"
+                      style={{ fontSize: '0.85rem', padding: '6px 10px', width: '100%' }}
+                    />
+                  </div>
+                  <div style={{ width: 60 }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                      {t('chargesCatColor')}
+                    </label>
+                    <input
+                      type="color"
+                      value={newCatForm.color}
+                      onChange={(e) => setNewCatForm((f) => ({ ...f, color: e.target.value }))}
+                      style={{ width: 40, height: 34, border: 'none', cursor: 'pointer', padding: 0, borderRadius: 6 }}
+                    />
+                  </div>
+                  <button
+                    disabled={catSaving || !newCatForm.name.trim()}
+                    onClick={async () => {
+                      if (!newCatForm.name.trim()) return;
+                      setCatSaving(true);
+                      const res = await apiFetch('/api/charges/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newCatForm),
+                      });
+                      if (res.ok) {
+                        const cat = await res.json();
+                        setCategories((prev) => [...prev, cat]);
+                        setNewCatForm({ name: '', color: '#64748b', icon: '📌' });
+                      }
+                      setCatSaving(false);
+                    }}
+                    className="btn-primary"
+                    style={{ alignSelf: 'flex-end', padding: '7px 14px', fontSize: '0.85rem' }}
+                  >
+                    {catSaving ? '…' : t('chargesCatSave')}
+                  </button>
+                </div>
               </div>
             </div>
           )}

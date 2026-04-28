@@ -3,10 +3,13 @@ import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween, localToday, addDays } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+import { usePlan } from '../../hooks/usePlan.js';
+import { useAuth } from '../../auth/AuthContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import DepositPill from '../../components/DepositPill.jsx';
 import CheckoutModal from './CheckoutModal.jsx';
 import PrintReceipt from '../../components/PrintReceipt.jsx';
+import AddChargeModal from '../charges/AddChargeModal.jsx';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -88,6 +91,12 @@ export default function BookingPanel({ booking: initialBooking, rooms = [], gues
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, currencySymbol, onStatusUpdate, onEdit, onBookingUpdated }) {
+  const plan = usePlan();
+  const { user } = useAuth();
+  const [activeTab,          setActiveTab]          = useState('details');
+  const [charges,            setCharges]            = useState(null); // null = not loaded
+  const [categories,         setCategories]         = useState([]);
+  const [addChargeFor,       setAddChargeFor]       = useState(null);
   const [showCancelConfirm,  setShowCancelConfirm]  = useState(false);
   const [depositGateOpen,    setDepositGateOpen]    = useState(false);
   const [depositAction,      setDepositAction]      = useState(null);
@@ -95,6 +104,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [toast,              setToast]              = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [showReprint,        setShowReprint]        = useState(false);
+
+  const showChargesTab = plan === 'multi';
 
   const depositRequired = !!property?.require_deposit;
 
@@ -236,6 +247,118 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         </div>
       )}
 
+      {/* Tab bar — Details / Charges (Multi only) */}
+      {showChargesTab && (
+        <div style={{
+          display: 'flex', borderBottom: '2px solid #f1f5f9',
+          margin: '0 22px', gap: 0,
+        }}>
+          {[['details', t('sectionBooking')], ['charges', t('chargesTabLabel')]].map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                if (tab === 'charges' && charges === null) {
+                  apiFetch(`/api/charges/booking/${b.id}`).then((r) => r.ok ? r.json() : []).then(setCharges);
+                  apiFetch('/api/charges/categories').then((r) => r.ok ? r.json() : []).then(setCategories);
+                }
+              }}
+              style={{
+                padding: '10px 14px', border: 'none', background: 'none',
+                fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600,
+                cursor: 'pointer', color: activeTab === tab ? '#1a4710' : '#94a3b8',
+                borderBottom: activeTab === tab ? '2px solid #1a4710' : '2px solid transparent',
+                marginBottom: -2,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Charges tab content */}
+      {showChargesTab && activeTab === 'charges' && (
+        <div style={{ padding: '14px 22px' }}>
+          {charges === null ? (
+            <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('chargesLoading')}</div>
+          ) : (
+            <>
+              {charges.length === 0 ? (
+                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: 14 }}>{t('chargesNoItems')}</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 14 }}>
+                  {charges.map((c) => (
+                    <div key={c.id} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 10,
+                      opacity: c.voided_at ? 0.45 : 1,
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a2e14' }}>
+                          {c.category_icon && <span style={{ marginRight: 4 }}>{c.category_icon}</span>}
+                          {c.description || c.category_name || '—'}
+                          {c.voided_at && (
+                            <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#ef4444', fontWeight: 500 }}>
+                              {t('chargesVoided')}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          {c.charge_date} · {c.charged_by_name ?? ''}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1a4710' }}>
+                          {fmtCurrency(c.amount)}
+                        </span>
+                        {!c.voided_at && (user?.role === 'owner' || user?.role === 'reception') && (
+                          <button
+                            onClick={async () => {
+                              const res = await apiFetch(`/api/charges/${c.id}`, { method: 'DELETE' });
+                              if (res.ok) setCharges((prev) => prev.map((x) => x.id === c.id ? { ...x, voided_at: 'voided' } : x));
+                            }}
+                            style={{
+                              background: 'none', border: '1px solid #fca5a5', borderRadius: 4,
+                              color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer',
+                              padding: '2px 8px', fontFamily: 'inherit',
+                            }}
+                          >
+                            {t('chargesVoid')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700 }}>
+                    <span style={{ color: '#374151' }}>{t('coTotal')}</span>
+                    <span style={{ color: '#1a4710' }}>
+                      {fmtCurrency(charges.filter((c) => !c.voided_at).reduce((s, c) => s + c.amount, 0))}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {(user?.role === 'owner' || user?.role === 'reception' || user?.role === 'charges_staff') && b.status !== 'cancelled' && b.status !== 'checked_out' && (
+                <button
+                  onClick={() => setAddChargeFor({ booking_id: b.id, guest_first_name: b.guest_first_name, guest_last_name: b.guest_last_name, room_name: b.room_name })}
+                  style={{
+                    padding: '8px 16px', borderRadius: 7,
+                    background: '#f0fdf4', border: '1.5px solid #86efac',
+                    color: '#166534', fontWeight: 600, fontSize: '0.85rem',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {t('chargesAddCharge')}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Details tab content — hide when charges tab is active */}
+      {(!showChargesTab || activeTab === 'details') && <>
+
       {(b.status === 'confirmed' || b.status === 'arriving') && (
         <StatusActions
           status={b.status} bookingId={b.id}
@@ -325,6 +448,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           </button>
         )}
       </div>
+
+      </> /* end details tab */}
 
       <ConfirmModal
         isOpen={showCancelConfirm}
@@ -421,6 +546,18 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             </div>
           </div>
         </div>
+      )}
+
+      {addChargeFor && categories.length > 0 && (
+        <AddChargeModal
+          booking={addChargeFor}
+          categories={categories}
+          onSaved={(charge) => {
+            setAddChargeFor(null);
+            setCharges((prev) => (prev ? [charge, ...prev] : [charge]));
+          }}
+          onClose={() => setAddChargeFor(null)}
+        />
       )}
     </>
   );

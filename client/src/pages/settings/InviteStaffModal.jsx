@@ -89,6 +89,7 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
                 <select name="role" className="form-control" value={form.role} onChange={handleChange}>
                   <option value="reception">Reception — can view and manage bookings</option>
                   <option value="owner">Owner — full access including settings</option>
+                  <option value="charges_staff">Charges Staff — room charges only (Multi)</option>
                 </select>
               </div>
 
