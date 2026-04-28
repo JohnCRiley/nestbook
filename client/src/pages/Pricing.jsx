@@ -25,7 +25,8 @@ export default function Pricing() {
     {
       key:      'pro',
       name:     t('planProName'),
-      price:    '€19',
+      price:    '£19',
+      priceEur: '€22',
       period:   t('planPerMonth'),
       desc:     t('planProDesc'),
       popular:  true,
@@ -35,7 +36,8 @@ export default function Pricing() {
     {
       key:      'multi',
       name:     t('planMultiName'),
-      price:    '€39',
+      price:    '£39',
+      priceEur: '€45',
       period:   t('planPerMonth'),
       desc:     t('planMultiDesc'),
       features: t('planMultiFeatures'),
@@ -98,6 +100,7 @@ export default function Pricing() {
               <div className="pricing-name">{plan.name}</div>
               <div className="pricing-price">
                 {plan.price}
+                {plan.priceEur && <span className="pricing-eur"> / {plan.priceEur}</span>}
                 <span className="pricing-period">/{plan.period}</span>
               </div>
               <p className="pricing-desc">{plan.desc}</p>
@@ -122,6 +125,7 @@ export default function Pricing() {
           );
         })}
       </div>
+      <p className="pricing-adaptive-note">{t('planAdaptivePricingNote')}</p>
     </div>
   );
 }

@@ -665,7 +665,9 @@ img { display: block; max-width: 100%; }
 .pricing-card.highlight .pricing-tier { color: var(--light); }
 .pricing-price { font-size: 2.4rem; font-weight: 900; color: var(--dark); letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
 .pricing-card.highlight .pricing-price { color: #fff; }
-.pricing-price span { font-size: 1rem; font-weight: 500; }
+.pricing-eur { font-size: 1.3rem; font-weight: 500; opacity: 0.7; }
+.pricing-card.highlight .pricing-eur { opacity: 0.75; }
+.pricing-adaptive-note { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 14px; }
 .pricing-period { font-size: 0.78rem; color: var(--muted); margin-bottom: 24px; }
 .pricing-card.highlight .pricing-period { color: rgba(255,255,255,0.55); }
 .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
@@ -1353,7 +1355,7 @@ img { display: block; max-width: 100%; }
       <div class="pricing-card highlight">
         <div class="pricing-popular" data-i18n="pricing.pro.popular">Most popular</div>
         <div class="pricing-tier" data-i18n="pricing.pro.tier">Pro</div>
-        <div class="pricing-price"><span>€</span>19</div>
+        <div class="pricing-price">£19<span class="pricing-eur"> / €22</span></div>
         <div class="pricing-period" data-i18n="pricing.pro.period">per month, billed monthly</div>
         <ul class="pricing-features">
           <li data-i18n="pricing.pro.f1">1 property, unlimited rooms</li>
@@ -1373,7 +1375,7 @@ img { display: block; max-width: 100%; }
       <!-- Multi-property -->
       <div class="pricing-card">
         <div class="pricing-tier" data-i18n="pricing.multi.tier">Multi-property</div>
-        <div class="pricing-price"><span>€</span>39</div>
+        <div class="pricing-price">£39<span class="pricing-eur"> / €45</span></div>
         <div class="pricing-period" data-i18n="pricing.multi.period">per month, billed monthly</div>
         <ul class="pricing-features">
           <li data-i18n="pricing.multi.f1">Up to 5 properties</li>
@@ -1387,6 +1389,7 @@ img { display: block; max-width: 100%; }
       </div>
 
     </div>
+    <p class="pricing-adaptive-note" data-i18n="pricing.note">Price shown in your local currency at checkout</p>
   </div>
 </section>
 
@@ -1569,6 +1572,7 @@ const I18N = {
     'pricing.multi.f5': 'Reports across all properties',
     'pricing.multi.f6': 'Combined or per-property exports',
     'pricing.multi.cta': 'Get started',
+    'pricing.note': 'Price shown in your local currency at checkout',
     'cta.heading': 'Ready to simplify your bookings?',
     'cta.sub':     'Join hundreds of small property owners across Europe who\'ve ditched the spreadsheet and the paper diary.',
     'cta.btn1':    'Start for free',
@@ -1691,6 +1695,7 @@ const I18N = {
     'pricing.multi.f5': 'Rapports pour toutes les propriétés',
     'pricing.multi.f6': 'Exports combinés ou par propriété',
     'pricing.multi.cta': 'Commencer',
+    'pricing.note': 'Prix affiché dans votre devise locale lors du paiement',
     'cta.heading': 'Prêt à simplifier vos réservations ?',
     'cta.sub':     'Rejoignez des centaines de petits hébergeurs en Europe qui ont abandonné le tableur et l\'agenda papier.',
     'cta.btn1':    'Commencer gratuitement',
@@ -1813,6 +1818,7 @@ const I18N = {
     'pricing.multi.f5': 'Informes de todas las propiedades',
     'pricing.multi.f6': 'Exportaciones combinadas o por propiedad',
     'pricing.multi.cta': 'Empezar',
+    'pricing.note': 'Precio mostrado en tu moneda local en el momento del pago',
     'cta.heading': '¿Listo para simplificar tus reservas?',
     'cta.sub':     'Únete a cientos de pequeños propietarios de toda Europa que han dejado atrás la hoja de cálculo y la agenda de papel.',
     'cta.btn1':    'Empezar gratis',
@@ -1935,6 +1941,7 @@ const I18N = {
     'pricing.multi.f5': 'Berichte für alle Unterkünfte',
     'pricing.multi.f6': 'Kombinierte oder einzelne Exporte',
     'pricing.multi.cta': 'Jetzt starten',
+    'pricing.note': 'Preis in Ihrer Landeswährung beim Bezahlen angezeigt',
     'cta.heading': 'Bereit, Ihre Buchungen zu vereinfachen?',
     'cta.sub':     'Schließen Sie sich Hunderten von kleinen Unterkunftsbetreibern in Europa an, die Tabelle und Papierkalender hinter sich gelassen haben.',
     'cta.btn1':    'Kostenlos starten',
@@ -2057,6 +2064,7 @@ const I18N = {
     'pricing.multi.f5': 'Rapporten voor alle accommodaties',
     'pricing.multi.f6': 'Gecombineerde of per-accommodatie exports',
     'pricing.multi.cta': 'Aan de slag',
+    'pricing.note': 'Prijs weergegeven in uw lokale valuta bij het afrekenen',
     'cta.heading': 'Klaar om uw reserveringen te vereenvoudigen?',
     'cta.sub':     'Sluit u aan bij duizenden kleine accommodatie-eigenaren die de papieren agenda hebben ingeruild voor iets beters.',
     'cta.btn1':    'Gratis starten',

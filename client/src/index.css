@@ -2767,6 +2767,19 @@ a { text-decoration: none; }
   margin-bottom: 4px;
 }
 
+.pricing-eur {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.pricing-adaptive-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+
 .pricing-period {
   font-size: 0.85rem;
   font-weight: 400;
