@@ -540,6 +540,18 @@ img { display: block; max-width: 100%; }
   color: var(--muted);
   line-height: 1.65;
 }
+.feature-plan-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--mid);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
 
 /* ── Languages ────────────────────────────────────────────────────────────── */
 #languages { background: var(--dark); color: #fff; }
@@ -1220,6 +1232,12 @@ img { display: block; max-width: 100%; }
         <div class="feature-title" data-i18n="features.audit.title">Staff Activity Audit Log</div>
         <div class="feature-desc" data-i18n="features.audit.desc">Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.</div>
       </div>
+      <div class="feature-card">
+        <div class="feature-icon">🍽️</div>
+        <div class="feature-plan-badge" data-i18n="features.charges.badge">Multi plan</div>
+        <div class="feature-title" data-i18n="features.charges.title">Resort-style room charging</div>
+        <div class="feature-desc" data-i18n="features.charges.desc">Bar, restaurant, shop and activities charged directly to the room. Full itemised folio at checkout. Dedicated portal for service staff.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -1384,6 +1402,9 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.multi.f4">Cross-property calendar view</li>
           <li data-i18n="pricing.multi.f5">Reports across all properties</li>
           <li data-i18n="pricing.multi.f6">Combined or per-property exports</li>
+          <li data-i18n="pricing.multi.f7">Room charges — bar, restaurant, shop &amp; activities</li>
+          <li data-i18n="pricing.multi.f8">Full guest folio with itemised checkout</li>
+          <li data-i18n="pricing.multi.f9">Dedicated charges staff portal</li>
         </ul>
         <a href="/app/register" class="btn btn-primary" style="width:100%; justify-content:center" data-i18n="pricing.multi.cta">Get started</a>
       </div>
@@ -1517,6 +1538,9 @@ const I18N = {
     'features.reports.desc':  'Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.',
     'features.audit.title':   'Staff Activity Audit Log',
     'features.audit.desc':    'Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.',
+    'features.charges.badge': 'Multi plan',
+    'features.charges.title': 'Resort-style room charging',
+    'features.charges.desc':  'Bar, restaurant, shop and activities charged directly to the room. Full itemised folio at checkout. Dedicated portal for service staff.',
     'langs.badge':   'Made for Europe',
     'langs.heading': 'One app, five languages',
     'langs.sub':     'Whether your guests book in English, your staff prefer French, or your Dutch owner wants everything in Nederlands — NestBook switches instantly.',
@@ -1571,6 +1595,9 @@ const I18N = {
     'pricing.multi.f4': 'Cross-property calendar view',
     'pricing.multi.f5': 'Reports across all properties',
     'pricing.multi.f6': 'Combined or per-property exports',
+    'pricing.multi.f7': 'Room charges — bar, restaurant, shop & activities',
+    'pricing.multi.f8': 'Full guest folio with itemised checkout',
+    'pricing.multi.f9': 'Dedicated charges staff portal',
     'pricing.multi.cta': 'Get started',
     'pricing.note': 'Price shown in your local currency at checkout',
     'cta.heading': 'Ready to simplify your bookings?',
@@ -1641,6 +1668,9 @@ const I18N = {
     'features.reports.desc':  'Générez des rapports de revenus, exportez vos données en CSV ou PDF et téléchargez votre liste de contacts clients — filtrés par période et propriété.',
     'features.audit.title':   'Journal d\'activité du personnel',
     'features.audit.desc':    'Chaque connexion, réservation, enregistrement, annulation et modification de paramètre est consigné avec un horodatage, le nom du personnel et l\'adresse IP.',
+    'features.charges.badge': 'Plan Multi',
+    'features.charges.title': 'Facturation en chambre style resort',
+    'features.charges.desc':  'Bar, restaurant, boutique et activités facturés directement sur la chambre. Folio complet et détaillé au départ. Portail dédié au personnel de service.',
     'langs.badge':   'Fait pour l\'Europe',
     'langs.heading': 'Une appli, cinq langues',
     'langs.sub':     'Que vos hôtes réservent en anglais, votre personnel préfère le français ou votre comptable veut l\'allemand — NestBook bascule instantanément.',
@@ -1694,6 +1724,9 @@ const I18N = {
     'pricing.multi.f4': 'Vue calendrier inter-propriétés',
     'pricing.multi.f5': 'Rapports pour toutes les propriétés',
     'pricing.multi.f6': 'Exports combinés ou par propriété',
+    'pricing.multi.f7': 'Charges en chambre — bar, restaurant, boutique & activités',
+    'pricing.multi.f8': 'Folio complet avec départ détaillé',
+    'pricing.multi.f9': 'Portail dédié au personnel de service',
     'pricing.multi.cta': 'Commencer',
     'pricing.note': 'Prix affiché dans votre devise locale lors du paiement',
     'cta.heading': 'Prêt à simplifier vos réservations ?',
@@ -1764,6 +1797,9 @@ const I18N = {
     'features.reports.desc':  'Genera informes de ingresos, exporta datos a CSV o PDF y descarga tu lista de contactos de huéspedes — todo filtrado por fechas y propiedad.',
     'features.audit.title':   'Registro de actividad del personal',
     'features.audit.desc':    'Cada inicio de sesión, reserva, check-in, cancelación y cambio de configuración queda registrado con marca de tiempo, nombre del empleado y dirección IP.',
+    'features.charges.badge': 'Plan Multi',
+    'features.charges.title': 'Cargos a habitación estilo resort',
+    'features.charges.desc':  'Bar, restaurante, tienda y actividades cargados directamente a la habitación. Folio completo y detallado al check-out. Portal dedicado para el personal de servicio.',
     'langs.badge':   'Hecho para Europa',
     'langs.heading': 'Una app, cinco idiomas',
     'langs.sub':     'Tanto si tus huéspedes reservan en inglés, tu personal prefiere el francés o tu contable quiere el alemán — NestBook cambia al instante.',
@@ -1817,6 +1853,9 @@ const I18N = {
     'pricing.multi.f4': 'Vista de calendario entre propiedades',
     'pricing.multi.f5': 'Informes de todas las propiedades',
     'pricing.multi.f6': 'Exportaciones combinadas o por propiedad',
+    'pricing.multi.f7': 'Cargos a habitación — bar, restaurante, tienda y actividades',
+    'pricing.multi.f8': 'Folio completo con check-out detallado',
+    'pricing.multi.f9': 'Portal dedicado para personal de servicio',
     'pricing.multi.cta': 'Empezar',
     'pricing.note': 'Precio mostrado en tu moneda local en el momento del pago',
     'cta.heading': '¿Listo para simplificar tus reservas?',
@@ -1887,6 +1926,9 @@ const I18N = {
     'features.reports.desc':  'Erstellen Sie Umsatzberichte, exportieren Sie Buchungsdaten als CSV oder PDF und laden Sie Ihre Gästekontaktliste herunter — gefiltert nach Zeitraum und Unterkunft.',
     'features.audit.title':   'Mitarbeiter-Aktivitätsprotokoll',
     'features.audit.desc':    'Jede Anmeldung, Buchung, Check-in, Stornierung und Einstellungsänderung wird mit Zeitstempel, Mitarbeitername und IP-Adresse protokolliert.',
+    'features.charges.badge': 'Multi-Plan',
+    'features.charges.title': 'Zimmerbelastung nach Resort-Art',
+    'features.charges.desc':  'Bar, Restaurant, Shop und Aktivitäten direkt auf das Zimmer gebucht. Vollständiges, detailliertes Folio beim Check-out. Dediziertes Portal für Servicepersonal.',
     'langs.badge':   'Für Europa gemacht',
     'langs.heading': 'Eine App, fünf Sprachen',
     'langs.sub':     'Ob Ihre Gäste auf Englisch buchen, Ihr Personal Französisch bevorzugt oder Ihr Buchhalter Deutsch möchte — NestBook wechselt sofort.',
@@ -1940,6 +1982,9 @@ const I18N = {
     'pricing.multi.f4': 'Objektübergreifende Kalenderansicht',
     'pricing.multi.f5': 'Berichte für alle Unterkünfte',
     'pricing.multi.f6': 'Kombinierte oder einzelne Exporte',
+    'pricing.multi.f7': 'Zimmerbelastungen — Bar, Restaurant, Shop & Aktivitäten',
+    'pricing.multi.f8': 'Vollständiges Gästefolio mit detailliertem Check-out',
+    'pricing.multi.f9': 'Dediziertes Portal für Servicepersonal',
     'pricing.multi.cta': 'Jetzt starten',
     'pricing.note': 'Preis in Ihrer Landeswährung beim Bezahlen angezeigt',
     'cta.heading': 'Bereit, Ihre Buchungen zu vereinfachen?',
@@ -2010,6 +2055,9 @@ const I18N = {
     'features.reports.desc':  'Genereer omzetrapporten, exporteer boekingsgegevens naar CSV of PDF en download uw gastencontactlijst — gefilterd op datumbereik en accommodatie.',
     'features.audit.title':   'Activiteitenlog van personeel',
     'features.audit.desc':    'Elke login, boeking, check-in, annulering en instellingswijziging wordt vastgelegd met tijdstempel, personeelsnaam en IP-adres.',
+    'features.charges.badge': 'Multi-plan',
+    'features.charges.title': 'Kamerbelasting op resort-stijl',
+    'features.charges.desc':  'Bar, restaurant, winkel en activiteiten rechtstreeks op de kamer in rekening gebracht. Volledig gespecificeerd folio bij het uitchecken. Speciaal portaal voor servicepersoneel.',
     'langs.badge':   'Spreekt u NestBook?',
     'langs.heading': 'Gemaakt voor Europese accommodatie-eigenaren',
     'langs.sub':     'Of u nu een B&B in de Achterhoek beheert, een gîte in de Provence, een casa rural in Andalusië of een Pension in Beieren — NestBook spreekt uw taal.',
@@ -2063,6 +2111,9 @@ const I18N = {
     'pricing.multi.f4': 'Gedeelde kalenderweergave',
     'pricing.multi.f5': 'Rapporten voor alle accommodaties',
     'pricing.multi.f6': 'Gecombineerde of per-accommodatie exports',
+    'pricing.multi.f7': 'Kamerbelastingen — bar, restaurant, winkel & activiteiten',
+    'pricing.multi.f8': 'Volledig gastenfolio met gespecificeerd uitchecken',
+    'pricing.multi.f9': 'Speciaal portaal voor servicepersoneel',
     'pricing.multi.cta': 'Aan de slag',
     'pricing.note': 'Prijs weergegeven in uw lokale valuta bij het afrekenen',
     'cta.heading': 'Klaar om uw reserveringen te vereenvoudigen?',
