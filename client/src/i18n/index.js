@@ -1,3 +1,4 @@
+// IMPORTANT: Never use curly/smart quotes in this file — use straight apostrophes only
 // Internationalisation — translation strings for the dashboard UI.
 // Import LANGS and look up by locale key, e.g. LANGS[locale] ?? LANGS.en
 
@@ -819,11 +820,11 @@ export const LANGS = {
     planProName:         'Pro',
     planProDesc:         'Pour les h\u00e9bergements en croissance qui ont besoin de plus.',
     planProCta:          'Passer \u00e0 Pro',
-    planProFeatures:     ['1 hébergement, chambres illimitées', 'Tout ce qui est dans Starter', 'Widget sans logo NestBook', 'Comptes personnel (jusqu'à 5)', 'Rapports de revenus & exports financiers', 'Calcul de la TVA', 'Journal d'activité du personnel', 'Export de la liste contacts clients', 'Gestion des acomptes', 'Assistance prioritaire'],
+    planProFeatures:     ['1 hébergement, chambres illimitées', 'Tout ce qui est dans Starter', 'Widget sans logo NestBook', 'Comptes personnel (jusqu\'à 5)', 'Rapports de revenus & exports financiers', 'Calcul de la TVA', 'Journal d\'activité du personnel', 'Export de la liste contacts clients', 'Gestion des acomptes', 'Assistance prioritaire'],
     planMultiName:       'Multi-h\u00e9bergement',
     planMultiDesc:       'Pour les propri\u00e9taires g\u00e9rant plusieurs h\u00e9bergements.',
     planMultiCta:        'Passer \u00e0 Multi',
-    planMultiFeatures:   ['Jusqu'à 5 hébergements', 'Tout ce qui est dans Pro', 'Comptes personnel illimités', 'Vue calendrier multi-hébergement', 'Facturation en chambre — bar, restaurant, boutique & activités', 'Portail dédié au personnel de facturation', 'Folio complet avec règlement détaillé', 'Rapports multi-hébergements', 'Exports combinés ou par hébergement'],
+    planMultiFeatures:   ['Jusqu\'à 5 hébergements', 'Tout ce qui est dans Pro', 'Comptes personnel illimités', 'Vue calendrier multi-hébergement', 'Facturation en chambre — bar, restaurant, boutique & activités', 'Portail dédié au personnel de facturation', 'Folio complet avec règlement détaillé', 'Rapports multi-hébergements', 'Exports combinés ou par hébergement'],
     planAdaptivePricingNote: 'Prix affiché dans votre devise locale lors du paiement',
     paySuccessTitle:     'Tout est pr\u00eat\u00a0!',
     paySuccessMsg:       (plan) => `Bienvenue sur la formule ${plan}. Vos nouvelles fonctionnalit\u00e9s sont actives.`,
@@ -1273,7 +1274,7 @@ export const LANGS = {
     chargesStaffSelect:   'Sélectionnez une chambre pour ajouter un frais',
     checkedInToast:       'Client enregistré avec succès',
     bookingCancelledToast: 'Réservation annulée',
-    staffAccessInfo:      "Le personnel avec le rôle Réceptionniste peut accéder à : Tableau de bord, Calendrier, Réservations, Clients et Chambres. Les Paramètres, Rapports et Journal d'activité sont réservés aux propriétaires.",
+    staffAccessInfo:      "Le personnel avec le rôle Réceptionniste peut accéder à : Tableau de bord, Calendrier, Réservations, Clients et Chambres. Les Paramètres, Rapports et Journal d\'activité sont réservés aux propriétaires.",
     fullscreenTooltip:    "Mode plein écran — ou installez NestBook comme application pour une meilleure expérience",
   },
 
