@@ -81,6 +81,13 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
   const upcoming  = upcomingBookings(bookings, today);
   const roomTypeKey = `roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`;
 
+  const activeBooking = bookings.find((b) =>
+    b.status !== 'cancelled' &&
+    b.status !== 'checked_out' &&
+    b.check_in_date <= today &&
+    b.check_out_date > today
+  );
+
   return (
     <>
       {/* Details */}
@@ -131,15 +138,27 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
         )}
       </div>
 
+      {/* Occupied notice */}
+      {activeBooking && (
+        <div style={{
+          margin: '0 0 8px', padding: '8px 12px', borderRadius: 6,
+          background: '#fef3c7', border: '1px solid #fbbf24',
+          fontSize: '0.83rem', color: '#92400e', fontWeight: 500,
+        }}>
+          {activeBooking.guest_first_name} {activeBooking.guest_last_name}
+          &nbsp;&mdash;&nbsp;{t('moCoutLbl')}: {activeBooking.check_out_date}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="panel-actions">
-        {room.status === 'available' && (
+        {!activeBooking && room.status === 'available' && (
           <button className="btn-panel-primary" onClick={onBook}>
             {t('bookThisRoom')}
           </button>
         )}
         <button
-          className={room.status === 'available' ? 'btn-secondary' : 'btn-panel-primary'}
+          className={(!activeBooking && room.status === 'available') ? 'btn-secondary' : 'btn-panel-primary'}
           onClick={onEdit}
           style={{ border: '1.5px solid var(--border)' }}
         >

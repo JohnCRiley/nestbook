@@ -99,7 +99,7 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
                       border: form.category_id === cat.id ? `2px solid ${cat.color}` : '2px solid #e2e8f0',
                     }}
                   >
-                    {cat.icon} {cat.name}
+                    {cat.name}
                   </button>
                 ))}
               </div>

@@ -30,6 +30,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
   const [showReceipt,   setShowReceipt]   = useState(false);
   const [confirming,    setConfirming]    = useState(false);
   const [roomCharges,   setRoomCharges]   = useState([]);
+  const [checkoutError, setCheckoutError] = useState(null);
 
   useEffect(() => {
     if (plan !== 'multi') return;
@@ -63,8 +64,13 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
   const handleConfirm = async () => {
     if (!paymentMethod) return;
     setConfirming(true);
-    await onConfirm(paymentMethod);
-    setConfirming(false);
+    setCheckoutError(null);
+    try {
+      await onConfirm(paymentMethod);
+    } catch (err) {
+      setCheckoutError(err.message || 'Checkout failed. Please try again.');
+      setConfirming(false);
+    }
   };
 
   return (
@@ -139,7 +145,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
                 roomCharges.map((c) => (
                   <LineRow
                     key={c.id}
-                    label={`${c.category_icon ? c.category_icon + ' ' : ''}${c.description || c.category_name || '—'}`}
+                    label={c.description || c.category_name || '—'}
                     value={fmtCurrency(c.amount)}
                   />
                 ))
@@ -233,6 +239,11 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
           padding: '14px 24px', borderTop: '1px solid #e2e8f0',
           display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
         }}>
+          {checkoutError && (
+            <div style={{ width: '100%', fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
+              {checkoutError}
+            </div>
+          )}
           <button
             onClick={handleConfirm}
             disabled={!paymentMethod || confirming}

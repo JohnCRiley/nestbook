@@ -1364,7 +1364,8 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.starter.f2">Booking calendar & management</li>
           <li data-i18n="pricing.starter.f3">Guest records</li>
           <li data-i18n="pricing.starter.f4">All 5 languages</li>
-          <li data-i18n="pricing.starter.f5">Booking widget (branded)</li>
+          <li data-i18n="pricing.starter.f5">Email confirmations</li>
+          <li data-i18n="pricing.starter.f6">Mobile app (PWA)</li>
         </ul>
         <a href="/app/register" class="btn btn-outline" style="width:100%; justify-content:center" data-i18n="pricing.starter.cta">Get started free</a>
       </div>
@@ -1380,7 +1381,7 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.pro.f2">Everything in Starter</li>
           <li data-i18n="pricing.pro.f3">White-label booking widget</li>
           <li data-i18n="pricing.pro.f4">Staff accounts (up to 5)</li>
-          <li data-i18n="pricing.pro.f5">Email booking confirmations</li>
+          <li data-i18n="pricing.pro.f5">Deposit management</li>
           <li data-i18n="pricing.pro.f6">Revenue reports &amp; financial exports</li>
           <li data-i18n="pricing.pro.f8">Guest contact list exports</li>
           <li data-i18n="pricing.pro.f9">Tax calculation tools</li>
@@ -1571,7 +1572,8 @@ const I18N = {
     'pricing.starter.f2': 'Booking calendar & management',
     'pricing.starter.f3': 'Guest records',
     'pricing.starter.f4': 'All 5 languages',
-    'pricing.starter.f5': 'Booking widget (branded)',
+    'pricing.starter.f5': 'Email confirmations',
+    'pricing.starter.f6': 'Mobile app (PWA)',
     'pricing.starter.cta': 'Get started free',
     'pricing.pro.popular': 'Most popular',
     'pricing.pro.tier':    'Pro',
@@ -1580,7 +1582,7 @@ const I18N = {
     'pricing.pro.f2': 'Everything in Starter',
     'pricing.pro.f3': 'White-label booking widget',
     'pricing.pro.f4': 'Staff accounts (up to 5)',
-    'pricing.pro.f5': 'Email booking confirmations',
+    'pricing.pro.f5': 'Deposit management',
     'pricing.pro.f6': 'Revenue reports & financial exports',
     'pricing.pro.f8': 'Guest contact list exports',
     'pricing.pro.f9': 'Tax calculation tools',
@@ -1701,7 +1703,8 @@ const I18N = {
     'pricing.starter.f2': 'Calendrier et gestion des réservations',
     'pricing.starter.f3': 'Fiches clients',
     'pricing.starter.f4': 'Les 5 langues',
-    'pricing.starter.f5': 'Widget de réservation (avec logo NestBook)',
+    'pricing.starter.f5': 'Confirmations par e-mail',
+    'pricing.starter.f6': 'Application mobile (PWA)',
     'pricing.starter.cta': 'Commencer gratuitement',
     'pricing.pro.popular': 'Le plus populaire',
     'pricing.pro.tier':    'Pro',
@@ -1710,10 +1713,11 @@ const I18N = {
     'pricing.pro.f2': 'Tout ce qui est inclus dans Découverte',
     'pricing.pro.f3': 'Widget sans logo NestBook',
     'pricing.pro.f4': 'Comptes personnel (jusqu\'à 5)',
-    'pricing.pro.f5': 'Confirmations de réservation par e-mail',
+    'pricing.pro.f5': 'Gestion des acomptes',
     'pricing.pro.f6': 'Rapports de revenus & exports financiers',
     'pricing.pro.f8': 'Export de la liste contacts clients',
     'pricing.pro.f9': 'Calcul de la TVA',
+    'pricing.pro.f10': 'Journal d\'activité du personnel',
     'pricing.pro.f7': 'Support prioritaire',
     'pricing.pro.cta': 'Essai gratuit 30 jours',
     'pricing.multi.tier':   'Multi-propriétés',
@@ -1830,7 +1834,8 @@ const I18N = {
     'pricing.starter.f2': 'Calendario y gestión de reservas',
     'pricing.starter.f3': 'Fichas de huéspedes',
     'pricing.starter.f4': 'Los 5 idiomas',
-    'pricing.starter.f5': 'Widget de reservas (con logo NestBook)',
+    'pricing.starter.f5': 'Confirmaciones por correo',
+    'pricing.starter.f6': 'Aplicación móvil (PWA)',
     'pricing.starter.cta': 'Empezar gratis',
     'pricing.pro.popular': 'El más popular',
     'pricing.pro.tier':    'Pro',
@@ -1839,10 +1844,11 @@ const I18N = {
     'pricing.pro.f2': 'Todo lo del plan Inicial',
     'pricing.pro.f3': 'Widget sin logo NestBook',
     'pricing.pro.f4': 'Cuentas de personal (hasta 5)',
-    'pricing.pro.f5': 'Confirmaciones de reserva por correo',
+    'pricing.pro.f5': 'Gestión de depósitos',
     'pricing.pro.f6': 'Informes de ingresos y exportaciones',
     'pricing.pro.f8': 'Exportación de contactos de huéspedes',
     'pricing.pro.f9': 'Herramientas de cálculo de impuestos',
+    'pricing.pro.f10': 'Registro de actividad del personal',
     'pricing.pro.f7': 'Soporte prioritario',
     'pricing.pro.cta': 'Prueba gratis 30 días',
     'pricing.multi.tier':   'Multi-propiedad',
@@ -1959,7 +1965,8 @@ const I18N = {
     'pricing.starter.f2': 'Buchungskalender & -verwaltung',
     'pricing.starter.f3': 'Gästekartei',
     'pricing.starter.f4': 'Alle 5 Sprachen',
-    'pricing.starter.f5': 'Buchungs-Widget (mit NestBook-Logo)',
+    'pricing.starter.f5': 'E-Mail-Bestätigungen',
+    'pricing.starter.f6': 'Mobile App (PWA)',
     'pricing.starter.cta': 'Kostenlos starten',
     'pricing.pro.popular': 'Am beliebtesten',
     'pricing.pro.tier':    'Pro',
@@ -1968,10 +1975,11 @@ const I18N = {
     'pricing.pro.f2': 'Alles aus Starter',
     'pricing.pro.f3': 'White-Label-Buchungs-Widget',
     'pricing.pro.f4': 'Mitarbeiterkonten (bis zu 5)',
-    'pricing.pro.f5': 'E-Mail-Buchungsbestätigungen',
+    'pricing.pro.f5': 'Kautionsverwaltung',
     'pricing.pro.f6': 'Umsatzberichte & Finanzexporte',
     'pricing.pro.f8': 'Gästekontaktliste exportieren',
     'pricing.pro.f9': 'Steuerberechnungstools',
+    'pricing.pro.f10': 'Mitarbeiter-Aktivitätsprotokoll',
     'pricing.pro.f7': 'Prioritäts-Support',
     'pricing.pro.cta': '30 Tage kostenlos testen',
     'pricing.multi.tier':   'Mehrobjekt',
@@ -2088,7 +2096,8 @@ const I18N = {
     'pricing.starter.f2': 'Boekingskalender en -beheer',
     'pricing.starter.f3': 'Gastendossiers',
     'pricing.starter.f4': 'Alle 5 talen',
-    'pricing.starter.f5': 'Boekingswidget (met NestBook-logo)',
+    'pricing.starter.f5': 'E-mailbevestigingen',
+    'pricing.starter.f6': 'Mobiele app (PWA)',
     'pricing.starter.cta': 'Gratis starten',
     'pricing.pro.popular': 'Meest populair',
     'pricing.pro.tier':    'Pro',
@@ -2097,10 +2106,11 @@ const I18N = {
     'pricing.pro.f2': 'Alles uit Starter',
     'pricing.pro.f3': 'White-label boekingswidget',
     'pricing.pro.f4': 'Personeelsaccounts (tot 5)',
-    'pricing.pro.f5': 'E-mailbevestigingen voor gasten',
+    'pricing.pro.f5': 'Deposito-beheer',
     'pricing.pro.f6': 'Omzetrapporten & financiële exports',
     'pricing.pro.f8': 'Export gastencontactlijst',
     'pricing.pro.f9': 'BTW-berekeningshulpmiddelen',
+    'pricing.pro.f10': 'Activiteitenlogboek personeel',
     'pricing.pro.f7': 'Prioriteitsondersteuning',
     'pricing.pro.cta': '30 dagen gratis proberen',
     'pricing.multi.tier':   'Meerdere accommodaties',

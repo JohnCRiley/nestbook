@@ -78,7 +78,7 @@ export default function Settings() {
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
   const [categories,    setCategories]    = useState([]);
-  const [newCatForm,    setNewCatForm]    = useState({ name: '', color: '#64748b', icon: '📌' });
+  const [newCatForm,    setNewCatForm]    = useState({ name: '', color: '#64748b', icon: '' });
   const [catSaving,     setCatSaving]     = useState(false);
 
   // Non-persisted feature toggles (widget, email_confirmations, offline)
@@ -511,7 +511,7 @@ export default function Settings() {
                           display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
                           background: cat.color, flexShrink: 0,
                         }} />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{cat.icon} {cat.name}</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{cat.name}</span>
                       </div>
                       <button
                         onClick={async () => {
@@ -541,18 +541,6 @@ export default function Settings() {
                       style={{ fontSize: '0.85rem', padding: '6px 10px' }}
                     />
                   </div>
-                  <div style={{ width: 80 }}>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
-                      {t('chargesCatIcon')}
-                    </label>
-                    <input
-                      value={newCatForm.icon}
-                      onChange={(e) => setNewCatForm((f) => ({ ...f, icon: e.target.value }))}
-                      placeholder="🍽️"
-                      className="form-control"
-                      style={{ fontSize: '0.85rem', padding: '6px 10px', width: '100%' }}
-                    />
-                  </div>
                   <div style={{ width: 60 }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
                       {t('chargesCatColor')}
@@ -577,7 +565,7 @@ export default function Settings() {
                       if (res.ok) {
                         const cat = await res.json();
                         setCategories((prev) => [...prev, cat]);
-                        setNewCatForm({ name: '', color: '#64748b', icon: '📌' });
+                        setNewCatForm({ name: '', color: '#64748b', icon: '' });
                       }
                       setCatSaving(false);
                     }}

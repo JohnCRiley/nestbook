@@ -167,11 +167,13 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         checked_out_at: now,
       }),
     });
-    if (res.ok) {
-      const updated = await res.json();
-      setShowCheckout(false);
-      if (onBookingUpdated) onBookingUpdated(updated);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? `Server error ${res.status}`);
     }
+    const updated = await res.json();
+    setShowCheckout(false);
+    if (onBookingUpdated) onBookingUpdated(updated);
   };
 
   return (
@@ -225,16 +227,25 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         }}>
           {t('fBreakfast')}
         </div>
-      ) : !!b.breakfast_added && (
-        <div style={{
-          padding: '8px 22px', borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
-          background: '#d9f0cc',
-        }}>
-          {t('bfBadgeFrom')(formatDateMedium(addDays(b.breakfast_start_date || b.check_in_date, 1), locale))}
-        </div>
-      )}
+      ) : !!b.breakfast_added && (() => {
+        const bfStartDate  = b.breakfast_start_date || b.check_in_date;
+        const firstMorning = addDays(bfStartDate, 1);
+        const servings     = nightsBetween(bfStartDate, b.check_out_date);
+        return (
+          <div style={{
+            padding: '8px 22px', borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
+            background: '#d9f0cc',
+          }}>
+            {t('bfBadgeDetail')(
+              formatDateMedium(firstMorning, locale),
+              servings,
+              formatDateMedium(b.check_out_date, locale)
+            )}
+          </div>
+        );
+      })()}
 
       {toast && (
         <div style={{
@@ -295,7 +306,6 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                     }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a2e14' }}>
-                          {c.category_icon && <span style={{ marginRight: 4 }}>{c.category_icon}</span>}
                           {c.description || c.category_name || '—'}
                           {c.voided_at && (
                             <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#ef4444', fontWeight: 500 }}>
@@ -979,7 +989,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
         <button
           className="btn-panel-primary"
           style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
-          onClick={onCheckOut ?? (() => onStatusUpdate(bookingId, 'checked_out'))}
+          onClick={onCheckOut}
         >
           {t('checkOutBtn')}
         </button>

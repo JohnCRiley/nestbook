@@ -245,10 +245,13 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       ? (parseInt(form.numGuests, 10) || 1)
       : 0;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
       const res = await apiFetch('/api/bookings', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
         body: JSON.stringify({
           property_id:          property?.id ?? 1,
           room_id:              Number(form.roomId),
@@ -266,13 +269,16 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
           breakfast_price_per_person: form.breakfastType === 'paid' ? bfPriceNum : 0,
         }),
       });
+      clearTimeout(timeoutId);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `Server error ${res.status}`);
       }
-      onSuccess();
+      const newBooking = await res.json();
+      onSuccess(newBooking);
     } catch (err) {
-      setError(err.message);
+      clearTimeout(timeoutId);
+      setError(err.name === 'AbortError' ? 'Request timed out. Please try again.' : err.message);
       setSubmitting(false);
     }
   }

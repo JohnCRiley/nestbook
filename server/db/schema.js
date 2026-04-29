@@ -501,13 +501,13 @@ export function initSchema() {
       `INSERT INTO service_categories (property_id, name, color, icon, sort_order) VALUES (?, ?, ?, ?, ?)`
     );
     const defaults = [
-      ['Food & Drink', '#f97316', '🍽️', 0],
-      ['Bar',          '#8b5cf6', '🍺', 1],
-      ['Laundry',      '#0ea5e9', '🧺', 2],
-      ['Spa & Wellness','#10b981','💆', 3],
-      ['Activities',   '#f59e0b', '⛷️', 4],
-      ['Transport',    '#6366f1', '🚗', 5],
-      ['Other',        '#64748b', '📌', 6],
+      ['Food & Drink', '#f97316', '', 0],
+      ['Bar',          '#8b5cf6', '', 1],
+      ['Laundry',      '#0ea5e9', '', 2],
+      ['Spa & Wellness','#10b981','', 3],
+      ['Activities',   '#f59e0b', '', 4],
+      ['Transport',    '#6366f1', '', 5],
+      ['Other',        '#64748b', '', 6],
     ];
     for (const { id } of propertiesWithoutCategories) {
       for (const [name, color, icon, sort_order] of defaults) {

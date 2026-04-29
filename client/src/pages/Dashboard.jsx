@@ -706,9 +706,11 @@ function BreakfastServiceList({ bookings, property, t }) {
   }
 
   const inHouseToday    = bookings.filter(b =>
-    b.status === 'arriving' && b.check_in_date <= today    && b.check_out_date > today);
+    b.status !== 'cancelled' && b.status !== 'checked_out' &&
+    b.check_in_date <= today    && b.check_out_date > today);
   const inHouseTomorrow = bookings.filter(b =>
-    b.status !== 'cancelled' && b.check_in_date <= tomorrow && b.check_out_date > tomorrow);
+    b.status !== 'cancelled' && b.status !== 'checked_out' &&
+    b.check_in_date <= tomorrow && b.check_out_date >= tomorrow);
 
   const todayGuests    = inHouseToday.filter(b    => hasBfOnDay(b, today));
   const tomorrowGuests = inHouseTomorrow.filter(b => hasBfOnDay(b, tomorrow));
