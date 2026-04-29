@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Car Door Magnetic Sign (Landscape 450x300mm)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:  #1a4710;
+    --mid:   #2f771b;
+    --light: #d9f0cc;
+    --leaf:  #3a9122;
+    --white: #ffffff;
+  }
+
+  /* 450mm × 300mm landscape */
+  @page { size: 450mm 300mm landscape; margin: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #888;
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  .page {
+    width: 450mm;
+    height: 300mm;
+    background: var(--dark);
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    box-shadow: 0 8px 60px rgba(0,0,0,0.35);
+    transform: scale(0.25);
+    transform-origin: top left;
+  }
+
+  /* ── Column 1: Brand ── */
+  .col-brand {
+    width: 155mm;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20mm 16mm;
+    border-right: 1px solid rgba(217,240,204,0.12);
+    position: relative;
+  }
+
+  .col-brand::after {
+    content: '';
+    position: absolute;
+    width: 280mm;
+    height: 280mm;
+    border-radius: 50%;
+    border: 30mm solid rgba(255,255,255,0.03);
+    top: -160mm;
+    right: -140mm;
+  }
+
+  .brand-logo { width: 72mm; height: 72mm; margin-bottom: 10mm; position: relative; z-index: 1; }
+
+  .brand-name {
+    color: var(--white);
+    font-size: 62px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 8mm;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-tagline {
+    color: var(--light);
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+    opacity: 0.85;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Column 2: Features ── */
+  .col-features {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16mm 14mm 16mm 16mm;
+    border-right: 1px solid rgba(217,240,204,0.12);
+    gap: 8mm;
+  }
+
+  .feat-heading {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(217,240,204,0.5);
+    margin-bottom: 2mm;
+  }
+
+  .feat-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8mm;
+  }
+
+  .feat-dot {
+    width: 26px;
+    height: 26px;
+    background: rgba(58,145,34,0.4);
+    border: 1.5px solid rgba(217,240,204,0.3);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .feat-text {
+    color: var(--light);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.3px;
+  }
+
+  .feat-sub {
+    color: rgba(217,240,204,0.6);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.3;
+    margin-top: 1mm;
+  }
+
+  /* ── Column 3: CTA ── */
+  .col-cta {
+    width: 130mm;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16mm 16mm;
+    gap: 6mm;
+  }
+
+  .qr-outer {
+    width: 90mm;
+    height: 90mm;
+    background: var(--white);
+    border-radius: 10mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3mm;
+  }
+
+  .qr-outer img { width: 100%; height: 100%; display: block; border-radius: 7mm; }
+
+  .qr-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  .price-row {
+    display: flex;
+    gap: 4mm;
+    align-items: center;
+  }
+
+  .price-pill {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(217,240,204,0.2);
+    border-radius: 8px;
+    padding: 3mm 5mm;
+    text-align: center;
+  }
+
+  .price-name { color: rgba(217,240,204,0.55); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .price-val { color: var(--light); font-size: 20px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; }
+  .price-val.free { color: #7dde5a; font-size: 16px; }
+
+  .cta-url {
+    color: var(--light);
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    text-decoration: none;
+    margin-top: 2mm;
+  }
+
+  @media print {
+    body { background: none; padding: 0; }
+    .page { transform: none; box-shadow: none; }
+  }
+
+  @media screen {
+    body { min-height: calc(300mm * 0.25 + 60px); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Column 1: Brand -->
+  <div class="col-brand">
+    <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="90" fill="#1a4710"/>
+      <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+      <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+      <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+      <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-name">NestBook</div>
+    <div class="brand-tagline">Booking software for<br>B&amp;Bs &amp; guest houses</div>
+  </div>
+
+  <!-- Column 2: Features -->
+  <div class="col-features">
+    <div class="feat-heading">Why owners choose NestBook</div>
+    <div class="feat-item">
+      <div class="feat-dot">&#128197;</div>
+      <div>
+        <div class="feat-text">Visual room calendar</div>
+        <div class="feat-sub">One-click check-in &amp; check-out</div>
+      </div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-dot">&#127760;</div>
+      <div>
+        <div class="feat-text">Zero-commission booking widget</div>
+        <div class="feat-sub">Guests book direct from your website</div>
+      </div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-dot">&#128202;</div>
+      <div>
+        <div class="feat-text">Revenue reports &amp; CSV exports</div>
+        <div class="feat-sub">Monthly income &amp; occupancy at a glance</div>
+      </div>
+    </div>
+    <div class="feat-item">
+      <div class="feat-dot">&#127757;</div>
+      <div>
+        <div class="feat-text">5 languages built in</div>
+        <div class="feat-sub">EN, FR, ES, DE, NL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column 3: CTA -->
+  <div class="col-cta">
+    <div class="qr-outer">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=340x340&color=1a4710&bgcolor=ffffff&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="Scan to sign up" width="340" height="340">
+    </div>
+    <div class="qr-label">Scan to sign up free</div>
+    <div class="price-row">
+      <div class="price-pill">
+        <div class="price-name">Starter</div>
+        <div class="price-val free">Free</div>
+      </div>
+      <div class="price-pill">
+        <div class="price-name">Pro</div>
+        <div class="price-val">&pound;19<span style="font-size:13px;opacity:0.6">/mo</span></div>
+      </div>
+      <div class="price-pill">
+        <div class="price-name">Multi</div>
+        <div class="price-val">&pound;39<span style="font-size:13px;opacity:0.6">/mo</span></div>
+      </div>
+    </div>
+    <a class="cta-url" href="https://nestbook.io">nestbook.io</a>
+  </div>
+
+</div>
+</body>
+</html>

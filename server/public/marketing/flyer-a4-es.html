@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Flyer A4 (ES)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --leaf:#3a9122; --white:#ffffff; --soft:#f0faf0; --text:#1a2e14; --muted:#557a4a; }
+  @page { size: A4 portrait; margin: 0; }
+  body { font-family:'Inter',system-ui,sans-serif; background:#ccc; display:flex; justify-content:center; padding:24px; min-height:100vh; }
+  .page { width:210mm; height:297mm; background:var(--white); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 4px 40px rgba(0,0,0,0.2); }
+  .header { background:var(--dark); padding:14mm 16mm 12mm; flex-shrink:0; position:relative; overflow:hidden; }
+  .header::after { content:''; position:absolute; width:200mm; height:200mm; border-radius:50%; border:30mm solid rgba(255,255,255,0.04); top:-120mm; right:-80mm; }
+  .brand { display:flex; align-items:center; gap:10px; margin-bottom:10mm; }
+  .logo { width:50px; height:50px; }
+  .brand-name { color:var(--white); font-size:32px; font-weight:900; letter-spacing:-0.5px; }
+  .headline { color:var(--white); font-size:31px; font-weight:900; line-height:1.12; letter-spacing:-0.5px; margin-bottom:4mm; position:relative; z-index:1; }
+  .subheadline { color:var(--light); font-size:13px; line-height:1.55; max-width:140mm; opacity:0.9; }
+  .stripe { height:6px; background:linear-gradient(90deg,var(--leaf),var(--light)); flex-shrink:0; }
+  .body { flex:1; padding:11mm 16mm 10mm; display:flex; flex-direction:column; gap:9mm; }
+  .section-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--mid); margin-bottom:4mm; }
+  .features { display:flex; flex-direction:column; gap:3.5mm; }
+  .feature { display:flex; align-items:center; gap:4mm; padding:4mm 5mm; background:var(--soft); border:1.5px solid var(--light); border-radius:8px; }
+  .feat-icon { width:34px; height:34px; background:var(--dark); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .feat-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:1.5px; }
+  .feat-desc { font-size:10px; color:var(--muted); line-height:1.4; }
+  .pricing { background:var(--dark); border-radius:10px; padding:5.5mm 7mm; display:flex; align-items:center; gap:6mm; }
+  .pricing-copy { flex:1; }
+  .pricing-headline { color:var(--white); font-size:14.5px; font-weight:800; margin-bottom:2px; }
+  .pricing-sub { color:var(--light); font-size:10px; line-height:1.45; opacity:0.85; }
+  .pricing-tiers { display:flex; flex-direction:column; gap:2px; text-align:right; flex-shrink:0; }
+  .tier { display:flex; align-items:baseline; gap:4px; justify-content:flex-end; }
+  .tier-name { color:rgba(217,240,204,0.6); font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .tier-price { color:var(--light); font-size:16px; font-weight:900; line-height:1; letter-spacing:-0.5px; }
+  .tier-price.free { color:#7dde5a; font-size:13px; }
+  .cta { display:flex; align-items:center; gap:8mm; background:var(--light); border-radius:10px; padding:6mm 8mm; }
+  .qr-wrap { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:2.5mm; }
+  .qr-box { width:30mm; height:30mm; background:var(--dark); border-radius:7px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .qr-box img { width:100%; height:100%; display:block; }
+  .qr-caption { font-size:8px; font-weight:700; color:var(--dark); text-transform:uppercase; letter-spacing:0.5px; text-align:center; }
+  .cta-copy { flex:1; }
+  .cta-headline { font-size:18px; font-weight:900; color:var(--dark); line-height:1.15; letter-spacing:-0.3px; margin-bottom:2.5mm; }
+  .cta-sub { font-size:10.5px; color:var(--text); line-height:1.5; margin-bottom:3mm; }
+  .cta-url { font-size:12px; font-weight:800; color:var(--mid); text-decoration:none; letter-spacing:-0.2px; }
+  .lang-bar { background:var(--mid); padding:2.5mm 16mm; display:flex; align-items:center; justify-content:center; gap:6px; flex-shrink:0; }
+  .lang-bar-icon { font-size:11px; opacity:0.85; }
+  .lang-bar-text { color:var(--light); font-size:9.5px; font-weight:600; letter-spacing:0.2px; }
+  .footer { background:var(--dark); padding:3.5mm 16mm; display:flex; justify-content:center; align-items:center; flex-shrink:0; }
+  .footer-url { color:var(--light); font-size:16px; font-weight:800; letter-spacing:-0.3px; text-decoration:none; }
+  @media print { body { background:none; padding:0; } .page { box-shadow:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="brand">
+      <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="90" fill="#1a4710"/>
+        <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+        <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+        <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+        <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NestBook</span>
+    </div>
+    <div class="headline">Gesti&oacute;n de reservas simple<br>para su casa rural o alojamiento</div>
+    <div class="subheadline">Olvide las hojas de c&aacute;lculo. NestBook ofrece a los propietarios independientes un sistema de reservas profesional &mdash; sencillo, asequible y listo para usar.</div>
+  </div>
+
+  <div class="stripe"></div>
+
+  <div class="body">
+
+    <div>
+      <div class="section-label">Todo lo que necesita</div>
+      <div class="features">
+        <div class="feature">
+          <div class="feat-icon">&#128197;</div>
+          <div class="feat-body">
+            <div class="feat-title">Calendario y gesti&oacute;n de reservas</div>
+            <div class="feat-desc">Calendario visual de habitaciones con check-in, check-out e historial completo.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feat-icon">&#127760;</div>
+          <div class="feat-body">
+            <div class="feat-title">Widget de reservas para su sitio web</div>
+            <div class="feat-desc">Los hu&eacute;spedes reservan directamente. Sin comisi&oacute;n. Los pagos van directamente a usted.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feat-icon">&#128179;</div>
+          <div class="feat-body">
+            <div class="feat-title">Seguimiento de dep&oacute;sitos y correos autom&aacute;ticos</div>
+            <div class="feat-desc">Cobre dep&oacute;sitos y env&iacute;e confirmaciones de reserva autom&aacute;ticamente.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feat-icon">&#128202;</div>
+          <div class="feat-body">
+            <div class="feat-title">Informes de ingresos y exportaciones contables</div>
+            <div class="feat-desc">Res&uacute;menes mensuales, tasas de ocupaci&oacute;n y exportaciones CSV.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feat-icon">&#127374;</div>
+          <div class="feat-body">
+            <div class="feat-title">Cargos en habitaci&oacute;n &mdash; bar, restaurante y actividades <span style="font-size:8px;background:#2f771b;color:#d9f0cc;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.3px">MULTI</span></div>
+            <div class="feat-desc">Agregue cargos al folio del hu&eacute;sped para una facturaci&oacute;n detallada.</div>
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feat-icon">&#127757;</div>
+          <div class="feat-body">
+            <div class="feat-title">Disponible en 5 idiomas &mdash; EN, FR, ES, DE, NL</div>
+            <div class="feat-desc">Interfaz completa en ingl&eacute;s, franc&eacute;s, espa&ntilde;ol, alem&aacute;n y neerland&eacute;s.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pricing">
+      <div class="pricing-copy">
+        <div class="pricing-headline">Precio fijo. Sin comisiones. Empiece gratis.</div>
+        <div class="pricing-sub">Sin porcentaje sobre reservas. Sin tarifas ocultas.<br>30 d&iacute;as de prueba gratuita &mdash; sin tarjeta de cr&eacute;dito.</div>
+      </div>
+      <div class="pricing-tiers">
+        <div class="tier">
+          <span class="tier-name">Starter</span>
+          <span class="tier-price free">Gratis</span>
+        </div>
+        <div class="tier">
+          <span class="tier-name">Pro</span>
+          <span class="tier-price">&euro;22<span style="font-size:10px;font-weight:500;opacity:0.6"> / &pound;19/mes</span></span>
+        </div>
+        <div class="tier">
+          <span class="tier-name">Multi</span>
+          <span class="tier-price">&euro;45<span style="font-size:10px;font-weight:500;opacity:0.6"> / &pound;39/mes</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <div class="qr-wrap">
+        <div class="qr-box">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=d9f0cc&bgcolor=1a4710&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="QR code" width="113" height="113">
+        </div>
+        <div class="qr-caption">Escanee para registrarse</div>
+      </div>
+      <div class="cta-copy">
+        <div class="cta-headline">Empiece su prueba gratuita<br>de 30 d&iacute;as hoy</div>
+        <div class="cta-sub">Sin tarjeta de cr&eacute;dito. Sin contrato. Acceso completo desde el primer d&iacute;a. Configuraci&oacute;n en menos de 10 minutos.</div>
+        <a class="cta-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="lang-bar">
+    <span class="lang-bar-icon">&#127757;</span>
+    <span class="lang-bar-text">Disponible en ingl&eacute;s, franc&eacute;s, espa&ntilde;ol, alem&aacute;n y neerland&eacute;s</span>
+  </div>
+
+  <div class="footer">
+    <a class="footer-url" href="https://nestbook.io">nestbook.io</a>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — A-Aufsteller A1 (DE)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --leaf:#3a9122; --white:#ffffff; }
+  @page { size: 594mm 841mm portrait; margin: 0; }
+  body { font-family:'Inter',system-ui,sans-serif; background:#aaa; display:flex; justify-content:center; padding:24px; min-height:100vh; }
+  .page { width:594mm; height:841mm; background:var(--dark); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 8px 60px rgba(0,0,0,0.3); transform:scale(0.205); transform-origin:top left; }
+  .top { flex-shrink:0; display:flex; justify-content:center; padding:42mm 30mm 18mm; }
+  .brand-row { display:flex; align-items:center; gap:18px; }
+  .big-logo { width:110mm; height:110mm; }
+  .brand-name { color:var(--white); font-size:130px; font-weight:900; letter-spacing:-4px; line-height:1; }
+  .stripe { height:14px; background:linear-gradient(90deg,var(--leaf),var(--light),var(--leaf)); flex-shrink:0; margin:0 30mm; border-radius:7px; }
+  .headline-section { flex-shrink:0; padding:22mm 30mm 0; text-align:center; }
+  .headline { color:var(--white); font-size:88px; font-weight:900; line-height:1.05; letter-spacing:-3px; }
+  .headline em { color:var(--light); font-style:normal; }
+  .qr-section { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16mm 30mm; gap:10mm; }
+  .qr-outer { width:130mm; height:130mm; background:var(--white); border-radius:18mm; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 10mm rgba(217,240,204,0.15); }
+  .qr-outer img { width:110mm; height:110mm; display:block; border-radius:10mm; }
+  .qr-caption { color:var(--light); font-size:32px; font-weight:800; letter-spacing:1px; text-transform:uppercase; text-align:center; }
+  .url-footer { flex-shrink:0; padding:14mm 30mm 22mm; text-align:center; }
+  .url-text { color:var(--white); font-size:72px; font-weight:900; letter-spacing:-2px; text-decoration:none; opacity:0.95; }
+  @media print { body { background:none; padding:0; } .page { transform:none; box-shadow:none; } }
+  @media screen { body { min-height:calc(841mm * 0.205 + 60px); } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top">
+    <div class="brand-row">
+      <svg class="big-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <rect width="512" height="512" rx="90" fill="#1a4710"/>
+        <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+        <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+        <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+        <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+        <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">NestBook</span>
+    </div>
+  </div>
+
+  <div class="stripe"></div>
+
+  <div class="headline-section">
+    <div class="headline">Schluss mit dem Papierbuch.<br><em>Buchungen einfach verwalten.</em></div>
+  </div>
+
+  <div class="qr-section">
+    <div class="qr-outer">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=420x420&color=1a4710&bgcolor=ffffff&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="Scannen und anmelden" width="415" height="415">
+    </div>
+    <div class="qr-caption">Scannen und kostenlos anmelden &mdash; 30 Tage, ohne Karte</div>
+  </div>
+
+  <div class="url-footer">
+    <a class="url-text" href="https://nestbook.io">nestbook.io</a>
+  </div>
+
+</div>
+</body>
+</html>

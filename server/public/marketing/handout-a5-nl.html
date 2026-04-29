@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Handout A5 (NL)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --leaf:#3a9122; --white:#ffffff; --soft:#f0faf0; --text:#1a2e14; --muted:#557a4a; }
+  @page { size: A5 portrait; margin: 0; }
+  body { font-family:'Inter',system-ui,sans-serif; background:#ccc; display:flex; flex-direction:column; align-items:center; padding:24px; gap:16px; min-height:100vh; }
+  .side-label { width:148mm; font-size:10px; font-weight:600; color:#777; font-family:system-ui,sans-serif; letter-spacing:0.5px; text-align:center; }
+  .page { width:148mm; height:210mm; background:var(--white); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 4px 30px rgba(0,0,0,0.18); flex-shrink:0; }
+  .front-bg { background:var(--dark); flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12mm 12mm 10mm; position:relative; overflow:hidden; }
+  .front-bg::before { content:''; position:absolute; width:160mm; height:160mm; border-radius:50%; border:20mm solid rgba(255,255,255,0.04); top:-70mm; right:-60mm; }
+  .front-bg::after { content:''; position:absolute; width:120mm; height:120mm; border-radius:50%; border:15mm solid rgba(255,255,255,0.03); bottom:-50mm; left:-40mm; }
+  .front-logo { width:54px; height:54px; margin-bottom:6mm; flex-shrink:0; position:relative; z-index:1; }
+  .front-brand { color:var(--white); font-size:30px; font-weight:900; letter-spacing:-0.5px; margin-bottom:8mm; position:relative; z-index:1; }
+  .front-hook { color:var(--white); font-size:19px; font-weight:800; line-height:1.2; text-align:center; letter-spacing:-0.3px; margin-bottom:4mm; position:relative; z-index:1; }
+  .front-sub { color:var(--light); font-size:11px; line-height:1.5; text-align:center; margin-bottom:6mm; opacity:0.85; position:relative; z-index:1; }
+  .front-pricing { display:flex; align-items:baseline; gap:5px; margin-bottom:7mm; position:relative; z-index:1; }
+  .fp-tier { display:flex; align-items:baseline; gap:2px; }
+  .fp-tn { color:rgba(217,240,204,0.55); font-size:7px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-right:2px; }
+  .fp-p { color:var(--light); font-size:14px; font-weight:900; letter-spacing:-0.3px; line-height:1; }
+  .fp-p.free { color:#7dde5a; font-size:11px; }
+  .fp-mo { font-size:7.5px; font-weight:500; opacity:0.6; letter-spacing:0; }
+  .fp-dot { color:rgba(217,240,204,0.25); font-size:10px; line-height:1; }
+  .front-qr-wrap { display:flex; flex-direction:column; align-items:center; gap:3mm; position:relative; z-index:1; }
+  .front-qr-box { width:36mm; height:36mm; background:var(--white); border-radius:8px; padding:3px; display:flex; align-items:center; justify-content:center; }
+  .front-qr-box img { width:100%; height:100%; display:block; border-radius:5px; }
+  .front-qr-caption { font-size:9px; font-weight:700; color:var(--light); text-transform:uppercase; letter-spacing:0.8px; text-align:center; }
+  .front-lang { background:rgba(0,0,0,0.2); padding:2mm 0; text-align:center; flex-shrink:0; font-size:8px; font-weight:600; color:rgba(217,240,204,0.7); letter-spacing:0.3px; }
+  .front-footer { background:rgba(0,0,0,0.25); padding:3.5mm 0; text-align:center; flex-shrink:0; }
+  .front-url { color:var(--light); font-size:13px; font-weight:800; text-decoration:none; letter-spacing:-0.2px; }
+  .back-header { background:var(--dark); padding:6mm 10mm 5mm; flex-shrink:0; display:flex; align-items:center; gap:8px; }
+  .back-logo { width:24px; height:24px; }
+  .back-brand { color:var(--white); font-size:16px; font-weight:800; }
+  .back-stripe { height:4px; background:linear-gradient(90deg,var(--leaf),var(--light)); flex-shrink:0; }
+  .back-body { flex:1; padding:6mm 10mm 5mm; display:flex; flex-direction:column; gap:5mm; }
+  .back-section-label { font-size:7.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--mid); margin-bottom:3mm; }
+  .back-features { display:flex; flex-direction:column; gap:2.5mm; }
+  .back-feature { display:flex; align-items:flex-start; gap:3mm; }
+  .bf-dot { width:20px; height:20px; background:var(--dark); border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+  .bf-title { font-size:10.5px; font-weight:700; color:var(--text); margin-bottom:1px; line-height:1.2; }
+  .bf-desc { font-size:8.5px; color:var(--muted); line-height:1.4; }
+  .back-pricing { background:var(--dark); border-radius:8px; padding:4mm 5mm; }
+  .bp-label { font-size:7.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:rgba(217,240,204,0.6); margin-bottom:3mm; }
+  .bp-tiers { display:flex; gap:3mm; }
+  .bp-tier { flex:1; background:rgba(255,255,255,0.07); border-radius:6px; padding:3mm 3.5mm; text-align:center; }
+  .bp-tier-name { font-size:8px; font-weight:600; color:rgba(217,240,204,0.65); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:1.5mm; }
+  .bp-tier-price { font-size:17px; font-weight:900; color:var(--light); line-height:1; letter-spacing:-0.5px; }
+  .bp-tier-price.free { color:#7dde5a; font-size:13px; line-height:1.3; }
+  .bp-tier-period { font-size:7.5px; color:rgba(217,240,204,0.5); margin-top:1px; }
+  .bp-note { font-size:8px; color:rgba(217,240,204,0.5); margin-top:3mm; line-height:1.4; }
+  .back-footer { background:var(--dark); padding:3mm 10mm; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .bf-url { color:var(--light); font-size:9px; font-weight:700; text-decoration:none; }
+  .bf-email { color:rgba(217,240,204,0.6); font-size:8.5px; }
+  @media print { body { background:none; padding:0; gap:0; } .side-label { display:none; } .page { box-shadow:none; page-break-after:always; } }
+</style>
+</head>
+<body>
+
+<div class="side-label">VOORZIJDE — Afdrukzijde 1</div>
+<div class="page">
+  <div class="front-bg">
+    <svg class="front-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="90" fill="#1a4710"/>
+      <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+      <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+      <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+      <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <div class="front-brand">NestBook</div>
+    <div class="front-hook">Het boekingssysteem dat uw<br>B&amp;B echt verdient</div>
+    <div class="front-sub">Kalender, boekingen, rapporten, aanbetalingen<br>en commissievrij widget &mdash; in 5 talen.</div>
+    <div class="front-pricing">
+      <div class="fp-tier"><span class="fp-tn">Starter</span><span class="fp-p free">Gratis</span></div>
+      <span class="fp-dot">&middot;</span>
+      <div class="fp-tier"><span class="fp-tn">Pro</span><span class="fp-p">&euro;22<span class="fp-mo"> / &pound;19/mnd</span></span></div>
+      <span class="fp-dot">&middot;</span>
+      <div class="fp-tier"><span class="fp-tn">Multi</span><span class="fp-p">&euro;45<span class="fp-mo"> / &pound;39/mnd</span></span></div>
+    </div>
+    <div class="front-qr-wrap">
+      <div class="front-qr-box">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=1a4710&bgcolor=ffffff&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="QR code" width="130" height="130">
+      </div>
+      <div class="front-qr-caption">Scan om gratis in te schrijven</div>
+    </div>
+  </div>
+  <div class="front-lang">&#127757; &nbsp;Beschikbaar in Engels, Frans, Spaans, Duits en Nederlands</div>
+  <div class="front-footer">
+    <a class="front-url" href="https://nestbook.io">nestbook.io</a>
+  </div>
+</div>
+
+<div class="side-label">ACHTERZIJDE — Afdrukzijde 2</div>
+<div class="page">
+  <div class="back-header">
+    <svg class="back-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="90" fill="#1a4710"/>
+      <ellipse cx="256" cy="240" rx="130" ry="160" fill="#2f771b"/>
+      <ellipse cx="256" cy="240" rx="95" ry="125" fill="#3a9122"/>
+      <line x1="256" y1="110" x2="256" y2="390" stroke="#d9f0cc" stroke-width="9" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="185" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="175" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="185" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="190" x2="327" y2="165" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="230" x2="337" y2="215" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="270" x2="327" y2="265" stroke="#d9f0cc" stroke-width="5" stroke-linecap="round"/>
+      <line x1="256" y1="390" x2="256" y2="440" stroke="#d9f0cc" stroke-width="8" stroke-linecap="round"/>
+      <line x1="256" y1="430" x2="225" y2="460" stroke="#d9f0cc" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <span class="back-brand">NestBook</span>
+  </div>
+  <div class="back-stripe"></div>
+  <div class="back-body">
+    <div>
+      <div class="back-section-label">Wat er inbegrepen is</div>
+      <div class="back-features">
+        <div class="back-feature">
+          <div class="bf-dot">&#128197;</div>
+          <div>
+            <div class="bf-title">Kalender &amp; boekingsbeheer</div>
+            <div class="bf-desc">Visuele kamerkalender. Inchecken en uitchecken met &eacute;&eacute;n klik.</div>
+          </div>
+        </div>
+        <div class="back-feature">
+          <div class="bf-dot">&#127760;</div>
+          <div>
+            <div class="bf-title">Directe boekingswidget</div>
+            <div class="bf-desc">Integreer op uw site. Geen commissie. Betalingen rechtstreeks naar u.</div>
+          </div>
+        </div>
+        <div class="back-feature">
+          <div class="bf-dot">&#128202;</div>
+          <div>
+            <div class="bf-title">Omzetrapportages</div>
+            <div class="bf-desc">Maandelijkse inkomsten, bezettingsgraden en exporteerbare gastenlijsten.</div>
+          </div>
+        </div>
+        <div class="back-feature">
+          <div class="bf-dot">&#128179;</div>
+          <div>
+            <div class="bf-title">Aanbetalingen bijhouden</div>
+            <div class="bf-desc">Aanbetalingen aanvragen, volgen en bevestigen voor aankomst.</div>
+          </div>
+        </div>
+        <div class="back-feature">
+          <div class="bf-dot">&#127374;</div>
+          <div>
+            <div class="bf-title">Kamerrekeningen &mdash; bar &amp; restaurant <span style="font-size:7px;background:#2f771b;color:#d9f0cc;padding:1px 4px;border-radius:3px;font-weight:700">MULTI</span></div>
+            <div class="bf-desc">Bar-, restaurant- en activiteitenkosten toevoegen aan gastenfolios.</div>
+          </div>
+        </div>
+        <div class="back-feature">
+          <div class="bf-dot">&#127757;</div>
+          <div>
+            <div class="bf-title">Ondersteuning in 5 talen</div>
+            <div class="bf-desc">Engels, Frans, Spaans, Duits en Nederlands.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="back-pricing">
+      <div class="bp-label">Prijzen &mdash; vast tarief, geen commissie</div>
+      <div class="bp-tiers">
+        <div class="bp-tier">
+          <div class="bp-tier-name">Starter</div>
+          <div class="bp-tier-price free">Gratis</div>
+          <div class="bp-tier-period">altijd</div>
+        </div>
+        <div class="bp-tier">
+          <div class="bp-tier-name">Pro</div>
+          <div class="bp-tier-price">&euro;22<span style="font-size:10px;font-weight:500;opacity:0.65"> / &pound;19</span></div>
+          <div class="bp-tier-period">/ maand</div>
+        </div>
+        <div class="bp-tier">
+          <div class="bp-tier-name">Multi</div>
+          <div class="bp-tier-price">&euro;45<span style="font-size:10px;font-weight:500;opacity:0.65"> / &pound;39</span></div>
+          <div class="bp-tier-period">/ maand</div>
+        </div>
+      </div>
+      <div class="bp-note">30 dagen gratis proberen op betaalde abonnementen &middot; Geen creditcard &middot; Altijd opzegbaar</div>
+    </div>
+  </div>
+  <div class="back-footer">
+    <a class="bf-url" href="https://nestbook.io">nestbook.io</a>
+    <span class="bf-email">hello@nestbook.io</span>
+  </div>
+</div>
+
+</body>
+</html>

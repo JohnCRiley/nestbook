@@ -127,11 +127,28 @@
     font-size: 11px;
     line-height: 1.5;
     text-align: center;
-    margin-bottom: 9mm;
+    margin-bottom: 6mm;
     opacity: 0.85;
     position: relative;
     z-index: 1;
   }
+
+  /* Front pricing strip */
+  .front-pricing {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 7mm;
+    position: relative;
+    z-index: 1;
+  }
+
+  .fp-tier { display: flex; align-items: baseline; gap: 2px; }
+  .fp-tn { color: rgba(217,240,204,0.55); font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
+  .fp-p { color: var(--light); font-size: 14px; font-weight: 900; letter-spacing: -0.3px; line-height: 1; }
+  .fp-p.free { color: #7dde5a; font-size: 11px; }
+  .fp-mo { font-size: 7.5px; font-weight: 500; opacity: 0.6; letter-spacing: 0; }
+  .fp-dot { color: rgba(217,240,204,0.25); font-size: 10px; line-height: 1; }
 
   .front-qr-wrap {
     display: flex;
@@ -222,10 +239,10 @@
 
   .back-body {
     flex: 1;
-    padding: 7mm 10mm 6mm;
+    padding: 6mm 10mm 5mm;
     display: flex;
     flex-direction: column;
-    gap: 6mm;
+    gap: 5mm;
   }
 
   .back-section-label {
@@ -279,7 +296,7 @@
   .back-pricing {
     background: var(--dark);
     border-radius: 8px;
-    padding: 4.5mm 5.5mm;
+    padding: 4mm 5mm;
   }
 
   .bp-label {
@@ -387,7 +404,14 @@
     </svg>
     <div class="front-brand">NestBook</div>
     <div class="front-hook">The booking system your<br>B&amp;B actually deserves</div>
-    <div class="front-sub">Calendar, bookings, reports, deposits, and a<br>commission-free widget — in 5 languages.</div>
+    <div class="front-sub">Calendar, bookings, reports, deposits, and a<br>commission-free widget &mdash; in 5 languages.</div>
+    <div class="front-pricing">
+      <div class="fp-tier"><span class="fp-tn">Starter</span><span class="fp-p free">Free</span></div>
+      <span class="fp-dot">&middot;</span>
+      <div class="fp-tier"><span class="fp-tn">Pro</span><span class="fp-p">&pound;19<span class="fp-mo"> / &euro;22/mo</span></span></div>
+      <span class="fp-dot">&middot;</span>
+      <div class="fp-tier"><span class="fp-tn">Multi</span><span class="fp-p">&pound;39<span class="fp-mo"> / &euro;45/mo</span></span></div>
+    </div>
     <div class="front-qr-wrap">
       <div class="front-qr-box">
         <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=1a4710&bgcolor=ffffff&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="QR code" width="130" height="130">
@@ -395,7 +419,7 @@
       <div class="front-qr-caption">Scan to sign up free</div>
     </div>
   </div>
-  <div class="front-lang">🌍 &nbsp;Available in English, French, Spanish, German &amp; Dutch</div>
+  <div class="front-lang">&#127757; &nbsp;Available in English, French, Spanish, German &amp; Dutch</div>
   <div class="front-footer">
     <a class="front-url" href="https://nestbook.io">nestbook.io</a>
   </div>
@@ -429,35 +453,42 @@
       <div class="back-section-label">What's included</div>
       <div class="back-features">
         <div class="back-feature">
-          <div class="bf-dot">📅</div>
+          <div class="bf-dot">&#128197;</div>
           <div>
             <div class="bf-title">Calendar &amp; booking management</div>
             <div class="bf-desc">Visual room calendar. One-click check-in and check-out.</div>
           </div>
         </div>
         <div class="back-feature">
-          <div class="bf-dot">🌐</div>
+          <div class="bf-dot">&#127760;</div>
           <div>
             <div class="bf-title">Direct booking widget</div>
             <div class="bf-desc">Embed on your site. Zero commission. Payments direct to you.</div>
           </div>
         </div>
         <div class="back-feature">
-          <div class="bf-dot">📊</div>
+          <div class="bf-dot">&#128202;</div>
           <div>
             <div class="bf-title">Revenue reports</div>
             <div class="bf-desc">Monthly income, occupancy rates, and exportable guest lists.</div>
           </div>
         </div>
         <div class="back-feature">
-          <div class="bf-dot">💳</div>
+          <div class="bf-dot">&#128179;</div>
           <div>
             <div class="bf-title">Deposit tracking</div>
             <div class="bf-desc">Request, track, and confirm deposits before guests arrive.</div>
           </div>
         </div>
         <div class="back-feature">
-          <div class="bf-dot">🌍</div>
+          <div class="bf-dot">&#127374;</div>
+          <div>
+            <div class="bf-title">Room charges &mdash; bar, restaurant &amp; activities <span style="font-size:7px;background:#2f771b;color:#d9f0cc;padding:1px 4px;border-radius:3px;font-weight:700;letter-spacing:0.3px">MULTI</span></div>
+            <div class="bf-desc">Add bar, restaurant and activity charges to guest folios.</div>
+          </div>
+        </div>
+        <div class="back-feature">
+          <div class="bf-dot">&#127757;</div>
           <div>
             <div class="bf-title">5-language support</div>
             <div class="bf-desc">English, French, Spanish, German and Dutch.</div>
@@ -467,7 +498,7 @@
     </div>
 
     <div class="back-pricing">
-      <div class="bp-label">Pricing — flat rate, no commissions</div>
+      <div class="bp-label">Pricing &mdash; flat rate, no commissions</div>
       <div class="bp-tiers">
         <div class="bp-tier">
           <div class="bp-tier-name">Starter</div>
@@ -476,16 +507,16 @@
         </div>
         <div class="bp-tier">
           <div class="bp-tier-name">Pro</div>
-          <div class="bp-tier-price">£19<span style="font-size:10px;font-weight:500;opacity:0.65"> / €22</span></div>
+          <div class="bp-tier-price">&pound;19<span style="font-size:10px;font-weight:500;opacity:0.65"> / &euro;22</span></div>
           <div class="bp-tier-period">/ month</div>
         </div>
         <div class="bp-tier">
           <div class="bp-tier-name">Multi</div>
-          <div class="bp-tier-price">£39<span style="font-size:10px;font-weight:500;opacity:0.65"> / €45</span></div>
+          <div class="bp-tier-price">&pound;39<span style="font-size:10px;font-weight:500;opacity:0.65"> / &euro;45</span></div>
           <div class="bp-tier-period">/ month</div>
         </div>
       </div>
-      <div class="bp-note">30-day free trial on paid plans · No credit card · Cancel any time</div>
+      <div class="bp-note">30-day free trial on paid plans &middot; No credit card &middot; Cancel any time</div>
     </div>
 
   </div>

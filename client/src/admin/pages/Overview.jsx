@@ -33,28 +33,78 @@ export default function Overview() {
           <h2>Marketing Materials</h2>
           <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>Open in browser · Ctrl+P to print</span>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '14px 0 4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '14px 0 4px' }}>
           {[
-            { label: 'A4 Flyer',          href: '/marketing/flyer-a4.html' },
-            { label: 'A5 Handout',        href: '/marketing/handout-a5.html' },
-            { label: 'A-Frame Sign',      href: '/marketing/aframe.html' },
-            { label: 'Feather Flag',      href: '/marketing/feather-flag.html' },
-            { label: 'Business Card',     href: '/marketing/business-card.html' },
-          ].map(({ label, href }) => (
-            <a
-              key={href}
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600,
-                background: '#f0fdf4', border: '1.5px solid #86efac', color: '#166534',
-                textDecoration: 'none',
-              }}
-            >
-              {label}
-            </a>
+            {
+              lang: '🇬🇧 English',
+              files: [
+                { label: 'A4 Flyer',      href: '/marketing/flyer-a4.html' },
+                { label: 'A5 Handout',    href: '/marketing/handout-a5.html' },
+                { label: 'A-Frame Sign',  href: '/marketing/aframe.html' },
+                { label: 'Feather Flag',  href: '/marketing/feather-flag.html' },
+                { label: 'Business Card', href: '/marketing/business-card.html' },
+              ],
+            },
+            {
+              lang: '🇫🇷 Français',
+              files: [
+                { label: 'Flyer A4',     href: '/marketing/flyer-a4-fr.html' },
+                { label: 'Handout A5',   href: '/marketing/handout-a5-fr.html' },
+                { label: 'Affiche A1',   href: '/marketing/aframe-fr.html' },
+              ],
+            },
+            {
+              lang: '🇩🇪 Deutsch',
+              files: [
+                { label: 'Flyer A4',         href: '/marketing/flyer-a4-de.html' },
+                { label: 'Handout A5',       href: '/marketing/handout-a5-de.html' },
+                { label: 'A-Aufsteller A1',  href: '/marketing/aframe-de.html' },
+              ],
+            },
+            {
+              lang: '🇳🇱 Nederlands',
+              files: [
+                { label: 'Flyer A4',      href: '/marketing/flyer-a4-nl.html' },
+                { label: 'Handout A5',    href: '/marketing/handout-a5-nl.html' },
+                { label: 'A-Frame A1',    href: '/marketing/aframe-nl.html' },
+              ],
+            },
+            {
+              lang: '🇪🇸 Español',
+              files: [
+                { label: 'Flyer A4',    href: '/marketing/flyer-a4-es.html' },
+                { label: 'Handout A5',  href: '/marketing/handout-a5-es.html' },
+                { label: 'Cartel A1',   href: '/marketing/aframe-es.html' },
+              ],
+            },
+            {
+              lang: '🚗 Magnetic Signs',
+              files: [
+                { label: 'Portrait EN',    href: '/marketing/car-door-magnetic-portrait.html' },
+                { label: 'Landscape EN',   href: '/marketing/car-door-magnetic-landscape.html' },
+                { label: 'Portrait FR',    href: '/marketing/car-door-magnetic-portrait-fr.html' },
+              ],
+            },
+          ].map(({ lang, files }) => (
+            <div key={lang} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', minWidth: 130, flexShrink: 0 }}>{lang}</span>
+              {files.map(({ label, href }) => (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    padding: '6px 13px', borderRadius: 6, fontSize: '0.82rem', fontWeight: 600,
+                    background: '#f0fdf4', border: '1.5px solid #86efac', color: '#166534',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           ))}
         </div>
       </div>

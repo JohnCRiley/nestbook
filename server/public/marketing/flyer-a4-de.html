@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NestBook — A4 Flyer</title>
+<title>NestBook — Flyer A4 (DE)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -42,7 +42,6 @@
     box-shadow: 0 4px 40px rgba(0,0,0,0.2);
   }
 
-  /* ── Header ── */
   .header {
     background: var(--dark);
     padding: 14mm 16mm 12mm;
@@ -62,13 +61,7 @@
     right: -80mm;
   }
 
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10mm;
-  }
-
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 10mm; }
   .logo { width: 50px; height: 50px; }
 
   .brand-name {
@@ -80,7 +73,7 @@
 
   .headline {
     color: var(--white);
-    font-size: 33px;
+    font-size: 31px;
     font-weight: 900;
     line-height: 1.12;
     letter-spacing: -0.5px;
@@ -97,13 +90,8 @@
     opacity: 0.9;
   }
 
-  .stripe {
-    height: 6px;
-    background: linear-gradient(90deg, var(--leaf), var(--light));
-    flex-shrink: 0;
-  }
+  .stripe { height: 6px; background: linear-gradient(90deg, var(--leaf), var(--light)); flex-shrink: 0; }
 
-  /* ── Body ── */
   .body {
     flex: 1;
     padding: 11mm 16mm 10mm;
@@ -121,12 +109,7 @@
     margin-bottom: 4mm;
   }
 
-  /* ── Feature bullets ── */
-  .features {
-    display: flex;
-    flex-direction: column;
-    gap: 3.5mm;
-  }
+  .features { display: flex; flex-direction: column; gap: 3.5mm; }
 
   .feature {
     display: flex;
@@ -150,22 +133,9 @@
     flex-shrink: 0;
   }
 
-  .feat-body {}
+  .feat-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 1.5px; }
+  .feat-desc { font-size: 10px; color: var(--muted); line-height: 1.4; }
 
-  .feat-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 1.5px;
-  }
-
-  .feat-desc {
-    font-size: 10px;
-    color: var(--muted);
-    line-height: 1.4;
-  }
-
-  /* ── Pricing ── */
   .pricing {
     background: var(--dark);
     border-radius: 10px;
@@ -176,55 +146,16 @@
   }
 
   .pricing-copy { flex: 1; }
+  .pricing-headline { color: var(--white); font-size: 14.5px; font-weight: 800; margin-bottom: 2px; }
+  .pricing-sub { color: var(--light); font-size: 10px; line-height: 1.45; opacity: 0.85; }
 
-  .pricing-headline {
-    color: var(--white);
-    font-size: 14.5px;
-    font-weight: 800;
-    margin-bottom: 2px;
-  }
+  .pricing-tiers { display: flex; flex-direction: column; gap: 2px; text-align: right; flex-shrink: 0; }
 
-  .pricing-sub {
-    color: var(--light);
-    font-size: 10px;
-    line-height: 1.45;
-    opacity: 0.85;
-  }
-
-  .pricing-tiers {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .tier {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    justify-content: flex-end;
-  }
-
-  .tier-name {
-    color: rgba(217,240,204,0.6);
-    font-size: 9px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .tier-price {
-    color: var(--light);
-    font-size: 16px;
-    font-weight: 900;
-    line-height: 1;
-    letter-spacing: -0.5px;
-  }
-
+  .tier { display: flex; align-items: baseline; gap: 4px; justify-content: flex-end; }
+  .tier-name { color: rgba(217,240,204,0.6); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tier-price { color: var(--light); font-size: 16px; font-weight: 900; line-height: 1; letter-spacing: -0.5px; }
   .tier-price.free { color: #7dde5a; font-size: 13px; }
 
-  /* ── QR CTA ── */
   .cta {
     display: flex;
     align-items: center;
@@ -234,13 +165,7 @@
     padding: 6mm 8mm;
   }
 
-  .qr-wrap {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2.5mm;
-  }
+  .qr-wrap { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2.5mm; }
 
   .qr-box {
     width: 30mm;
@@ -253,48 +178,14 @@
     overflow: hidden;
   }
 
-  .qr-box img {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
+  .qr-box img { width: 100%; height: 100%; display: block; }
 
-  .qr-caption {
-    font-size: 8px;
-    font-weight: 700;
-    color: var(--dark);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: center;
-  }
-
+  .qr-caption { font-size: 8px; font-weight: 700; color: var(--dark); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
   .cta-copy { flex: 1; }
+  .cta-headline { font-size: 18px; font-weight: 900; color: var(--dark); line-height: 1.15; letter-spacing: -0.3px; margin-bottom: 2.5mm; }
+  .cta-sub { font-size: 10.5px; color: var(--text); line-height: 1.5; margin-bottom: 3mm; }
+  .cta-url { font-size: 12px; font-weight: 800; color: var(--mid); text-decoration: none; letter-spacing: -0.2px; }
 
-  .cta-headline {
-    font-size: 18px;
-    font-weight: 900;
-    color: var(--dark);
-    line-height: 1.15;
-    letter-spacing: -0.3px;
-    margin-bottom: 2.5mm;
-  }
-
-  .cta-sub {
-    font-size: 10.5px;
-    color: var(--text);
-    line-height: 1.5;
-    margin-bottom: 3mm;
-  }
-
-  .cta-url {
-    font-size: 12px;
-    font-weight: 800;
-    color: var(--mid);
-    text-decoration: none;
-    letter-spacing: -0.2px;
-  }
-
-  /* ── Languages badge ── */
   .lang-bar {
     background: var(--mid);
     padding: 2.5mm 16mm;
@@ -305,19 +196,9 @@
     flex-shrink: 0;
   }
 
-  .lang-bar-icon {
-    font-size: 11px;
-    opacity: 0.85;
-  }
+  .lang-bar-icon { font-size: 11px; opacity: 0.85; }
+  .lang-bar-text { color: var(--light); font-size: 9.5px; font-weight: 600; letter-spacing: 0.2px; }
 
-  .lang-bar-text {
-    color: var(--light);
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-  }
-
-  /* ── Footer ── */
   .footer {
     background: var(--dark);
     padding: 3.5mm 16mm;
@@ -327,13 +208,7 @@
     flex-shrink: 0;
   }
 
-  .footer-url {
-    color: var(--light);
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: -0.3px;
-    text-decoration: none;
-  }
+  .footer-url { color: var(--light); font-size: 16px; font-weight: 800; letter-spacing: -0.3px; text-decoration: none; }
 
   @media print {
     body { background: none; padding: 0; }
@@ -362,8 +237,8 @@
       </svg>
       <span class="brand-name">NestBook</span>
     </div>
-    <div class="headline">Booking software built<br>for B&amp;Bs and guest houses</div>
-    <div class="subheadline">Stop juggling spreadsheets and sticky notes. NestBook gives independent property owners a professional booking system — simple, affordable, and yours to keep.</div>
+    <div class="headline">Einfache Buchungsverwaltung<br>f&uuml;r Ihre Pension oder Ferienwohnung</div>
+    <div class="subheadline">Schluss mit Tabellenkalkulationen und Notizbuchern. NestBook gibt kleinen Unterkunftsbetreibern ein professionelles Buchungssystem &mdash; einfach, erschwinglich und sofort einsatzbereit.</div>
   </div>
 
   <div class="stripe"></div>
@@ -371,48 +246,48 @@
   <div class="body">
 
     <div>
-      <div class="section-label">Everything you need</div>
+      <div class="section-label">Alles, was Sie brauchen</div>
       <div class="features">
         <div class="feature">
           <div class="feat-icon">&#128197;</div>
           <div class="feat-body">
-            <div class="feat-title">Simple calendar &amp; booking management</div>
-            <div class="feat-desc">Visual room calendar with one-click check-in, check-out and full booking history.</div>
+            <div class="feat-title">Kalender &amp; Buchungsverwaltung</div>
+            <div class="feat-desc">Visueller Zimmerkalender mit Check-in, Check-out und vollst&auml;ndiger Buchungshistorie.</div>
           </div>
         </div>
         <div class="feature">
           <div class="feat-icon">&#127760;</div>
           <div class="feat-body">
-            <div class="feat-title">Embeddable booking widget for your website</div>
-            <div class="feat-desc">Guests book direct from your site. Zero commission. Payments go straight to you.</div>
+            <div class="feat-title">Buchungs-Widget f&uuml;r Ihre Website</div>
+            <div class="feat-desc">G&auml;ste buchen direkt. Keine Provision. Zahlungen direkt an Sie.</div>
           </div>
         </div>
         <div class="feature">
           <div class="feat-icon">&#128179;</div>
           <div class="feat-body">
-            <div class="feat-title">Deposit tracking &amp; automated guest emails</div>
-            <div class="feat-desc">Collect deposits and send booking confirmations automatically.</div>
+            <div class="feat-title">Anzahlungen &amp; automatische Gastmails</div>
+            <div class="feat-desc">Anzahlungen einziehen und Buchungsbest&auml;tigungen automatisch versenden.</div>
           </div>
         </div>
         <div class="feature">
           <div class="feat-icon">&#128202;</div>
           <div class="feat-body">
-            <div class="feat-title">Revenue reports &amp; accountant-ready exports</div>
-            <div class="feat-desc">Monthly income summaries, occupancy rates and one-click CSV exports.</div>
+            <div class="feat-title">Umsatzberichte &amp; Buchhaltungsexporte</div>
+            <div class="feat-desc">Monatliche Einnahmen, Auslastungsraten und CSV-Exporte.</div>
           </div>
         </div>
         <div class="feature">
           <div class="feat-icon">&#127374;</div>
           <div class="feat-body">
-            <div class="feat-title">Room charges &mdash; bar, restaurant &amp; activities <span style="font-size:8px;background:#2f771b;color:#d9f0cc;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.3px">MULTI</span></div>
-            <div class="feat-desc">Add bar, restaurant and activity charges to guest folios for itemised checkout.</div>
+            <div class="feat-title">Zimmergeb&uuml;hren &mdash; Bar, Restaurant &amp; Aktivit&auml;ten <span style="font-size:8px;background:#2f771b;color:#d9f0cc;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.3px">MULTI</span></div>
+            <div class="feat-desc">Bar-, Restaurant- und Aktivit&auml;tsgeb&uuml;hren f&uuml;r eine detaillierte Abrechnung.</div>
           </div>
         </div>
         <div class="feature">
           <div class="feat-icon">&#127757;</div>
           <div class="feat-body">
-            <div class="feat-title">Works in 5 languages &mdash; EN, FR, ES, DE, NL</div>
-            <div class="feat-desc">Full interface and guest-facing pages in English, French, Spanish, German and Dutch.</div>
+            <div class="feat-title">Verf&uuml;gbar in 5 Sprachen &mdash; EN, FR, ES, DE, NL</div>
+            <div class="feat-desc">Vollst&auml;ndige Oberfl&auml;che auf Englisch, Franz&ouml;sisch, Spanisch, Deutsch und Niederl&auml;ndisch.</div>
           </div>
         </div>
       </div>
@@ -421,21 +296,21 @@
     <!-- Pricing -->
     <div class="pricing">
       <div class="pricing-copy">
-        <div class="pricing-headline">Flat price. No commissions. Start free.</div>
-        <div class="pricing-sub">No percentage cut on bookings. No hidden fees.<br>30-day free trial — no credit card required.</div>
+        <div class="pricing-headline">Festpreis. Keine Provision. Kostenlos starten.</div>
+        <div class="pricing-sub">Kein Prozentsatz auf Buchungen. Keine versteckten Geb&uuml;hren.<br>30 Tage kostenlos testen &mdash; keine Kreditkarte erforderlich.</div>
       </div>
       <div class="pricing-tiers">
         <div class="tier">
           <span class="tier-name">Starter</span>
-          <span class="tier-price free">Free</span>
+          <span class="tier-price free">Kostenlos</span>
         </div>
         <div class="tier">
           <span class="tier-name">Pro</span>
-          <span class="tier-price">£19<span style="font-size:10px;font-weight:500;opacity:0.6"> / €22/mo</span></span>
+          <span class="tier-price">&euro;22<span style="font-size:10px;font-weight:500;opacity:0.6"> / &pound;19/Monat</span></span>
         </div>
         <div class="tier">
           <span class="tier-name">Multi</span>
-          <span class="tier-price">£39<span style="font-size:10px;font-weight:500;opacity:0.6"> / €45/mo</span></span>
+          <span class="tier-price">&euro;45<span style="font-size:10px;font-weight:500;opacity:0.6"> / &pound;39/Monat</span></span>
         </div>
       </div>
     </div>
@@ -446,11 +321,11 @@
         <div class="qr-box">
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&color=d9f0cc&bgcolor=1a4710&data=https%3A%2F%2Fnestbook.io%2Fapp%2Fregister" alt="QR code" width="113" height="113">
         </div>
-        <div class="qr-caption">Scan to sign up free</div>
+        <div class="qr-caption">Scannen und anmelden</div>
       </div>
       <div class="cta-copy">
-        <div class="cta-headline">Start your free<br>30-day trial today</div>
-        <div class="cta-sub">No credit card. No contract. Full access from day one. Set up in under 10 minutes.</div>
+        <div class="cta-headline">Jetzt 30 Tage kostenlos<br>testen</div>
+        <div class="cta-sub">Keine Kreditkarte. Kein Vertrag. Voller Zugang ab dem ersten Tag. Einrichtung in unter 10 Minuten.</div>
         <a class="cta-url" href="https://nestbook.io/app/register">nestbook.io/app/register</a>
       </div>
     </div>
@@ -458,8 +333,8 @@
   </div>
 
   <div class="lang-bar">
-    <span class="lang-bar-icon">🌍</span>
-    <span class="lang-bar-text">Available in English, French, Spanish, German &amp; Dutch</span>
+    <span class="lang-bar-icon">&#127757;</span>
+    <span class="lang-bar-text">Verf&uuml;gbar auf Englisch, Franz&ouml;sisch, Spanisch, Deutsch und Niederl&auml;ndisch</span>
   </div>
 
   <div class="footer">
