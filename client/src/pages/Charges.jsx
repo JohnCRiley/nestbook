@@ -100,8 +100,8 @@ export default function Charges() {
     if (plan !== 'multi' && !isChargesStaff) { setLoading(false); return; }
     if (!property?.id) { setLoading(false); return; }
     Promise.all([
-      apiFetch(`/api/charges/rooms-today`).then((r) => r.ok ? r.json() : []),
-      apiFetch(`/api/charges/categories`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/charges/rooms-today?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/charges/categories?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
     ]).then(([r, c]) => {
       setRooms(Array.isArray(r) ? r : []);
       setCategories(Array.isArray(c) ? c : []);
@@ -124,7 +124,7 @@ export default function Charges() {
     setRooms((prev) =>
       prev.map((r) =>
         r.booking_id === charge.booking_id
-          ? { ...r, charges_total: r.charges_total + charge.amount, charges_count: r.charges_count + 1 }
+          ? { ...r, charges_total: r.charges_total + parseFloat(charge.amount), charges_count: r.charges_count + 1 }
           : r
       )
     );

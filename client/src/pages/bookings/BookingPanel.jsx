@@ -309,7 +309,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1a4710' }}>
-                          {fmtCurrency(c.amount)}
+                          {fmtCurrency(parseFloat(c.amount))}
                         </span>
                         {!c.voided_at && (user?.role === 'owner' || user?.role === 'reception') && (
                           <button
@@ -332,7 +332,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700 }}>
                     <span style={{ color: '#374151' }}>{t('coTotal')}</span>
                     <span style={{ color: '#1a4710' }}>
-                      {fmtCurrency(charges.filter((c) => !c.voided_at).reduce((s, c) => s + c.amount, 0))}
+                      {fmtCurrency(charges.filter((c) => !c.voided_at).reduce((s, c) => s + parseFloat(c.amount), 0))}
                     </span>
                   </div>
                 </div>

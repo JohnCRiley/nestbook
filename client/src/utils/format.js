@@ -60,9 +60,11 @@ export function addDays(dateStr, n) {
   ].join('-');
 }
 
-/** "€900" or "€1,850" — returns "—" for null/undefined. */
+/** "€900" or "€1,850" — returns "—" for null/undefined/NaN. */
 export function formatCurrency(amount, currency = 'EUR') {
   if (amount == null) return '—';
+  const num = parseFloat(amount);
+  if (isNaN(num)) return '—';
   const symbol = { EUR: '€', GBP: '£', USD: '$', CHF: '₣' }[currency] ?? currency;
-  return symbol + Number(amount).toLocaleString('en-GB');
+  return symbol + num.toLocaleString('en-GB');
 }

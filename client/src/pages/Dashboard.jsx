@@ -40,7 +40,7 @@ export default function Dashboard() {
   const [error,          setError]          = useState(null);
   const [upgradeToast,   setUpgradeToast]   = useState(false);
   const [pageToast,      setPageToast]      = useState(null);
-  const [chargesToday,   setChargesToday]   = useState(null);
+  const [chargesToday,   setChargesToday]   = useState({ total: 0, count: 0 });
   const [showAvailablePopover, setShowAvailablePopover] = useState(false);
   const [selectedBooking,      setSelectedBooking]      = useState(null);
   const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null);
@@ -74,7 +74,7 @@ export default function Dashboard() {
       return () => clearTimeout(timer);
     }
     const chargesFetch = plan === 'multi'
-      ? apiFetch('/api/charges/today-summary').then((r) => r.ok ? r.json() : null).catch(() => null)
+      ? apiFetch(`/api/charges/today-summary?property_id=${property.id}`).then((r) => r.ok ? r.json() : null).catch(() => null)
       : Promise.resolve(null);
     Promise.all([
       apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
@@ -86,7 +86,7 @@ export default function Dashboard() {
         setBookings(Array.isArray(b) ? b : []);
         setRooms(Array.isArray(r) ? r : []);
         setGuests(Array.isArray(g) ? g : []);
-        if (ch) setChargesToday(ch);
+        setChargesToday(ch ?? { total: 0, count: 0 });
         setLoading(false);
       })
       .catch((err) => { setError(err.message); setLoading(false); });
@@ -241,7 +241,7 @@ export default function Dashboard() {
         <StatCard value={arrivalsToday.length}      label={t('arrivals')} />
         <StatCard value={departuresToday.length}    label={t('departures')} />
         <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
-        {plan === 'multi' && chargesToday !== null && (
+        {plan === 'multi' && (
           <StatCard
             value={chargesToday.total > 0 ? fmtCurrency(chargesToday.total) : t('chargesTodayNone')}
             label={t('chargesToday')}

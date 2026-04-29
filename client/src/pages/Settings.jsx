@@ -616,13 +616,15 @@ export default function Settings() {
                   </button>
                 </PlanGate>
               </div>
-              <div style={{
-                marginTop: 16, padding: '10px 14px',
-                background: '#f0f9ff', border: '1px solid #bae6fd',
-                borderRadius: 8, fontSize: '0.82rem', color: '#0c4a6e', lineHeight: 1.55,
-              }}>
-                ℹ️ {t('staffAccessInfo')}
-              </div>
+              {plan !== 'free' && (
+                <div style={{
+                  marginTop: 16, padding: '10px 14px',
+                  background: '#f0f9ff', border: '1px solid #bae6fd',
+                  borderRadius: 8, fontSize: '0.82rem', color: '#0c4a6e', lineHeight: 1.55,
+                }}>
+                  ℹ️ {t('staffAccessInfo')}
+                </div>
+              )}
             </div>
           </div>
 

@@ -12,8 +12,21 @@ function propertyIsMulti(propertyId) {
   return row?.plan === 'multi';
 }
 
+// Resolve the active property ID: prefer an explicit query/body param (owner only),
+// verified against ownership, then fall back to the JWT property.
+function getPropertyId(req) {
+  const explicit = Number(req.query.property_id) || Number(req.body?.property_id);
+  if (explicit && req.user.role === 'owner') {
+    const owns = db.prepare(
+      `SELECT id FROM properties WHERE id = ? AND owner_id = ?`
+    ).get(explicit, req.user.userId);
+    if (owns) return explicit;
+  }
+  return req.user.propertyId;
+}
+
 function requireMulti(req, res, next) {
-  if (!propertyIsMulti(req.user.propertyId)) {
+  if (!propertyIsMulti(getPropertyId(req))) {
     return res.status(403).json({ error: 'Room charges require the Multi plan.' });
   }
   next();
@@ -21,7 +34,7 @@ function requireMulti(req, res, next) {
 
 // ── GET /api/charges/categories ───────────────────────────────────────────────
 chargesRouter.get('/categories', requireMulti, (req, res) => {
-  const propertyId = req.user.propertyId;
+  const propertyId = getPropertyId(req);
   const cats = db.prepare(
     `SELECT * FROM service_categories WHERE property_id = ? ORDER BY sort_order, name`
   ).all(propertyId);
@@ -35,7 +48,7 @@ chargesRouter.post('/categories', requireMulti, (req, res) => {
   }
   const { name, color, icon } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Category name is required.' });
-  const propertyId = req.user.propertyId;
+  const propertyId = getPropertyId(req);
   const maxOrder = db.prepare(
     `SELECT COALESCE(MAX(sort_order), -1) AS m FROM service_categories WHERE property_id = ?`
   ).get(propertyId)?.m ?? -1;
@@ -53,7 +66,7 @@ chargesRouter.delete('/categories/:id', requireMulti, (req, res) => {
   }
   const cat = db.prepare(
     `SELECT * FROM service_categories WHERE id = ? AND property_id = ?`
-  ).get(Number(req.params.id), req.user.propertyId);
+  ).get(Number(req.params.id), getPropertyId(req));
   if (!cat) return res.status(404).json({ error: 'Category not found.' });
   db.prepare(`DELETE FROM service_categories WHERE id = ?`).run(Number(req.params.id));
   res.json({ success: true });
@@ -63,7 +76,7 @@ chargesRouter.delete('/categories/:id', requireMulti, (req, res) => {
 // Returns rooms with active (arriving/confirmed) in-house bookings today,
 // plus total active charge amount per booking.
 chargesRouter.get('/rooms-today', requireMulti, (req, res) => {
-  const propertyId = req.user.propertyId;
+  const propertyId = getPropertyId(req);
   const rows = db.prepare(`
     SELECT
       b.id              AS booking_id,
@@ -101,7 +114,7 @@ chargesRouter.get('/rooms-today', requireMulti, (req, res) => {
 // ── GET /api/charges/today-summary ───────────────────────────────────────────
 // Dashboard stat: total active charges for today.
 chargesRouter.get('/today-summary', requireMulti, (req, res) => {
-  const propertyId = req.user.propertyId;
+  const propertyId = getPropertyId(req);
   const row = db.prepare(`
     SELECT
       COALESCE(SUM(rc.amount), 0) AS total,
@@ -115,7 +128,7 @@ chargesRouter.get('/today-summary', requireMulti, (req, res) => {
 // ── GET /api/charges/booking/:bookingId ───────────────────────────────────────
 chargesRouter.get('/booking/:bookingId', requireMulti, (req, res) => {
   const bookingId = Number(req.params.bookingId);
-  const propertyId = req.user.propertyId;
+  const propertyId = getPropertyId(req);
 
   // Verify the booking belongs to this property
   const booking = db.prepare(
@@ -142,7 +155,7 @@ chargesRouter.get('/booking/:bookingId', requireMulti, (req, res) => {
 // ── POST /api/charges ─────────────────────────────────────────────────────────
 chargesRouter.post('/', requireMulti, (req, res) => {
   const { booking_id, category_id, description, amount, charge_date } = req.body;
-  const propertyId = req.user.propertyId;
+  const propertyId = getPropertyId(req);
 
   if (!booking_id || amount == null) {
     return res.status(400).json({ error: 'booking_id and amount are required.' });
@@ -166,9 +179,10 @@ chargesRouter.post('/', requireMulti, (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
     Number(booking_id),
-    propertyId,
+    getPropertyId(req),
     category_id ? Number(category_id) : null,
     description?.trim() || null,
+    parsedAmount,
     charge_date || new Date().toISOString().slice(0, 10),
     req.user.userId,
   );
@@ -191,7 +205,7 @@ chargesRouter.delete('/:id', requireMulti, (req, res) => {
   }
   const charge = db.prepare(
     `SELECT * FROM room_charges WHERE id = ? AND property_id = ?`
-  ).get(Number(req.params.id), req.user.propertyId);
+  ).get(Number(req.params.id), getPropertyId(req));
   if (!charge) return res.status(404).json({ error: 'Charge not found.' });
   if (charge.voided_at) return res.status(400).json({ error: 'Charge already voided.' });
 

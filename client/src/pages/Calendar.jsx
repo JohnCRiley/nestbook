@@ -415,8 +415,10 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
   const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
-  const firstBfMorning = b.breakfast_start_date ? addDaysStr(b.breakfast_start_date, 1) : null;
-  const showBfBadge    = !!firstBfMorning && !!cellDate && cellDate >= firstBfMorning;
+  const firstBfMorning = b.breakfast_added
+    ? (b.breakfast_start_date ? addDaysStr(b.breakfast_start_date, 1) : addDaysStr(b.check_in_date, 1))
+    : null;
+  const showBfBadge = !!firstBfMorning && !!cellDate && cellDate >= firstBfMorning;
 
   return (
     <div
