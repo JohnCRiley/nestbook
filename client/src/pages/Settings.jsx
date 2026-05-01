@@ -77,9 +77,12 @@ export default function Settings() {
   const [showDeleteAccount,    setShowDeleteAccount]    = useState(false);
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
-  const [categories,    setCategories]    = useState([]);
-  const [newCatForm,    setNewCatForm]    = useState({ name: '', color: '#64748b', icon: '' });
-  const [catSaving,     setCatSaving]     = useState(false);
+  const [categories,       setCategories]       = useState([]);
+  const [newCatForm,       setNewCatForm]       = useState({ name: '', color: '#64748b', icon: '' });
+  const [catSaving,        setCatSaving]        = useState(false);
+  const [editingCatId,     setEditingCatId]     = useState(null);
+  const [editCatForm,      setEditCatForm]      = useState({ name: '', color: '#64748b' });
+  const [catDeleteTarget,  setCatDeleteTarget]  = useState(null);
 
   // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
@@ -539,28 +542,80 @@ export default function Settings() {
                   )}
                   {categories.map((cat) => (
                     <div key={cat.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '8px 0', borderBottom: '1px solid #f1f5f9', gap: 10,
+                      padding: '8px 0', borderBottom: '1px solid #f1f5f9',
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{
-                          display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
-                          background: cat.color, flexShrink: 0,
-                        }} />
-                        <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{cat.name}</span>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          const res = await apiFetch(`/api/charges/categories/${cat.id}`, { method: 'DELETE' });
-                          if (res.ok) setCategories((prev) => prev.filter((c) => c.id !== cat.id));
-                        }}
-                        style={{
-                          background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer',
-                          fontSize: '0.8rem', fontFamily: 'inherit', padding: '2px 6px', borderRadius: 4,
-                        }}
-                      >
-                        {t('chargesCatDelete')}
-                      </button>
+                      {editingCatId === cat.id ? (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <input
+                            value={editCatForm.name}
+                            onChange={(e) => setEditCatForm((f) => ({ ...f, name: e.target.value }))}
+                            className="form-control"
+                            style={{ flex: 2, minWidth: 100, fontSize: '0.85rem', padding: '4px 8px' }}
+                          />
+                          <input
+                            type="color"
+                            value={editCatForm.color}
+                            onChange={(e) => setEditCatForm((f) => ({ ...f, color: e.target.value }))}
+                            style={{ width: 36, height: 30, border: 'none', cursor: 'pointer', padding: 0, borderRadius: 4 }}
+                          />
+                          <button
+                            className="btn-primary"
+                            style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                            disabled={!editCatForm.name.trim()}
+                            onClick={async () => {
+                              const res = await apiFetch(`/api/charges/categories/${cat.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(editCatForm),
+                              });
+                              if (res.ok) {
+                                const updated = await res.json();
+                                setCategories((prev) => prev.map((c) => c.id === cat.id ? updated : c));
+                                setEditingCatId(null);
+                              }
+                            }}
+                          >
+                            {t('saveChanges')}
+                          </button>
+                          <button
+                            className="btn-secondary"
+                            style={{ fontSize: '0.8rem', padding: '4px 10px', border: '1px solid var(--border)' }}
+                            onClick={() => setEditingCatId(null)}
+                          >
+                            {t('cancel')}
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{
+                              display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+                              background: cat.color, flexShrink: 0,
+                            }} />
+                            <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{cat.name}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                              onClick={() => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, color: cat.color }); }}
+                              style={{
+                                background: 'none', border: 'none', color: '#64748b', cursor: 'pointer',
+                                fontSize: '0.8rem', fontFamily: 'inherit', padding: '2px 6px', borderRadius: 4,
+                              }}
+                            >
+                              {t('editRoom')}
+                            </button>
+                            <button
+                              onClick={() => setCatDeleteTarget(cat)}
+                              style={{
+                                background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer',
+                                fontSize: '0.8rem', fontFamily: 'inherit', padding: '2px 6px', borderRadius: 4,
+                              }}
+                            >
+                              {t('chargesCatDelete')}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -765,6 +820,21 @@ export default function Settings() {
           onError={(msg) => showToast(msg, 'error')}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!catDeleteTarget}
+        title={t('chargesCatTitle')}
+        message={t('chargesCatDeleteConfirm')(catDeleteTarget?.name ?? '')}
+        confirmLabel={t('chargesCatDelete')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onConfirm={async () => {
+          const res = await apiFetch(`/api/charges/categories/${catDeleteTarget.id}`, { method: 'DELETE' });
+          if (res.ok) setCategories((prev) => prev.filter((c) => c.id !== catDeleteTarget.id));
+          setCatDeleteTarget(null);
+        }}
+        onCancel={() => setCatDeleteTarget(null)}
+      />
     </>
   );
 }

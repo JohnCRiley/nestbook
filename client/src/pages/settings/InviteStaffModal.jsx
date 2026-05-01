@@ -56,8 +56,7 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="modal-overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-overlay">
       <div className="modal" role="dialog" aria-label="Add staff member">
 
         <div className="modal-header">

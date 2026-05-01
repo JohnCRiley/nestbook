@@ -110,6 +110,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
   const depositRequired = !!property?.require_deposit;
 
+  // Fetch charges eagerly so EstimatedTotal can include them
+  useEffect(() => {
+    if (plan !== 'multi') return;
+    apiFetch(`/api/charges/booking/${b.id}`).then((r) => r.ok ? r.json() : []).then(setCharges).catch(() => {});
+  }, [b.id, plan]);
+
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -266,9 +272,13 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               key={tab}
               onClick={() => {
                 setActiveTab(tab);
-                if (tab === 'charges' && charges === null) {
-                  apiFetch(`/api/charges/booking/${b.id}`).then((r) => r.ok ? r.json() : []).then(setCharges);
-                  apiFetch('/api/charges/categories').then((r) => r.ok ? r.json() : []).then(setCategories);
+                if (tab === 'charges') {
+                  if (charges === null) {
+                    apiFetch(`/api/charges/booking/${b.id}`).then((r) => r.ok ? r.json() : []).then(setCharges);
+                  }
+                  if (categories.length === 0) {
+                    apiFetch('/api/charges/categories').then((r) => r.ok ? r.json() : []).then(setCategories);
+                  }
                 }
               }}
               style={{
@@ -347,7 +357,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               )}
               {(user?.role === 'owner' || user?.role === 'reception' || user?.role === 'charges_staff') && b.status !== 'cancelled' && b.status !== 'checked_out' && (
                 <button
-                  onClick={() => setAddChargeFor({ booking_id: b.id, guest_first_name: b.guest_first_name, guest_last_name: b.guest_last_name, room_name: b.room_name })}
+                  onClick={() => setAddChargeFor({ booking_id: b.id, property_id: b.property_id, guest_first_name: b.guest_first_name, guest_last_name: b.guest_last_name, room_name: b.room_name })}
                   style={{
                     padding: '8px 16px', borderRadius: 7,
                     background: '#f0fdf4', border: '1.5px solid #86efac',
@@ -425,7 +435,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       </div>
 
       {/* Estimated total breakdown */}
-      <EstimatedTotal b={b} nights={nights} property={property} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} t={t} />
+      <EstimatedTotal b={b} nights={nights} property={property} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} t={t} charges={charges} />
 
       {/* Reprint receipt for checked-out bookings */}
       {b.status === 'checked_out' && b.payment_method && (
@@ -927,7 +937,7 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
 
 // ── EstimatedTotal ────────────────────────────────────────────────────────────
 
-function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t }) {
+function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, charges }) {
   const pricePerNight    = b.price_per_night ?? 0;
   const roomSubtotal     = nights * pricePerNight;
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
@@ -939,9 +949,12 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t })
   const breakfastSub     = breakfastCharged ? bfGuests * bfDays * bfPrice : 0;
   const depositPaid      = !!b.deposit_paid;
   const depositAmount    = parseFloat(property?.deposit_amount) || 0;
-  const total            = Math.max(0, roomSubtotal + breakfastSub - (depositPaid ? depositAmount : 0));
+  const chargesTotal     = Array.isArray(charges)
+    ? charges.filter((c) => !c.voided_at).reduce((s, c) => s + parseFloat(c.amount), 0)
+    : 0;
+  const total            = Math.max(0, roomSubtotal + breakfastSub + chargesTotal - (depositPaid ? depositAmount : 0));
 
-  if (!pricePerNight && !breakfastCharged && !depositPaid) return null;
+  if (!pricePerNight && !breakfastCharged && !depositPaid && !chargesTotal) return null;
 
   return (
     <div className="panel-section">
@@ -954,6 +967,9 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t })
             label={`${t('fBreakfast')} (${bfGuests} × ${bfDays} × ${currencySymbol}${bfPrice.toFixed(2)})`}
             value={fmtCurrency(breakfastSub)}
           />
+        )}
+        {chargesTotal > 0 && (
+          <ERow label={t('chargesTabLabel')} value={fmtCurrency(chargesTotal)} />
         )}
         {depositPaid && depositAmount > 0 && <ERow label={t('coLessDeposit')} value={`-${fmtCurrency(depositAmount)}`} valueColor="#166534" />}
         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #1a4710', marginTop: 6, paddingTop: 6 }}>

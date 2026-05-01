@@ -5,6 +5,7 @@ import { apiFetch } from '../utils/apiFetch.js';
 /**
  * Returns the logged-in user's current plan: 'free' | 'pro' | 'multi'.
  * Starts with the cached value from localStorage, then refreshes from the API.
+ * Also syncs immediately when updateUser changes user.plan (e.g. post-upgrade).
  */
 export function usePlan() {
   const { user } = useAuth();
@@ -16,6 +17,11 @@ export function usePlan() {
       .then((data) => { if (data.plan) setPlan(data.plan); })
       .catch(() => {});
   }, []);
+
+  // Sync when user.plan is updated via updateUser (e.g. after Stripe upgrade)
+  useEffect(() => {
+    if (user?.plan) setPlan(user.plan);
+  }, [user?.plan]);
 
   return plan;
 }

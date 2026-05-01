@@ -222,12 +222,13 @@ propertiesRouter.delete('/:id', (req, res) => {
       });
     }
 
-    // Delete in FK order (node:sqlite has no .transaction(); use manual BEGIN/COMMIT)
+    // Delete in FK order: nullify staff refs → charges → bookings → categories → rooms → property
     try {
       db.exec('BEGIN');
       db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(pid);
-      db.prepare('UPDATE bookings SET room_id = NULL WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM room_charges WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM bookings WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM rooms WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM properties WHERE id = ?').run(pid);
       db.exec('COMMIT');

@@ -1,5 +1,11 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { logAction, getIp } from '../utils/auditLog.js';
+
+function actorFromReq(req) {
+  const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
+  return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role };
+}
 
 export const chargesRouter = Router();
 
@@ -57,6 +63,22 @@ chargesRouter.post('/categories', requireMulti, (req, res) => {
   ).run(propertyId, name.trim(), color || '#64748b', icon || '📌', maxOrder + 1);
   const cat = db.prepare(`SELECT * FROM service_categories WHERE id = ?`).get(Number(result.lastInsertRowid));
   res.status(201).json(cat);
+});
+
+// ── PUT /api/charges/categories/:id ──────────────────────────────────────────
+chargesRouter.put('/categories/:id', requireMulti, (req, res) => {
+  if (req.user.role !== 'owner') {
+    return res.status(403).json({ error: 'Only owners can manage categories.' });
+  }
+  const { name, color } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'Category name is required.' });
+  const cat = db.prepare(
+    `SELECT * FROM service_categories WHERE id = ? AND property_id = ?`
+  ).get(Number(req.params.id), getPropertyId(req));
+  if (!cat) return res.status(404).json({ error: 'Category not found.' });
+  db.prepare(`UPDATE service_categories SET name = ?, color = ? WHERE id = ?`)
+    .run(name.trim(), color || cat.color, Number(req.params.id));
+  res.json(db.prepare(`SELECT * FROM service_categories WHERE id = ?`).get(Number(req.params.id)));
 });
 
 // ── DELETE /api/charges/categories/:id ───────────────────────────────────────
@@ -196,6 +218,18 @@ chargesRouter.post('/', requireMulti, (req, res) => {
     WHERE rc.id = ?
   `).get(Number(result.lastInsertRowid));
   res.status(201).json(charge);
+
+  logAction(db, {
+    ...actorFromReq(req),
+    propertyId: propertyId,
+    action: 'CHARGE_ADDED',
+    category: 'charge',
+    targetType: 'charge',
+    targetId: Number(result.lastInsertRowid),
+    targetName: description?.trim() || charge?.category_name || null,
+    detail: `Booking #${booking_id} — ${parsedAmount.toFixed(2)}`,
+    ipAddress: getIp(req),
+  });
 });
 
 // ── DELETE /api/charges/:id (void) ────────────────────────────────────────────
@@ -213,4 +247,16 @@ chargesRouter.delete('/:id', requireMulti, (req, res) => {
     `UPDATE room_charges SET voided_at = datetime('now'), voided_by = ? WHERE id = ?`
   ).run(req.user.userId, Number(req.params.id));
   res.json({ success: true });
+
+  logAction(db, {
+    ...actorFromReq(req),
+    propertyId: getPropertyId(req),
+    action: 'CHARGE_VOIDED',
+    category: 'charge',
+    targetType: 'charge',
+    targetId: Number(req.params.id),
+    targetName: charge?.description || charge?.category_name || null,
+    detail: `Booking #${charge.booking_id} — voided ${parseFloat(charge.amount).toFixed(2)}`,
+    ipAddress: getIp(req),
+  });
 });

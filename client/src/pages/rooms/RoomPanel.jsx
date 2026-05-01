@@ -182,11 +182,12 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
     status:             room.status             ?? 'available',
     breakfast_included: room.breakfast_included ?? 0,
   });
-  const [saving,          setSaving]          = useState(false);
-  const [deleting,        setDeleting]        = useState(false);
+  const [saving,             setSaving]             = useState(false);
+  const [deleting,           setDeleting]           = useState(false);
   const [deleteBookingCount, setDeleteBookingCount] = useState(0);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [error,           setError]           = useState(null);
+  const [showPreDeleteModal, setShowPreDeleteModal] = useState(false);
+  const [showDeleteModal,    setShowDeleteModal]    = useState(false);
+  const [error,              setError]              = useState(null);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -222,7 +223,12 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
     }
   };
 
-  const handleDeleteClick = async () => {
+  const handleDeleteClick = () => {
+    setShowPreDeleteModal(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    setShowPreDeleteModal(false);
     setError(null);
     try {
       const res = await apiFetch(`/api/rooms/${room.id}`, { method: 'DELETE' });
@@ -301,6 +307,15 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
               <span className="panel-field-label" style={{ marginBottom: 0 }}>{t('breakfastIncludedLabel')}</span>
             </label>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>{t('roomBreakfastSubtitle')}</div>
+            {!!form.breakfast_included && (
+              <div style={{
+                marginTop: 6, padding: '6px 10px', borderRadius: 5,
+                background: '#fef3c7', border: '1px solid #fbbf24',
+                fontSize: '0.75rem', color: '#92400e',
+              }}>
+                {t('roomBreakfastWarn')}
+              </div>
+            )}
           </div>
 
           <div className="panel-field">
@@ -357,11 +372,20 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
       </div>
 
       <ConfirmModal
+        isOpen={showPreDeleteModal}
+        title={t('deleteRoomTitle')}
+        message={t('deleteRoomConfirm')(room.name)}
+        confirmLabel={t('deleteRoomBtn')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => setShowPreDeleteModal(false)}
+      />
+
+      <ConfirmModal
         isOpen={showDeleteModal}
         title={t('deleteRoomTitle')}
-        message={deleteBookingCount > 0
-          ? t('deleteRoomWithBookings')(deleteBookingCount)
-          : t('deleteRoomConfirm')(room.name)}
+        message={t('deleteRoomWithBookings')(deleteBookingCount)}
         confirmLabel={deleting ? t('deleting') : t('deleteRoomBtn')}
         cancelLabel={t('cancel')}
         variant="danger"

@@ -34,6 +34,7 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           booking_id: booking.booking_id,
+          property_id: booking.property_id || undefined,
           category_id: form.category_id || null,
           description: form.description || null,
           amount,

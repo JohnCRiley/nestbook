@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import {
   localToday,
@@ -30,6 +31,7 @@ const BADGE_CLASS = {
 export default function Dashboard() {
   const t = useT();
   const { fmtCurrency, property, locale } = useLocale();
+  const { user, refreshPlan } = useAuth();
   const navigate = useNavigate();
   const plan = usePlan();
   const [searchParams] = useSearchParams();
@@ -58,9 +60,16 @@ export default function Dashboard() {
     // Strip query params from URL immediately
     window.history.replaceState({}, '', '/app/dashboard');
 
-    // Call sync-session to ensure plan is updated in DB
+    // Call sync-session to ensure plan is updated in DB, then refresh local state
     if (sessionId) {
-      apiFetch(`/api/stripe/sync-session?session_id=${sessionId}`).catch(() => {});
+      apiFetch('/api/stripe/sync-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      })
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data?.plan) refreshPlan(); })
+        .catch(() => {});
     }
 
     // Show upgrade toast
@@ -241,7 +250,9 @@ export default function Dashboard() {
         <StatCard value={occupiedTonight.length}   label={t('occupied')} />
         <StatCard value={arrivalsToday.length}      label={t('arrivals')} />
         <StatCard value={departuresToday.length}    label={t('departures')} />
-        <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
+        {user?.role === 'owner' && (
+          <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
+        )}
         {plan === 'multi' && (
           <StatCard
             value={chargesToday.total > 0 ? fmtCurrency(chargesToday.total) : t('chargesTodayNone')}
