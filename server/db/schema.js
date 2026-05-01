@@ -325,6 +325,14 @@ export function initSchema() {
     db.exec(`ALTER TABLE properties ADD COLUMN breakfast_price REAL NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN breakfast_start_time TEXT DEFAULT '07:00'`);
+  } catch { /* already exists */ }
+
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN breakfast_end_time TEXT DEFAULT '11:00'`);
+  } catch { /* already exists */ }
+
   // Migration: checkout tracking on bookings
   try {
     db.exec(`ALTER TABLE bookings ADD COLUMN payment_method TEXT`);

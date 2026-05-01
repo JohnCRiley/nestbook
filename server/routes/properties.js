@@ -157,13 +157,14 @@ propertiesRouter.put('/:id', (req, res) => {
       name, type, address, city, country,
       check_in_time, check_out_time, currency, locale,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
+      breakfast_start_time, breakfast_end_time,
     } = req.body;
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
           check_in_time = ?, check_out_time = ?, currency = ?, locale = ?,
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
-          breakfast_price = ?
+          breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -172,6 +173,8 @@ propertiesRouter.put('/:id', (req, res) => {
       require_deposit    ? 1 : 0,
       parseFloat(deposit_amount) || 0,
       parseFloat(breakfast_price) || 0,
+      breakfast_start_time ?? '07:00',
+      breakfast_end_time   ?? '11:00',
       req.params.id,
     );
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween, localToday, addDays } from '../../utils/format.js';
+import { isEligibleForBreakfast } from '../../utils/breakfast.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
@@ -218,19 +219,15 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Breakfast strip ───────────────────────────────────────────────── */}
-      {(!!property?.breakfast_included || !!b.room_breakfast_included) ? (
-        <div style={{
-          padding: '8px 22px', borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
-          background: '#d9f0cc',
-        }}>
-          {t('fBreakfast')}
-        </div>
-      ) : !!b.breakfast_added && (() => {
-        const bfStartDate  = b.breakfast_start_date || b.check_in_date;
+      {(!!property?.breakfast_included || !!b.room_breakfast_included || !!b.breakfast_added) && (() => {
+        const bfStartDate  = (!property?.breakfast_included && !b.room_breakfast_included && b.breakfast_start_date)
+          ? b.breakfast_start_date
+          : b.check_in_date;
         const firstMorning = addDays(bfStartDate, 1);
-        const servings     = nightsBetween(bfStartDate, b.check_out_date);
+        const mornings     = nightsBetween(bfStartDate, b.check_out_date);
+        const guests       = (!property?.breakfast_included && !b.room_breakfast_included && b.breakfast_guests)
+          ? b.breakfast_guests
+          : b.num_guests || 1;
         return (
           <div style={{
             padding: '8px 22px', borderBottom: '1px solid var(--border)',
@@ -238,10 +235,11 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
             background: '#d9f0cc',
           }}>
-            {t('bfBadgeDetail')(
+            {t('bfPanelSummary')(
               formatDateMedium(firstMorning, locale),
-              servings,
-              formatDateMedium(b.check_out_date, locale)
+              formatDateMedium(b.check_out_date, locale),
+              mornings,
+              guests
             )}
           </div>
         );

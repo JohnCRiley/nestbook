@@ -11,6 +11,7 @@ import {
   nightsBetween,
   addDays,
 } from '../utils/format.js';
+import { isEligibleForBreakfast } from '../utils/breakfast.js';
 import BookingPanel from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
@@ -690,45 +691,37 @@ function BreakfastServiceList({ bookings, property, t }) {
   const today    = localToday();
   const tomorrow = addDays(today, 1);
 
-  function hasBfOnDay(b, day) {
-    if (property?.breakfast_included || b.room_breakfast_included) return true;
-    if (!b.breakfast_added) return false;
-    const firstMorning = b.breakfast_start_date
-      ? addDays(b.breakfast_start_date, 1)
-      : addDays(b.check_in_date, 1);
-    return firstMorning <= day;
-  }
+  const now = new Date();
+  const nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const serviceFinishedToday = nowHHMM > (property?.breakfast_end_time ?? '11:00');
 
-  function coversOnDay(b, day) {
-    if (!hasBfOnDay(b, day)) return 0;
-    if (property?.breakfast_included || b.room_breakfast_included) return b.num_guests || 1;
-    return b.breakfast_guests || b.num_guests || 1;
+  function getCovers(b) {
+    const bfFree = !!(property?.breakfast_included || b.room_breakfast_included);
+    return bfFree ? (b.num_guests || 1) : (b.breakfast_guests || b.num_guests || 1);
   }
 
   const inHouseToday    = bookings.filter(b =>
     b.status !== 'cancelled' && b.status !== 'checked_out' &&
-    b.check_in_date <= today    && b.check_out_date > today);
+    b.check_in_date <= today    && b.check_out_date >= today);
   const inHouseTomorrow = bookings.filter(b =>
     b.status !== 'cancelled' && b.status !== 'checked_out' &&
     b.check_in_date <= tomorrow && b.check_out_date >= tomorrow);
 
-  const todayGuests    = inHouseToday.filter(b    => hasBfOnDay(b, today));
-  const tomorrowGuests = inHouseTomorrow.filter(b => hasBfOnDay(b, tomorrow));
-  const todayCovers    = todayGuests.reduce((s, b)    => s + coversOnDay(b, today),    0);
-  const tomorrowCovers = tomorrowGuests.reduce((s, b) => s + coversOnDay(b, tomorrow), 0);
+  const todayGuests    = inHouseToday.filter(b    => isEligibleForBreakfast(b, null, property, today));
+  const tomorrowGuests = inHouseTomorrow.filter(b => isEligibleForBreakfast(b, null, property, tomorrow));
+  const todayCovers    = todayGuests.reduce((s, b)    => s + getCovers(b), 0);
+  const tomorrowCovers = tomorrowGuests.reduce((s, b) => s + getCovers(b), 0);
 
   if (inHouseToday.length === 0 && inHouseTomorrow.length === 0) return null;
 
-  function BfRow({ b, day }) {
-    const num = coversOnDay(b, day);
+  function BfRow({ b }) {
+    const num = getCovers(b);
     const bfFree = !!(property?.breakfast_included || b.room_breakfast_included);
     const status = bfFree
       ? t('bfStatusIncluded')
-      : b.breakfast_added
-        ? b.breakfast_start_date
-          ? t('bfStatusFrom')(formatDateMedium(addDays(b.breakfast_start_date, 1), locale))
-          : t('bfStatusIncluded')
-        : t('bfStatusNone');
+      : b.breakfast_start_date
+        ? t('bfStatusFrom')(formatDateMedium(addDays(b.breakfast_start_date, 1), locale))
+        : t('bfStatusIncluded');
     return (
       <div className="booking-row" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="booking-guest">
@@ -744,26 +737,30 @@ function BreakfastServiceList({ bookings, property, t }) {
             }}>{num}x</span>
           )}
           <span style={{
-            fontSize: '0.78rem', color: num > 0 ? '#166534' : '#6b7280',
-            fontWeight: num > 0 ? 600 : 400,
+            fontSize: '0.78rem', color: '#166534', fontWeight: 600,
           }}>{status}</span>
         </div>
       </div>
     );
   }
 
-  function BfPanel({ title, guests, covers, emptyKey, coversKey, day }) {
+  function BfPanel({ title, guests, covers, emptyKey, coversKey, serviceFinished }) {
     return (
       <div className="section-card">
         <div className="section-head">
           <h2>{title}</h2>
           <span className="count-pill">{covers}</span>
         </div>
+        {serviceFinished && (
+          <div style={{ padding: '6px 16px', fontSize: '0.78rem', color: '#92400e', background: '#fef3c7', borderBottom: '1px solid var(--border)' }}>
+            {t('bfServiceFinished')}
+          </div>
+        )}
         {guests.length === 0 ? (
           <div className="empty-state">{t(emptyKey)}</div>
         ) : (
           <>
-            {guests.map(b => <BfRow key={b.id} b={b} day={day} />)}
+            {guests.map(b => <BfRow key={b.id} b={b} />)}
             <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a4710', borderTop: '1.5px solid #d9f0cc' }}>
               {t(coversKey)(covers)}
             </div>
@@ -779,13 +776,13 @@ function BreakfastServiceList({ bookings, property, t }) {
         title={t('bfServiceTitle')}
         guests={todayGuests} covers={todayCovers}
         emptyKey="bfNoCoversToday" coversKey="bfCovers"
-        day={today}
+        serviceFinished={serviceFinishedToday}
       />
       <BfPanel
         title={t('bfTomorrowTitle')}
         guests={tomorrowGuests} covers={tomorrowCovers}
         emptyKey="bfNoTomorrowCovers" coversKey="bfCoversTomorrow"
-        day={tomorrow}
+        serviceFinished={false}
       />
     </div>
   );

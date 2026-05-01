@@ -109,10 +109,12 @@ export default function Settings() {
         check_out_time:     p.check_out_time     ?? '11:00',
         currency:           p.currency           ?? 'EUR',
         locale:             p.locale             ?? 'en',
-        breakfast_included: p.breakfast_included ? 1 : 0,
-        require_deposit:    p.require_deposit    ? 1 : 0,
-        deposit_amount:     p.deposit_amount     ?? 0,
-        breakfast_price:    p.breakfast_price    ?? 0,
+        breakfast_included:   p.breakfast_included ? 1 : 0,
+        require_deposit:      p.require_deposit    ? 1 : 0,
+        deposit_amount:       p.deposit_amount     ?? 0,
+        breakfast_price:      p.breakfast_price    ?? 0,
+        breakfast_start_time: p.breakfast_start_time ?? '07:00',
+        breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -340,23 +342,57 @@ export default function Settings() {
                       onChange={() => setForm((p) => ({ ...p, breakfast_included: p.breakfast_included ? 0 : 1 }))}
                     />
                     {!!form.breakfast_included && (
-                      <div style={{ padding: '4px 0 14px 0' }}>
-                        <label className="form-label" style={{ fontSize: '0.82rem' }}>
-                          {t('breakfastPriceLabel')} ({currencySymbol})
-                        </label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          min="0"
-                          step="0.01"
-                          value={form.breakfast_price}
-                          onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
-                          style={{ marginTop: 4, maxWidth: 160 }}
-                        />
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                          {t('breakfastPriceHint')}
+                      <>
+                        <div style={{ padding: '4px 0 14px 0' }}>
+                          <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                            {t('breakfastPriceLabel')} ({currencySymbol})
+                          </label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            min="0"
+                            step="0.01"
+                            value={form.breakfast_price}
+                            onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
+                            style={{ marginTop: 4, maxWidth: 160 }}
+                          />
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                            {t('breakfastPriceHint')}
+                          </div>
                         </div>
-                      </div>
+                        <div style={{ padding: '4px 0 14px 0' }}>
+                          <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                            {t('bfTimesLabel')}
+                          </label>
+                          <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>{t('bfStartTimeLabel')}</label>
+                              <input
+                                type="time"
+                                className="form-control"
+                                name="breakfast_start_time"
+                                value={form.breakfast_start_time}
+                                onChange={handleFormChange}
+                                style={{ marginTop: 2, maxWidth: 120 }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>{t('bfEndTimeLabel')}</label>
+                              <input
+                                type="time"
+                                className="form-control"
+                                name="breakfast_end_time"
+                                value={form.breakfast_end_time}
+                                onChange={handleFormChange}
+                                style={{ marginTop: 2, maxWidth: 120 }}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                            {t('bfTimesHint')}
+                          </div>
+                        </div>
+                      </>
                     )}
                     <ToggleRow
                       label={t('fDeposit')}

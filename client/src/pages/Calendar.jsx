@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { localToday, addDays as addDaysStr } from '../utils/format.js';
+import { isEligibleForBreakfast } from '../utils/breakfast.js';
 import BookingPanel    from './bookings/BookingPanel.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
@@ -302,6 +303,7 @@ export default function Calendar() {
               onEmptyClick={handleEmptyClick}
               t={t}
               locale={locale}
+              property={property}
             />
           ))}
 
@@ -342,7 +344,7 @@ export default function Calendar() {
 
 // ── RoomRow ───────────────────────────────────────────────────────────────────
 
-function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso }) {
+function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property }) {
   const isMaintenance = room.status === 'maintenance';
 
   return (
@@ -373,6 +375,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
               todayIso={todayIso ?? today}
               cellDate={iso}
               t={t}
+              property={property}
             />
           );
         }
@@ -401,7 +404,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
 
 // ── BookedCell ────────────────────────────────────────────────────────────────
 
-function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t }) {
+function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t, property }) {
   const statusClass =
     b.status === 'checked_out' ? 'is-checked-out' : 'is-booked';
 
@@ -415,10 +418,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
   const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
-  const firstBfMorning = b.breakfast_added
-    ? (b.breakfast_start_date ? addDaysStr(b.breakfast_start_date, 1) : addDaysStr(b.check_in_date, 1))
-    : null;
-  const showBfBadge = !!firstBfMorning && !!cellDate && cellDate >= firstBfMorning;
+  const showBfBadge = !!cellDate && isEligibleForBreakfast(b, null, property, cellDate);
 
   return (
     <div
