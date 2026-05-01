@@ -1209,7 +1209,15 @@
     // ── Floating trigger button ──────────────────────────────────────────────
     const trigger = el('button', 'nb-trigger');
     trigger.setAttribute('aria-label', T.bookNow);
-    const icon = el('span', 'nb-trigger-icon'); icon.appendChild(txt('🏡'));
+    const icon = el('span', 'nb-trigger-icon');
+    const houseSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    houseSvg.setAttribute('width', '16'); houseSvg.setAttribute('height', '16');
+    houseSvg.setAttribute('viewBox', '0 0 24 24'); houseSvg.setAttribute('fill', 'none');
+    houseSvg.setAttribute('stroke', 'currentColor'); houseSvg.setAttribute('stroke-width', '2');
+    houseSvg.setAttribute('stroke-linecap', 'round'); houseSvg.setAttribute('stroke-linejoin', 'round');
+    const p1 = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p1.setAttribute('d', 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'); houseSvg.appendChild(p1);
+    const p2 = document.createElementNS('http://www.w3.org/2000/svg', 'polyline'); p2.setAttribute('points', '9 22 9 12 15 12 15 22'); houseSvg.appendChild(p2);
+    icon.appendChild(houseSvg);
     trigger.appendChild(icon);
     trigger.appendChild(txt(' ' + T.bookNow));
     trigger.addEventListener('click', openModal);

@@ -30,6 +30,7 @@ function UpgradeGate() {
 
 // ── Room tile ─────────────────────────────────────────────────────────────────
 function RoomTile({ room, onAddCharge, canAdd, fmtCurrency }) {
+  const t = useT();
   const hasCharges = room.charges_count > 0;
   return (
     <div style={{
@@ -73,7 +74,7 @@ function RoomTile({ room, onAddCharge, canAdd, fmtCurrency }) {
             cursor: 'pointer', fontFamily: 'inherit', marginTop: 4,
           }}
         >
-          + Add Charge
+          {t('chargesAddCharge')}
         </button>
       )}
     </div>

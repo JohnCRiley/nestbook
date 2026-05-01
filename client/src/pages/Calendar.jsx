@@ -430,7 +430,8 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
       {showBfBadge && (
         <div style={{
           position: 'absolute', right: 0, top: 0, bottom: 0,
-          width: 6, background: '#16a34a',
+          width: 4,
+          background: 'repeating-linear-gradient(to bottom, #d97706 0, #d97706 4px, transparent 4px, transparent 8px)',
         }} />
       )}
       <div className="cal-cell-inner">
@@ -500,6 +501,18 @@ function Legend({ t }) {
           {label}
         </div>
       ))}
+      <div className="legend-item">
+        <span className="cal-action-badge cal-ci-badge" style={{ fontSize: '0.6rem' }}>{t('calCiBadge')}</span>
+        {t('calLegendCI')}
+      </div>
+      <div className="legend-item">
+        <span className="cal-action-badge cal-co-badge" style={{ fontSize: '0.6rem' }}>{t('calCoBadge')}</span>
+        {t('calLegendCO')}
+      </div>
+      <div className="legend-item">
+        <span className="legend-swatch sw-breakfast" />
+        {t('calLegendBreakfast')}
+      </div>
     </div>
   );
 }

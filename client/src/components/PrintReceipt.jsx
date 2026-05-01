@@ -251,7 +251,7 @@ export default function PrintReceipt({
     depositLabel:  t('depositPaidPill'),
     depositFmt:    `-${fc(depositAmount, symbol)}`,
     roomCharges:   Array.isArray(roomCharges) ? roomCharges : [],
-    chargesLabel:  'Room Charges',
+    chargesLabel:  t('chargesReceiptLabel'),
     symbol,
     totalDueFmt:   fc(totalDue, symbol),
     pmLabel: paymentMethod

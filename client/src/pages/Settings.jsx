@@ -406,7 +406,7 @@ export default function Settings() {
                     {!!form.require_deposit && (
                       <div style={{ padding: '4px 0 14px 0' }}>
                         <label className="form-label" style={{ fontSize: '0.82rem' }}>
-                          Deposit amount ({currencySymbol})
+                          {t('depositAmount')} ({currencySymbol})
                         </label>
                         <input
                           type="number"

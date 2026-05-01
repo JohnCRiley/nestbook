@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 /**
  * Branded confirmation modal — replaces window.confirm() throughout the app.
@@ -18,13 +19,17 @@ export default function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel  = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   variant = 'warning',
   busy    = false,
 }) {
+  const t = useT();
+  const resolvedConfirm = confirmLabel ?? t('confirm');
+  const resolvedCancel  = cancelLabel  ?? t('cancel');
+
   useEffect(() => {
     if (!isOpen) return;
     const handle = (e) => { if (e.key === 'Escape') onCancel(); };
@@ -51,7 +56,7 @@ export default function ConfirmModal({
           <p className="cm-message">{message}</p>
           <div className="cm-actions">
             <button className="cm-btn-cancel" onClick={onCancel} disabled={busy}>
-              {cancelLabel}
+              {resolvedCancel}
             </button>
             <button
               className="cm-btn-confirm"
@@ -59,7 +64,7 @@ export default function ConfirmModal({
               onClick={onConfirm}
               disabled={busy}
             >
-              {confirmLabel}
+              {resolvedConfirm}
             </button>
           </div>
         </div>

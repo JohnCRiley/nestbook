@@ -183,7 +183,7 @@ a { text-decoration: none; }
   margin-left: 240px;
   flex: 1;
   padding: 36px 40px;
-  padding-bottom: max(36px, env(safe-area-inset-bottom));
+  padding-bottom: max(80px, env(safe-area-inset-bottom));
   height: 100vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -374,7 +374,8 @@ a { text-decoration: none; }
     padding-top: calc(56px + 24px);
     padding-left: 20px;
     padding-right: 20px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    padding-bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
+    overflow-x: hidden;
     height: 100dvh;
   }
 
@@ -1567,6 +1568,12 @@ a { text-decoration: none; }
     45deg, #f5f5f5, #f5f5f5 3px, #ddd 3px, #ddd 6px
   );
   border: 1px solid #ddd;
+}
+.legend-swatch.sw-breakfast {
+  background: repeating-linear-gradient(
+    to bottom, #d97706 0, #d97706 3px, transparent 3px, transparent 7px
+  );
+  border: 1px solid #d97706;
 }
 
 /* ── Calendar responsive ─────────────────────────────────────────────────── */
@@ -3876,6 +3883,7 @@ a { text-decoration: none; }
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 20px;
+  margin-bottom: 16px;
   padding: 12px 0 4px;
   border-top: 1px solid var(--border);
 }
@@ -3927,6 +3935,12 @@ a { text-decoration: none; }
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
     z-index: 10;
+  }
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-form-row {
+    grid-template-columns: 1fr;
   }
 }
 
