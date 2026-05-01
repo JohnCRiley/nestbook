@@ -44,8 +44,15 @@ adminRouter.get('/users', (req, res) => {
 
     if (search) {
       const pattern = `%${search}%`;
-      conditions.push('(u.name LIKE ? OR u.email LIKE ? OR p.name LIKE ?)');
-      params.push(pattern, pattern, pattern);
+      if (/^\d+$/.test(search)) {
+        const numId = Number(search);
+        conditions.push(`(u.name LIKE ? OR u.email LIKE ? OR p.name LIKE ? OR p.id = ?
+          OR EXISTS (SELECT 1 FROM properties p3 WHERE p3.owner_id = u.id AND p3.id = ?))`);
+        params.push(pattern, pattern, pattern, numId, numId);
+      } else {
+        conditions.push('(u.name LIKE ? OR u.email LIKE ? OR p.name LIKE ?)');
+        params.push(pattern, pattern, pattern);
+      }
     }
     if (plan && plan !== 'all') {
       conditions.push('u.plan = ?');
@@ -81,10 +88,12 @@ adminRouter.get('/users', (req, res) => {
     const BASE_SELECT = `
       SELECT u.id, u.name, u.email, u.role, u.plan, u.created_at,
              u.discount_code, u.suspended, u.email_verified,
-             p.name as property_name, p.type as property_type, p.country,
+             p.id as property_id, p.name as property_name, p.type as property_type, p.country,
              s.stripe_customer_id, s.stripe_subscription_id,
              s.status as sub_status, s.current_period_end,
-             s.notes as sub_notes, s.cancel_at_period_end
+             s.notes as sub_notes, s.cancel_at_period_end,
+             (SELECT GROUP_CONCAT(CAST(p2.id AS TEXT) || ':' || p2.name, '|')
+              FROM properties p2 WHERE p2.owner_id = u.id ORDER BY p2.id) as owned_properties
       FROM users u
       LEFT JOIN properties p ON p.id = u.property_id
       LEFT JOIN subscriptions s ON s.user_id = u.id

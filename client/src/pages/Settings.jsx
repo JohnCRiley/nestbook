@@ -712,7 +712,7 @@ export default function Settings() {
 
       {/* ── Embed widget — full width (Pro feature) ──────────────────────── */}
       <PlanGate requiredPlan="pro">
-        <EmbedSection snippet={embedSnippet} t={t} />
+        <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
       </PlanGate>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
@@ -771,13 +771,21 @@ export default function Settings() {
 
 // ── EmbedSection ──────────────────────────────────────────────────────────────
 
-function EmbedSection({ snippet, t }) {
-  const [copied, setCopied] = useState(false);
+function EmbedSection({ snippet, t, propertyId }) {
+  const [copied,   setCopied]   = useState(false);
+  const [idCopied, setIdCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(snippet).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(String(propertyId)).then(() => {
+      setIdCopied(true);
+      setTimeout(() => setIdCopied(false), 2000);
     });
   };
 
@@ -788,6 +796,24 @@ function EmbedSection({ snippet, t }) {
         <p>{t('embedSub')}</p>
       </div>
       <div className="embed-body">
+        {propertyId != null && (
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14, fontSize: '0.82rem', color: '#6b7280' }}>
+            <span>{t('propIdLabel')}:</span>
+            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#374151' }}>{propertyId}</span>
+            <button
+              onClick={handleCopyId}
+              style={{
+                padding: '2px 9px', borderRadius: 4,
+                border: '1px solid #e2e8f0', background: '#f8fafc',
+                cursor: 'pointer', fontSize: '0.75rem',
+                color: idCopied ? '#16a34a' : '#64748b', fontWeight: 600,
+              }}
+            >
+              {idCopied ? t('embedCopied') : t('embedCopy')}
+            </button>
+            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>{t('propIdHint')}</span>
+          </div>
+        )}
         <p className="embed-desc">
           {t('embedDesc').split('<body>').map((part, i) =>
             i === 0 ? part : <span key={i}><code style={{ background: '#f1f5f9', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em' }}>&lt;body&gt;</code>{part}</span>

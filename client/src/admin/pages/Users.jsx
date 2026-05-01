@@ -370,7 +370,7 @@ export default function Users() {
       <div style={{ marginBottom: 12 }}>
         <input
           type="text"
-          placeholder="Search by name, email or property..."
+          placeholder="Search by name, email, property or property ID..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{
@@ -561,7 +561,24 @@ export default function Users() {
                     </div>
                   </td>
                   <td>
-                    <div>{u.property_name ?? '—'}</div>
+                    {u.owned_properties && u.owned_properties.includes('|') ? (
+                      u.owned_properties.split('|').map(entry => {
+                        const colon = entry.indexOf(':');
+                        const pid   = entry.slice(0, colon);
+                        const pname = entry.slice(colon + 1);
+                        return (
+                          <div key={pid} style={{ lineHeight: 1.5 }}>
+                            <span style={{ fontSize: '0.82rem' }}>{pname}</span>{' '}
+                            <CopyId id={pid} />
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div>
+                        <span>{u.property_name ?? '—'}</span>
+                        {u.property_id && <>{' '}<CopyId id={u.property_id} /></>}
+                      </div>
+                    )}
                     {u.property_type && (
                       <div className="admin-muted" style={{ fontSize: '0.75rem' }}>
                         {u.property_type}
@@ -612,6 +629,7 @@ export default function Users() {
 
             <div className="admin-user-card-meta">
               <span>{u.property_name ?? 'No property'}</span>
+              {u.property_id && <CopyId id={u.property_id} />}
               <span>·</span>
               <span>{fmtDate(u.created_at)}</span>
               {u.sub_notes === 'Complimentary' && (
@@ -643,6 +661,22 @@ export default function Users() {
                   <strong>Role:</strong> {u.role} ·
                   <strong> Discount:</strong> {u.discount_code ?? '—'}
                 </div>
+                {u.owned_properties && u.owned_properties.includes('|') && (
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: 8 }}>
+                    <strong>Properties:</strong>{' '}
+                    {u.owned_properties.split('|').map((entry, i) => {
+                      const colon = entry.indexOf(':');
+                      const pid   = entry.slice(0, colon);
+                      const pname = entry.slice(colon + 1);
+                      return (
+                        <span key={pid}>
+                          {i > 0 && ', '}
+                          {pname} <CopyId id={pid} />
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className="admin-user-card-actions">
                   <ActionButtons u={u} />
                 </div>
@@ -722,6 +756,35 @@ export default function Users() {
         onCancel={() => setPendingConfirm(null)}
       />
     </>
+  );
+}
+
+// ── CopyId ────────────────────────────────────────────────────────────────────
+
+function CopyId({ id }) {
+  const [copied, setCopied] = useState(false);
+  const copy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(String(id)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+      <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#94a3b8' }}>ID:{id}</span>
+      <button
+        onClick={copy}
+        title="Copy property ID"
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: '0.68rem', color: copied ? '#16a34a' : '#94a3b8',
+          padding: '0 2px', lineHeight: 1, fontWeight: 600,
+        }}
+      >
+        {copied ? '✓' : 'copy'}
+      </button>
+    </span>
   );
 }
 
