@@ -209,7 +209,7 @@ export default function Settings() {
   const embedSnippet = `<!-- NestBook Booking Widget -->
 <script
   src="https://nestbook.io/widget.js"
-  data-property-id="1"
+  data-property-id="${activeProperty?.id ?? ''}"
   data-lang="${form?.locale ?? 'en'}"
   data-currency="${form?.currency ?? 'EUR'}"
   async>

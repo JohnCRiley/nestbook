@@ -18,12 +18,29 @@ const DEMO_ROOMS = [
 
 export const widgetRouter = Router();
 
+// ── Widget property guard ─────────────────────────────────────────────────────
+// Returns the property row augmented with owner plan/suspended if valid for
+// widget use (Pro or Multi, owner not suspended). Returns null otherwise.
+function widgetPropertyGuard(property_id) {
+  const row = db.prepare(`
+    SELECT p.id, u.plan, u.suspended
+    FROM properties p
+    LEFT JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
+    WHERE p.id = ?
+  `).get(property_id);
+  if (!row || !row.plan || row.suspended || !['pro', 'multi'].includes(row.plan)) return null;
+  return row;
+}
+
 // ── GET /api/widget/rooms?property_id=X ──────────────────────────────────────
 // Returns rooms for a property (no guest PII).
 widgetRouter.get('/rooms', (req, res) => {
   try {
     const { property_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+    if (!widgetPropertyGuard(property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
     const rows = db.prepare(
       'SELECT * FROM rooms WHERE property_id = ? ORDER BY id'
     ).all(property_id);
@@ -40,6 +57,9 @@ widgetRouter.get('/bookings', (req, res) => {
   try {
     const { property_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+    if (!widgetPropertyGuard(property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
     const rows = db.prepare(`
       SELECT id, room_id, check_in_date, check_out_date, status
       FROM bookings
