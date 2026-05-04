@@ -3959,6 +3959,35 @@ a { text-decoration: none; }
   .settings-form-row {
     grid-template-columns: 1fr;
   }
+  /* Rooms stat bar — 2×2 grid on mobile */
+  .stat-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-bar-item {
+    min-width: 0;
+    width: 100%;
+  }
+  /* Settings — user row wraps on narrow screens */
+  .user-row {
+    flex-wrap: wrap;
+  }
+  /* Settings — embed code block stays within viewport */
+  .embed-code-wrap {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  /* Settings — danger zone rows wrap so button doesn't overflow */
+  .danger-zone-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 399px) {
+  /* Rooms stat bar — single column on very small screens */
+  .stat-bar {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
