@@ -441,13 +441,13 @@ export default function Settings() {
                     </span>
                   </div>
 
-                  {sub?.current_period_end && sub?.plan !== 'free' && (
+                  {sub?.plan !== 'free' && (
                     <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                      {sub.cancel_at_period_end
+                      {sub?.cancel_at_period_end
                         ? <span style={{ color: '#dc2626' }}>
-                            {t('cancelsOn')} {fmtDate(sub.current_period_end, locale)}
+                            {t('cancelsOn')} {sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : t('billingDateUnavailable')}
                           </span>
-                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{fmtDate(sub.current_period_end, locale)}</strong></>
+                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : t('billingDateUnavailable')}</strong></>
                       }
                     </div>
                   )}
@@ -1119,7 +1119,9 @@ const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl
 function fmtDate(iso, locale = 'en') {
   if (!iso) return '—';
   const browserLocale = LOCALE_MAP[locale] || 'en-GB';
-  return new Date(iso).toLocaleDateString(browserLocale, { day: 'numeric', month: 'short', year: 'numeric' });
+  // Stripe returns Unix timestamps (seconds); multiply by 1000 for JS Date
+  const d = typeof iso === 'number' ? new Date(iso * 1000) : new Date(iso);
+  return d.toLocaleDateString(browserLocale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function FormField({ label, children }) {

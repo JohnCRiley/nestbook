@@ -8,4 +8,7 @@ const DB_PATH = join(__dirname, '..', 'nestbook.db');
 
 const db = new DatabaseSync(DB_PATH);
 
+// Enforce foreign key constraints on every connection open
+db.exec('PRAGMA foreign_keys = ON');
+
 export default db;

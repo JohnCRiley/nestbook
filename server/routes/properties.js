@@ -222,10 +222,11 @@ propertiesRouter.delete('/:id', (req, res) => {
       });
     }
 
-    // Delete in FK order: nullify staff refs → charges → bookings → categories → rooms → property
+    // Delete in FK order: nullify staff refs → audit_log → charges → bookings → categories → rooms → property
     try {
       db.exec('BEGIN');
       db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM room_charges WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM bookings WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(pid);
