@@ -304,6 +304,7 @@ export default function Calendar() {
               t={t}
               locale={locale}
               property={property}
+              isMobile={isMobile}
             />
           ))}
 
@@ -344,7 +345,7 @@ export default function Calendar() {
 
 // ── RoomRow ───────────────────────────────────────────────────────────────────
 
-function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property }) {
+function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property, isMobile }) {
   const isMaintenance = room.status === 'maintenance';
 
   return (
@@ -376,6 +377,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
               cellDate={iso}
               t={t}
               property={property}
+              isMobile={isMobile}
             />
           );
         }
@@ -404,7 +406,7 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
 
 // ── BookedCell ────────────────────────────────────────────────────────────────
 
-function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t, property }) {
+function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t, property, isMobile }) {
   const statusClass =
     b.status === 'checked_out' ? 'is-checked-out' : 'is-booked';
 
@@ -438,7 +440,9 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
         <div className="cal-guest-name" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
           {showCiBadge && <span className="cal-action-badge cal-ci-badge">{t ? t('calCiBadge') : 'CI'}</span>}
           {showCoBadge && <span className="cal-action-badge cal-co-badge">{t ? t('calCoBadge') : 'CO'}</span>}
-          {b.guest_first_name}
+          {isMobile && b.guest_last_name
+            ? `${b.guest_first_name?.[0] ?? ''}. ${b.guest_last_name}`
+            : `${b.guest_first_name} ${b.guest_last_name}`.trim()}
         </div>
         <div className="cal-booking-nights">→ {formatCheckOut(b.check_out_date, locale)}</div>
       </div>
@@ -476,7 +480,7 @@ function HistoricalCell({ booking: b, onClick }) {
     >
       <div className="cal-cell-inner">
         <div className="cal-guest-name" style={{ textDecoration: 'line-through', opacity: 0.5 }}>
-          {b.guest_first_name}
+          {`${b.guest_first_name} ${b.guest_last_name}`.trim()}
         </div>
       </div>
     </div>

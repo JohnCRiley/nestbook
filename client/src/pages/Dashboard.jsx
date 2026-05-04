@@ -456,21 +456,13 @@ export default function Dashboard() {
                 property={property}
                 right={
                   b.status === 'arriving' ? (
-                    <button
-                      className="btn-checkout"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPendingConfirm({
-                          title: t('checkOutBtn'),
-                          message: t('checkOutConfirm')(`${b.guest_first_name} ${b.guest_last_name}`),
-                          confirmLabel: t('checkOutBtn'),
-                          variant: 'warning',
-                          action: () => handleStatusUpdate(b.id, 'checked_out'),
-                        });
-                      }}
-                    >
-                      {t('checkOutBtn')}
-                    </button>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, color: '#92400e',
+                      background: '#fef3c7', border: '1px solid #fcd34d',
+                      borderRadius: 4, padding: '3px 8px', whiteSpace: 'nowrap',
+                    }}>
+                      {t('dueToCheckOut')}
+                    </span>
                   ) : (
                     <span className={BADGE_CLASS[b.status] ?? 'badge'}>
                       {BADGE_LABEL[b.status] ?? b.status}

@@ -157,7 +157,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
           )}
 
           {/* Deposit */}
-          {(depositPaid || outstanding > 0) && (
+          {property?.require_deposit === 1 && (depositPaid || outstanding > 0) && (
             <Section title={t('depositPill')}>
               {depositPaid && (
                 <LineRow
@@ -181,7 +181,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
             {(breakfastCharged || chargesSubtotal > 0) && (
               <LineRow label={t('coSubtotal')} value={fmtCurrency(subtotal)} />
             )}
-            {depositPaid && depositAmount > 0 && (
+            {property?.require_deposit === 1 && depositPaid && depositAmount > 0 && (
               <LineRow
                 label={t('coLessDeposit')}
                 value={`-${fmtCurrency(depositDeduction)}`}
@@ -199,7 +199,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
                 {fmtCurrency(totalDue)}
               </span>
             </div>
-            {outstanding > 0 && (
+            {property?.require_deposit === 1 && outstanding > 0 && (
               <div style={{ fontSize: '0.78rem', color: '#b45309', marginTop: 4 }}>
                 {t('coIncludingOutstanding')(fmtCurrency(outstanding))}
               </div>

@@ -247,7 +247,7 @@ export default function PrintReceipt({
       ? `${t('fBreakfast')} (${breakfastGuests ?? (b.num_guests || 1)} × ${breakfastDays ?? nights} × ${fc(bfPricePerPerson, symbol)})`
       : '',
     breakfastSubtotalFmt: fc(breakfastSubtotal, symbol),
-    depositPaidLine: depositPaid && depositAmount > 0,
+    depositPaidLine: property?.require_deposit === 1 && depositPaid && depositAmount > 0,
     depositLabel:  t('depositPaidPill'),
     depositFmt:    `-${fc(depositAmount, symbol)}`,
     roomCharges:   Array.isArray(roomCharges) ? roomCharges : [],

@@ -383,6 +383,7 @@ export const LANGS = {
     departuresBanner:      (n) => n === 1 ? 'You have 1 departure today' : `You have ${n} departures today`,
     checkThemIn:           'Check them in →',
     checkThemOut:          'Check them out →',
+    dueToCheckOut:         'Due to check out',
     calCiBadge:            'CI',
     calCoBadge:            'CO',
     // ── New booking modal (redesign) ──────────────────────────────────────────
@@ -1052,6 +1053,7 @@ export const LANGS = {
     departuresBanner:      (n) => n === 1 ? "Vous avez 1 départ aujourd'hui" : `Vous avez ${n} départs aujourd'hui`,
     checkThemIn:           'Enregistrer →',
     checkThemOut:          'Enregistrer le départ →',
+    dueToCheckOut:         'Départ prévu',
     calCiBadge:            'CI',
     calCoBadge:            'CO',
     // ── New booking modal (redesign) ──────────────────────────────────────────
@@ -1690,6 +1692,7 @@ export const LANGS = {
     departuresBanner:      (n) => n === 1 ? 'Tiene 1 salida hoy' : `Tiene ${n} salidas hoy`,
     checkThemIn:           'Registrar entrada →',
     checkThemOut:          'Registrar salida →',
+    dueToCheckOut:         'Salida prevista',
     calCiBadge:            'CI',
     calCoBadge:            'CO',
     // ── New booking modal (redesign) ──────────────────────────────────────────
@@ -2328,6 +2331,7 @@ export const LANGS = {
     departuresBanner:      (n) => n === 1 ? 'Sie haben heute 1 Abreise' : `Sie haben heute ${n} Abreisen`,
     checkThemIn:           'Einchecken →',
     checkThemOut:          'Auschecken →',
+    dueToCheckOut:         'Abreise geplant',
     calCiBadge:            'CI',
     calCoBadge:            'CO',
     // ── New booking modal (redesign) ──────────────────────────────────────────
@@ -2966,6 +2970,7 @@ export const LANGS = {
     departuresBanner:      (n) => n === 1 ? 'U heeft vandaag 1 vertrek' : `U heeft vandaag ${n} vertrekken`,
     checkThemIn:           'Inchecken →',
     checkThemOut:          'Uitchecken →',
+    dueToCheckOut:         'Vertrek gepland',
     calCiBadge:            'CI',
     calCoBadge:            'CO',
     // ── New booking modal (redesign) ──────────────────────────────────────────
