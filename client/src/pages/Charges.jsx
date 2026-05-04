@@ -99,7 +99,8 @@ export default function Charges() {
 
   useEffect(() => {
     if (plan !== 'multi' && !isChargesStaff) { setLoading(false); return; }
-    if (!property?.id) { setLoading(false); return; }
+    if (!property?.id) return; // Wait for property — stay on loading spinner
+    setLoading(true);
     Promise.all([
       apiFetch(`/api/charges/rooms-today?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/charges/categories?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),

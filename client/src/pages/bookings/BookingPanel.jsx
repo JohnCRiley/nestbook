@@ -113,7 +113,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   // Fetch charges eagerly so EstimatedTotal can include them
   useEffect(() => {
     if (plan !== 'multi') return;
-    apiFetch(`/api/charges/booking/${b.id}`).then((r) => r.ok ? r.json() : []).then(setCharges).catch(() => {});
+    apiFetch(`/api/charges/booking/${b.id}?property_id=${b.property_id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then(setCharges)
+      .catch(() => setCharges([]));
   }, [b.id, plan]);
 
   const showToast = (msg) => {
@@ -274,10 +277,16 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                 setActiveTab(tab);
                 if (tab === 'charges') {
                   if (charges === null) {
-                    apiFetch(`/api/charges/booking/${b.id}`).then((r) => r.ok ? r.json() : []).then(setCharges);
+                    apiFetch(`/api/charges/booking/${b.id}?property_id=${b.property_id}`)
+                      .then((r) => r.ok ? r.json() : [])
+                      .then(setCharges)
+                      .catch(() => setCharges([]));
                   }
                   if (categories.length === 0) {
-                    apiFetch('/api/charges/categories').then((r) => r.ok ? r.json() : []).then(setCategories);
+                    apiFetch(`/api/charges/categories?property_id=${b.property_id}`)
+                      .then((r) => r.ok ? r.json() : [])
+                      .then(setCategories)
+                      .catch(() => {});
                   }
                 }
               }}

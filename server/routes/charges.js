@@ -102,6 +102,7 @@ chargesRouter.get('/rooms-today', requireMulti, (req, res) => {
   const rows = db.prepare(`
     SELECT
       b.id              AS booking_id,
+      b.property_id,
       b.room_id,
       r.name            AS room_name,
       r.type            AS room_type,
@@ -196,27 +197,33 @@ chargesRouter.post('/', requireMulti, (req, res) => {
     return res.status(400).json({ error: 'Cannot charge a cancelled booking.' });
   }
 
-  const result = db.prepare(`
-    INSERT INTO room_charges (booking_id, property_id, category_id, description, amount, charge_date, charged_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    Number(booking_id),
-    getPropertyId(req),
-    category_id ? Number(category_id) : null,
-    description?.trim() || null,
-    parsedAmount,
-    charge_date || new Date().toISOString().slice(0, 10),
-    req.user.userId,
-  );
+  let result, charge;
+  try {
+    result = db.prepare(`
+      INSERT INTO room_charges (booking_id, property_id, category_id, description, amount, charge_date, charged_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      Number(booking_id),
+      propertyId,
+      category_id ? Number(category_id) : null,
+      description?.trim() || null,
+      parsedAmount,
+      charge_date || new Date().toISOString().slice(0, 10),
+      req.user.userId,
+    );
+    charge = db.prepare(`
+      SELECT rc.*, sc.name AS category_name, sc.color AS category_color, sc.icon AS category_icon,
+             u.name AS charged_by_name
+      FROM room_charges rc
+      LEFT JOIN service_categories sc ON sc.id = rc.category_id
+      LEFT JOIN users u ON u.id = rc.charged_by
+      WHERE rc.id = ?
+    `).get(Number(result.lastInsertRowid));
+  } catch (err) {
+    console.error('[charges/add] Insert failed:', err.message);
+    return res.status(500).json({ error: 'Failed to save charge: ' + err.message });
+  }
 
-  const charge = db.prepare(`
-    SELECT rc.*, sc.name AS category_name, sc.color AS category_color, sc.icon AS category_icon,
-           u.name AS charged_by_name
-    FROM room_charges rc
-    LEFT JOIN service_categories sc ON sc.id = rc.category_id
-    LEFT JOIN users u ON u.id = rc.charged_by
-    WHERE rc.id = ?
-  `).get(Number(result.lastInsertRowid));
   res.status(201).json(charge);
 
   logAction(db, {
