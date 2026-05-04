@@ -339,64 +339,17 @@ export default function Settings() {
                 {form && (
                   <>
                     <ToggleRow
-                      label={t('fBreakfast')}
-                      desc={t('fBreakfastSub')}
+                      label={t('bfPropertyToggleLabel')}
                       checked={!!form.breakfast_included}
                       onChange={() => setForm((p) => ({ ...p, breakfast_included: p.breakfast_included ? 0 : 1 }))}
                     />
-                    {!!form.breakfast_included && (
-                      <>
-                        <div style={{ padding: '4px 0 14px 0' }}>
-                          <label className="form-label" style={{ fontSize: '0.82rem' }}>
-                            {t('breakfastPriceLabel')} ({currencySymbol})
-                          </label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            min="0"
-                            step="0.01"
-                            value={form.breakfast_price}
-                            onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
-                            style={{ marginTop: 4, maxWidth: 160 }}
-                          />
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                            {t('breakfastPriceHint')}
-                          </div>
-                        </div>
-                        <div style={{ padding: '4px 0 14px 0' }}>
-                          <label className="form-label" style={{ fontSize: '0.82rem' }}>
-                            {t('bfTimesLabel')}
-                          </label>
-                          <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
-                            <div>
-                              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>{t('bfStartTimeLabel')}</label>
-                              <input
-                                type="time"
-                                className="form-control"
-                                name="breakfast_start_time"
-                                value={form.breakfast_start_time}
-                                onChange={handleFormChange}
-                                style={{ marginTop: 2, maxWidth: 120 }}
-                              />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>{t('bfEndTimeLabel')}</label>
-                              <input
-                                type="time"
-                                className="form-control"
-                                name="breakfast_end_time"
-                                value={form.breakfast_end_time}
-                                onChange={handleFormChange}
-                                style={{ marginTop: 2, maxWidth: 120 }}
-                              />
-                            </div>
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                            {t('bfTimesHint')}
-                          </div>
-                        </div>
-                      </>
-                    )}
+                    <div style={{
+                      margin: '2px 0 10px 0', padding: '8px 12px',
+                      background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6,
+                      fontSize: '0.78rem', color: '#92400e', lineHeight: 1.5,
+                    }}>
+                      ⚠️ {t('bfPropertyToggleWarn')}
+                    </div>
                     <ToggleRow
                       label={t('fDeposit')}
                       desc={t('fDepositSub')}
@@ -424,6 +377,47 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {/* Breakfast service hours — always visible */}
+          {form && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>{t('bfTimesLabel')}</h2>
+                <p>{t('bfTimesHint')}</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('bfStartTimeLabel')}</label>
+                    <input
+                      type="time"
+                      className="form-control"
+                      name="breakfast_start_time"
+                      value={form.breakfast_start_time}
+                      onChange={handleFormChange}
+                      style={{ marginTop: 4, maxWidth: 130 }}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('bfEndTimeLabel')}</label>
+                    <input
+                      type="time"
+                      className="form-control"
+                      name="breakfast_end_time"
+                      value={form.breakfast_end_time}
+                      onChange={handleFormChange}
+                      style={{ marginTop: 4, maxWidth: 130 }}
+                    />
+                  </div>
+                </div>
+                <div className="settings-save-row" style={{ marginTop: 16 }}>
+                  <button className="btn-primary" onClick={handleSave} disabled={saving}>
+                    {saving ? t('saving') : t('saveChanges')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Subscription */}
           {user?.role === 'owner' && (

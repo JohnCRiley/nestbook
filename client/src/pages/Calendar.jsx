@@ -418,7 +418,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
   const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
-  const showBfBadge = !!cellDate && isEligibleForBreakfast(b, null, property, cellDate);
+  const showBfBadge = !!cellDate && isEligibleForBreakfast(b, null, property, addDaysStr(cellDate, 1));
 
   return (
     <div
