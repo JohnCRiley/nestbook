@@ -65,8 +65,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
   const amenityPreview = parseAmenities(form.amenities);
 
   return (
-    <div className="modal-overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-overlay">
       <div className="modal" role="dialog" aria-label={t('moRoomTitle')}>
 
         <div className="modal-header">

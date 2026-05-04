@@ -36,6 +36,14 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
   const t = useT();
   const { locale } = useLocale();
 
+  const activeBooking = bookings.find((b) =>
+    b.status !== 'cancelled' &&
+    b.status !== 'checked_out' &&
+    b.check_in_date <= today &&
+    b.check_out_date > today
+  );
+  const effectiveStatus = activeBooking ? 'occupied' : room.status;
+
   return (
     <>
       <div className="panel-backdrop" onClick={onClose} />
@@ -46,7 +54,7 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
           <button className="panel-close" onClick={onClose} aria-label="Close">✕</button>
           <div className="panel-guest-name" style={{ marginBottom: 4 }}>{room.name}</div>
           <div className="panel-room-type-row">
-            <StatusPill status={room.status} />
+            <StatusPill status={effectiveStatus} />
             <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem' }}>
               {t(`roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`)}
             </span>
@@ -59,7 +67,8 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
           <div className="panel-body">
             {mode === 'view'
               ? <ViewMode room={room} bookings={bookings} today={today}
-                  onEdit={() => setMode('edit')} onBook={onBook} t={t} locale={locale} />
+                  onEdit={() => setMode('edit')} onBook={onBook} t={t} locale={locale}
+                  effectiveStatus={effectiveStatus} />
               : <EditMode room={room}
                   onCancel={() => setMode('view')}
                   onSaved={(updated) => { onRoomUpdated(updated); setMode('view'); }}
@@ -75,7 +84,7 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
 
 // ── View mode ─────────────────────────────────────────────────────────────────
 
-function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
+function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveStatus }) {
   const { currencySymbol } = useLocale();
   const amenities = parseAmenities(room.amenities);
   const upcoming  = upcomingBookings(bookings, today);
@@ -96,7 +105,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale }) {
         <PanelRow label={t('typeLabel')}    value={t(roomTypeKey)} />
         <PanelRow label={t('capacity')}     value={t('guestWord')(room.capacity)} />
         <PanelRow label={t('priceLabel')}   value={`${currencySymbol}${room.price_per_night}${t('perNight')}`} />
-        <PanelRow label={t('status')}       value={<StatusPill status={room.status} t={t} />} />
+        <PanelRow label={t('status')}       value={<StatusPill status={effectiveStatus ?? room.status} t={t} />} />
         {!!room.breakfast_included && (
           <PanelRow label={t('breakfastIncludedLabel')} value={
             <span style={{
