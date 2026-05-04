@@ -188,104 +188,107 @@ export default function Bookings() {
         <div className="toast toast-success">{pageToast}</div>
       )}
 
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="page-toolbar">
-        <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>{t('bookings')}</h1>
-          <div className="page-date">{total} {t('totalReservations')}</div>
-        </div>
-        <button className="btn-primary" onClick={() => setShowNewModal(true)}>
-          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          {t('newBooking').replace('+ ', '')}
-        </button>
-      </div>
-
-      {/* ── Controls: search + filters ────────────────────────────────────── */}
-      <div className="controls-row">
-        <div className="search-wrap">
-          <SearchIcon />
-          <input
-            type="text"
-            className="search-input"
-            placeholder={t('searchBooking')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="page-fill">
+        {/* ── Page header ──────────────────────────────────────────────────── */}
+        <div className="page-toolbar">
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <h1>{t('bookings')}</h1>
+            <div className="page-date">{total} {t('totalReservations')}</div>
+          </div>
+          <button className="btn-primary" onClick={() => setShowNewModal(true)}>
+            <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+            {t('newBooking').replace('+ ', '')}
+          </button>
         </div>
 
-        <div className="filter-bar">
-          {FILTERS.map(({ key, label }) => (
-            <button
-              key={key}
-              className={`filter-btn${activeFilter === key ? ' active' : ''}`}
-              onClick={() => handleFilterChange(key)}
-            >
-              {label}
-              <span className="f-count">{counts[key] ?? 0}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Loading / empty ───────────────────────────────────────────────── */}
-      {loading ? (
-        <div className="loading-screen">{t('loadingBookings')}</div>
-      ) : bookings.length === 0 ? (
-        <div className="table-empty">
-          {search.trim() ? t('noBookingsMatching')(search.trim()) : t('noBookingsFilter')}
-        </div>
-      ) : (
-        <>
-          {/* ── Mobile card list ─────────────────────────────────────────── */}
-          <div className="booking-cards">
-            {bookings.map((b) => (
-              <BookingCard
-                key={b.id}
-                booking={b}
-                isSelected={selectedBooking?.id === b.id}
-                onClick={handleRowClick}
-              />
-            ))}
+        {/* ── Controls: search + filters ────────────────────────────────────── */}
+        <div className="controls-row">
+          <div className="search-wrap">
+            <SearchIcon />
+            <input
+              type="text"
+              className="search-input"
+              placeholder={t('searchBooking')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
-          {/* ── Desktop table ────────────────────────────────────────────── */}
-          <div className="table-wrap">
-            <table className="bookings-table">
-              <thead>
-                <tr>
-                  <th>{t('thGuest')}</th>
-                  <th>{t('thRoom')}</th>
-                  <th>{t('thCheckIn')}</th>
-                  <th>{t('thCheckOut')}</th>
-                  <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
-                  <th>{t('thSource')}</th>
-                  <th>{t('thTotal')}</th>
-                  <th>{t('thStatus')}</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="filter-bar">
+            {FILTERS.map(({ key, label }) => (
+              <button
+                key={key}
+                className={`filter-btn${activeFilter === key ? ' active' : ''}`}
+                onClick={() => handleFilterChange(key)}
+              >
+                {label}
+                <span className="f-count">{counts[key] ?? 0}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Loading / empty / table ───────────────────────────────────────── */}
+        <div className="scrollable-content">
+          {loading ? (
+            <div className="loading-screen">{t('loadingBookings')}</div>
+          ) : bookings.length === 0 ? (
+            <div className="table-empty">
+              {search.trim() ? t('noBookingsMatching')(search.trim()) : t('noBookingsFilter')}
+            </div>
+          ) : (
+            <>
+              {/* ── Mobile card list ─────────────────────────────────────────── */}
+              <div className="booking-cards">
                 {bookings.map((b) => (
-                  <BookingRow
+                  <BookingCard
                     key={b.id}
                     booking={b}
                     isSelected={selectedBooking?.id === b.id}
                     onClick={handleRowClick}
                   />
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
 
-        </>
-      )}
+              {/* ── Desktop table ────────────────────────────────────────────── */}
+              <div className="table-wrap">
+                <table className="bookings-table">
+                  <thead>
+                    <tr>
+                      <th>{t('thGuest')}</th>
+                      <th>{t('thRoom')}</th>
+                      <th>{t('thCheckIn')}</th>
+                      <th>{t('thCheckOut')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
+                      <th>{t('thSource')}</th>
+                      <th>{t('thTotal')}</th>
+                      <th>{t('thStatus')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookings.map((b) => (
+                      <BookingRow
+                        key={b.id}
+                        booking={b}
+                        isSelected={selectedBooking?.id === b.id}
+                        onClick={handleRowClick}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
 
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={pageSize}
-        onPage={setPage}
-      />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={pageSize}
+          onPage={setPage}
+        />
+      </div>
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedBooking && (

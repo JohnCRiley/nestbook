@@ -50,7 +50,7 @@ const CAT_STYLE = {
 export default function ActivityLog() {
   const t = useT();
   return (
-    <>
+    <div className="page-fill">
       <div className="page-header">
         <h1>{t('activityLog')}</h1>
         <div className="page-date">{t('activityLogSubtitle')}</div>
@@ -58,7 +58,7 @@ export default function ActivityLog() {
       <PlanGate requiredPlan="pro">
         <ActivityLogContent />
       </PlanGate>
-    </>
+    </div>
   );
 }
 
@@ -187,32 +187,34 @@ function ActivityLogContent() {
       </div>
 
       {/* Table */}
-      {loading ? (
-        <div className="loading-screen">{t('alLoadingLogs')}</div>
-      ) : logs.length === 0 ? (
-        <div className="table-empty">{t('alNoLogs')}</div>
-      ) : (
-        <div className="table-wrap">
-          <table className="bookings-table" style={{ fontSize: '0.82rem' }}>
-            <thead>
-              <tr>
-                <th>{t('alTimestamp')}</th>
-                <th>{t('alUser')}</th>
-                <th>{t('alAction')}</th>
-                <th>{t('alCategory')}</th>
-                <th>{t('alTarget')}</th>
-                <th>{t('alDetail')}</th>
-                <th style={{ color: 'var(--text-muted)' }}>{t('alIPAddress')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <LogRow key={log.id} log={log} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="scrollable-content">
+        {loading ? (
+          <div className="loading-screen">{t('alLoadingLogs')}</div>
+        ) : logs.length === 0 ? (
+          <div className="table-empty">{t('alNoLogs')}</div>
+        ) : (
+          <div className="table-wrap">
+            <table className="bookings-table" style={{ fontSize: '0.82rem' }}>
+              <thead>
+                <tr>
+                  <th>{t('alTimestamp')}</th>
+                  <th>{t('alUser')}</th>
+                  <th>{t('alAction')}</th>
+                  <th>{t('alCategory')}</th>
+                  <th>{t('alTarget')}</th>
+                  <th>{t('alDetail')}</th>
+                  <th style={{ color: 'var(--text-muted)' }}>{t('alIPAddress')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <LogRow key={log.id} log={log} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <Pagination page={page} totalPages={totalPages} total={total} limit={pageSize} onPage={setPage} />
     </>

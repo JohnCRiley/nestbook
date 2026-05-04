@@ -189,6 +189,23 @@ a { text-decoration: none; }
   -webkit-overflow-scrolling: touch;
 }
 
+/* ─── Pagination always-visible flex layout ──────────────────────────────── */
+.page-fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.page-fill > .pagination {
+  flex-shrink: 0;
+}
+
 /* ─── Mobile top bar (hidden on tablet + desktop) ───────────────────────── */
 .mobile-topbar    { display: none; }
 .sidebar-overlay  { display: none; }

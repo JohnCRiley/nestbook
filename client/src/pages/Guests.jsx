@@ -124,78 +124,80 @@ export default function Guests() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="page-toolbar">
-        <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>{t('guests')}</h1>
-          <div className="page-date">{counts.total} {t('guestRecords')}</div>
-        </div>
-        {(plan === 'pro' || plan === 'multi') && (
-          <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
-            {t('importGuestsBtn')}
-          </button>
-        )}
-        <button className="btn-primary" onClick={() => setShowNewModal(true)}>
-          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          {t('newGuest').replace('+ ', '')}
-        </button>
-      </div>
-
-      {/* ── Stat bar ─────────────────────────────────────────────────────── */}
-      <div className="stat-bar">
-        <StatBarItem value={counts.total}        label={t('totalGuests')} />
-        <StatBarItem value={counts.newThisMonth} label={t('newThisMonth')} />
-      </div>
-
-      {/* ── Search ───────────────────────────────────────────────────────── */}
-      <div className="controls-row" style={{ marginBottom: 16 }}>
-        <div className="search-wrap">
-          <SearchIcon />
-          <input
-            type="text"
-            className="search-input"
-            placeholder={t('searchGuests')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        {search && !loading && (
-          <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)' }}>
-            {t('searchResults')(total)}
-          </span>
-        )}
-      </div>
-
-      {/* ── Guest card grid ───────────────────────────────────────────────── */}
-      {loading ? (
-        <div className="loading-screen">{t('loadingGuests')}</div>
-      ) : guests.length === 0 ? (
-        <div className="guests-empty">
-          {search ? t('noGuestsSearch')(search) : t('noGuests')}
-        </div>
-      ) : (
-        <>
-          <div className="guest-grid">
-            {guests.map((guest) => (
-              <GuestCard
-                key={guest.id}
-                guest={guest}
-                bookingCount={(bookingsByGuest[guest.id] ?? []).length}
-                isActive={selectedGuest?.id === guest.id}
-                onClick={handleCardClick}
-              />
-            ))}
+      <div className="page-fill">
+        {/* ── Page header ──────────────────────────────────────────────────── */}
+        <div className="page-toolbar">
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <h1>{t('guests')}</h1>
+            <div className="page-date">{counts.total} {t('guestRecords')}</div>
           </div>
-        </>
-      )}
+          {(plan === 'pro' || plan === 'multi') && (
+            <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
+              {t('importGuestsBtn')}
+            </button>
+          )}
+          <button className="btn-primary" onClick={() => setShowNewModal(true)}>
+            <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+            {t('newGuest').replace('+ ', '')}
+          </button>
+        </div>
 
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={pageSize}
-        onPage={setPage}
-      />
+        {/* ── Stat bar ─────────────────────────────────────────────────────── */}
+        <div className="stat-bar">
+          <StatBarItem value={counts.total}        label={t('totalGuests')} />
+          <StatBarItem value={counts.newThisMonth} label={t('newThisMonth')} />
+        </div>
+
+        {/* ── Search ───────────────────────────────────────────────────────── */}
+        <div className="controls-row" style={{ marginBottom: 16 }}>
+          <div className="search-wrap">
+            <SearchIcon />
+            <input
+              type="text"
+              className="search-input"
+              placeholder={t('searchGuests')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          {search && !loading && (
+            <span style={{ fontSize: '0.83rem', color: 'var(--text-muted)' }}>
+              {t('searchResults')(total)}
+            </span>
+          )}
+        </div>
+
+        {/* ── Guest card grid ───────────────────────────────────────────────── */}
+        <div className="scrollable-content">
+          {loading ? (
+            <div className="loading-screen">{t('loadingGuests')}</div>
+          ) : guests.length === 0 ? (
+            <div className="guests-empty">
+              {search ? t('noGuestsSearch')(search) : t('noGuests')}
+            </div>
+          ) : (
+            <div className="guest-grid">
+              {guests.map((guest) => (
+                <GuestCard
+                  key={guest.id}
+                  guest={guest}
+                  bookingCount={(bookingsByGuest[guest.id] ?? []).length}
+                  isActive={selectedGuest?.id === guest.id}
+                  onClick={handleCardClick}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={pageSize}
+          onPage={setPage}
+        />
+      </div>
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedGuest && (
