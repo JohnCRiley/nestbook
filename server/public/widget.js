@@ -952,8 +952,8 @@
         card.appendChild(caps);
         if (amenities.length > 0) card.appendChild(tags);
 
-        // Breakfast badge
-        if (room.breakfast_included) {
+        // Breakfast badge — show if room or property includes breakfast
+        if (room.breakfast_included || room.property_breakfast_included) {
           const bfBadge = el('div', 'nb-breakfast');
           bfBadge.appendChild(txt(T.breakfastIncluded));
           card.appendChild(bfBadge);
@@ -1241,7 +1241,7 @@
     const topbar = el('div', 'nb-hd-topbar');
     const logo = el('span', 'nb-hd-logo');
     const logoIcon = el('img', 'nb-hd-logo-icon');
-    logoIcon.src = '/icon.svg';
+    logoIcon.src = API_BASE + '/icon.svg';
     logoIcon.alt = 'NestBook';
     logoIcon.style.cssText = 'width:20px;height:20px;border-radius:4px;';
     logo.appendChild(logoIcon); logo.appendChild(txt('NestBook'));

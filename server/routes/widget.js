@@ -41,9 +41,13 @@ widgetRouter.get('/rooms', (req, res) => {
     if (!widgetPropertyGuard(property_id)) {
       return res.status(403).json({ error: 'Widget not available for this property' });
     }
-    const rows = db.prepare(
-      'SELECT * FROM rooms WHERE property_id = ? ORDER BY id'
-    ).all(property_id);
+    const rows = db.prepare(`
+      SELECT r.*, p.breakfast_included AS property_breakfast_included
+      FROM rooms r
+      JOIN properties p ON p.id = r.property_id
+      WHERE r.property_id = ?
+      ORDER BY r.id
+    `).all(property_id);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
