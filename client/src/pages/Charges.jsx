@@ -4,6 +4,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import AddChargeModal from './charges/AddChargeModal.jsx';
+import ChargesDetailModal from './charges/ChargesDetailModal.jsx';
 
 // ── Upgrade gate ──────────────────────────────────────────────────────────────
 function UpgradeGate() {
@@ -29,9 +30,9 @@ function UpgradeGate() {
 }
 
 // ── Room tile ─────────────────────────────────────────────────────────────────
-function RoomTile({ room, onAddCharge, canAdd, fmtCurrency }) {
+function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
   const t = useT();
-  const hasCharges = room.charges_count > 0;
+  const chargeCount = room.charges_count ?? 0;
   return (
     <div style={{
       background: '#fff', borderRadius: 10, border: '1.5px solid #e2e8f0',
@@ -53,30 +54,43 @@ function RoomTile({ room, onAddCharge, canAdd, fmtCurrency }) {
             {room.check_in_date} → {room.check_out_date}
           </div>
         </div>
-        {hasCharges && (
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#1a4710' }}>
-              {fmtCurrency(room.charges_total)}
-            </div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-              {room.charges_count} charge{room.charges_count !== 1 ? 's' : ''}
-            </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: chargeCount > 0 ? '#1a4710' : '#94a3b8' }}>
+            {fmtCurrency(room.charges_total ?? 0)}
           </div>
-        )}
+          {chargeCount > 0 && (
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              {chargeCount} charge{chargeCount !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
       </div>
-      {canAdd && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+        {canAdd && (
+          <button
+            onClick={() => onAddCharge(room)}
+            style={{
+              width: '100%', padding: '7px 12px', borderRadius: 7,
+              background: '#1a4710', border: 'none',
+              color: '#fff', fontWeight: 600, fontSize: '0.85rem',
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {t('chargesAddCharge')}
+          </button>
+        )}
         <button
-          onClick={() => onAddCharge(room)}
+          onClick={() => onViewCharges(room)}
           style={{
             width: '100%', padding: '7px 12px', borderRadius: 7,
-            background: '#f0fdf4', border: '1.5px solid #86efac',
-            color: '#166534', fontWeight: 600, fontSize: '0.85rem',
-            cursor: 'pointer', fontFamily: 'inherit', marginTop: 4,
+            background: '#fff', border: '1.5px solid #e2e8f0',
+            color: '#374151', fontWeight: 600, fontSize: '0.85rem',
+            cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
-          {t('chargesAddCharge')}
+          {chargeCount > 0 ? t('chargesViewBtnCount')(chargeCount) : t('chargesViewBtn')}
         </button>
-      )}
+      </div>
     </div>
   );
 }
@@ -92,14 +106,16 @@ export default function Charges() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addChargeFor, setAddChargeFor] = useState(null);
+  const [viewChargeFor, setViewChargeFor] = useState(null);
+  const [detailRefreshKey, setDetailRefreshKey] = useState(0);
 
   const isChargesStaff = user?.role === 'charges_staff';
   const canAdd = user?.role === 'charges_staff' || user?.role === 'reception' || user?.role === 'owner';
-  const canVoid = user?.role === 'owner' || user?.role === 'reception';
+  const canAddFromDetail = user?.role === 'owner' || user?.role === 'reception';
 
   useEffect(() => {
     if (plan !== 'multi' && !isChargesStaff) { setLoading(false); return; }
-    if (!property?.id) return; // Wait for property — stay on loading spinner
+    if (!property?.id) return;
     setLoading(true);
     Promise.all([
       apiFetch(`/api/charges/rooms-today?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
@@ -123,10 +139,11 @@ export default function Charges() {
 
   const handleChargeSaved = (charge) => {
     setAddChargeFor(null);
+    setDetailRefreshKey((k) => k + 1);
     setRooms((prev) =>
       prev.map((r) =>
         r.booking_id === charge.booking_id
-          ? { ...r, charges_total: r.charges_total + parseFloat(charge.amount), charges_count: r.charges_count + 1 }
+          ? { ...r, charges_total: (r.charges_total ?? 0) + parseFloat(charge.amount), charges_count: (r.charges_count ?? 0) + 1 }
           : r
       )
     );
@@ -164,6 +181,7 @@ export default function Charges() {
                 key={room.booking_id}
                 room={room}
                 onAddCharge={setAddChargeFor}
+                onViewCharges={setViewChargeFor}
                 canAdd={canAdd}
                 fmtCurrency={fmtCurrency}
               />
@@ -178,6 +196,16 @@ export default function Charges() {
           categories={categories}
           onSaved={handleChargeSaved}
           onClose={() => setAddChargeFor(null)}
+        />
+      )}
+
+      {viewChargeFor && (
+        <ChargesDetailModal
+          room={viewChargeFor}
+          onClose={() => setViewChargeFor(null)}
+          onAddCharge={setAddChargeFor}
+          canAddFromDetail={canAddFromDetail}
+          refreshKey={detailRefreshKey}
         />
       )}
     </div>
