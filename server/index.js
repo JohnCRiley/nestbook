@@ -21,6 +21,7 @@ import { widgetRouter }              from './routes/widget.js';
 import { reportsRouter }             from './routes/reports.js';
 import { activityLogRouter }         from './routes/activityLog.js';
 import { chargesRouter }             from './routes/charges.js';
+import { marketingRouter }           from './routes/marketing.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -53,6 +54,7 @@ app.use('/api/auth',           authRouter);
 app.use('/api/contact',        contactRouter);
 app.use('/api/widget',         widgetRouter);
 app.use('/api/super-admin',    superAdminAuthRouter);
+app.use('/api',               marketingRouter);
 
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.

@@ -27,11 +27,35 @@
   .qr-caption { color:var(--light); font-size:34px; font-weight:800; letter-spacing:2px; text-transform:uppercase; text-align:center; }
   .url-footer { flex-shrink:0; padding:14mm 30mm 22mm; text-align:center; }
   .url-text { color:var(--white); font-size:72px; font-weight:900; letter-spacing:-2px; text-decoration:none; opacity:0.95; }
-  @media print { body { background:none; padding:0; } .page { transform:none; box-shadow:none; } }
+  @media print { body { background:none; padding:0; } .page { transform:none; box-shadow:none; } .download-bar { display: none !important; } .page { transform: none !important; } }
   @media screen { body { min-height:calc(841mm * 0.205 + 60px); } }
+
+  /* ── Download bar ── */
+  .download-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: #1a4710; color: #fff;
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: Arial, sans-serif; font-size: 14px;
+  }
+  .download-btn {
+    background: #fff; color: #1a4710; border: none;
+    padding: 8px 16px; border-radius: 6px;
+    cursor: pointer; font-weight: bold; font-size: 13px;
+    font-family: Arial, sans-serif;
+  }
+  .download-btn.secondary {
+    background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.6);
+  }
+  .download-hint { font-size: 11px; opacity: 0.75; margin-left: auto; }
 </style>
 </head>
 <body>
+<div class="download-bar">
+  <button class="download-btn" onclick="downloadPDF()">&#8659; Download PDF</button>
+  <button class="download-btn secondary" onclick="downloadPNG()">&#128444; Download PNG</button>
+  <span class="download-hint">PDF = full colours, correct dimensions &bull; PNG = screenshot</span>
+</div>
 <div class="page">
 
   <div class="top">
@@ -72,5 +96,30 @@
   </div>
 
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function downloadPDF() {
+  var name = window.location.pathname.split('/').pop().replace('.html', '');
+  window.location.href = '/api/marketing/pdf/' + name;
+}
+async function downloadPNG() {
+  if (typeof html2canvas === 'undefined') {
+    alert('PNG download is still loading, please try again in a moment.');
+    return;
+  }
+  var el = document.querySelector('.page') || document.querySelector('.flag') || document.querySelector('.sheet') || document.querySelector('.card-front') || document.body;
+  var canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: false, logging: false });
+  canvas.toBlob(function(blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = document.title.replace(/[^a-zA-Z0-9\-]/g, '-').toLowerCase() + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  }, 'image/png');
+}
+</script>
 </body>
 </html>
