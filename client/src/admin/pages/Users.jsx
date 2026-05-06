@@ -331,7 +331,9 @@ export default function Users() {
           >
             {busy[`${u.id}_verify`] ? '…' : 'Verify email'}
           </button>
-        ) : null}
+        ) : (
+          <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, whiteSpace: 'nowrap' }}>✓ Verified</span>
+        )}
         <button
           className={`sa-btn ${u.suspended ? 'sa-btn-comp' : 'sa-btn-cancel'}`}
           disabled={!!busy[`${u.id}_suspend`]}

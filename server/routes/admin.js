@@ -400,7 +400,7 @@ adminRouter.post('/users/:id/verify-email', (req, res) => {
   const userId = Number(req.params.id);
   const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
-  db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(userId);
+  db.prepare('UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?').run(userId);
   res.json({ success: true });
 });
 
@@ -864,3 +864,65 @@ adminRouter.get('/audit-log', (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── GET /api/admin/audit-log/export ──────────────────────────────────────────
+// Downloads all matching audit log entries as a CSV file (no pagination).
+adminRouter.get('/audit-log/export', (req, res) => {
+  try {
+    const { propertyId, property_id, category, action, from, to, search } = req.query;
+    const propId = propertyId || property_id;
+
+    const conditions = [];
+    const params     = [];
+
+    if (propId)   { conditions.push('a.property_id = ?');      params.push(Number(propId)); }
+    if (category) { conditions.push('a.category = ?');         params.push(category); }
+    if (action)   { conditions.push('a.action = ?');           params.push(action); }
+    if (from)     { conditions.push('date(a.timestamp) >= ?'); params.push(from); }
+    if (to)       { conditions.push('date(a.timestamp) <= ?'); params.push(to); }
+    if (search) {
+      conditions.push('(a.user_name LIKE ? OR a.user_email LIKE ? OR p.name LIKE ? OR a.detail LIKE ?)');
+      const q = `%${search}%`;
+      params.push(q, q, q, q);
+    }
+
+    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const rows = db.prepare(
+      `SELECT a.*, p.name as property_name
+       FROM audit_log a
+       LEFT JOIN properties p ON a.property_id = p.id
+       ${where} ORDER BY a.timestamp DESC`
+    ).all(...params);
+
+    const headers = ['Date & Time', 'Property', 'Staff Member', 'Role', 'Action', 'Category', 'Details', 'IP Address'];
+    const csvRows = rows.map((e) => [
+      fmtCsvTimestamp(e.timestamp),
+      e.property_name || '',
+      e.user_name || 'System',
+      e.user_role || '',
+      e.action || '',
+      e.category || '',
+      e.detail || '',
+      e.ip_address || '',
+    ]);
+
+    const csv = [headers, ...csvRows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const date = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="nestbook-audit-log-${date}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+function fmtCsvTimestamp(ts) {
+  if (!ts) return '';
+  const d = new Date(ts.endsWith('Z') ? ts : ts + 'Z');
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}

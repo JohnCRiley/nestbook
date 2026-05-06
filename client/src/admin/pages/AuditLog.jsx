@@ -33,6 +33,29 @@ export default function AuditLog() {
   const [category,   setCategory]   = useState('');
   const [from,       setFrom]       = useState('');
   const [to,         setTo]         = useState('');
+  const [csvLoading, setCsvLoading] = useState(false);
+
+  async function downloadCsv() {
+    setCsvLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (category) params.set('category', category);
+      if (from)     params.set('from', from);
+      if (to)       params.set('to', to);
+      const res = await saApiFetch(`/api/admin/audit-log/export?${params}`);
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `nestbook-audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[audit-log/export]', err.message);
+    }
+    setCsvLoading(false);
+  }
 
   const fetchLogs = useCallback(() => {
     setLoading(true);
@@ -81,6 +104,18 @@ export default function AuditLog() {
         <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>to</span>
         <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }}
           style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.83rem' }} />
+        <button
+          onClick={downloadCsv}
+          disabled={csvLoading}
+          style={{
+            padding: '6px 14px', borderRadius: 6, border: '1px solid #1a4710',
+            background: csvLoading ? '#f8fafc' : '#1a4710', color: csvLoading ? '#94a3b8' : '#fff',
+            fontWeight: 600, fontSize: '0.83rem', cursor: csvLoading ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit', whiteSpace: 'nowrap',
+          }}
+        >
+          {csvLoading ? 'Exporting…' : 'Download CSV'}
+        </button>
       </div>
 
       {/* Table */}
