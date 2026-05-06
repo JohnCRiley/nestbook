@@ -83,6 +83,7 @@ export default function Settings() {
   const [editingCatId,     setEditingCatId]     = useState(null);
   const [editCatForm,      setEditCatForm]      = useState({ name: '', color: '#64748b' });
   const [catDeleteTarget,  setCatDeleteTarget]  = useState(null);
+  const [catTaxInputs,     setCatTaxInputs]     = useState({});
 
   // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
@@ -121,7 +122,9 @@ export default function Settings() {
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
-      setCategories(Array.isArray(cats) ? cats : []);
+      const catArr = Array.isArray(cats) ? cats : [];
+      setCategories(catArr);
+      setCatTaxInputs(Object.fromEntries(catArr.map(c => [c.id, String(c.tax_rate ?? 0)])));
     });
   }, [activeProperty?.id, plan]);
 
@@ -581,14 +584,41 @@ export default function Settings() {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
                             <span style={{
                               display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
                               background: cat.color, flexShrink: 0,
                             }} />
                             <span style={{ fontSize: '0.88rem', fontWeight: 500 }}>{cat.name}</span>
                           </div>
-                          <div style={{ display: 'flex', gap: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', color: '#64748b' }}>
+                              {t('chargesCatTaxRate')}
+                              <input
+                                type="number"
+                                min="0" max="100" step="0.1"
+                                value={catTaxInputs[cat.id] ?? '0'}
+                                onChange={e => setCatTaxInputs(prev => ({ ...prev, [cat.id]: e.target.value }))}
+                                onBlur={async () => {
+                                  const newRate = Math.max(0, Math.min(100, parseFloat(catTaxInputs[cat.id]) || 0));
+                                  if (newRate === (cat.tax_rate ?? 0)) return;
+                                  const res = await apiFetch(`/api/charges/categories/${cat.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name: cat.name, color: cat.color, tax_rate: newRate }),
+                                  });
+                                  if (res.ok) {
+                                    const updated = await res.json();
+                                    setCategories(prev => prev.map(c => c.id === cat.id ? updated : c));
+                                  }
+                                }}
+                                style={{
+                                  width: 58, padding: '2px 6px', fontSize: '0.82rem',
+                                  border: '1px solid #e2e8f0', borderRadius: 4,
+                                  fontFamily: 'inherit', textAlign: 'right',
+                                }}
+                              />
+                            </label>
                             <button
                               onClick={() => { setEditingCatId(cat.id); setEditCatForm({ name: cat.name, color: cat.color }); }}
                               style={{

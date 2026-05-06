@@ -499,6 +499,9 @@ export function initSchema() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_charges_property ON room_charges(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_charges_date     ON room_charges(charge_date)`);
 
+  // Add tax_rate to service_categories (idempotent)
+  try { db.exec(`ALTER TABLE service_categories ADD COLUMN tax_rate REAL NOT NULL DEFAULT 0`); } catch {}
+
   // Seed default service categories for properties that have none yet
   const propertiesWithoutCategories = db.prepare(`
     SELECT p.id FROM properties p

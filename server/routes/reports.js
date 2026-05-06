@@ -87,6 +87,69 @@ reportsRouter.get('/revenue', (req, res) => {
   }
 });
 
+// ── GET /api/reports/charges ──────────────────────────────────────────────────
+// Query params: from (YYYY-MM-DD), to (YYYY-MM-DD), propertyId
+// Multi plan only. Returns charges grouped by category with per-category tax.
+reportsRouter.get('/charges', (req, res) => {
+  const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+  if (!user || user.plan !== 'multi') {
+    return res.status(403).json({ error: 'Multi plan required.' });
+  }
+
+  const { from, to, propertyId } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from and to are required.' });
+
+  const userPropIds = getUserPropertyIds(req.user.userId, req.user.role);
+  const propIds = resolvePropIds(req.user.userId, req.user.role, propertyId, userPropIds);
+  if (!propIds) return res.status(403).json({ error: 'Access denied.' });
+  if (!propIds.length) return res.json({ rows: [], totals: { count: 0, gross: 0, tax: 0, net: 0 } });
+
+  const placeholders = propIds.map(() => '?').join(',');
+  const args = [...propIds, from, to];
+
+  try {
+    const rawRows = db.prepare(`
+      SELECT
+        sc.id    AS category_id,
+        sc.name  AS category_name,
+        sc.color AS category_color,
+        sc.icon  AS category_icon,
+        COALESCE(sc.tax_rate, 0) AS tax_rate,
+        COUNT(rc.id)    AS count,
+        SUM(rc.amount)  AS gross
+      FROM room_charges rc
+      LEFT JOIN service_categories sc ON sc.id = rc.category_id
+      WHERE rc.property_id IN (${placeholders})
+        AND rc.voided_at IS NULL
+        AND rc.charge_date >= ?
+        AND rc.charge_date <  ?
+      GROUP BY rc.category_id
+      ORDER BY sc.name
+    `).all(...args);
+
+    let totalCount = 0, totalGross = 0, totalTax = 0, totalNet = 0;
+    const rows = rawRows.map(r => {
+      const gross   = r.gross || 0;
+      const taxFrac = (r.tax_rate || 0) / 100;
+      const tax     = gross * taxFrac;
+      const net     = gross - tax;
+      totalCount += r.count;
+      totalGross += gross;
+      totalTax   += tax;
+      totalNet   += net;
+      return { ...r, gross, tax, net };
+    });
+
+    res.json({
+      rows,
+      totals: { count: totalCount, gross: totalGross, tax: totalTax, net: totalNet },
+    });
+  } catch (e) {
+    console.error('[reports/charges]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
 // ── GET /api/reports/guests ───────────────────────────────────────────────────
 // Query params: from, to, propertyId
 reportsRouter.get('/guests', (req, res) => {

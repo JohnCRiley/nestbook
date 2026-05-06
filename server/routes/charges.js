@@ -70,14 +70,15 @@ chargesRouter.put('/categories/:id', requireMulti, (req, res) => {
   if (req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Only owners can manage categories.' });
   }
-  const { name, color } = req.body;
+  const { name, color, tax_rate } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Category name is required.' });
   const cat = db.prepare(
     `SELECT * FROM service_categories WHERE id = ? AND property_id = ?`
   ).get(Number(req.params.id), getPropertyId(req));
   if (!cat) return res.status(404).json({ error: 'Category not found.' });
-  db.prepare(`UPDATE service_categories SET name = ?, color = ? WHERE id = ?`)
-    .run(name.trim(), color || cat.color, Number(req.params.id));
+  const parsedTax = tax_rate != null ? Math.max(0, Math.min(100, parseFloat(tax_rate) || 0)) : (cat.tax_rate ?? 0);
+  db.prepare(`UPDATE service_categories SET name = ?, color = ?, tax_rate = ? WHERE id = ?`)
+    .run(name.trim(), color || cat.color, parsedTax, Number(req.params.id));
   res.json(db.prepare(`SELECT * FROM service_categories WHERE id = ?`).get(Number(req.params.id)));
 });
 

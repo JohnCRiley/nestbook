@@ -72,6 +72,10 @@ function ReportsContent() {
   const [results,    setResults]    = useState(null);
   const [rooms,      setRooms]      = useState([]);
 
+  // ── Room charges report state ──────────────────────────────────────────────
+  const [chargesResults,  setChargesResults]  = useState(null);
+  const [chargesLoading,  setChargesLoading]  = useState(false);
+
   // ── Guest list state ───────────────────────────────────────────────────────
   const [gFrom,         setGFrom]         = useState(() => getPresetRange('this_month').from);
   const [gTo,           setGTo]           = useState(() => getPresetRange('this_month').to);
@@ -132,6 +136,19 @@ function ReportsContent() {
       if (r.ok) setResults(data);
     } catch { /* network error */ }
     setLoading(false);
+  }
+
+  async function generateCharges() {
+    setChargesLoading(true);
+    setChargesResults(null);
+    try {
+      const params = new URLSearchParams({ from, to });
+      if (propFilter !== 'all') params.set('propertyId', propFilter);
+      const r = await apiFetch(`/api/reports/charges?${params}`);
+      const data = await r.json();
+      if (r.ok) setChargesResults(data);
+    } catch { /* network error */ }
+    setChargesLoading(false);
   }
 
   const tax = taxRate ? Number(taxRate) / 100 : 0;
@@ -219,8 +236,21 @@ function ReportsContent() {
       }).join(',');
       dataRows.push(sumRow);
     }
+    const csvBlocks = [[headers.join(','), ...dataRows].join('\n')];
+
+    if (chargesResults?.rows?.length) {
+      csvBlocks.push('');
+      csvBlocks.push(t('reportRoomChargesTitle'));
+      csvBlocks.push([t('reportChargesCategory'), t('reportChargesTransactions'), t('reportChargesGross'), t('reportChargesTax'), t('reportChargesNet')].join(','));
+      for (const r of chargesResults.rows) {
+        csvBlocks.push([`"${r.category_name || 'Uncategorised'}"`, r.count, r.gross.toFixed(2), r.tax.toFixed(2), r.net.toFixed(2)].join(','));
+      }
+      const ct = chargesResults.totals;
+      csvBlocks.push(['"TOTAL"', ct.count, ct.gross.toFixed(2), ct.tax.toFixed(2), ct.net.toFixed(2)].join(','));
+    }
+
     triggerDownload(
-      [headers.join(','), ...dataRows].join('\n'),
+      csvBlocks.join('\n'),
       'text/csv',
       `nestbook-report-${from}-${to}.csv`
     );
@@ -237,6 +267,32 @@ function ReportsContent() {
       const cells = buildRow(b);
       return `<tr>${activeFields.map(f => `<td>${cells[f]}</td>`).join('')}</tr>`;
     }).join('');
+
+    let chargesSection = '';
+    if (chargesResults?.rows?.length) {
+      const ct = chargesResults.totals;
+      const grandGross = summary.totalRevenue + ct.gross;
+      const grandTax   = summary.totalTax   + ct.tax;
+      const grandNet   = summary.netRevenue  + ct.net;
+      const chargesRows = chargesResults.rows.map(r =>
+        `<tr><td>${r.category_name || 'Uncategorised'}</td><td>${r.count}</td><td>${fmtMoney(r.gross)}</td><td>${fmtMoney(r.tax)}</td><td>${fmtMoney(r.net)}</td></tr>`
+      ).join('');
+      chargesSection = `<h2 style="font-size:15px;margin:28px 0 10px">${t('reportRoomChargesTitle')}</h2>
+<table>
+  <thead><tr><th>${t('reportChargesCategory')}</th><th>${t('reportChargesTransactions')}</th><th>${t('reportChargesGross')}</th><th>${t('reportChargesTax')}</th><th>${t('reportChargesNet')}</th></tr></thead>
+  <tbody>${chargesRows}</tbody>
+</table>
+<div class="summary" style="margin-top:20px">
+  <h2>${t('reportRevenueSummary')}</h2>
+  <div class="sum-grid">
+    <div class="sum-item"><label>${t('reportChargesAccommodation')}</label><span>${fmtMoney(summary.totalRevenue)}</span></div>
+    <div class="sum-item"><label>${t('reportRoomChargesTitle')}</label><span>${fmtMoney(ct.gross)}</span></div>
+    <div class="sum-item"><label>${t('reportChargesGrandTotal')}</label><span>${fmtMoney(grandGross)}</span></div>
+    <div class="sum-item"><label>${t('reportSumTax')}</label><span>${fmtMoney(grandTax)}</span></div>
+    <div class="sum-item"><label>${t('reportSumNet')}</label><span>${fmtMoney(grandNet)}</span></div>
+  </div>
+</div>`;
+    }
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -282,6 +338,7 @@ function ReportsContent() {
   <thead><tr>${activeFields.map(f => `<th>${fieldLabel(f)}</th>`).join('')}</tr></thead>
   <tbody>${tableRows}</tbody>
 </table>
+${chargesSection}
 <div class="footer">${t('reportGeneratedBy')} ${genDate}</div>
 </body></html>`;
 
@@ -518,6 +575,103 @@ function ReportsContent() {
           )
         )}
       </div>
+
+      {/* ── Room Charges Report (Multi plan only) ──────────────────────────── */}
+      {plan === 'multi' && (
+        <div className="admin-card" style={{ marginBottom: 24 }}>
+          <div className="admin-card-header">
+            <h2>{t('reportRoomChargesTitle')}</h2>
+          </div>
+
+          <div style={{ padding: '16px 20px', borderBottom: chargesResults !== null ? '1px solid #f1f5f9' : 'none' }}>
+            <p style={{ margin: '0 0 14px', fontSize: '0.875rem', color: '#64748b', fontStyle: 'italic' }}>
+              {t('reportChargesAccommodation')} taxes use per-category rates set in Settings.
+            </p>
+            <button className="btn-primary" onClick={generateCharges} disabled={chargesLoading}>
+              {chargesLoading ? '…' : t('reportGenerate')}
+            </button>
+          </div>
+
+          {chargesResults !== null && (
+            chargesResults.rows.length === 0 ? (
+              <div style={{ padding: '20px', color: '#94a3b8', fontSize: '0.875rem' }}>
+                {t('reportChargesNoData')}
+              </div>
+            ) : (
+              <>
+                {/* Combined Revenue Summary (only when both reports loaded) */}
+                {summary && (
+                  <div style={{ padding: '20px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 14 }}>
+                      {t('reportRevenueSummary')}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                      {[
+                        [t('reportChargesAccommodation'), fmtMoney(summary.totalRevenue)],
+                        [t('reportRoomChargesTitle'),     fmtMoney(chargesResults.totals.gross)],
+                        [t('reportChargesGrandTotal'),    fmtMoney(summary.totalRevenue + chargesResults.totals.gross)],
+                        [t('reportSumTax'),               fmtMoney(summary.totalTax + chargesResults.totals.tax)],
+                        [t('reportSumNet'),               fmtMoney(summary.netRevenue + chargesResults.totals.net)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="report-summary-card">
+                          <div className="report-summary-label">{label}</div>
+                          <div className="report-summary-value">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Per-category charges table */}
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{t('reportChargesCategory')}</th>
+                        <th>{t('reportChargesTransactions')}</th>
+                        <th>{t('reportChargesGross')}</th>
+                        <th>{t('reportChargesTax')}</th>
+                        <th>{t('reportChargesNet')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chargesResults.rows.map(r => (
+                        <tr key={r.category_id ?? 'uncategorised'}>
+                          <td style={{ fontWeight: 500 }}>
+                            {r.category_color && (
+                              <span style={{
+                                display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                                background: r.category_color, marginRight: 6,
+                              }} />
+                            )}
+                            {r.category_name || 'Uncategorised'}
+                            {r.tax_rate > 0 && (
+                              <span style={{ marginLeft: 6, fontSize: '0.75rem', color: '#94a3b8' }}>
+                                {r.tax_rate}%
+                              </span>
+                            )}
+                          </td>
+                          <td>{r.count}</td>
+                          <td style={{ fontWeight: 600 }}>{fmtMoney(r.gross)}</td>
+                          <td className="admin-muted">{fmtMoney(r.tax)}</td>
+                          <td style={{ fontWeight: 600 }}>{fmtMoney(r.net)}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                        <td>{t('reportChargesGrandTotal')}</td>
+                        <td>{chargesResults.totals.count}</td>
+                        <td>{fmtMoney(chargesResults.totals.gross)}</td>
+                        <td>{fmtMoney(chargesResults.totals.tax)}</td>
+                        <td>{fmtMoney(chargesResults.totals.net)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )
+          )}
+        </div>
+      )}
 
       {/* ── Guest Contact List ──────────────────────────────────────────────── */}
       <div className="admin-card">
