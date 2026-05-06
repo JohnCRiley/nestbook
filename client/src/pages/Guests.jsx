@@ -124,9 +124,8 @@ export default function Guests() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="page-fill">
-        {/* ── Page header ──────────────────────────────────────────────────── */}
-        <div className="page-toolbar">
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div className="page-toolbar">
           <div className="page-header" style={{ marginBottom: 0 }}>
             <h1>{t('guests')}</h1>
             <div className="page-date">{counts.total} {t('guestRecords')}</div>
@@ -167,37 +166,34 @@ export default function Guests() {
           )}
         </div>
 
-        {/* ── Guest card grid ───────────────────────────────────────────────── */}
-        <div className="scrollable-content">
-          {loading ? (
-            <div className="loading-screen">{t('loadingGuests')}</div>
-          ) : guests.length === 0 ? (
-            <div className="guests-empty">
-              {search ? t('noGuestsSearch')(search) : t('noGuests')}
-            </div>
-          ) : (
-            <div className="guest-grid">
-              {guests.map((guest) => (
-                <GuestCard
-                  key={guest.id}
-                  guest={guest}
-                  bookingCount={(bookingsByGuest[guest.id] ?? []).length}
-                  isActive={selectedGuest?.id === guest.id}
-                  onClick={handleCardClick}
-                />
-              ))}
-            </div>
-          )}
+      {/* ── Guest card grid ───────────────────────────────────────────────── */}
+      {loading ? (
+        <div className="loading-screen">{t('loadingGuests')}</div>
+      ) : guests.length === 0 ? (
+        <div className="guests-empty">
+          {search ? t('noGuestsSearch')(search) : t('noGuests')}
         </div>
+      ) : (
+        <div className="guest-grid">
+          {guests.map((guest) => (
+            <GuestCard
+              key={guest.id}
+              guest={guest}
+              bookingCount={(bookingsByGuest[guest.id] ?? []).length}
+              isActive={selectedGuest?.id === guest.id}
+              onClick={handleCardClick}
+            />
+          ))}
+        </div>
+      )}
 
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          limit={pageSize}
-          onPage={setPage}
-        />
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={pageSize}
+        onPage={setPage}
+      />
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedGuest && (

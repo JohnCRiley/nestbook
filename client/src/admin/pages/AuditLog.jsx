@@ -56,7 +56,7 @@ export default function AuditLog() {
   const CATS = ['', 'auth', 'booking', 'guest', 'room', 'property', 'user'];
 
   return (
-    <div className="page-fill">
+    <div>
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '1.3rem', fontWeight: 700 }}>Audit Log</h2>
         <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
@@ -83,8 +83,7 @@ export default function AuditLog() {
       </div>
 
       {/* Table */}
-      <div className="scrollable-content">
-        {loading ? (
+      {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Loading…</div>
         ) : logs.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>No activity found.</div>
@@ -137,7 +136,6 @@ export default function AuditLog() {
             </table>
           </div>
         )}
-      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

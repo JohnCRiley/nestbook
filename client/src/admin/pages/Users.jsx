@@ -361,7 +361,6 @@ export default function Users() {
 
   return (
     <>
-      <div className="page-fill">
       <div className="page-header">
         <h1>Users</h1>
         <div className="page-date">{countLabel}</div>
@@ -505,7 +504,6 @@ export default function Users() {
       </div>
 
       {/* ── Desktop / Tablet table ─────────────────────────────────────────── */}
-      <div className="scrollable-content">
       <div className="admin-card admin-user-table-wrap">
         <div className="admin-table-wrap">
           <table className="admin-table">
@@ -706,8 +704,6 @@ export default function Users() {
           </div>
         )}
       </div>
-      </div>{/* end scrollable-content */}
-
       {/* ── Pagination ─────────────────────────────────────────────────────── */}
       {total > 0 && totalPages > 1 && (
         <div className="pagination" style={{ marginTop: 16 }}>
@@ -725,8 +721,6 @@ export default function Users() {
           </div>
         </div>
       )}
-      </div>{/* end page-fill */}
-
       {refundTarget && (
         <RefundModal
           user={refundTarget}

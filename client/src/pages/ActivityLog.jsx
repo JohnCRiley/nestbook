@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiFetch }     from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import PlanGate          from '../components/PlanGate.jsx';
 import Pagination        from '../components/Pagination.jsx';
 import usePageSize       from '../hooks/usePageSize.js';
-
-const RESERVED = 160;
 
 // Human-readable action labels
 const ACTION_LABELS = {
@@ -35,6 +33,8 @@ const ACTION_LABELS = {
   PROPERTY_UPDATED:    'Property updated',
   PROPERTY_DELETED:    'Property deleted',
   USER_CREATED:        'Staff account created',
+  CHARGE_ADDED:        'Charge added',
+  CHARGE_VOIDED:       'Charge voided',
 };
 
 // Category badge styles
@@ -45,12 +45,13 @@ const CAT_STYLE = {
   room:     { background: '#ffedd5', color: '#9a3412' },
   property: { background: '#ccfbf1', color: '#0f766e' },
   user:     { background: '#fce7f3', color: '#9d174d' },
+  charge:   { background: '#fef9c3', color: '#854d0e' },
 };
 
 export default function ActivityLog() {
   const t = useT();
   return (
-    <div className="page-fill">
+    <>
       <div className="page-header">
         <h1>{t('activityLog')}</h1>
         <div className="page-date">{t('activityLogSubtitle')}</div>
@@ -58,14 +59,14 @@ export default function ActivityLog() {
       <PlanGate requiredPlan="pro">
         <ActivityLogContent />
       </PlanGate>
-    </div>
+    </>
   );
 }
 
 function ActivityLogContent() {
   const t = useT();
   const { property } = useLocale();
-  const pageSize = usePageSize(56, RESERVED);
+  const pageSize = usePageSize(72, 240);
 
   const [logs,       setLogs]       = useState([]);
   const [total,      setTotal]      = useState(0);
@@ -75,14 +76,6 @@ function ActivityLogContent() {
   const [category,   setCategory]   = useState('');
   const [from,       setFrom]       = useState('');
   const [to,         setTo]         = useState('');
-
-  const prevPageSizeRef = useRef(pageSize);
-  useEffect(() => {
-    if (prevPageSizeRef.current !== pageSize) {
-      prevPageSizeRef.current = pageSize;
-      setPage(1);
-    }
-  }, [pageSize]);
 
   const fetchLogs = useCallback(() => {
     if (!property?.id) return;
@@ -103,8 +96,7 @@ function ActivityLogContent() {
   }, [property?.id, page, pageSize, category, from, to]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
-
-  const handleCategoryChange = (cat) => { setCategory(cat); setPage(1); };
+  useEffect(() => { setPage(1); }, [category, from, to]);
 
   const handleExportCSV = () => {
     if (!property?.id) return;
@@ -149,36 +141,34 @@ function ActivityLogContent() {
 
   return (
     <>
-      {/* Controls */}
-      <div className="controls-row" style={{ flexWrap: 'wrap', gap: 8 }}>
-        <div className="filter-bar">
+      {/* ── Controls ─────────────────────────────────────────────────────── */}
+      <div className="al-controls">
+        {/* Category filter tabs — horizontal scroll on mobile */}
+        <div className="al-filter-tabs">
           {CATEGORIES.map(({ key, label }) => (
             <button
               key={key}
               className={`filter-btn${category === key ? ' active' : ''}`}
-              onClick={() => handleCategoryChange(key)}
+              onClick={() => setCategory(key)}
             >
               {label}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 'auto' }}>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-            {t('reportFrom')}
-          </label>
+        {/* Date range + export — wraps below tabs on mobile */}
+        <div className="al-date-row">
+          <label className="al-date-label">{t('reportFrom')}</label>
           <input
             type="date" value={from}
-            onChange={(e) => { setFrom(e.target.value); setPage(1); }}
-            style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.82rem' }}
+            onChange={(e) => setFrom(e.target.value)}
+            className="al-date-input"
           />
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-            {t('reportTo')}
-          </label>
+          <label className="al-date-label">{t('reportTo')}</label>
           <input
             type="date" value={to}
-            onChange={(e) => { setTo(e.target.value); setPage(1); }}
-            style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.82rem' }}
+            onChange={(e) => setTo(e.target.value)}
+            className="al-date-input"
           />
           <button className="btn-secondary" onClick={handleExportCSV} style={{ whiteSpace: 'nowrap' }}>
             {t('alExportCSV')}
@@ -186,14 +176,15 @@ function ActivityLogContent() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="scrollable-content">
-        {loading ? (
-          <div className="loading-screen">{t('alLoadingLogs')}</div>
-        ) : logs.length === 0 ? (
-          <div className="table-empty">{t('alNoLogs')}</div>
-        ) : (
-          <div className="table-wrap">
+      {/* ── Content ──────────────────────────────────────────────────────── */}
+      {loading ? (
+        <div className="loading-screen">{t('alLoadingLogs')}</div>
+      ) : logs.length === 0 ? (
+        <div className="table-empty">{t('alNoLogs')}</div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="table-wrap al-table-wrap">
             <table className="bookings-table" style={{ fontSize: '0.82rem' }}>
               <thead>
                 <tr>
@@ -213,8 +204,15 @@ function ActivityLogContent() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+
+          {/* Mobile card list */}
+          <div className="al-cards">
+            {logs.map((log) => (
+              <LogCard key={log.id} log={log} />
+            ))}
+          </div>
+        </>
+      )}
 
       <Pagination page={page} totalPages={totalPages} total={total} limit={pageSize} onPage={setPage} />
     </>
@@ -259,6 +257,34 @@ function LogRow({ log }) {
         {log.ip_address ?? '—'}
       </td>
     </tr>
+  );
+}
+
+function LogCard({ log }) {
+  const catStyle = CAT_STYLE[log.category] ?? { background: '#f1f5f9', color: '#475569' };
+  const actionLabel = ACTION_LABELS[log.action] ?? log.action;
+  const targetLabel = log.target_name ?? (log.target_id ? `#${log.target_id}` : '');
+
+  return (
+    <div className="al-card">
+      <div className="al-card-top">
+        <span className="al-card-time">{formatTs(log.timestamp)}</span>
+        <span className="al-card-cat-badge" style={catStyle}>{log.category}</span>
+      </div>
+      <div className="al-card-user">
+        <span className="al-card-name">{log.user_name ?? '—'}</span>
+        {log.user_role && (
+          <span className="al-card-role">{log.user_role}</span>
+        )}
+      </div>
+      <div className="al-card-action">{actionLabel}</div>
+      {(targetLabel || log.detail) && (
+        <div className="al-card-detail">
+          {targetLabel && <span className="al-card-target">{targetLabel}</span>}
+          {log.detail && <span className="al-card-detail-text">{log.detail}</span>}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -188,9 +188,8 @@ export default function Bookings() {
         <div className="toast toast-success">{pageToast}</div>
       )}
 
-      <div className="page-fill">
-        {/* ── Page header ──────────────────────────────────────────────────── */}
-        <div className="page-toolbar">
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div className="page-toolbar">
           <div className="page-header" style={{ marginBottom: 0 }}>
             <h1>{t('bookings')}</h1>
             <div className="page-date">{total} {t('totalReservations')}</div>
@@ -228,67 +227,64 @@ export default function Bookings() {
           </div>
         </div>
 
-        {/* ── Loading / empty / table ───────────────────────────────────────── */}
-        <div className="scrollable-content">
-          {loading ? (
-            <div className="loading-screen">{t('loadingBookings')}</div>
-          ) : bookings.length === 0 ? (
-            <div className="table-empty">
-              {search.trim() ? t('noBookingsMatching')(search.trim()) : t('noBookingsFilter')}
-            </div>
-          ) : (
-            <>
-              {/* ── Mobile card list ─────────────────────────────────────────── */}
-              <div className="booking-cards">
+      {/* ── Loading / empty / table ───────────────────────────────────────── */}
+      {loading ? (
+        <div className="loading-screen">{t('loadingBookings')}</div>
+      ) : bookings.length === 0 ? (
+        <div className="table-empty">
+          {search.trim() ? t('noBookingsMatching')(search.trim()) : t('noBookingsFilter')}
+        </div>
+      ) : (
+        <>
+          {/* ── Mobile card list ─────────────────────────────────────────── */}
+          <div className="booking-cards">
+            {bookings.map((b) => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                isSelected={selectedBooking?.id === b.id}
+                onClick={handleRowClick}
+              />
+            ))}
+          </div>
+
+          {/* ── Desktop table ────────────────────────────────────────────── */}
+          <div className="table-wrap">
+            <table className="bookings-table">
+              <thead>
+                <tr>
+                  <th>{t('thGuest')}</th>
+                  <th>{t('thRoom')}</th>
+                  <th>{t('thCheckIn')}</th>
+                  <th>{t('thCheckOut')}</th>
+                  <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
+                  <th>{t('thSource')}</th>
+                  <th>{t('thTotal')}</th>
+                  <th>{t('thStatus')}</th>
+                </tr>
+              </thead>
+              <tbody>
                 {bookings.map((b) => (
-                  <BookingCard
+                  <BookingRow
                     key={b.id}
                     booking={b}
                     isSelected={selectedBooking?.id === b.id}
                     onClick={handleRowClick}
                   />
                 ))}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
-              {/* ── Desktop table ────────────────────────────────────────────── */}
-              <div className="table-wrap">
-                <table className="bookings-table">
-                  <thead>
-                    <tr>
-                      <th>{t('thGuest')}</th>
-                      <th>{t('thRoom')}</th>
-                      <th>{t('thCheckIn')}</th>
-                      <th>{t('thCheckOut')}</th>
-                      <th style={{ textAlign: 'center' }}>{t('thGuests')}</th>
-                      <th>{t('thSource')}</th>
-                      <th>{t('thTotal')}</th>
-                      <th>{t('thStatus')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.map((b) => (
-                      <BookingRow
-                        key={b.id}
-                        booking={b}
-                        isSelected={selectedBooking?.id === b.id}
-                        onClick={handleRowClick}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          total={total}
-          limit={pageSize}
-          onPage={setPage}
-        />
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={pageSize}
+        onPage={setPage}
+      />
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedBooking && (

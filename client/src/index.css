@@ -189,23 +189,6 @@ a { text-decoration: none; }
   -webkit-overflow-scrolling: touch;
 }
 
-/* ─── Pagination always-visible flex layout ──────────────────────────────── */
-.page-fill {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.scrollable-content {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.page-fill > .pagination {
-  flex-shrink: 0;
-}
-
 /* ─── Mobile top bar (hidden on tablet + desktop) ───────────────────────── */
 .mobile-topbar    { display: none; }
 .sidebar-overlay  { display: none; }
@@ -3890,6 +3873,122 @@ a { text-decoration: none; }
 @media (max-width: 767px) {
   .modal-overlay { padding: 16px 8px; align-items: flex-start; }
   .modal { border-radius: 12px; }
+}
+
+/* ── Activity Log ────────────────────────────────────────────────────────── */
+.al-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.al-filter-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.al-filter-tabs::-webkit-scrollbar { display: none; }
+.al-date-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.al-date-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.al-date-input {
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+/* Desktop: show table, hide cards */
+.al-table-wrap { display: block; }
+.al-cards      { display: none; }
+
+/* ── Activity Log mobile cards ───────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .al-table-wrap { display: none; }
+  .al-cards      { display: flex; flex-direction: column; gap: 8px; }
+  .al-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .al-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .al-card-time {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .al-card-cat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+  .al-card-user {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .al-card-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+  }
+  .al-card-role {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    background: var(--bg-subtle, #f1f5f9);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .al-card-action {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+  .al-card-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .al-card-target {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .al-card-detail-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .al-date-row {
+    gap: 6px;
+  }
+  .al-date-input {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 /* ── Pagination ──────────────────────────────────────────────────────────── */
