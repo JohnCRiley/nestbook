@@ -68,8 +68,8 @@ marketingRouter.get('/marketing/pdf/:name', async (req, res) => {
       `attachment; filename="nestbook-${req.params.name}.pdf"`);
     res.send(Buffer.from(pdf));
   } catch (err) {
-    console.error('[marketing/pdf]', err.message);
-    res.status(500).json({ error: 'PDF generation failed. Ensure Puppeteer is installed (npm install in server/).' });
+    console.error('[marketing/pdf]', err);
+    res.status(500).json({ error: `PDF generation failed: ${err.message}` });
   } finally {
     if (browser) await browser.close();
   }

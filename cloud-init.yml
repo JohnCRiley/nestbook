@@ -1,0 +1,188 @@
+#cloud-config
+#
+# NestBook — Production Deployment
+# Target: Hetzner Cloud, Ubuntu 24.04
+# Usage:  Paste this entire file into the "User data" field when creating
+#         a new server.  Cloud-Init runs once on first boot as root.
+#
+# After boot, monitor progress with:
+#   cat /root/DEPLOY_STATUS.txt
+#
+# When you see "NESTBOOK DEPLOYED", edit the .env and restart:
+#   nano /opt/nestbook/server/.env
+#   pm2 restart nestbook-api
+
+# ---------------------------------------------------------------------------
+# Files written before runcmd executes
+# ---------------------------------------------------------------------------
+write_files:
+
+  # Nginx site config — written to /tmp first because /etc/nginx/ does not
+  # exist until nginx is installed in runcmd.
+  - path: /tmp/nginx-nestbook.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      server {
+          listen 80;
+          server_name _;
+
+          # Serve the Vite production build
+          root /opt/nestbook/client/dist;
+          index index.html;
+
+          # SPA routing — unknown paths fall back to index.html
+          location / {
+              try_files $uri $uri/ /index.html;
+          }
+
+          # Proxy all /api/* requests to the Node.js server
+          location /api/ {
+              proxy_pass             http://127.0.0.1:3001;
+              proxy_http_version     1.1;
+              proxy_set_header       Upgrade           $http_upgrade;
+              proxy_set_header       Connection        'upgrade';
+              proxy_set_header       Host              $host;
+              proxy_set_header       X-Real-IP         $remote_addr;
+              proxy_set_header       X-Forwarded-For   $proxy_add_x_forwarded_for;
+              proxy_set_header       X-Forwarded-Proto $scheme;
+              proxy_cache_bypass     $http_upgrade;
+              proxy_read_timeout     60s;
+              # Pass raw body unchanged (required for Stripe webhook signature)
+              proxy_request_buffering off;
+          }
+      }
+
+  # Production .env template — copy to /opt/nestbook/server/.env in runcmd.
+  # Permissions 0600: readable by root only.
+  - path: /tmp/nestbook.env
+    owner: root:root
+    permissions: '0600'
+    content: |
+      # ---------------------------------------------------------------
+      # NestBook — Production Environment Variables
+      # Edit every value marked CHANGE_THIS before going live.
+      # Restart the app after editing: pm2 restart nestbook-api
+      # ---------------------------------------------------------------
+
+      PORT=3001
+
+      # JWT secret — generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+      JWT_SECRET=CHANGE_THIS_TO_A_RANDOM_64_CHARACTER_HEX_STRING
+
+      # Super-admin panel password (used at /super-admin/login)
+      SUPER_ADMIN_PASSWORD=CHANGE_THIS_BEFORE_GOING_LIVE
+
+      # Stripe — find these in your Stripe dashboard
+      STRIPE_SECRET_KEY=sk_live_CHANGE_THIS_TO_YOUR_STRIPE_SECRET_KEY
+      STRIPE_WEBHOOK_SECRET=whsec_CHANGE_THIS_TO_YOUR_STRIPE_WEBHOOK_SECRET
+
+# ---------------------------------------------------------------------------
+# Main provisioning sequence — runs as root after first boot
+# ---------------------------------------------------------------------------
+runcmd:
+
+  # ── Deployment start ──────────────────────────────────────────────────────
+  - |
+    echo "NESTBOOK DEPLOYMENT LOG"                              > /root/DEPLOY_STATUS.txt
+    echo "======================================="             >> /root/DEPLOY_STATUS.txt
+    echo "Started: $(date '+%Y-%m-%d %H:%M:%S UTC')"          >> /root/DEPLOY_STATUS.txt
+    echo ""                                                    >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 1: Update system packages ───────────────────────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 1/8 — Updating system packages..." >> /root/DEPLOY_STATUS.txt
+  - DEBIAN_FRONTEND=noninteractive apt-get update -y
+  - DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+  - echo "[$(date '+%H:%M:%S')] System packages updated." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 2: Install Node.js 24 via NodeSource ─────────────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 2/8 — Installing Node.js 24..." >> /root/DEPLOY_STATUS.txt
+  - curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+  - echo "[$(date '+%H:%M:%S')] Node.js $(node --version) / npm $(npm --version) installed." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 3: Install nginx, git, certbot, PM2, and Chrome system libs ────────
+  - echo "[$(date '+%H:%M:%S')] STEP 3/8 — Installing nginx, git, certbot, PM2, Chrome deps..." >> /root/DEPLOY_STATUS.txt
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y nginx git certbot python3-certbot-nginx ufw
+  - npm install -g pm2
+  # Chrome/Puppeteer system dependencies (required for headless PDF generation)
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates fonts-liberation libatk-bridge2.0-0 libatk1.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 xdg-utils
+  - echo "[$(date '+%H:%M:%S')] nginx, git, certbot, PM2 $(pm2 --version), Chrome deps installed." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 4: Clone NestBook repository ────────────────────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 4/8 — Cloning NestBook repository..." >> /root/DEPLOY_STATUS.txt
+  - git clone https://github.com/JohnCRiley/nestbook.git /opt/nestbook
+  - echo "[$(date '+%H:%M:%S')] Repository cloned to /opt/nestbook." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 5: Create production .env ───────────────────────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 5/8 — Creating production .env..." >> /root/DEPLOY_STATUS.txt
+  - cp /tmp/nestbook.env /opt/nestbook/server/.env
+  - chmod 600 /opt/nestbook/server/.env
+  - rm /tmp/nestbook.env
+  - echo "[$(date '+%H:%M:%S')] .env written to /opt/nestbook/server/.env (edit before going live)." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 6: Install dependencies and build frontend ───────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 6/8 — Installing npm dependencies..." >> /root/DEPLOY_STATUS.txt
+  # Root npm install handles both workspaces (client + server) in one pass.
+  - bash -c "cd /opt/nestbook && npm install 2>&1"
+  - echo "[$(date '+%H:%M:%S')] Dependencies installed. Building React frontend..." >> /root/DEPLOY_STATUS.txt
+  - bash -c "cd /opt/nestbook/client && npm run build 2>&1"
+  - echo "[$(date '+%H:%M:%S')] Frontend built to client/dist/." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 7: Initialise database ───────────────────────────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 7/8 — Seeding database..." >> /root/DEPLOY_STATUS.txt
+  - bash -c "cd /opt/nestbook/server && node --no-warnings=ExperimentalWarning db/seed.js 2>&1"
+  - bash -c "cd /opt/nestbook/server && node --no-warnings=ExperimentalWarning db/migrate.js 2>&1"
+  - echo "[$(date '+%H:%M:%S')] Database initialised." >> /root/DEPLOY_STATUS.txt
+
+  # ── Step 8: Start app with PM2 ────────────────────────────────────────────
+  - echo "[$(date '+%H:%M:%S')] STEP 8/8 — Starting NestBook with PM2..." >> /root/DEPLOY_STATUS.txt
+  # --cwd ensures the --env-file=.env path resolves correctly on every restart.
+  - bash -c "pm2 start 'node --no-warnings=ExperimentalWarning --env-file=.env index.js' --name nestbook-api --cwd /opt/nestbook/server 2>&1"
+  - pm2 save
+  # Generate and run the systemd startup script so PM2 survives reboots.
+  - bash -c "pm2 startup systemd -u root --hp /root 2>&1 | tail -1 | bash"
+  - echo "[$(date '+%H:%M:%S')] PM2 started and registered with systemd." >> /root/DEPLOY_STATUS.txt
+
+  # ── Configure nginx ───────────────────────────────────────────────────────
+  - cp /tmp/nginx-nestbook.conf /etc/nginx/sites-available/nestbook
+  - ln -sf /etc/nginx/sites-available/nestbook /etc/nginx/sites-enabled/nestbook
+  - rm -f /etc/nginx/sites-enabled/default
+  - nginx -t
+  - systemctl restart nginx
+  - systemctl enable nginx
+  - echo "[$(date '+%H:%M:%S')] nginx configured and restarted." >> /root/DEPLOY_STATUS.txt
+
+  # ── Configure firewall ────────────────────────────────────────────────────
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp    comment 'SSH'
+  - ufw allow 80/tcp    comment 'HTTP'
+  - ufw allow 443/tcp   comment 'HTTPS'
+  - ufw allow 8022/tcp  comment 'Alt SSH'
+  - ufw --force enable
+  - echo "[$(date '+%H:%M:%S')] Firewall enabled (ports 22, 80, 443, 8022 open)." >> /root/DEPLOY_STATUS.txt
+
+  # ── Deployment complete ───────────────────────────────────────────────────
+  - |
+    echo ""                                                              >> /root/DEPLOY_STATUS.txt
+    echo "======================================="                       >> /root/DEPLOY_STATUS.txt
+    echo "NESTBOOK DEPLOYED"                                             >> /root/DEPLOY_STATUS.txt
+    echo "Completed: $(date '+%Y-%m-%d %H:%M:%S UTC')"                  >> /root/DEPLOY_STATUS.txt
+    echo "======================================="                       >> /root/DEPLOY_STATUS.txt
+    echo ""                                                              >> /root/DEPLOY_STATUS.txt
+    echo "REQUIRED — before going live:"                                 >> /root/DEPLOY_STATUS.txt
+    echo "  1. Edit secrets in /opt/nestbook/server/.env"                >> /root/DEPLOY_STATUS.txt
+    echo "     - JWT_SECRET (generate a random 64-char hex string)"      >> /root/DEPLOY_STATUS.txt
+    echo "     - SUPER_ADMIN_PASSWORD"                                   >> /root/DEPLOY_STATUS.txt
+    echo "     - STRIPE_SECRET_KEY"                                      >> /root/DEPLOY_STATUS.txt
+    echo "     - STRIPE_WEBHOOK_SECRET"                                  >> /root/DEPLOY_STATUS.txt
+    echo "  2. Restart: pm2 restart nestbook-api"                        >> /root/DEPLOY_STATUS.txt
+    echo ""                                                              >> /root/DEPLOY_STATUS.txt
+    echo "SSL — once your domain DNS points to this server:"             >> /root/DEPLOY_STATUS.txt
+    echo "  certbot --nginx -d yourdomain.com"                           >> /root/DEPLOY_STATUS.txt
+    echo ""                                                              >> /root/DEPLOY_STATUS.txt
+    echo "Demo login: demo@nestbook.io / demo1234"                       >> /root/DEPLOY_STATUS.txt
+    echo "PM2 status: pm2 status"                                        >> /root/DEPLOY_STATUS.txt
+    echo "App logs:   pm2 logs nestbook-api"                             >> /root/DEPLOY_STATUS.txt
+    echo "nginx logs: tail -f /var/log/nginx/error.log"                  >> /root/DEPLOY_STATUS.txt
