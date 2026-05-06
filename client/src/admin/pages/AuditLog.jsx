@@ -14,6 +14,7 @@ const ACTION_LABELS = {
   ROOM_CREATED: 'Room created', ROOM_UPDATED: 'Room updated', ROOM_DELETED: 'Room deleted',
   PROPERTY_CREATED: 'Property created', PROPERTY_UPDATED: 'Property updated',
   PROPERTY_DELETED: 'Property deleted', USER_CREATED: 'Staff created',
+  PLAN_UPGRADED: 'Plan upgraded',
 };
 
 const CAT_COLOR = {

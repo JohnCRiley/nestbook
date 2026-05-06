@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
 import db from '../db/database.js';
+import { sendUpgradeWelcome, sendMultiWelcome } from '../email/emailService.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
 
@@ -95,6 +97,10 @@ stripeRouter.post('/sync-session', async (req, res) => {
       ? new Date(rawEnd * 1000).toISOString()
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
+    // Capture current plan before updating so we can detect upgrades.
+    const oldUser = db.prepare('SELECT id, name, email, plan FROM users WHERE id = ?').get(userId);
+    const oldPlan = oldUser?.plan ?? 'free';
+
     // Update the user's plan first — this is the critical step.
     const userUpdate = db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
     console.log('[sync-session] UPDATE users changes:', userUpdate.changes, '| userId used:', userId);
@@ -124,6 +130,27 @@ stripeRouter.post('/sync-session', async (req, res) => {
     if (userRow?.discount_code) {
       db.prepare('UPDATE discount_codes SET current_uses = current_uses + 1 WHERE code = ? AND active = 1')
         .run(userRow.discount_code.toUpperCase());
+    }
+
+    // Fire upgrade email + audit log if the plan actually changed upward.
+    if (oldPlan !== plan && oldUser) {
+      const property = db.prepare('SELECT * FROM properties WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
+      if (plan === 'multi') {
+        sendMultiWelcome(oldUser, property);
+      } else {
+        sendUpgradeWelcome(oldUser, property, periodEnd);
+      }
+      logAction(db, {
+        propertyId: property?.id ?? null,
+        userId:     Number(userId),
+        userName:   oldUser.name,
+        userEmail:  oldUser.email,
+        userRole:   'owner',
+        action:     'PLAN_UPGRADED',
+        category:   'auth',
+        detail:     `${oldPlan} → ${plan}`,
+        ipAddress:  getIp(req),
+      });
     }
 
     res.json({ plan });
@@ -213,6 +240,9 @@ stripeRouter.post('/webhook', async (req, res) => {
         const plan      = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
         const periodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
 
+        const oldWebhookUser = db.prepare('SELECT id, name, email, plan FROM users WHERE id = ?').get(userId);
+        const oldWebhookPlan = oldWebhookUser?.plan ?? 'free';
+
         const existingSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
         if (existingSub) {
           db.prepare(`
@@ -230,6 +260,26 @@ stripeRouter.post('/webhook', async (req, res) => {
 
         db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
         console.log(`✓ Subscription activated: user ${userId} → ${plan}`);
+
+        if (oldWebhookPlan !== plan && oldWebhookUser) {
+          const webhookProperty = db.prepare('SELECT * FROM properties WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
+          if (plan === 'multi') {
+            sendMultiWelcome(oldWebhookUser, webhookProperty);
+          } else {
+            sendUpgradeWelcome(oldWebhookUser, webhookProperty, periodEnd);
+          }
+          logAction(db, {
+            propertyId: webhookProperty?.id ?? null,
+            userId:     Number(userId),
+            userName:   oldWebhookUser.name,
+            userEmail:  oldWebhookUser.email,
+            userRole:   'owner',
+            action:     'PLAN_UPGRADED',
+            category:   'auth',
+            detail:     `${oldWebhookPlan} → ${plan}`,
+            ipAddress:  null,
+          });
+        }
         break;
       }
 

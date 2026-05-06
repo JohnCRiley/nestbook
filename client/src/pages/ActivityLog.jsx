@@ -35,6 +35,7 @@ const ACTION_LABELS = {
   USER_CREATED:        'Staff account created',
   CHARGE_ADDED:        'Charge added',
   CHARGE_VOIDED:       'Charge voided',
+  PLAN_UPGRADED:       'Plan upgraded',
 };
 
 // Category badge styles
