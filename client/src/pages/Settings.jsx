@@ -746,13 +746,15 @@ export default function Settings() {
               {deleteAccountOpen && (
                 <div className="danger-zone-body">
 
-                  {/* Cancel subscription */}
+                  {/* Cancel subscription — only shown for active paid plans */}
                   {sub?.plan && sub.plan !== 'free' && !sub?.cancel_at_period_end && sub?.notes !== 'Complimentary' && (
                     <div className="danger-zone-row">
                       <div>
-                        <div className="danger-zone-row-title">{t('cancelSubTitle')}</div>
+                        <div className="danger-zone-row-title">{t('cancelSubOnly')}</div>
                         <div className="danger-zone-row-desc">
-                          {t('cancelSubDesc')}
+                          {sub?.current_period_end
+                            ? t('cancelSubExplain')(fmtDate(sub.current_period_end, locale))
+                            : t('cancelSubDesc')}
                         </div>
                       </div>
                       <button
@@ -768,9 +770,9 @@ export default function Settings() {
                   {/* Delete account */}
                   <div className="danger-zone-row">
                     <div>
-                      <div className="danger-zone-row-title">{t('deleteAccountTitle')}</div>
+                      <div className="danger-zone-row-title">{t('deleteAccountOnly')}</div>
                       <div className="danger-zone-row-desc">
-                        {t('deleteAccountDesc')}
+                        {t('deleteAccountExplain')}
                       </div>
                     </div>
                     <button

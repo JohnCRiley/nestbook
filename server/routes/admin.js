@@ -446,41 +446,40 @@ adminRouter.delete('/users/:id', async (req, res) => {
   const ownedProps = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId);
   const propIds    = ownedProps.map((p) => p.id);
 
-  // Wipe all data in dependency order: bookings → guests → rooms → properties → subscription → user
-  try {
-    db.exec('BEGIN');
-
+  const deleteUser = db.transaction(() => {
     if (propIds.length > 0) {
       const placeholders = propIds.map(() => '?').join(',');
 
-      // 1. Bookings (reference property_id and room_id — no CASCADE set)
-      db.prepare(`DELETE FROM bookings WHERE property_id IN (${placeholders})`).run(...propIds);
-
-      // 2. Orphaned guests (guests with no remaining bookings anywhere)
-      db.prepare(
-        'DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings WHERE guest_id IS NOT NULL)'
-      ).run();
-
-      // 3. Rooms (no CASCADE without PRAGMA foreign_keys = ON)
-      db.prepare(`DELETE FROM rooms WHERE property_id IN (${placeholders})`).run(...propIds);
-
-      // 4. Nullify property_id for any staff accounts on these properties
+      // Nullify property_id for any staff accounts on these properties
       db.prepare(`UPDATE users SET property_id = NULL WHERE property_id IN (${placeholders})`).run(...propIds);
 
-      // 5. Properties
+      // audit_log references property_id with no CASCADE — must delete before properties
+      db.prepare(`DELETE FROM audit_log WHERE property_id IN (${placeholders})`).run(...propIds);
+
+      // bookings, rooms, service_categories, room_charges cascade from property_id
+      db.prepare(`DELETE FROM bookings WHERE property_id IN (${placeholders})`).run(...propIds);
       db.prepare(`DELETE FROM properties WHERE id IN (${placeholders})`).run(...propIds);
     }
 
-    // 6. Subscription
+    // Orphaned guests
+    db.prepare(
+      'DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings WHERE guest_id IS NOT NULL)'
+    ).run();
+
+    // room_charges.charged_by / voided_by reference users(id) with no CASCADE
+    db.prepare('UPDATE room_charges SET charged_by = NULL WHERE charged_by = ?').run(userId);
+    db.prepare('UPDATE room_charges SET voided_by = NULL WHERE voided_by = ?').run(userId);
+    // audit_log.user_id references users(id) with no CASCADE
+    db.prepare('DELETE FROM audit_log WHERE user_id = ?').run(userId);
+
     db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
-
-    // 7. User
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  });
 
-    db.exec('COMMIT');
+  try {
+    deleteUser();
     res.json({ success: true });
   } catch (err) {
-    try { db.exec('ROLLBACK'); } catch (_) {}
     console.error('[admin/delete]', err.message);
     res.status(500).json({ error: 'Failed to delete account.' });
   }

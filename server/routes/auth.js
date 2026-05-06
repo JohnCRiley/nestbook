@@ -204,30 +204,23 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
   const user   = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
 
-  // Cancel any active Stripe subscription (best-effort)
+  // Cancel any active Stripe subscription (best-effort, outside transaction)
   const sub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(userId);
   if (stripe && sub?.stripe_subscription_id) {
     try { await stripe.subscriptions.cancel(sub.stripe_subscription_id); } catch (_) {}
   }
 
-  try {
-    db.exec('BEGIN');
+  const deleteAccount = db.transaction(() => {
+    const ownedProps = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId);
 
-    // Collect all property IDs owned by this user
-    const ownedPropIds = db.prepare('SELECT id FROM properties WHERE owner_id = ?')
-      .all(userId).map(p => p.id);
-
-    // Also include legacy property_id link if not already covered
-    if (user.property_id && !ownedPropIds.includes(user.property_id)) {
-      ownedPropIds.push(user.property_id);
-    }
-
-    // Nullify property_id for any staff on these properties (before deleting)
-    for (const propId of ownedPropIds) {
-      db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ? AND id != ?')
-        .run(propId, userId);
-      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(propId);
-      db.prepare('DELETE FROM properties WHERE id = ?').run(propId); // rooms cascade
+    for (const prop of ownedProps) {
+      // Nullify property_id for staff accounts on this property
+      db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ? AND id != ?').run(prop.id, userId);
+      // audit_log references property_id with no CASCADE — must delete before property
+      db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(prop.id);
+      // bookings, rooms, service_categories, room_charges cascade from property_id
+      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM properties WHERE id = ?').run(prop.id);
     }
 
     // Clean orphaned guests
@@ -235,13 +228,20 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
       'DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings WHERE guest_id IS NOT NULL)'
     ).run();
 
+    // room_charges.charged_by / voided_by reference users(id) with no CASCADE
+    db.prepare('UPDATE room_charges SET charged_by = NULL WHERE charged_by = ?').run(userId);
+    db.prepare('UPDATE room_charges SET voided_by = NULL WHERE voided_by = ?').run(userId);
+    // audit_log.user_id references users(id) with no CASCADE
+    db.prepare('DELETE FROM audit_log WHERE user_id = ?').run(userId);
+
     db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
-    db.exec('COMMIT');
+  });
 
+  try {
+    deleteAccount();
     res.json({ success: true });
   } catch (err) {
-    try { db.exec('ROLLBACK'); } catch (_) {}
     console.error('[auth/delete-account]', err.message);
     res.status(500).json({ error: 'Failed to delete account.' });
   }
