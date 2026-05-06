@@ -108,18 +108,22 @@ function ActivityLogContent() {
     apiFetch(`/api/activity-log?${params}`)
       .then((r) => r.json())
       .then(({ logs: rows }) => {
-        const header = 'Timestamp,User,Email,Role,Action,Category,Target,Detail,IP\n';
-        const lines  = rows.map((l) => [
-          l.timestamp,
-          csvCell(l.user_name),
-          csvCell(l.user_email),
-          csvCell(l.user_role),
-          csvCell(ACTION_LABELS[l.action] ?? l.action),
-          csvCell(l.category),
-          csvCell(l.target_name ?? (l.target_id ? `#${l.target_id}` : '')),
-          csvCell(l.detail),
-          csvCell(l.ip_address),
-        ].join(','));
+        const header = 'Date & Time,Staff Member,Role,Action,Category,Details,IP Address\n';
+        const lines  = rows.map((l) => {
+          const detail = [
+            l.target_name ?? (l.target_id ? `#${l.target_id}` : ''),
+            l.detail,
+          ].filter(Boolean).join(' — ');
+          return [
+            csvCell(fmtCsvTs(l.timestamp)),
+            csvCell(l.user_name),
+            csvCell(l.user_role),
+            csvCell(ACTION_LABELS[l.action] ?? l.action),
+            csvCell(l.category),
+            csvCell(detail),
+            csvCell(l.ip_address),
+          ].join(',');
+        });
         const blob = new Blob([header + lines.join('\n')], { type: 'text/csv' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
@@ -295,6 +299,13 @@ function formatTs(ts) {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
+}
+
+function fmtCsvTs(ts) {
+  if (!ts) return '';
+  const d = new Date(ts.endsWith('Z') ? ts : ts + 'Z');
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function csvCell(val) {
