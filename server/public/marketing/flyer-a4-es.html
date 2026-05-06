@@ -13,22 +13,23 @@
   @page { size: A4 portrait; margin: 0; }
   body { font-family:'Inter',system-ui,sans-serif; background:#ccc; display:flex; justify-content:center; padding:24px; min-height:100vh; }
   .page { width:210mm; height:297mm; background:var(--white); display:flex; flex-direction:column; overflow:hidden; box-shadow:0 4px 40px rgba(0,0,0,0.2); }
-  .header { background:var(--dark); padding:14mm 16mm 12mm; flex-shrink:0; position:relative; overflow:hidden; }
+  .header { background:var(--dark); padding:9mm 14mm 7mm; flex-shrink:0; position:relative; overflow:hidden; }
   .header::after { content:''; position:absolute; width:200mm; height:200mm; border-radius:50%; border:30mm solid rgba(255,255,255,0.04); top:-120mm; right:-80mm; }
-  .brand { display:flex; align-items:center; gap:10px; margin-bottom:10mm; }
+  .brand { display:flex; align-items:center; gap:10px; margin-bottom:5mm; }
   .logo { width:50px; height:50px; }
   .brand-name { color:var(--white); font-size:32px; font-weight:900; letter-spacing:-0.5px; }
-  .headline { color:var(--white); font-size:31px; font-weight:900; line-height:1.12; letter-spacing:-0.5px; margin-bottom:4mm; position:relative; z-index:1; }
+  .headline { color:var(--white); font-size:26px; font-weight:900; line-height:1.12; letter-spacing:-0.5px; margin-bottom:4mm; position:relative; z-index:1; }
   .subheadline { color:var(--light); font-size:13px; line-height:1.55; max-width:140mm; opacity:0.9; }
   .stripe { height:6px; background:linear-gradient(90deg,var(--leaf),var(--light)); flex-shrink:0; }
-  .body { flex:1; padding:11mm 16mm 10mm; display:flex; flex-direction:column; gap:9mm; }
+  .body { flex:1; padding:7mm 12mm 5mm; display:flex; flex-direction:column; gap:5mm; }
+  .body > div:first-child { flex: 1; min-height: 0; overflow: hidden; }
   .section-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--mid); margin-bottom:4mm; }
-  .features { display:flex; flex-direction:column; gap:3.5mm; }
-  .feature { display:flex; align-items:center; gap:4mm; padding:4mm 5mm; background:var(--soft); border:1.5px solid var(--light); border-radius:8px; }
+  .features { display:flex; flex-direction:column; gap:2mm; }
+  .feature { display:flex; align-items:center; gap:4mm; padding:2.5mm 4mm; background:var(--soft); border:1.5px solid var(--light); border-radius:8px; }
   .feat-icon { width:34px; height:34px; background:var(--dark); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
   .feat-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:1.5px; }
   .feat-desc { font-size:10px; color:var(--muted); line-height:1.4; }
-  .pricing { background:var(--dark); border-radius:10px; padding:5.5mm 7mm; display:flex; align-items:center; gap:6mm; }
+  .pricing { background:var(--dark); border-radius:10px; padding:5.5mm 7mm; display:flex; align-items:center; gap:6mm; flex-shrink:0; }
   .pricing-copy { flex:1; }
   .pricing-headline { color:var(--white); font-size:14.5px; font-weight:800; margin-bottom:2px; }
   .pricing-sub { color:var(--light); font-size:10px; line-height:1.45; opacity:0.85; }
@@ -37,7 +38,7 @@
   .tier-name { color:rgba(217,240,204,0.6); font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
   .tier-price { color:var(--light); font-size:16px; font-weight:900; line-height:1; letter-spacing:-0.5px; }
   .tier-price.free { color:#7dde5a; font-size:13px; }
-  .cta { display:flex; align-items:center; gap:8mm; background:var(--light); border-radius:10px; padding:6mm 8mm; }
+  .cta { display:flex; align-items:center; gap:8mm; background:var(--light); border-radius:10px; padding:4mm 6mm; flex-shrink:0; }
   .qr-wrap { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:2.5mm; }
   .qr-box { width:30mm; height:30mm; background:var(--dark); border-radius:7px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .qr-box img { width:100%; height:100%; display:block; }
@@ -51,7 +52,7 @@
   .lang-bar-text { color:var(--light); font-size:9.5px; font-weight:600; letter-spacing:0.2px; }
   .footer { background:var(--dark); padding:3.5mm 16mm; display:flex; justify-content:center; align-items:center; flex-shrink:0; }
   .footer-url { color:var(--light); font-size:16px; font-weight:800; letter-spacing:-0.3px; text-decoration:none; }
-  @media print { body { background:none; padding:0; } .page { box-shadow:none; } .download-bar { display: none !important; } .page { transform: none !important; } }
+  @media print { body { background:none; padding:0; margin:0; width:210mm; height:297mm; overflow:hidden; } .page { box-shadow:none; } .download-bar { display: none !important; } .page { transform: none !important; } }
 
   /* ── Download bar ── */
   .download-bar {

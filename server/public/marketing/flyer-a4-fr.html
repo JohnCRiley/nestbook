@@ -45,7 +45,7 @@
   /* ── Header ── */
   .header {
     background: var(--dark);
-    padding: 14mm 16mm 12mm;
+    padding: 9mm 14mm 7mm;
     flex-shrink: 0;
     position: relative;
     overflow: hidden;
@@ -66,7 +66,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10mm;
+    margin-bottom: 5mm;
   }
 
   .logo { width: 50px; height: 50px; }
@@ -80,7 +80,7 @@
 
   .headline {
     color: var(--white);
-    font-size: 33px;
+    font-size: 26px;
     font-weight: 900;
     line-height: 1.12;
     letter-spacing: -0.5px;
@@ -106,11 +106,13 @@
   /* ── Body ── */
   .body {
     flex: 1;
-    padding: 11mm 16mm 10mm;
+    padding: 7mm 12mm 5mm;
     display: flex;
     flex-direction: column;
-    gap: 9mm;
+    gap: 5mm;
   }
+
+  .body > div:first-child { flex: 1; min-height: 0; overflow: hidden; }
 
   .section-label {
     font-size: 9px;
@@ -125,14 +127,14 @@
   .features {
     display: flex;
     flex-direction: column;
-    gap: 3.5mm;
+    gap: 2mm;
   }
 
   .feature {
     display: flex;
     align-items: center;
     gap: 4mm;
-    padding: 4mm 5mm;
+    padding: 2.5mm 4mm;
     background: var(--soft);
     border: 1.5px solid var(--light);
     border-radius: 8px;
@@ -173,6 +175,7 @@
     display: flex;
     align-items: center;
     gap: 6mm;
+    flex-shrink: 0;
   }
 
   .pricing-copy { flex: 1; }
@@ -231,7 +234,8 @@
     gap: 8mm;
     background: var(--light);
     border-radius: 10px;
-    padding: 6mm 8mm;
+    padding: 4mm 6mm;
+    flex-shrink: 0;
   }
 
   .qr-wrap {
@@ -333,7 +337,7 @@
   }
 
   @media print {
-    body { background: none; padding: 0; }
+    body { background: none; padding: 0; margin: 0; width: 210mm; height: 297mm; overflow: hidden; }
     .page { box-shadow: none; }
     .download-bar { display: none !important; }
     .page { transform: none !important; }

@@ -40,13 +40,14 @@
   .back-brand { color:var(--white); font-size:16px; font-weight:800; }
   .back-stripe { height:4px; background:linear-gradient(90deg,var(--leaf),var(--light)); flex-shrink:0; }
   .back-body { flex:1; padding:6mm 10mm 5mm; display:flex; flex-direction:column; gap:5mm; }
+  .back-body > div:first-child { flex: 1; min-height: 0; overflow: hidden; }
   .back-section-label { font-size:7.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--mid); margin-bottom:3mm; }
   .back-features { display:flex; flex-direction:column; gap:2.5mm; }
   .back-feature { display:flex; align-items:flex-start; gap:3mm; }
   .bf-dot { width:20px; height:20px; background:var(--dark); border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
   .bf-title { font-size:10.5px; font-weight:700; color:var(--text); margin-bottom:1px; line-height:1.2; }
   .bf-desc { font-size:8.5px; color:var(--muted); line-height:1.4; }
-  .back-pricing { background:var(--dark); border-radius:8px; padding:4mm 5mm; }
+  .back-pricing { flex-shrink:0; background:var(--dark); border-radius:8px; padding:4mm 5mm; }
   .bp-label { font-size:7.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:rgba(217,240,204,0.6); margin-bottom:3mm; }
   .bp-tiers { display:flex; gap:3mm; }
   .bp-tier { flex:1; background:rgba(255,255,255,0.07); border-radius:6px; padding:3mm 3.5mm; text-align:center; }
@@ -58,7 +59,7 @@
   .back-footer { background:var(--dark); padding:3mm 10mm; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
   .bf-url { color:var(--light); font-size:9px; font-weight:700; text-decoration:none; }
   .bf-email { color:rgba(217,240,204,0.6); font-size:8.5px; }
-  @media print { body { background:none; padding:0; gap:0; } .side-label { display:none; } .page { box-shadow:none; page-break-after:always; } .download-bar { display: none !important; } .page { transform: none !important; } }
+  @media print { body { background:none; padding:0; gap:0; margin:0; overflow:hidden; } .side-label { display:none; } .page { box-shadow:none; page-break-after:always; } .download-bar { display: none !important; } .page { transform: none !important; } }
 
   /* ── Download bar ── */
   .download-bar {
