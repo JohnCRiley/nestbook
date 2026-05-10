@@ -12,7 +12,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
   useEffect(() => {
     if (!room?.booking_id) return;
     setLoading(true);
-    apiFetch(`/api/charges/booking/${room.booking_id}`)
+    apiFetch(`/api/charges/booking/${room.booking_id}?property_id=${room.property_id}`)
       .then((r) => r.ok ? r.json() : [])
       .then((data) => {
         setCharges(Array.isArray(data) ? data.filter((c) => !c.voided) : []);
