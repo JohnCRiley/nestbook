@@ -1011,16 +1011,16 @@ function DeleteAccountModal({ onClose, onSuccess, onError }) {
     if (confirmText !== 'DELETE') return;
     setLoading(true);
     try {
-      const res  = await apiFetch('/api/auth/account', { method: 'DELETE' });
-      const data = await res.json();
+      const res = await apiFetch('/api/auth/account', { method: 'DELETE' });
       if (res.ok) {
         onSuccess();
       } else {
-        onError(data.error || 'Delete failed.');
+        const data = await res.json().catch(() => ({}));
+        onError(data.error || `Delete failed (${res.status}).`);
         setLoading(false);
       }
-    } catch {
-      onError('Network error.');
+    } catch (err) {
+      onError(err.message || 'Network error — please try again.');
       setLoading(false);
     }
   }

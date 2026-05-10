@@ -429,6 +429,7 @@ adminRouter.post('/users/:id/unsuspend', (req, res) => {
 // GDPR account deletion: cancels Stripe sub, wipes all user data from the DB.
 adminRouter.delete('/users/:id', async (req, res) => {
   const userId = Number(req.params.id);
+  console.log('[admin/delete-user] Request for user:', userId);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
 
@@ -478,10 +479,11 @@ adminRouter.delete('/users/:id', async (req, res) => {
 
   try {
     deleteUser();
+    console.log('[admin/delete-user] Successfully deleted user:', userId);
     res.json({ success: true });
   } catch (err) {
-    console.error('[admin/delete]', err.message);
-    res.status(500).json({ error: 'Failed to delete account.' });
+    console.error('[admin/delete-user] Error:', err.message);
+    res.status(500).json({ error: 'Failed to delete account: ' + err.message });
   }
 });
 
