@@ -165,7 +165,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   };
 
   // Checkout via modal
-  const handleCheckoutConfirm = async (paymentMethod) => {
+  const handleCheckoutConfirm = async (paymentMethod, shouldPrint) => {
     const now = new Date().toISOString();
     const res = await apiFetch(`/api/bookings/${b.id}`, {
       method: 'PUT',
@@ -183,6 +183,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
     }
     const updated = await res.json();
     setShowCheckout(false);
+    if (shouldPrint) setShowReprint(true);
     if (onBookingUpdated) onBookingUpdated(updated);
   };
 
@@ -521,6 +522,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             breakfastSubtotal={rpBfSub} bfPricePerPerson={rpBfPrice}
             breakfastGuests={rpBfGuests} breakfastDays={rpBfDays}
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
+            roomCharges={charges?.filter((c) => !c.voided_at) ?? []}
             totalDue={rpTotal} paymentMethod={b.payment_method}
             onClose={() => setShowReprint(false)}
           />

@@ -134,7 +134,7 @@ function buildReceiptHTML(d, format) {
   const divider = `<hr class="receipt-divider">`;
 
   const chargeRows = (d.roomCharges ?? [])
-    .map((c) => row(`  ${c.category_icon ? c.category_icon + ' ' : ''}${c.description || c.category_name || ''}`, fc(c.amount, d.symbol), 'indent'))
+    .map((c) => row(`  ${c.description || c.category_name || ''}`, fc(c.amount, d.symbol), 'indent'))
     .join('');
 
   const chargesBlock = (d.roomCharges ?? []).length > 0
@@ -376,7 +376,7 @@ export default function PrintReceipt({
               {d.roomCharges.map((c) => (
                 <PreviewRow
                   key={c.id}
-                  label={`  ${c.category_icon ? c.category_icon + ' ' : ''}${c.description || c.category_name || ''}`}
+                  label={`  ${c.description || c.category_name || ''}`}
                   value={fc(c.amount, symbol)}
                   indent
                 />

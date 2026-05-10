@@ -26,11 +26,12 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
   const t = useT();
   const { fmtCurrency, currencySymbol } = useLocale();
   const plan = usePlan();
-  const [paymentMethod, setPaymentMethod] = useState(null);
-  const [showReceipt,   setShowReceipt]   = useState(false);
-  const [confirming,    setConfirming]    = useState(false);
-  const [roomCharges,   setRoomCharges]   = useState([]);
-  const [checkoutError, setCheckoutError] = useState(null);
+  const [paymentMethod,    setPaymentMethod]    = useState(null);
+  const [showReceipt,      setShowReceipt]      = useState(false);
+  const [confirming,       setConfirming]       = useState(false);
+  const [roomCharges,      setRoomCharges]      = useState([]);
+  const [checkoutError,    setCheckoutError]    = useState(null);
+  const [printOnCheckout,  setPrintOnCheckout]  = useState(true);
 
   useEffect(() => {
     if (plan !== 'multi') return;
@@ -66,7 +67,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
     setConfirming(true);
     setCheckoutError(null);
     try {
-      await onConfirm(paymentMethod);
+      await onConfirm(paymentMethod, printOnCheckout);
     } catch (err) {
       setCheckoutError(err.message || 'Checkout failed. Please try again.');
       setConfirming(false);
@@ -239,6 +240,18 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
           padding: '14px 24px', borderTop: '1px solid #e2e8f0',
           display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
         }}>
+          <label style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+            fontSize: '0.85rem', color: '#374151', cursor: 'pointer', userSelect: 'none',
+          }}>
+            <input
+              type="checkbox"
+              checked={printOnCheckout}
+              onChange={(e) => setPrintOnCheckout(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1a4710' }}
+            />
+            {t('printReceiptCheckbox')}
+          </label>
           {checkoutError && (
             <div style={{ width: '100%', fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
               {checkoutError}
