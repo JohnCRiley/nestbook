@@ -77,6 +77,7 @@ chargesRouter.put('/categories/:id', requireMulti, (req, res) => {
   ).get(Number(req.params.id), getPropertyId(req));
   if (!cat) return res.status(404).json({ error: 'Category not found.' });
   const parsedTax = tax_rate != null ? Math.max(0, Math.min(100, parseFloat(tax_rate) || 0)) : (cat.tax_rate ?? 0);
+  console.log('[categories/update] id:', req.params.id, 'tax_rate raw:', tax_rate, '→ stored:', parsedTax);
   db.prepare(`UPDATE service_categories SET name = ?, color = ?, tax_rate = ? WHERE id = ?`)
     .run(name.trim(), color || cat.color, parsedTax, Number(req.params.id));
   res.json(db.prepare(`SELECT * FROM service_categories WHERE id = ?`).get(Number(req.params.id)));

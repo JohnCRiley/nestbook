@@ -94,7 +94,7 @@ export default function Settings() {
   useEffect(() => {
     if (!activeProperty?.id) return;
     const catFetch = plan === 'multi'
-      ? apiFetch(`/api/charges/categories`).then((r) => r.ok ? r.json() : []).catch(() => [])
+      ? apiFetch(`/api/charges/categories?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => [])
       : Promise.resolve([]);
     Promise.all([
       apiFetch(`/api/properties/${activeProperty.id}`).then((r) => r.json()),
@@ -605,11 +605,14 @@ export default function Settings() {
                                   const res = await apiFetch(`/api/charges/categories/${cat.id}`, {
                                     method: 'PUT',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ name: cat.name, color: cat.color, tax_rate: newRate }),
+                                    body: JSON.stringify({ name: cat.name, color: cat.color, tax_rate: newRate, property_id: activeProperty?.id }),
                                   });
                                   if (res.ok) {
                                     const updated = await res.json();
                                     setCategories(prev => prev.map(c => c.id === cat.id ? updated : c));
+                                    setCatTaxInputs(prev => ({ ...prev, [cat.id]: String(updated.tax_rate ?? 0) }));
+                                  } else {
+                                    setCatTaxInputs(prev => ({ ...prev, [cat.id]: String(cat.tax_rate ?? 0) }));
                                   }
                                 }}
                                 style={{
@@ -675,11 +678,12 @@ export default function Settings() {
                       const res = await apiFetch('/api/charges/categories', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newCatForm),
+                        body: JSON.stringify({ ...newCatForm, property_id: activeProperty?.id }),
                       });
                       if (res.ok) {
                         const cat = await res.json();
                         setCategories((prev) => [...prev, cat]);
+                        setCatTaxInputs((prev) => ({ ...prev, [cat.id]: String(cat.tax_rate ?? 0) }));
                         setNewCatForm({ name: '', color: '#64748b', icon: '' });
                       }
                       setCatSaving(false);
