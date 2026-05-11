@@ -398,7 +398,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Mid-stay breakfast management ──────────────────────────────────── */}
-      {b.status === 'arriving' && !property?.breakfast_included && !b.room_breakfast_included && (
+      {b.status === 'checked_in' && !property?.breakfast_included && !b.room_breakfast_included && (
         <AddBreakfastSection
           b={b} property={property}
           onBookingUpdated={onBookingUpdated}
@@ -759,7 +759,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
 function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, currencySymbol, locale, showToast }) {
   // bfMorning = morning date (the first morning breakfast is served)
   // stored breakfast_start_date = addDays(bfMorning, -1) — one night before the morning
-  const minMorning  = addDays(b.check_in_date, 1);          // earliest first morning
+  const minMorning  = addDays(localToday(), 1);              // earliest = next morning (can't add retroactively)
   const maxMorning  = b.check_out_date;                     // latest = departure morning
   const tomorrow    = addDays(localToday(), 1);
   const defaultMorning = tomorrow > maxMorning ? maxMorning : tomorrow < minMorning ? minMorning : tomorrow;
