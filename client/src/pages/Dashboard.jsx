@@ -30,7 +30,7 @@ const BADGE_CLASS = {
 export default function Dashboard() {
   const t = useT();
   const { fmtCurrency, property, locale } = useLocale();
-  const { user, refreshPlan } = useAuth();
+  const { user, refreshPlan, updateUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -65,7 +65,12 @@ export default function Dashboard() {
         body: JSON.stringify({ sessionId }),
       })
         .then((r) => r.ok ? r.json() : null)
-        .then((data) => { if (data?.plan) refreshPlan(); })
+        .then((data) => {
+          if (data?.plan) {
+            updateUser({ plan: data.plan });
+            refreshPlan();
+          }
+        })
         .catch(() => {});
     }
 
