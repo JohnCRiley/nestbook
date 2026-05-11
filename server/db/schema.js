@@ -146,6 +146,11 @@ export function initSchema() {
 
   // Additional migrations
   try {
+    db.exec(`ALTER TABLE subscriptions ADD COLUMN user_id INTEGER`);
+    console.log('[schema] Added user_id to subscriptions');
+  } catch { /* already exists */ }
+
+  try {
     db.exec(`ALTER TABLE subscriptions ADD COLUMN notes TEXT`);
   } catch { /* already exists */ }
 

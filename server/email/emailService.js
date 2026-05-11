@@ -897,19 +897,28 @@ export async function sendWelcomeEmail(user, property) {
  * @param {string} periodEnd — ISO date string for the trial/billing period end
  */
 export async function sendUpgradeWelcome(user, property, periodEnd) {
-  if (!resend) return;
-  if (!user?.email) return;
+  console.log('[email] sendUpgradeWelcome called — user:', user?.email, '| property id:', property?.id, '| resend ready:', !!resend);
+  if (!resend) { console.warn('[email] Skipping — resend not initialised'); return; }
+  if (!user?.email) { console.warn('[email] Skipping — no user email'); return; }
   const locale = property?.locale ?? 'en';
+  let html;
   try {
-    await resend.emails.send({
+    html = proUpgradeHtml(user, property ?? {}, periodEnd);
+  } catch (buildErr) {
+    console.error('[email] proUpgradeHtml threw:', buildErr);
+    return;
+  }
+  try {
+    console.log('[email] Calling resend.emails.send for Pro upgrade →', user.email);
+    const result = await resend.emails.send({
       from:    FROM,
       to:      user.email,
       subject: t(locale, 'proUpgradeSubject'),
-      html:    proUpgradeHtml(user, property ?? {}, periodEnd),
+      html,
     });
-    console.log(`[email] Pro upgrade email sent → ${user.email}`);
+    console.log('[email] Pro upgrade email sent →', user.email, '| id:', result?.id ?? result?.data?.id);
   } catch (err) {
-    console.error('[email] Failed to send Pro upgrade email:', err.message);
+    console.error('[email] Failed to send Pro upgrade email:', err?.message ?? err, '| full:', JSON.stringify(err));
   }
 }
 
@@ -919,18 +928,27 @@ export async function sendUpgradeWelcome(user, property, periodEnd) {
  * @param {object} property — { id, name, locale, ... }
  */
 export async function sendMultiWelcome(user, property) {
-  if (!resend) return;
-  if (!user?.email) return;
+  console.log('[email] sendMultiWelcome called — user:', user?.email, '| property id:', property?.id, '| resend ready:', !!resend);
+  if (!resend) { console.warn('[email] Skipping — resend not initialised'); return; }
+  if (!user?.email) { console.warn('[email] Skipping — no user email'); return; }
   const locale = property?.locale ?? 'en';
+  let html;
   try {
-    await resend.emails.send({
+    html = multiUpgradeHtml(user, property ?? {});
+  } catch (buildErr) {
+    console.error('[email] multiUpgradeHtml threw:', buildErr);
+    return;
+  }
+  try {
+    console.log('[email] Calling resend.emails.send for Multi upgrade →', user.email);
+    const result = await resend.emails.send({
       from:    FROM,
       to:      user.email,
       subject: t(locale, 'multiUpgradeSubject'),
-      html:    multiUpgradeHtml(user, property ?? {}),
+      html,
     });
-    console.log(`[email] Multi upgrade email sent → ${user.email}`);
+    console.log('[email] Multi upgrade email sent →', user.email, '| id:', result?.id ?? result?.data?.id);
   } catch (err) {
-    console.error('[email] Failed to send Multi upgrade email:', err.message);
+    console.error('[email] Failed to send Multi upgrade email:', err?.message ?? err, '| full:', JSON.stringify(err));
   }
 }

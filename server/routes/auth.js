@@ -207,7 +207,8 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found.' });
 
   // Cancel any active Stripe subscription (best-effort, outside transaction)
-  const sub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(userId);
+  let sub = null;
+  try { sub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(userId); } catch (_) {}
   if (stripe && sub?.stripe_subscription_id) {
     try { await stripe.subscriptions.cancel(sub.stripe_subscription_id); } catch (_) {}
   }
