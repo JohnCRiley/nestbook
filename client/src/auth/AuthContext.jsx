@@ -8,15 +8,28 @@ export function AuthProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('nb_user')); } catch { return null; }
   });
 
-  // Sync user state when another tab calls updateUser (e.g. email verification)
+  // Sync user state when another tab calls updateUser (e.g. email verification).
+  // The storage event fires for changes from OTHER documents; visibilitychange
+  // catches the case where the event was missed while the tab was in the background.
   useEffect(() => {
     const handleStorage = (e) => {
       if (e.key === 'nb_user') {
         try { setUser(e.newValue ? JSON.parse(e.newValue) : null); } catch {}
       }
     };
+    const handleVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const stored = localStorage.getItem('nb_user');
+        setUser(stored ? JSON.parse(stored) : null);
+      } catch {}
+    };
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    document.addEventListener('visibilitychange', handleVisible);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      document.removeEventListener('visibilitychange', handleVisible);
+    };
   }, []);
 
   function login(newToken, newUser) {

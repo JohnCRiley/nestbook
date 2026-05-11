@@ -20,6 +20,7 @@ export default function VerifyEmail() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
+          console.log('[verify-email] Calling updateUser({ email_verified: true })');
           updateUser({ email_verified: true });
           setStatus('success');
         } else {
