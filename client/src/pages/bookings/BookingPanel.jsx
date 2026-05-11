@@ -494,6 +494,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         <CheckoutModal
           booking={b}
           property={property}
+          charges={charges}
           onConfirm={handleCheckoutConfirm}
           onCancel={() => setShowCheckout(false)}
         />

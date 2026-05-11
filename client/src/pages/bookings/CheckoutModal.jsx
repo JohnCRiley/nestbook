@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { nightsBetween } from '../../utils/format.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
-import { usePlan } from '../../hooks/usePlan.js';
-import { apiFetch } from '../../utils/apiFetch.js';
 import PrintReceipt from '../../components/PrintReceipt.jsx';
 
 const PAYMENT_METHODS = [
@@ -22,24 +20,19 @@ const PAYMENT_METHODS = [
  *   onConfirm(paymentMethod) — called when "Confirm checkout" is clicked
  *   onCancel      — close without checking out
  */
-export default function CheckoutModal({ booking: b, property, onConfirm, onCancel }) {
+export default function CheckoutModal({ booking: b, property, charges: chargesProp, onConfirm, onCancel }) {
   const t = useT();
   const { fmtCurrency, currencySymbol } = useLocale();
-  const plan = usePlan();
   const [paymentMethod,    setPaymentMethod]    = useState(null);
   const [showReceipt,      setShowReceipt]      = useState(false);
   const [confirming,       setConfirming]       = useState(false);
-  const [roomCharges,      setRoomCharges]      = useState([]);
   const [checkoutError,    setCheckoutError]    = useState(null);
   const [printOnCheckout,  setPrintOnCheckout]  = useState(true);
 
-  useEffect(() => {
-    if (plan !== 'multi') return;
-    apiFetch(`/api/charges/booking/${b.id}`)
-      .then((r) => r.ok ? r.json() : [])
-      .then((charges) => setRoomCharges(Array.isArray(charges) ? charges.filter((c) => !c.voided_at) : []))
-      .catch(() => {});
-  }, [b.id, plan]);
+  // chargesProp is null when panel hasn't fetched yet (non-multi or not loaded)
+  const roomCharges = Array.isArray(chargesProp)
+    ? chargesProp.filter((c) => !c.voided_at)
+    : [];
 
   const nights          = nightsBetween(b.check_in_date, b.check_out_date);
   const pricePerNight   = b.price_per_night ?? 0;
@@ -138,7 +131,7 @@ export default function CheckoutModal({ booking: b, property, onConfirm, onCance
           )}
 
           {/* Room charges (Multi plan) */}
-          {plan === 'multi' && (
+          {chargesProp !== null && chargesProp !== undefined && (
             <Section title={t('chargesCheckoutTitle')}>
               {roomCharges.length === 0 ? (
                 <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>{t('chargesCheckoutNone')}</div>
