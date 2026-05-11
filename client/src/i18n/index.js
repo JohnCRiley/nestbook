@@ -1040,7 +1040,7 @@ planGateProFeature:    'Ceci est une fonctionnalité Pro',
     propAddedToast:       (name) => `${name} a été ajouté.`,
     propRemovedToast:     (name) => `${name} a été supprimé.`,
     propAddError:         'Impossible d\'ajouter l\'hébergement.',
-    propRemoveError:      'Impossible de supprimer l''hébergement.',
+    propRemoveError:      'Impossible de supprimer l\'hébergement.',
     propertiesOf5:        (n) => `${n} sur 5 hébergements`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Consultation\u00a0:',
