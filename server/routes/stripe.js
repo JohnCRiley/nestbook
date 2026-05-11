@@ -137,7 +137,7 @@ stripeRouter.post('/sync-session', async (req, res) => {
     console.log('[stripe/upgrade] User:', oldUser?.email);
     console.log('[email] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
     if (oldPlan !== plan && oldUser) {
-      const property = db.prepare('SELECT * FROM properties WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
+      const property = db.prepare('SELECT * FROM properties WHERE owner_id = ? ORDER BY id LIMIT 1').get(userId);
       if (plan === 'multi') {
         sendMultiWelcome(oldUser, property)
           .catch(err => console.error('[stripe] Multi email failed:', err.message));
@@ -272,7 +272,7 @@ stripeRouter.post('/webhook', async (req, res) => {
         console.log('[email] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
 
         if (oldWebhookPlan !== plan && oldWebhookUser) {
-          const webhookProperty = db.prepare('SELECT * FROM properties WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
+          const webhookProperty = db.prepare('SELECT * FROM properties WHERE owner_id = ? ORDER BY id LIMIT 1').get(userId);
           if (plan === 'multi') {
             sendMultiWelcome(oldWebhookUser, webhookProperty)
               .catch(err => console.error('[stripe] Multi email failed (webhook):', err.message));
