@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { usePlan } from '../hooks/usePlan.js';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT } from '../i18n/LocaleContext.jsx';
 
+const PLAN_RANK = { free: 0, pro: 1, multi: 2 };
+
 export default function Pricing() {
   const currentPlan = usePlan();
-  const navigate    = useNavigate();
   const t           = useT();
   const [loading, setLoading] = useState(null);
   const [error,   setError]   = useState('');
 
-  // Build plan data from translated strings
+  console.log('[Pricing] Current plan:', currentPlan, typeof currentPlan);
+
   const PLANS = [
     {
       key:      'free',
@@ -45,8 +46,13 @@ export default function Pricing() {
     },
   ];
 
+  function getPlanStatus(tilePlan) {
+    if (tilePlan === currentPlan) return 'current';
+    if ((PLAN_RANK[tilePlan] ?? 0) < (PLAN_RANK[currentPlan] ?? 0)) return 'downgrade';
+    return 'upgrade';
+  }
+
   async function handleUpgrade(planKey) {
-    if (planKey === 'free') return;
     setError('');
     setLoading(planKey);
 
@@ -86,16 +92,16 @@ export default function Pricing() {
 
       <div className="pricing-grid">
         {PLANS.map((plan) => {
-          const isCurrent  = currentPlan === plan.key;
-          const isDisabled = isCurrent || loading !== null;
+          const status    = getPlanStatus(plan.key);
+          const isCurrent = status === 'current';
 
           return (
             <div
               key={plan.key}
               className={`pricing-card${plan.popular ? ' pricing-card-popular' : ''}${isCurrent ? ' pricing-card-current' : ''}`}
             >
-              {plan.popular && <div className="pricing-badge">{t('planMostPopular')}</div>}
-              {isCurrent    && <div className="pricing-badge pricing-badge-current">{t('planCurrentBadge')}</div>}
+              {plan.popular && !isCurrent && <div className="pricing-badge">{t('planMostPopular')}</div>}
+              {isCurrent                   && <div className="pricing-badge pricing-badge-current">{t('planCurrentBadge')}</div>}
 
               <div className="pricing-name">{plan.name}</div>
               <div className="pricing-price">
@@ -114,13 +120,20 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              <button
-                className={`pricing-btn${plan.popular && !isCurrent ? ' pricing-btn-primary' : ''}`}
-                onClick={() => handleUpgrade(plan.key)}
-                disabled={isDisabled}
-              >
-                {loading === plan.key ? t('planCtaRedirecting') : isCurrent ? t('planCtaCurrent') : plan.cta}
-              </button>
+              {status === 'current' && (
+                <button className="pricing-btn" disabled>
+                  {t('planCtaCurrent')}
+                </button>
+              )}
+              {status === 'upgrade' && (
+                <button
+                  className={`pricing-btn${plan.popular ? ' pricing-btn-primary' : ''}`}
+                  onClick={() => handleUpgrade(plan.key)}
+                  disabled={loading !== null}
+                >
+                  {loading === plan.key ? t('planCtaRedirecting') : plan.cta}
+                </button>
+              )}
             </div>
           );
         })}
