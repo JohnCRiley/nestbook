@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale } from '../../i18n/LocaleContext.jsx';
+import { usePlan } from '../../hooks/usePlan.js';
 
 export default function InviteStaffModal({ onClose, onSuccess }) {
   const { property } = useLocale();
+  const plan = usePlan();
+  const isMulti = plan === 'multi';
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'reception' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -88,7 +91,9 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
                 <select name="role" className="form-control" value={form.role} onChange={handleChange}>
                   <option value="reception">Reception — can view and manage bookings</option>
                   <option value="owner">Owner — full access including settings</option>
-                  <option value="charges_staff">Charges Staff — room charges only (Multi)</option>
+                  {isMulti && (
+                    <option value="charges_staff">Charges Staff — room charges only (Multi)</option>
+                  )}
                 </select>
               </div>
 
