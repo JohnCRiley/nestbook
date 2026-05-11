@@ -1,4 +1,4 @@
-// IMPORTANT: Never use curly/smart quotes in this file — use straight apostrophes only
+﻿// IMPORTANT: Never use curly/smart quotes in this file — use straight apostrophes only
 // Internationalisation — translation strings for the dashboard UI.
 // Import LANGS and look up by locale key, e.g. LANGS[locale] ?? LANGS.en
 
@@ -183,6 +183,11 @@ export const LANGS = {
     planMultiCta:        'Upgrade to Multi',
     planMultiFeatures:   ['Up to 5 properties', 'Everything in Pro', 'Unlimited staff accounts', 'Cross-property calendar view', 'Room charges — bar, restaurant, shop & activities', 'Dedicated charges staff portal', 'Full guest folio with itemised checkout', 'Cross-property reports', 'Combined or per-property exports'],
     planAdaptivePricingNote: 'Price shown in your local currency at checkout',
+    planGateProFeature:    'This is a Pro feature',
+    planGateMultiFeature:  'This is a Multi-property feature',
+    planGateUpgradePrompt: 'Upgrade your plan to unlock this feature.',
+    planGateViewPricing:   'View pricing →',
+    planGateTrialNote:     'Start your 30-day free trial — no card required',
     paySuccessTitle:     "You're all set!",
     paySuccessMsg:       (plan) => `Welcome to the ${plan} plan. Your new features are active now.`,
     paySuccessBtn:       'Go to dashboard \u2192',
@@ -335,6 +340,7 @@ export const LANGS = {
     propAddedToast:       (name) => `${name} has been added.`,
     propRemovedToast:     (name) => `${name} has been removed.`,
     propAddError:         'Failed to add property.',
+    propRemoveError:      'Could not remove property.',
     propertiesOf5:        (n) => `${n} of 5 properties`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Viewing:',
@@ -877,6 +883,11 @@ export const LANGS = {
     planMultiCta:        'Passer \u00e0 Multi',
     planMultiFeatures:   ['Jusqu\'à 5 hébergements', 'Tout ce qui est dans Pro', 'Comptes personnel illimités', 'Vue calendrier multi-hébergement', 'Facturation en chambre — bar, restaurant, boutique & activités', 'Portail dédié au personnel de facturation', 'Folio complet avec règlement détaillé', 'Rapports multi-hébergements', 'Exports combinés ou par hébergement'],
     planAdaptivePricingNote: 'Prix affiché dans votre devise locale lors du paiement',
+planGateProFeature:    'Ceci est une fonctionnalité Pro',
+    planGateMultiFeature:  'Ceci est une fonctionnalité Multi-hébergement',
+    planGateUpgradePrompt: 'Améliorez votre abonnement pour débloquer cette fonctionnalité.',
+    planGateViewPricing:   'Voir les tarifs →',
+    planGateTrialNote:     'Commencez votre essai gratuit de 30 jours — sans carte bancaire',
     paySuccessTitle:     'Tout est pr\u00eat\u00a0!',
     paySuccessMsg:       (plan) => `Bienvenue sur la formule ${plan}. Vos nouvelles fonctionnalit\u00e9s sont actives.`,
     paySuccessBtn:       'Aller au tableau de bord \u2192',
@@ -1029,6 +1040,7 @@ export const LANGS = {
     propAddedToast:       (name) => `${name} a été ajouté.`,
     propRemovedToast:     (name) => `${name} a été supprimé.`,
     propAddError:         'Impossible d\'ajouter l\'hébergement.',
+    propRemoveError:      'Impossible de supprimer l''hébergement.',
     propertiesOf5:        (n) => `${n} sur 5 hébergements`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Consultation\u00a0:',
@@ -1540,6 +1552,11 @@ export const LANGS = {
     planMultiCta:        'Pasarse a Multi',
     planMultiFeatures:   ['Hasta 5 alojamientos', 'Todo lo del Pro', 'Cuentas de personal ilimitadas', 'Vista de calendario multi-alojamiento', 'Cargos a habitación — bar, restaurante, tienda y actividades', 'Portal dedicado al personal de cargos', 'Folio completo del huésped con liquidación detallada', 'Informes de todos los alojamientos', 'Exportaciones combinadas o por alojamiento'],
     planAdaptivePricingNote: 'Precio mostrado en tu moneda local en el momento del pago',
+planGateProFeature:    'Esta es una función Pro',
+    planGateMultiFeature:  'Esta es una función Multi-alojamiento',
+    planGateUpgradePrompt: 'Actualice su plan para desbloquear esta función.',
+    planGateViewPricing:   'Ver precios →',
+    planGateTrialNote:     'Comience su prueba gratuita de 30 días — sin tarjeta de crédito',
     paySuccessTitle:     '\u00a1Todo listo!',
     paySuccessMsg:       (plan) => `Bienvenido al plan ${plan}. Tus nuevas funciones est\u00e1n activas.`,
     paySuccessBtn:       'Ir al panel de control \u2192',
@@ -1692,6 +1709,7 @@ export const LANGS = {
     propAddedToast:       (name) => `${name} ha sido añadido.`,
     propRemovedToast:     (name) => `${name} ha sido eliminado.`,
     propAddError:         'No se pudo añadir el alojamiento.',
+    propRemoveError:      'No se pudo eliminar el alojamiento.',
     propertiesOf5:        (n) => `${n} de 5 alojamientos`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Viendo:',
@@ -2203,6 +2221,11 @@ export const LANGS = {
     planMultiCta:        'Zu Multi wechseln',
     planMultiFeatures:   ['Bis zu 5 Unterkünfte', 'Alles aus Pro', 'Unbegrenzte Mitarbeiterkonten', 'Kalenderansicht für mehrere Unterkünfte', 'Zimmerbelastung — Bar, Restaurant, Shop & Aktivitäten', 'Dediziertes Personal-Portal für Zimmerbelastungen', 'Vollständige Gästerechnung mit detaillierter Abrechnung', 'Berichte für alle Unterkünfte', 'Kombinierte oder einzelne Exporte'],
     planAdaptivePricingNote: 'Preis in Ihrer Landeswährung beim Bezahlen angezeigt',
+planGateProFeature:    'Dies ist eine Pro-Funktion',
+    planGateMultiFeature:  'Dies ist eine Multi-Unterkunft-Funktion',
+    planGateUpgradePrompt: 'Upgraden Sie Ihren Plan, um diese Funktion freizuschalten.',
+    planGateViewPricing:   'Preise ansehen →',
+    planGateTrialNote:     'Starten Sie Ihre 30-tägige kostenlose Testversion — keine Kreditkarte erforderlich',
     paySuccessTitle:     'Alles bereit!',
     paySuccessMsg:       (plan) => `Willkommen im ${plan}-Plan. Ihre neuen Funktionen sind jetzt aktiv.`,
     paySuccessBtn:       'Zum Dashboard \u2192',
@@ -2355,6 +2378,7 @@ export const LANGS = {
     propAddedToast:       (name) => `${name} wurde hinzugefügt.`,
     propRemovedToast:     (name) => `${name} wurde entfernt.`,
     propAddError:         'Unterkunft konnte nicht hinzugefügt werden.',
+    propRemoveError:      'Unterkunft konnte nicht entfernt werden.',
     propertiesOf5:        (n) => `${n} von 5 Unterkünften`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Anzeigen:',
@@ -2866,6 +2890,11 @@ export const LANGS = {
     planMultiCta:        'Upgraden naar Multi',
     planMultiFeatures:   ['Tot 5 accommodaties', 'Alles in Pro', 'Onbeperkte personeelsaccounts', 'Kalenderoverzicht meerdere accommodaties', 'Kamerbelasting — bar, restaurant, winkel & activiteiten', 'Dedicated personeelsportaal voor kamerbelasting', 'Volledig gastdossier met gedetailleerde afrekening', 'Rapporten voor alle accommodaties', 'Gecombineerde of per-accommodatie exports'],
     planAdaptivePricingNote: 'Prijs weergegeven in uw lokale valuta bij het afrekenen',
+planGateProFeature:    'Dit is een Pro-functie',
+    planGateMultiFeature:  'Dit is een Multi-accommodatie-functie',
+    planGateUpgradePrompt: 'Upgrade uw abonnement om deze functie te ontgrendelen.',
+    planGateViewPricing:   'Prijzen bekijken →',
+    planGateTrialNote:     'Start uw gratis proefperiode van 30 dagen — geen creditcard vereist',
     paySuccessTitle:     'Alles klaar!',
     paySuccessMsg:       (plan) => `Welkom bij het ${plan}-abonnement. Uw nieuwe functies zijn nu actief.`,
     paySuccessBtn:       'Naar dashboard \u2192',
@@ -3018,6 +3047,7 @@ export const LANGS = {
     propAddedToast:       (name) => `${name} is toegevoegd.`,
     propRemovedToast:     (name) => `${name} is verwijderd.`,
     propAddError:         'Accommodatie kon niet worden toegevoegd.',
+    propRemoveError:      'Accommodatie kon niet worden verwijderd.'
     propertiesOf5:        (n) => `${n} van 5 accommodaties`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Bekijkt:',

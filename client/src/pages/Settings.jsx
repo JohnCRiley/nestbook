@@ -1092,11 +1092,11 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
       if (res.ok) {
         onSuccess(data.deleted_id, data.properties);
       } else {
-        onError(data.error || 'Could not remove property.');
+        onError(data.error || t('propRemoveError'));
         setLoading(false);
       }
     } catch {
-      onError('Network error.');
+      onError(t('networkError'));
       setLoading(false);
     }
   }
