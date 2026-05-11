@@ -41,6 +41,7 @@ export default function BookingPanel({ booking: initialBooking, rooms = [], gues
   }, [onSave]);
 
   const b = localBooking;
+  console.log('[BookingPanel] booking status:', b?.status, 'breakfast_added:', b?.breakfast_added);
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
   const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
@@ -398,7 +399,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Mid-stay breakfast management ──────────────────────────────────── */}
-      {b.status === 'checked_in' && !property?.breakfast_included && !b.room_breakfast_included && (
+      {b.status === 'arriving' && !property?.breakfast_included && !b.room_breakfast_included && (
         <AddBreakfastSection
           b={b} property={property}
           onBookingUpdated={onBookingUpdated}
