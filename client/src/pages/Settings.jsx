@@ -448,14 +448,14 @@ export default function Settings() {
                     <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
                       {sub?.cancel_at_period_end
                         ? <span style={{ color: '#dc2626' }}>
-                            {t('cancelsOn')} {sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : t('billingDateUnavailable')}
+                            {t('cancelsOn')} {fmtDate(sub?.current_period_end, locale) || t('billingDateUnavailable')}
                           </span>
-                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : t('billingDateUnavailable')}</strong></>
+                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{fmtDate(sub?.current_period_end, locale) || t('billingDateUnavailable')}</strong></>
                       }
                     </div>
                   )}
 
-                  {sub?.cancel_at_period_end && (
+                  {!!sub?.cancel_at_period_end && (
                     <div style={{ fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 12px' }}>
                       {t('subCancelScheduled')}
                     </div>
@@ -756,7 +756,7 @@ export default function Settings() {
                       <div>
                         <div className="danger-zone-row-title">{t('cancelSubOnly')}</div>
                         <div className="danger-zone-row-desc">
-                          {sub?.current_period_end
+                          {fmtDate(sub?.current_period_end, locale)
                             ? t('cancelSubExplain')(fmtDate(sub.current_period_end, locale))
                             : t('cancelSubDesc')}
                         </div>
@@ -804,7 +804,7 @@ export default function Settings() {
       <ConfirmModal
         isOpen={showCancelModal}
         title={t('cancelSubMoTitle')}
-        message={`${t('cancelSubConfirm')} ${sub?.current_period_end ? t('cancelSubWithDate')(PLAN_LABELS[sub?.plan] ?? 'Pro', fmtDate(sub.current_period_end, locale)) : t('cancelSubNoDate')}`}
+        message={`${t('cancelSubConfirm')} ${fmtDate(sub?.current_period_end, locale) ? t('cancelSubWithDate')(PLAN_LABELS[sub?.plan] ?? 'Pro', fmtDate(sub.current_period_end, locale)) : t('cancelSubNoDate')}`}
         confirmLabel={t('confirmCancelSub')}
         cancelLabel={t('keepSubscription')}
         variant="danger"
@@ -1153,10 +1153,11 @@ function RemovePropertyModal({ property: prop, onClose, onSuccess, onError }) {
 const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
 
 function fmtDate(iso, locale = 'en') {
-  if (!iso) return '—';
+  if (!iso || iso === '0') return null;
   const browserLocale = LOCALE_MAP[locale] || 'en-GB';
   // Stripe returns Unix timestamps (seconds); multiply by 1000 for JS Date
   const d = typeof iso === 'number' ? new Date(iso * 1000) : new Date(iso);
+  if (isNaN(d.getTime()) || d.getFullYear() < 2020) return null;
   return d.toLocaleDateString(browserLocale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
