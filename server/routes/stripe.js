@@ -133,12 +133,17 @@ stripeRouter.post('/sync-session', async (req, res) => {
     }
 
     // Fire upgrade email + audit log if the plan actually changed upward.
+    console.log('[stripe/upgrade] Old plan:', oldPlan, '→ New plan:', plan);
+    console.log('[stripe/upgrade] User:', oldUser?.email);
+    console.log('[email] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
     if (oldPlan !== plan && oldUser) {
       const property = db.prepare('SELECT * FROM properties WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
       if (plan === 'multi') {
-        sendMultiWelcome(oldUser, property);
+        sendMultiWelcome(oldUser, property)
+          .catch(err => console.error('[stripe] Multi email failed:', err.message));
       } else {
-        sendUpgradeWelcome(oldUser, property, periodEnd);
+        sendUpgradeWelcome(oldUser, property, periodEnd)
+          .catch(err => console.error('[stripe] Upgrade email failed:', err.message));
       }
       logAction(db, {
         propertyId: property?.id ?? null,
@@ -151,6 +156,8 @@ stripeRouter.post('/sync-session', async (req, res) => {
         detail:     `${oldPlan} → ${plan}`,
         ipAddress:  getIp(req),
       });
+    } else {
+      console.log('[stripe/upgrade] Skipping email — plan unchanged or user missing');
     }
 
     res.json({ plan });
@@ -260,13 +267,18 @@ stripeRouter.post('/webhook', async (req, res) => {
 
         db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
         console.log(`✓ Subscription activated: user ${userId} → ${plan}`);
+        console.log('[stripe/webhook/upgrade] Old plan:', oldWebhookPlan, '→ New plan:', plan);
+        console.log('[stripe/webhook/upgrade] User:', oldWebhookUser?.email);
+        console.log('[email] RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
 
         if (oldWebhookPlan !== plan && oldWebhookUser) {
           const webhookProperty = db.prepare('SELECT * FROM properties WHERE user_id = ? ORDER BY id LIMIT 1').get(userId);
           if (plan === 'multi') {
-            sendMultiWelcome(oldWebhookUser, webhookProperty);
+            sendMultiWelcome(oldWebhookUser, webhookProperty)
+              .catch(err => console.error('[stripe] Multi email failed (webhook):', err.message));
           } else {
-            sendUpgradeWelcome(oldWebhookUser, webhookProperty, periodEnd);
+            sendUpgradeWelcome(oldWebhookUser, webhookProperty, periodEnd)
+              .catch(err => console.error('[stripe] Upgrade email failed (webhook):', err.message));
           }
           logAction(db, {
             propertyId: webhookProperty?.id ?? null,
@@ -279,6 +291,8 @@ stripeRouter.post('/webhook', async (req, res) => {
             detail:     `${oldWebhookPlan} → ${plan}`,
             ipAddress:  null,
           });
+        } else {
+          console.log('[stripe/webhook/upgrade] Skipping email — plan unchanged or user missing');
         }
         break;
       }
