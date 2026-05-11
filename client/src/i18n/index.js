@@ -3047,7 +3047,7 @@ planGateProFeature:    'Dit is een Pro-functie',
     propAddedToast:       (name) => `${name} is toegevoegd.`,
     propRemovedToast:     (name) => `${name} is verwijderd.`,
     propAddError:         'Accommodatie kon niet worden toegevoegd.',
-    propRemoveError:      'Accommodatie kon niet worden verwijderd.'
+    propRemoveError:      'Accommodatie kon niet worden verwijderd.',
     propertiesOf5:        (n) => `${n} van 5 accommodaties`,
     // ── Translation audit keys ────────────────────────────────────────────────
     viewingProperty:      'Bekijkt:',
