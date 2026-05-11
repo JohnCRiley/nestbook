@@ -66,10 +66,16 @@ export default function Dashboard() {
       })
         .then((r) => r.ok ? r.json() : null)
         .then((data) => {
-          if (data?.plan) {
-            updateUser({ plan: data.plan });
-            refreshPlan();
-          }
+          if (!data?.plan) return;
+          // Fetch canonical user from /api/auth/me (reads users table only,
+          // no subscriptions dependency) and update the full context object.
+          apiFetch('/api/auth/me')
+            .then((r) => r.ok ? r.json() : null)
+            .then((me) => {
+              if (me?.plan) updateUser(me);
+              else updateUser({ plan: data.plan }); // fallback
+            })
+            .catch(() => updateUser({ plan: data.plan })); // fallback
         })
         .catch(() => {});
     }

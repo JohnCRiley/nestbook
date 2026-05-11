@@ -47,9 +47,11 @@ export function AuthProvider({ children }) {
   }
 
   function updateUser(updates) {
-    const updated = { ...user, ...updates };
-    localStorage.setItem('nb_user', JSON.stringify(updated));
-    setUser(updated);
+    setUser(prev => {
+      const updated = { ...(prev ?? {}), ...updates };
+      localStorage.setItem('nb_user', JSON.stringify(updated));
+      return updated;
+    });
   }
 
   async function refreshPlan() {

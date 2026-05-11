@@ -175,6 +175,14 @@ authRouter.post('/register', (req, res) => {
 });
 
 // ── GET /api/auth/verify-email?token=xxx ─────────────────────────────────
+authRouter.get('/me', requireAuth, (req, res) => {
+  const user = db.prepare(
+    'SELECT id, email, name, plan, email_verified FROM users WHERE id = ?'
+  ).get(req.user.userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  res.json(user);
+});
+
 authRouter.get('/verify-email', (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ error: 'Token is required.' });
