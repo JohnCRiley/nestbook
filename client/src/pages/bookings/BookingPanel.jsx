@@ -9,7 +9,7 @@ import { useAuth } from '../../auth/AuthContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import DepositPill from '../../components/DepositPill.jsx';
 import CheckoutModal from './CheckoutModal.jsx';
-import PrintReceipt from '../../components/PrintReceipt.jsx';
+import PrintReceipt, { buildReceiptHTML, PM_LABELS, THANK_YOU, LOCALE_MAP } from '../../components/PrintReceipt.jsx';
 import AddChargeModal from '../charges/AddChargeModal.jsx';
 
 const SOURCE_OPTIONS = [
@@ -167,6 +167,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
   // Checkout via modal
   const handleCheckoutConfirm = async (paymentMethod, shouldPrint) => {
+    // Open print window NOW, inside the user-gesture call stack, before any await.
+    // window.open() is blocked by popup blockers when called from async/useEffect.
+    const printWin = shouldPrint
+      ? window.open('', '_blank', 'width=720,height=800,menubar=no,toolbar=no')
+      : null;
+
     const now = new Date().toISOString();
     const res = await apiFetch(`/api/bookings/${b.id}`, {
       method: 'PUT',
@@ -179,12 +185,80 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       }),
     });
     if (!res.ok) {
+      if (printWin) printWin.close();
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error ?? `Server error ${res.status}`);
     }
     const updated = await res.json();
+
+    if (printWin) {
+      const loc = property?.locale ?? 'en';
+      const sym = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' }[property?.currency ?? 'EUR'] ?? '€';
+      const fc  = (amount) => (amount == null ? '—' : `${sym}${Number(amount).toFixed(2)}`);
+
+      const rpNights    = nightsBetween(b.check_in_date, b.check_out_date);
+      const rpRate      = b.price_per_night ?? (b.total_price && rpNights ? b.total_price / rpNights : 0);
+      const rpRoom      = rpNights * rpRate;
+      const rpBfFree    = !!(property?.breakfast_included || b.room_breakfast_included);
+      const rpBfChg     = !!b.breakfast_added && !rpBfFree;
+      const rpBfPrice   = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
+      const bfStart     = b.breakfast_start_date || b.check_in_date;
+      const rpBfDays    = rpBfChg ? Math.max(1, nightsBetween(bfStart, b.check_out_date)) : 0;
+      const rpBfGuests  = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
+      const rpBfSub     = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
+      const rpDepPaid   = !!b.deposit_paid;
+      const rpDepAmt    = parseFloat(property?.deposit_amount) || 0;
+      const rpCharges   = charges?.filter((c) => !c.voided_at) ?? [];
+      const rpChargeSub = rpCharges.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+      const rpTotal     = Math.max(0, rpRoom + rpBfSub + rpChargeSub - (rpDepPaid ? rpDepAmt : 0));
+
+      const d = {
+        locale: loc,
+        propertyName:    property?.name    ?? '',
+        propertyAddress: property?.address ?? '',
+        propertyCity:    property?.city    ?? '',
+        propertyCountry: property?.country ?? '',
+        today: new Date().toLocaleDateString(LOCALE_MAP[loc] ?? 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+        guestName:   `${b.guest_first_name} ${b.guest_last_name}`,
+        bookingRef:  `#${b.id}`,
+        roomName:    `${b.room_name ?? t('roomDeleted')} (${b.room_type ?? ''})`,
+        checkInOut:  `${b.check_in_date} → ${b.check_out_date}`,
+        nightsLine:  `${rpNights} × ${fc(rpRate)}`,
+        roomSubtotalFmt: fc(rpRoom),
+        breakfastFree: rpBfFree,
+        breakfastLabel: t('fBreakfast'),
+        breakfastComplimentary: t('coComplimentary'),
+        breakfastCharged: rpBfChg,
+        breakfastChargeLine: rpBfChg
+          ? `${t('fBreakfast')} (${rpBfGuests} × ${rpBfDays} × ${fc(rpBfPrice)})`
+          : '',
+        breakfastSubtotalFmt: fc(rpBfSub),
+        depositPaidLine: property?.require_deposit === 1 && rpDepPaid && rpDepAmt > 0,
+        depositLabel: t('depositPaidPill'),
+        depositFmt: `-${fc(rpDepAmt)}`,
+        roomCharges: rpCharges,
+        chargesLabel: t('chargesReceiptLabel'),
+        symbol: sym,
+        totalDueFmt: fc(rpTotal),
+        pmLabel: PM_LABELS[paymentMethod]?.[loc] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod ?? '—',
+        thankyou: THANK_YOU[loc] ?? THANK_YOU.en,
+        receiptTitle:   t('coReceiptTitle'),
+        dateLabel:      t('coReceiptDate'),
+        guestLabel:     t('coReceiptGuest'),
+        refLabel:       t('bookingRef'),
+        stayLabel:      t('coStaySummary'),
+        totalPaidLabel: t('coTotalPaid'),
+        paymentLabel:   t('coReceiptPaymentMethod'),
+      };
+
+      const html = buildReceiptHTML(d, 'receipt');
+      printWin.document.write(html);
+      printWin.document.close();
+      printWin.focus();
+      printWin.print();
+    }
+
     setShowCheckout(false);
-    if (shouldPrint) setShowReprint('auto');
     if (onBookingUpdated) onBookingUpdated(updated);
   };
 
@@ -452,7 +526,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {b.status === 'checked_out' && b.payment_method && (
         <div style={{ padding: '0 22px 10px' }}>
           <button
-            onClick={() => setShowReprint('manual')}
+            onClick={() => setShowReprint(true)}
             style={{
               background: 'none', border: '1px solid var(--border)',
               borderRadius: 6, padding: '6px 14px', fontSize: '0.82rem',
@@ -526,7 +600,6 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
             roomCharges={charges?.filter((c) => !c.voided_at) ?? []}
             totalDue={rpTotal} paymentMethod={b.payment_method}
-            autoPrint={showReprint === 'auto'}
             onClose={() => setShowReprint(false)}
           />
         );

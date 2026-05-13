@@ -1,16 +1,15 @@
-import { useEffect } from 'react';
 import { useT } from '../i18n/LocaleContext.jsx';
 
-const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
+export const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
 
-const PM_LABELS = {
+export const PM_LABELS = {
   cash:          { en: 'Cash',          fr: 'Espèces',          es: 'Efectivo',               de: 'Bargeld',        nl: 'Contant' },
   card:          { en: 'Card',          fr: 'Carte',            es: 'Tarjeta',                de: 'Karte',          nl: 'Kaart' },
   bank_transfer: { en: 'Bank Transfer', fr: 'Virement bancaire', es: 'Transferencia bancaria', de: 'Banküberweisung', nl: 'Bankoverschrijving' },
   other:         { en: 'Other',         fr: 'Autre',            es: 'Otro',                   de: 'Sonstiges',      nl: 'Anders' },
 };
 
-const THANK_YOU = {
+export const THANK_YOU = {
   en: 'Thank you for staying with us. We hope to welcome you again soon.',
   fr: 'Merci pour votre séjour. Nous espérons vous accueillir à nouveau très prochainement.',
   es: 'Gracias por su estancia. Esperamos darle la bienvenida de nuevo muy pronto.',
@@ -37,7 +36,7 @@ function esc(str) {
 
 // ── Build self-contained HTML for the print window ────────────────────────────
 
-function buildReceiptHTML(d, format) {
+export function buildReceiptHTML(d, format) {
   const isReceipt = format === 'receipt';
 
   const bodyCSS = isReceipt
@@ -219,7 +218,6 @@ export default function PrintReceipt({
   totalDue,
   paymentMethod,
   onClose,
-  autoPrint = false,
 }) {
   const t      = useT();
   const locale = property?.locale ?? 'en';
@@ -278,9 +276,6 @@ export default function PrintReceipt({
     win.focus();
     win.print();
   }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (autoPrint) doPrint('receipt'); }, []);
 
   // ── Preview helpers (mirrors buildReceiptHTML layout) ──────────────────────
   const PreviewRow = ({ label, value, indent, credit }) => (
