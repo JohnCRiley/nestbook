@@ -206,11 +206,17 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       const rpBfDays    = rpBfChg ? Math.max(1, nightsBetween(bfStart, b.check_out_date)) : 0;
       const rpBfGuests  = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
       const rpBfSub     = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
-      const rpDepPaid   = !!b.deposit_paid;
-      const rpDepAmt    = parseFloat(property?.deposit_amount) || 0;
-      const rpCharges   = charges?.filter((c) => !c.voided_at) ?? [];
-      const rpChargeSub = rpCharges.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-      const rpTotal     = Math.max(0, rpRoom + rpBfSub + rpChargeSub - (rpDepPaid ? rpDepAmt : 0));
+      const rpDepPaid    = !!b.deposit_paid;
+      const rpDepAmt     = parseFloat(property?.deposit_amount) || 0;
+      const rpCharges    = charges?.filter((c) => !c.voided_at) ?? [];
+      const rpChargeSub  = rpCharges.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+      const rpSubtotal   = rpRoom + rpBfSub + rpChargeSub;
+      const rpDepReqd    = property?.require_deposit === 1;
+      const rpDepPdLine  = rpDepReqd && rpDepPaid && rpDepAmt > 0;
+      const rpDepOutLine = rpDepReqd && !rpDepPaid  && rpDepAmt > 0;
+      const rpGrandTotal = rpDepPdLine  ? Math.max(0, rpSubtotal - rpDepAmt)
+                         : rpDepOutLine ? rpSubtotal + rpDepAmt
+                         : rpSubtotal;
 
       const d = {
         locale: loc,
@@ -233,13 +239,18 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           ? `${t('fBreakfast')} (${rpBfGuests} × ${rpBfDays} × ${fc(rpBfPrice)})`
           : '',
         breakfastSubtotalFmt: fc(rpBfSub),
-        depositPaidLine: property?.require_deposit === 1 && rpDepPaid && rpDepAmt > 0,
-        depositLabel: t('depositPaidPill'),
-        depositFmt: `-${fc(rpDepAmt)}`,
+        depositPaidLine:         rpDepPdLine,
+        depositLabel:            t('depositPaidPill'),
+        depositFmt:              `-${fc(rpDepAmt)}`,
+        depositOutstandingLine:  rpDepOutLine,
+        depositOutstandingFmt:   fc(rpDepAmt),
+        depositOutstandingLabel: t('coDepositOutstanding'),
+        subtotalFmt:             fc(rpSubtotal),
+        subtotalLabel:           t('coSubtotal'),
         roomCharges: rpCharges,
         chargesLabel: t('chargesReceiptLabel'),
         symbol: sym,
-        totalDueFmt: fc(rpTotal),
+        totalDueFmt:    fc(rpGrandTotal),
         pmLabel: PM_LABELS[paymentMethod]?.[loc] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod ?? '—',
         thankyou: THANK_YOU[loc] ?? THANK_YOU.en,
         receiptTitle:   t('coReceiptTitle'),
@@ -248,6 +259,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         refLabel:       t('bookingRef'),
         stayLabel:      t('coStaySummary'),
         totalPaidLabel: t('coTotalPaid'),
+        totalDueLabel:  t('coTotalDue'),
         paymentLabel:   t('coReceiptPaymentMethod'),
       };
 
@@ -589,7 +601,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpBfSub    = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
         const rpDepPaid  = !!b.deposit_paid;
         const rpDepAmt   = parseFloat(property?.deposit_amount) || 0;
-        const rpTotal    = Math.max(0, rpRoom + rpBfSub - (rpDepPaid ? rpDepAmt : 0));
+        const rpRoomChs  = charges?.filter((c) => !c.voided_at) ?? [];
+        const rpChargeSb = rpRoomChs.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+        // Pass subtotal pre-deposit-adjustment; component computes grand total from deposit status
+        const rpTotal    = Math.max(0, rpRoom + rpBfSub + rpChargeSb - (rpDepPaid ? rpDepAmt : 0));
         return (
           <PrintReceipt
             booking={b} property={property}
@@ -598,7 +613,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             breakfastSubtotal={rpBfSub} bfPricePerPerson={rpBfPrice}
             breakfastGuests={rpBfGuests} breakfastDays={rpBfDays}
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
-            roomCharges={charges?.filter((c) => !c.voided_at) ?? []}
+            roomCharges={rpRoomChs}
             totalDue={rpTotal} paymentMethod={b.payment_method}
             onClose={() => setShowReprint(false)}
           />

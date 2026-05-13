@@ -148,10 +148,18 @@ export function buildReceiptHTML(d, format) {
     d.breakfastCharged
       ? row(`  ${d.breakfastChargeLine}`, d.breakfastSubtotalFmt, 'indent')
       : '',
-    d.depositPaidLine
-      ? rowCredit(`  ${d.depositLabel}`, d.depositFmt)
-      : '',
   ].join('');
+
+  const depositBlock = (d.depositPaidLine || d.depositOutstandingLine)
+    ? [
+        row(d.subtotalLabel, d.subtotalFmt),
+        d.depositPaidLine
+          ? rowCredit(d.depositLabel, d.depositFmt)
+          : row(d.depositOutstandingLabel, d.depositOutstandingFmt),
+      ].join('')
+    : '';
+
+  const totalLabel = d.depositOutstandingLine ? d.totalDueLabel : d.totalPaidLabel;
 
   return `<!DOCTYPE html>
 <html lang="${esc(d.locale)}">
@@ -183,11 +191,12 @@ export function buildReceiptHTML(d, format) {
   ${row(`  ${d.nightsLine}`, d.roomSubtotalFmt, 'indent')}
   ${extras}
   ${chargesBlock}
+  ${depositBlock ? `${divider}${depositBlock}` : ''}
 
   ${divider}
 
   <div class="receipt-total">
-    <span>${esc(d.totalPaidLabel)}</span>
+    <span>${esc(totalLabel)}</span>
     <span>${esc(d.totalDueFmt)}</span>
   </div>
   ${row(d.paymentLabel, d.pmLabel)}
@@ -224,6 +233,14 @@ export default function PrintReceipt({
   const symbol = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' }[property?.currency ?? 'EUR'] ?? '€';
 
   // Pre-resolve all strings (hooks can't be called inside buildReceiptHTML)
+  const depositReqd   = property?.require_deposit === 1;
+  const depPaidLine   = depositReqd && !!depositPaid && depositAmount > 0;
+  const depOutLine    = depositReqd && !depositPaid  && depositAmount > 0;
+  // If deposit was paid, totalDue already had it subtracted — add back to get subtotal
+  const subtotalNum   = depPaidLine ? totalDue + depositAmount : totalDue;
+  // Grand total: deduct deposit if paid, add if outstanding
+  const grandTotal    = depOutLine  ? totalDue + depositAmount : totalDue;
+
   const d = {
     locale,
     propertyName:    property?.name    ?? '',
@@ -247,13 +264,18 @@ export default function PrintReceipt({
       ? `${t('fBreakfast')} (${breakfastGuests ?? (b.num_guests || 1)} × ${breakfastDays ?? nights} × ${fc(bfPricePerPerson, symbol)})`
       : '',
     breakfastSubtotalFmt: fc(breakfastSubtotal, symbol),
-    depositPaidLine: property?.require_deposit === 1 && depositPaid && depositAmount > 0,
-    depositLabel:  t('depositPaidPill'),
-    depositFmt:    `-${fc(depositAmount, symbol)}`,
+    depositPaidLine:         depPaidLine,
+    depositLabel:            t('depositPaidPill'),
+    depositFmt:              `-${fc(depositAmount, symbol)}`,
+    depositOutstandingLine:  depOutLine,
+    depositOutstandingFmt:   fc(depositAmount, symbol),
+    depositOutstandingLabel: t('coDepositOutstanding'),
+    subtotalFmt:             fc(subtotalNum, symbol),
+    subtotalLabel:           t('coSubtotal'),
     roomCharges:   Array.isArray(roomCharges) ? roomCharges : [],
     chargesLabel:  t('chargesReceiptLabel'),
     symbol,
-    totalDueFmt:   fc(totalDue, symbol),
+    totalDueFmt:   fc(grandTotal, symbol),
     pmLabel: paymentMethod
       ? (PM_LABELS[paymentMethod]?.[locale] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod)
       : '—',
@@ -264,6 +286,7 @@ export default function PrintReceipt({
     refLabel:       t('bookingRef'),
     stayLabel:      t('coStaySummary'),
     totalPaidLabel: t('coTotalPaid'),
+    totalDueLabel:  t('coTotalDue'),
     paymentLabel:   t('coReceiptPaymentMethod'),
   };
 
