@@ -633,7 +633,7 @@ export default function Settings() {
                                 fontSize: '0.8rem', fontFamily: 'inherit', padding: '2px 6px', borderRadius: 4,
                               }}
                             >
-                              {t('editRoom')}
+                              {t('edit')}
                             </button>
                             <button
                               onClick={() => setCatDeleteTarget(cat)}

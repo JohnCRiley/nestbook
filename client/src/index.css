@@ -602,14 +602,17 @@ a { text-decoration: none; }
 
 /* ─── Calendar CI / CO action badges ────────────────────────────────────── */
 .cal-action-badge {
-  display: inline-block;
-  font-size: 0.62rem;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.5px;
   border-radius: 3px;
   padding: 1px 4px;
   line-height: 1.4;
-  flex-shrink: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 .cal-ci-badge { background: #16a34a; color: white; }
 .cal-co-badge { background: #d97706; color: white; }
@@ -1504,6 +1507,10 @@ a { text-decoration: none; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding-right: 26px;
+}
+.cal-cell-breakfast {
+  border-right: 3px dashed #d97706;
 }
 
 .cal-booking-nights {

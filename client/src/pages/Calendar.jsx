@@ -424,22 +424,18 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
 
   return (
     <div
-      className={`cal-cell ${cellClass}`}
+      className={`cal-cell ${cellClass}${showBfBadge ? ' cal-cell-breakfast' : ''}`}
       style={style}
       onClick={onClick}
       title={`${b.guest_first_name} ${b.guest_last_name} — ${b.room_name}\n${b.check_in_date} → ${b.check_out_date}`}
     >
-      {showBfBadge && (
-        <div style={{
-          position: 'absolute', right: 0, top: 0, bottom: 0,
-          width: 4,
-          background: 'repeating-linear-gradient(to bottom, #d97706 0, #d97706 4px, transparent 4px, transparent 8px)',
-        }} />
+      {(showCiBadge || showCoBadge) && (
+        <span className={`cal-action-badge ${showCiBadge ? 'cal-ci-badge' : 'cal-co-badge'}`}>
+          {showCiBadge ? (t ? t('calCiBadge') : 'CI') : (t ? t('calCoBadge') : 'CO')}
+        </span>
       )}
       <div className="cal-cell-inner">
-        <div className="cal-guest-name" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-          {showCiBadge && <span className="cal-action-badge cal-ci-badge">{t ? t('calCiBadge') : 'CI'}</span>}
-          {showCoBadge && <span className="cal-action-badge cal-co-badge">{t ? t('calCoBadge') : 'CO'}</span>}
+        <div className="cal-guest-name">
           {isMobile && b.guest_last_name
             ? `${b.guest_first_name?.[0] ?? ''}. ${b.guest_last_name}`
             : `${b.guest_first_name} ${b.guest_last_name}`.trim()}
@@ -506,11 +502,11 @@ function Legend({ t }) {
         </div>
       ))}
       <div className="legend-item">
-        <span className="cal-action-badge cal-ci-badge" style={{ fontSize: '0.6rem' }}>{t('calCiBadge')}</span>
+        <span className="cal-action-badge cal-ci-badge" style={{ position: 'static' }}>{t('calCiBadge')}</span>
         {t('calLegendCI')}
       </div>
       <div className="legend-item">
-        <span className="cal-action-badge cal-co-badge" style={{ fontSize: '0.6rem' }}>{t('calCoBadge')}</span>
+        <span className="cal-action-badge cal-co-badge" style={{ position: 'static' }}>{t('calCoBadge')}</span>
         {t('calLegendCO')}
       </div>
       <div className="legend-item">
