@@ -390,8 +390,14 @@ function shell(bodyHtml) {
       <!-- Header -->
       <tr>
         <td style="background:#1a4710;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
-          <img src="https://nestbook.io/icon.svg" width="40" height="40"
-               style="border-radius:9px;vertical-align:middle;margin-right:10px;" alt="NestBook">
+          <table cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:middle;margin-right:10px;">
+            <tr>
+              <td style="background:#1a4710;border-radius:9px;width:40px;height:40px;text-align:center;">
+                <img src="https://nestbook.io/icon-192.png" width="40" height="40"
+                     style="display:block;border-radius:9px;" alt="NestBook">
+              </td>
+            </tr>
+          </table>
           <span style="color:#fff;font-size:1.3rem;font-weight:700;vertical-align:middle;letter-spacing:-0.3px;">NestBook</span>
         </td>
       </tr>
