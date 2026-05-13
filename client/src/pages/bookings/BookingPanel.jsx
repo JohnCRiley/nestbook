@@ -429,8 +429,21 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                         {!c.voided_at && (user?.role === 'owner' || user?.role === 'reception') && (
                           <button
                             onClick={async () => {
-                              const res = await apiFetch(`/api/charges/${c.id}`, { method: 'DELETE' });
-                              if (res.ok) setCharges((prev) => prev.map((x) => x.id === c.id ? { ...x, voided_at: 'voided' } : x));
+                              console.log('[void-charge] chargeId:', c.id, 'property_id:', b.property_id);
+                              try {
+                                const res = await apiFetch(
+                                  `/api/charges/${c.id}?property_id=${b.property_id}`,
+                                  { method: 'DELETE' },
+                                );
+                                if (res.ok) {
+                                  setCharges((prev) => prev.map((x) => x.id === c.id ? { ...x, voided_at: 'voided' } : x));
+                                } else {
+                                  const body = await res.json().catch(() => ({}));
+                                  showToast(body.error ?? `Void failed (${res.status})`);
+                                }
+                              } catch {
+                                showToast('Void failed — please try again.');
+                              }
                             }}
                             style={{
                               background: 'none', border: '1px solid #fca5a5', borderRadius: 4,

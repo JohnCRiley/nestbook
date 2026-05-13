@@ -243,6 +243,7 @@ chargesRouter.post('/', requireMulti, (req, res) => {
 
 // ── DELETE /api/charges/:id (void) ────────────────────────────────────────────
 chargesRouter.delete('/:id', requireMulti, (req, res) => {
+  console.log('[charges/void] chargeId:', req.params.id, 'user role:', req.user?.role, 'propertyId:', getPropertyId(req));
   if (req.user.role === 'charges_staff') {
     return res.status(403).json({ error: 'Only owners and reception staff can void charges.' });
   }
