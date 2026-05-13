@@ -263,7 +263,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         paymentLabel:   t('coReceiptPaymentMethod'),
       };
 
-      const html = buildReceiptHTML(d, 'receipt');
+      const html = buildReceiptHTML(d, 'a4');
       printWin.document.write(html);
       printWin.document.close();
       printWin.focus();
