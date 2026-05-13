@@ -88,11 +88,23 @@ chargesRouter.delete('/categories/:id', requireMulti, (req, res) => {
   if (req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Only owners can manage categories.' });
   }
+  const categoryId = Number(req.params.id);
+  console.log('[categories/delete] id:', categoryId);
   const cat = db.prepare(
     `SELECT * FROM service_categories WHERE id = ? AND property_id = ?`
-  ).get(Number(req.params.id), getPropertyId(req));
+  ).get(categoryId, getPropertyId(req));
   if (!cat) return res.status(404).json({ error: 'Category not found.' });
-  db.prepare(`DELETE FROM service_categories WHERE id = ?`).run(Number(req.params.id));
+
+  const chargeCount = db.prepare(
+    `SELECT COUNT(*) AS c FROM room_charges WHERE category_id = ? AND voided_at IS NULL`
+  ).get(categoryId)?.c ?? 0;
+  if (chargeCount > 0) {
+    return res.status(400).json({
+      error: 'This category has existing charges and cannot be deleted.',
+    });
+  }
+
+  db.prepare(`DELETE FROM service_categories WHERE id = ?`).run(categoryId);
   res.json({ success: true });
 });
 

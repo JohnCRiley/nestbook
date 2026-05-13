@@ -560,15 +560,19 @@ export default function Settings() {
                             style={{ fontSize: '0.8rem', padding: '4px 12px' }}
                             disabled={!editCatForm.name.trim()}
                             onClick={async () => {
+                              console.log('[categories/edit] Saving:', cat.id, editCatForm.name);
                               const res = await apiFetch(`/api/charges/categories/${cat.id}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(editCatForm),
+                                body: JSON.stringify({ ...editCatForm, property_id: activeProperty?.id }),
                               });
                               if (res.ok) {
                                 const updated = await res.json();
                                 setCategories((prev) => prev.map((c) => c.id === cat.id ? updated : c));
                                 setEditingCatId(null);
+                              } else {
+                                const body = await res.json().catch(() => ({}));
+                                showToast(body.error ?? 'Failed to save category.', 'error');
                               }
                             }}
                           >
@@ -859,9 +863,19 @@ export default function Settings() {
         cancelLabel={t('cancel')}
         variant="danger"
         onConfirm={async () => {
-          const res = await apiFetch(`/api/charges/categories/${catDeleteTarget.id}`, { method: 'DELETE' });
-          if (res.ok) setCategories((prev) => prev.filter((c) => c.id !== catDeleteTarget.id));
-          setCatDeleteTarget(null);
+          console.log('[categories/delete] id:', catDeleteTarget.id);
+          const res = await apiFetch(
+            `/api/charges/categories/${catDeleteTarget.id}?property_id=${activeProperty?.id}`,
+            { method: 'DELETE' },
+          );
+          if (res.ok) {
+            setCategories((prev) => prev.filter((c) => c.id !== catDeleteTarget.id));
+            setCatDeleteTarget(null);
+          } else {
+            const body = await res.json().catch(() => ({}));
+            showToast(body.error ?? 'Failed to delete category.', 'error');
+            setCatDeleteTarget(null);
+          }
         }}
         onCancel={() => setCatDeleteTarget(null)}
       />
