@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useT } from '../i18n/LocaleContext.jsx';
 
 const LOCALE_MAP = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
@@ -218,6 +219,7 @@ export default function PrintReceipt({
   totalDue,
   paymentMethod,
   onClose,
+  autoPrint = false,
 }) {
   const t      = useT();
   const locale = property?.locale ?? 'en';
@@ -276,6 +278,9 @@ export default function PrintReceipt({
     win.focus();
     win.print();
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autoPrint) doPrint('receipt'); }, []);
 
   // ── Preview helpers (mirrors buildReceiptHTML layout) ──────────────────────
   const PreviewRow = ({ label, value, indent, credit }) => (

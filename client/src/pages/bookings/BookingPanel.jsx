@@ -184,7 +184,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
     }
     const updated = await res.json();
     setShowCheckout(false);
-    if (shouldPrint) setShowReprint(true);
+    if (shouldPrint) setShowReprint('auto');
     if (onBookingUpdated) onBookingUpdated(updated);
   };
 
@@ -452,7 +452,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {b.status === 'checked_out' && b.payment_method && (
         <div style={{ padding: '0 22px 10px' }}>
           <button
-            onClick={() => setShowReprint(true)}
+            onClick={() => setShowReprint('manual')}
             style={{
               background: 'none', border: '1px solid var(--border)',
               borderRadius: 6, padding: '6px 14px', fontSize: '0.82rem',
@@ -526,6 +526,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
             roomCharges={charges?.filter((c) => !c.voided_at) ?? []}
             totalDue={rpTotal} paymentMethod={b.payment_method}
+            autoPrint={showReprint === 'auto'}
             onClose={() => setShowReprint(false)}
           />
         );
