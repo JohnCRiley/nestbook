@@ -923,6 +923,10 @@ adminRouter.get('/audit-log/export', (req, res) => {
 function fmtCsvTimestamp(ts) {
   if (!ts) return '';
   const d = new Date(ts.endsWith('Z') ? ts : ts + 'Z');
-  const p = (n) => String(n).padStart(2, '0');
-  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false, timeZone: 'UTC',
+  });
 }

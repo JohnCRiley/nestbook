@@ -305,8 +305,12 @@ function formatTs(ts) {
 function fmtCsvTs(ts) {
   if (!ts) return '';
   const d = new Date(ts.endsWith('Z') ? ts : ts + 'Z');
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-GB', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false, timeZone: 'UTC',
+  });
 }
 
 function csvCell(val) {
