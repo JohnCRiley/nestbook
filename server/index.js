@@ -9,7 +9,7 @@ import { requireSuperAdminSession }  from './middleware/requireSuperAdminSession
 import { healthRouter }              from './routes/health.js';
 import { authRouter }                from './routes/auth.js';
 import { superAdminAuthRouter }      from './routes/superAdminAuth.js';
-import { stripeRouter }              from './routes/stripe.js';
+import { stripeRouter, stripeWebhookRouter } from './routes/stripe.js';
 import { propertiesRouter }          from './routes/properties.js';
 import { roomsRouter }               from './routes/rooms.js';
 import { guestsRouter }              from './routes/guests.js';
@@ -45,8 +45,10 @@ app.use(express.static(join(__dirname, 'public')));
 // React SPA assets (JS, CSS, icons) — served at /app/*
 app.use('/app', express.static(join(__dirname, '../client/dist')));
 
-// ── Stripe webhook needs raw body ─────────────────────────────────────────────
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+// ── Stripe webhook — MUST be before requireAuth ───────────────────────────────
+// Stripe sends its own signature header, not a JWT. The handler verifies via
+// stripe.webhooks.constructEvent(); it must receive the raw (unparsed) body.
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRouter);
 
 // ── Public routes (no auth) ───────────────────────────────────────────────────
 app.use('/api',                healthRouter);
