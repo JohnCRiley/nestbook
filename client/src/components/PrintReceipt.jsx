@@ -250,6 +250,14 @@ export default function PrintReceipt({
   const grossSubtotal   = (roomSubtotal || 0) + (breakfastSubtotal || 0) + chargesTotal;
   const depositDeduction = depPaidLine ? depositAmount : 0;
   const grandTotal      = Math.max(0, grossSubtotal - depositDeduction - refund);
+  console.log('[PrintReceipt] roomSubtotal:', roomSubtotal);
+  console.log('[PrintReceipt] breakfastSubtotal:', breakfastSubtotal);
+  console.log('[PrintReceipt] chargesTotal:', chargesTotal);
+  console.log('[PrintReceipt] grossSubtotal:', grossSubtotal);
+  console.log('[PrintReceipt] depositDeduction:', depositDeduction);
+  console.log('[PrintReceipt] refund (from refundAmount prop):', refund);
+  console.log('[PrintReceipt] grandTotal:', grandTotal);
+  console.log('[PrintReceipt] booking.refund_amount:', b?.refund_amount);
 
   const d = {
     locale,
