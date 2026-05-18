@@ -674,9 +674,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpDepAmt   = parseFloat(property?.deposit_amount) || 0;
         const rpRoomChs  = charges?.filter((c) => !c.voided_at) ?? [];
         const rpChargeSb = rpRoomChs.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-        // Pass subtotal pre-deposit-adjustment; component computes grand total from deposit status
         const rpRefund   = parseFloat(b.refund_amount) || 0;
-        const rpTotal    = Math.max(0, rpRoom + rpBfSub + rpChargeSb - (rpDepPaid ? rpDepAmt : 0));
         return (
           <PrintReceipt
             booking={b} property={property}
@@ -686,7 +684,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             breakfastGuests={rpBfGuests} breakfastDays={rpBfDays}
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
             roomCharges={rpRoomChs}
-            totalDue={rpTotal} paymentMethod={b.payment_method}
+            paymentMethod={b.payment_method}
             refundAmount={rpRefund} refundReason={b.refund_reason}
             onClose={() => setShowReprint(false)}
           />

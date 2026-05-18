@@ -232,7 +232,6 @@ export default function PrintReceipt({
   breakfastGuests, breakfastDays,
   depositPaid, depositAmount,
   roomCharges,
-  totalDue,
   paymentMethod,
   refundAmount, refundReason,
   onClose,
@@ -246,10 +245,11 @@ export default function PrintReceipt({
   const depPaidLine   = depositReqd && !!depositPaid && depositAmount > 0;
   const depOutLine    = depositReqd && !depositPaid  && depositAmount > 0;
   const refund        = Number(refundAmount) || 0;
-  // If deposit was paid, totalDue already had it subtracted — add back to get subtotal
-  const subtotalNum   = depPaidLine ? totalDue + depositAmount : totalDue;
-  // Grand total: deduct deposit if paid, add if outstanding, then subtract refund
-  const grandTotal    = (depOutLine ? totalDue + depositAmount : totalDue) - refund;
+  // Compute total from raw components — never from a pre-calculated prop
+  const chargesTotal    = (Array.isArray(roomCharges) ? roomCharges : []).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const grossSubtotal   = (roomSubtotal || 0) + (breakfastSubtotal || 0) + chargesTotal;
+  const depositDeduction = depPaidLine ? depositAmount : 0;
+  const grandTotal      = Math.max(0, grossSubtotal - depositDeduction - refund);
 
   const d = {
     locale,
@@ -280,7 +280,7 @@ export default function PrintReceipt({
     depositOutstandingLine:  depOutLine,
     depositOutstandingFmt:   fc(depositAmount, symbol),
     depositOutstandingLabel: t('coDepositOutstanding'),
-    subtotalFmt:             fc(subtotalNum, symbol),
+    subtotalFmt:             fc(grossSubtotal, symbol),
     subtotalLabel:           t('coSubtotal'),
     roomCharges:   Array.isArray(roomCharges) ? roomCharges : [],
     chargesLabel:  t('chargesReceiptLabel'),

@@ -333,7 +333,6 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
           depositPaid={depositPaid}
           depositAmount={depositAmount}
           roomCharges={roomCharges}
-          totalDue={totalDue}
           paymentMethod={paymentMethod}
           refundAmount={refundAmt}
           refundReason={b.refund_reason}
