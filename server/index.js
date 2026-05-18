@@ -9,7 +9,7 @@ import { requireSuperAdminSession }  from './middleware/requireSuperAdminSession
 import { healthRouter }              from './routes/health.js';
 import { authRouter }                from './routes/auth.js';
 import { superAdminAuthRouter }      from './routes/superAdminAuth.js';
-import { stripeRouter, stripeWebhookRouter } from './routes/stripe.js';
+import { stripeRouter, stripeWebhookHandler } from './routes/stripe.js';
 import { propertiesRouter }          from './routes/properties.js';
 import { roomsRouter }               from './routes/rooms.js';
 import { guestsRouter }              from './routes/guests.js';
@@ -38,13 +38,12 @@ app.use(cors({
 }));
 
 // ── Stripe webhook — MUST be before express.json() AND requireAuth ───────────
-// express.json() would parse and discard the raw buffer; stripe.webhooks
-// .constructEvent() requires the original Buffer for signature verification.
-// app.post (not app.use) binds to POST only; inline factory ensures express.raw()
-// is instantiated fresh per-request so it always captures the raw body.
+// Using a plain handler (not a Router) avoids Express path-stripping ambiguity.
+// express.raw() captures the raw Buffer before express.json() can parse it;
+// stripe.webhooks.constructEvent() requires that raw Buffer for signature check.
 app.post('/api/stripe/webhook',
-  (req, res, next) => express.raw({ type: '*/*' })(req, res, next),
-  stripeWebhookRouter
+  express.raw({ type: '*/*' }),
+  stripeWebhookHandler
 );
 
 // ── JSON body parser for all other routes ─────────────────────────────────────

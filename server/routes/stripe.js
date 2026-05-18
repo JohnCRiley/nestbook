@@ -5,7 +5,6 @@ import { sendUpgradeWelcome, sendMultiWelcome } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
-export const stripeWebhookRouter = Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -216,9 +215,10 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
 });
 
 // ── POST /api/stripe/webhook ──────────────────────────────────────────────────
-// Mounted in index.js BEFORE requireAuth — Stripe uses its own signature
-// verification via stripe.webhooks.constructEvent(), not JWT.
-stripeWebhookRouter.post('/', async (req, res) => {
+// Exported as a plain handler and mounted directly in index.js BEFORE
+// requireAuth and express.json(). Stripe uses its own signature verification
+// via stripe.webhooks.constructEvent() — no JWT needed.
+export async function stripeWebhookHandler(req, res) {
   const sig    = req.headers['stripe-signature'];
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -347,4 +347,4 @@ stripeWebhookRouter.post('/', async (req, res) => {
   }
 
   res.json({ received: true });
-});
+}
