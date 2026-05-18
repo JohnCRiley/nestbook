@@ -1019,6 +1019,29 @@ a { text-decoration: none; }
   }
 }
 
+/* ── Print receipt modal toolbar ─────────────────────────────────────────── */
+/* On narrow screens: stack title above buttons, buttons share full row width */
+@media (max-width: 540px) {
+  .pr-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 10px 12px !important;
+  }
+  .pr-toolbar-title {
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .pr-toolbar-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .pr-toolbar-actions button {
+    flex: 1;
+    padding: 9px 4px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
 .panel-header {
   padding: 20px 22px 18px;
   background: var(--sidebar-bg);

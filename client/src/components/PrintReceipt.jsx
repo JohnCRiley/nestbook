@@ -325,22 +325,24 @@ export default function PrintReceipt({
       }}>
 
         {/* Toolbar */}
-        <div style={{
+        <div className="pr-toolbar" style={{
           display: 'flex', gap: 8, padding: '12px 16px', flexShrink: 0,
           borderBottom: '1px solid #e2e8f0', alignItems: 'center', background: '#f8fafc',
         }}>
-          <span style={{ flex: 1, fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>
+          <span className="pr-toolbar-title" style={{ flex: 1, fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>
             {t('coPrintReceipt')}
           </span>
-          <button onClick={() => doPrint('a4')}      style={btnStyle('#1a4710', '#fff')}>
-            {t('printA4')}
-          </button>
-          <button onClick={() => doPrint('receipt')} style={btnStyle('#0f172a', '#fff')}>
-            {t('print80mm')}
-          </button>
-          <button onClick={onClose} style={btnStyle('#f1f5f9', '#374151', '#e2e8f0')}>
-            {t('cancel')}
-          </button>
+          <div className="pr-toolbar-actions">
+            <button onClick={() => doPrint('a4')}      style={btnStyle('#1a4710', '#fff')}>
+              {t('printA4')}
+            </button>
+            <button onClick={() => doPrint('receipt')} style={btnStyle('#0f172a', '#fff')}>
+              {t('print80mm')}
+            </button>
+            <button onClick={onClose} style={btnStyle('#f1f5f9', '#374151', '#e2e8f0')}>
+              {t('cancel')}
+            </button>
+          </div>
         </div>
 
         {/* Scrollable receipt preview */}
