@@ -51,6 +51,8 @@ const PM_KEY_MAP = {
 const emptyExpenses = () =>
   Object.fromEntries(EXPENSE_CATS.map(k => [k, { amount: '', desc: '' }]));
 
+const emptyAdj = () => [{ note: '', amount: '' }];
+
 // ── Page shell ────────────────────────────────────────────────────────────────
 
 export default function Reports() {
@@ -96,10 +98,9 @@ function ReportsContent() {
   const [chargesLoading,  setChargesLoading]  = useState(false);
 
   // ── Business expenses state ────────────────────────────────────────────────
-  const [expenses,  setExpenses]  = useState(emptyExpenses);
-  const [adjNote,   setAdjNote]   = useState('');
-  const [adjAmount, setAdjAmount] = useState('');
-  const [expOpen,   setExpOpen]   = useState(false);
+  const [expenses,    setExpenses]    = useState(emptyExpenses);
+  const [adjustments, setAdjustments] = useState(emptyAdj);
+  const [expOpen,     setExpOpen]     = useState(false);
   const [expSaving, setExpSaving] = useState(false);
   const [expSaved,  setExpSaved]  = useState(false);
 
@@ -164,8 +165,7 @@ function ReportsContent() {
     setResults(null);
     setPaymentMethods(null);
     setExpenses(emptyExpenses());
-    setAdjNote('');
-    setAdjAmount('');
+    setAdjustments(emptyAdj());
     try {
       const params = new URLSearchParams({ from, to, status });
       if (propFilter !== 'all') params.set('propertyId', propFilter);
@@ -190,10 +190,13 @@ function ReportsContent() {
       if (!r.ok) return;
       const rows = await r.json();
       const next = emptyExpenses();
+      const adjRows = [];
       for (const row of rows) {
         if (row.category === '_adj') {
-          setAdjNote(row.description ?? '');
-          setAdjAmount(row.amount < 0 ? String(-row.amount) : String(row.amount || ''));
+          adjRows.push({
+            note:   row.description ?? '',
+            amount: row.amount < 0 ? String(-row.amount) : String(row.amount || ''),
+          });
         } else if (next[row.category] !== undefined) {
           next[row.category] = {
             amount: row.amount ? String(row.amount) : '',
@@ -202,6 +205,7 @@ function ReportsContent() {
         }
       }
       setExpenses(next);
+      setAdjustments(adjRows.length > 0 ? adjRows : emptyAdj());
     } catch { /* ignore */ }
   }
 
@@ -211,12 +215,14 @@ function ReportsContent() {
       .map(k => ({ category: k, description: expenses[k].desc, amount: Number(expenses[k].amount) || 0 }))
       .filter(e => e.amount > 0 || e.description);
 
-    if (adjNote || adjAmount) {
-      expRows.push({
-        category:    '_adj',
-        description: adjNote,
-        amount:      -(Number(adjAmount) || 0),
-      });
+    for (const adj of adjustments) {
+      if (adj.note || adj.amount) {
+        expRows.push({
+          category:    '_adj',
+          description: adj.note,
+          amount:      -(Number(adj.amount) || 0),
+        });
+      }
     }
 
     setExpSaving(true);
@@ -273,12 +279,12 @@ function ReportsContent() {
     const bookingRev   = summary.totalRevenue;
     const chargesRev   = chargesResults?.totals?.gross ?? 0;
     const totalIncome  = bookingRev + chargesRev;
-    const adjAmt       = Number(adjAmount) || 0;
+    const adjAmt       = adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0);
     const netIncome    = totalIncome - adjAmt;
     const totalExpenses = EXPENSE_CATS.reduce((s, k) => s + (Number(expenses[k].amount) || 0), 0);
     const netProfit    = netIncome - totalExpenses;
     return { bookingRev, chargesRev, totalIncome, adjAmt, netIncome, totalExpenses, netProfit };
-  }, [summary, chargesResults, adjAmount, expenses]);
+  }, [summary, chargesResults, adjustments, expenses]);
 
   // ── Build row ──────────────────────────────────────────────────────────────
 
@@ -374,11 +380,19 @@ function ReportsContent() {
     }
 
     const expenseHasData = EXPENSE_CATS.some(k => Number(expenses[k].amount) > 0);
-    if (expenseHasData || adjAmount) {
-      if (adjAmount) {
+    const adjHasData = adjustments.some(a => Number(a.amount) > 0 || a.note);
+    if (expenseHasData || adjHasData) {
+      if (adjHasData) {
         csvBlocks.push('');
         csvBlocks.push(t('reportAdjustments'));
-        csvBlocks.push([`"${adjNote || '—'}"`, (-Number(adjAmount)).toFixed(2)].join(','));
+        csvBlocks.push([t('reportAdjNote'), t('reportAdjAmount')].join(','));
+        for (const a of adjustments) {
+          if (a.note || a.amount) {
+            csvBlocks.push([`"${a.note || '—'}"`, (-Number(a.amount || 0)).toFixed(2)].join(','));
+          }
+        }
+        const adjTotal = adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+        csvBlocks.push([`"${t('reportAdjTotal')}"`, (-adjTotal).toFixed(2)].join(','));
       }
       if (expenseHasData) {
         csvBlocks.push('');
@@ -483,8 +497,9 @@ function ReportsContent() {
     <div class="pl-row"><span>${t('reportPLBookingRevenue')}</span><span>${fmtMoney(plSummary.bookingRev)}</span></div>
     ${plSummary.chargesRev > 0 ? `<div class="pl-row"><span>${t('reportPLRoomCharges')}</span><span>${fmtMoney(plSummary.chargesRev)}</span></div>` : ''}
     <div class="pl-row pl-subtotal"><span>${t('reportPLTotalIncome')}</span><span>${fmtMoney(plSummary.totalIncome)}</span></div>
-    ${plSummary.adjAmt > 0 ? `<div class="pl-row pl-adj"><span>${t('reportPLLessAdj')}${adjNote ? ` (${adjNote})` : ''}</span><span>-${fmtMoney(plSummary.adjAmt)}</span></div>
-    <div class="pl-row pl-subtotal"><span>${t('reportPLNetIncome')}</span><span>${fmtMoney(plSummary.netIncome)}</span></div>` : ''}
+    ${plSummary.adjAmt > 0 ? adjustments.filter(a => Number(a.amount) > 0).map(a =>
+      `<div class="pl-row pl-adj"><span>${t('reportPLLessAdj')}${a.note ? ` (${a.note})` : ''}</span><span>-${fmtMoney(Number(a.amount))}</span></div>`
+    ).join('') + `<div class="pl-row pl-subtotal"><span>${t('reportPLNetIncome')}</span><span>${fmtMoney(plSummary.netIncome)}</span></div>` : ''}
   </div>
   ${expRows ? `<div class="pl-group" style="margin-top:12px">
     <div class="pl-label">${t('reportPLExpenses')}</div>
@@ -1002,29 +1017,57 @@ ${plSection}
                 <div style={{ fontSize: '0.77rem', color: '#92400e', marginBottom: 10 }}>
                   {t('reportAdjHint')}
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('reportAdjNote')}</label>
+
+                {/* Column headers */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                  <div style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: '#92400e' }}>{t('reportAdjNote')}</div>
+                  <div style={{ width: 130, fontSize: '0.75rem', fontWeight: 600, color: '#92400e', textAlign: 'right' }}>{t('reportAdjAmount')}</div>
+                  <div style={{ width: 28 }} />
+                </div>
+
+                {/* Dynamic rows */}
+                {adjustments.map((adj, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                     <input
                       className="form-control"
-                      style={{ fontSize: '0.82rem', padding: '5px 8px' }}
-                      placeholder="e.g. Room 2 complaint refund"
-                      value={adjNote}
-                      onChange={e => setAdjNote(e.target.value)}
+                      style={{ flex: 1, fontSize: '0.82rem', padding: '5px 8px' }}
+                      placeholder={t('reportAdjPlaceholder')}
+                      value={adj.note}
+                      onChange={e => setAdjustments(prev => prev.map((a, j) => j === i ? { ...a, note: e.target.value } : a))}
                     />
-                  </div>
-                  <div style={{ width: 140 }}>
-                    <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('reportAdjAmount')}</label>
                     <input
                       type="number" min="0" step="0.01"
                       className="form-control"
-                      style={{ fontSize: '0.82rem', padding: '5px 8px', textAlign: 'right' }}
+                      style={{ width: 130, fontSize: '0.82rem', padding: '5px 8px', textAlign: 'right' }}
                       placeholder="0.00"
-                      value={adjAmount}
-                      onChange={e => setAdjAmount(e.target.value)}
+                      value={adj.amount}
+                      onChange={e => setAdjustments(prev => prev.map((a, j) => j === i ? { ...a, amount: e.target.value } : a))}
                     />
+                    <button
+                      onClick={() => setAdjustments(prev => prev.filter((_, j) => j !== i))}
+                      style={{ width: 28, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: '#b45309', fontSize: '0.9rem', padding: 0, flexShrink: 0, lineHeight: 1 }}
+                      title={t('reportAdjRemove')}
+                    >✕</button>
                   </div>
-                </div>
+                ))}
+
+                {/* Add row link */}
+                {adjustments.length < 20 && (
+                  <button
+                    onClick={() => setAdjustments(prev => [...prev, { note: '', amount: '' }])}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '0.82rem', padding: '4px 0', fontWeight: 600, textDecoration: 'underline' }}
+                  >
+                    {t('reportAdjAddRow')}
+                  </button>
+                )}
+
+                {/* Running total */}
+                {adjustments.some(a => Number(a.amount) > 0) && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, marginTop: 6, borderTop: '1px solid #fde68a', fontSize: '0.875rem', fontWeight: 700, color: '#92400e' }}>
+                    <span>{t('reportAdjTotal')}</span>
+                    <span>-{fmtMoney(adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0))}</span>
+                  </div>
+                )}
               </div>
 
               {/* Save button */}
@@ -1060,7 +1103,9 @@ ${plSection}
                   <PLRow label={t('reportPLTotalIncome')} value={fmtMoney(plSummary.totalIncome)} bold divider />
                   {plSummary.adjAmt > 0 && (
                     <>
-                      <PLRow label={`${t('reportPLLessAdj')}${adjNote ? ` (${adjNote})` : ''}`} value={`-${fmtMoney(plSummary.adjAmt)}`} muted />
+                      {adjustments.filter(a => Number(a.amount) > 0).map((a, i) => (
+                        <PLRow key={i} label={`${t('reportPLLessAdj')}${a.note ? ` (${a.note})` : ''}`} value={`-${fmtMoney(Number(a.amount))}`} muted />
+                      ))}
                       <PLRow label={t('reportPLNetIncome')} value={fmtMoney(plSummary.netIncome)} bold divider />
                     </>
                   )}
