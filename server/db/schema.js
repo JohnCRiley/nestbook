@@ -280,6 +280,22 @@ export function initSchema() {
     db.exec(`ALTER TABLE guests ADD COLUMN blacklisted INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }
 
+  // Migration: scope guests to a property (privacy isolation between tenants).
+  // Backfill existing guests from their earliest booking's property_id.
+  try {
+    db.exec(`ALTER TABLE guests ADD COLUMN property_id INTEGER REFERENCES properties(id)`);
+    const backfilled = db.prepare(`
+      UPDATE guests
+      SET property_id = (
+        SELECT b.property_id FROM bookings b
+        WHERE b.guest_id = guests.id
+        ORDER BY b.id LIMIT 1
+      )
+      WHERE property_id IS NULL
+    `).run();
+    console.log(`✓ Backfilled property_id for ${backfilled.changes} guest(s).`);
+  } catch { /* column already exists */ }
+
   // Migration: flagged column on bookings (set when blacklisted guest books via widget)
   try {
     db.exec(`ALTER TABLE bookings ADD COLUMN flagged INTEGER NOT NULL DEFAULT 0`);

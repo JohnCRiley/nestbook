@@ -4,7 +4,7 @@ import { useT } from '../../i18n/LocaleContext.jsx';
 
 const EMPTY = { first_name: '', last_name: '', email: '', phone: '', notes: '' };
 
-export default function NewGuestModal({ onClose, onSuccess }) {
+export default function NewGuestModal({ onClose, onSuccess, propertyId }) {
   const t = useT();
   const [form,       setForm]       = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -26,11 +26,12 @@ export default function NewGuestModal({ onClose, onSuccess }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          first_name: form.first_name.trim(),
-          last_name:  form.last_name.trim(),
-          email:      form.email.trim()  || null,
-          phone:      form.phone.trim()  || null,
-          notes:      form.notes.trim()  || null,
+          first_name:  form.first_name.trim(),
+          last_name:   form.last_name.trim(),
+          email:       form.email.trim()  || null,
+          phone:       form.phone.trim()  || null,
+          notes:       form.notes.trim()  || null,
+          property_id: propertyId,
         }),
       });
       if (!res.ok) {

@@ -63,7 +63,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     }
     clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(() => {
-      apiFetch(`/api/guests?search=${encodeURIComponent(form.lastName)}&limit=8`)
+      apiFetch(`/api/guests?search=${encodeURIComponent(form.lastName)}&limit=8&property_id=${property?.id}`)
         .then(r => r.ok ? r.json() : { guests: [] })
         .then(data => {
           const list = Array.isArray(data) ? data : (data.guests ?? []);
@@ -216,10 +216,11 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({
-            first_name: form.firstName.trim(),
-            last_name:  form.lastName.trim(),
-            email:      form.email.trim() || null,
-            phone:      form.phone.trim() || null,
+            first_name:  form.firstName.trim(),
+            last_name:   form.lastName.trim(),
+            email:       form.email.trim() || null,
+            phone:       form.phone.trim() || null,
+            property_id: property?.id,
           }),
         });
         if (!res.ok) {

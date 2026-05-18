@@ -105,7 +105,7 @@ export default function Bookings() {
     if (!property?.id) return;
     Promise.all([
       apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
-      apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/guests?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
     ]).then(([r, g]) => {
       setRooms(Array.isArray(r) ? r : []);
       setGuests(Array.isArray(g) ? g : []);

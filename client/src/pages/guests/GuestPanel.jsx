@@ -78,7 +78,7 @@ function PanelHeader({ guest, onClose }) {
 // ── View mode ─────────────────────────────────────────────────────────────────
 
 function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
-  const { currencySymbol } = useLocale();
+  const { currencySymbol, property } = useLocale();
   const t = useT();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting,          setDeleting]          = useState(false);
@@ -150,7 +150,7 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
           onClick={async () => {
             setBlacklisting(true);
             try {
-              const res = await apiFetch(`/api/guests/${guest.id}/blacklist`, { method: 'PUT' });
+              const res = await apiFetch(`/api/guests/${guest.id}/blacklist?property_id=${property?.id}`, { method: 'PUT' });
               if (res.ok) onGuestUpdated(await res.json());
             } finally { setBlacklisting(false); }
           }}
@@ -182,7 +182,7 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
         onConfirm={async () => {
           setDeleting(true);
           try {
-            const res = await apiFetch(`/api/guests/${guest.id}/anonymise`, { method: 'PUT' });
+            const res = await apiFetch(`/api/guests/${guest.id}/anonymise?property_id=${property?.id}`, { method: 'PUT' });
             if (res.ok && onGuestDeleted) onGuestDeleted(guest.id);
           } finally {
             setDeleting(false);
@@ -199,6 +199,7 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
 
 function EditMode({ guest, onCancel, onSaved }) {
   const t = useT();
+  const { property } = useLocale();
   const [form, setForm] = useState({
     first_name: guest.first_name ?? '',
     last_name:  guest.last_name  ?? '',
@@ -224,7 +225,7 @@ function EditMode({ guest, onCancel, onSaved }) {
       const res = await apiFetch(`/api/guests/${guest.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, property_id: property?.id }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const updated = await res.json();

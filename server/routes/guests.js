@@ -9,15 +9,42 @@ function actorFromReq(req) {
   return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role, propertyId: req.user.propertyId ?? null };
 }
 
+// Resolve the property ID for the request, same pattern as bookings/charges.
+// Owners may pass an explicit property_id (query or body) verified against ownership.
+// Everyone else falls back to the property encoded in their JWT.
+function getPropertyId(req) {
+  const explicit = Number(req.query.property_id) || Number(req.body?.property_id);
+  if (explicit && req.user.role === 'owner') {
+    const owns = db.prepare(
+      `SELECT id FROM properties WHERE id = ? AND owner_id = ?`
+    ).get(explicit, req.user.userId);
+    if (owns) return explicit;
+  }
+  return req.user.propertyId;
+}
+
+// Verify a guest belongs to the request's property. Returns the guest row or null.
+function getOwnedGuest(guestId, propertyId) {
+  return db.prepare(
+    `SELECT * FROM guests WHERE id = ? AND property_id = ?`
+  ).get(Number(guestId), propertyId);
+}
+
 // ── GET /api/guests/counts ────────────────────────────────────────────────
 // Returns { total, newThisMonth } — used by the Guests page stat bar.
 // Must be defined BEFORE /:id so Express doesn't treat "counts" as an id.
 guestsRouter.get('/counts', (req, res) => {
   try {
-    const total = db.prepare(`SELECT COUNT(*) as n FROM guests WHERE deleted = 0`).get().n;
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
+    const total = db.prepare(
+      `SELECT COUNT(*) as n FROM guests WHERE deleted = 0 AND property_id = ?`
+    ).get(propertyId).n;
     const newThisMonth = db.prepare(
-      `SELECT COUNT(*) as n FROM guests WHERE deleted = 0 AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`
-    ).get().n;
+      `SELECT COUNT(*) as n FROM guests WHERE deleted = 0 AND property_id = ?
+       AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`
+    ).get(propertyId).n;
     res.json({ total, newThisMonth });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -26,16 +53,18 @@ guestsRouter.get('/counts', (req, res) => {
 
 // ── GET /api/guests ───────────────────────────────────────────────────────
 // Query params (all optional):
+//   property_id  — required for scoping (falls back to JWT propertyId)
 //   search       — filter by name or email
 //   page / limit — when present returns paginated object {guests,total,page,totalPages}
 //                  when absent returns plain array (backward compat for dropdowns)
 guestsRouter.get('/', (req, res) => {
   try {
-    const { search, page, limit } = req.query;
-    const conditions = [];
-    const params     = [];
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
 
-    conditions.push('deleted = 0');
+    const { search, page, limit } = req.query;
+    const conditions = ['deleted = 0', 'property_id = ?'];
+    const params     = [propertyId];
 
     if (search) {
       const pattern = `%${search}%`;
@@ -43,7 +72,7 @@ guestsRouter.get('/', (req, res) => {
       params.push(pattern, pattern, pattern);
     }
 
-    const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+    const where = 'WHERE ' + conditions.join(' AND ');
 
     if (page) {
       const pageNum   = Math.max(1, Number(page));
@@ -68,7 +97,10 @@ guestsRouter.get('/', (req, res) => {
 // ── GET /api/guests/:id ───────────────────────────────────────────────────
 guestsRouter.get('/:id', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
+    const row = getOwnedGuest(req.params.id, propertyId);
     if (!row) return res.status(404).json({ error: 'Guest not found' });
     res.json(row);
   } catch (err) {
@@ -92,6 +124,9 @@ guestsRouter.post('/import', (req, res) => {
       return res.status(403).json({ error: 'Pro or Multi plan required to import guests.' });
     }
 
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
     const { rows } = req.body;
     console.log('[guests/import] Received rows:', Array.isArray(rows) ? rows.length : 'not array', '— first row:', JSON.stringify(rows?.[0]));
 
@@ -103,10 +138,12 @@ guestsRouter.post('/import', (req, res) => {
     }
 
     const insertStmt = db.prepare(`
-      INSERT INTO guests (first_name, last_name, email, phone, notes)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO guests (first_name, last_name, email, phone, notes, property_id)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const checkDup = db.prepare('SELECT id FROM guests WHERE email = ? AND deleted = 0');
+    const checkDup = db.prepare(
+      'SELECT id FROM guests WHERE email = ? AND deleted = 0 AND property_id = ?'
+    );
 
     let imported = 0, skipped = 0, errors = 0;
     db.exec('BEGIN');
@@ -118,9 +155,9 @@ guestsRouter.post('/import', (req, res) => {
           if (!fn || !ln) { errors++; continue; }
 
           const email = row.email?.trim() || null;
-          if (email && checkDup.get(email)) { skipped++; continue; }
+          if (email && checkDup.get(email, propertyId)) { skipped++; continue; }
 
-          insertStmt.run(fn, ln, email, row.phone?.trim() || null, row.notes?.trim() || null);
+          insertStmt.run(fn, ln, email, row.phone?.trim() || null, row.notes?.trim() || null, propertyId);
           imported++;
         } catch (rowErr) {
           console.warn('[guests/import] Row insert error:', rowErr.message, '— row:', JSON.stringify(row));
@@ -157,10 +194,13 @@ guestsRouter.post('/', (req, res) => {
       return res.status(400).json({ error: 'first_name and last_name are required' });
     }
 
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
     const result = db.prepare(`
-      INSERT INTO guests (first_name, last_name, email, phone, notes)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(first_name, last_name, email ?? null, phone ?? null, notes ?? null);
+      INSERT INTO guests (first_name, last_name, email, phone, notes, property_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(first_name, last_name, email ?? null, phone ?? null, notes ?? null, propertyId);
 
     const created = db.prepare('SELECT * FROM guests WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(created);
@@ -182,15 +222,18 @@ guestsRouter.post('/', (req, res) => {
 // ── PUT /api/guests/:id ───────────────────────────────────────────────────
 guestsRouter.put('/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT id FROM guests WHERE id = ?').get(req.params.id);
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
+    const existing = getOwnedGuest(req.params.id, propertyId);
     if (!existing) return res.status(404).json({ error: 'Guest not found' });
 
     const { first_name, last_name, email, phone, notes } = req.body;
 
     db.prepare(`
       UPDATE guests SET first_name = ?, last_name = ?, email = ?, phone = ?, notes = ?
-      WHERE id = ?
-    `).run(first_name, last_name, email, phone, notes, req.params.id);
+      WHERE id = ? AND property_id = ?
+    `).run(first_name, last_name, email, phone, notes, req.params.id, propertyId);
 
     const updated = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
     res.json(updated);
@@ -213,15 +256,19 @@ guestsRouter.put('/:id', (req, res) => {
 // GDPR right to erasure: wipe PII but keep booking history (guest row preserved).
 guestsRouter.put('/:id/anonymise', (req, res) => {
   try {
-    const existing = db.prepare('SELECT id FROM guests WHERE id = ?').get(req.params.id);
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
+    const existing = getOwnedGuest(req.params.id, propertyId);
     if (!existing) return res.status(404).json({ error: 'Guest not found' });
+
     const before = db.prepare('SELECT first_name, last_name FROM guests WHERE id = ?').get(req.params.id);
     db.prepare(`
       UPDATE guests
       SET first_name = 'Deleted', last_name = 'Guest',
           email = NULL, phone = NULL, notes = NULL, deleted = 1
-      WHERE id = ?
-    `).run(req.params.id);
+      WHERE id = ? AND property_id = ?
+    `).run(req.params.id, propertyId);
     res.json({ success: true });
 
     logAction(db, {
@@ -242,10 +289,14 @@ guestsRouter.put('/:id/anonymise', (req, res) => {
 // Toggle blacklisted flag. Returns the updated guest record.
 guestsRouter.put('/:id/blacklist', (req, res) => {
   try {
-    const guest = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
+    const guest = getOwnedGuest(req.params.id, propertyId);
     if (!guest) return res.status(404).json({ error: 'Guest not found' });
+
     const newVal = guest.blacklisted ? 0 : 1;
-    db.prepare(`UPDATE guests SET blacklisted = ? WHERE id = ?`).run(newVal, req.params.id);
+    db.prepare(`UPDATE guests SET blacklisted = ? WHERE id = ? AND property_id = ?`).run(newVal, req.params.id, propertyId);
     const updated = db.prepare('SELECT * FROM guests WHERE id = ?').get(req.params.id);
     res.json(updated);
 
@@ -266,7 +317,12 @@ guestsRouter.put('/:id/blacklist', (req, res) => {
 // ── DELETE /api/guests/:id ────────────────────────────────────────────────
 guestsRouter.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM guests WHERE id = ?').run(req.params.id);
+    const propertyId = getPropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+
+    const result = db.prepare(
+      'DELETE FROM guests WHERE id = ? AND property_id = ?'
+    ).run(req.params.id, propertyId);
     if (result.changes === 0) return res.status(404).json({ error: 'Guest not found' });
     res.status(204).end();
   } catch (err) {

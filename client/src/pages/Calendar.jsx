@@ -159,7 +159,7 @@ export default function Calendar() {
     Promise.all([
       apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
-      apiFetch('/api/guests').then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/guests?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
     ]).then(([b, r, g]) => {
       setBookings(Array.isArray(b) ? b : []);
       setRooms(Array.isArray(r) ? r : []);

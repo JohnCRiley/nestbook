@@ -58,7 +58,7 @@ function downloadBlob(content, filename, type = 'text/csv;charset=utf-8;') {
   URL.revokeObjectURL(url);
 }
 
-export default function ImportGuestsModal({ onClose, onImported }) {
+export default function ImportGuestsModal({ onClose, onImported, propertyId }) {
   const t = useT();
   const fileRef = useRef(null);
 
@@ -124,7 +124,7 @@ export default function ImportGuestsModal({ onClose, onImported }) {
       const res  = await apiFetch('/api/guests/import', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ rows }),
+        body:    JSON.stringify({ rows, property_id: propertyId }),
       });
       const data = await res.json();
       console.log('[Import] API response status:', res.status, 'body:', JSON.stringify(data));

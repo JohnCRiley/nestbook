@@ -47,11 +47,12 @@ export default function Guests() {
 
   // ── Fetch stats via /counts endpoint ────────────────────────────────────────
   const fetchCounts = useCallback(() => {
-    apiFetch('/api/guests/counts')
+    if (!property?.id) return;
+    apiFetch(`/api/guests/counts?property_id=${property.id}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { if (data) setCounts(data); })
       .catch(() => {});
-  }, []);
+  }, [property?.id]);
 
   // Reset to page 1 when viewport size changes the page size
   const prevPageSizeRef = useRef(pageSize);
@@ -64,7 +65,8 @@ export default function Guests() {
 
   // ── Fetch paginated guests ────────────────────────────────────────────────────
   const fetchGuests = useCallback(() => {
-    const params = new URLSearchParams({ page, limit: pageSize });
+    if (!property?.id) return;
+    const params = new URLSearchParams({ page, limit: pageSize, property_id: property.id });
     if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
 
     setLoading(true);
@@ -77,7 +79,7 @@ export default function Guests() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [page, pageSize, debouncedSearch]);
+  }, [page, pageSize, debouncedSearch, property?.id]);
 
   // ── Fetch all bookings (plain array, for the guest detail panel) ─────────────
   useEffect(() => {
@@ -211,6 +213,7 @@ export default function Guests() {
         <NewGuestModal
           onClose={() => setShowNewModal(false)}
           onSuccess={handleNewGuestSuccess}
+          propertyId={property?.id}
         />
       )}
 
@@ -219,6 +222,7 @@ export default function Guests() {
         <ImportGuestsModal
           onClose={() => setShowImportModal(false)}
           onImported={() => { fetchGuests(); fetchCounts(); }}
+          propertyId={property?.id}
         />
       )}
 
