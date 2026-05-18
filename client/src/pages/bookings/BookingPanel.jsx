@@ -1136,7 +1136,8 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
   const chargesTotal     = Array.isArray(charges)
     ? charges.filter((c) => !c.voided_at).reduce((s, c) => s + parseFloat(c.amount), 0)
     : 0;
-  const total            = Math.max(0, roomSubtotal + breakfastSub + chargesTotal - (depositPaid ? depositAmount : 0));
+  const refundAmt        = parseFloat(b.refund_amount) || 0;
+  const total            = Math.max(0, roomSubtotal + breakfastSub + chargesTotal - (depositPaid ? depositAmount : 0) - refundAmt);
 
   if (!pricePerNight && !breakfastCharged && !depositPaid && !chargesTotal) return null;
 
@@ -1156,6 +1157,7 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
           <ERow label={t('chargesTabLabel')} value={fmtCurrency(chargesTotal)} />
         )}
         {depositPaid && depositAmount > 0 && <ERow label={t('coLessDeposit')} value={`-${fmtCurrency(depositAmount)}`} valueColor="#166534" />}
+        {refundAmt > 0 && <ERow label={t('refundLine')} value={`-${fmtCurrency(refundAmt)}`} valueColor="#166534" />}
         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #1a4710', marginTop: 6, paddingTop: 6 }}>
           <span style={{ fontWeight: 700, color: '#1a4710' }}>{t('coTotalDue')}</span>
           <span style={{ fontWeight: 800, color: '#1a4710', fontSize: '1.05rem' }}>{fmtCurrency(total)}</span>
