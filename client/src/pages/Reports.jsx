@@ -269,7 +269,8 @@ function ReportsContent() {
     const daysInRange  = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000));
     const activeRooms  = rooms.filter(r => r.status !== 'maintenance').length || 1;
     const occupancy    = Math.min(100, Math.round((totalNights / (activeRooms * daysInRange)) * 100));
-    return { totalBookings, totalNights, totalRevenue, totalTax, netRevenue, avgBookingValue, occupancy };
+    const totalRefunds = results.reduce((s, b) => s + (b.refund_amount || 0), 0);
+    return { totalBookings, totalNights, totalRevenue, totalTax, netRevenue, avgBookingValue, occupancy, totalRefunds };
   }, [results, tax, from, to, rooms]);
 
   // ── P&L summary ────────────────────────────────────────────────────────────
@@ -279,11 +280,12 @@ function ReportsContent() {
     const bookingRev   = summary.totalRevenue;
     const chargesRev   = chargesResults?.totals?.gross ?? 0;
     const totalIncome  = bookingRev + chargesRev;
-    const adjAmt       = adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0);
-    const netIncome    = totalIncome - adjAmt;
+    const totalRefunds  = summary.totalRefunds ?? 0;
+    const adjAmt        = adjustments.reduce((s, a) => s + (Number(a.amount) || 0), 0);
+    const netIncome     = totalIncome - totalRefunds - adjAmt;
     const totalExpenses = EXPENSE_CATS.reduce((s, k) => s + (Number(expenses[k].amount) || 0), 0);
-    const netProfit    = netIncome - totalExpenses;
-    return { bookingRev, chargesRev, totalIncome, adjAmt, netIncome, totalExpenses, netProfit };
+    const netProfit     = netIncome - totalExpenses;
+    return { bookingRev, chargesRev, totalIncome, totalRefunds, adjAmt, netIncome, totalExpenses, netProfit };
   }, [summary, chargesResults, adjustments, expenses]);
 
   // ── Build row ──────────────────────────────────────────────────────────────
@@ -415,8 +417,9 @@ function ReportsContent() {
       csvBlocks.push([`"${t('reportPLBookingRevenue')}"`, plSummary.bookingRev.toFixed(2)].join(','));
       if (plSummary.chargesRev > 0) csvBlocks.push([`"${t('reportPLRoomCharges')}"`, plSummary.chargesRev.toFixed(2)].join(','));
       csvBlocks.push([`"${t('reportPLTotalIncome')}"`, plSummary.totalIncome.toFixed(2)].join(','));
+      if (plSummary.totalRefunds > 0) csvBlocks.push([`"${t('reportPLLessRefunds')}"`, (-plSummary.totalRefunds).toFixed(2)].join(','));
       if (plSummary.adjAmt > 0) csvBlocks.push([`"${t('reportPLLessAdj')}"`, (-plSummary.adjAmt).toFixed(2)].join(','));
-      csvBlocks.push([`"${t('reportPLNetIncome')}"`, plSummary.netIncome.toFixed(2)].join(','));
+      if (plSummary.totalRefunds > 0 || plSummary.adjAmt > 0) csvBlocks.push([`"${t('reportPLNetIncome')}"`, plSummary.netIncome.toFixed(2)].join(','));
       csvBlocks.push(`"${t('reportPLExpenses')}"`);
       for (const k of EXPENSE_CATS) {
         const amt = Number(expenses[k].amount) || 0;
@@ -497,9 +500,13 @@ function ReportsContent() {
     <div class="pl-row"><span>${t('reportPLBookingRevenue')}</span><span>${fmtMoney(plSummary.bookingRev)}</span></div>
     ${plSummary.chargesRev > 0 ? `<div class="pl-row"><span>${t('reportPLRoomCharges')}</span><span>${fmtMoney(plSummary.chargesRev)}</span></div>` : ''}
     <div class="pl-row pl-subtotal"><span>${t('reportPLTotalIncome')}</span><span>${fmtMoney(plSummary.totalIncome)}</span></div>
-    ${plSummary.adjAmt > 0 ? adjustments.filter(a => Number(a.amount) > 0).map(a =>
-      `<div class="pl-row pl-adj"><span>${t('reportPLLessAdj')}${a.note ? ` (${a.note})` : ''}</span><span>-${fmtMoney(Number(a.amount))}</span></div>`
-    ).join('') + `<div class="pl-row pl-subtotal"><span>${t('reportPLNetIncome')}</span><span>${fmtMoney(plSummary.netIncome)}</span></div>` : ''}
+    ${(plSummary.totalRefunds > 0 || plSummary.adjAmt > 0) ? [
+      plSummary.totalRefunds > 0 ? `<div class="pl-row pl-adj"><span>${t('reportPLLessRefunds')}</span><span>-${fmtMoney(plSummary.totalRefunds)}</span></div>` : '',
+      ...adjustments.filter(a => Number(a.amount) > 0).map(a =>
+        `<div class="pl-row pl-adj"><span>${t('reportPLLessAdj')}${a.note ? ` (${a.note})` : ''}</span><span>-${fmtMoney(Number(a.amount))}</span></div>`
+      ),
+      `<div class="pl-row pl-subtotal"><span>${t('reportPLNetIncome')}</span><span>${fmtMoney(plSummary.netIncome)}</span></div>`,
+    ].join('') : ''}
   </div>
   ${expRows ? `<div class="pl-group" style="margin-top:12px">
     <div class="pl-label">${t('reportPLExpenses')}</div>
@@ -745,6 +752,7 @@ ${plSection}
                       [t('reportSumNet'),       fmtMoney(summary.netRevenue)],
                       [t('reportSumAvg'),       fmtMoney(summary.avgBookingValue)],
                       [t('reportSumOccupancy'), `${summary.occupancy}%`],
+                      ...(summary.totalRefunds > 0 ? [[t('reportSumRefunds'), `-${fmtMoney(summary.totalRefunds)}`]] : []),
                     ].map(([label, value]) => (
                       <div key={label} className="report-summary-card">
                         <div className="report-summary-label">{label}</div>
@@ -1101,9 +1109,12 @@ ${plSection}
                     <PLRow label={t('reportPLRoomCharges')} value={fmtMoney(plSummary.chargesRev)} />
                   )}
                   <PLRow label={t('reportPLTotalIncome')} value={fmtMoney(plSummary.totalIncome)} bold divider />
-                  {plSummary.adjAmt > 0 && (
+                  {(plSummary.totalRefunds > 0 || plSummary.adjAmt > 0) && (
                     <>
-                      {adjustments.filter(a => Number(a.amount) > 0).map((a, i) => (
+                      {plSummary.totalRefunds > 0 && (
+                        <PLRow label={t('reportPLLessRefunds')} value={`-${fmtMoney(plSummary.totalRefunds)}`} muted />
+                      )}
+                      {plSummary.adjAmt > 0 && adjustments.filter(a => Number(a.amount) > 0).map((a, i) => (
                         <PLRow key={i} label={`${t('reportPLLessAdj')}${a.note ? ` (${a.note})` : ''}`} value={`-${fmtMoney(Number(a.amount))}`} muted />
                       ))}
                       <PLRow label={t('reportPLNetIncome')} value={fmtMoney(plSummary.netIncome)} bold divider />

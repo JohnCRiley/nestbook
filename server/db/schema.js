@@ -564,5 +564,15 @@ export function initSchema() {
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_expenses_property ON property_expenses(property_id, period_from, period_to)`);
 
+  // Refund columns on bookings (idempotent migration)
+  const bookingsSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
+  if (!bookingsSql.includes('refund_amount')) {
+    db.exec(`ALTER TABLE bookings ADD COLUMN refund_amount REAL DEFAULT 0`);
+    db.exec(`ALTER TABLE bookings ADD COLUMN refund_reason TEXT`);
+    db.exec(`ALTER TABLE bookings ADD COLUMN refunded_at   TEXT`);
+    db.exec(`ALTER TABLE bookings ADD COLUMN refunded_by   TEXT`);
+    console.log('✓ Added refund columns to bookings.');
+  }
+
   console.log('✓ Database schema ready.');
 }

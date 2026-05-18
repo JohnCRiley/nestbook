@@ -106,6 +106,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [toast,              setToast]              = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [showReprint,        setShowReprint]        = useState(false);
+  const [showRefund,         setShowRefund]         = useState(false);
   const checkedOutBookingRef = useRef(null);
 
   const showChargesTab = plan === 'multi';
@@ -154,6 +155,22 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
     } finally {
       setDepositWorking(false);
     }
+  };
+
+  const handleRefundConfirm = async (amount, reason) => {
+    const res = await apiFetch(`/api/bookings/${b.id}/refund`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, reason }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? `Server error ${res.status}`);
+    }
+    const updated = await res.json();
+    if (onBookingUpdated) onBookingUpdated(updated);
+    setShowRefund(false);
+    showToast(t('refundRecorded'));
   };
 
   // Intercept check-in: if deposit required but unpaid, show deposit gate
@@ -215,9 +232,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       const rpDepReqd    = property?.require_deposit === 1;
       const rpDepPdLine  = rpDepReqd && rpDepPaid && rpDepAmt > 0;
       const rpDepOutLine = rpDepReqd && !rpDepPaid  && rpDepAmt > 0;
-      const rpGrandTotal = rpDepPdLine  ? Math.max(0, rpSubtotal - rpDepAmt)
+      const rpRefund     = parseFloat(b.refund_amount) || 0;
+      const rpGrandTotal = (rpDepPdLine  ? Math.max(0, rpSubtotal - rpDepAmt)
                          : rpDepOutLine ? rpSubtotal + rpDepAmt
-                         : rpSubtotal;
+                         : rpSubtotal) - rpRefund;
 
       const d = {
         locale: loc,
@@ -251,6 +269,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         roomCharges: rpCharges,
         chargesLabel: t('chargesReceiptLabel'),
         symbol: sym,
+        refundAmt:    rpRefund,
+        refundReason: b.refund_reason ?? '',
+        refundLabel:  t('refundLine'),
+        refundFmt:    rpRefund > 0 ? `-${fc(rpRefund)}` : null,
         totalDueFmt:    fc(rpGrandTotal),
         pmLabel: PM_LABELS[paymentMethod]?.[loc] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod ?? '—',
         thankyou: THANK_YOU[loc] ?? THANK_YOU.en,
@@ -547,6 +569,36 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {/* Estimated total breakdown */}
       <EstimatedTotal b={b} nights={nights} property={property} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} t={t} charges={charges} />
 
+      {/* Refund info — shown when a refund has been recorded */}
+      {b.refund_amount > 0 && (
+        <div style={{
+          margin: '0 22px 10px', padding: '10px 14px', borderRadius: 7,
+          background: '#f0fdf4', border: '1px solid #86efac', fontSize: '0.84rem',
+        }}>
+          <span style={{ fontWeight: 700, color: '#166534' }}>{t('refundRecorded')}: </span>
+          <span style={{ color: '#1a2e14' }}>
+            {fmtCurrency(b.refund_amount)}
+            {b.refund_reason ? ` — ${b.refund_reason}` : ''}
+          </span>
+        </div>
+      )}
+
+      {/* Record Refund button — owner only, checked-in or checked-out */}
+      {user?.role === 'owner' && (b.status === 'arriving' || b.status === 'checked_out') && (
+        <div style={{ padding: '0 22px 10px' }}>
+          <button
+            onClick={() => setShowRefund(true)}
+            style={{
+              background: 'none', border: '1px solid #fca5a5', borderRadius: 6,
+              padding: '6px 14px', fontSize: '0.82rem', color: '#b91c1c',
+              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+            }}
+          >
+            {t('refundRecord')}
+          </button>
+        </div>
+      )}
+
       {/* Reprint receipt for checked-out bookings */}
       {b.status === 'checked_out' && b.payment_method && (
         <div style={{ padding: '0 22px 10px' }}>
@@ -623,6 +675,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpRoomChs  = charges?.filter((c) => !c.voided_at) ?? [];
         const rpChargeSb = rpRoomChs.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
         // Pass subtotal pre-deposit-adjustment; component computes grand total from deposit status
+        const rpRefund   = parseFloat(b.refund_amount) || 0;
         const rpTotal    = Math.max(0, rpRoom + rpBfSub + rpChargeSb - (rpDepPaid ? rpDepAmt : 0));
         return (
           <PrintReceipt
@@ -634,10 +687,22 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             depositPaid={rpDepPaid} depositAmount={rpDepAmt}
             roomCharges={rpRoomChs}
             totalDue={rpTotal} paymentMethod={b.payment_method}
+            refundAmount={rpRefund} refundReason={b.refund_reason}
             onClose={() => setShowReprint(false)}
           />
         );
       })()}
+
+      {/* ── Refund modal ──────────────────────────────────────────────────── */}
+      {showRefund && (
+        <RefundModal
+          booking={b}
+          fmtCurrency={fmtCurrency}
+          t={t}
+          onConfirm={handleRefundConfirm}
+          onClose={() => setShowRefund(false)}
+        />
+      )}
 
       {/* ── Deposit gate modal ─────────────────────────────────────────────── */}
       {depositGateOpen && (
@@ -1165,6 +1230,103 @@ function PanelRow({ label, value }) {
     <div className="panel-row">
       <span className="panel-row-label">{label}</span>
       <span className="panel-row-value">{value}</span>
+    </div>
+  );
+}
+
+// ── Refund modal ──────────────────────────────────────────────────────────────
+
+function RefundModal({ booking: b, fmtCurrency, t, onConfirm, onClose }) {
+  const [amount,  setAmount]  = useState('');
+  const [reason,  setReason]  = useState('');
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState(null);
+
+  const handleSubmit = async () => {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) { setError(t('refundAmount') + ' required'); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      await onConfirm(amt, reason.trim() || null);
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 12, padding: '24px 24px 20px',
+        maxWidth: 400, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 4, color: '#111827' }}>
+          {t('refundRecord')}
+        </div>
+        <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 18 }}>
+          {b.guest_first_name} {b.guest_last_name} — #{b.id}
+          {b.refund_amount > 0 && (
+            <span style={{ marginLeft: 8, color: '#b91c1c', fontWeight: 600 }}>
+              ({t('refundRecorded')}: {fmtCurrency(b.refund_amount)})
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+              {t('refundAmount')}
+            </label>
+            <input
+              type="number" min="0.01" step="0.01"
+              className="form-control"
+              placeholder="0.00"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+              {t('refundReason')}
+            </label>
+            <input
+              className="form-control"
+              placeholder="e.g. Noise complaint"
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ marginTop: 10, fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+          <button
+            className="btn-panel-primary"
+            style={{ flex: 1 }}
+            onClick={handleSubmit}
+            disabled={saving || !amount}
+          >
+            {saving ? '…' : t('refundConfirm')}
+          </button>
+          <button
+            className="btn-panel-secondary"
+            onClick={onClose}
+            disabled={saving}
+          >
+            {t('cancel')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

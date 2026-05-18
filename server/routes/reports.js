@@ -64,6 +64,7 @@ reportsRouter.get('/revenue', (req, res) => {
       SELECT
         b.id, b.property_id, b.check_in_date, b.check_out_date,
         b.status, b.source, b.total_price, b.created_at,
+        b.refund_amount, b.refund_reason,
         g.first_name  AS guest_first_name,
         g.last_name   AS guest_last_name,
         g.email       AS guest_email,

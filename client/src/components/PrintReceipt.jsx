@@ -159,6 +159,13 @@ export function buildReceiptHTML(d, format) {
       ].join('')
     : '';
 
+  const refundBlock = d.refundAmt > 0
+    ? rowCredit(
+        `${d.refundLabel}${d.refundReason ? ` — ${d.refundReason}` : ''}`,
+        d.refundFmt,
+      )
+    : '';
+
   const totalLabel = d.depositOutstandingLine ? d.totalDueLabel : d.totalPaidLabel;
 
   return `<!DOCTYPE html>
@@ -192,6 +199,7 @@ export function buildReceiptHTML(d, format) {
   ${extras}
   ${chargesBlock}
   ${depositBlock ? `${divider}${depositBlock}` : ''}
+  ${refundBlock}
 
   ${divider}
 
@@ -226,6 +234,7 @@ export default function PrintReceipt({
   roomCharges,
   totalDue,
   paymentMethod,
+  refundAmount, refundReason,
   onClose,
 }) {
   const t      = useT();
@@ -236,10 +245,11 @@ export default function PrintReceipt({
   const depositReqd   = property?.require_deposit === 1;
   const depPaidLine   = depositReqd && !!depositPaid && depositAmount > 0;
   const depOutLine    = depositReqd && !depositPaid  && depositAmount > 0;
+  const refund        = Number(refundAmount) || 0;
   // If deposit was paid, totalDue already had it subtracted — add back to get subtotal
   const subtotalNum   = depPaidLine ? totalDue + depositAmount : totalDue;
-  // Grand total: deduct deposit if paid, add if outstanding
-  const grandTotal    = depOutLine  ? totalDue + depositAmount : totalDue;
+  // Grand total: deduct deposit if paid, add if outstanding, then subtract refund
+  const grandTotal    = (depOutLine ? totalDue + depositAmount : totalDue) - refund;
 
   const d = {
     locale,
@@ -275,6 +285,10 @@ export default function PrintReceipt({
     roomCharges:   Array.isArray(roomCharges) ? roomCharges : [],
     chargesLabel:  t('chargesReceiptLabel'),
     symbol,
+    refundAmt:     refund,
+    refundReason:  refundReason ?? '',
+    refundLabel:   t('refundLine'),
+    refundFmt:     refund > 0 ? `-${fc(refund, symbol)}` : null,
     totalDueFmt:   fc(grandTotal, symbol),
     pmLabel: paymentMethod
       ? (PM_LABELS[paymentMethod]?.[locale] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod)
@@ -390,6 +404,13 @@ export default function PrintReceipt({
           )}
           {d.depositPaidLine && (
             <PreviewRow label={`  ${d.depositLabel}`} value={d.depositFmt} indent credit />
+          )}
+          {d.refundAmt > 0 && (
+            <PreviewRow
+              label={`  ${d.refundLabel}${d.refundReason ? ` — ${d.refundReason}` : ''}`}
+              value={d.refundFmt}
+              indent credit
+            />
           )}
 
           {d.roomCharges.length > 0 && (

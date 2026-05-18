@@ -69,6 +69,10 @@ const ENRICHED_SELECT = `
     b.breakfast_price_per_person,
     b.payment_method,
     b.checked_out_at,
+    b.refund_amount,
+    b.refund_reason,
+    b.refunded_at,
+    b.refunded_by,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -454,6 +458,56 @@ bookingsRouter.post('/:id/mark-deposit-paid', (req, res) => {
 
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
     sendDepositConfirmation(updated, property).catch(() => {});
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/refund ─────────────────────────────────────────
+// Owner-only. Records a refund against a checked-in or checked-out booking.
+bookingsRouter.post('/:id/refund', (req, res) => {
+  try {
+    if (req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'Owner access required.' });
+    }
+
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!['arriving', 'checked_out'].includes(booking.status)) {
+      return res.status(400).json({ error: 'Refunds can only be recorded for checked-in or checked-out bookings.' });
+    }
+
+    const { amount, reason } = req.body;
+    const amt = Number(amount);
+    if (!amount || isNaN(amt) || amt <= 0) {
+      return res.status(400).json({ error: 'A positive refund amount is required.' });
+    }
+
+    const actor = actorFromReq(req);
+    const now   = new Date().toISOString();
+    db.prepare(`
+      UPDATE bookings
+      SET refund_amount = ?, refund_reason = ?, refunded_at = ?, refunded_by = ?
+      WHERE id = ?
+    `).run(amt, reason ?? null, now, actor.userName ?? null, req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actor,
+      propertyId: booking.property_id,
+      action: 'REFUND_RECORDED',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name} — ${booking.room_name ?? ''}`,
+      detail: `Amount: ${amt.toFixed(2)}${reason ? ` — ${reason}` : ''}`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -50,10 +50,11 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
   const depositPaid     = !!b.deposit_paid;
   const depositAmount   = parseFloat(property?.deposit_amount) || 0;
   const depositDeduction = depositPaid ? depositAmount : 0;
+  const refundAmt        = parseFloat(b.refund_amount) || 0;
 
   const chargesSubtotal = roomCharges.reduce((s, c) => s + c.amount, 0);
   const subtotal    = roomSubtotal + breakfastSubtotal + chargesSubtotal;
-  const totalDue    = Math.max(0, subtotal - depositDeduction);
+  const totalDue    = Math.max(0, subtotal - depositDeduction - refundAmt);
   const outstanding = !depositPaid && depositAmount > 0 ? depositAmount : 0;
 
   const handleConfirm = async () => {
@@ -181,6 +182,13 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
               <LineRow
                 label={t('coLessDeposit')}
                 value={`-${fmtCurrency(depositDeduction)}`}
+                valueStyle={{ color: '#166534' }}
+              />
+            )}
+            {refundAmt > 0 && (
+              <LineRow
+                label={`${t('refundLine')}${b.refund_reason ? ` — ${b.refund_reason}` : ''}`}
+                value={`-${fmtCurrency(refundAmt)}`}
                 valueStyle={{ color: '#166534' }}
               />
             )}
@@ -324,6 +332,8 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
           roomCharges={roomCharges}
           totalDue={totalDue}
           paymentMethod={paymentMethod}
+          refundAmount={refundAmt}
+          refundReason={b.refund_reason}
           onClose={() => setShowReceipt(false)}
         />
       )}
