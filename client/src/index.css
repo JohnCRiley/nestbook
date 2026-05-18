@@ -1007,6 +1007,17 @@ a { text-decoration: none; }
   display: flex;
   flex-direction: column;
   animation: slideInRight 0.22s ease;
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On mobile the panel must not exceed the viewport width — a fixed 420px
+   panel on a 360px screen hides 60px of content off the left edge. */
+@media (max-width: 479px) {
+  .detail-panel {
+    width: 100vw;
+    left: 0;
+  }
 }
 
 .panel-header {
