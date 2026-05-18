@@ -4,7 +4,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import PlanGate from '../components/PlanGate.jsx';
 
-// ── Date helpers ──────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 function toIso(d) {
   return [
@@ -34,6 +34,22 @@ const ALL_FIELDS = [
   'ref', 'guestName', 'guestEmail', 'room', 'checkIn', 'checkOut',
   'duration', 'rate', 'total', 'taxRate', 'taxAmount', 'net', 'source',
 ];
+
+const EXPENSE_CATS = [
+  'consumables', 'utilities', 'maintenance', 'marketing',
+  'insurance', 'professional', 'staff', 'other',
+];
+
+const PM_KEY_MAP = {
+  cash:          'pmCash',
+  card:          'pmCard',
+  bank_transfer: 'pmBankTransfer',
+  other:         'pmOther',
+  _none:         'reportPMNotRecorded',
+};
+
+const emptyExpenses = () =>
+  Object.fromEntries(EXPENSE_CATS.map(k => [k, { amount: '', desc: '' }]));
 
 // ── Page shell ────────────────────────────────────────────────────────────────
 
@@ -72,9 +88,20 @@ function ReportsContent() {
   const [results,    setResults]    = useState(null);
   const [rooms,      setRooms]      = useState([]);
 
+  // ── Payment methods state (from revenue response) ──────────────────────────
+  const [paymentMethods, setPaymentMethods] = useState(null);
+
   // ── Room charges report state ──────────────────────────────────────────────
   const [chargesResults,  setChargesResults]  = useState(null);
   const [chargesLoading,  setChargesLoading]  = useState(false);
+
+  // ── Business expenses state ────────────────────────────────────────────────
+  const [expenses,  setExpenses]  = useState(emptyExpenses);
+  const [adjNote,   setAdjNote]   = useState('');
+  const [adjAmount, setAdjAmount] = useState('');
+  const [expOpen,   setExpOpen]   = useState(false);
+  const [expSaving, setExpSaving] = useState(false);
+  const [expSaved,  setExpSaved]  = useState(false);
 
   // ── Guest list state ───────────────────────────────────────────────────────
   const [gFrom,         setGFrom]         = useState(() => getPresetRange('this_month').from);
@@ -91,6 +118,13 @@ function ReportsContent() {
       .then(r => setRooms(Array.isArray(r) ? r : []))
       .catch(() => {});
   }, [property?.id]);
+
+  // Single property ID — expenses only supported for one property at a time
+  const singlePropId = useMemo(() => {
+    if (propFilter !== 'all') return Number(propFilter);
+    if (property?.id) return property.id;
+    return null;
+  }, [propFilter, property?.id]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -128,15 +162,77 @@ function ReportsContent() {
   async function generate() {
     setLoading(true);
     setResults(null);
+    setPaymentMethods(null);
+    setExpenses(emptyExpenses());
+    setAdjNote('');
+    setAdjAmount('');
     try {
       const params = new URLSearchParams({ from, to, status });
       if (propFilter !== 'all') params.set('propertyId', propFilter);
       const r = await apiFetch(`/api/reports/revenue?${params}`);
       const data = await r.json();
-      if (r.ok) setResults(data);
+      if (r.ok) {
+        // Revenue endpoint now returns { rows, paymentMethods }
+        setResults(Array.isArray(data) ? data : (data.rows ?? []));
+        setPaymentMethods(Array.isArray(data) ? [] : (data.paymentMethods ?? []));
+        // Auto-load saved expenses for this period
+        if (singlePropId) fetchExpenses(singlePropId, from, to);
+      }
     } catch { /* network error */ }
     setLoading(false);
   }
+
+  // ── Expenses ───────────────────────────────────────────────────────────────
+
+  async function fetchExpenses(pid, f, t_) {
+    try {
+      const r = await apiFetch(`/api/reports/expenses?propertyId=${pid}&from=${f}&to=${t_}`);
+      if (!r.ok) return;
+      const rows = await r.json();
+      const next = emptyExpenses();
+      for (const row of rows) {
+        if (row.category === '_adj') {
+          setAdjNote(row.description ?? '');
+          setAdjAmount(row.amount < 0 ? String(-row.amount) : String(row.amount || ''));
+        } else if (next[row.category] !== undefined) {
+          next[row.category] = {
+            amount: row.amount ? String(row.amount) : '',
+            desc:   row.description ?? '',
+          };
+        }
+      }
+      setExpenses(next);
+    } catch { /* ignore */ }
+  }
+
+  async function saveExpenses() {
+    if (!singlePropId) return;
+    const expRows = EXPENSE_CATS
+      .map(k => ({ category: k, description: expenses[k].desc, amount: Number(expenses[k].amount) || 0 }))
+      .filter(e => e.amount > 0 || e.description);
+
+    if (adjNote || adjAmount) {
+      expRows.push({
+        category:    '_adj',
+        description: adjNote,
+        amount:      -(Number(adjAmount) || 0),
+      });
+    }
+
+    setExpSaving(true);
+    try {
+      await apiFetch('/api/reports/expenses', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ propertyId: singlePropId, from, to, expenses: expRows }),
+      });
+      setExpSaved(true);
+      setTimeout(() => setExpSaved(false), 2500);
+    } catch { /* ignore */ }
+    setExpSaving(false);
+  }
+
+  // ── Room charges report ────────────────────────────────────────────────────
 
   async function generateCharges() {
     setChargesLoading(true);
@@ -170,6 +266,22 @@ function ReportsContent() {
     return { totalBookings, totalNights, totalRevenue, totalTax, netRevenue, avgBookingValue, occupancy };
   }, [results, tax, from, to, rooms]);
 
+  // ── P&L summary ────────────────────────────────────────────────────────────
+
+  const plSummary = useMemo(() => {
+    if (!summary) return null;
+    const bookingRev   = summary.totalRevenue;
+    const chargesRev   = chargesResults?.totals?.gross ?? 0;
+    const totalIncome  = bookingRev + chargesRev;
+    const adjAmt       = Number(adjAmount) || 0;
+    const netIncome    = totalIncome - adjAmt;
+    const totalExpenses = EXPENSE_CATS.reduce((s, k) => s + (Number(expenses[k].amount) || 0), 0);
+    const netProfit    = netIncome - totalExpenses;
+    return { bookingRev, chargesRev, totalIncome, adjAmt, netIncome, totalExpenses, netProfit };
+  }, [summary, chargesResults, adjAmount, expenses]);
+
+  // ── Build row ──────────────────────────────────────────────────────────────
+
   function buildRow(b) {
     const nights   = Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000));
     const totalAmt = b.total_price || 0;
@@ -192,16 +304,18 @@ function ReportsContent() {
     return cells;
   }
 
+  // ── CSV export ─────────────────────────────────────────────────────────────
+
   function downloadCSV() {
     if (!results) return;
     const activeFields = ALL_FIELDS.filter(f => fields.has(f));
     const headers = activeFields.map(fieldLabel);
     const dataRows = results.map(b => {
-      const cells = buildRow(b);
-      const nights   = Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000));
-      const totalAmt = b.total_price || 0;
-      const taxAmt   = totalAmt * tax;
-      const netAmt   = totalAmt - taxAmt;
+      const cells   = buildRow(b);
+      const nights  = Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000));
+      const total   = b.total_price || 0;
+      const taxAmt  = total * tax;
+      const netAmt  = total - taxAmt;
       return activeFields.map(f => {
         switch (f) {
           case 'ref':       return `"#${b.id}"`;
@@ -212,7 +326,7 @@ function ReportsContent() {
           case 'checkOut':  return `"${b.check_out_date}"`;
           case 'duration':  return nights;
           case 'rate':      return b.price_per_night || '';
-          case 'total':     return totalAmt.toFixed(2);
+          case 'total':     return total.toFixed(2);
           case 'taxRate':   return taxRate || '0';
           case 'taxAmount': return taxAmt.toFixed(2);
           case 'net':       return netAmt.toFixed(2);
@@ -221,7 +335,6 @@ function ReportsContent() {
         }
       }).join(',');
     });
-    // Summary row
     if (summary) {
       const sumRow = activeFields.map(f => {
         switch (f) {
@@ -249,12 +362,61 @@ function ReportsContent() {
       csvBlocks.push(['"TOTAL"', ct.count, ct.gross.toFixed(2), ct.tax.toFixed(2), ct.net.toFixed(2)].join(','));
     }
 
-    triggerDownload(
-      csvBlocks.join('\n'),
-      'text/csv',
-      `nestbook-report-${from}-${to}.csv`
-    );
+    if (paymentMethods?.length) {
+      csvBlocks.push('');
+      csvBlocks.push(t('reportPaymentMethods'));
+      csvBlocks.push([t('reportChargesCategory'), t('reportPMBookings'), t('reportChargesGross')].join(','));
+      for (const pm of paymentMethods) {
+        csvBlocks.push([`"${t(PM_KEY_MAP[pm.method] ?? 'reportPMNotRecorded')}"`, pm.count, (pm.total || 0).toFixed(2)].join(','));
+      }
+      const pmTotal = paymentMethods.reduce((s, pm) => s + (pm.total || 0), 0);
+      csvBlocks.push([`"${t('reportChargesGrandTotal')}"`, paymentMethods.reduce((s, pm) => s + (pm.count || 0), 0), pmTotal.toFixed(2)].join(','));
+    }
+
+    const expenseHasData = EXPENSE_CATS.some(k => Number(expenses[k].amount) > 0);
+    if (expenseHasData || adjAmount) {
+      if (adjAmount) {
+        csvBlocks.push('');
+        csvBlocks.push(t('reportAdjustments'));
+        csvBlocks.push([`"${adjNote || '—'}"`, (-Number(adjAmount)).toFixed(2)].join(','));
+      }
+      if (expenseHasData) {
+        csvBlocks.push('');
+        csvBlocks.push(t('reportBusinessExpenses'));
+        csvBlocks.push([t('reportChargesCategory'), t('reportExpDescription'), t('reportExpAmount')].join(','));
+        for (const k of EXPENSE_CATS) {
+          const amt = Number(expenses[k].amount) || 0;
+          if (amt > 0 || expenses[k].desc) {
+            csvBlocks.push([`"${t(`expCat_${k}`)}"`, `"${expenses[k].desc}"`, amt.toFixed(2)].join(','));
+          }
+        }
+        csvBlocks.push([`"${t('reportPLTotalExpenses')}"`, '', EXPENSE_CATS.reduce((s, k) => s + (Number(expenses[k].amount) || 0), 0).toFixed(2)].join(','));
+      }
+    }
+
+    if (plSummary) {
+      csvBlocks.push('');
+      csvBlocks.push(t('reportPL'));
+      csvBlocks.push(`"${t('reportPLIncome')}"`);
+      csvBlocks.push([`"${t('reportPLBookingRevenue')}"`, plSummary.bookingRev.toFixed(2)].join(','));
+      if (plSummary.chargesRev > 0) csvBlocks.push([`"${t('reportPLRoomCharges')}"`, plSummary.chargesRev.toFixed(2)].join(','));
+      csvBlocks.push([`"${t('reportPLTotalIncome')}"`, plSummary.totalIncome.toFixed(2)].join(','));
+      if (plSummary.adjAmt > 0) csvBlocks.push([`"${t('reportPLLessAdj')}"`, (-plSummary.adjAmt).toFixed(2)].join(','));
+      csvBlocks.push([`"${t('reportPLNetIncome')}"`, plSummary.netIncome.toFixed(2)].join(','));
+      csvBlocks.push(`"${t('reportPLExpenses')}"`);
+      for (const k of EXPENSE_CATS) {
+        const amt = Number(expenses[k].amount) || 0;
+        if (amt > 0) csvBlocks.push([`"${t(`expCat_${k}`)}"`, amt.toFixed(2)].join(','));
+      }
+      csvBlocks.push([`"${t('reportPLTotalExpenses')}"`, plSummary.totalExpenses.toFixed(2)].join(','));
+      csvBlocks.push([`"${t('reportPLNetProfit')}"`, plSummary.netProfit.toFixed(2)].join(','));
+      csvBlocks.push(`"${t('reportPLDisclaimer')}"`);
+    }
+
+    triggerDownload(csvBlocks.join('\n'), 'text/csv', `nestbook-report-${from}-${to}.csv`);
   }
+
+  // ── PDF export ─────────────────────────────────────────────────────────────
 
   function downloadPDF() {
     if (!results || !summary) return;
@@ -294,9 +456,52 @@ function ReportsContent() {
 </div>`;
     }
 
+    let pmSection = '';
+    if (paymentMethods?.length) {
+      const pmRows = paymentMethods.map(pm =>
+        `<tr><td>${t(PM_KEY_MAP[pm.method] ?? 'reportPMNotRecorded')}</td><td>${pm.count} ${t('reportPMBookings')}</td><td style="text-align:right;font-weight:700">${fmtMoney(pm.total || 0)}</td></tr>`
+      ).join('');
+      const pmTotal = paymentMethods.reduce((s, pm) => s + (pm.total || 0), 0);
+      pmSection = `<h2 style="font-size:15px;margin:28px 0 10px">${t('reportPaymentMethods')}</h2>
+<table>
+  <thead><tr><th>${t('reportChargesCategory')}</th><th>${t('reportPMBookings')}</th><th style="text-align:right">${t('reportChargesGross')}</th></tr></thead>
+  <tbody>${pmRows}<tr style="background:#f1f5f9;font-weight:700"><td>${t('reportChargesGrandTotal')}</td><td>${paymentMethods.reduce((s, pm) => s + (pm.count || 0), 0)} ${t('reportPMBookings')}</td><td style="text-align:right">${fmtMoney(pmTotal)}</td></tr></tbody>
+</table>`;
+    }
+
+    let plSection = '';
+    if (plSummary) {
+      const expRows = EXPENSE_CATS
+        .filter(k => Number(expenses[k].amount) > 0)
+        .map(k => `<div class="pl-row"><span>${t(`expCat_${k}`)}${expenses[k].desc ? ` <small style="color:#64748b;font-size:10px">${expenses[k].desc}</small>` : ''}</span><span>${fmtMoney(Number(expenses[k].amount))}</span></div>`)
+        .join('');
+
+      plSection = `<div class="pl-box">
+  <h2>${t('reportPL')}</h2>
+  <div class="pl-group">
+    <div class="pl-label">${t('reportPLIncome')}</div>
+    <div class="pl-row"><span>${t('reportPLBookingRevenue')}</span><span>${fmtMoney(plSummary.bookingRev)}</span></div>
+    ${plSummary.chargesRev > 0 ? `<div class="pl-row"><span>${t('reportPLRoomCharges')}</span><span>${fmtMoney(plSummary.chargesRev)}</span></div>` : ''}
+    <div class="pl-row pl-subtotal"><span>${t('reportPLTotalIncome')}</span><span>${fmtMoney(plSummary.totalIncome)}</span></div>
+    ${plSummary.adjAmt > 0 ? `<div class="pl-row pl-adj"><span>${t('reportPLLessAdj')}${adjNote ? ` (${adjNote})` : ''}</span><span>-${fmtMoney(plSummary.adjAmt)}</span></div>
+    <div class="pl-row pl-subtotal"><span>${t('reportPLNetIncome')}</span><span>${fmtMoney(plSummary.netIncome)}</span></div>` : ''}
+  </div>
+  ${expRows ? `<div class="pl-group" style="margin-top:12px">
+    <div class="pl-label">${t('reportPLExpenses')}</div>
+    ${expRows}
+    <div class="pl-row pl-subtotal"><span>${t('reportPLTotalExpenses')}</span><span>${fmtMoney(plSummary.totalExpenses)}</span></div>
+  </div>` : ''}
+  <div class="pl-net">
+    <span>${t('reportPLNetProfit')}</span>
+    <span style="color:${plSummary.netProfit >= 0 ? '#166534' : '#dc2626'}">${fmtMoney(plSummary.netProfit)}</span>
+  </div>
+  <div class="pl-disclaimer">${t('reportPLDisclaimer')}</div>
+</div>`;
+    }
+
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<title>Revenue Report \u2014 ${propName}</title>
+<title>Revenue Report — ${propName}</title>
 <style>
   body{font-family:system-ui,sans-serif;margin:40px;color:#0f172a;font-size:12px}
   .prop-name{font-size:18px;font-weight:700;margin-bottom:2px}
@@ -314,14 +519,23 @@ function ReportsContent() {
   tr:nth-child(even) td{background:#f8fafc}
   .footer{color:#94a3b8;font-size:10px;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:8px}
   .leaf{font-size:18px;float:right;opacity:.3}
+  .pl-box{background:#f0fdf4;border:2px solid #1a4710;border-radius:8px;padding:20px;margin:28px 0}
+  .pl-box h2{margin:0 0 14px;font-size:15px;color:#1a4710}
+  .pl-group{margin-bottom:8px}
+  .pl-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin:8px 0 4px}
+  .pl-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
+  .pl-subtotal{border-top:1px solid #1a4710;font-weight:700;margin-top:4px;padding-top:4px}
+  .pl-adj{color:#b45309}
+  .pl-net{display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:3px double #1a4710;margin-top:12px;padding-top:10px}
+  .pl-disclaimer{font-size:9px;color:#94a3b8;margin-top:10px;font-style:italic}
   @media print{body{margin:20px}}
 </style>
 </head><body>
-<div class="leaf">\uD83C\uDF3F</div>
+<div class="leaf">🌿</div>
 <div class="prop-name">${propName}</div>
 <div class="prop-addr">${propAddress}</div>
 <h1>${t('revenueReportTitle')}</h1>
-<div class="subtitle">${from} \u2013 ${to}</div>
+<div class="subtitle">${from} – ${to}</div>
 <div class="summary">
   <h2>${t('reportSummaryTitle')}</h2>
   <div class="sum-grid">
@@ -338,7 +552,9 @@ function ReportsContent() {
   <thead><tr>${activeFields.map(f => `<th>${fieldLabel(f)}</th>`).join('')}</tr></thead>
   <tbody>${tableRows}</tbody>
 </table>
+${pmSection}
 ${chargesSection}
+${plSection}
 <div class="footer">${t('reportGeneratedBy')} ${genDate}</div>
 </body></html>`;
 
@@ -372,11 +588,7 @@ ${chargesSection}
       [`"${g.first_name || ''} ${g.last_name || ''}"`, `"${g.email || ''}"`,
        `"${g.check_in_date}"`, `"${g.check_out_date}"`, `"${g.room_name || ''}"`].join(',')
     );
-    triggerDownload(
-      [headers.join(','), ...rows].join('\n'),
-      'text/csv',
-      `nestbook-guests-${gFrom}-${gTo}.csv`
-    );
+    triggerDownload([headers.join(','), ...rows].join('\n'), 'text/csv', `nestbook-guests-${gFrom}-${gTo}.csv`);
   }
 
   function copyEmails() {
@@ -403,7 +615,6 @@ ${chargesSection}
         <div style={{ padding: '20px', borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
 
-            {/* Date range preset */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('reportDateRange')}</label>
               <select className="form-control" style={{ width: 190 }} value={preset} onChange={e => handlePreset(e.target.value)}>
@@ -415,7 +626,6 @@ ${chargesSection}
               </select>
             </div>
 
-            {/* Custom dates */}
             {preset === 'custom' && (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -429,7 +639,6 @@ ${chargesSection}
               </>
             )}
 
-            {/* Property selector — Multi plan + multiple properties only */}
             {plan === 'multi' && properties && properties.length > 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('reportProperty')}</label>
@@ -440,7 +649,6 @@ ${chargesSection}
               </div>
             )}
 
-            {/* Booking status */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('reportStatus')}</label>
               <select className="form-control" style={{ width: 190 }} value={status} onChange={e => setStatus(e.target.value)}>
@@ -450,7 +658,6 @@ ${chargesSection}
               </select>
             </div>
 
-            {/* Tax rate */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('reportTaxRateLabel')}</label>
               <input
@@ -533,6 +740,41 @@ ${chargesSection}
                 </div>
               )}
 
+              {/* Payment Methods breakdown */}
+              {paymentMethods && paymentMethods.length > 0 && (
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 10 }}>
+                    {t('reportPaymentMethods')}
+                  </div>
+                  <table style={{ width: '100%', maxWidth: 480, borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <tbody>
+                      {paymentMethods.map(pm => (
+                        <tr key={pm.method} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '5px 8px 5px 0', color: '#374151', fontWeight: 500 }}>
+                            {t(PM_KEY_MAP[pm.method] ?? 'reportPMNotRecorded')}
+                          </td>
+                          <td style={{ padding: '5px 8px', color: '#64748b', fontSize: '0.8rem' }}>
+                            {pm.count} {t('reportPMBookings')}
+                          </td>
+                          <td style={{ padding: '5px 0 5px 8px', fontWeight: 600, textAlign: 'right', color: '#1a2e14' }}>
+                            {fmtMoney(pm.total || 0)}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={{ borderTop: '2px solid #1a4710' }}>
+                        <td style={{ padding: '7px 8px 5px 0', fontWeight: 700 }}>{t('reportChargesGrandTotal')}</td>
+                        <td style={{ padding: '7px 8px', color: '#64748b', fontSize: '0.8rem' }}>
+                          {paymentMethods.reduce((s, pm) => s + (pm.count || 0), 0)} {t('reportPMBookings')}
+                        </td>
+                        <td style={{ padding: '7px 0 5px 8px', fontWeight: 700, textAlign: 'right', color: '#1a4710' }}>
+                          {fmtMoney(paymentMethods.reduce((s, pm) => s + (pm.total || 0), 0))}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
               {/* Export buttons */}
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button className="btn-secondary" onClick={downloadCSV}>⬇ {t('reportDownloadCSV')}</button>
@@ -599,7 +841,6 @@ ${chargesSection}
               </div>
             ) : (
               <>
-                {/* Combined Revenue Summary (only when both reports loaded) */}
                 {summary && (
                   <div style={{ padding: '20px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
                     <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 14 }}>
@@ -622,7 +863,6 @@ ${chargesSection}
                   </div>
                 )}
 
-                {/* Per-category charges table */}
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
@@ -673,6 +913,201 @@ ${chargesSection}
         </div>
       )}
 
+      {/* ── Business Expenses (Pro/Multi, single property) ─────────────────── */}
+      {singlePropId && (
+        <div className="admin-card" style={{ marginBottom: 24 }}>
+          {/* Accordion header */}
+          <button
+            onClick={() => setExpOpen(v => !v)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1a2e14' }}>
+              {t('reportBusinessExpenses')}
+              <span style={{ marginLeft: 8, fontSize: '0.8rem', fontWeight: 400, color: '#94a3b8' }}>
+                {from} — {to}
+              </span>
+            </span>
+            <span style={{ fontSize: '1.1rem', color: '#64748b', transform: expOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▾</span>
+          </button>
+
+          {expOpen && (
+            <div style={{ borderTop: '1px solid #f1f5f9' }}>
+              {/* Expenses table */}
+              <div style={{ padding: '16px 20px 0', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 8px 6px 0', color: '#64748b', fontWeight: 600, fontSize: '0.78rem' }}>
+                        {t('reportChargesCategory')}
+                      </th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.78rem' }}>
+                        {t('reportExpDescription')}
+                      </th>
+                      <th style={{ textAlign: 'right', padding: '6px 0 6px 8px', color: '#64748b', fontWeight: 600, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                        {t('reportExpAmount')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {EXPENSE_CATS.map(k => (
+                      <tr key={k} style={{ borderBottom: '1px solid #f8fafc' }}>
+                        <td style={{ padding: '7px 8px 7px 0', color: '#374151', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                          {t(`expCat_${k}`)}
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input
+                            className="form-control"
+                            style={{ fontSize: '0.82rem', padding: '5px 8px' }}
+                            placeholder={t('reportExpDescription')}
+                            value={expenses[k].desc}
+                            onChange={e => setExpenses(prev => ({ ...prev, [k]: { ...prev[k], desc: e.target.value } }))}
+                          />
+                        </td>
+                        <td style={{ padding: '4px 0 4px 8px' }}>
+                          <input
+                            type="number" min="0" step="0.01"
+                            className="form-control"
+                            style={{ fontSize: '0.82rem', padding: '5px 8px', textAlign: 'right', width: 120 }}
+                            placeholder="0.00"
+                            value={expenses[k].amount}
+                            onChange={e => setExpenses(prev => ({ ...prev, [k]: { ...prev[k], amount: e.target.value } }))}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Totals row */}
+                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+                      <td style={{ padding: '8px 8px 8px 0', fontWeight: 700 }}>{t('reportPLTotalExpenses')}</td>
+                      <td />
+                      <td style={{ padding: '8px 0 8px 8px', textAlign: 'right', fontWeight: 700, color: '#1a4710' }}>
+                        {fmtMoney(EXPENSE_CATS.reduce((s, k) => s + (Number(expenses[k].amount) || 0), 0))}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Revenue Adjustments */}
+              <div style={{
+                margin: '12px 20px 0', padding: '14px 16px', borderRadius: 8,
+                background: '#fffbeb', border: '1px solid #fde68a',
+              }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#92400e', marginBottom: 4 }}>
+                  {t('reportAdjustments')}
+                </div>
+                <div style={{ fontSize: '0.77rem', color: '#92400e', marginBottom: 10 }}>
+                  {t('reportAdjHint')}
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('reportAdjNote')}</label>
+                    <input
+                      className="form-control"
+                      style={{ fontSize: '0.82rem', padding: '5px 8px' }}
+                      placeholder="e.g. Room 2 complaint refund"
+                      value={adjNote}
+                      onChange={e => setAdjNote(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ width: 140 }}>
+                    <label className="form-label" style={{ fontSize: '0.78rem' }}>{t('reportAdjAmount')}</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      className="form-control"
+                      style={{ fontSize: '0.82rem', padding: '5px 8px', textAlign: 'right' }}
+                      placeholder="0.00"
+                      value={adjAmount}
+                      onChange={e => setAdjAmount(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Save button */}
+              <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button className="btn-primary" onClick={saveExpenses} disabled={expSaving}>
+                  {expSaving ? '…' : t('reportExpSave')}
+                </button>
+                {expSaved && (
+                  <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
+                    {t('reportExpSaved')}
+                  </span>
+                )}
+              </div>
+
+              {/* P&L Summary */}
+              {plSummary && (
+                <div style={{
+                  margin: '0 20px 20px', padding: '18px 20px', borderRadius: 8,
+                  background: '#f0fdf4', border: '2px solid #1a4710',
+                }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1a4710', marginBottom: 14, letterSpacing: '0.01em' }}>
+                    {t('reportPL')} — {from} to {to}
+                  </div>
+
+                  {/* Income */}
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+                    {t('reportPLIncome')}
+                  </div>
+                  <PLRow label={t('reportPLBookingRevenue')} value={fmtMoney(plSummary.bookingRev)} />
+                  {plSummary.chargesRev > 0 && (
+                    <PLRow label={t('reportPLRoomCharges')} value={fmtMoney(plSummary.chargesRev)} />
+                  )}
+                  <PLRow label={t('reportPLTotalIncome')} value={fmtMoney(plSummary.totalIncome)} bold divider />
+                  {plSummary.adjAmt > 0 && (
+                    <>
+                      <PLRow label={`${t('reportPLLessAdj')}${adjNote ? ` (${adjNote})` : ''}`} value={`-${fmtMoney(plSummary.adjAmt)}`} muted />
+                      <PLRow label={t('reportPLNetIncome')} value={fmtMoney(plSummary.netIncome)} bold divider />
+                    </>
+                  )}
+
+                  {/* Expenses */}
+                  {plSummary.totalExpenses > 0 && (
+                    <>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', color: '#64748b', textTransform: 'uppercase', margin: '12px 0 4px' }}>
+                        {t('reportPLExpenses')}
+                      </div>
+                      {EXPENSE_CATS.filter(k => Number(expenses[k].amount) > 0).map(k => (
+                        <PLRow
+                          key={k}
+                          label={`${t(`expCat_${k}`)}${expenses[k].desc ? ` — ${expenses[k].desc}` : ''}`}
+                          value={fmtMoney(Number(expenses[k].amount))}
+                        />
+                      ))}
+                      <PLRow label={t('reportPLTotalExpenses')} value={fmtMoney(plSummary.totalExpenses)} bold divider />
+                    </>
+                  )}
+
+                  {/* Net profit */}
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                    marginTop: 12, paddingTop: 10, borderTop: '3px double #1a4710',
+                  }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1a2e14' }}>
+                      {t('reportPLNetProfit')}
+                    </span>
+                    <span style={{
+                      fontWeight: 800, fontSize: '1.2rem',
+                      color: plSummary.netProfit >= 0 ? '#166534' : '#dc2626',
+                    }}>
+                      {fmtMoney(plSummary.netProfit)}
+                    </span>
+                  </div>
+
+                  <div style={{ marginTop: 10, fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                    {t('reportPLDisclaimer')}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Guest Contact List ──────────────────────────────────────────────── */}
       <div className="admin-card">
         <div className="admin-card-header">
@@ -717,6 +1152,29 @@ ${chargesSection}
         )}
       </div>
 
+    </div>
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function PLRow({ label, value, bold, divider, muted }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      padding: divider ? '5px 0' : '3px 0',
+      borderTop: divider ? '1px solid #bbf7d0' : 'none',
+      marginTop: divider ? 4 : 0,
+      fontSize: '0.875rem',
+    }}>
+      <span style={{ color: muted ? '#92400e' : '#374151', flex: 1 }}>{label}</span>
+      <span style={{
+        fontWeight: bold ? 700 : 500,
+        color: muted ? '#b45309' : '#1a2e14',
+        minWidth: 90, textAlign: 'right',
+      }}>
+        {value}
+      </span>
     </div>
   );
 }

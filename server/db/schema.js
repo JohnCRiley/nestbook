@@ -549,5 +549,20 @@ export function initSchema() {
     console.log(`✓ Seeded default service categories for ${propertiesWithoutCategories.length} propert${propertiesWithoutCategories.length === 1 ? 'y' : 'ies'}.`);
   }
 
+  // Business expenses — per-period expense tracking for property owners (Pro/Multi)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS property_expenses (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      period_from TEXT    NOT NULL,
+      period_to   TEXT    NOT NULL,
+      category    TEXT    NOT NULL,
+      description TEXT,
+      amount      REAL    NOT NULL DEFAULT 0,
+      created_at  TEXT    DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_expenses_property ON property_expenses(property_id, period_from, period_to)`);
+
   console.log('✓ Database schema ready.');
 }

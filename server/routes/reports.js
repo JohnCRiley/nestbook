@@ -80,7 +80,23 @@ reportsRouter.get('/revenue', (req, res) => {
         ${statusClause}
       ORDER BY b.check_in_date ASC
     `).all(...args);
-    res.json(rows);
+
+    // Payment method breakdown — always checked_out bookings in the same date range
+    const paymentMethods = db.prepare(`
+      SELECT
+        COALESCE(payment_method, '_none') AS method,
+        COUNT(*)           AS count,
+        SUM(total_price)   AS total
+      FROM bookings
+      WHERE property_id IN (${placeholders})
+        AND status = 'checked_out'
+        AND check_in_date >= ?
+        AND check_in_date <  ?
+      GROUP BY payment_method
+      ORDER BY SUM(total_price) DESC
+    `).all(...args);
+
+    res.json({ rows, paymentMethods });
   } catch (e) {
     console.error('[reports/revenue]', e);
     res.status(500).json({ error: 'Database error.' });
@@ -146,6 +162,64 @@ reportsRouter.get('/charges', (req, res) => {
     });
   } catch (e) {
     console.error('[reports/charges]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
+// ── GET /api/reports/expenses ─────────────────────────────────────────────────
+// Query params: from, to, propertyId (required, single property)
+reportsRouter.get('/expenses', (req, res) => {
+  if (!requirePro(req, res)) return;
+
+  const { from, to, propertyId } = req.query;
+  if (!from || !to || !propertyId) {
+    return res.status(400).json({ error: 'from, to, propertyId are required.' });
+  }
+  const pid = Number(propertyId);
+  const userPropIds = getUserPropertyIds(req.user.userId, req.user.role);
+  if (!userPropIds.includes(pid)) return res.status(403).json({ error: 'Access denied.' });
+
+  try {
+    const rows = db.prepare(
+      `SELECT category, description, amount FROM property_expenses
+       WHERE property_id = ? AND period_from = ? AND period_to = ?`
+    ).all(pid, from, to);
+    res.json(rows);
+  } catch (e) {
+    console.error('[reports/expenses GET]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
+// ── POST /api/reports/expenses ────────────────────────────────────────────────
+// Body: { propertyId, from, to, expenses: [{category, description, amount}] }
+// Replaces all expense rows for the period (delete + re-insert).
+reportsRouter.post('/expenses', (req, res) => {
+  if (!requirePro(req, res)) return;
+
+  const { propertyId, from, to, expenses } = req.body;
+  if (!from || !to || !propertyId || !Array.isArray(expenses)) {
+    return res.status(400).json({ error: 'propertyId, from, to, expenses[] are required.' });
+  }
+  const pid = Number(propertyId);
+  const userPropIds = getUserPropertyIds(req.user.userId, req.user.role);
+  if (!userPropIds.includes(pid)) return res.status(403).json({ error: 'Access denied.' });
+
+  try {
+    db.prepare(
+      `DELETE FROM property_expenses WHERE property_id = ? AND period_from = ? AND period_to = ?`
+    ).run(pid, from, to);
+
+    const insert = db.prepare(
+      `INSERT INTO property_expenses (property_id, period_from, period_to, category, description, amount)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    );
+    for (const e of expenses) {
+      insert.run(pid, from, to, String(e.category), String(e.description ?? ''), Number(e.amount) || 0);
+    }
+    res.json({ saved: expenses.length });
+  } catch (e) {
+    console.error('[reports/expenses POST]', e);
     res.status(500).json({ error: 'Database error.' });
   }
 });
