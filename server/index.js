@@ -36,6 +36,14 @@ app.use(cors({
   origin: (origin, callback) => callback(null, true),
   credentials: false,
 }));
+
+// ── Stripe webhook — MUST be before express.json() AND requireAuth ───────────
+// express.json() would parse and discard the raw buffer; stripe.webhooks
+// .constructEvent() requires the original Buffer for signature verification.
+// type: '*/*' catches the request regardless of the Content-Type header Stripe sends.
+app.use('/api/stripe/webhook', express.raw({ type: '*/*' }), stripeWebhookRouter);
+
+// ── JSON body parser for all other routes ─────────────────────────────────────
 app.use(express.json());
 
 // ── Static files ──────────────────────────────────────────────────────────────
@@ -44,11 +52,6 @@ app.use(express.static(join(__dirname, 'public')));
 
 // React SPA assets (JS, CSS, icons) — served at /app/*
 app.use('/app', express.static(join(__dirname, '../client/dist')));
-
-// ── Stripe webhook — MUST be before requireAuth ───────────────────────────────
-// Stripe sends its own signature header, not a JWT. The handler verifies via
-// stripe.webhooks.constructEvent(); it must receive the raw (unparsed) body.
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookRouter);
 
 // ── Public routes (no auth) ───────────────────────────────────────────────────
 app.use('/api',                healthRouter);
