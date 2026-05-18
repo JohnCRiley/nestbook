@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween, localToday, addDays } from '../../utils/format.js';
 import { isEligibleForBreakfast } from '../../utils/breakfast.js';
@@ -106,6 +106,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [toast,              setToast]              = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [showReprint,        setShowReprint]        = useState(false);
+  const checkedOutBookingRef = useRef(null);
 
   const showChargesTab = plan === 'multi';
 
@@ -270,8 +271,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       printWin.print();
     }
 
-    setShowCheckout(false);
-    if (onBookingUpdated) onBookingUpdated(updated);
+    checkedOutBookingRef.current = updated;
   };
 
   return (
@@ -597,6 +597,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           charges={charges}
           onConfirm={handleCheckoutConfirm}
           onCancel={() => setShowCheckout(false)}
+          onDone={() => {
+            setShowCheckout(false);
+            if (onBookingUpdated && checkedOutBookingRef.current) {
+              onBookingUpdated(checkedOutBookingRef.current);
+            }
+          }}
         />
       )}
 

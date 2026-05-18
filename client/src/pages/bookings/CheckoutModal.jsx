@@ -20,7 +20,7 @@ const PAYMENT_METHODS = [
  *   onConfirm(paymentMethod) — called when "Confirm checkout" is clicked
  *   onCancel      — close without checking out
  */
-export default function CheckoutModal({ booking: b, property, charges: chargesProp, onConfirm, onCancel }) {
+export default function CheckoutModal({ booking: b, property, charges: chargesProp, onConfirm, onCancel, onDone }) {
   const t = useT();
   const { fmtCurrency, currencySymbol } = useLocale();
   const [paymentMethod,    setPaymentMethod]    = useState(null);
@@ -28,6 +28,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
   const [confirming,       setConfirming]       = useState(false);
   const [checkoutError,    setCheckoutError]    = useState(null);
   const [printOnCheckout,  setPrintOnCheckout]  = useState(true);
+  const [checkoutComplete, setCheckoutComplete] = useState(false);
 
   // chargesProp is null when panel hasn't fetched yet (non-multi or not loaded)
   const roomCharges = Array.isArray(chargesProp)
@@ -61,6 +62,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
     setCheckoutError(null);
     try {
       await onConfirm(paymentMethod, printOnCheckout);
+      setCheckoutComplete(true);
     } catch (err) {
       setCheckoutError(err.message || 'Checkout failed. Please try again.');
       setConfirming(false);
@@ -233,58 +235,73 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
           padding: '14px 24px', borderTop: '1px solid #e2e8f0',
           display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
         }}>
-          <label style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-            fontSize: '0.85rem', color: '#374151', cursor: 'pointer', userSelect: 'none',
-          }}>
-            <input
-              type="checkbox"
-              checked={printOnCheckout}
-              onChange={(e) => setPrintOnCheckout(e.target.checked)}
-              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1a4710' }}
-            />
-            {t('printReceiptCheckbox')}
-          </label>
-          {checkoutError && (
-            <div style={{ width: '100%', fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
-              {checkoutError}
-            </div>
+          {checkoutComplete ? (
+            <button
+              onClick={onDone}
+              style={{
+                width: '100%', padding: '12px 20px', borderRadius: 7, border: 'none',
+                background: '#166534', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {t('coCheckoutDone')}
+            </button>
+          ) : (
+            <>
+              <label style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                fontSize: '0.85rem', color: '#374151', cursor: 'pointer', userSelect: 'none',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={printOnCheckout}
+                  onChange={(e) => setPrintOnCheckout(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1a4710' }}
+                />
+                {t('printReceiptCheckbox')}
+              </label>
+              {checkoutError && (
+                <div style={{ width: '100%', fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
+                  {checkoutError}
+                </div>
+              )}
+              <button
+                onClick={handleConfirm}
+                disabled={!paymentMethod || confirming}
+                style={{
+                  flex: 1, padding: '10px 20px', borderRadius: 7, border: 'none',
+                  background: paymentMethod ? '#1a4710' : '#d1d5db',
+                  color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+                  cursor: paymentMethod ? 'pointer' : 'not-allowed',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {confirming ? t('coConfirming') : t('coConfirmCheckout')}
+              </button>
+              <button
+                onClick={() => setShowReceipt(true)}
+                style={{
+                  padding: '10px 16px', borderRadius: 7,
+                  background: '#f0fdf4', border: '1.5px solid #86efac',
+                  color: '#166534', fontWeight: 600, fontSize: '0.88rem',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {t('coPrintReceipt')}
+              </button>
+              <button
+                onClick={onCancel}
+                style={{
+                  padding: '10px 16px', borderRadius: 7,
+                  background: '#f8fafc', border: '1.5px solid #e2e8f0',
+                  color: '#64748b', fontWeight: 600, fontSize: '0.88rem',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {t('cancel')}
+              </button>
+            </>
           )}
-          <button
-            onClick={handleConfirm}
-            disabled={!paymentMethod || confirming}
-            style={{
-              flex: 1, padding: '10px 20px', borderRadius: 7, border: 'none',
-              background: paymentMethod ? '#1a4710' : '#d1d5db',
-              color: '#fff', fontWeight: 700, fontSize: '0.95rem',
-              cursor: paymentMethod ? 'pointer' : 'not-allowed',
-              fontFamily: 'inherit',
-            }}
-          >
-            {confirming ? t('coConfirming') : t('coConfirmCheckout')}
-          </button>
-          <button
-            onClick={() => setShowReceipt(true)}
-            style={{
-              padding: '10px 16px', borderRadius: 7,
-              background: '#f0fdf4', border: '1.5px solid #86efac',
-              color: '#166534', fontWeight: 600, fontSize: '0.88rem',
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {t('coPrintReceipt')}
-          </button>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: '10px 16px', borderRadius: 7,
-              background: '#f8fafc', border: '1.5px solid #e2e8f0',
-              color: '#64748b', fontWeight: 600, fontSize: '0.88rem',
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {t('cancel')}
-          </button>
         </div>
       </div>
 

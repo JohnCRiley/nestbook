@@ -1007,7 +1007,6 @@ a { text-decoration: none; }
   display: flex;
   flex-direction: column;
   animation: slideInRight 0.22s ease;
-  will-change: transform;
   -webkit-overflow-scrolling: touch;
 }
 
