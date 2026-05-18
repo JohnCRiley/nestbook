@@ -248,7 +248,9 @@ stripeWebhookRouter.post('/', async (req, res) => {
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId   = stripeSub.items.data[0]?.price?.id;
         const plan      = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
-        const periodEnd = new Date(stripeSub.current_period_end * 1000).toISOString();
+        const periodEnd = stripeSub.current_period_end
+          ? new Date(stripeSub.current_period_end * 1000).toISOString()
+          : null;
 
         const oldWebhookUser = db.prepare('SELECT id, name, email, plan FROM users WHERE id = ?').get(userId);
         const oldWebhookPlan = oldWebhookUser?.plan ?? 'free';
@@ -305,7 +307,9 @@ stripeWebhookRouter.post('/', async (req, res) => {
         const priceId = sub.items.data[0]?.price?.id;
         const plan    = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
         const status  = sub.status === 'past_due' ? 'past_due' : 'active';
-        const periodEnd = new Date(sub.current_period_end * 1000).toISOString();
+        const periodEnd = sub.current_period_end
+          ? new Date(sub.current_period_end * 1000).toISOString()
+          : null;
         const cancelAtEnd = sub.cancel_at_period_end ? 1 : 0;
 
         db.prepare(`

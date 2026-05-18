@@ -40,8 +40,12 @@ app.use(cors({
 // ── Stripe webhook — MUST be before express.json() AND requireAuth ───────────
 // express.json() would parse and discard the raw buffer; stripe.webhooks
 // .constructEvent() requires the original Buffer for signature verification.
-// type: '*/*' catches the request regardless of the Content-Type header Stripe sends.
-app.use('/api/stripe/webhook', express.raw({ type: '*/*' }), stripeWebhookRouter);
+// app.post (not app.use) binds to POST only; inline factory ensures express.raw()
+// is instantiated fresh per-request so it always captures the raw body.
+app.post('/api/stripe/webhook',
+  (req, res, next) => express.raw({ type: '*/*' })(req, res, next),
+  stripeWebhookRouter
+);
 
 // ── JSON body parser for all other routes ─────────────────────────────────────
 app.use(express.json());
