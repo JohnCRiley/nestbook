@@ -464,6 +464,17 @@ export default function PrintReceipt({
             Powered by NestBook
           </div>
 
+          {/* Debug block — screen only, shows in preview modal */}
+          <div style={{
+            marginTop: 16, padding: '8px 10px',
+            background: '#fef3c7', border: '1px solid #f59e0b',
+            fontSize: '0.75rem', fontFamily: 'monospace', color: '#92400e',
+            lineHeight: 1.6, borderRadius: 4,
+          }}>
+            <strong>DEBUG (preview only)</strong><br />
+            {d.calcDebug}
+          </div>
+
         </div>
       </div>
     </div>
