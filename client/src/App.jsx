@@ -22,6 +22,7 @@ import VerifyEmail      from './pages/VerifyEmail.jsx';
 import AdminRoute         from './admin/AdminRoute.jsx';
 import AdminLayout        from './admin/AdminLayout.jsx';
 import SuperAdminLogin    from './admin/SuperAdminLogin.jsx';
+import UpgradeBanner      from './components/UpgradeBanner.jsx';
 
 function OfflineBanner() {
   const [offline, setOffline] = useState(!navigator.onLine);
@@ -138,6 +139,7 @@ function AppLayout() {
       <Sidebar />
       <main className="main-content">
         <EmailVerifyBanner />
+        <UpgradeBanner />
         <PropertyBanner />
         <Routes>
           <Route path="/"          element={<Navigate to="/dashboard" replace />} />
