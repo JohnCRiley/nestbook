@@ -284,7 +284,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
             >✕</button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 22 }}>🌿</span>
+              <img src="/icon.svg" alt="NestBook" style={{ width: 40, height: 40, borderRadius: 8 }} />
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
                 {tx.title}
               </h2>
