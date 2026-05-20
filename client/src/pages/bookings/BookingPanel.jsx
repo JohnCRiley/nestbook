@@ -274,6 +274,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         refundLabel:  t('refundLine'),
         refundFmt:    rpRefund > 0 ? `-${fc(rpRefund)}` : null,
         totalDueFmt:    fc(rpGrandTotal),
+        calcDebug: `room(${rpRoom}) + bf(${rpBfSub}) + charges(${rpChargeSub}) - deposit(${rpDepPdLine ? rpDepAmt : 0}) - refund(${rpRefund}) = ${rpGrandTotal}`,
         pmLabel: PM_LABELS[paymentMethod]?.[loc] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod ?? '—',
         thankyou: THANK_YOU[loc] ?? THANK_YOU.en,
         receiptTitle:   t('coReceiptTitle'),
