@@ -963,7 +963,7 @@ adminRouter.get('/business/month', (req, res) => {
     const subscriberCount = proCount + multiCount;
     const stripeFees     = +(revenue * 0.015 + subscriberCount * 0.20).toFixed(2);
     const expenses       = db.prepare(
-      `SELECT id, category, description, amount_gbp FROM nestbook_expenses WHERE month = ? ORDER BY id`
+      `SELECT id, category, description, amount_gbp, receipt_ref, miles FROM nestbook_expenses WHERE month = ? ORDER BY id`
     ).all(month);
     res.json({ revenue, stripeFees, subscriberCount, expenses });
   } catch (e) {
@@ -981,10 +981,17 @@ adminRouter.post('/business/expenses', (req, res) => {
   try {
     db.prepare(`DELETE FROM nestbook_expenses WHERE month = ?`).run(month);
     const insert = db.prepare(
-      `INSERT INTO nestbook_expenses (month, category, description, amount_gbp) VALUES (?, ?, ?, ?)`
+      `INSERT INTO nestbook_expenses (month, category, description, amount_gbp, receipt_ref, miles) VALUES (?, ?, ?, ?, ?, ?)`
     );
     for (const e of expenses) {
-      insert.run(month, String(e.category), String(e.description ?? ''), Number(e.amount_gbp) || 0);
+      insert.run(
+        month,
+        String(e.category),
+        String(e.description ?? ''),
+        Number(e.amount_gbp) || 0,
+        e.receipt_ref ? String(e.receipt_ref) : null,
+        e.miles != null ? Number(e.miles) || null : null,
+      );
     }
     res.json({ saved: expenses.length });
   } catch (e) {

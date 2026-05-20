@@ -587,5 +587,9 @@ export function initSchema() {
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_nb_expenses_month ON nestbook_expenses(month)`);
 
+  // Migrations for nestbook_expenses (idempotent)
+  try { db.exec(`ALTER TABLE nestbook_expenses ADD COLUMN receipt_ref TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE nestbook_expenses ADD COLUMN miles REAL`); } catch {}
+
   console.log('✓ Database schema ready.');
 }

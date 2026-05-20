@@ -5,11 +5,48 @@ const GBP = v => `£${Number(v).toFixed(2)}`;
 const pct = v => `${Number(v).toFixed(1)}%`;
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const EXPENSE_CATEGORIES = [
-  'hosting','email_svc','dns','biz_email','domain','accountant',
-  'marketing','software','companies_house','other',
+const VAT_THRESHOLD  = 90000;
+const MILEAGE_RATE   = 0.45; // HMRC 2024/25
+
+// Category definitions grouped for the dropdown
+const CATEGORY_GROUPS = [
+  {
+    label: 'Operating Costs',
+    options: [
+      { value: 'hosting',         label: 'Hosting' },
+      { value: 'email_svc',       label: 'Email service' },
+      { value: 'dns',             label: 'DNS' },
+      { value: 'biz_email',       label: 'Business email' },
+      { value: 'domain',          label: 'Domain' },
+      { value: 'accountant',      label: 'Accountant' },
+      { value: 'marketing',       label: 'Marketing' },
+      { value: 'software',        label: 'Software' },
+      { value: 'companies_house', label: 'Companies House' },
+      { value: 'other',           label: 'Other' },
+    ],
+  },
+  {
+    label: 'Travel & Expenses',
+    options: [
+      { value: 'travel_flights',       label: 'Flights' },
+      { value: 'travel_train',         label: 'Train / public transport' },
+      { value: 'travel_mileage',       label: 'Car mileage' },
+      { value: 'travel_accommodation', label: 'Accommodation' },
+      { value: 'travel_subsistence',   label: 'Subsistence (meals)' },
+      { value: 'travel_expo',          label: 'Expo fees' },
+      { value: 'travel_parking',       label: 'Parking' },
+      { value: 'travel_other',         label: 'Other travel' },
+    ],
+  },
 ];
-const VAT_THRESHOLD = 90000;
+
+function categoryLabel(value) {
+  for (const g of CATEGORY_GROUPS) {
+    const opt = g.options.find(o => o.value === value);
+    if (opt) return opt.label;
+  }
+  return value;
+}
 
 function currentMonth() {
   const d = new Date();
@@ -19,8 +56,7 @@ function currentMonth() {
 function currentTaxYear() {
   const d = new Date();
   const y = d.getFullYear();
-  const m = d.getMonth() + 1;
-  return m >= 4 ? y : y - 1;
+  return (d.getMonth() + 1) >= 4 ? y : y - 1;
 }
 
 function fmtMonth(ym) {
@@ -53,12 +89,9 @@ function downloadCsv(rows, totals, taxYear) {
   const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement('a'), {
-    href: url,
-    download: `nestbook-business-${taxYear}-${taxYear + 1}.csv`,
+    href: url, download: `nestbook-business-${taxYear}-${taxYear + 1}.csv`,
   });
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
@@ -78,15 +111,12 @@ function StatCard({ label, value, sub, accent }) {
 
 // ── VAT progress bar ──────────────────────────────────────────────────────────
 function VatMonitor({ vatRolling12 }) {
-  const pctUsed = Math.min(100, (vatRolling12 / VAT_THRESHOLD) * 100);
-  const color   = pctUsed >= 100 ? '#ef4444' : pctUsed >= 80 ? '#f59e0b' : '#22c55e';
+  const pctUsed   = Math.min(100, (vatRolling12 / VAT_THRESHOLD) * 100);
+  const color     = pctUsed >= 100 ? '#ef4444' : pctUsed >= 80 ? '#f59e0b' : '#22c55e';
   const remaining = VAT_THRESHOLD - vatRolling12;
 
   return (
-    <div style={{
-      background: '#1e293b', borderRadius: 10, padding: '20px 24px',
-      border: '1px solid #334155', marginBottom: 28,
-    }}>
+    <div style={{ background: '#1e293b', borderRadius: 10, padding: '20px 24px', border: '1px solid #334155', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9' }}>VAT Threshold Monitor</span>
         <span style={{ fontSize: 12, color: '#94a3b8' }}>UK threshold: {GBP(VAT_THRESHOLD)} rolling 12 months</span>
@@ -100,10 +130,110 @@ function VatMonitor({ vatRolling12 }) {
           {pctUsed >= 100 && ' — REGISTER FOR VAT'}
           {pctUsed >= 80 && pctUsed < 100 && ' — approaching threshold'}
         </span>
-        {remaining > 0 && (
-          <span style={{ color: '#64748b' }}>{GBP(remaining)} remaining</span>
-        )}
+        {remaining > 0 && <span style={{ color: '#64748b' }}>{GBP(remaining)} remaining</span>}
       </div>
+    </div>
+  );
+}
+
+// ── Category select (with optgroups) ──────────────────────────────────────────
+function CategorySelect({ value, onChange, style }) {
+  return (
+    <select value={value} onChange={onChange} style={style}>
+      {CATEGORY_GROUPS.map(g => (
+        <optgroup key={g.label} label={g.label}>
+          {g.options.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
+}
+
+// ── Single expense row ────────────────────────────────────────────────────────
+function ExpenseRow({ row, index, onChange, onRemove }) {
+  const isMileage = row.category === 'travel_mileage';
+
+  function handleMilesChange(val) {
+    const miles = val === '' ? '' : parseFloat(val) || 0;
+    const amount_gbp = miles === '' ? '' : +(miles * MILEAGE_RATE).toFixed(2);
+    onChange(index, { ...row, miles: val, amount_gbp });
+  }
+
+  const inputBase = {
+    background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9',
+    borderRadius: 5, padding: '5px 8px', fontSize: 12,
+  };
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      {/* Main row */}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <CategorySelect
+          value={row.category}
+          onChange={ev => {
+            const cat = ev.target.value;
+            const reset = cat === 'travel_mileage' ? { miles: '', amount_gbp: '' } : { miles: null };
+            onChange(index, { ...row, category: cat, ...reset });
+          }}
+          style={{ ...inputBase, width: 168, flexShrink: 0 }}
+        />
+
+        <input
+          type="text"
+          placeholder="Description"
+          value={row.description}
+          onChange={ev => onChange(index, { ...row, description: ev.target.value })}
+          style={{ ...inputBase, flex: 1, minWidth: 80 }}
+        />
+
+        <input
+          type="text"
+          placeholder="Receipt ref"
+          value={row.receipt_ref || ''}
+          onChange={ev => onChange(index, { ...row, receipt_ref: ev.target.value })}
+          style={{ ...inputBase, width: 120, flexShrink: 0 }}
+          title="Receipt or reference number for audit trail"
+        />
+
+        {isMileage ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <input
+              type="number"
+              placeholder="Miles"
+              value={row.miles ?? ''}
+              onChange={ev => handleMilesChange(ev.target.value)}
+              min="0"
+              style={{ ...inputBase, width: 68, textAlign: 'right' }}
+            />
+            <span style={{ color: '#64748b', fontSize: 11, whiteSpace: 'nowrap' }}>mi</span>
+            <span style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600, width: 70, textAlign: 'right', flexShrink: 0 }}>
+              {row.miles ? GBP(parseFloat(row.miles) * MILEAGE_RATE) : '£0.00'}
+            </span>
+          </div>
+        ) : (
+          <input
+            type="number"
+            placeholder="0.00"
+            value={row.amount_gbp}
+            onChange={ev => onChange(index, { ...row, amount_gbp: ev.target.value })}
+            style={{ ...inputBase, width: 90, textAlign: 'right', flexShrink: 0 }}
+          />
+        )}
+
+        <button
+          onClick={() => onRemove(index)}
+          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 16, padding: '0 2px', lineHeight: 1, flexShrink: 0 }}
+        >×</button>
+      </div>
+
+      {/* Mileage note */}
+      {isMileage && (
+        <div style={{ marginTop: 3, marginLeft: 174, fontSize: 10, color: '#475569' }}>
+          HMRC approved mileage rate 2024/25 · 45p per mile
+        </div>
+      )}
     </div>
   );
 }
@@ -122,34 +252,31 @@ function MonthlyPL() {
     setError(null);
     apiFetch(`/api/admin/business/month?month=${month}`)
       .then(r => r.json())
-      .then(d => {
-        setData(d);
-        setExpenses(d.expenses.map(e => ({ ...e })));
-      })
+      .then(d => { setData(d); setExpenses(d.expenses.map(e => ({ ...e }))); })
       .catch(() => setError('Failed to load.'));
   }, [month]);
 
   function addRow() {
-    setExpenses(prev => [...prev, { category: 'other', description: '', amount_gbp: '' }]);
+    setExpenses(prev => [...prev, { category: 'other', description: '', amount_gbp: '', receipt_ref: '', miles: null }]);
   }
 
   function removeRow(i) {
     setExpenses(prev => prev.filter((_, idx) => idx !== i));
   }
 
-  function updateRow(i, field, val) {
-    setExpenses(prev => prev.map((row, idx) => idx === i ? { ...row, [field]: val } : row));
+  function updateRow(i, updated) {
+    setExpenses(prev => prev.map((row, idx) => idx === i ? updated : row));
   }
 
   async function handleSave() {
-    setSaving(true);
-    setSaved(false);
-    setError(null);
+    setSaving(true); setSaved(false); setError(null);
     try {
       const clean = expenses.map(e => ({
         category:    e.category,
         description: e.description,
         amount_gbp:  parseFloat(e.amount_gbp) || 0,
+        receipt_ref: e.receipt_ref || null,
+        miles:       e.miles != null && e.miles !== '' ? parseFloat(e.miles) || null : null,
       })).filter(e => e.amount_gbp > 0 || e.description);
       const r = await apiFetch('/api/admin/business/expenses', {
         method: 'POST',
@@ -158,7 +285,7 @@ function MonthlyPL() {
       });
       if (!r.ok) throw new Error();
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      setTimeout(() => setSaved(false), 2500);
     } catch {
       setError('Save failed.');
     } finally {
@@ -167,27 +294,21 @@ function MonthlyPL() {
   }
 
   const totalExpenses = expenses.reduce((s, e) => s + (parseFloat(e.amount_gbp) || 0), 0);
-  const revenue       = data?.revenue || 0;
-  const stripeFees    = data?.stripeFees || 0;
-  const netProfit     = revenue - totalExpenses - stripeFees;
-  const corpTax       = Math.max(0, netProfit * 0.19);
-  const postTax       = netProfit - corpTax;
+  const revenue    = data?.revenue    || 0;
+  const stripeFees = data?.stripeFees || 0;
+  const netProfit  = revenue - totalExpenses - stripeFees;
+  const corpTax    = Math.max(0, netProfit * 0.19);
+  const postTax    = netProfit - corpTax;
 
   return (
-    <div style={{
-      background: '#1e293b', borderRadius: 10, padding: '24px',
-      border: '1px solid #334155', marginBottom: 28,
-    }}>
+    <div style={{ background: '#1e293b', borderRadius: 10, padding: '24px', border: '1px solid #334155', marginBottom: 28 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#f1f5f9' }}>Monthly P&amp;L</h3>
         <input
           type="month"
           value={month}
           onChange={e => setMonth(e.target.value)}
-          style={{
-            background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9',
-            borderRadius: 6, padding: '6px 10px', fontSize: 13,
-          }}
+          style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9', borderRadius: 6, padding: '6px 10px', fontSize: 13 }}
         />
       </div>
 
@@ -209,51 +330,18 @@ function MonthlyPL() {
         </tbody>
       </table>
 
-      {/* Expenses */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Operating Expenses</div>
+      {/* Column headers */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 6, paddingRight: 24 }}>
+        <div style={{ width: 168, flexShrink: 0, fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: 1 }}>Category</div>
+        <div style={{ flex: 1, minWidth: 80, fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: 1 }}>Description</div>
+        <div style={{ width: 120, flexShrink: 0, fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: 1 }}>Receipt ref</div>
+        <div style={{ width: 152, flexShrink: 0, fontSize: 10, color: '#475569', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'right' }}>Amount</div>
+      </div>
+
+      {/* Expense rows */}
+      <div style={{ marginBottom: 8 }}>
         {expenses.map((e, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
-            <select
-              value={e.category}
-              onChange={ev => updateRow(i, 'category', ev.target.value)}
-              style={{
-                background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9',
-                borderRadius: 5, padding: '5px 8px', fontSize: 12, width: 140, flexShrink: 0,
-              }}
-            >
-              {EXPENSE_CATEGORIES.map(c => (
-                <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Description"
-              value={e.description}
-              onChange={ev => updateRow(i, 'description', ev.target.value)}
-              style={{
-                flex: 1, background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9',
-                borderRadius: 5, padding: '5px 8px', fontSize: 12,
-              }}
-            />
-            <input
-              type="number"
-              placeholder="0.00"
-              value={e.amount_gbp}
-              onChange={ev => updateRow(i, 'amount_gbp', ev.target.value)}
-              style={{
-                width: 90, background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9',
-                borderRadius: 5, padding: '5px 8px', fontSize: 12, textAlign: 'right',
-              }}
-            />
-            <button
-              onClick={() => removeRow(i)}
-              style={{
-                background: 'none', border: 'none', color: '#ef4444',
-                cursor: 'pointer', fontSize: 16, padding: '0 4px', lineHeight: 1,
-              }}
-            >×</button>
-          </div>
+          <ExpenseRow key={i} row={e} index={i} onChange={updateRow} onRemove={removeRow} />
         ))}
         <button
           onClick={addRow}
@@ -292,8 +380,8 @@ function MonthlyPL() {
           disabled={saving}
           style={{
             background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6,
-            padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
-            opacity: saving ? 0.6 : 1,
+            padding: '8px 20px', fontSize: 13, fontWeight: 600,
+            cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
           }}
         >{saving ? 'Saving…' : 'Save Expenses'}</button>
       </div>
@@ -309,8 +397,7 @@ function AnnualSummary() {
   const [error,   setError]   = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     apiFetch(`/api/admin/business/annual?taxYear=${taxYear}`)
       .then(r => r.json())
       .then(d => setData(d))
@@ -321,43 +408,32 @@ function AnnualSummary() {
   const yearOpts = [];
   for (let y = 2024; y <= currentTaxYear() + 1; y++) yearOpts.push(y);
 
-  const th = { padding: '8px 10px', color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'right', whiteSpace: 'nowrap' };
-  const td = { padding: '8px 10px', fontSize: 13, textAlign: 'right', borderBottom: '1px solid #1e293b' };
+  const th  = { padding: '8px 10px', color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'right', whiteSpace: 'nowrap' };
+  const td  = { padding: '8px 10px', fontSize: 13, textAlign: 'right', borderBottom: '1px solid #1e293b' };
   const tdL = { ...td, textAlign: 'left', color: '#94a3b8' };
 
   return (
-    <div style={{
-      background: '#1e293b', borderRadius: 10, padding: '24px',
-      border: '1px solid #334155',
-    }}>
+    <div style={{ background: '#1e293b', borderRadius: 10, padding: '24px', border: '1px solid #334155' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#f1f5f9' }}>Annual Summary (UK Tax Year)</h3>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <select
             value={taxYear}
             onChange={e => setTaxYear(Number(e.target.value))}
-            style={{
-              background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9',
-              borderRadius: 6, padding: '6px 10px', fontSize: 13,
-            }}
+            style={{ background: '#0f172a', border: '1px solid #334155', color: '#f1f5f9', borderRadius: 6, padding: '6px 10px', fontSize: 13 }}
           >
-            {yearOpts.map(y => (
-              <option key={y} value={y}>{y}/{y + 1}</option>
-            ))}
+            {yearOpts.map(y => <option key={y} value={y}>{y}/{y + 1}</option>)}
           </select>
           {data && (
             <button
               onClick={() => downloadCsv(data.rows, data.totals, data.taxYear)}
-              style={{
-                background: '#1e3a5f', border: '1px solid #3b82f6', color: '#60a5fa',
-                borderRadius: 6, padding: '6px 14px', fontSize: 12, cursor: 'pointer',
-              }}
+              style={{ background: '#1e3a5f', border: '1px solid #3b82f6', color: '#60a5fa', borderRadius: 6, padding: '6px 14px', fontSize: 12, cursor: 'pointer' }}
             >Export CSV</button>
           )}
         </div>
       </div>
 
-      {error  && <div style={{ color: '#ef4444', fontSize: 13 }}>{error}</div>}
+      {error   && <div style={{ color: '#ef4444', fontSize: 13 }}>{error}</div>}
       {loading && <div style={{ color: '#64748b', fontSize: 13 }}>Loading…</div>}
 
       {data && (
@@ -393,11 +469,11 @@ function AnnualSummary() {
             <tfoot>
               <tr style={{ borderTop: '2px solid #334155', background: '#0f172a' }}>
                 <td style={{ ...tdL, fontWeight: 700, color: '#f1f5f9' }}>Total</td>
-                <td style={{ ...td, color: '#22c55e', fontWeight: 700 }}>{GBP(data.totals.revenue)}</td>
-                <td style={{ ...td, color: '#ef4444', fontWeight: 700 }}>−{GBP(data.totals.expenses)}</td>
-                <td style={{ ...td, color: '#ef4444', fontWeight: 700 }}>−{GBP(data.totals.stripeFees)}</td>
+                <td style={{ ...td, color: '#22c55e',  fontWeight: 700 }}>{GBP(data.totals.revenue)}</td>
+                <td style={{ ...td, color: '#ef4444',  fontWeight: 700 }}>−{GBP(data.totals.expenses)}</td>
+                <td style={{ ...td, color: '#ef4444',  fontWeight: 700 }}>−{GBP(data.totals.stripeFees)}</td>
                 <td style={{ ...td, color: data.totals.netProfit >= 0 ? '#f1f5f9' : '#ef4444', fontWeight: 700 }}>{GBP(data.totals.netProfit)}</td>
-                <td style={{ ...td, color: '#f59e0b', fontWeight: 700 }}>−{GBP(data.totals.corpTax)}</td>
+                <td style={{ ...td, color: '#f59e0b',  fontWeight: 700 }}>−{GBP(data.totals.corpTax)}</td>
                 <td style={{ ...td, color: (data.totals.netProfit - data.totals.corpTax) >= 0 ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{GBP(data.totals.netProfit - data.totals.corpTax)}</td>
               </tr>
             </tfoot>
@@ -429,12 +505,11 @@ export default function BusinessFinances() {
         Financial overview of NestBook Ltd — separate from property owners' finances.
       </p>
 
-      {error  && <div style={{ color: '#ef4444', marginBottom: 20 }}>{error}</div>}
+      {error   && <div style={{ color: '#ef4444', marginBottom: 20 }}>{error}</div>}
       {loading && <div style={{ color: '#64748b', marginBottom: 20 }}>Loading…</div>}
 
       {stats && (
         <>
-          {/* Revenue stats */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
             <StatCard label="Monthly Recurring Revenue" value={GBP(stats.mrr)} sub="Current MRR" accent="#22c55e" />
             <StatCard label="Annual Run Rate" value={GBP(stats.arr)} sub="MRR × 12" />
@@ -445,16 +520,11 @@ export default function BusinessFinances() {
               <StatCard label="Cancelling" value={stats.atRisk} sub="end of period" accent="#ef4444" />
             )}
           </div>
-
-          {/* VAT monitor */}
           <VatMonitor vatRolling12={stats.vatRolling12} />
         </>
       )}
 
-      {/* Monthly P&L (always visible) */}
       <MonthlyPL />
-
-      {/* Annual summary */}
       <AnnualSummary />
     </div>
   );
