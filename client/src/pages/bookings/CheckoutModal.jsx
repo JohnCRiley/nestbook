@@ -57,9 +57,6 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
   const totalDue     = Math.max(0, subtotal - depositDeduction);
   const displayTotal = Math.max(0, totalDue - refundAmt);
   const outstanding  = !depositPaid && depositAmount > 0 ? depositAmount : 0;
-  console.log('[CheckoutModal] roomSubtotal:', roomSubtotal, 'breakfastSubtotal:', breakfastSubtotal, 'chargesSubtotal:', chargesSubtotal);
-  console.log('[CheckoutModal] refundAmt:', refundAmt, '(from b.refund_amount:', b.refund_amount, ')');
-  console.log('[CheckoutModal] subtotal:', subtotal, 'totalDue (pre-refund):', totalDue, 'displayTotal (post-refund):', displayTotal);
 
   const handleConfirm = async () => {
     if (!paymentMethod) return;

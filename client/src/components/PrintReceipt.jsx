@@ -116,13 +116,6 @@ export function buildReceiptHTML(d, format) {
       color: #aaa;
       margin-top: 4px;
     }
-    .debug-block {
-      margin-top: 16px; padding: 8px 10px;
-      background: #fef3c7; border: 1px solid #f59e0b;
-      font-size: 8pt; font-family: monospace; color: #92400e;
-      line-height: 1.5;
-    }
-    @media print { .debug-block { display: none; } }
     .section-label {
       font-size: ${isReceipt ? '7pt' : '9pt'};
       color: #888;
@@ -222,10 +215,6 @@ export function buildReceiptHTML(d, format) {
     ${esc(d.thankyou)}
     <div class="receipt-powered">Powered by NestBook</div>
   </div>
-  <div class="debug-block">
-    <strong>DEBUG (screen only, does not print)</strong><br>
-    ${esc(d.calcDebug ?? 'no debug info')}
-  </div>
 </body>
 </html>`;
 }
@@ -261,8 +250,6 @@ export default function PrintReceipt({
   const grossSubtotal   = (roomSubtotal || 0) + (breakfastSubtotal || 0) + chargesTotal;
   const depositDeduction = depPaidLine ? depositAmount : 0;
   const grandTotal      = Math.max(0, grossSubtotal - depositDeduction - refund);
-  console.log('[PrintReceipt] roomSubtotal:', roomSubtotal, 'breakfastSubtotal:', breakfastSubtotal, 'chargesTotal:', chargesTotal);
-  console.log('[PrintReceipt] depositDeduction:', depositDeduction, 'refund:', refund, 'grandTotal:', grandTotal);
 
   const d = {
     locale,
@@ -303,7 +290,6 @@ export default function PrintReceipt({
     refundLabel:   t('refundLine'),
     refundFmt:     refund > 0 ? `-${fc(refund, symbol)}` : null,
     totalDueFmt:   fc(grandTotal, symbol),
-    calcDebug: `room(${roomSubtotal}) + bf(${breakfastSubtotal || 0}) + charges(${chargesTotal}) - deposit(${depositDeduction}) - refund(${refund}) = ${grandTotal}`,
     pmLabel: paymentMethod
       ? (PM_LABELS[paymentMethod]?.[locale] ?? PM_LABELS[paymentMethod]?.en ?? paymentMethod)
       : '—',
@@ -462,17 +448,6 @@ export default function PrintReceipt({
           </div>
           <div style={{ textAlign: 'center', fontSize: '0.65rem', color: '#94a3b8' }}>
             Powered by NestBook
-          </div>
-
-          {/* Debug block — screen only, shows in preview modal */}
-          <div style={{
-            marginTop: 16, padding: '8px 10px',
-            background: '#fef3c7', border: '1px solid #f59e0b',
-            fontSize: '0.75rem', fontFamily: 'monospace', color: '#92400e',
-            lineHeight: 1.6, borderRadius: 4,
-          }}>
-            <strong>DEBUG (preview only)</strong><br />
-            {d.calcDebug}
           </div>
 
         </div>
