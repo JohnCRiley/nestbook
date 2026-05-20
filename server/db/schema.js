@@ -574,5 +574,18 @@ export function initSchema() {
     console.log('✓ Added refund columns to bookings.');
   }
 
+  // NestBook operating expenses — per-month tracking for NestBook Ltd itself
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS nestbook_expenses (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      month       TEXT    NOT NULL,
+      category    TEXT    NOT NULL,
+      description TEXT,
+      amount_gbp  REAL    NOT NULL DEFAULT 0,
+      created_at  TEXT    DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_nb_expenses_month ON nestbook_expenses(month)`);
+
   console.log('✓ Database schema ready.');
 }

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, Routes, Route } from 'react-router-dom';
-import Overview      from './pages/Overview.jsx';
-import Properties    from './pages/Properties.jsx';
-import Users         from './pages/Users.jsx';
-import Revenue       from './pages/Revenue.jsx';
-import AdminSettings from './pages/AdminSettings.jsx';
-import MailingList   from './pages/MailingList.jsx';
-import AuditLog      from './pages/AuditLog.jsx';
+import Overview          from './pages/Overview.jsx';
+import Properties        from './pages/Properties.jsx';
+import Users             from './pages/Users.jsx';
+import Revenue           from './pages/Revenue.jsx';
+import AdminSettings     from './pages/AdminSettings.jsx';
+import MailingList       from './pages/MailingList.jsx';
+import AuditLog          from './pages/AuditLog.jsx';
+import BusinessFinances  from './pages/BusinessFinances.jsx';
 import { clearSASession } from './saApiFetch.js';
 
 const NAV = [
@@ -16,7 +17,8 @@ const NAV = [
   { to: '/super-admin/revenue',      label: 'Revenue',                  icon: <IconRevenue /> },
   { to: '/super-admin/audit-log',    label: 'Audit Log',                icon: <IconAuditLog /> },
   { to: '/super-admin/mailing-list', label: 'Mailing List',             icon: <IconMail /> },
-  { to: '/super-admin/settings',     label: 'Settings',                 icon: <IconSettings /> },
+  { to: '/super-admin/settings',          label: 'Settings',          icon: <IconSettings /> },
+  { to: '/super-admin/business-finances', label: 'NestBook Business', icon: <IconFinances /> },
 ];
 
 export default function AdminLayout() {
@@ -107,7 +109,8 @@ export default function AdminLayout() {
           <Route path="revenue"           element={<Revenue       />} />
           <Route path="audit-log"         element={<AuditLog      />} />
           <Route path="mailing-list"      element={<MailingList   />} />
-          <Route path="settings"          element={<AdminSettings />} />
+          <Route path="settings"            element={<AdminSettings     />} />
+          <Route path="business-finances" element={<BusinessFinances  />} />
         </Routes>
       </main>
     </div>
@@ -170,6 +173,17 @@ function IconMail() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
       <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  );
+}
+
+function IconFinances() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      <line x1="12" y1="12" x2="12" y2="16"/>
+      <line x1="10" y1="14" x2="14" y2="14"/>
     </svg>
   );
 }

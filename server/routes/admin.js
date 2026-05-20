@@ -930,3 +930,106 @@ function fmtCsvTimestamp(ts) {
     hour12: false, timeZone: 'UTC',
   });
 }
+
+// ── GET /api/admin/business/stats ─────────────────────────────────────────────
+adminRouter.get('/business/stats', (req, res) => {
+  try {
+    const proCount   = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'pro'").get().n;
+    const multiCount = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'multi'").get().n;
+    const freeCount  = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'free'").get().n;
+    const totalUsers = proCount + multiCount + freeCount;
+    const mrr        = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
+    const arr        = mrr * 12;
+    const conversionPct = totalUsers > 0 ? +((proCount + multiCount) / totalUsers * 100).toFixed(1) : 0;
+    const atRisk = db.prepare(
+      "SELECT COUNT(*) as n FROM subscriptions WHERE cancel_at_period_end = 1 AND status = 'active'"
+    ).get().n;
+    res.json({ mrr, arr, proCount, multiCount, freeCount, totalUsers, conversionPct, atRisk, vatRolling12: arr });
+  } catch (e) {
+    console.error('[admin/business/stats]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
+// ── GET /api/admin/business/month?month=YYYY-MM ───────────────────────────────
+adminRouter.get('/business/month', (req, res) => {
+  const { month } = req.query;
+  if (!month || !/^\d{4}-\d{2}$/.test(month))
+    return res.status(400).json({ error: 'month required (YYYY-MM)' });
+  try {
+    const proCount       = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'pro'").get().n;
+    const multiCount     = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'multi'").get().n;
+    const revenue        = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
+    const subscriberCount = proCount + multiCount;
+    const stripeFees     = +(revenue * 0.015 + subscriberCount * 0.20).toFixed(2);
+    const expenses       = db.prepare(
+      `SELECT id, category, description, amount_gbp FROM nestbook_expenses WHERE month = ? ORDER BY id`
+    ).all(month);
+    res.json({ revenue, stripeFees, subscriberCount, expenses });
+  } catch (e) {
+    console.error('[admin/business/month]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
+// ── POST /api/admin/business/expenses ─────────────────────────────────────────
+// Body: { month, expenses: [{category, description, amount_gbp}] }
+adminRouter.post('/business/expenses', (req, res) => {
+  const { month, expenses } = req.body;
+  if (!month || !/^\d{4}-\d{2}$/.test(month) || !Array.isArray(expenses))
+    return res.status(400).json({ error: 'month and expenses[] required' });
+  try {
+    db.prepare(`DELETE FROM nestbook_expenses WHERE month = ?`).run(month);
+    const insert = db.prepare(
+      `INSERT INTO nestbook_expenses (month, category, description, amount_gbp) VALUES (?, ?, ?, ?)`
+    );
+    for (const e of expenses) {
+      insert.run(month, String(e.category), String(e.description ?? ''), Number(e.amount_gbp) || 0);
+    }
+    res.json({ saved: expenses.length });
+  } catch (e) {
+    console.error('[admin/business/expenses POST]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
+// ── GET /api/admin/business/annual?taxYear=YYYY ───────────────────────────────
+// Returns 12 months of UK tax year (April–March) with revenue, expenses, Stripe fees, P&L.
+adminRouter.get('/business/annual', (req, res) => {
+  const taxYear = parseInt(req.query.taxYear) || new Date().getFullYear();
+  try {
+    const proCount        = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'pro'").get().n;
+    const multiCount      = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'multi'").get().n;
+    const mrr             = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
+    const subscriberCount = proCount + multiCount;
+
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(taxYear, 3 + i, 1); // April = index 3
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const rows = months.map(month => {
+      const expRow   = db.prepare(`SELECT COALESCE(SUM(amount_gbp),0) as total FROM nestbook_expenses WHERE month = ?`).get(month);
+      const expenses = expRow.total || 0;
+      const revenue    = mrr;
+      const stripeFees = +(revenue * 0.015 + subscriberCount * 0.20).toFixed(2);
+      const netProfit  = +(revenue - expenses - stripeFees).toFixed(2);
+      const corpTax    = +(Math.max(0, netProfit) * 0.19).toFixed(2);
+      return { month, revenue, expenses: +expenses.toFixed(2), stripeFees, netProfit, corpTax };
+    });
+
+    const totals = rows.reduce((acc, r) => ({
+      revenue:    +(acc.revenue    + r.revenue).toFixed(2),
+      expenses:   +(acc.expenses   + r.expenses).toFixed(2),
+      stripeFees: +(acc.stripeFees + r.stripeFees).toFixed(2),
+      netProfit:  +(acc.netProfit  + r.netProfit).toFixed(2),
+      corpTax:    +(acc.corpTax    + r.corpTax).toFixed(2),
+    }), { revenue: 0, expenses: 0, stripeFees: 0, netProfit: 0, corpTax: 0 });
+
+    res.json({ taxYear, rows, totals });
+  } catch (e) {
+    console.error('[admin/business/annual]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
