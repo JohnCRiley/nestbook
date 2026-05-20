@@ -52,11 +52,9 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
   const depositDeduction = depositPaid ? depositAmount : 0;
   const refundAmt        = parseFloat(b.refund_amount) || 0;
 
-  const chargesSubtotal = roomCharges.reduce((s, c) => s + c.amount, 0);
+  const chargesSubtotal = roomCharges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   const subtotal     = roomSubtotal + breakfastSubtotal + chargesSubtotal;
-  // totalDue: pre-refund — passed to PrintReceipt, which subtracts refund itself
   const totalDue     = Math.max(0, subtotal - depositDeduction);
-  // displayTotal: what's shown in the checkout UI after refund deduction
   const displayTotal = Math.max(0, totalDue - refundAmt);
   const outstanding  = !depositPaid && depositAmount > 0 ? depositAmount : 0;
   console.log('[CheckoutModal] roomSubtotal:', roomSubtotal, 'breakfastSubtotal:', breakfastSubtotal, 'chargesSubtotal:', chargesSubtotal);
