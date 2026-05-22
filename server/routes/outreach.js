@@ -174,13 +174,62 @@ outreachRouter.post('/send', async (req, res) => {
       .replace(/\{\{company\}\}/g, p.company || '')
       .replace(/\{\{email\}\}/g, p.email);
 
+    // Convert plain text body to HTML: paragraphs separated by blank lines
+    const bodyHtml = finalBody
+      .split(/\n{2,}/)
+      .map(para => `<p style="margin:0 0 16px 0;line-height:1.7">${para.replace(/\n/g, '<br>')}</p>`)
+      .join('\n');
+
     const unsubUrl = `${process.env.BASE_URL || 'https://nestbook.io'}/api/outreach/unsubscribe?token=${p.unsubscribe_token}`;
-    const htmlBody = `<div style="font-family:sans-serif;max-width:600px;line-height:1.6">${
-      finalBody.replace(/\n/g, '<br>')
-    }</div>
-<p style="font-size:11px;color:#999;margin-top:32px">
-  <a href="${unsubUrl}" style="color:#999">Unsubscribe</a>
-</p>`;
+
+    const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 16px">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+
+  <!-- Header -->
+  <tr><td style="background:#1a4710;padding:20px 32px;border-radius:8px 8px 0 0">
+    <img src="https://nestbook.io/icon-192.png"
+         width="36" height="36"
+         style="border-radius:8px;vertical-align:middle;display:inline-block">
+    <span style="color:#ffffff;font-size:20px;font-weight:700;margin-left:12px;vertical-align:middle">NestBook</span>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="background:#ffffff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+    <div style="color:#1e293b;font-size:15px">
+      ${bodyHtml}
+    </div>
+
+    <!-- Signature -->
+    <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e2e8f0">
+      <img src="https://nestbook.io/icon-192.png"
+           width="28" height="28"
+           style="border-radius:6px;vertical-align:middle;display:inline-block">
+      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px">John Riley</strong><br>
+      <span style="color:#64748b;font-size:13px;line-height:1.8">
+        Founder, NestBook<br>
+        <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none">hello@nestbook.io</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none">nestbook.io</a>
+      </span>
+    </div>
+
+    <!-- GDPR footer -->
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6">
+      You received this email because you manage a hospitality property and we thought NestBook might be useful to you.<br>
+      <a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline">Unsubscribe</a>
+    </div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
 
     try {
       await sendOutreachEmail({ to: p.email, subject, html: htmlBody });

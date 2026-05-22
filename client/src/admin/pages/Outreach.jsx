@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -219,6 +219,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   const [campId, setCampId]       = useState('');
   const [sending, setSending]     = useState(false);
   const [result, setResult]       = useState(null);
+  const sendingRef                = useRef(false); // synchronous guard against double-click
 
   function loadTemplate(id) {
     const t = templates.find(t => t.id === Number(id));
@@ -226,17 +227,23 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   }
 
   async function send() {
-    if (!subject.trim() || !body.trim()) return;
+    if (sendingRef.current || !subject.trim() || !body.trim()) return;
+    sendingRef.current = true;
     setSending(true);
-    const res = await saApiFetch('/api/admin/outreach/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prospect_ids: selected.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null }),
-    });
-    setSending(false);
-    const data = await res.json();
-    setResult(data.results);
-    onSent();
+    try {
+      const res = await saApiFetch('/api/admin/outreach/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prospect_ids: selected.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null }),
+      });
+      const data = await res.json();
+      setResult(data.results);
+      onSent();
+    } catch {
+      // Only re-enable on network error so the user can retry
+      sendingRef.current = false;
+      setSending(false);
+    }
   }
 
   if (result) {
