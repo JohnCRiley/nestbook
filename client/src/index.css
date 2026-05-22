@@ -54,13 +54,13 @@ html[data-theme="ember"] {
   --text-muted:    #a8a29e;
 }
 html[data-theme="ruby"] {
-  --sidebar-bg:    #800705;
+  --sidebar-bg:    #590c0b;
   --sidebar-active:#b50908;
   --accent:        #b50908;
-  --accent-dark:   #800705;
+  --accent-dark:   #590c0b;
   --tint-bg:       #faf1e1;
   --tint-border:   #e8d8be;
-  --tint-text:     #800705;
+  --tint-text:     #590c0b;
   --light-green:   #faf1e1;
   --page-bg:       #fdf8f2;
   --border:        #e5e7eb;

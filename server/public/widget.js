@@ -43,7 +43,7 @@
     forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
     royal:    { brand: '#2c5580', dark: '#1f3a55', light: '#fffbe0' },
     ember:    { brand: '#d6a242', dark: '#a37830', light: '#d9d6d0' },
-    ruby:     { brand: '#b50908', dark: '#800705', light: '#faf1e1' },
+    ruby:     { brand: '#b50908', dark: '#590c0b', light: '#faf1e1' },
     sky:      { brand: '#699ec9', dark: '#4a7a99', light: '#bfd3e3' },
     lavender: { brand: '#7636f5', dark: '#5b1ed4', light: '#d7cfee' },
     charcoal: { brand: '#dc2626', dark: '#1c1917', light: '#e7e5e4' },
