@@ -591,5 +591,153 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE nestbook_expenses ADD COLUMN receipt_ref TEXT`); } catch {}
   try { db.exec(`ALTER TABLE nestbook_expenses ADD COLUMN miles REAL`); } catch {}
 
+  // ── Prospect Outreach CRM ─────────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prospects (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      name              TEXT    NOT NULL,
+      company           TEXT,
+      email             TEXT    NOT NULL UNIQUE,
+      source            TEXT    NOT NULL DEFAULT 'manual'
+                                CHECK(source IN ('manual','csv','auto_signup','website')),
+      status            TEXT    NOT NULL DEFAULT 'new'
+                                CHECK(status IN ('new','contacted','replied','converted','unsubscribed')),
+      notes             TEXT,
+      follow_up_date    TEXT,
+      unsubscribe_token TEXT    UNIQUE,
+      unsubscribed_at   TEXT,
+      converted_at      TEXT,
+      user_id           INTEGER REFERENCES users(id),
+      created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_templates (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT NOT NULL,
+      subject    TEXT NOT NULL,
+      body       TEXT NOT NULL,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS outreach_campaigns (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL,
+      description TEXT,
+      status      TEXT NOT NULL DEFAULT 'draft'
+                  CHECK(status IN ('draft','active','completed')),
+      sent_count  INTEGER NOT NULL DEFAULT 0,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prospect_emails (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      prospect_id  INTEGER NOT NULL REFERENCES prospects(id) ON DELETE CASCADE,
+      campaign_id  INTEGER REFERENCES outreach_campaigns(id),
+      template_id  INTEGER REFERENCES email_templates(id),
+      subject      TEXT NOT NULL,
+      body         TEXT NOT NULL,
+      sent_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_prospect_emails_prospect ON prospect_emails(prospect_id)`);
+
+  // Seed 5 default email templates (only if none exist yet)
+  const tmplCount = db.prepare(`SELECT COUNT(*) AS n FROM email_templates`).get().n;
+  if (tmplCount === 0) {
+    const insertTmpl = db.prepare(
+      `INSERT INTO email_templates (name, subject, body, is_default) VALUES (?, ?, ?, 1)`
+    );
+    insertTmpl.run(
+      'Introduction — What is NestBook?',
+      'Manage your B&B bookings without the chaos',
+      `Hi {{name}},
+
+I hope you don't mind me reaching out — I came across {{company}} and thought NestBook might be a great fit.
+
+NestBook is simple property management software built for small B&Bs, gîtes, and guesthouses. It handles bookings, guests, rooms, revenue reports, and even the booking widget for your website — all in one place.
+
+No complicated setup. No per-booking fees. Just a flat monthly subscription starting at £19.
+
+Would you be open to a quick look? There's a 30-day free trial, no credit card required.
+
+Best wishes,
+John at NestBook`
+    );
+    insertTmpl.run(
+      'Free Trial Offer',
+      '30 days free — no card needed',
+      `Hi {{name}},
+
+Quick note to let you know that NestBook offers a completely free 30-day trial — no credit card, no commitment.
+
+It takes about 5 minutes to set up: add your rooms, import your guests, and you're managing bookings from day one.
+
+If you run a B&B, gîte, or small guesthouse and you're still relying on spreadsheets or paper, this was built for you.
+
+Try it free at nestbook.io
+
+John at NestBook`
+    );
+    insertTmpl.run(
+      'Welcome — You Just Signed Up',
+      'Great to have you on board, {{name}}',
+      `Hi {{name}},
+
+Welcome to NestBook! I noticed you just created your account and wanted to personally reach out.
+
+If you have any questions getting started — adding rooms, setting up your calendar, or connecting your booking widget — just reply to this email and I'll help you directly.
+
+A few things worth knowing:
+- Your 30-day Pro trial starts the moment you upgrade
+- The booking widget embeds directly on your website
+- Revenue reports are automatically generated from your bookings
+
+Happy to jump on a quick call if that would help.
+
+John at NestBook`
+    );
+    insertTmpl.run(
+      'Feature Highlight — Booking Widget',
+      'Let guests book directly from your website',
+      `Hi {{name}},
+
+One of the most popular NestBook features is the booking widget — a small snippet of code you paste onto your website that lets guests check availability and book in real time.
+
+No more back-and-forth emails asking "is the 12th available?". Guests see live availability and book instantly. You get an automatic confirmation.
+
+It's included in the Pro plan (from £19/month), and the 30-day trial is free.
+
+Worth a look: nestbook.io
+
+Best,
+John`
+    );
+    insertTmpl.run(
+      'Follow-up — Checking In',
+      'Still thinking about NestBook?',
+      `Hi {{name}},
+
+I sent a note a while back about NestBook — just wanted to follow up in case it got buried.
+
+If now isn't the right time, no problem at all — just let me know and I won't bother you again. But if you're still looking for a simpler way to manage bookings at {{company}}, I'd love to help.
+
+Free trial at nestbook.io — no card needed.
+
+Best,
+John`
+    );
+    console.log('✓ Seeded 5 default email templates.');
+  }
+
   console.log('✓ Database schema ready.');
 }

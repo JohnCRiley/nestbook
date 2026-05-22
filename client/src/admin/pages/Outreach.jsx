@@ -1,0 +1,767 @@
+import { useState, useEffect, useCallback } from 'react';
+import { saApiFetch } from '../saApiFetch.js';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(n) { return (n ?? 0).toLocaleString(); }
+
+function StatusBadge({ status }) {
+  const colours = {
+    new:          { bg: '#eff6ff', color: '#1d4ed8', label: 'New' },
+    contacted:    { bg: '#fef9c3', color: '#92400e', label: 'Contacted' },
+    replied:      { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
+    converted:    { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
+    unsubscribed: { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
+  };
+  const s = colours[status] || colours.new;
+  return (
+    <span style={{
+      padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600,
+      background: s.bg, color: s.color,
+    }}>{s.label}</span>
+  );
+}
+
+function SourceBadge({ source }) {
+  const labels = { manual: 'Manual', csv: 'CSV', auto_signup: 'Signed up', website: 'Website' };
+  return (
+    <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
+      {labels[source] ?? source}
+    </span>
+  );
+}
+
+// ── Section wrapper ───────────────────────────────────────────────────────────
+function Section({ title, children, action }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0', marginBottom: 24 }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' }}>{title}</h3>
+        {action}
+      </div>
+      <div style={{ padding: 20 }}>{children}</div>
+    </div>
+  );
+}
+
+function Btn({ children, onClick, variant = 'primary', small, disabled, style }) {
+  const styles = {
+    primary:   { background: '#1a4710', color: '#fff', border: 'none' },
+    secondary: { background: '#fff', color: '#374151', border: '1px solid #d1d5db' },
+    danger:    { background: '#fff', color: '#dc2626', border: '1px solid #fca5a5' },
+  };
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: small ? '4px 10px' : '7px 14px',
+        borderRadius: 6, fontSize: small ? '0.8rem' : '0.85rem', fontWeight: 600,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
+        fontFamily: 'inherit', ...styles[variant], ...style,
+      }}
+    >{children}</button>
+  );
+}
+
+function Input({ value, onChange, placeholder, style, type = 'text' }) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit', ...style }}
+    />
+  );
+}
+
+function Textarea({ value, onChange, rows = 5, placeholder, style }) {
+  return (
+    <textarea
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      rows={rows}
+      placeholder={placeholder}
+      style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit', width: '100%', resize: 'vertical', ...style }}
+    />
+  );
+}
+
+// ── Stats bar ─────────────────────────────────────────────────────────────────
+function StatsBar({ stats }) {
+  if (!stats) return null;
+  const cards = [
+    { label: 'Total Prospects',  value: fmt(stats.total) },
+    { label: 'New',              value: fmt(stats.byStatus?.new) },
+    { label: 'Contacted',        value: fmt(stats.byStatus?.contacted) },
+    { label: 'Converted',        value: fmt(stats.byStatus?.converted), highlight: true },
+    { label: 'Sent Today',       value: fmt(stats.sentToday) },
+    { label: 'Emails Sent',      value: fmt(stats.sentTotal) },
+    { label: 'Campaigns',        value: fmt(stats.campaigns) },
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
+      {cards.map(c => (
+        <div key={c.label} style={{
+          background: c.highlight ? '#f0fdf4' : '#fff',
+          border: `1px solid ${c.highlight ? '#bbf7d0' : '#e2e8f0'}`,
+          borderRadius: 8, padding: '12px 16px',
+        }}>
+          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: c.highlight ? '#166534' : '#0f172a' }}>{c.value}</div>
+          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>{c.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Add Prospect modal ────────────────────────────────────────────────────────
+function AddProspectModal({ onClose, onSaved }) {
+  const [name, setName]       = useState('');
+  const [company, setCompany] = useState('');
+  const [email, setEmail]     = useState('');
+  const [notes, setNotes]     = useState('');
+  const [saving, setSaving]   = useState(false);
+  const [err, setErr]         = useState('');
+
+  async function save() {
+    if (!name.trim() || !email.trim()) { setErr('Name and email are required.'); return; }
+    setSaving(true); setErr('');
+    const res = await saApiFetch('/api/admin/outreach/prospects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, company, email, notes }),
+    });
+    setSaving(false);
+    if (res.ok) { onSaved(); onClose(); }
+    else { const d = await res.json(); setErr(d.error || 'Failed to save'); }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 440 }}>
+        <h3 style={{ margin: '0 0 18px', fontSize: '1rem' }}>Add Prospect</h3>
+        {err && <div style={{ background: '#fef2f2', color: '#dc2626', padding: '8px 12px', borderRadius: 6, marginBottom: 12, fontSize: '0.85rem' }}>{err}</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Input value={name}    onChange={setName}    placeholder="Full name *" style={{ width: '100%' }} />
+          <Input value={company} onChange={setCompany} placeholder="Company / property name" style={{ width: '100%' }} />
+          <Input value={email}   onChange={setEmail}   placeholder="Email address *" type="email" style={{ width: '100%' }} />
+          <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes (optional)" />
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Add Prospect'}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Prospect modal ───────────────────────────────────────────────────────
+function EditProspectModal({ prospect, onClose, onSaved }) {
+  const [name, setName]             = useState(prospect.name);
+  const [company, setCompany]       = useState(prospect.company ?? '');
+  const [email, setEmail]           = useState(prospect.email);
+  const [status, setStatus]         = useState(prospect.status);
+  const [notes, setNotes]           = useState(prospect.notes ?? '');
+  const [followUp, setFollowUp]     = useState(prospect.follow_up_date ?? '');
+  const [saving, setSaving]         = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await saApiFetch(`/api/admin/outreach/prospects/${prospect.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, company, email, status, notes, follow_up_date: followUp || null }),
+    });
+    setSaving(false); onSaved(); onClose();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 480 }}>
+        <h3 style={{ margin: '0 0 18px', fontSize: '1rem' }}>Edit Prospect</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Input value={name}    onChange={setName}    placeholder="Full name" style={{ width: '100%' }} />
+          <Input value={company} onChange={setCompany} placeholder="Company / property" style={{ width: '100%' }} />
+          <Input value={email}   onChange={setEmail}   placeholder="Email" type="email" style={{ width: '100%' }} />
+          <select
+            value={status} onChange={e => setStatus(e.target.value)}
+            style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+          >
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="replied">Replied</option>
+            <option value="converted">Converted</option>
+            <option value="unsubscribed">Unsubscribed</option>
+          </select>
+          <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes" />
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: 4 }}>Follow-up date</label>
+            <Input value={followUp} onChange={setFollowUp} type="date" style={{ width: '100%' }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Email Composer modal ──────────────────────────────────────────────────────
+function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, onSent }) {
+  const selected = prospects.filter(p => selectedIds.includes(p.id) && p.status !== 'unsubscribed');
+  const [subject, setSubject]     = useState('');
+  const [body, setBody]           = useState('');
+  const [tmplId, setTmplId]       = useState('');
+  const [campId, setCampId]       = useState('');
+  const [sending, setSending]     = useState(false);
+  const [result, setResult]       = useState(null);
+
+  function loadTemplate(id) {
+    const t = templates.find(t => t.id === Number(id));
+    if (t) { setSubject(t.subject); setBody(t.body); setTmplId(id); }
+  }
+
+  async function send() {
+    if (!subject.trim() || !body.trim()) return;
+    setSending(true);
+    const res = await saApiFetch('/api/admin/outreach/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prospect_ids: selected.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null }),
+    });
+    setSending(false);
+    const data = await res.json();
+    setResult(data.results);
+    onSent();
+  }
+
+  if (result) {
+    const ok = result.filter(r => r.ok).length;
+    const fail = result.length - ok;
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div style={{ background: '#fff', borderRadius: 10, padding: 28, maxWidth: 380 }}>
+          <h3 style={{ margin: '0 0 12px' }}>Email sent</h3>
+          <p style={{ color: '#166534' }}>✓ {ok} sent successfully</p>
+          {fail > 0 && <p style={{ color: '#dc2626' }}>✗ {fail} failed</p>}
+          <Btn onClick={onClose} style={{ marginTop: 12 }}>Close</Btn>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 580 }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: '1rem' }}>Compose Email</h3>
+        <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 16px' }}>
+          To: {selected.map(p => p.name).join(', ')} ({selected.length} recipient{selected.length !== 1 ? 's' : ''})
+        </p>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <select
+            value={tmplId} onChange={e => loadTemplate(e.target.value)}
+            style={{ flex: 1, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
+          >
+            <option value="">— Load a template —</option>
+            {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <select
+            value={campId} onChange={e => setCampId(e.target.value)}
+            style={{ flex: 1, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
+          >
+            <option value="">— Campaign (optional) —</option>
+            {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+
+        <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 10px' }}>
+          Use {'{{name}}'}, {'{{company}}'} for personalisation
+        </p>
+
+        <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%', marginBottom: 10 }} />
+        <Textarea value={body} onChange={setBody} rows={10} placeholder="Email body *" />
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+          <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim()}>
+            {sending ? 'Sending…' : `Send to ${selected.length}`}
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Template Manager modal ────────────────────────────────────────────────────
+function TemplateManager({ templates, onClose, onChanged }) {
+  const [editing, setEditing]   = useState(null);
+  const [name, setName]         = useState('');
+  const [subject, setSubject]   = useState('');
+  const [body, setBody]         = useState('');
+  const [saving, setSaving]     = useState(false);
+
+  function startNew()  { setEditing('new'); setName(''); setSubject(''); setBody(''); }
+  function startEdit(t){ setEditing(t.id); setName(t.name); setSubject(t.subject); setBody(t.body); }
+  function cancel()    { setEditing(null); }
+
+  async function save() {
+    if (!name || !subject || !body) return;
+    setSaving(true);
+    if (editing === 'new') {
+      await saApiFetch('/api/admin/outreach/templates', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subject, body }),
+      });
+    } else {
+      await saApiFetch(`/api/admin/outreach/templates/${editing}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subject, body }),
+      });
+    }
+    setSaving(false); setEditing(null); onChanged();
+  }
+
+  async function del(id) {
+    if (!window.confirm('Delete this template?')) return;
+    await saApiFetch(`/api/admin/outreach/templates/${id}`, { method: 'DELETE' });
+    onChanged();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: '1rem' }}>Email Templates</h3>
+          <Btn onClick={startNew} small>+ New Template</Btn>
+        </div>
+
+        {editing && (
+          <div style={{ background: '#f8fafc', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+            <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>{editing === 'new' ? 'New Template' : 'Edit Template'}</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Input value={name}    onChange={setName}    placeholder="Template name" style={{ width: '100%' }} />
+              <Input value={subject} onChange={setSubject} placeholder="Email subject" style={{ width: '100%' }} />
+              <Textarea value={body} onChange={setBody} rows={8} placeholder="Email body (use {{name}}, {{company}})" />
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <Btn onClick={save} small disabled={saving}>{saving ? 'Saving…' : 'Save'}</Btn>
+              <Btn variant="secondary" onClick={cancel} small>Cancel</Btn>
+            </div>
+          </div>
+        )}
+
+        {templates.map(t => (
+          <div key={t.id} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
+              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{t.subject}</div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{t.body.slice(0, 80)}…</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <Btn small variant="secondary" onClick={() => startEdit(t)}>Edit</Btn>
+              <Btn small variant="danger"    onClick={() => del(t.id)}>Delete</Btn>
+            </div>
+          </div>
+        ))}
+
+        <div style={{ marginTop: 16, textAlign: 'right' }}>
+          <Btn variant="secondary" onClick={onClose}>Close</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Campaign Manager modal ────────────────────────────────────────────────────
+function CampaignManager({ campaigns, onClose, onChanged }) {
+  const [name, setName]           = useState('');
+  const [desc, setDesc]           = useState('');
+  const [saving, setSaving]       = useState(false);
+
+  async function create() {
+    if (!name.trim()) return;
+    setSaving(true);
+    await saApiFetch('/api/admin/outreach/campaigns', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description: desc }),
+    });
+    setSaving(false); setName(''); setDesc(''); onChanged();
+  }
+
+  async function del(id) {
+    if (!window.confirm('Delete this campaign?')) return;
+    await saApiFetch(`/api/admin/outreach/campaigns/${id}`, { method: 'DELETE' });
+    onChanged();
+  }
+
+  const statusLabel = { draft: 'Draft', active: 'Active', completed: 'Done' };
+  const statusColour = { draft: '#94a3b8', active: '#1a4710', completed: '#64748b' };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ margin: '0 0 16px', fontSize: '1rem' }}>Campaigns</h3>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <Input value={name} onChange={setName} placeholder="Campaign name" style={{ flex: 1 }} />
+          <Input value={desc} onChange={setDesc} placeholder="Description (optional)" style={{ flex: 1 }} />
+          <Btn onClick={create} disabled={saving || !name.trim()}>Add</Btn>
+        </div>
+
+        {campaigns.map(c => (
+          <div key={c.id} style={{ padding: '10px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</div>
+              {c.description && <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{c.description}</div>}
+              <div style={{ fontSize: '0.75rem', color: statusColour[c.status], marginTop: 2, fontWeight: 600 }}>
+                {statusLabel[c.status]} · {c.sent_count} sent
+              </div>
+            </div>
+            <Btn small variant="danger" onClick={() => del(c.id)}>Delete</Btn>
+          </div>
+        ))}
+
+        <div style={{ marginTop: 16, textAlign: 'right' }}>
+          <Btn variant="secondary" onClick={onClose}>Close</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CSV Import modal ──────────────────────────────────────────────────────────
+function CsvImportModal({ onClose, onImported }) {
+  const [raw, setRaw]       = useState('');
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  function parseRows(text) {
+    const lines = text.trim().split('\n').filter(Boolean);
+    if (lines.length === 0) return [];
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+    return lines.slice(1).map(line => {
+      const vals = line.split(',').map(v => v.trim().replace(/"/g, ''));
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+      return {
+        name:    obj.name    || obj['full name'] || '',
+        company: obj.company || obj.property    || '',
+        email:   obj.email                      || '',
+        notes:   obj.notes                      || '',
+      };
+    }).filter(r => r.email);
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      setRaw(ev.target.result);
+      setPreview(parseRows(ev.target.result).slice(0, 5));
+    };
+    reader.readAsText(file);
+  }
+
+  async function doImport() {
+    const rows = parseRows(raw);
+    if (rows.length === 0) return;
+    setSaving(true);
+    const res = await saApiFetch('/api/admin/outreach/prospects/bulk-import', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    });
+    setSaving(false);
+    const data = await res.json();
+    setResult(data);
+    onImported();
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 500 }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: '1rem' }}>Bulk Import from CSV</h3>
+        <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px' }}>
+          CSV columns: <code>name, email, company, notes</code> (header row required)
+        </p>
+
+        {result ? (
+          <div>
+            <div style={{ color: '#166534', marginBottom: 6 }}>✓ {result.imported} imported</div>
+            {result.skipped > 0 && <div style={{ color: '#92400e' }}>⚠ {result.skipped} skipped (duplicates or missing fields)</div>}
+            <Btn onClick={onClose} style={{ marginTop: 14 }}>Close</Btn>
+          </div>
+        ) : (
+          <>
+            <input type="file" accept=".csv" onChange={handleFileChange} style={{ marginBottom: 12 }} />
+
+            {preview && preview.length > 0 && (
+              <div style={{ background: '#f8fafc', borderRadius: 6, padding: 12, marginBottom: 12, fontSize: '0.8rem' }}>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>Preview ({preview.length} rows):</div>
+                {preview.map((r, i) => (
+                  <div key={i} style={{ marginBottom: 2 }}>{r.name} — {r.email} {r.company ? `(${r.company})` : ''}</div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+              <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+              <Btn onClick={doImport} disabled={saving || !raw.trim()}>{saving ? 'Importing…' : 'Import'}</Btn>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+export default function Outreach() {
+  const [stats, setStats]           = useState(null);
+  const [prospects, setProspects]   = useState([]);
+  const [total, setTotal]           = useState(0);
+  const [templates, setTemplates]   = useState([]);
+  const [campaigns, setCampaigns]   = useState([]);
+  const [followUps, setFollowUps]   = useState([]);
+
+  // Filters
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterSource, setFilterSource] = useState('');
+  const [search, setSearch]             = useState('');
+
+  // UI state
+  const [selected, setSelected]         = useState([]);
+  const [showAdd, setShowAdd]           = useState(false);
+  const [editing, setEditing]           = useState(null);
+  const [showCompose, setShowCompose]   = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showCampaigns, setShowCampaigns] = useState(false);
+  const [showCsv, setShowCsv]           = useState(false);
+  const [tab, setTab]                   = useState('prospects'); // prospects | followup
+
+  const load = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (filterStatus) params.set('status', filterStatus);
+    if (filterSource) params.set('source', filterSource);
+    if (search)       params.set('q', search);
+
+    const [pRes, sRes, tRes, cRes, fRes] = await Promise.all([
+      saApiFetch(`/api/admin/outreach/prospects?${params}`),
+      saApiFetch('/api/admin/outreach/stats'),
+      saApiFetch('/api/admin/outreach/templates'),
+      saApiFetch('/api/admin/outreach/campaigns'),
+      saApiFetch('/api/admin/outreach/prospects/follow-up'),
+    ]);
+    if (pRes.ok) { const d = await pRes.json(); setProspects(d.prospects); setTotal(d.total); }
+    if (sRes.ok) setStats(await sRes.json());
+    if (tRes.ok) setTemplates(await tRes.json());
+    if (cRes.ok) setCampaigns(await cRes.json());
+    if (fRes.ok) setFollowUps(await fRes.json());
+  }, [filterStatus, filterSource, search]);
+
+  useEffect(() => { load(); }, [load]);
+
+  function toggleSelect(id) {
+    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  }
+  function toggleAll() {
+    setSelected(selected.length === prospects.length ? [] : prospects.map(p => p.id));
+  }
+
+  async function delProspect(id) {
+    if (!window.confirm('Delete this prospect?')) return;
+    await saApiFetch(`/api/admin/outreach/prospects/${id}`, { method: 'DELETE' });
+    setSelected(s => s.filter(x => x !== id));
+    load();
+  }
+
+  const tabStyle = active => ({
+    padding: '8px 16px', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem',
+    cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+    background: active ? '#1a4710' : '#f1f5f9',
+    color: active ? '#fff' : '#374151',
+  });
+
+  return (
+    <div style={{ padding: '24px 28px', maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>Prospect Outreach</h1>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.85rem' }}>
+            CRM for reaching out to potential B&B and guesthouse owners
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn variant="secondary" onClick={() => setShowCampaigns(true)}>Campaigns</Btn>
+          <Btn variant="secondary" onClick={() => setShowTemplates(true)}>Templates</Btn>
+          <Btn variant="secondary" onClick={() => setShowCsv(true)}>Import CSV</Btn>
+          <Btn onClick={() => setShowAdd(true)}>+ Add Prospect</Btn>
+        </div>
+      </div>
+
+      <StatsBar stats={stats} />
+
+      {/* ── Tab bar ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button style={tabStyle(tab === 'prospects')} onClick={() => setTab('prospects')}>All Prospects ({total})</button>
+        <button style={tabStyle(tab === 'followup')}  onClick={() => setTab('followup')}>Follow-up Queue ({followUps.length})</button>
+      </div>
+
+      {tab === 'followup' && (
+        <Section title="Follow-up Queue" action={
+          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Prospects not contacted in 7+ days</span>
+        }>
+          {followUps.length === 0 ? (
+            <p style={{ color: '#94a3b8', margin: 0 }}>No prospects need following up right now.</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Last Contact</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {followUps.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ padding: '8px 12px' }}><strong>{p.name}</strong><br /><span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span></td>
+                    <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
+                    <td style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.8rem' }}>{p.last_contacted ? new Date(p.last_contacted).toLocaleDateString() : 'Never'}</td>
+                    <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
+                    <td style={{ padding: '8px 12px' }}>
+                      <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Compose</Btn>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Section>
+      )}
+
+      {tab === 'prospects' && (
+        <Section
+          title="Prospects"
+          action={
+            selected.length > 0 && (
+              <Btn small onClick={() => setShowCompose(true)}>
+                Compose to {selected.length}
+              </Btn>
+            )
+          }
+        >
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            <Input value={search} onChange={v => { setSearch(v); setSelected([]); }} placeholder="Search name, email, company…" style={{ flex: '1 1 200px' }} />
+            <select
+              value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setSelected([]); }}
+              style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+            >
+              <option value="">All statuses</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="replied">Replied</option>
+              <option value="converted">Converted</option>
+              <option value="unsubscribed">Unsubscribed</option>
+            </select>
+            <select
+              value={filterSource} onChange={e => { setFilterSource(e.target.value); setSelected([]); }}
+              style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+            >
+              <option value="">All sources</option>
+              <option value="manual">Manual</option>
+              <option value="csv">CSV</option>
+              <option value="auto_signup">Signed up</option>
+              <option value="website">Website</option>
+            </select>
+          </div>
+
+          {prospects.length === 0 ? (
+            <p style={{ color: '#94a3b8', margin: 0 }}>No prospects found. Add one or import a CSV.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', width: 32 }}>
+                      <input type="checkbox" checked={selected.length === prospects.length && prospects.length > 0} onChange={toggleAll} />
+                    </th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Source</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Added</th>
+                    <th style={{ padding: '8px 12px' }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {prospects.map(p => (
+                    <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: selected.includes(p.id) ? '#f0fdf4' : undefined }}>
+                      <td style={{ padding: '8px 12px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(p.id)}
+                          onChange={() => toggleSelect(p.id)}
+                          disabled={p.status === 'unsubscribed'}
+                        />
+                      </td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <strong>{p.name}</strong>
+                        <br />
+                        <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span>
+                        {p.notes && <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 2 }}>{p.notes.slice(0, 50)}{p.notes.length > 50 ? '…' : ''}</div>}
+                      </td>
+                      <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
+                      <td style={{ padding: '8px 12px' }}><SourceBadge source={p.source} /></td>
+                      <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
+                      <td style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.78rem' }}>
+                        {new Date(p.created_at).toLocaleDateString()}
+                        {p.follow_up_date && <div style={{ color: '#92400e', fontWeight: 600 }}>Follow-up: {new Date(p.follow_up_date).toLocaleDateString()}</div>}
+                        {p.converted_at && <div style={{ color: '#166534', fontWeight: 600 }}>Converted!</div>}
+                      </td>
+                      <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <Btn small variant="secondary" onClick={() => setEditing(p)}>Edit</Btn>
+                          {p.status !== 'unsubscribed' && (
+                            <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Email</Btn>
+                          )}
+                          <Btn small variant="danger" onClick={() => delProspect(p.id)}>✕</Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* ── Modals ── */}
+      {showAdd && <AddProspectModal onClose={() => setShowAdd(false)} onSaved={load} />}
+      {editing  && <EditProspectModal prospect={editing} onClose={() => setEditing(null)} onSaved={load} />}
+      {showCompose && (
+        <ComposeModal
+          selectedIds={selected}
+          prospects={prospects.concat(followUps)}
+          templates={templates}
+          campaigns={campaigns}
+          onClose={() => setShowCompose(false)}
+          onSent={load}
+        />
+      )}
+      {showTemplates && <TemplateManager templates={templates} onClose={() => setShowTemplates(false)} onChanged={load} />}
+      {showCampaigns && <CampaignManager campaigns={campaigns} onClose={() => setShowCampaigns(false)} onChanged={load} />}
+      {showCsv       && <CsvImportModal  onClose={() => setShowCsv(false)} onImported={load} />}
+    </div>
+  );
+}

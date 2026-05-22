@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import Stripe from 'stripe';
 import db from '../db/database.js';
 import { sendWelcomeEmail, sendVerificationEmail } from '../email/emailService.js';
+import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
@@ -161,6 +162,9 @@ authRouter.post('/register', (req, res) => {
     token,
     user: { id: userId, name, email: normalEmail, role: 'owner', property_id: propId, email_verified: false },
   });
+
+  // Auto-convert prospect if this email was in the outreach CRM
+  checkAndConvertProspect(normalEmail, userId);
 
   // Fire-and-forget — must not delay the registration response
   sendWelcomeEmail(

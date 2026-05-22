@@ -958,3 +958,13 @@ export async function sendMultiWelcome(user, property) {
     console.error('[email] Failed to send Multi upgrade email:', err?.message ?? err, '| full:', JSON.stringify(err));
   }
 }
+
+// ── Outreach / prospect email ─────────────────────────────────────────────────
+export async function sendOutreachEmail({ to, subject, html }) {
+  if (!resend) {
+    console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');
+    return;
+  }
+  const result = await resend.emails.send({ from: FROM, to, subject, html });
+  console.log('[email] Outreach email sent →', to, '| id:', result?.id ?? result?.data?.id);
+}

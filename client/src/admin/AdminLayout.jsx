@@ -8,6 +8,7 @@ import AdminSettings     from './pages/AdminSettings.jsx';
 import MailingList       from './pages/MailingList.jsx';
 import AuditLog          from './pages/AuditLog.jsx';
 import BusinessFinances  from './pages/BusinessFinances.jsx';
+import Outreach          from './pages/Outreach.jsx';
 import { clearSASession } from './saApiFetch.js';
 
 const NAV = [
@@ -17,6 +18,7 @@ const NAV = [
   { to: '/super-admin/revenue',      label: 'Revenue',                  icon: <IconRevenue /> },
   { to: '/super-admin/audit-log',    label: 'Audit Log',                icon: <IconAuditLog /> },
   { to: '/super-admin/mailing-list', label: 'Mailing List',             icon: <IconMail /> },
+  { to: '/super-admin/outreach',    label: 'Outreach CRM',             icon: <IconOutreach /> },
   { to: '/super-admin/settings',          label: 'Settings',          icon: <IconSettings /> },
   { to: '/super-admin/business-finances', label: 'NestBook Business', icon: <IconFinances /> },
 ];
@@ -108,9 +110,10 @@ export default function AdminLayout() {
           <Route path="users"             element={<Users         />} />
           <Route path="revenue"           element={<Revenue       />} />
           <Route path="audit-log"         element={<AuditLog      />} />
-          <Route path="mailing-list"      element={<MailingList   />} />
-          <Route path="settings"            element={<AdminSettings     />} />
-          <Route path="business-finances" element={<BusinessFinances  />} />
+          <Route path="mailing-list"      element={<MailingList       />} />
+          <Route path="outreach"          element={<Outreach           />} />
+          <Route path="settings"          element={<AdminSettings      />} />
+          <Route path="business-finances" element={<BusinessFinances   />} />
         </Routes>
       </main>
     </div>
@@ -184,6 +187,16 @@ function IconFinances() {
       <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
       <line x1="12" y1="12" x2="12" y2="16"/>
       <line x1="10" y1="14" x2="14" y2="14"/>
+    </svg>
+  );
+}
+
+function IconOutreach() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16"/>
+      <path d="M16 5l3 3-3 3"/>
+      <path d="M19 8H9"/>
     </svg>
   );
 }
