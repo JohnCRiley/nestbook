@@ -529,6 +529,23 @@ function CsvImportModal({ onClose, onImported }) {
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
+function downloadCsvTemplate() {
+  const csv = [
+    '# property_type: bnb, gite, guest_house, hotel, other',
+    '# country: UK, France, Spain, Germany, Netherlands, Other',
+    '# language: en, fr, es, de, nl',
+    '# source: google, booking_com, airbnb, referral, expo, other',
+    'name,property_name,email,property_type,country,region,language,website,source,notes',
+    'Margaret Hughes,The Old Rectory B&B,margaret@oldrectory.co.uk,bnb,UK,Dorset,en,www.oldrectorybandbreakfast.co.uk,google,Found via Google search',
+    'Pierre Dupont,Gîte Les Lavandes,pierre@giteslavandes.fr,gite,France,Provence,fr,www.giteslavandes.fr,booking_com,Listed on Booking.com',
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'nestbook-prospects-template.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Outreach() {
   const [stats, setStats]           = useState(null);
   const [prospects, setProspects]   = useState([]);
@@ -607,6 +624,7 @@ export default function Outreach() {
         <div style={{ display: 'flex', gap: 8 }}>
           <Btn variant="secondary" onClick={() => setShowCampaigns(true)}>Campaigns</Btn>
           <Btn variant="secondary" onClick={() => setShowTemplates(true)}>Templates</Btn>
+          <Btn variant="secondary" onClick={downloadCsvTemplate}>↓ CSV template</Btn>
           <Btn variant="secondary" onClick={() => setShowCsv(true)}>Import CSV</Btn>
           <Btn onClick={() => setShowAdd(true)}>+ Add Prospect</Btn>
         </div>
