@@ -175,6 +175,21 @@ widgetRouter.post('/bookings', (req, res) => {
   }
 });
 
+// ── GET /api/widget/property?property_id=X ───────────────────────────────────
+// Returns the theme for a property so the widget can style itself correctly.
+// Public endpoint — no auth required.
+widgetRouter.get('/property', (req, res) => {
+  try {
+    const { property_id } = req.query;
+    if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+    const row = db.prepare('SELECT theme FROM properties WHERE id = ?').get(property_id);
+    if (!row) return res.status(404).json({ error: 'Property not found' });
+    res.json({ theme: row.theme ?? 'forest' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/widget/demo/rooms ────────────────────────────────────────────────
 // Always returns all 4 demo rooms as available — no auth, no DB query.
 // Used by widget-test.html in demo mode so visitor bookings never block rooms.

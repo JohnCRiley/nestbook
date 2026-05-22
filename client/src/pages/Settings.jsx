@@ -12,11 +12,11 @@ const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 
 const THEMES = [
   { id: 'forest',   label: 'Forest',   primary: '#1a4710', bg: '#f3f7f2' },
-  { id: 'royal',    label: 'Royal',    primary: '#1e3a8a', bg: '#fdf8f0' },
-  { id: 'ember',    label: 'Ember',    primary: '#c2410c', bg: '#f1f5f9' },
-  { id: 'ruby',     label: 'Ruby',     primary: '#991b1b', bg: '#f5f5f5' },
-  { id: 'sky',      label: 'Sky',      primary: '#0369a1', bg: '#f0f9ff' },
-  { id: 'lavender', label: 'Lavender', primary: '#5b21b6', bg: '#f5f3ff' },
+  { id: 'royal',    label: 'Royal',    primary: '#1f3a55', bg: '#fffcf0' },
+  { id: 'ember',    label: 'Ember',    primary: '#a37830', bg: '#f1efec' },
+  { id: 'ruby',     label: 'Ruby',     primary: '#800705', bg: '#fdf8f2' },
+  { id: 'sky',      label: 'Sky',      primary: '#3a7ab0', bg: '#e8f2f9' },
+  { id: 'lavender', label: 'Lavender', primary: '#5b1ed4', bg: '#f0ecfb' },
   { id: 'charcoal', label: 'Charcoal', primary: '#1c1917', bg: '#f8fafc', accent: '#dc2626' },
 ];
 

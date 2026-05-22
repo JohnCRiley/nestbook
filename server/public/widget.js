@@ -36,9 +36,22 @@
     { id: 'D4', name: 'Chambre Olivier', type: 'single', price_per_night: 65,  capacity: 1, amenities: 'wifi',                         status: 'available' },
   ] : null;
 
-  const BRAND       = SCRIPT.getAttribute('data-color') || '#2f771b';
-  const BRAND_DARK  = '#1a4710';
-  const BRAND_LIGHT = '#d9f0cc';
+  const BRAND_OVERRIDE = SCRIPT.getAttribute('data-color') || null;
+
+  // Colour palettes for each theme — must stay in sync with client/src/index.css
+  const THEME_COLOURS = {
+    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+    royal:    { brand: '#2c5580', dark: '#1f3a55', light: '#fffbe0' },
+    ember:    { brand: '#d6a242', dark: '#a37830', light: '#d9d6d0' },
+    ruby:     { brand: '#b50908', dark: '#800705', light: '#faf1e1' },
+    sky:      { brand: '#699ec9', dark: '#4a7a99', light: '#bfd3e3' },
+    lavender: { brand: '#7636f5', dark: '#5b1ed4', light: '#d7cfee' },
+    charcoal: { brand: '#dc2626', dark: '#1c1917', light: '#e7e5e4' },
+  };
+
+  let BRAND       = '#2f771b';
+  let BRAND_DARK  = '#1a4710';
+  let BRAND_LIGHT = '#d9f0cc';
 
   // ── i18n ───────────────────────────────────────────────────────────────────
   const STRINGS = {
@@ -1198,8 +1211,25 @@
   }
 
   // ── Init ───────────────────────────────────────────────────────────────────
-  function init() {
+  async function init() {
     if (document.getElementById('nb-styles')) return;   // already initialised
+
+    // Resolve brand colours: manual override wins, otherwise fetch from server.
+    if (BRAND_OVERRIDE) {
+      BRAND = BRAND_OVERRIDE;
+      // BRAND_DARK and BRAND_LIGHT stay at forest defaults when manually overridden.
+    } else if (!DEMO_MODE) {
+      try {
+        const r = await fetch(API_BASE + '/api/widget/property?property_id=' + PROPERTY_ID);
+        if (r.ok) {
+          const data = await r.json();
+          const palette = THEME_COLOURS[data.theme] ?? THEME_COLOURS.forest;
+          BRAND       = palette.brand;
+          BRAND_DARK  = palette.dark;
+          BRAND_LIGHT = palette.light;
+        }
+      } catch (_) { /* network error — fall back to forest colours */ }
+    }
 
     injectStyles();
 
