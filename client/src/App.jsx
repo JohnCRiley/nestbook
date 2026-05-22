@@ -92,7 +92,7 @@ function ChargesStaffShell() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       <header style={{
-        background: '#1a4710', color: '#fff',
+        background: 'var(--accent-dark)', color: '#fff',
         padding: '12px 24px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', gap: 16,
       }}>

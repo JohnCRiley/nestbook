@@ -20,7 +20,7 @@ function UpgradeGate() {
       </div>
       <a href="/app/pricing" style={{
         display: 'inline-block', padding: '10px 24px', borderRadius: 8,
-        background: '#1a4710', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+        background: 'var(--accent-dark)', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
         textDecoration: 'none',
       }}>
         View Plans
@@ -55,7 +55,7 @@ function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: chargeCount > 0 ? '#1a4710' : '#94a3b8' }}>
+          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: chargeCount > 0 ? 'var(--accent-dark)' : '#94a3b8' }}>
             {fmtCurrency(room.charges_total ?? 0)}
           </div>
           {chargeCount > 0 && (
@@ -71,7 +71,7 @@ function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
             onClick={() => onAddCharge(room)}
             style={{
               width: '100%', padding: '7px 12px', borderRadius: 7,
-              background: '#1a4710', border: 'none',
+              background: 'var(--accent-dark)', border: 'none',
               color: '#fff', fontWeight: 600, fontSize: '0.85rem',
               cursor: 'pointer', fontFamily: 'inherit',
             }}

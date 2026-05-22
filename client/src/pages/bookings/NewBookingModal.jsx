@@ -465,8 +465,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                   <div className="form-group span-2" style={{ marginTop: 8 }}>
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
-                      fontSize: '0.8rem', fontWeight: 600, color: '#1a4710',
-                      background: '#d9f0cc', border: '1px solid #86efac',
+                      fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent-dark)',
+                      background: 'var(--light-green)', border: '1px solid var(--tint-border)',
                       borderRadius: 4, padding: '4px 10px',
                     }}>
                       {t('breakfastIncludedNote')}
@@ -524,8 +524,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                         {form.breakfastType === 'paid' && datesValid && (
                           <div style={{
                             marginTop: 8, padding: '10px 12px',
-                            background: '#f0fdf4', borderRadius: 6,
-                            border: '1px solid #86efac',
+                            background: 'var(--tint-bg)', borderRadius: 6,
+                            border: '1px solid var(--tint-border)',
                           }}>
                             <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 8 }}>
                               {t('bfMorningHint')}
@@ -574,8 +574,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                             </div>
                             {bfServings > 0 && bfPriceNum > 0 && (
                               <div style={{
-                                marginTop: 8, fontSize: '0.8rem', color: '#166534',
-                                background: '#d9f0cc', padding: '5px 8px', borderRadius: 5,
+                                marginTop: 8, fontSize: '0.8rem', color: 'var(--tint-text)',
+                                background: 'var(--light-green)', padding: '5px 8px', borderRadius: 5,
                               }}>
                                 {t('bfPreviewCalc')(bfServings, bfGuestsNum, `${currencySymbol}${bfPriceNum.toFixed(2)}`, fmtCurrency(bfSubtotal))}
                               </div>
@@ -648,20 +648,20 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                         <div style={{
                           display: 'flex', justifyContent: 'space-between',
                           padding: '7px 12px', borderBottom: '1px solid var(--border)',
-                          background: '#f0fdf4',
+                          background: 'var(--tint-bg)',
                         }}>
-                          <span style={{ color: '#166534' }}>
+                          <span style={{ color: 'var(--tint-text)' }}>
                             {t('nbPriceBreakdownBf')(bfGuestsNum, bfServings, `${currencySymbol}${bfPriceNum.toFixed(2)}`)}
                           </span>
-                          <span style={{ fontWeight: 600, color: '#166534' }}>{fmtCurrency(bfSubtotal)}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--tint-text)' }}>{fmtCurrency(bfSubtotal)}</span>
                         </div>
                       )}
                       <div style={{
                         display: 'flex', justifyContent: 'space-between',
                         padding: '9px 12px',
                       }}>
-                        <span style={{ fontWeight: 700, color: '#1a4710' }}>{t('coTotalDue')}</span>
-                        <span style={{ fontWeight: 800, color: '#1a4710', fontSize: '1rem' }}>{fmtCurrency(totalPrice)}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--accent-dark)' }}>{t('coTotalDue')}</span>
+                        <span style={{ fontWeight: 800, color: 'var(--accent-dark)', fontSize: '1rem' }}>{fmtCurrency(totalPrice)}</span>
                       </div>
                     </div>
                   </div>

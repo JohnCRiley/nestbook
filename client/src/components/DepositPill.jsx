@@ -13,7 +13,7 @@ export default function DepositPill({ booking, property }) {
 
   if (booking.deposit_paid) {
     return (
-      <span style={{ ...pillBase, background: '#d9f0cc', color: '#1a4710', border: '1px solid #86efac' }}>
+      <span style={{ ...pillBase, background: 'var(--light-green)', color: 'var(--accent-dark)', border: '1px solid var(--tint-border)' }}>
         {t('depositPaidPill')}
       </span>
     );

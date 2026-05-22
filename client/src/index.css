@@ -130,12 +130,12 @@ a { text-decoration: none; }
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #b8ddb0 transparent;
+  scrollbar-color: var(--light-green) transparent;
 }
 /* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar               { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track         { background: transparent; }
-::-webkit-scrollbar-thumb         { background: #b8ddb0; border-radius: 3px; }
+::-webkit-scrollbar-thumb         { background: var(--light-green); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover   { background: var(--accent); }
 ::-webkit-scrollbar-corner        { background: transparent; }
 /* Lighter thumb inside scrollable panels and modals */
@@ -146,7 +146,7 @@ a { text-decoration: none; }
 .panel-scroll::-webkit-scrollbar-thumb:hover,
 .modal-body::-webkit-scrollbar-thumb:hover,
 .modal-box::-webkit-scrollbar-thumb:hover,
-.table-scroll::-webkit-scrollbar-thumb:hover { background: #b8ddb0; }
+.table-scroll::-webkit-scrollbar-thumb:hover { background: var(--tint-border); }
 
 /* ─── App layout ─────────────────────────────────────────────────────────── */
 .layout {
@@ -711,7 +711,7 @@ a { text-decoration: none; }
   z-index: 2;
   pointer-events: none;
 }
-.cal-ci-badge { background: #16a34a; color: white; }
+.cal-ci-badge { background: var(--accent); color: white; }
 .cal-co-badge { background: #d97706; color: white; }
 
 /* ─── ConfirmModal ───────────────────────────────────────────────────────── */
@@ -1591,9 +1591,9 @@ a { text-decoration: none; }
 
 /* arriving today */
 .cal-cell.is-arriving {
-  background: #86efac;  /* lighter green — checking in */
+  background: var(--light-green);
 }
-.cal-cell.is-arriving:hover { background: #4ade80; }
+.cal-cell.is-arriving:hover { background: var(--tint-border); }
 
 /* checked out */
 .cal-cell.is-checked-out {
@@ -1696,7 +1696,7 @@ a { text-decoration: none; }
   border-radius: 3px;
   flex-shrink: 0;
 }
-.legend-swatch.sw-arriving    { background: #86efac; border: 1px solid #4ade80; }
+.legend-swatch.sw-arriving    { background: var(--light-green); border: 1px solid var(--tint-border); }
 .legend-swatch.sw-booked      { background: var(--accent); }
 .legend-swatch.sw-checked-out { background: #e2e8f0; }
 .legend-swatch.sw-available   { background: white; border: 1px solid var(--border); }
@@ -3291,10 +3291,10 @@ a { text-decoration: none; }
 }
 
 .admin-stat-card.accent-green {
-  background: #f0fdf4;
-  border-color: #86efac;
+  background: var(--tint-bg);
+  border-color: var(--tint-border);
 }
-.admin-stat-card.accent-green .admin-stat-value { color: #16a34a; }
+.admin-stat-card.accent-green .admin-stat-value { color: var(--accent); }
 
 .admin-stat-card.accent-warn {
   background: #fffbeb;
@@ -3512,12 +3512,12 @@ a { text-decoration: none; }
   background: #fde68a;
 }
 .sa-btn-refund {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
+  background: var(--tint-bg);
+  color: var(--tint-text);
+  border-color: var(--tint-border);
 }
 .sa-btn-refund:hover:not(:disabled) {
-  background: #bbf7d0;
+  background: var(--tint-border);
 }
 .sa-btn-delete {
   background: #fee2e2;
@@ -3748,7 +3748,7 @@ a { text-decoration: none; }
   animation: sa-toast-in 0.2s ease;
 }
 .sa-toast-success {
-  background: #166534;
+  background: var(--accent-dark);
   color: #fff;
 }
 .sa-toast-error {
@@ -4685,11 +4685,11 @@ a { text-decoration: none; }
 }
 .ml-btn-copy:hover { background: #bfdbfe; }
 .ml-btn-csv {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
+  background: var(--tint-bg);
+  color: var(--tint-text);
+  border-color: var(--tint-border);
 }
-.ml-btn-csv:hover { background: #bbf7d0; }
+.ml-btn-csv:hover { background: var(--tint-border); }
 .ml-btn-mailchimp {
   background: #ffe4e6;
   color: #9f1239;

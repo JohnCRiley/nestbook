@@ -351,8 +351,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           <div style={{
             padding: '8px 22px', borderBottom: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: '0.82rem', color: '#1a4710', fontWeight: 600,
-            background: '#d9f0cc',
+            fontSize: '0.82rem', color: 'var(--accent-dark)', fontWeight: 600,
+            background: 'var(--light-green)',
           }}>
             {t('bfPanelSummary')(
               formatDateMedium(firstMorning, locale),
@@ -367,8 +367,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {toast && (
         <div style={{
           margin: '10px 22px 0', padding: '7px 12px',
-          background: '#f0faf0', border: '1px solid #86efac',
-          borderRadius: 6, fontSize: '0.82rem', color: '#166534', fontWeight: 600,
+          background: 'var(--tint-bg)', border: '1px solid var(--tint-border)',
+          borderRadius: 6, fontSize: '0.82rem', color: 'var(--tint-text)', fontWeight: 600,
         }}>
           {toast}
         </div>
@@ -403,8 +403,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               style={{
                 padding: '10px 14px', border: 'none', background: 'none',
                 fontFamily: 'inherit', fontSize: '0.85rem', fontWeight: 600,
-                cursor: 'pointer', color: activeTab === tab ? '#1a4710' : '#94a3b8',
-                borderBottom: activeTab === tab ? '2px solid #1a4710' : '2px solid transparent',
+                cursor: 'pointer', color: activeTab === tab ? 'var(--accent-dark)' : '#94a3b8',
+                borderBottom: activeTab === tab ? '2px solid var(--accent-dark)' : '2px solid transparent',
                 marginBottom: -2,
               }}
             >
@@ -445,7 +445,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1a4710' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--accent-dark)' }}>
                           {fmtCurrency(parseFloat(c.amount))}
                         </span>
                         {!c.voided_at && (user?.role === 'owner' || user?.role === 'reception') && (
@@ -481,7 +481,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   ))}
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 700 }}>
                     <span style={{ color: '#374151' }}>{t('coTotal')}</span>
-                    <span style={{ color: '#1a4710' }}>
+                    <span style={{ color: 'var(--accent-dark)' }}>
                       {fmtCurrency(charges.filter((c) => !c.voided_at).reduce((s, c) => s + parseFloat(c.amount), 0))}
                     </span>
                   </div>
@@ -492,8 +492,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   onClick={() => setAddChargeFor({ booking_id: b.id, property_id: b.property_id, guest_first_name: b.guest_first_name, guest_last_name: b.guest_last_name, room_name: b.room_name })}
                   style={{
                     padding: '8px 16px', borderRadius: 7,
-                    background: '#f0fdf4', border: '1.5px solid #86efac',
-                    color: '#166534', fontWeight: 600, fontSize: '0.85rem',
+                    background: 'var(--tint-bg)', border: '1.5px solid var(--tint-border)',
+                    color: 'var(--tint-text)', fontWeight: 600, fontSize: '0.85rem',
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >
@@ -573,9 +573,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {b.refund_amount > 0 && (
         <div style={{
           margin: '0 22px 10px', padding: '10px 14px', borderRadius: 7,
-          background: '#f0fdf4', border: '1px solid #86efac', fontSize: '0.84rem',
+          background: 'var(--tint-bg)', border: '1px solid var(--tint-border)', fontSize: '0.84rem',
         }}>
-          <span style={{ fontWeight: 700, color: '#166534' }}>{t('refundRecorded')}: </span>
+          <span style={{ fontWeight: 700, color: 'var(--tint-text)' }}>{t('refundRecorded')}: </span>
           <span style={{ color: '#1a2e14' }}>
             {fmtCurrency(b.refund_amount)}
             {b.refund_reason ? ` — ${b.refund_reason}` : ''}
@@ -994,15 +994,15 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
     const morningDate = addDays(storedStart, 1);
     const guests      = parseInt(b.breakfast_guests, 10) || parseInt(b.num_guests, 10) || 1;
     return (
-      <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)', background: '#f0fdf4' }}>
+      <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)', background: 'var(--tint-bg)' }}>
         {!editing ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
-            <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--tint-text)', fontWeight: 600 }}>
               {t('bfAddedFromInfo')(formatDateMedium(morningDate, locale), guests)}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
               <button
-                style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #86efac', background: '#fff', color: '#166534', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid var(--tint-border)', background: '#fff', color: 'var(--tint-text)', cursor: 'pointer', fontFamily: 'inherit' }}
                 onClick={() => { setEditing(true); setBfMorning(morningDate); setBfGuests(guests); }}
               >{t('bfModify')}</button>
               <button
@@ -1033,8 +1033,8 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
         <button
           style={{
             fontSize: '0.82rem', padding: '6px 14px', borderRadius: 6,
-            border: '1.5px solid #86efac', background: '#f0fdf4',
-            color: '#166534', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            border: '1.5px solid var(--tint-border)', background: 'var(--tint-bg)',
+            color: 'var(--tint-text)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           }}
           onClick={() => setEditing(true)}
         >{t('bfAddTitle')}</button>
@@ -1057,7 +1057,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
 function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPriceNum, servings, previewTotal, minMorning, maxMorning, currencySymbol, fmtCurrency, locale, t, saving, onMorningChange, onGuestsChange, onPriceChange, onSave, onCancel }) {
   return (
     <div style={{ fontSize: '0.85rem' }}>
-      <div style={{ fontWeight: 600, color: '#166534', marginBottom: 6 }}>{t('bfAddTitle')}</div>
+      <div style={{ fontWeight: 600, color: 'var(--tint-text)', marginBottom: 6 }}>{t('bfAddTitle')}</div>
       <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 10 }}>{t('bfMorningHint')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
         <div>
@@ -1098,7 +1098,7 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
         />
       </div>
       {servings > 0 && (
-        <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: 10, background: '#f0fdf4', padding: '5px 8px', borderRadius: 5 }}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--tint-text)', marginBottom: 10, background: 'var(--tint-bg)', padding: '5px 8px', borderRadius: 5 }}>
           {t('bfPreviewCalc')(servings, bfGuestsNum, `${currencySymbol}${bfPriceNum.toFixed(2)}`, fmtCurrency(previewTotal))}
         </div>
       )}
@@ -1146,7 +1146,7 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
       <div className="panel-section-title">{t('coEstimatedTotal')}</div>
       <div style={{ fontSize: '0.85rem' }}>
         <ERow label={`${currencySymbol}${pricePerNight.toFixed(2)} × ${t('nightWord')(nights)}`} value={fmtCurrency(roomSubtotal)} />
-        {breakfastFree && <ERow label={t('fBreakfast')} value={t('coComplimentary')} valueColor="#166534" />}
+        {breakfastFree && <ERow label={t('fBreakfast')} value={t('coComplimentary')} valueColor="var(--tint-text)" />}
         {breakfastCharged && (
           <ERow
             label={`${t('fBreakfast')} (${bfGuests} × ${bfDays} × ${currencySymbol}${bfPrice.toFixed(2)})`}
@@ -1156,11 +1156,11 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
         {chargesTotal > 0 && (
           <ERow label={t('chargesTabLabel')} value={fmtCurrency(chargesTotal)} />
         )}
-        {depositPaid && depositAmount > 0 && <ERow label={t('coLessDeposit')} value={`-${fmtCurrency(depositAmount)}`} valueColor="#166534" />}
-        {refundAmt > 0 && <ERow label={t('refundLine')} value={`-${fmtCurrency(refundAmt)}`} valueColor="#166534" />}
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #1a4710', marginTop: 6, paddingTop: 6 }}>
-          <span style={{ fontWeight: 700, color: '#1a4710' }}>{t('coTotalDue')}</span>
-          <span style={{ fontWeight: 800, color: '#1a4710', fontSize: '1.05rem' }}>{fmtCurrency(total)}</span>
+        {depositPaid && depositAmount > 0 && <ERow label={t('coLessDeposit')} value={`-${fmtCurrency(depositAmount)}`} valueColor="var(--tint-text)" />}
+        {refundAmt > 0 && <ERow label={t('refundLine')} value={`-${fmtCurrency(refundAmt)}`} valueColor="var(--tint-text)" />}
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid var(--accent-dark)', marginTop: 6, paddingTop: 6 }}>
+          <span style={{ fontWeight: 700, color: 'var(--accent-dark)' }}>{t('coTotalDue')}</span>
+          <span style={{ fontWeight: 800, color: 'var(--accent-dark)', fontSize: '1.05rem' }}>{fmtCurrency(total)}</span>
         </div>
       </div>
     </div>

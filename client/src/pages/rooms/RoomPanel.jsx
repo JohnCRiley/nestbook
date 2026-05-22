@@ -110,8 +110,8 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
           <PanelRow label={t('breakfastIncludedLabel')} value={
             <span style={{
               display: 'inline-flex', alignItems: 'center',
-              fontSize: '0.72rem', fontWeight: 700, color: '#1a4710',
-              background: '#d9f0cc', border: '1px solid #86efac',
+              fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-dark)',
+              background: 'var(--light-green)', border: '1px solid var(--tint-border)',
               borderRadius: 4, padding: '2px 7px',
             }}>
               {t('fBreakfast')}

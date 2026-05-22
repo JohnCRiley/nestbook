@@ -40,7 +40,7 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   const cfg = {
-    success: { icon: '✓',  headerBg: '#1a4710', confirmBg: '#1a4710' },
+    success: { icon: '✓',  headerBg: 'var(--accent-dark)', confirmBg: 'var(--accent-dark)' },
     warning: { icon: '⚠',  headerBg: '#92400e', confirmBg: '#d97706' },
     danger:  { icon: '🗑', headerBg: '#991b1b', confirmBg: '#dc2626' },
   }[variant] ?? { icon: '⚠', headerBg: '#92400e', confirmBg: '#d97706' };

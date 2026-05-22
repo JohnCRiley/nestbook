@@ -261,14 +261,14 @@ export default function Dashboard() {
       {/* ── Action banners ─────────────────────────────────────────────── */}
       {arrivalsToday.filter((b) => b.status === 'confirmed').length > 0 && (
         <div style={{
-          background: '#d9f0cc', border: '1.5px solid #4ade80', borderRadius: 10,
+          background: 'var(--light-green)', border: '1.5px solid var(--tint-border)', borderRadius: 10,
           padding: '12px 18px', marginBottom: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <span style={{ fontWeight: 600, color: '#1a4710', fontSize: '0.95rem' }}>
+          <span style={{ fontWeight: 600, color: 'var(--accent-dark)', fontSize: '0.95rem' }}>
             {t('arrivalsBanner')(arrivalsToday.filter((b) => b.status === 'confirmed').length)}
           </span>
-          <span style={{ color: '#1a4710', fontWeight: 700, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+          <span style={{ color: 'var(--accent-dark)', fontWeight: 700, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
             {t('checkThemIn')}
           </span>
         </div>
@@ -635,14 +635,14 @@ function calcDue(b, property) {
 
 function bfStatusBadge(b, property, t, locale) {
   if (property?.breakfast_included || b.room_breakfast_included) {
-    return { text: t('bfStatusIncluded'), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+    return { text: t('bfStatusIncluded'), color: 'var(--accent-dark)', bg: 'var(--light-green)', border: 'var(--tint-border)' };
   }
   if (b.breakfast_added && b.breakfast_start_date) {
     const morningDate = formatDateMedium(addDays(b.breakfast_start_date, 1), locale);
-    return { text: t('bfStatusFrom')(morningDate), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+    return { text: t('bfStatusFrom')(morningDate), color: 'var(--accent-dark)', bg: 'var(--light-green)', border: 'var(--tint-border)' };
   }
   if (b.breakfast_added) {
-    return { text: t('bfStatusIncluded'), color: '#1a4710', bg: '#d9f0cc', border: '#86efac' };
+    return { text: t('bfStatusIncluded'), color: 'var(--accent-dark)', bg: 'var(--light-green)', border: 'var(--tint-border)' };
   }
   return null;
 }
@@ -676,7 +676,7 @@ function BookingRow({ booking: b, property, right, nightWord, onClick, showDue, 
           {b.room_name} &middot; {nightWord(nights)}
         </div>
         {due != null && (
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a4710', marginTop: 2 }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-dark)', marginTop: 2 }}>
             {t('coTotalDue')}: {fmtCurrency(due)}
           </div>
         )}
@@ -731,13 +731,13 @@ function BreakfastServiceList({ bookings, property, t }) {
         <div className="booking-right" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {num > 0 && (
             <span style={{
-              fontSize: '0.78rem', fontWeight: 700, color: '#1a4710',
-              background: '#d9f0cc', border: '1px solid #86efac',
+              fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-dark)',
+              background: 'var(--light-green)', border: '1px solid var(--tint-border)',
               borderRadius: 3, padding: '2px 7px',
             }}>{num}x</span>
           )}
           <span style={{
-            fontSize: '0.78rem', color: '#166534', fontWeight: 600,
+            fontSize: '0.78rem', color: 'var(--tint-text)', fontWeight: 600,
           }}>{status}</span>
         </div>
       </div>
@@ -761,7 +761,7 @@ function BreakfastServiceList({ bookings, property, t }) {
         ) : (
           <>
             {guests.map(b => <BfRow key={b.id} b={b} />)}
-            <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: '#1a4710', borderTop: '1.5px solid #d9f0cc' }}>
+            <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-dark)', borderTop: '1.5px solid var(--light-green)' }}>
               {t(coversKey)(covers)}
             </div>
           </>
