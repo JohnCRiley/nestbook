@@ -531,15 +531,11 @@ function CsvImportModal({ onClose, onImported }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 function downloadCsvTemplate() {
   const csv = [
-    '# property_type: bnb, gite, guest_house, hotel, other',
-    '# country: UK, France, Spain, Germany, Netherlands, Other',
-    '# language: en, fr, es, de, nl',
-    '# source: google, booking_com, airbnb, referral, expo, other',
     'name,property_name,email,property_type,country,region,language,website,source,notes',
-    'Margaret Hughes,The Old Rectory B&B,margaret@oldrectory.co.uk,bnb,UK,Dorset,en,www.oldrectorybandbreakfast.co.uk,google,Found via Google search',
-    'Pierre Dupont,Gîte Les Lavandes,pierre@giteslavandes.fr,gite,France,Provence,fr,www.giteslavandes.fr,booking_com,Listed on Booking.com',
+    'Margaret Hughes,The Old Rectory B&B,margaret@oldrectory.co.uk,bnb,UK,Dorset,en,www.oldrectory.co.uk,google,Found via Google search',
+    'Pierre Dupont,Gite Les Lavandes,pierre@giteslavandes.fr,gite,France,Provence,fr,www.giteslavandes.fr,booking_com,Listed on Booking.com',
   ].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url; a.download = 'nestbook-prospects-template.csv'; a.click();
