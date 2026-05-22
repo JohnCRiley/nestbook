@@ -16,7 +16,7 @@ import { guestsRouter }              from './routes/guests.js';
 import { bookingsRouter }            from './routes/bookings.js';
 import { usersRouter }               from './routes/users.js';
 import { adminRouter }               from './routes/admin.js';
-import { outreachRouter, handleUnsubscribe } from './routes/outreach.js';
+import { handleUnsubscribe } from './routes/outreach.js';
 import { contactRouter }             from './routes/contact.js';
 import { widgetRouter }              from './routes/widget.js';
 import { reportsRouter }             from './routes/reports.js';
@@ -71,8 +71,7 @@ app.get('/api/outreach/unsubscribe', handleUnsubscribe);
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.
 // Returns 404 on any auth failure to keep the panel invisible.
-app.use('/api/admin',          requireSuperAdminSession, adminRouter);
-app.use('/api/admin/outreach', requireSuperAdminSession, outreachRouter);
+app.use('/api/admin', requireSuperAdminSession, adminRouter);
 
 // ── Auth middleware — protects all regular /api routes below ──────────────────
 app.use('/api', requireAuth);

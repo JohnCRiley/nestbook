@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
 import db from '../db/database.js';
+import { outreachRouter } from './outreach.js';
 
 export const adminRouter = Router();
+
+// Mount outreach as a sub-router — must come before any catch-all routes
+adminRouter.use('/outreach', outreachRouter);
 
 const PLAN_MRR  = { pro: 19, multi: 39 };
 const stripe    = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
