@@ -128,11 +128,15 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
   const insert = db.prepare(
     `INSERT OR IGNORE INTO prospects (name, company, email, source, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?)`
   );
+
+  let imported = 0;
+  let skipped  = 0;
   const errors = [];
-  const importMany = db.transaction((items) => {
-    let imported = 0;
-    let skipped  = 0;
-    for (const r of items) {
+
+  // node:sqlite has no db.transaction() — use explicit SQL transaction
+  db.exec('BEGIN');
+  try {
+    for (const r of rows) {
       if (!r.name || !r.email) { skipped++; continue; }
       try {
         const token = makeUnsubToken();
@@ -143,12 +147,14 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
         skipped++;
       }
     }
-    return { imported, skipped };
-  });
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    return res.status(500).json({ error: err.message, imported: 0, skipped: 0, errors: [] });
+  }
 
-  const result = importMany(rows);
-  console.log('[outreach/import] result:', result, errors.length ? errors : '');
-  res.json({ ...result, errors });
+  console.log('[outreach/import] result:', { imported, skipped }, errors.length ? errors : '');
+  res.json({ imported, skipped, errors });
 });
 
 // ── Email history for a prospect ──────────────────────────────────────────────
