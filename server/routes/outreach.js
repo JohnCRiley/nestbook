@@ -125,9 +125,10 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
   console.log('[outreach/import] received:', rows?.length ?? 0, 'rows', rows?.[0] ?? '');
   if (!Array.isArray(rows) || rows.length === 0) return res.status(400).json({ error: 'rows array required' });
 
-  const insert = db.prepare(
-    `INSERT OR IGNORE INTO prospects (name, company, email, source, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?)`
+  const insert      = db.prepare(
+    `INSERT INTO prospects (name, company, email, source, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?)`
   );
+  const checkEmail  = db.prepare(`SELECT id FROM prospects WHERE email = ?`);
 
   let imported = 0;
   let skipped  = 0;
@@ -138,10 +139,12 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
   try {
     for (const r of rows) {
       if (!r.name || !r.email) { skipped++; continue; }
+      const normalEmail = r.email.toLowerCase().trim();
+      if (checkEmail.get(normalEmail)) { skipped++; continue; } // duplicate
       try {
         const token = makeUnsubToken();
-        const info = insert.run(r.name.trim(), r.company?.trim() || null, r.email.toLowerCase().trim(), r.notes?.trim() || null, token);
-        if (info.changes > 0) imported++; else skipped++;
+        insert.run(r.name.trim(), r.company?.trim() || null, normalEmail, r.notes?.trim() || null, token);
+        imported++;
       } catch (err) {
         errors.push(`Row "${r.name}" (${r.email}): ${err.message}`);
         skipped++;

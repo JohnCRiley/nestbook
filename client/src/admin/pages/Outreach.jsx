@@ -212,7 +212,9 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
 
 // ── Email Composer modal ──────────────────────────────────────────────────────
 function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, onSent }) {
-  const selected = prospects.filter(p => selectedIds.includes(p.id) && p.status !== 'unsubscribed');
+  const selected = prospects
+    .filter(p => selectedIds.includes(p.id) && p.status !== 'unsubscribed')
+    .filter((p, i, self) => self.findIndex(t => t.email === p.email) === i);
   const [subject, setSubject]     = useState('');
   const [body, setBody]           = useState('');
   const [tmplId, setTmplId]       = useState('');
