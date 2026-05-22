@@ -122,25 +122,33 @@ outreachRouter.delete('/prospects/:id', (req, res) => {
 // Expects { rows: [{ name, company, email, notes }] }
 outreachRouter.post('/prospects/bulk-import', (req, res) => {
   const { rows } = req.body;
+  console.log('[outreach/import] received:', rows?.length ?? 0, 'rows', rows?.[0] ?? '');
   if (!Array.isArray(rows) || rows.length === 0) return res.status(400).json({ error: 'rows array required' });
 
   const insert = db.prepare(
     `INSERT OR IGNORE INTO prospects (name, company, email, source, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?)`
   );
+  const errors = [];
   const importMany = db.transaction((items) => {
     let imported = 0;
     let skipped  = 0;
     for (const r of items) {
       if (!r.name || !r.email) { skipped++; continue; }
-      const token = makeUnsubToken();
-      const info = insert.run(r.name.trim(), r.company?.trim() || null, r.email.toLowerCase().trim(), r.notes?.trim() || null, token);
-      if (info.changes > 0) imported++; else skipped++;
+      try {
+        const token = makeUnsubToken();
+        const info = insert.run(r.name.trim(), r.company?.trim() || null, r.email.toLowerCase().trim(), r.notes?.trim() || null, token);
+        if (info.changes > 0) imported++; else skipped++;
+      } catch (err) {
+        errors.push(`Row "${r.name}" (${r.email}): ${err.message}`);
+        skipped++;
+      }
     }
     return { imported, skipped };
   });
 
   const result = importMany(rows);
-  res.json(result);
+  console.log('[outreach/import] result:', result, errors.length ? errors : '');
+  res.json({ ...result, errors });
 });
 
 // ── Email history for a prospect ──────────────────────────────────────────────

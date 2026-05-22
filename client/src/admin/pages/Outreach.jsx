@@ -449,7 +449,9 @@ function CsvImportModal({ onClose, onImported }) {
   const [saving, setSaving] = useState(false);
 
   function parseRows(text) {
-    const lines = text.trim().split('\n').filter(Boolean);
+    // Strip UTF-8 BOM (added by Excel / our template) and normalise line endings
+    const cleaned = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = cleaned.trim().split('\n').filter(Boolean);
     if (lines.length === 0) return [];
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
     return lines.slice(1).map(line => {
@@ -457,12 +459,12 @@ function CsvImportModal({ onClose, onImported }) {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
       return {
-        name:    obj.name    || obj['full name'] || '',
-        company: obj.company || obj.property    || '',
-        email:   obj.email                      || '',
-        notes:   obj.notes                      || '',
+        name:    obj.name          || obj['full name']   || '',
+        company: obj.property_name || obj.company        || obj.property || '',
+        email:   obj.email                               || '',
+        notes:   obj.notes                               || '',
       };
-    }).filter(r => r.email);
+    }).filter(r => r.email && r.name);
   }
 
   function handleFileChange(e) {
@@ -478,16 +480,24 @@ function CsvImportModal({ onClose, onImported }) {
 
   async function doImport() {
     const rows = parseRows(raw);
-    if (rows.length === 0) return;
+    if (rows.length === 0) {
+      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has name and email columns.'] });
+      return;
+    }
     setSaving(true);
-    const res = await saApiFetch('/api/admin/outreach/prospects/bulk-import', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows }),
-    });
-    setSaving(false);
-    const data = await res.json();
-    setResult(data);
-    onImported();
+    try {
+      const res = await saApiFetch('/api/admin/outreach/prospects/bulk-import', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      });
+      const data = await res.json();
+      setResult(res.ok ? data : { imported: 0, skipped: 0, errors: [data.error || 'Server error'] });
+      onImported();
+    } catch (err) {
+      setResult({ imported: 0, skipped: 0, errors: [err.message || 'Network error'] });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -495,13 +505,15 @@ function CsvImportModal({ onClose, onImported }) {
       <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 500 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '1rem' }}>Bulk Import from CSV</h3>
         <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px' }}>
-          CSV columns: <code>name, email, company, notes</code> (header row required)
+          Required columns: <code>name</code>, <code>email</code>. Optional: <code>property_name</code>, <code>notes</code>. Use ↓ CSV template for the full format.
         </p>
 
         {result ? (
           <div>
-            <div style={{ color: '#166534', marginBottom: 6 }}>✓ {result.imported} imported</div>
-            {result.skipped > 0 && <div style={{ color: '#92400e' }}>⚠ {result.skipped} skipped (duplicates or missing fields)</div>}
+            {result.imported > 0 && <div style={{ color: '#166534', marginBottom: 6 }}>✅ {result.imported} prospect{result.imported !== 1 ? 's' : ''} imported successfully.</div>}
+            {result.skipped  > 0 && <div style={{ color: '#92400e', marginBottom: 6 }}>⚠ {result.skipped} skipped (duplicates or missing name/email).</div>}
+            {result.errors?.map((e, i) => <div key={i} style={{ color: '#dc2626', marginBottom: 6 }}>✗ {e}</div>)}
+            {result.imported === 0 && !result.errors?.length && <div style={{ color: '#64748b', marginBottom: 6 }}>No new prospects added.</div>}
             <Btn onClick={onClose} style={{ marginTop: 14 }}>Close</Btn>
           </div>
         ) : (
