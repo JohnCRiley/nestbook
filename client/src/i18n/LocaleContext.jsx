@@ -61,6 +61,12 @@ export function LocaleProvider({ children }) {
     }
   }
 
+  // Apply theme whenever the active property changes
+  useEffect(() => {
+    const theme = property?.theme ?? 'forest';
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [property?.theme]);
+
   // Derive locale directly from property so calling setProperty() anywhere
   // (e.g. after saving Settings) updates the language instantly without a refresh.
   const locale = property?.locale ?? 'en';

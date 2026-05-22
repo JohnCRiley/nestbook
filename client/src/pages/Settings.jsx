@@ -10,6 +10,16 @@ import { usePlan } from '../hooks/usePlan.js';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 
+const THEMES = [
+  { id: 'forest',   label: 'Forest',   primary: '#1a4710', bg: '#f3f7f2' },
+  { id: 'royal',    label: 'Royal',    primary: '#1e3a8a', bg: '#fdf8f0' },
+  { id: 'ember',    label: 'Ember',    primary: '#c2410c', bg: '#f1f5f9' },
+  { id: 'ruby',     label: 'Ruby',     primary: '#991b1b', bg: '#f5f5f5' },
+  { id: 'sky',      label: 'Sky',      primary: '#0369a1', bg: '#f0f9ff' },
+  { id: 'lavender', label: 'Lavender', primary: '#5b21b6', bg: '#f5f3ff' },
+  { id: 'charcoal', label: 'Charcoal', primary: '#1c1917', bg: '#f8fafc', accent: '#dc2626' },
+];
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PROPERTY_TYPES = [
@@ -77,6 +87,7 @@ export default function Settings() {
   const [showDeleteAccount,    setShowDeleteAccount]    = useState(false);
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
+  const [theme,            setTheme]            = useState('forest');
   const [categories,       setCategories]       = useState([]);
   const [newCatForm,       setNewCatForm]       = useState({ name: '', color: '#64748b', icon: '' });
   const [catSaving,        setCatSaving]        = useState(false);
@@ -103,6 +114,7 @@ export default function Settings() {
       catFetch,
     ]).then(([p, u, s, cats]) => {
       setProperty(p);
+      setTheme(p.theme ?? 'forest');
       setForm({
         name:               p.name               ?? '',
         type:               p.type               ?? 'bnb',
@@ -137,6 +149,26 @@ export default function Settings() {
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleFormChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleThemeChange = async (newTheme) => {
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    if (!form || !activeProperty?.id) return;
+    try {
+      const res = await apiFetch(`/api/properties/${activeProperty.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, theme: newTheme }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setProperty(updated);
+        setContextProperty(updated);
+        updatePropertyInList(updated);
+        showToast('Theme updated');
+      }
+    } catch {}
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -417,6 +449,59 @@ export default function Settings() {
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>
                     {saving ? t('saving') : t('saveChanges')}
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Appearance — theme picker, owner only */}
+          {user?.role === 'owner' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>Appearance</h2>
+                <p>Choose a colour theme for your property dashboard.</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  {THEMES.map(th => (
+                    <button
+                      key={th.id}
+                      onClick={() => handleThemeChange(th.id)}
+                      title={th.label}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: 6, background: 'none', border: 'none', cursor: 'pointer',
+                        padding: 0, fontFamily: 'inherit',
+                      }}
+                    >
+                      <div style={{
+                        width: 44, height: 44, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${th.primary} 55%, ${th.accent ?? th.bg} 55%)`,
+                        border: theme === th.id
+                          ? `3px solid ${th.primary}`
+                          : '3px solid transparent',
+                        outline: theme === th.id ? `2px solid #fff` : 'none',
+                        outlineOffset: -5,
+                        boxShadow: theme === th.id
+                          ? `0 0 0 2px ${th.primary}`
+                          : '0 1px 3px rgba(0,0,0,0.15)',
+                        transition: 'box-shadow 0.15s',
+                        position: 'relative',
+                      }}>
+                        {theme === th.id && (
+                          <span style={{
+                            position: 'absolute', inset: 0, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: 18, fontWeight: 700,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                          }}>✓</span>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: '0.72rem', color: '#475569', fontWeight: theme === th.id ? 700 : 400,
+                      }}>{th.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

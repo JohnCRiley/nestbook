@@ -155,20 +155,22 @@ propertiesRouter.put('/:id', (req, res) => {
     }
     const {
       name, type, address, city, country,
-      check_in_time, check_out_time, currency, locale,
+      check_in_time, check_out_time, currency, locale, theme,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time,
     } = req.body;
+    const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
-          check_in_time = ?, check_out_time = ?, currency = ?, locale = ?,
+          check_in_time = ?, check_out_time = ?, currency = ?, locale = ?, theme = ?,
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
           breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
       check_in_time, check_out_time, currency, locale,
+      VALID_THEMES.includes(theme) ? theme : 'forest',
       breakfast_included ? 1 : 0,
       require_deposit    ? 1 : 0,
       parseFloat(deposit_amount) || 0,

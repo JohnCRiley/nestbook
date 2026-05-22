@@ -591,6 +591,9 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE nestbook_expenses ADD COLUMN receipt_ref TEXT`); } catch {}
   try { db.exec(`ALTER TABLE nestbook_expenses ADD COLUMN miles REAL`); } catch {}
 
+  // Property theme
+  try { db.exec(`ALTER TABLE properties ADD COLUMN theme TEXT NOT NULL DEFAULT 'forest'`); } catch {}
+
   // ── Prospect Outreach CRM ─────────────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS prospects (

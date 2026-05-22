@@ -1,20 +1,117 @@
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 :root {
+  /* Brand — Forest default; overridden per theme below */
   --sidebar-bg:    #1a4710;
   --sidebar-hover: rgba(255,255,255,0.08);
   --sidebar-active:#2f771b;
   --accent:        #2f771b;
   --accent-dark:   #1a4710;
+  --tint-bg:       #f0fdf4;
+  --tint-border:   #bbf7d0;
+  --tint-text:     #166534;
   --light-green:   #d9f0cc;
+  /* Neutral — unchanged across themes */
   --page-bg:       #f3f7f2;
   --card-bg:       #ffffff;
   --border:        #e4ede2;
   --text-primary:  #1a2e14;
   --text-secondary:#557a4a;
   --text-muted:    #8aab7f;
-  --shadow-sm:     0 1px 3px rgba(26,71,16,0.08);
-  --shadow-md:     0 4px 12px rgba(26,71,16,0.10);
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.07);
+  --shadow-md:     0 4px 12px rgba(0,0,0,0.10);
   --radius:        10px;
+}
+
+/* ─── Themes ─────────────────────────────────────────────────────────────── */
+html[data-theme="royal"] {
+  --sidebar-bg:    #1e3a8a;
+  --sidebar-active:#2563eb;
+  --accent:        #2563eb;
+  --accent-dark:   #1d4ed8;
+  --tint-bg:       #eff6ff;
+  --tint-border:   #bfdbfe;
+  --tint-text:     #1e40af;
+  --light-green:   #bfdbfe;
+  --page-bg:       #fdf8f0;
+  --border:        #dde4f0;
+  --text-primary:  #0f172a;
+  --text-secondary:#3b4f7a;
+  --text-muted:    #6b7faa;
+}
+html[data-theme="ember"] {
+  --sidebar-bg:    #c2410c;
+  --sidebar-active:#ea580c;
+  --accent:        #ea580c;
+  --accent-dark:   #c2410c;
+  --tint-bg:       #fff7ed;
+  --tint-border:   #fed7aa;
+  --tint-text:     #9a3412;
+  --light-green:   #fed7aa;
+  --page-bg:       #f1f5f9;
+  --border:        #e2e8f0;
+  --text-primary:  #1c1917;
+  --text-secondary:#57534e;
+  --text-muted:    #a8a29e;
+}
+html[data-theme="ruby"] {
+  --sidebar-bg:    #991b1b;
+  --sidebar-active:#dc2626;
+  --accent:        #dc2626;
+  --accent-dark:   #b91c1c;
+  --tint-bg:       #fef2f2;
+  --tint-border:   #fecaca;
+  --tint-text:     #991b1b;
+  --light-green:   #fecaca;
+  --page-bg:       #f5f5f5;
+  --border:        #e5e7eb;
+  --text-primary:  #1c1917;
+  --text-secondary:#6b4444;
+  --text-muted:    #9b7070;
+}
+html[data-theme="sky"] {
+  --sidebar-bg:    #0369a1;
+  --sidebar-active:#0284c7;
+  --accent:        #0284c7;
+  --accent-dark:   #0369a1;
+  --tint-bg:       #e0f2fe;
+  --tint-border:   #7dd3fc;
+  --tint-text:     #0369a1;
+  --light-green:   #7dd3fc;
+  --page-bg:       #f0f9ff;
+  --border:        #d0e8f5;
+  --text-primary:  #0c1a24;
+  --text-secondary:#315b7a;
+  --text-muted:    #6497b8;
+}
+html[data-theme="lavender"] {
+  --sidebar-bg:    #5b21b6;
+  --sidebar-active:#7c3aed;
+  --accent:        #7c3aed;
+  --accent-dark:   #6d28d9;
+  --tint-bg:       #ede9fe;
+  --tint-border:   #c4b5fd;
+  --tint-text:     #5b21b6;
+  --light-green:   #c4b5fd;
+  --page-bg:       #f5f3ff;
+  --border:        #ddd6fe;
+  --text-primary:  #1e1b4b;
+  --text-secondary:#4c3d8f;
+  --text-muted:    #7c6bc0;
+}
+html[data-theme="charcoal"] {
+  --sidebar-bg:    #1c1917;
+  --sidebar-active:#292524;
+  --accent:        #dc2626;
+  --accent-dark:   #b91c1c;
+  --tint-bg:       #fef2f2;
+  --tint-border:   #fecaca;
+  --tint-text:     #dc2626;
+  --light-green:   #e7e5e4;
+  --page-bg:       #f8fafc;
+  --border:        #e2e8f0;
+  --text-primary:  #0f172a;
+  --text-secondary:#475569;
+  --text-muted:    #94a3b8;
 }
 
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
@@ -39,13 +136,13 @@ a { text-decoration: none; }
 ::-webkit-scrollbar               { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track         { background: transparent; }
 ::-webkit-scrollbar-thumb         { background: #b8ddb0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover   { background: #2f771b; }
+::-webkit-scrollbar-thumb:hover   { background: var(--accent); }
 ::-webkit-scrollbar-corner        { background: transparent; }
 /* Lighter thumb inside scrollable panels and modals */
 .panel-scroll::-webkit-scrollbar-thumb,
 .modal-body::-webkit-scrollbar-thumb,
 .modal-box::-webkit-scrollbar-thumb,
-.table-scroll::-webkit-scrollbar-thumb { background: #d9f0cc; }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--light-green); }
 .panel-scroll::-webkit-scrollbar-thumb:hover,
 .modal-body::-webkit-scrollbar-thumb:hover,
 .modal-box::-webkit-scrollbar-thumb:hover,
@@ -573,7 +670,7 @@ a { text-decoration: none; }
 
 /* ─── Check-in / Check-out action buttons (dashboard rows) ──────────────── */
 .btn-checkin {
-  background: #16a34a;
+  background: var(--accent);
   color: white;
   border: none;
   border-radius: 7px;
@@ -584,7 +681,7 @@ a { text-decoration: none; }
   font-family: inherit;
   white-space: nowrap;
 }
-.btn-checkin:hover { background: #15803d; }
+.btn-checkin:hover { background: var(--accent-dark); }
 
 .btn-checkout {
   background: #d97706;
@@ -909,7 +1006,7 @@ a { text-decoration: none; }
   border-radius: 4px;
   white-space: nowrap;
 }
-.source-direct      { background: #f0fdf4; color: #166534; }
+.source-direct      { background: var(--tint-bg); color: var(--tint-text); }
 .source-phone       { background: #eff6ff; color: #1d4ed8; }
 .source-email       { background: #faf5ff; color: #6b21a8; }
 .source-booking_com { background: #eff6ff; color: #0d47a1; }
@@ -2962,9 +3059,9 @@ a { text-decoration: none; }
 
 /* ── Upgrade banner (free plan users) ───────────────────────────────────── */
 .upgrade-banner {
-  background: #f0fdf4;
-  border-bottom: 1px solid rgba(22,163,74,0.20);
-  color: #166534;
+  background: var(--tint-bg);
+  border-bottom: 1px solid var(--tint-border);
+  color: var(--tint-text);
   font-size: 0.82rem;
   display: flex;
   align-items: center;
@@ -2980,9 +3077,9 @@ a { text-decoration: none; }
 
 .upgrade-banner-cta {
   background: none;
-  border: 1.5px solid rgba(22,163,74,0.5);
+  border: 1.5px solid var(--tint-border);
   border-radius: 6px;
-  color: #166534;
+  color: var(--tint-text);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 3px 10px;
@@ -2991,19 +3088,19 @@ a { text-decoration: none; }
   white-space: nowrap;
   transition: background 0.15s;
 }
-.upgrade-banner-cta:hover { background: rgba(22,163,74,0.08); }
+.upgrade-banner-cta:hover { background: var(--tint-border); opacity: 0.7; }
 
 .upgrade-banner-dismiss {
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(22,163,74,0.5);
+  color: var(--tint-border);
   font-size: 12px;
   padding: 2px 4px;
   flex-shrink: 0;
   line-height: 1;
 }
-.upgrade-banner-dismiss:hover { color: #166534; }
+.upgrade-banner-dismiss:hover { color: var(--tint-text); }
 
 @media (min-width: 768px) and (max-width: 1023px) {
   .upgrade-banner { margin: -36px -24px 24px; padding: 8px 24px; }
@@ -3957,7 +4054,7 @@ a { text-decoration: none; }
 
 /* ── "+ New Guest" button label in booking modal ────────────────────────── */
 .btn-new-guest-inline {
-  background: #1a4710;
+  background: var(--accent-dark);
   color: #fff;
   border: none;
   border-radius: 6px;
