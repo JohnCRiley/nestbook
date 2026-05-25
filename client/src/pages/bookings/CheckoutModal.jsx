@@ -86,7 +86,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
 
         {/* Header */}
         <div style={{
-          background: 'var(--accent-dark)', color: '#fff',
+          background: 'var(--header-bg)', color: 'var(--header-text)',
           padding: '18px 24px 14px',
         }}>
           <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 4 }}>
@@ -195,12 +195,12 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
             )}
             <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '10px 0 4px', borderTop: '2px solid var(--accent-dark)', marginTop: 6,
+              padding: '10px 0 4px', borderTop: '2px solid var(--heading-text)', marginTop: 6,
             }}>
-              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--accent-dark)' }}>
+              <span style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--heading-text)' }}>
                 {t('coTotalDue')}
               </span>
-              <span style={{ fontWeight: 800, fontSize: '1.3rem', color: 'var(--accent-dark)' }}>
+              <span style={{ fontWeight: 800, fontSize: '1.3rem', color: 'var(--heading-text)' }}>
                 {fmtCurrency(displayTotal)}
               </span>
             </div>
@@ -221,9 +221,9 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
                   style={{
                     padding: '8px 16px', borderRadius: 6, fontSize: '0.88rem', fontWeight: 600,
                     cursor: 'pointer', transition: 'all 0.12s',
-                    background: paymentMethod === value ? 'var(--accent-dark)' : '#f8fafc',
+                    background: paymentMethod === value ? 'var(--accent)' : '#f8fafc',
                     color:      paymentMethod === value ? '#fff'     : '#374151',
-                    border:     paymentMethod === value ? '2px solid var(--accent-dark)' : '2px solid #e2e8f0',
+                    border:     paymentMethod === value ? '2px solid var(--accent)' : '2px solid #e2e8f0',
                   }}
                 >
                   {t(labelKey)}
@@ -265,7 +265,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
                   type="checkbox"
                   checked={printOnCheckout}
                   onChange={(e) => setPrintOnCheckout(e.target.checked)}
-                  style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--accent-dark)' }}
+                  style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--toggle-on)' }}
                 />
                 {t('printReceiptCheckbox')}
               </label>
@@ -279,7 +279,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
                 disabled={!paymentMethod || confirming}
                 style={{
                   flex: 1, padding: '10px 20px', borderRadius: 7, border: 'none',
-                  background: paymentMethod ? 'var(--accent-dark)' : '#d1d5db',
+                  background: paymentMethod ? 'var(--accent)' : '#d1d5db',
                   color: '#fff', fontWeight: 700, fontSize: '0.95rem',
                   cursor: paymentMethod ? 'pointer' : 'not-allowed',
                   fontFamily: 'inherit',
