@@ -12,7 +12,7 @@ export function apiFetch(url, options = {}) {
     if (res.status === 401) {
       localStorage.removeItem('nb_token');
       localStorage.removeItem('nb_user');
-      window.location.href = '/login';
+      window.location.href = '/app/login';
       // Return a promise that never resolves — the redirect is in progress.
       return new Promise(() => {});
     }
