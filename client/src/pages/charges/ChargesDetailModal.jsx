@@ -39,7 +39,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
         maxHeight: '90vh', display: 'flex', flexDirection: 'column',
       }}>
         {/* Header */}
-        <div style={{ background: 'var(--accent-dark)', color: '#fff', padding: '16px 24px', flexShrink: 0 }}>
+        <div style={{ background: 'var(--header-bg)', color: 'var(--header-text)', padding: '16px 24px', flexShrink: 0 }}>
           <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>
             {t('chargesFor')(room.room_name)}
           </div>
@@ -90,7 +90,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
                     <td style={{ padding: '9px 12px', color: '#374151', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.82rem' }}>
                       {c.description ?? '—'}
                     </td>
-                    <td style={{ padding: '9px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--accent-dark)', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '9px 16px', textAlign: 'right', fontWeight: 600, color: 'var(--heading-text)', whiteSpace: 'nowrap' }}>
                       {fmtCurrency(c.amount)}
                     </td>
                   </tr>
@@ -111,7 +111,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
             <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1a2e14' }}>
               {t('chargesViewTotal')}
             </span>
-            <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--accent-dark)' }}>
+            <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--heading-text)' }}>
               {fmtCurrency(total)}
             </span>
           </div>
@@ -139,7 +139,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
               onClick={() => { onClose(); onAddCharge(room); }}
               style={{
                 padding: '9px 18px', borderRadius: 7, border: 'none',
-                background: 'var(--accent-dark)', color: '#fff', fontWeight: 700, fontSize: '0.88rem',
+                background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '0.88rem',
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >

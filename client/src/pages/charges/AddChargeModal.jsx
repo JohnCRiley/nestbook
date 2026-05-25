@@ -67,7 +67,7 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
         background: '#fff', borderRadius: 12, width: '100%', maxWidth: 440,
         boxShadow: '0 8px 40px rgba(0,0,0,0.22)', overflow: 'hidden',
       }}>
-        <div style={{ background: 'var(--accent-dark)', color: '#fff', padding: '16px 24px' }}>
+        <div style={{ background: 'var(--header-bg)', color: 'var(--header-text)', padding: '16px 24px' }}>
           <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{t('addChargeTitle')}</div>
           <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', marginTop: 3 }}>
             {booking.guest_first_name} {booking.guest_last_name} — {booking.room_name}
@@ -193,7 +193,7 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
               disabled={saving || !form.amount}
               style={{
                 padding: '9px 18px', borderRadius: 7, border: 'none',
-                background: saving || !form.amount ? '#d1d5db' : 'var(--accent-dark)',
+                background: saving || !form.amount ? '#d1d5db' : 'var(--accent)',
                 color: '#fff', fontWeight: 700, fontSize: '0.88rem',
                 cursor: saving || !form.amount ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit',
