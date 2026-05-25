@@ -459,7 +459,7 @@ export default function Settings() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <h2>Appearance</h2>
-                <p>Choose a colour theme for your property dashboard.</p>
+                <p>Choose a colour theme for your property dashboard. Your booking widget will automatically match.</p>
               </div>
               <div className="settings-card-body">
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>

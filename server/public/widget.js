@@ -41,12 +41,12 @@
   // Colour palettes for each theme — must stay in sync with client/src/index.css
   const THEME_COLOURS = {
     forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
-    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#E8E3DC' },
-    ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E2DFDA' },
-    ruby:     { brand: '#490403', dark: '#340302', light: '#D1C2C2' },
-    sky:      { brand: '#4B779B', dark: '#3a5f7a', light: '#B8D1E5' },
-    lavender: { brand: '#4F4582', dark: '#3a3060', light: '#E8E3DC' },
-    charcoal: { brand: '#8A0505', dark: '#292929', light: '#DADEE2' },
+    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
+    ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
+    ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
+    sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6' },
+    lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
+    charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
   };
 
   let BRAND       = '#2f771b';
