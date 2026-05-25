@@ -1797,10 +1797,8 @@ a { text-decoration: none; }
   border: 1px solid #ddd;
 }
 .legend-swatch.sw-breakfast {
-  background: repeating-linear-gradient(
-    to bottom, #111 0, #111 3px, transparent 3px, transparent 7px
-  );
-  border: 1px solid #555;
+  background: var(--accent);
+  border: 3px dashed #ffffff;
 }
 
 /* ── Calendar responsive ─────────────────────────────────────────────────── */
