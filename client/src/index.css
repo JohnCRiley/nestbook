@@ -8,7 +8,7 @@
   --accent:             #2f771b;
   --accent-dark:        #1a4710;
   --tint-bg:            #f0fdf4;
-  --tint-border:        #bbf7d0;
+  --tint-border:        #2f771b;
   --tint-text:          #166534;
   --light-green:        #d9f0cc;
   --card-bg:            #ffffff;
@@ -1574,8 +1574,8 @@ a { text-decoration: none; }
 /* ── Header row ── */
 .cal-corner {
   background: var(--light-green);
-  border-right: 2px solid var(--tint-border);
-  border-bottom: 2px solid var(--tint-border);
+  border-right: 1px solid var(--tint-border);
+  border-bottom: 1px solid var(--tint-border);
   position: sticky;
   left: 0;
   z-index: 3;
@@ -1583,7 +1583,7 @@ a { text-decoration: none; }
 
 .cal-day-header {
   background: var(--light-green);
-  border-bottom: 2px solid var(--tint-border);
+  border-bottom: 1px solid var(--tint-border);
   border-right: 1px solid var(--tint-border);
   padding: 10px 8px;
   text-align: center;
@@ -1619,7 +1619,7 @@ a { text-decoration: none; }
 /* ── Room label cells ── */
 .cal-room-label {
   background: var(--card-bg);
-  border-right: 2px solid var(--tint-border);
+  border-right: 1px solid var(--tint-border);
   border-bottom: 1px solid var(--border);
   padding: 10px 12px;
   position: sticky;
@@ -2827,7 +2827,7 @@ a { text-decoration: none; }
 /* Negative margins cancel main-content's padding so the banner runs edge-to-edge */
 .verify-email-banner {
   background: var(--light-green);
-  border-bottom: 1.5px solid var(--tint-border);
+  border-bottom: 1px solid var(--tint-border);
   /* match main-content desktop padding: 36px top, 40px sides */
   margin: -36px -40px 28px;
   padding: 11px 40px;
