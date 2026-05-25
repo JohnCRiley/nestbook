@@ -48,7 +48,7 @@ html[data-theme="royal"] {
   --tint-bg:            #E8E3DC;
   --tint-border:        #70879E;
   --tint-text:          #1C1C1E;
-  --light-green:        #9BB5C8;
+  --light-green:        #F6F4EE;
   --btn-secondary-bg:   #E8E3DC;
   --btn-secondary-text: #1C1C1E;
   --toggle-on:          #70879E;
@@ -74,7 +74,7 @@ html[data-theme="ember"] {
   --tint-bg:            #E2DFDA;
   --tint-border:        #CEB892;
   --tint-text:          #1C160D;
-  --light-green:        #E8A838;
+  --light-green:        #E9E7E2;
   --btn-secondary-bg:   #E2DFDA;
   --btn-secondary-text: #1C1C1E;
   --toggle-on:          #1A2535;
@@ -100,7 +100,7 @@ html[data-theme="ruby"] {
   --tint-bg:            #D1C2C2;
   --tint-border:        #988181;
   --tint-text:          #1C1C1E;
-  --light-green:        #CF514F;
+  --light-green:        #E9E7E7;
   --btn-secondary-bg:   #D1C2C2;
   --btn-secondary-text: #1C1C1E;
   --toggle-on:          #CF514F;
@@ -126,7 +126,7 @@ html[data-theme="sky"] {
   --tint-bg:            #B8D1E5;
   --tint-border:        #B8D1E5;
   --tint-text:          #1C1C1E;
-  --light-green:        #B8D1E5;
+  --light-green:        #F4F5F6;
   --btn-secondary-bg:   #B8D1E5;
   --btn-secondary-text: #1C1C1E;
   --toggle-on:          #878A8C;
@@ -152,7 +152,7 @@ html[data-theme="lavender"] {
   --tint-bg:            #E8E3DC;
   --tint-border:        #928CB1;
   --tint-text:          #1C1C1E;
-  --light-green:        #928CB1;
+  --light-green:        #E7E7E9;
   --btn-secondary-bg:   #E8E3DC;
   --btn-secondary-text: #1C1C1E;
   --toggle-on:          #928CB1;
@@ -178,7 +178,7 @@ html[data-theme="charcoal"] {
   --tint-bg:            #292929;
   --tint-border:        #8A0505;
   --tint-text:          #FFFFFF;
-  --light-green:        #DADEE2;
+  --light-green:        #F4F5F6;
   --btn-secondary-bg:   #292929;
   --btn-secondary-text: #FFFFFF;
   --toggle-on:          #8A0505;
