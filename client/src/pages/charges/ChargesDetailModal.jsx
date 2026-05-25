@@ -104,7 +104,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
         {charges.length > 0 && (
           <div style={{
             padding: '11px 24px',
-            background: 'var(--tint-bg)', borderTop: '1.5px solid var(--light-green)',
+            background: 'var(--tint-bg)', borderTop: '1.5px solid var(--tint-border)',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             flexShrink: 0,
           }}>

@@ -761,7 +761,7 @@ function BreakfastServiceList({ bookings, property, t }) {
         ) : (
           <>
             {guests.map(b => <BfRow key={b.id} b={b} />)}
-            <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-dark)', borderTop: '1.5px solid var(--light-green)' }}>
+            <div style={{ padding: '10px 16px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-dark)', borderTop: '1.5px solid var(--tint-border)' }}>
               {t(coversKey)(covers)}
             </div>
           </>

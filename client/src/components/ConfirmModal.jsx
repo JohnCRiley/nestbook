@@ -40,15 +40,15 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   const cfg = {
-    success: { icon: '✓',  headerBg: 'var(--accent-dark)', confirmBg: 'var(--accent-dark)' },
-    warning: { icon: '⚠',  headerBg: '#92400e', confirmBg: '#d97706' },
-    danger:  { icon: '🗑', headerBg: '#991b1b', confirmBg: '#dc2626' },
-  }[variant] ?? { icon: '⚠', headerBg: '#92400e', confirmBg: '#d97706' };
+    success: { icon: '✓',  headerBg: 'var(--header-bg)', headerText: 'var(--header-text)', confirmBg: 'var(--accent)' },
+    warning: { icon: '⚠',  headerBg: '#92400e',          headerText: '#fff',               confirmBg: '#d97706' },
+    danger:  { icon: '🗑', headerBg: '#991b1b',          headerText: '#fff',               confirmBg: '#dc2626' },
+  }[variant] ?? { icon: '⚠', headerBg: '#92400e', headerText: '#fff', confirmBg: '#d97706' };
 
   return (
     <div className="cm-backdrop" onClick={onCancel}>
       <div className="cm-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="cm-header" style={{ background: cfg.headerBg }}>
+        <div className="cm-header" style={{ background: cfg.headerBg, color: cfg.headerText }}>
           <span className="cm-icon" aria-hidden="true">{cfg.icon}</span>
           <span className="cm-title">{title}</span>
         </div>

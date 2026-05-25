@@ -92,25 +92,25 @@ function ChargesStaffShell() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       <header style={{
-        background: 'var(--accent-dark)', color: '#fff',
+        background: 'var(--header-bg)', color: 'var(--header-text)',
         padding: '12px 24px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', gap: 16,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>NestBook</span>
           {property?.name && (
-            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--header-text)', opacity: 0.65, fontWeight: 500 }}>
               {property.name}
             </span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)' }}>{user?.name}</span>
+          <span style={{ fontSize: '0.82rem', color: 'var(--header-text)', opacity: 0.7 }}>{user?.name}</span>
           <button
             onClick={() => { logout(); window.location.href = '/app/login'; }}
             style={{
-              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 6,
-              color: '#fff', padding: '6px 14px', fontSize: '0.82rem',
+              background: 'rgba(0,0,0,0.08)', border: 'none', borderRadius: 6,
+              color: 'var(--header-text)', padding: '6px 14px', fontSize: '0.82rem',
               fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
             }}
           >

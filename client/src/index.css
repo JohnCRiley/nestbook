@@ -619,7 +619,7 @@ a { text-decoration: none; }
   background: var(--card-bg);
   border-radius: var(--radius);
   padding: 20px 22px;
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid var(--accent-bar);
   box-shadow: var(--shadow-sm);
 }
 
@@ -660,14 +660,14 @@ a { text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  background: var(--light-green);
-  border-bottom: 1px solid var(--tint-border);
+  background: var(--header-bg);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
 }
 
 .section-head h2 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--accent-dark);
+  color: var(--header-text);
   letter-spacing: 0.1px;
 }
 
@@ -824,7 +824,6 @@ a { text-decoration: none; }
   align-items: center;
   gap: 12px;
   padding: 18px 22px;
-  color: #fff;
 }
 .cm-icon  { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
 .cm-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
@@ -1101,7 +1100,7 @@ a { text-decoration: none; }
 .booking-cards { display: none; }
 
 .booking-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   padding: 14px 16px;
@@ -1366,26 +1365,27 @@ a { text-decoration: none; }
 
 .modal-header {
   padding: 18px 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--light-green);
+  background: var(--header-bg);
   border-radius: 12px 12px 0 0;
   flex-shrink: 0;
 }
-.modal-header h2    { font-size: 1rem; font-weight: 700; color: var(--accent-dark); }
+.modal-header h2    { font-size: 1rem; font-weight: 700; color: var(--header-text); }
 .modal-close-btn    {
   background: none;
   border: none;
   font-size: 1.2rem;
   cursor: pointer;
-  color: var(--text-muted);
+  color: var(--header-text);
   padding: 2px 7px;
   border-radius: 4px;
   line-height: 1;
+  opacity: 0.65;
 }
-.modal-close-btn:hover { background: rgba(0,0,0,0.07); color: var(--text-primary); }
+.modal-close-btn:hover { background: rgba(0,0,0,0.08); opacity: 1; }
 
 .modal-body   { padding: 24px; }
 .modal-body--sections { padding: 0 24px; }
@@ -2088,7 +2088,7 @@ a { text-decoration: none; }
   height: 5px;
   flex-shrink: 0;
 }
-.stripe-available   { background: var(--accent); }
+.stripe-available   { background: var(--accent-bar); }
 .stripe-occupied    { background: #f59e0b; }
 .stripe-maintenance { background: #94a3b8; }
 

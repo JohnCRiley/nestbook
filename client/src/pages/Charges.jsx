@@ -20,7 +20,7 @@ function UpgradeGate() {
       </div>
       <a href="/app/pricing" style={{
         display: 'inline-block', padding: '10px 24px', borderRadius: 8,
-        background: 'var(--accent-dark)', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+        background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
         textDecoration: 'none',
       }}>
         View Plans
@@ -35,31 +35,31 @@ function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
   const chargeCount = room.charges_count ?? 0;
   return (
     <div style={{
-      background: '#fff', borderRadius: 10, border: '1.5px solid #e2e8f0',
+      background: 'var(--card-bg)', borderRadius: 10, border: '1.5px solid var(--border)',
       padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8,
       boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a2e14' }}>
+          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
             {room.room_name}
-            <span style={{ marginLeft: 6, fontSize: '0.75rem', fontWeight: 500, color: '#94a3b8' }}>
+            <span style={{ marginLeft: 6, fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>
               {room.room_type}
             </span>
           </div>
-          <div style={{ fontSize: '0.82rem', color: '#374151', marginTop: 3 }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 3 }}>
             {room.guest_first_name} {room.guest_last_name}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
             {room.check_in_date} → {room.check_out_date}
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: chargeCount > 0 ? 'var(--accent-dark)' : '#94a3b8' }}>
+          <div style={{ fontWeight: 700, fontSize: '1.05rem', color: chargeCount > 0 ? 'var(--heading-text)' : 'var(--text-muted)' }}>
             {fmtCurrency(room.charges_total ?? 0)}
           </div>
           {chargeCount > 0 && (
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
               {chargeCount} charge{chargeCount !== 1 ? 's' : ''}
             </div>
           )}
@@ -71,7 +71,7 @@ function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
             onClick={() => onAddCharge(room)}
             style={{
               width: '100%', padding: '7px 12px', borderRadius: 7,
-              background: 'var(--accent-dark)', border: 'none',
+              background: 'var(--accent)', border: 'none',
               color: '#fff', fontWeight: 600, fontSize: '0.85rem',
               cursor: 'pointer', fontFamily: 'inherit',
             }}
@@ -83,8 +83,8 @@ function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
           onClick={() => onViewCharges(room)}
           style={{
             width: '100%', padding: '7px 12px', borderRadius: 7,
-            background: '#fff', border: '1.5px solid #e2e8f0',
-            color: '#374151', fontWeight: 600, fontSize: '0.85rem',
+            background: 'var(--card-bg)', border: '1.5px solid var(--border)',
+            color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem',
             cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
