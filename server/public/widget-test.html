@@ -130,6 +130,22 @@
     </div>
   </div>
 
+  <!-- Theme preview switcher -->
+  <div style="margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+    <span style="font-size: 0.9rem; color: #555;">Preview theme:</span>
+    <button onclick="setWidgetTheme('forest')"   style="background:#1a4710; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">🌿 Forest</button>
+    <button onclick="setWidgetTheme('royal')"    style="background:#1F3A55; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">⚓ Navy</button>
+    <button onclick="setWidgetTheme('ember')"    style="background:#1A2535; color:#E8A838; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">✨ Warm Gold</button>
+    <button onclick="setWidgetTheme('ruby')"     style="background:#490403; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">💎 Ruby</button>
+    <button onclick="setWidgetTheme('sky')"      style="background:#4B779B; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">☁️ Sky Blue</button>
+    <button onclick="setWidgetTheme('lavender')" style="background:#62598F; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">🪻 Lavender</button>
+    <button onclick="setWidgetTheme('charcoal')" style="background:#292929; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">🖤 Charcoal</button>
+  </div>
+  <p style="font-size: 0.8rem; color: #888; margin: 0 0 20px;">
+    Your booking widget automatically matches your chosen theme —
+    so it blends perfectly with your website.
+  </p>
+
   <script>
   // ── Page translations ──────────────────────────────────────────────────────
   const PAGE_STRINGS = {
@@ -244,6 +260,43 @@
       btn.classList.toggle('active', btn.dataset.lang === lang);
     });
   })();
+
+  // ── Theme preview switcher ─────────────────────────────────────────────────
+  const DEMO_THEMES = {
+    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
+    ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
+    ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
+    sky:      { brand: '#4B779B', dark: '#4B779B', light: '#F4F5F6' },
+    lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
+    charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
+  };
+
+  function setWidgetTheme(themeName) {
+    const t = DEMO_THEMES[themeName];
+    if (!t) return;
+    let el = document.getElementById('nb-theme-override');
+    if (!el) { el = document.createElement('style'); el.id = 'nb-theme-override'; document.head.appendChild(el); }
+    el.textContent = [
+      `.nb-trigger{background:${t.brand}!important}`,
+      `.nb-trigger:hover{background:${t.dark}!important}`,
+      `.nb-hd-topbar{background:${t.dark}!important}`,
+      `.nb-hd-title-row{background:${t.light}!important;color:${t.dark}!important}`,
+      `.nb-btn-main{background:${t.brand}!important}`,
+      `.nb-btn-main:hover{background:${t.dark}!important}`,
+      `.nb-btn-back:hover{border-color:${t.brand}!important;color:${t.dark}!important}`,
+      `.nb-input:focus,.nb-select:focus,.nb-textarea:focus{border-color:${t.brand}!important}`,
+      `.nb-guests-btn:hover{background:${t.light}!important;color:${t.dark}!important}`,
+      `.nb-room:hover{border-color:${t.brand}!important}`,
+      `.nb-room.nb-selected{border-color:${t.brand}!important;background:${t.light}!important}`,
+      `.nb-room-price{color:${t.dark}!important}`,
+      `.nb-price-callout{background:${t.dark}!important}`,
+      `.nb-price-big{color:${t.light}!important}`,
+      `.nb-spinner{border-color:${t.light}!important;border-top-color:${t.brand}!important}`,
+      `.nb-success-icon{background:${t.light}!important}`,
+      `.nb-success-ref{background:${t.dark}!important;color:${t.light}!important}`,
+    ].join('');
+  }
   </script>
 
   <!-- NestBook booking widget — demo mode enabled -->
