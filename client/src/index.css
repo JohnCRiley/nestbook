@@ -1799,6 +1799,9 @@ a { text-decoration: none; }
 .legend-swatch.sw-breakfast {
   background: var(--accent);
   border: 3px dashed #ffffff;
+  border-radius: 4px;
+  width: 24px;
+  height: 16px;
 }
 
 /* ── Calendar responsive ─────────────────────────────────────────────────── */
