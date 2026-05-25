@@ -1237,7 +1237,7 @@ a { text-decoration: none; }
 .panel-close:hover { background: rgba(255,255,255,0.22); }
 
 .panel-guest-name   { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
-.panel-booking-ref  { font-size: 0.72rem; opacity: 0.5; margin-bottom: 8px; }
+.panel-booking-ref  { font-size: 0.72rem; opacity: 0.65; margin-bottom: 8px; }
 
 .panel-scroll { flex: 1; overflow-y: auto; }
 .panel-body   { padding: 22px; }
@@ -1851,9 +1851,9 @@ a { text-decoration: none; }
 }
 
 .stat-bar-item {
-  background: white;
+  background: var(--card-bg);
   border-radius: var(--radius);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--accent-bar);
   box-shadow: var(--shadow-sm);
   padding: 12px 18px;
   flex: 1;
@@ -2293,19 +2293,21 @@ a { text-decoration: none; }
 
 .settings-card-header {
   padding: 14px 20px;
-  background: var(--light-green);
-  border-bottom: 1px solid var(--tint-border);
+  background: var(--header-bg);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  color: var(--header-text);
 }
 
 .settings-card-header h2 {
   font-size: 0.875rem;
   font-weight: 700;
-  color: var(--accent-dark);
+  color: var(--header-text);
 }
 
 .settings-card-header p {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--header-text);
+  opacity: 0.7;
   margin-top: 2px;
 }
 

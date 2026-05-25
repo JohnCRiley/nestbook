@@ -64,7 +64,7 @@ function PanelHeader({ guest, onClose }) {
             {flag && <span style={{ marginLeft: 7, fontSize: '1.1rem' }}>{flag}</span>}
           </div>
           {country && (
-            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.78rem' }}>{country}</div>
+            <div style={{ fontSize: '0.78rem', opacity: 0.65 }}>{country}</div>
           )}
         </div>
       </div>

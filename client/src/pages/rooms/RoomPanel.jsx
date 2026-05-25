@@ -55,7 +55,7 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
           <div className="panel-guest-name" style={{ marginBottom: 4 }}>{room.name}</div>
           <div className="panel-room-type-row">
             <StatusPill status={effectiveStatus} />
-            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem' }}>
+            <span style={{ fontSize: '0.8rem', opacity: 0.65 }}>
               {t(`roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`)}
             </span>
           </div>
