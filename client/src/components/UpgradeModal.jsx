@@ -259,7 +259,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
 
           {/* ── Header ─────────────────────────────────────────────────────── */}
           <div style={{
-            background: '#1a4710',
+            background: 'var(--accent-dark)',
             padding: '28px 28px 24px', flexShrink: 0, position: 'relative',
           }}>
             <button
@@ -305,7 +305,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
                     background: tab === t ? '#fff' : 'rgba(255,255,255,0.15)',
                     border: 'none', borderRadius: 8, padding: '6px 16px',
                     fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                    color: tab === t ? '#1a4710' : 'rgba(255,255,255,0.85)',
+                    color: tab === t ? 'var(--accent-dark)' : 'rgba(255,255,255,0.85)',
                     transition: 'all 0.15s',
                   }}
                 >{t === 'pro' ? tx.tabPro : tx.tabMulti}</button>
@@ -357,7 +357,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
               onClick={handleUpgrade}
               disabled={loading}
               style={{
-                width: '100%', background: loading ? '#2f771b' : '#1a4710',
+                width: '100%', background: loading ? 'var(--accent)' : 'var(--accent-dark)',
                 color: '#fff', border: 'none', borderRadius: 10,
                 padding: '13px 20px', fontSize: 15, fontWeight: 700,
                 cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '-0.01em',

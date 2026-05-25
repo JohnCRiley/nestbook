@@ -661,7 +661,7 @@ a { text-decoration: none; }
   justify-content: space-between;
   padding: 14px 20px;
   background: var(--light-green);
-  border-bottom: 1px solid rgba(47,119,27,0.15);
+  border-bottom: 1px solid var(--tint-border);
 }
 
 .section-head h2 {
@@ -1050,7 +1050,7 @@ a { text-decoration: none; }
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--accent-dark);
-  border-bottom: 1px solid rgba(47,119,27,0.15);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .bookings-table td {
@@ -1065,8 +1065,8 @@ a { text-decoration: none; }
   transition: background 0.1s;
 }
 .bookings-table tbody tr:last-child td { border-bottom: none; }
-.bookings-table tbody tr:hover          { background: #f7fbf6; }
-.bookings-table tbody tr.row-selected   { background: #edf7e8; }
+.bookings-table tbody tr:hover          { background: var(--tint-bg); }
+.bookings-table tbody tr.row-selected   { background: var(--tint-bg); }
 
 .cell-guest-name { font-weight: 600; }
 .cell-guest-id   { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
@@ -1109,8 +1109,8 @@ a { text-decoration: none; }
   border: 1.5px solid transparent;
   transition: border-color 0.12s, background 0.1s;
 }
-.booking-card:hover          { background: #f7fbf6; border-color: rgba(47,119,27,0.3); }
-.booking-card--selected      { background: #edf7e8; border-color: var(--accent); }
+.booking-card:hover          { background: var(--tint-bg); border-color: var(--tint-border); }
+.booking-card--selected      { background: var(--tint-bg); border-color: var(--accent); }
 
 .bc-header {
   display: flex;
@@ -1501,7 +1501,7 @@ a { text-decoration: none; }
 
 .form-error {
   background: var(--light-green);
-  border: 1px solid rgba(47,119,27,0.25);
+  border: 1px solid var(--tint-border);
   border-radius: 6px;
   padding: 10px 14px;
   font-size: 0.83rem;
@@ -1560,8 +1560,8 @@ a { text-decoration: none; }
 /* ── Header row ── */
 .cal-corner {
   background: var(--light-green);
-  border-right: 2px solid rgba(47,119,27,0.2);
-  border-bottom: 2px solid rgba(47,119,27,0.2);
+  border-right: 2px solid var(--tint-border);
+  border-bottom: 2px solid var(--tint-border);
   position: sticky;
   left: 0;
   z-index: 3;
@@ -1569,8 +1569,8 @@ a { text-decoration: none; }
 
 .cal-day-header {
   background: var(--light-green);
-  border-bottom: 2px solid rgba(47,119,27,0.2);
-  border-right: 1px solid rgba(47,119,27,0.12);
+  border-bottom: 2px solid var(--tint-border);
+  border-right: 1px solid var(--tint-border);
   padding: 10px 8px;
   text-align: center;
 }
@@ -1604,8 +1604,8 @@ a { text-decoration: none; }
 
 /* ── Room label cells ── */
 .cal-room-label {
-  background: white;
-  border-right: 2px solid rgba(47,119,27,0.15);
+  background: var(--card-bg);
+  border-right: 2px solid var(--tint-border);
   border-bottom: 1px solid var(--border);
   padding: 10px 12px;
   position: sticky;
@@ -1653,7 +1653,7 @@ a { text-decoration: none; }
 
 /* empty cell hover */
 .cal-cell.is-empty:hover {
-  background: #f0fdf0;
+  background: var(--tint-bg);
 }
 
 /* booked cell */
@@ -2294,7 +2294,7 @@ a { text-decoration: none; }
 .settings-card-header {
   padding: 14px 20px;
   background: var(--light-green);
-  border-bottom: 1px solid rgba(47,119,27,0.15);
+  border-bottom: 1px solid var(--tint-border);
 }
 
 .settings-card-header h2 {
@@ -2674,7 +2674,7 @@ a { text-decoration: none; }
 
 .auth-error {
   background: var(--light-green);
-  border: 1px solid rgba(47,119,27,0.25);
+  border: 1px solid var(--tint-border);
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.875rem;
@@ -2811,7 +2811,7 @@ a { text-decoration: none; }
 /* Negative margins cancel main-content's padding so the banner runs edge-to-edge */
 .verify-email-banner {
   background: var(--light-green);
-  border-bottom: 1.5px solid rgba(47,119,27,0.20);
+  border-bottom: 1.5px solid var(--tint-border);
   /* match main-content desktop padding: 36px top, 40px sides */
   margin: -36px -40px 28px;
   padding: 11px 40px;
@@ -2915,7 +2915,7 @@ a { text-decoration: none; }
 /* ── Pricing page ────────────────────────────────────────────────────────── */
 .pricing-error {
   background: var(--light-green);
-  border: 1px solid rgba(47,119,27,0.25);
+  border: 1px solid var(--tint-border);
   border-radius: 8px;
   padding: 10px 16px;
   font-size: 0.875rem;
@@ -3906,7 +3906,7 @@ a { text-decoration: none; }
 /* ── Property banner (top of main content when >1 property) ──────────────── */
 .property-banner {
   background: var(--light-green);
-  border-bottom: 1px solid rgba(47,119,27,0.20);
+  border-bottom: 1px solid var(--tint-border);
   color: var(--accent-dark);
   font-size: 0.80rem;
   padding: 7px 40px;
@@ -3924,7 +3924,7 @@ a { text-decoration: none; }
 
 /* ── Danger zone accordion (Settings — "Manage Subscription") ────────────── */
 .danger-zone-card {
-  border: 1px solid rgba(47,119,27,0.20);
+  border: 1px solid var(--border);
   border-radius: 10px;
   background: #fff;
   overflow: hidden;
@@ -3957,7 +3957,7 @@ a { text-decoration: none; }
 }
 
 .danger-zone-body {
-  border-top: 1px solid rgba(47,119,27,0.15);
+  border-top: 1px solid var(--border);
   padding: 4px 0 8px;
 }
 
@@ -4055,7 +4055,7 @@ a { text-decoration: none; }
 /* ── Dashboard info / error box ─────────────────────────────────────────── */
 .db-info-box {
   background: var(--light-green);
-  border: 1px solid rgba(47,119,27,0.20);
+  border: 1px solid var(--tint-border);
   border-radius: 10px;
   padding: 16px 22px;
   font-size: 0.9rem;
