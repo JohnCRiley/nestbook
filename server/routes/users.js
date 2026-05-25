@@ -93,9 +93,10 @@ usersRouter.post('/', (req, res) => {
 // ── PUT /api/users/me/password ────────────────────────────────────────────
 // Authenticated user changes their own password.
 // req.user is set by requireAuth middleware ({ userId, role, propertyId }).
-usersRouter.put('/me/password', (req, res) => {
+usersRouter.put('/me/password', async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+    const userId = req.user.userId;
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'currentPassword and newPassword are required.' });
@@ -104,13 +105,19 @@ usersRouter.put('/me/password', (req, res) => {
       return res.status(400).json({ error: 'New password must be at least 8 characters.' });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.userId);
-    if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) {
-      return res.status(401).json({ error: 'Current password is incorrect.' });
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const valid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!valid) {
+      return res.status(400).json({ error: 'Current password is incorrect.' });
     }
 
-    const hash = bcrypt.hashSync(newPassword, 10);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, user.id);
+    const newHash = await bcrypt.hash(newPassword, 10);
+    console.log('[change-password] updating user:', userId);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, userId);
+    console.log('[change-password] password updated for user:', userId);
+
     res.json({ ok: true });
 
     logAction(db, {

@@ -37,6 +37,7 @@ export default function ChangePasswordModal({ onClose }) {
       if (!res.ok) {
         throw new Error(body.error ?? `Error ${res.status}`);
       }
+      setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setSuccess(true);
     } catch (err) {
       setError(err.message);
@@ -65,7 +66,7 @@ export default function ChangePasswordModal({ onClose }) {
                 color: '#3a6e2a',
                 fontSize: '0.9rem',
               }}>
-                Password updated successfully.
+                ✅ Your password has been changed successfully.
               </div>
             </div>
             <div className="modal-footer">
