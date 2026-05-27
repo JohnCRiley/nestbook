@@ -86,6 +86,7 @@ export default function Settings() {
   const [showAddProperty,      setShowAddProperty]      = useState(false);
   const [showDeleteAccount,    setShowDeleteAccount]    = useState(false);
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
+  const [calendarSyncOpen,     setCalendarSyncOpen]     = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
   const [theme,            setTheme]            = useState('forest');
   const [categories,       setCategories]       = useState([]);
@@ -511,57 +512,74 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Calendar Sync — iCal export per room */}
+          {/* Calendar Sync — iCal export per room (collapsible) */}
           {rooms.length > 0 && (
-            <div className="settings-card">
-              <div className="settings-card-header">
-                <h2>Calendar Sync</h2>
-                <p>Share these links with Booking.com, Airbnb or any other platform to automatically block dates when you receive a NestBook booking. Updates every few hours.</p>
-              </div>
-              <div className="settings-card-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {rooms.map((room) => {
-                    const icalUrl = room.ical_token
-                      ? `${window.location.origin}/api/ical/${room.property_id}/${room.id}/${room.ical_token}`
-                      : null;
-                    return (
-                      <div key={room.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a', marginBottom: 6 }}>
-                          {room.name}
-                        </div>
-                        {icalUrl ? (
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <input
-                              readOnly
-                              value={icalUrl}
-                              onFocus={(e) => e.target.select()}
-                              className="form-control"
-                              style={{ flex: 1, minWidth: 220, fontSize: '0.78rem', color: '#475569', fontFamily: 'monospace' }}
-                            />
-                            <button
-                              className="btn-secondary"
-                              style={{ flexShrink: 0, fontSize: '0.8rem', padding: '6px 14px' }}
-                              onClick={() => {
-                                navigator.clipboard.writeText(icalUrl).then(() => {
-                                  setCopiedRoomId(room.id);
-                                  setTimeout(() => setCopiedRoomId(null), 2000);
-                                });
-                              }}
-                            >
-                              {copiedRoomId === room.id ? 'Copied!' : 'Copy URL'}
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Token not yet generated — save the room to create one.</span>
-                        )}
-                      </div>
-                    );
-                  })}
+            <div className="danger-zone-card">
+              <button
+                className="danger-zone-toggle"
+                onClick={() => setCalendarSyncOpen((o) => !o)}
+                aria-expanded={calendarSyncOpen}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                  <span>Calendar Sync</span>
+                  {!calendarSyncOpen && (
+                    <span style={{ fontSize: '0.78rem', fontWeight: 400, color: 'var(--accent)', opacity: 0.8 }}>
+                      Sync your NestBook calendar with Booking.com and Airbnb
+                    </span>
+                  )}
                 </div>
-                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '14px 0 0' }}>
-                  Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong> or <strong>Airbnb → Availability → Sync calendars</strong>.
-                </p>
-              </div>
+                <span className="danger-zone-chevron">{calendarSyncOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {calendarSyncOpen && (
+                <div className="danger-zone-body" style={{ padding: '16px 20px' }}>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16, lineHeight: 1.55 }}>
+                    Share these links with Booking.com, Airbnb or any other platform to automatically block dates when you receive a NestBook booking. Updates every few hours.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {rooms.map((room) => {
+                      const icalUrl = room.ical_token
+                        ? `${window.location.origin}/api/ical/${room.property_id}/${room.id}/${room.ical_token}`
+                        : null;
+                      return (
+                        <div key={room.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a', marginBottom: 6 }}>
+                            {room.name}
+                          </div>
+                          {icalUrl ? (
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <input
+                                readOnly
+                                value={icalUrl}
+                                onFocus={(e) => e.target.select()}
+                                className="form-control"
+                                style={{ flex: 1, minWidth: 220, fontSize: '0.78rem', color: '#475569', fontFamily: 'monospace' }}
+                              />
+                              <button
+                                className="btn-secondary"
+                                style={{ flexShrink: 0, fontSize: '0.8rem', padding: '6px 14px' }}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(icalUrl).then(() => {
+                                    setCopiedRoomId(room.id);
+                                    setTimeout(() => setCopiedRoomId(null), 2000);
+                                  });
+                                }}
+                              >
+                                {copiedRoomId === room.id ? 'Copied!' : 'Copy URL'}
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Token not yet generated — save the room to create one.</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '14px 0 0' }}>
+                    Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong> or <strong>Airbnb → Availability → Sync calendars</strong>.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
