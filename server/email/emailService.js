@@ -959,6 +959,35 @@ export async function sendMultiWelcome(user, property) {
   }
 }
 
+// ── Password reset ────────────────────────────────────────────────────────────
+export async function sendPasswordResetEmail(email, token) {
+  if (!resend) {
+    console.log('[email] SKIPPED password reset email to', email, '(no Resend key)');
+    return;
+  }
+  const resetUrl = `https://nestbook.io/app/reset-password?token=${token}`;
+  await resend.emails.send({
+    from: FROM,
+    to: email,
+    subject: 'Reset your NestBook password',
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <div style="background:#1a4710;padding:24px;border-radius:8px 8px 0 0;">
+          <img src="https://nestbook.io/icon-192.png" style="width:36px;height:36px;border-radius:8px;vertical-align:middle;" alt="">
+          <span style="color:#fff;font-size:20px;font-weight:700;margin-left:12px;vertical-align:middle;">NestBook</span>
+        </div>
+        <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;">
+          <h2 style="color:#1a4710;margin:0 0 12px;">Reset your password</h2>
+          <p style="color:#374151;margin:0 0 20px;">We received a request to reset your NestBook password. Click the button below to choose a new one.</p>
+          <a href="${resetUrl}" style="display:inline-block;background:#1a4710;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;margin-bottom:20px;">Reset my password</a>
+          <p style="color:#64748b;font-size:0.85rem;margin:0;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+        </div>
+      </div>
+    `,
+  });
+  console.log('[email] Password reset sent →', email);
+}
+
 // ── Outreach / prospect email ─────────────────────────────────────────────────
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {

@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 
 const KIOSK_KEY = 'nb_kiosk';
 
 export default function Login() {
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const { login }    = useAuth();
+  const navigate     = useNavigate();
+  const location     = useLocation();
+  const resetSuccess = location.state?.resetSuccess ?? false;
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -61,6 +63,15 @@ export default function Login() {
 
         <h1 className="auth-heading">Sign in</h1>
 
+        {resetSuccess && (
+          <div className="auth-success" style={{
+            background: '#f0fdf4', border: '1px solid #86efac',
+            borderRadius: 8, padding: '10px 14px',
+            fontSize: '0.875rem', color: '#15803d', marginBottom: 16,
+          }}>
+            Password reset successfully. Sign in with your new password.
+          </div>
+        )}
         {error && <div className="auth-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -81,7 +92,7 @@ export default function Login() {
           <div className="auth-field">
             <div className="auth-label-row">
               <label className="auth-label" htmlFor="password">Password</label>
-              <a href="#" className="auth-forgot">Forgot password?</a>
+              <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
             </div>
             <PasswordInput
               id="password"

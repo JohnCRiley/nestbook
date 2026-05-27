@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import Stripe from 'stripe';
 import db from '../db/database.js';
-import { sendWelcomeEmail, sendVerificationEmail } from '../email/emailService.js';
+import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from '../email/emailService.js';
 import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
@@ -178,7 +178,52 @@ authRouter.post('/register', (req, res) => {
   ).catch(() => {});
 });
 
-// ── GET /api/auth/verify-email?token=xxx ─────────────────────────────────
+// ── POST /api/auth/forgot-password ───────────────────────────────────────
+authRouter.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.json({ success: true });
+
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
+  if (!user) return res.json({ success: true }); // don't reveal whether email exists
+
+  const token   = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+
+  db.prepare(
+    'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?'
+  ).run(token, expires, user.id);
+
+  try {
+    await sendPasswordResetEmail(user.email, token);
+    console.log('[forgot-password] reset email sent to:', email);
+  } catch (err) {
+    console.error('[forgot-password] failed to send email:', err?.message ?? err);
+  }
+
+  res.json({ success: true });
+});
+
+// ── POST /api/auth/reset-password ─────────────────────────────────────────
+authRouter.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required.' });
+  if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+
+  const user = db.prepare(
+    `SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > datetime('now')`
+  ).get(token);
+
+  if (!user) return res.status(400).json({ error: 'Invalid or expired reset link.' });
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  db.prepare(
+    'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?'
+  ).run(hash, user.id);
+
+  res.json({ success: true });
+});
+
+// ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
     'SELECT id, email, name, plan, email_verified FROM users WHERE id = ?'

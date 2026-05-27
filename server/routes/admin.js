@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
+import bcrypt from 'bcryptjs';
 import db from '../db/database.js';
 import { outreachRouter } from './outreach.js';
 
@@ -427,6 +428,24 @@ adminRouter.post('/users/:id/unsuspend', (req, res) => {
 
   db.prepare('UPDATE users SET suspended = 0 WHERE id = ?').run(userId);
   res.json({ success: true });
+});
+
+// ── POST /api/admin/users/:id/reset-password ─────────────────────────────────
+adminRouter.post('/users/:id/reset-password', async (req, res) => {
+  const userId = Number(req.params.id);
+  const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  const digits = Math.floor(100000 + Math.random() * 900000);
+  const tempPassword = `Temp${digits}`;
+  const hash = await bcrypt.hash(tempPassword, 10);
+
+  db.prepare(
+    'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?'
+  ).run(hash, userId);
+
+  console.log(`[admin/reset-password] Temp password set for user ${userId} (${user.email})`);
+  res.json({ success: true, tempPassword });
 });
 
 // ── DELETE /api/admin/users/:id ───────────────────────────────────────────────

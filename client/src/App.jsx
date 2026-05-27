@@ -19,6 +19,8 @@ import Charges          from './pages/Charges.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
+import ForgotPassword  from './pages/ForgotPassword.jsx';
+import ResetPassword   from './pages/ResetPassword.jsx';
 import AdminRoute         from './admin/AdminRoute.jsx';
 import AdminLayout        from './admin/AdminLayout.jsx';
 import SuperAdminLogin    from './admin/SuperAdminLogin.jsx';
@@ -167,7 +169,9 @@ export default function App() {
         <Routes>
           <Route path="/login"        element={<Login          />} />
           <Route path="/register"     element={<Register       />} />
-          <Route path="/verify-email" element={<VerifyEmail    />} />
+          <Route path="/verify-email"    element={<VerifyEmail    />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password"  element={<ResetPassword  />} />
           <Route path="/success"      element={<PaymentSuccess />} />
           <Route path="/cancel"       element={<PaymentCancel  />} />
           <Route path="/super-admin/login" element={<SuperAdminLogin />} />

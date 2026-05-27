@@ -77,12 +77,13 @@ export default function Users() {
   const [totalPages,    setTotalPages]    = useState(0);
   const [search,        setSearch]        = useState('');
   const [filters,       setFilters]       = useState(EMPTY_FILTERS);
-  const [busy,          setBusy]          = useState({});
-  const [refundTarget,  setRefundTarget]  = useState(null);
-  const [deleteTarget,  setDeleteTarget]  = useState(null);
-  const [toast,         setToast]         = useState(null);
-  const [pendingConfirm,setPendingConfirm]= useState(null);
-  const [expandedCard,  setExpandedCard]  = useState(null);
+  const [busy,              setBusy]              = useState({});
+  const [refundTarget,      setRefundTarget]      = useState(null);
+  const [deleteTarget,      setDeleteTarget]      = useState(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState(null); // { name, email, tempPassword }
+  const [toast,             setToast]             = useState(null);
+  const [pendingConfirm,    setPendingConfirm]    = useState(null);
+  const [expandedCard,      setExpandedCard]      = useState(null);
 
   const prevPageSizeRef = useRef(pageSize);
   useEffect(() => {
@@ -282,6 +283,21 @@ export default function Users() {
     fetchUsers();
   }
 
+  async function resetPassword(userId, name, email) {
+    setBusyKey(userId, 'resetpw', true);
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}/reset-password`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        navigator.clipboard.writeText(data.tempPassword).catch(() => {});
+        setResetPasswordResult({ name, email, tempPassword: data.tempPassword });
+      } else {
+        showToast(data.error || 'Failed to reset password.', 'error');
+      }
+    } catch { showToast('Network error.', 'error'); }
+    setBusyKey(userId, 'resetpw', false);
+  }
+
   function ActionButtons({ u }) {
     return (
       <div className="sa-actions">
@@ -354,6 +370,20 @@ export default function Users() {
           title="Permanently delete account and all data (GDPR)"
         >
           Delete
+        </button>
+        <button
+          className="sa-btn"
+          style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}
+          disabled={!!busy[`${u.id}_resetpw`]}
+          onClick={() => setPendingConfirm({
+            title: 'Reset password',
+            message: `Set a temporary password for ${u.name}? They will need to change it in Settings.`,
+            variant: 'warning',
+            action: () => resetPassword(u.id, u.name, u.email),
+          })}
+          title="Set a temporary password for this user"
+        >
+          {busy[`${u.id}_resetpw`] ? '…' : 'Reset pw'}
         </button>
       </div>
     );
@@ -732,6 +762,13 @@ export default function Users() {
         />
       )}
 
+      {resetPasswordResult && (
+        <TempPasswordModal
+          result={resetPasswordResult}
+          onClose={() => setResetPasswordResult(null)}
+        />
+      )}
+
       {deleteTarget && (
         <DeleteModal
           user={deleteTarget}
@@ -936,6 +973,62 @@ function RefundModal({ user, onClose, onSuccess, onError }) {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Temp Password Modal ───────────────────────────────────────────────────────
+
+function TempPasswordModal({ result, onClose }) {
+  const [copied, setCopied] = useState(false);
+
+  function copyAgain() {
+    navigator.clipboard.writeText(result.tempPassword).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 440 }}>
+        <div className="modal-header">
+          <h2>Temporary password set</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 16 }}>
+            A temporary password has been set for <strong>{result.name}</strong> ({result.email}).
+          </p>
+          <div style={{
+            background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8,
+            padding: '14px 16px', marginBottom: 16, display: 'flex',
+            alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
+            <code style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.05em', color: '#0f172a' }}>
+              {result.tempPassword}
+            </code>
+            <button
+              onClick={copyAgain}
+              style={{
+                background: copied ? '#dcfce7' : '#e2e8f0',
+                border: 'none', borderRadius: 6,
+                padding: '6px 12px', fontSize: '0.8rem', fontWeight: 700,
+                cursor: 'pointer', color: copied ? '#15803d' : '#475569',
+                whiteSpace: 'nowrap', transition: 'all 0.15s',
+              }}
+            >
+              {copied ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <p style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 20 }}>
+            The password has been copied to your clipboard. Ask the user to sign in with this password and change it immediately in Settings → Change Password.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn-primary" onClick={onClose}>Done</button>
+          </div>
         </div>
       </div>
     </div>
