@@ -356,6 +356,66 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Multi-property management — Multi plan only */}
+          {user?.role === 'owner' && plan === 'multi' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>{t('propertiesTitle')}</h2>
+                <p>{t('propertiesOf5')(properties.length)}</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {properties.map((p) => (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 0', borderBottom: '1px solid #f1f5f9',
+                      gap: 12,
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'capitalize' }}>{p.type}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        {p.id === activeProperty?.id && (
+                          <span style={{
+                            fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7',
+                            color: '#166534', padding: '2px 10px', borderRadius: 12,
+                          }}>{t('activeLabel')}</span>
+                        )}
+                        {properties.length > 1 && (
+                          <button
+                            className="prop-remove-btn"
+                            onClick={() => setRemovePropertyTarget(p)}
+                            title={`${t('removeBtn')} ${p.name}`}
+                          >
+                            {t('removeBtn')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {properties.length < 5 && (
+                  showAddProperty ? (
+                    <AddPropertyForm
+                      onSave={handleAddProperty}
+                      onCancel={() => setShowAddProperty(false)}
+                    />
+                  ) : (
+                    <button
+                      className="btn-secondary"
+                      style={{ marginTop: 14 }}
+                      onClick={() => setShowAddProperty(true)}
+                    >
+                      {t('addAnotherProperty')}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Breakfast service hours */}
           {form && (
             <div className="settings-card">
@@ -519,7 +579,7 @@ export default function Settings() {
 
           {/* Calendar Sync — iCal export per room (collapsible) */}
           {rooms.length > 0 && (
-            <div className="danger-zone-card">
+            <div className="danger-zone-card" style={{ marginTop: 16 }}>
               <button
                 className="danger-zone-toggle"
                 onClick={() => setCalendarSyncOpen((o) => !o)}
@@ -627,66 +687,6 @@ export default function Settings() {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Multi-property management — Multi plan only */}
-          {user?.role === 'owner' && plan === 'multi' && (
-            <div className="settings-card">
-              <div className="settings-card-header">
-                <h2>{t('propertiesTitle')}</h2>
-                <p>{t('propertiesOf5')(properties.length)}</p>
-              </div>
-              <div className="settings-card-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  {properties.map((p) => (
-                    <div key={p.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 0', borderBottom: '1px solid #f1f5f9',
-                      gap: 12,
-                    }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</div>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'capitalize' }}>{p.type}</div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        {p.id === activeProperty?.id && (
-                          <span style={{
-                            fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7',
-                            color: '#166534', padding: '2px 10px', borderRadius: 12,
-                          }}>{t('activeLabel')}</span>
-                        )}
-                        {properties.length > 1 && (
-                          <button
-                            className="prop-remove-btn"
-                            onClick={() => setRemovePropertyTarget(p)}
-                            title={`${t('removeBtn')} ${p.name}`}
-                          >
-                            {t('removeBtn')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {properties.length < 5 && (
-                  showAddProperty ? (
-                    <AddPropertyForm
-                      onSave={handleAddProperty}
-                      onCancel={() => setShowAddProperty(false)}
-                    />
-                  ) : (
-                    <button
-                      className="btn-secondary"
-                      style={{ marginTop: 14 }}
-                      onClick={() => setShowAddProperty(true)}
-                    >
-                      {t('addAnotherProperty')}
-                    </button>
-                  )
-                )}
               </div>
             </div>
           )}
