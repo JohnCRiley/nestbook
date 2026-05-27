@@ -355,6 +355,100 @@ export default function Settings() {
               </div>
             </div>
           </div>
+
+          {/* Breakfast service hours */}
+          {form && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>{t('bfTimesLabel')}</h2>
+                <p>{t('bfTimesHint')}</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('bfStartTimeLabel')}</label>
+                    <input
+                      type="time"
+                      className="form-control"
+                      name="breakfast_start_time"
+                      value={form.breakfast_start_time}
+                      onChange={handleFormChange}
+                      style={{ marginTop: 4, maxWidth: 130 }}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('bfEndTimeLabel')}</label>
+                    <input
+                      type="time"
+                      className="form-control"
+                      name="breakfast_end_time"
+                      value={form.breakfast_end_time}
+                      onChange={handleFormChange}
+                      style={{ marginTop: 4, maxWidth: 130 }}
+                    />
+                  </div>
+                </div>
+                <div className="settings-save-row" style={{ marginTop: 16 }}>
+                  <button className="btn-primary" onClick={handleSave} disabled={saving}>
+                    {saving ? t('saving') : t('saveChanges')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Appearance — theme picker */}
+          {user?.role === 'owner' && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>Appearance</h2>
+                <p>Choose a colour theme for your property dashboard. Your booking widget will automatically match.</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  {THEMES.map(th => (
+                    <button
+                      key={th.id}
+                      onClick={() => handleThemeChange(th.id)}
+                      title={th.label}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: 6, background: 'none', border: 'none', cursor: 'pointer',
+                        padding: 0, fontFamily: 'inherit',
+                      }}
+                    >
+                      <div style={{
+                        width: 44, height: 44, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${th.primary} 55%, ${th.accent ?? th.bg} 55%)`,
+                        border: theme === th.id
+                          ? `3px solid ${th.primary}`
+                          : '3px solid transparent',
+                        outline: theme === th.id ? `2px solid #fff` : 'none',
+                        outlineOffset: -5,
+                        boxShadow: theme === th.id
+                          ? `0 0 0 2px ${th.primary}`
+                          : '0 1px 3px rgba(0,0,0,0.15)',
+                        transition: 'box-shadow 0.15s',
+                        position: 'relative',
+                      }}>
+                        {theme === th.id && (
+                          <span style={{
+                            position: 'absolute', inset: 0, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: 18, fontWeight: 700,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                          }}>✓</span>
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: '0.72rem', color: '#475569', fontWeight: theme === th.id ? 700 : 400,
+                      }}>{th.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── RIGHT COLUMN — Features + Access ──────────────────────────── */}
@@ -418,99 +512,10 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Breakfast service hours — always visible */}
-          {form && (
-            <div className="settings-card">
-              <div className="settings-card-header">
-                <h2>{t('bfTimesLabel')}</h2>
-                <p>{t('bfTimesHint')}</p>
-              </div>
-              <div className="settings-card-body">
-                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('bfStartTimeLabel')}</label>
-                    <input
-                      type="time"
-                      className="form-control"
-                      name="breakfast_start_time"
-                      value={form.breakfast_start_time}
-                      onChange={handleFormChange}
-                      style={{ marginTop: 4, maxWidth: 130 }}
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('bfEndTimeLabel')}</label>
-                    <input
-                      type="time"
-                      className="form-control"
-                      name="breakfast_end_time"
-                      value={form.breakfast_end_time}
-                      onChange={handleFormChange}
-                      style={{ marginTop: 4, maxWidth: 130 }}
-                    />
-                  </div>
-                </div>
-                <div className="settings-save-row" style={{ marginTop: 16 }}>
-                  <button className="btn-primary" onClick={handleSave} disabled={saving}>
-                    {saving ? t('saving') : t('saveChanges')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Appearance — theme picker, owner only */}
-          {user?.role === 'owner' && (
-            <div className="settings-card">
-              <div className="settings-card-header">
-                <h2>Appearance</h2>
-                <p>Choose a colour theme for your property dashboard. Your booking widget will automatically match.</p>
-              </div>
-              <div className="settings-card-body">
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                  {THEMES.map(th => (
-                    <button
-                      key={th.id}
-                      onClick={() => handleThemeChange(th.id)}
-                      title={th.label}
-                      style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        gap: 6, background: 'none', border: 'none', cursor: 'pointer',
-                        padding: 0, fontFamily: 'inherit',
-                      }}
-                    >
-                      <div style={{
-                        width: 44, height: 44, borderRadius: '50%',
-                        background: `linear-gradient(135deg, ${th.primary} 55%, ${th.accent ?? th.bg} 55%)`,
-                        border: theme === th.id
-                          ? `3px solid ${th.primary}`
-                          : '3px solid transparent',
-                        outline: theme === th.id ? `2px solid #fff` : 'none',
-                        outlineOffset: -5,
-                        boxShadow: theme === th.id
-                          ? `0 0 0 2px ${th.primary}`
-                          : '0 1px 3px rgba(0,0,0,0.15)',
-                        transition: 'box-shadow 0.15s',
-                        position: 'relative',
-                      }}>
-                        {theme === th.id && (
-                          <span style={{
-                            position: 'absolute', inset: 0, display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            color: '#fff', fontSize: 18, fontWeight: 700,
-                            textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                          }}>✓</span>
-                        )}
-                      </div>
-                      <span style={{
-                        fontSize: '0.72rem', color: '#475569', fontWeight: theme === th.id ? 700 : 400,
-                      }}>{th.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Widget embed code (Pro) */}
+          <PlanGate requiredPlan="pro">
+            <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
+          </PlanGate>
 
           {/* Calendar Sync — iCal export per room (collapsible) */}
           {rooms.length > 0 && (
@@ -959,11 +964,6 @@ export default function Settings() {
         </div>
 
       </div>
-
-      {/* ── Embed widget — full width (Pro feature) ──────────────────────── */}
-      <PlanGate requiredPlan="pro">
-        <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
-      </PlanGate>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
       <ConfirmModal

@@ -2292,7 +2292,7 @@ a { text-decoration: none; }
   gap: 20px;
   align-items: start;
 }
-@media (max-width: 1023px) {
+@media (max-width: 767px) {
   .settings-layout { grid-template-columns: 1fr; }
 }
 
