@@ -594,6 +594,10 @@ export function initSchema() {
   // Property theme
   try { db.exec(`ALTER TABLE properties ADD COLUMN theme TEXT NOT NULL DEFAULT 'forest'`); } catch {}
 
+  // iCal sync token per room — unguessable URL for calendar feed export
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
+  db.prepare(`UPDATE rooms SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
+
   // ── Prospect Outreach CRM ─────────────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS prospects (

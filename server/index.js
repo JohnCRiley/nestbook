@@ -17,6 +17,7 @@ import { bookingsRouter }            from './routes/bookings.js';
 import { usersRouter }               from './routes/users.js';
 import { adminRouter }               from './routes/admin.js';
 import { handleUnsubscribe } from './routes/outreach.js';
+import { icalRouter }                from './routes/ical.js';
 import { contactRouter }             from './routes/contact.js';
 import { widgetRouter }              from './routes/widget.js';
 import { reportsRouter }             from './routes/reports.js';
@@ -67,6 +68,9 @@ app.use('/api',               marketingRouter);
 
 // Public unsubscribe endpoint — must be before requireAuth
 app.get('/api/outreach/unsubscribe', handleUnsubscribe);
+
+// Public iCal feed — Booking.com / Airbnb fetch this directly, no login required
+app.use('/api/ical', icalRouter);
 
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.

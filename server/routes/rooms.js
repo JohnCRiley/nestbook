@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
@@ -126,16 +127,18 @@ roomsRouter.post('/', (req, res) => {
       }
     }
 
+    const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, ical_token)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
       capacity  ?? 2,
       amenities ?? null,
       status    ?? 'available',
-      breakfast_included ? 1 : 0
+      breakfast_included ? 1 : 0,
+      ical_token
     );
 
     const created = db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid);

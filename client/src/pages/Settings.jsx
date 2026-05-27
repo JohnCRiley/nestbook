@@ -95,6 +95,8 @@ export default function Settings() {
   const [editCatForm,      setEditCatForm]      = useState({ name: '', color: '#64748b' });
   const [catDeleteTarget,  setCatDeleteTarget]  = useState(null);
   const [catTaxInputs,     setCatTaxInputs]     = useState({});
+  const [rooms,            setRooms]            = useState([]);
+  const [copiedRoomId,     setCopiedRoomId]     = useState(null);
 
   // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
@@ -112,7 +114,8 @@ export default function Settings() {
       apiFetch(`/api/users?property_id=${activeProperty.id}`).then((r) => r.json()),
       apiFetch('/api/stripe/subscription').then((r) => r.json()).catch(() => null),
       catFetch,
-    ]).then(([p, u, s, cats]) => {
+      apiFetch(`/api/rooms?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([p, u, s, cats, rms]) => {
       setProperty(p);
       setTheme(p.theme ?? 'forest');
       setForm({
@@ -137,6 +140,7 @@ export default function Settings() {
       const catArr = Array.isArray(cats) ? cats : [];
       setCategories(catArr);
       setCatTaxInputs(Object.fromEntries(catArr.map(c => [c.id, String(c.tax_rate ?? 0)])));
+      setRooms(Array.isArray(rms) ? rms : (rms?.rooms ?? []));
     });
   }, [activeProperty?.id, plan]);
 
@@ -503,6 +507,60 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Calendar Sync — iCal export per room */}
+          {rooms.length > 0 && (
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <h2>Calendar Sync</h2>
+                <p>Share these links with Booking.com, Airbnb or any other platform to automatically block dates when you receive a NestBook booking. Updates every few hours.</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {rooms.map((room) => {
+                    const icalUrl = room.ical_token
+                      ? `${window.location.origin}/api/ical/${room.property_id}/${room.id}/${room.ical_token}`
+                      : null;
+                    return (
+                      <div key={room.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a', marginBottom: 6 }}>
+                          {room.name}
+                        </div>
+                        {icalUrl ? (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <input
+                              readOnly
+                              value={icalUrl}
+                              onFocus={(e) => e.target.select()}
+                              className="form-control"
+                              style={{ flex: 1, minWidth: 220, fontSize: '0.78rem', color: '#475569', fontFamily: 'monospace' }}
+                            />
+                            <button
+                              className="btn-secondary"
+                              style={{ flexShrink: 0, fontSize: '0.8rem', padding: '6px 14px' }}
+                              onClick={() => {
+                                navigator.clipboard.writeText(icalUrl).then(() => {
+                                  setCopiedRoomId(room.id);
+                                  setTimeout(() => setCopiedRoomId(null), 2000);
+                                });
+                              }}
+                            >
+                              {copiedRoomId === room.id ? 'Copied!' : 'Copy URL'}
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Token not yet generated — save the room to create one.</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '14px 0 0' }}>
+                  Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong> or <strong>Airbnb → Availability → Sync calendars</strong>.
+                </p>
               </div>
             </div>
           )}
