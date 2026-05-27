@@ -6,11 +6,12 @@ function fmt(n) { return (n ?? 0).toLocaleString(); }
 
 function StatusBadge({ status }) {
   const colours = {
-    new:          { bg: '#eff6ff', color: '#1d4ed8', label: 'New' },
-    contacted:    { bg: '#fef9c3', color: '#92400e', label: 'Contacted' },
-    replied:      { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
-    converted:    { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
-    unsubscribed: { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
+    new:              { bg: '#eff6ff', color: '#1d4ed8', label: 'New' },
+    contacted:        { bg: '#fef9c3', color: '#92400e', label: 'Contacted' },
+    follow_up_sent:   { bg: '#fff7ed', color: '#c2410c', label: 'Follow-up sent' },
+    replied:          { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
+    converted:        { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
+    unsubscribed:     { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
   };
   const s = colours[status] || colours.new;
   return (
@@ -191,6 +192,7 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
           >
             <option value="new">New</option>
             <option value="contacted">Contacted</option>
+            <option value="follow_up_sent">Follow-up sent</option>
             <option value="replied">Replied</option>
             <option value="converted">Converted</option>
             <option value="unsubscribed">Unsubscribed</option>
@@ -215,13 +217,14 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   const selected = prospects
     .filter(p => selectedIds.includes(p.id) && p.status !== 'unsubscribed')
     .filter((p, i, self) => self.findIndex(t => t.email === p.email) === i);
-  const [subject, setSubject]     = useState('');
-  const [body, setBody]           = useState('');
-  const [tmplId, setTmplId]       = useState('');
-  const [campId, setCampId]       = useState('');
-  const [sending, setSending]     = useState(false);
-  const [result, setResult]       = useState(null);
-  const sendingRef                = useRef(false); // synchronous guard against double-click
+  const [subject, setSubject]       = useState('');
+  const [body, setBody]             = useState('');
+  const [tmplId, setTmplId]         = useState('');
+  const [campId, setCampId]         = useState('');
+  const [followUpDays, setFollowUpDays] = useState(7);
+  const [sending, setSending]       = useState(false);
+  const [result, setResult]         = useState(null);
+  const sendingRef                  = useRef(false); // synchronous guard against double-click
 
   function loadTemplate(id) {
     const t = templates.find(t => t.id === Number(id));
@@ -236,7 +239,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
       const res = await saApiFetch('/api/admin/outreach/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prospect_ids: selected.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null }),
+        body: JSON.stringify({ prospect_ids: selected.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null, followUpDays }),
       });
       const data = await res.json();
       setResult(data.results);
@@ -295,7 +298,29 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
         <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%', marginBottom: 10 }} />
         <Textarea value={body} onChange={setBody} rows={10} placeholder="Email body *" />
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
+        <div style={{ marginTop: 14, padding: '10px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+          <span style={{ fontSize: '0.8rem', color: '#475569' }}>
+            Follow-up reminder in:&nbsp;
+          </span>
+          {[7, 14, 21].map(d => (
+            <button
+              key={d}
+              onClick={() => setFollowUpDays(d)}
+              style={{
+                marginRight: 6, padding: '3px 10px', borderRadius: 4, border: '1px solid',
+                borderColor: followUpDays === d ? 'var(--accent)' : '#d1d5db',
+                background: followUpDays === d ? 'var(--light-green)' : '#fff',
+                color: followUpDays === d ? 'var(--heading-text)' : '#475569',
+                fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >{d} days</button>
+          ))}
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            — sets follow-up date automatically after sending
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
           <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim()}>
             {sending ? 'Sending…' : `Send to ${selected.length}`}
@@ -650,33 +675,43 @@ export default function Outreach() {
 
       {tab === 'followup' && (
         <Section title="Follow-up Queue" action={
-          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Prospects not contacted in 7+ days</span>
+          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Due today or overdue</span>
         }>
           {followUps.length === 0 ? (
-            <p style={{ color: '#94a3b8', margin: 0 }}>No prospects need following up right now.</p>
+            <p style={{ color: '#94a3b8', margin: 0 }}>No follow-ups due right now.</p>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
                   <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
                   <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Last Contact</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Follow-up Date</th>
                   <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {followUps.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc' }}>
-                    <td style={{ padding: '8px 12px' }}><strong>{p.name}</strong><br /><span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span></td>
-                    <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
-                    <td style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.8rem' }}>{p.last_contacted ? new Date(p.last_contacted).toLocaleDateString() : 'Never'}</td>
-                    <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Compose</Btn>
-                    </td>
-                  </tr>
-                ))}
+                {followUps.map(p => {
+                  const today = new Date().toISOString().split('T')[0];
+                  const overdue = p.follow_up_date && p.follow_up_date < today;
+                  const dueToday = p.follow_up_date && p.follow_up_date === today;
+                  const rowBg = overdue ? '#fff7ed' : dueToday ? '#fefce8' : 'transparent';
+                  const dateColor = overdue ? '#b45309' : dueToday ? '#854d0e' : '#94a3b8';
+                  return (
+                    <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: rowBg }}>
+                      <td style={{ padding: '8px 12px' }}><strong>{p.name}</strong><br /><span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span></td>
+                      <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
+                      <td style={{ padding: '8px 12px', color: dateColor, fontSize: '0.8rem', fontWeight: overdue ? 600 : 400 }}>
+                        {p.follow_up_date ? new Date(p.follow_up_date + 'T00:00:00').toLocaleDateString() : 'Never contacted'}
+                        {overdue && <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#f97316' }}>overdue</span>}
+                      </td>
+                      <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Compose</Btn>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

@@ -50,18 +50,23 @@ outreachRouter.get('/prospects', (req, res) => {
 });
 
 // ── Prospects — follow-up queue ───────────────────────────────────────────────
+// Shows prospects whose follow_up_date is today or past, plus any 'new' prospects
+// with no follow_up_date (never emailed). Ordered: overdue first, never-contacted last.
 outreachRouter.get('/prospects/follow-up', (req, res) => {
   const rows = db.prepare(`
     SELECT p.*, MAX(pe.sent_at) AS last_contacted
     FROM prospects p
     LEFT JOIN prospect_emails pe ON pe.prospect_id = p.id
-    WHERE p.status IN ('new','contacted')
-      AND p.status != 'unsubscribed'
+    WHERE p.status NOT IN ('unsubscribed', 'converted', 'replied')
+      AND (
+        (p.follow_up_date IS NOT NULL AND p.follow_up_date <= date('now'))
+        OR (p.follow_up_date IS NULL AND p.status = 'new')
+      )
     GROUP BY p.id
-    HAVING last_contacted IS NULL
-       OR last_contacted < datetime('now', '-7 days')
-    ORDER BY last_contacted ASC NULLS FIRST
-    LIMIT 50
+    ORDER BY
+      CASE WHEN p.follow_up_date IS NULL THEN 1 ELSE 0 END,
+      p.follow_up_date ASC
+    LIMIT 100
   `).all();
   res.json(rows);
 });
@@ -174,9 +179,9 @@ outreachRouter.get('/prospects/:id/emails', (req, res) => {
 });
 
 // ── Send email ────────────────────────────────────────────────────────────────
-// Body: { prospect_ids: [id, ...], subject, body, template_id?, campaign_id? }
+// Body: { prospect_ids: [id, ...], subject, body, template_id?, campaign_id?, followUpDays? }
 outreachRouter.post('/send', async (req, res) => {
-  const { prospect_ids, subject, body, template_id, campaign_id } = req.body;
+  const { prospect_ids, subject, body, template_id, campaign_id, followUpDays } = req.body;
   if (!Array.isArray(prospect_ids) || prospect_ids.length === 0) return res.status(400).json({ error: 'prospect_ids required' });
   if (!subject || !body) return res.status(400).json({ error: 'subject and body required' });
 
@@ -254,7 +259,16 @@ outreachRouter.post('/send', async (req, res) => {
         `INSERT INTO prospect_emails (prospect_id, campaign_id, template_id, subject, body) VALUES (?, ?, ?, ?, ?)`
       ).run(pid, campaign_id || null, template_id || null, subject, finalBody);
 
-      db.prepare(`UPDATE prospects SET status = 'contacted' WHERE id = ? AND status = 'new'`).run(pid);
+      const days = (Number.isInteger(followUpDays) && followUpDays > 0) ? followUpDays : 7;
+      const followUpDate = new Date();
+      followUpDate.setDate(followUpDate.getDate() + days);
+      const followUpStr = followUpDate.toISOString().split('T')[0];
+      db.prepare(`
+        UPDATE prospects
+        SET follow_up_date = ?,
+            status = CASE WHEN status = 'new' THEN 'contacted' WHEN status = 'contacted' THEN 'follow_up_sent' ELSE status END
+        WHERE id = ?
+      `).run(followUpStr, pid);
       results.push({ id: pid, ok: true });
     } catch (err) {
       results.push({ id: pid, ok: false, reason: err.message });
