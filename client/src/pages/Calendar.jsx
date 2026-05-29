@@ -119,6 +119,22 @@ function cellInfo(bookings, roomId, dayIso) {
   return null;
 }
 
+/** Returns true if a YYYY-MM-DD date falls within a rate period's range (MM-DD or YYYY-MM-DD). */
+function rateDateInRange(dateIso, from, to) {
+  const annual = from.length === 5;
+  if (annual) {
+    const mmdd = dateIso.slice(5);
+    if (from <= to) return mmdd >= from && mmdd <= to;
+    return mmdd >= from || mmdd <= to;
+  }
+  return dateIso >= from && dateIso <= to;
+}
+
+/** Returns the first active rate period for a given ISO date, or null. */
+function getActivePeriod(ratePeriods, dateIso) {
+  return ratePeriods.find((p) => rateDateInRange(dateIso, p.date_from, p.date_to)) ?? null;
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Calendar() {
@@ -144,10 +160,11 @@ export default function Calendar() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  const [bookings, setBookings] = useState([]);
-  const [rooms,    setRooms]    = useState([]);
-  const [guests,   setGuests]   = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const [bookings,     setBookings]     = useState([]);
+  const [rooms,        setRooms]        = useState([]);
+  const [guests,       setGuests]       = useState([]);
+  const [ratePeriods,  setRatePeriods]  = useState([]);
+  const [loading,      setLoading]      = useState(true);
 
   const [selectedBooking,  setSelectedBooking]  = useState(null);
   const [newModalValues,   setNewModalValues]   = useState(null);
@@ -160,10 +177,12 @@ export default function Calendar() {
       apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/guests?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
-    ]).then(([b, r, g]) => {
+      apiFetch(`/api/rate-periods?property_id=${property.id}`).then((r) => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([b, r, g, rp]) => {
       setBookings(Array.isArray(b) ? b : []);
       setRooms(Array.isArray(r) ? r : []);
       setGuests(Array.isArray(g) ? g : []);
+      setRatePeriods(Array.isArray(rp) ? rp : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [property?.id]);
@@ -278,13 +297,24 @@ export default function Calendar() {
           {/* ── Header row ─────────────────────────────────────────────── */}
           <div className="cal-corner" />
           {days.map((day) => {
-            const iso      = toIso(day);
-            const isToday  = iso === today;
+            const iso         = toIso(day);
+            const isToday     = iso === today;
+            const activePeriod = getActivePeriod(ratePeriods, iso);
             const { name, num } = fmtDayHeader(day, DAY_NAMES);
             return (
               <div key={iso} className={`cal-day-header${isToday ? ' is-today' : ''}`}>
                 <div className="cal-day-name">{name}</div>
                 <div className="cal-day-num">{num}</div>
+                {activePeriod && (
+                  <div
+                    title={`${t('calRatePeriodDot')}: ${activePeriod.name}`}
+                    style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: '#f59e0b', margin: '2px auto 0',
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
               </div>
             );
           })}

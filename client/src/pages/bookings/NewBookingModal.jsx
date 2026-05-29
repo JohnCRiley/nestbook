@@ -49,6 +49,9 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const [bookedRoomIds,     setBookedRoomIds]     = useState(new Set());
   const [availabilityError, setAvailabilityError] = useState(null);
 
+  // ── Seasonal rate ─────────────────────────────────────────────────────────
+  const [seasonalRate, setSeasonalRate] = useState(null); // { rate, periodName } | null
+
   // ── Submit state ───────────────────────────────────────────────────────────
   const [submitting,  setSubmitting]  = useState(false);
   const [error,       setError]       = useState(null);
@@ -129,6 +132,16 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       .catch(() => {});
   }, [form.roomId, form.checkIn, form.checkOut, t]);
 
+  // ── Seasonal rate — fetched when room + check-in date both selected ──────────
+  useEffect(() => {
+    setSeasonalRate(null);
+    if (!form.roomId || !form.checkIn) return;
+    apiFetch(`/api/rooms/${form.roomId}/rate?date=${form.checkIn}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setSeasonalRate(data))
+      .catch(() => {});
+  }, [form.roomId, form.checkIn]);
+
   // ── Keep bfMorning inside valid range when dates or type change ────────────
   useEffect(() => {
     if (form.breakfastType !== 'paid' || !form.checkIn) return;
@@ -174,7 +187,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const availableRooms    = datesValid
     ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
     : [];
-  const roomPricePerNight = selectedRoom?.price_per_night ?? 0;
+  const roomPricePerNight = seasonalRate?.rate ?? selectedRoom?.price_per_night ?? 0;
   const roomSubtotal      = nightsCount ? nightsCount * roomPricePerNight : 0;
   const bfMinMorning      = form.checkIn  ? addDays(form.checkIn, 1) : '';
   const bfMaxMorning      = form.checkOut || '';
@@ -641,6 +654,15 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                       }}>
                         <span style={{ color: '#64748b' }}>
                           {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${roomPricePerNight.toFixed(2)}`)}
+                          {seasonalRate?.periodName && (
+                            <span style={{
+                              marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
+                              background: '#fef9c3', color: '#854d0e',
+                              padding: '1px 6px', borderRadius: 4,
+                            }}>
+                              {t('nbSeasonalRate')(seasonalRate.periodName)}
+                            </span>
+                          )}
                         </span>
                         <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
                       </div>

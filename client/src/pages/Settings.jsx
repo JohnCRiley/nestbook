@@ -98,6 +98,10 @@ export default function Settings() {
   const [catTaxInputs,     setCatTaxInputs]     = useState({});
   const [rooms,            setRooms]            = useState([]);
   const [copiedRoomId,     setCopiedRoomId]     = useState(null);
+  const [ratePeriods,      setRatePeriods]      = useState([]);
+  const [showRatePeriodModal, setShowRatePeriodModal] = useState(false);
+  const [editingRatePeriod,   setEditingRatePeriod]   = useState(null); // period object | null
+  const [ratePeriodDeleteTarget, setRatePeriodDeleteTarget] = useState(null);
 
   // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
@@ -110,13 +114,17 @@ export default function Settings() {
     const catFetch = plan === 'multi'
       ? apiFetch(`/api/charges/categories?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => [])
       : Promise.resolve([]);
+    const rpFetch = plan !== 'free'
+      ? apiFetch(`/api/rate-periods?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => [])
+      : Promise.resolve([]);
     Promise.all([
       apiFetch(`/api/properties/${activeProperty.id}`).then((r) => r.json()),
       apiFetch(`/api/users?property_id=${activeProperty.id}`).then((r) => r.json()),
       apiFetch('/api/stripe/subscription').then((r) => r.json()).catch(() => null),
       catFetch,
       apiFetch(`/api/rooms?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([p, u, s, cats, rms]) => {
+      rpFetch,
+    ]).then(([p, u, s, cats, rms, rp]) => {
       setProperty(p);
       setTheme(p.theme ?? 'forest');
       setForm({
@@ -142,6 +150,7 @@ export default function Settings() {
       setCategories(catArr);
       setCatTaxInputs(Object.fromEntries(catArr.map(c => [c.id, String(c.tax_rate ?? 0)])));
       setRooms(Array.isArray(rms) ? rms : (rms?.rooms ?? []));
+      setRatePeriods(Array.isArray(rp) ? rp : []);
     });
   }, [activeProperty?.id, plan]);
 
@@ -575,6 +584,18 @@ export default function Settings() {
           {/* Widget embed code (Pro) */}
           <PlanGate requiredPlan="pro">
             <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
+          </PlanGate>
+
+          {/* Seasonal Pricing — rate periods (Pro+) */}
+          <PlanGate requiredPlan="pro">
+            <SeasonalPricingSection
+              t={t}
+              ratePeriods={ratePeriods}
+              currencySymbol={currencySymbol}
+              onAdd={() => { setEditingRatePeriod(null); setShowRatePeriodModal(true); }}
+              onEdit={(p) => { setEditingRatePeriod(p); setShowRatePeriodModal(true); }}
+              onDelete={(p) => setRatePeriodDeleteTarget(p)}
+            />
           </PlanGate>
 
           {/* Calendar Sync — iCal export per room (collapsible) */}
@@ -1016,6 +1037,41 @@ export default function Settings() {
         />
       )}
 
+      {showRatePeriodModal && (
+        <RatePeriodModal
+          t={t}
+          currencySymbol={currencySymbol}
+          period={editingRatePeriod}
+          propertyId={activeProperty?.id}
+          onClose={() => setShowRatePeriodModal(false)}
+          onSave={(saved) => {
+            setRatePeriods((prev) =>
+              editingRatePeriod
+                ? prev.map((p) => (p.id === saved.id ? saved : p))
+                : [...prev, saved]
+            );
+            setShowRatePeriodModal(false);
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={!!ratePeriodDeleteTarget}
+        title={t('seasonalPricingTitle')}
+        message={t('ratePeriodDeleteConfirm')(ratePeriodDeleteTarget?.name ?? '')}
+        confirmLabel={t('ratePeriodDelete')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onConfirm={async () => {
+          const res = await apiFetch(`/api/rate-periods/${ratePeriodDeleteTarget.id}`, { method: 'DELETE' });
+          if (res.ok || res.status === 204) {
+            setRatePeriods((prev) => prev.filter((p) => p.id !== ratePeriodDeleteTarget.id));
+          }
+          setRatePeriodDeleteTarget(null);
+        }}
+        onCancel={() => setRatePeriodDeleteTarget(null)}
+      />
+
       <ConfirmModal
         isOpen={!!catDeleteTarget}
         title={t('chargesCatTitle')}
@@ -1356,6 +1412,220 @@ function ToggleRow({ label, desc, checked, onChange }) {
         <input type="checkbox" checked={checked} onChange={onChange} />
         <span className="toggle-track" />
       </label>
+    </div>
+  );
+}
+
+// ── SeasonalPricingSection ────────────────────────────────────────────────────
+
+function isRatePeriodActive(p) {
+  const today = new Date();
+  const mmdd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const iso  = today.toISOString().slice(0, 10);
+  const annual = p.date_from.length === 5;
+  if (annual) {
+    if (p.date_from <= p.date_to) return mmdd >= p.date_from && mmdd <= p.date_to;
+    return mmdd >= p.date_from || mmdd <= p.date_to;
+  }
+  return iso >= p.date_from && iso <= p.date_to;
+}
+
+function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit, onDelete }) {
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('seasonalPricingTitle')}</h2>
+        <p>{t('seasonalPricingSubtitle')}</p>
+      </div>
+      <div className="settings-card-body">
+        {ratePeriods.length === 0 ? (
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 14px' }}>
+            {t('ratePeriodNone')}
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+            {ratePeriods.map((p) => {
+              const active = isRatePeriodActive(p);
+              return (
+                <div key={p.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', borderRadius: 8,
+                  background: active ? '#fefce8' : '#f8fafc',
+                  border: `1px solid ${active ? '#fcd34d' : 'var(--border)'}`,
+                  gap: 10, flexWrap: 'wrap',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</span>
+                      {active && (
+                        <span style={{
+                          fontSize: '0.7rem', fontWeight: 700, background: '#fef08a',
+                          color: '#854d0e', padding: '2px 8px', borderRadius: 12,
+                        }}>
+                          {t('ratePeriodActiveNow')}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>
+                      {p.date_from} → {p.date_to}
+                      {' · '}
+                      {p.rate_type === 'flat'
+                        ? `${currencySymbol}${Number(p.rate_value).toFixed(2)}/night`
+                        : `×${p.rate_value} multiplier`}
+                      {p.priority > 0 && ` · priority ${p.priority}`}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      className="btn-ghost-sm"
+                      onClick={() => onEdit(p)}
+                    >
+                      {t('ratePeriodEdit')}
+                    </button>
+                    <button
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.8rem', padding: '2px 6px', borderRadius: 4 }}
+                      onClick={() => onDelete(p)}
+                    >
+                      {t('ratePeriodDelete')}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <button className="btn-secondary" style={{ fontSize: '0.85rem' }} onClick={onAdd}>
+          {t('ratePeriodAdd')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── RatePeriodModal ───────────────────────────────────────────────────────────
+
+function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSave }) {
+  const EMPTY_FORM = { name: '', date_from: '', date_to: '', rate_type: 'flat', rate_value: '', priority: '0' };
+  const [form,    setForm]    = useState(period
+    ? { name: period.name, date_from: period.date_from, date_to: period.date_to, rate_type: period.rate_type, rate_value: String(period.rate_value), priority: String(period.priority) }
+    : EMPTY_FORM
+  );
+  const [saving, setSaving]  = useState(false);
+  const [error,  setError]   = useState(null);
+
+  const isEdit = !!period;
+
+  function handleChange(e) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name.trim() || !form.date_from || !form.date_to || !form.rate_value) {
+      setError(t('requiredFields'));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(
+        isEdit ? `/api/rate-periods/${period.id}` : '/api/rate-periods',
+        {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            property_id: propertyId,
+            name:        form.name.trim(),
+            date_from:   form.date_from.trim(),
+            date_to:     form.date_to.trim(),
+            rate_type:   form.rate_type,
+            rate_value:  Number(form.rate_value),
+            priority:    Number(form.priority ?? 0),
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Failed to save.'); setSaving(false); return; }
+      onSave(data);
+    } catch (err) {
+      setError(err.message || t('networkError'));
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box" style={{ maxWidth: 480 }}>
+        <div className="modal-header">
+          <h2>{isEdit ? t('ratePeriodEdit') : t('ratePeriodAdd')}</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            <div className="form-group">
+              <label className="form-label">{t('ratePeriodName')} *</label>
+              <input name="name" className="form-control" value={form.name} onChange={handleChange}
+                placeholder={t('ratePeriodNamePlaceholder')} autoFocus />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label className="form-label">{t('ratePeriodFrom')} *</label>
+                <input name="date_from" className="form-control" value={form.date_from} onChange={handleChange}
+                  placeholder="MM-DD or YYYY-MM-DD" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t('ratePeriodTo')} *</label>
+                <input name="date_to" className="form-control" value={form.date_to} onChange={handleChange}
+                  placeholder="MM-DD or YYYY-MM-DD" />
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: -8 }}>
+              {t('ratePeriodFormatHint')}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label className="form-label">{t('ratePeriodRateType')} *</label>
+                <select name="rate_type" className="form-control" value={form.rate_type} onChange={handleChange}>
+                  <option value="flat">{t('ratePeriodFlat')}</option>
+                  <option value="multiplier">{t('ratePeriodMultiplier')}</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  {form.rate_type === 'flat'
+                    ? `${t('ratePeriodValue')} (${currencySymbol})`
+                    : `${t('ratePeriodValue')} (e.g. 1.5)`}
+                  {' *'}
+                </label>
+                <input name="rate_value" type="number" className="form-control" value={form.rate_value}
+                  onChange={handleChange} min="0" step="0.01"
+                  placeholder={form.rate_type === 'flat' ? '120.00' : '1.5'} />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ maxWidth: 160 }}>
+              <label className="form-label">{t('ratePeriodPriority')}</label>
+              <input name="priority" type="number" className="form-control" value={form.priority}
+                onChange={handleChange} min="0" step="1"
+                placeholder="0" />
+              <span className="form-hint" style={{ fontSize: '0.75rem' }}>0 = highest priority</span>
+            </div>
+
+            {error && <div className="form-error">{error}</div>}
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>{t('cancel')}</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? t('saving') : t('ratePeriodSave')}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -746,5 +746,22 @@ John`
     console.log('✓ Seeded 5 default email templates.');
   }
 
+  // Seasonal / rate periods — property-level nightly rate overrides
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS rate_periods (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id  INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      name         TEXT    NOT NULL,
+      date_from    TEXT    NOT NULL,
+      date_to      TEXT    NOT NULL,
+      rate_type    TEXT    NOT NULL DEFAULT 'flat'
+                   CHECK(rate_type IN ('flat','multiplier')),
+      rate_value   REAL    NOT NULL,
+      priority     INTEGER NOT NULL DEFAULT 0,
+      created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_periods_property ON rate_periods(property_id)`);
+
   console.log('✓ Database schema ready.');
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
+import { getRateForDate } from '../utils/ratePeriods.js';
 
 export const roomsRouter = Router();
 
@@ -88,6 +89,25 @@ roomsRouter.get('/', (req, res) => {
     }
 
     res.json(db.prepare(`SELECT * FROM rooms ${where} ORDER BY id`).all(...params));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/rooms/:id/rate?date=YYYY-MM-DD ───────────────────────────────
+roomsRouter.get('/:id/rate', (req, res) => {
+  try {
+    const rid  = Number(req.params.id);
+    const date = req.query.date;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: 'date query param (YYYY-MM-DD) is required' });
+    }
+    const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const result = getRateForDate(room.property_id, rid, date);
+    if (!result) return res.status(404).json({ error: 'Room not found' });
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

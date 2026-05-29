@@ -54,6 +54,24 @@ widgetRouter.get('/rooms', (req, res) => {
   }
 });
 
+// ── GET /api/widget/rate-periods?property_id=X ───────────────────────────────
+// Returns rate periods so the widget can show seasonal prices to guests.
+widgetRouter.get('/rate-periods', (req, res) => {
+  try {
+    const { property_id } = req.query;
+    if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+    if (!widgetPropertyGuard(property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
+    const rows = db.prepare(
+      'SELECT id, name, date_from, date_to, rate_type, rate_value, priority FROM rate_periods WHERE property_id = ? ORDER BY priority ASC, id ASC'
+    ).all(property_id);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/widget/bookings?property_id=X ────────────────────────────────────
 // Returns minimal booking data needed for client-side availability checks.
 // Guest PII is deliberately excluded.
