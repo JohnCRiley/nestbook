@@ -665,6 +665,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           booking={b}
           property={property}
           charges={charges}
+          roomBreakdown={roomBreakdown}
           onConfirm={handleCheckoutConfirm}
           onCancel={() => setShowCheckout(false)}
           onDone={() => {

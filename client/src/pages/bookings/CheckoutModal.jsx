@@ -20,7 +20,7 @@ const PAYMENT_METHODS = [
  *   onConfirm(paymentMethod) — called when "Confirm checkout" is clicked
  *   onCancel      — close without checking out
  */
-export default function CheckoutModal({ booking: b, property, charges: chargesProp, onConfirm, onCancel, onDone }) {
+export default function CheckoutModal({ booking: b, property, charges: chargesProp, roomBreakdown, onConfirm, onCancel, onDone }) {
   const t = useT();
   const { fmtCurrency, currencySymbol } = useLocale();
   const [paymentMethod,    setPaymentMethod]    = useState(null);
@@ -37,7 +37,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
 
   const nights          = nightsBetween(b.check_in_date, b.check_out_date);
   const pricePerNight   = b.price_per_night ?? 0;
-  const roomSubtotal    = nights * pricePerNight;
+  const roomSubtotal    = roomBreakdown?.total ?? nights * pricePerNight;
 
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
@@ -104,10 +104,25 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
             <LineRow label={t('moCinLbl')}    value={b.check_in_date} />
             <LineRow label={t('moCoutLbl')}   value={b.check_out_date} />
             <LineRow label={t('labelDuration')} value={t('nightWord')(nights)} />
-            <LineRow label={t('coRatePerNight')}
-              value={`${currencySymbol}${pricePerNight.toFixed(2)}`} />
-            <LineRow label={t('coRoomSubtotal')}
-              value={fmtCurrency(roomSubtotal)} bold />
+            {roomBreakdown?.breakdown?.length > 0 ? (
+              <>
+                {roomBreakdown.breakdown.map((seg, i) => (
+                  <LineRow
+                    key={i}
+                    label={`${t('nightWord')(seg.nights)} × ${currencySymbol}${seg.ratePerNight.toFixed(2)}${seg.periodName ? ` (${seg.periodName})` : ''}`}
+                    value={fmtCurrency(seg.subtotal)}
+                  />
+                ))}
+                <LineRow label={t('coRoomSubtotal')} value={fmtCurrency(roomSubtotal)} bold />
+              </>
+            ) : (
+              <>
+                <LineRow label={t('coRatePerNight')}
+                  value={`${currencySymbol}${pricePerNight.toFixed(2)}`} />
+                <LineRow label={t('coRoomSubtotal')}
+                  value={fmtCurrency(roomSubtotal)} bold />
+              </>
+            )}
           </Section>
 
           {/* Extras */}
@@ -322,6 +337,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
           nights={nights}
           pricePerNight={pricePerNight}
           roomSubtotal={roomSubtotal}
+          roomBreakdown={roomBreakdown}
           breakfastFree={breakfastFree}
           breakfastCharged={breakfastCharged}
           breakfastSubtotal={breakfastSubtotal}
