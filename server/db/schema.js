@@ -786,6 +786,20 @@ John`
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_periods_property ON rate_periods(property_id)`);
 
+  // Per-room rate overrides for rate periods
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS rate_period_rooms (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      rate_period_id INTEGER NOT NULL,
+      room_id        INTEGER NOT NULL,
+      amount         REAL    NOT NULL,
+      FOREIGN KEY (rate_period_id) REFERENCES rate_periods(id) ON DELETE CASCADE,
+      FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+      UNIQUE(rate_period_id, room_id)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_period_rooms ON rate_period_rooms(rate_period_id)`);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

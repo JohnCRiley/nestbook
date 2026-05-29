@@ -24,7 +24,10 @@ function dateInRange(dateIso, from, to) {
 
 /**
  * Return the effective rate for a room on a given check-in date.
- * Iterates rate_periods ordered by priority ASC (lower = higher priority).
+ * Priority order:
+ *   1. Room-specific override in rate_period_rooms
+ *   2. Period default rate (rate_value > 0)
+ *   3. Room's own base price
  * Returns { rate, periodName } — periodName is null when the base rate applies.
  */
 export function getRateForDate(propertyId, roomId, checkInDate) {
@@ -40,10 +43,22 @@ export function getRateForDate(propertyId, roomId, checkInDate) {
 
   for (const p of periods) {
     if (dateInRange(checkInDate, p.date_from, p.date_to)) {
-      const rate = p.rate_type === 'multiplier'
-        ? Math.round(base * p.rate_value * 100) / 100
-        : p.rate_value;
-      return { rate, periodName: p.name };
+      // 1. Room-specific flat rate override
+      const roomRate = db.prepare(
+        'SELECT amount FROM rate_period_rooms WHERE rate_period_id = ? AND room_id = ?'
+      ).get(p.id, roomId);
+      if (roomRate?.amount > 0) {
+        return { rate: roomRate.amount, periodName: p.name };
+      }
+      // 2. Period default rate (flat or multiplier for backward compat)
+      if (p.rate_value > 0) {
+        const rate = p.rate_type === 'multiplier'
+          ? Math.round(base * p.rate_value * 100) / 100
+          : p.rate_value;
+        return { rate, periodName: p.name };
+      }
+      // 3. Period matched but no configured rate — return room default
+      return { rate: base, periodName: null };
     }
   }
 

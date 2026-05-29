@@ -21,6 +21,17 @@ function canAccess(userId, role, propId) {
   return Number(u?.property_id) === pid;
 }
 
+function attachRoomRates(period) {
+  period.roomRates = db.prepare(`
+    SELECT rpr.room_id, rpr.amount, r.name AS room_name, r.price_per_night AS default_price
+    FROM rate_period_rooms rpr
+    JOIN rooms r ON r.id = rpr.room_id
+    WHERE rpr.rate_period_id = ?
+    ORDER BY r.name ASC
+  `).all(period.id);
+  return period;
+}
+
 // GET /api/rate-periods?property_id=X
 ratePeriodsRouter.get('/', (req, res) => {
   try {
@@ -32,7 +43,7 @@ ratePeriodsRouter.get('/', (req, res) => {
     const rows = db.prepare(
       'SELECT * FROM rate_periods WHERE property_id = ? ORDER BY priority ASC, id ASC'
     ).all(propId);
-    res.json(rows);
+    res.json(rows.map(attachRoomRates));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -41,12 +52,9 @@ ratePeriodsRouter.get('/', (req, res) => {
 // POST /api/rate-periods
 ratePeriodsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, date_from, date_to, rate_type, rate_value, priority } = req.body;
-    if (!property_id || !name?.trim() || !date_from || !date_to || !rate_type || rate_value == null) {
-      return res.status(400).json({ error: 'property_id, name, date_from, date_to, rate_type and rate_value are required' });
-    }
-    if (!['flat', 'multiplier'].includes(rate_type)) {
-      return res.status(400).json({ error: 'rate_type must be flat or multiplier' });
+    const { property_id, name, date_from, date_to, rate_type, rate_value, priority, roomRates } = req.body;
+    if (!property_id || !name?.trim() || !date_from || !date_to) {
+      return res.status(400).json({ error: 'property_id, name, date_from and date_to are required' });
     }
     if (!canAccess(req.user.userId, req.user.role, property_id)) {
       return res.status(403).json({ error: 'Access denied.' });
@@ -57,21 +65,39 @@ ratePeriodsRouter.post('/', (req, res) => {
     if (limit === 0) {
       return res.status(403).json({ error: 'Seasonal pricing is a Pro feature. Upgrade to use it.' });
     }
-    const count = db.prepare(
-      'SELECT COUNT(*) AS n FROM rate_periods WHERE property_id = ?'
-    ).get(property_id).n;
+    const count = db.prepare('SELECT COUNT(*) AS n FROM rate_periods WHERE property_id = ?').get(property_id).n;
     if (count >= limit) {
       return res.status(403).json({
         error: `Your plan allows a maximum of ${limit} rate periods. Upgrade to Multi for unlimited.`,
       });
     }
 
-    const result = db.prepare(
-      `INSERT INTO rate_periods (property_id, name, date_from, date_to, rate_type, rate_value, priority)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(property_id, name.trim(), date_from, date_to, rate_type, Number(rate_value), Number(priority ?? 0));
+    let newId;
+    try {
+      db.exec('BEGIN');
+      const result = db.prepare(
+        `INSERT INTO rate_periods (property_id, name, date_from, date_to, rate_type, rate_value, priority)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        property_id, name.trim(), date_from, date_to,
+        rate_type ?? 'flat', Number(rate_value ?? 0), Number(priority ?? 0)
+      );
+      newId = Number(result.lastInsertRowid);
 
-    res.status(201).json(db.prepare('SELECT * FROM rate_periods WHERE id = ?').get(result.lastInsertRowid));
+      const insertRoomRate = db.prepare(
+        'INSERT OR REPLACE INTO rate_period_rooms (rate_period_id, room_id, amount) VALUES (?, ?, ?)'
+      );
+      for (const rr of (roomRates ?? [])) {
+        if (rr.roomId && rr.amount > 0) insertRoomRate.run(newId, rr.roomId, rr.amount);
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+
+    const period = db.prepare('SELECT * FROM rate_periods WHERE id = ?').get(newId);
+    res.status(201).json(attachRoomRates(period));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -87,22 +113,39 @@ ratePeriodsRouter.put('/:id', (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    const { name, date_from, date_to, rate_type, rate_value, priority } = req.body;
-    db.prepare(
-      `UPDATE rate_periods
-       SET name = ?, date_from = ?, date_to = ?, rate_type = ?, rate_value = ?, priority = ?
-       WHERE id = ?`
-    ).run(
-      name?.trim() ?? period.name,
-      date_from    ?? period.date_from,
-      date_to      ?? period.date_to,
-      rate_type    ?? period.rate_type,
-      rate_value   != null ? Number(rate_value)  : period.rate_value,
-      priority     != null ? Number(priority)    : period.priority,
-      id
-    );
+    const { name, date_from, date_to, rate_type, rate_value, priority, roomRates } = req.body;
 
-    res.json(db.prepare('SELECT * FROM rate_periods WHERE id = ?').get(id));
+    try {
+      db.exec('BEGIN');
+      db.prepare(
+        `UPDATE rate_periods
+         SET name = ?, date_from = ?, date_to = ?, rate_type = ?, rate_value = ?, priority = ?
+         WHERE id = ?`
+      ).run(
+        name?.trim()  ?? period.name,
+        date_from     ?? period.date_from,
+        date_to       ?? period.date_to,
+        rate_type     ?? period.rate_type,
+        rate_value != null ? Number(rate_value) : period.rate_value,
+        priority   != null ? Number(priority)   : period.priority,
+        id
+      );
+
+      db.prepare('DELETE FROM rate_period_rooms WHERE rate_period_id = ?').run(id);
+      const insertRoomRate = db.prepare(
+        'INSERT INTO rate_period_rooms (rate_period_id, room_id, amount) VALUES (?, ?, ?)'
+      );
+      for (const rr of (roomRates ?? [])) {
+        if (rr.roomId && rr.amount > 0) insertRoomRate.run(id, rr.roomId, rr.amount);
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+
+    const updated = db.prepare('SELECT * FROM rate_periods WHERE id = ?').get(id);
+    res.json(attachRoomRates(updated));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

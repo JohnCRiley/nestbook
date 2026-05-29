@@ -595,6 +595,7 @@ export default function Settings() {
               onAdd={() => { setEditingRatePeriod(null); setShowRatePeriodModal(true); }}
               onEdit={(p) => { setEditingRatePeriod(p); setShowRatePeriodModal(true); }}
               onDelete={(p) => setRatePeriodDeleteTarget(p)}
+              rooms={rooms}
             />
           </PlanGate>
 
@@ -1043,6 +1044,7 @@ export default function Settings() {
           currencySymbol={currencySymbol}
           period={editingRatePeriod}
           propertyId={activeProperty?.id}
+          rooms={rooms}
           onClose={() => setShowRatePeriodModal(false)}
           onSave={(saved) => {
             setRatePeriods((prev) =>
@@ -1446,9 +1448,14 @@ function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit,
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
             {ratePeriods.map((p) => {
               const active = isRatePeriodActive(p);
+              const roomRates = p.roomRates ?? [];
+              const preview = roomRates.slice(0, 3).map(
+                rr => `${rr.room_name}: ${currencySymbol}${Number(rr.amount).toFixed(0)}`
+              ).join(' · ');
+              const extra = roomRates.length > 3 ? ` · +${roomRates.length - 3} more` : '';
               return (
                 <div key={p.id} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
                   padding: '10px 14px', borderRadius: 8,
                   background: active ? '#fefce8' : '#f8fafc',
                   border: `1px solid ${active ? '#fcd34d' : 'var(--border)'}`,
@@ -1466,20 +1473,23 @@ function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit,
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
                       {p.date_from} → {p.date_to}
-                      {' · '}
-                      {p.rate_type === 'flat'
-                        ? `${currencySymbol}${Number(p.rate_value).toFixed(2)}/night`
-                        : `×${p.rate_value} multiplier`}
                       {p.priority > 0 && ` · priority ${p.priority}`}
                     </div>
+                    {(preview || p.rate_value > 0) && (
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: 3 }}>
+                        {preview}{extra}
+                        {p.rate_value > 0 && (
+                          <span style={{ color: '#94a3b8' }}>
+                            {preview ? ' · ' : ''}default: {currencySymbol}{Number(p.rate_value).toFixed(0)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button
-                      className="btn-ghost-sm"
-                      onClick={() => onEdit(p)}
-                    >
+                    <button className="btn-ghost-sm" onClick={() => onEdit(p)}>
                       {t('ratePeriodEdit')}
                     </button>
                     <button
@@ -1504,18 +1514,31 @@ function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit,
 
 // ── RatePeriodModal ───────────────────────────────────────────────────────────
 
-function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSave }) {
-  const EMPTY_FORM = { name: '', date_from: '', date_to: '', rate_type: 'flat', rate_value: '', priority: '0' };
-  const [form,    setForm]    = useState(period
-    ? { name: period.name, date_from: period.date_from, date_to: period.date_to, rate_type: period.rate_type, rate_value: String(period.rate_value), priority: String(period.priority) }
-    : EMPTY_FORM
-  );
-  const [saving, setSaving]  = useState(false);
-  const [error,  setError]   = useState(null);
+function RatePeriodModal({ t, currencySymbol, period, propertyId, rooms, onClose, onSave }) {
+  const initialRoomRates = {};
+  for (const rr of (period?.roomRates ?? [])) {
+    initialRoomRates[rr.room_id] = String(rr.amount);
+  }
+
+  const [form, setForm] = useState(period ? {
+    name:        period.name,
+    date_from:   period.date_from,
+    date_to:     period.date_to,
+    priority:    String(period.priority),
+    defaultRate: String(period.rate_value),
+    roomRates:   initialRoomRates,
+  } : {
+    name: '', date_from: '', date_to: '', priority: '0', defaultRate: '0', roomRates: {},
+  });
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState(null);
 
   const isEdit = !!period;
 
-  const hasData = !!(form.name || form.date_from || form.date_to || form.rate_value);
+  const hasData = !!(
+    form.name || form.date_from || form.date_to ||
+    Object.values(form.roomRates).some(v => parseFloat(v) > 0)
+  );
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -1533,19 +1556,23 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
     onClose();
   }
 
-  function handleChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  function setRoomRate(roomId, value) {
+    setForm(prev => ({ ...prev, roomRates: { ...prev.roomRates, [roomId]: value } }));
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim() || !form.date_from || !form.date_to || !form.rate_value) {
+    if (!form.name.trim() || !form.date_from || !form.date_to) {
       setError(t('requiredFields'));
       return;
     }
     setSaving(true);
     setError(null);
     try {
+      const roomRatesPayload = (rooms ?? [])
+        .filter(r => parseFloat(form.roomRates[r.id]) > 0)
+        .map(r => ({ roomId: r.id, amount: parseFloat(form.roomRates[r.id]) }));
+
       const res = await apiFetch(
         isEdit ? `/api/rate-periods/${period.id}` : '/api/rate-periods',
         {
@@ -1556,9 +1583,10 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
             name:        form.name.trim(),
             date_from:   form.date_from.trim(),
             date_to:     form.date_to.trim(),
-            rate_type:   form.rate_type,
-            rate_value:  Number(form.rate_value),
+            rate_type:   'flat',
+            rate_value:  parseFloat(form.defaultRate) || 0,
             priority:    Number(form.priority ?? 0),
+            roomRates:   roomRatesPayload,
           }),
         }
       );
@@ -1573,7 +1601,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
 
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
-      <div className="modal-box" style={{ maxWidth: 480 }}>
+      <div className="modal-box" style={{ maxWidth: 560 }}>
         <div className="modal-header">
           <h2>{isEdit ? t('ratePeriodEdit') : t('ratePeriodAdd')}</h2>
           <button className="modal-close" onClick={onClose}>✕</button>
@@ -1581,22 +1609,32 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
+            {/* Name + dates + priority */}
             <div className="form-group">
               <label className="form-label">{t('ratePeriodName')} *</label>
-              <input name="name" className="form-control" value={form.name} onChange={handleChange}
-                placeholder={t('ratePeriodNamePlaceholder')} autoFocus />
+              <input className="form-control" value={form.name} autoFocus
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                placeholder={t('ratePeriodNamePlaceholder')} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
               <div className="form-group">
                 <label className="form-label">{t('ratePeriodFrom')} *</label>
-                <input name="date_from" className="form-control" value={form.date_from} onChange={handleChange}
+                <input className="form-control" value={form.date_from}
+                  onChange={e => setForm(p => ({ ...p, date_from: e.target.value }))}
                   placeholder="MM-DD or YYYY-MM-DD" />
               </div>
               <div className="form-group">
                 <label className="form-label">{t('ratePeriodTo')} *</label>
-                <input name="date_to" className="form-control" value={form.date_to} onChange={handleChange}
+                <input className="form-control" value={form.date_to}
+                  onChange={e => setForm(p => ({ ...p, date_to: e.target.value }))}
                   placeholder="MM-DD or YYYY-MM-DD" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t('ratePeriodPriority')}</label>
+                <input type="number" className="form-control" value={form.priority} min="0" step="1"
+                  onChange={e => setForm(p => ({ ...p, priority: e.target.value }))}
+                  placeholder="0" />
               </div>
             </div>
 
@@ -1604,34 +1642,85 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
               {t('ratePeriodFormatHint')}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="form-group">
-                <label className="form-label">{t('ratePeriodRateType')} *</label>
-                <select name="rate_type" className="form-control" value={form.rate_type} onChange={handleChange}>
-                  <option value="flat">{t('ratePeriodFlat')}</option>
-                  <option value="multiplier">{t('ratePeriodMultiplier')}</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  {form.rate_type === 'flat'
-                    ? `${t('ratePeriodValue')} (${currencySymbol})`
-                    : `${t('ratePeriodValue')} (e.g. 1.5)`}
-                  {' *'}
-                </label>
-                <input name="rate_value" type="number" className="form-control" value={form.rate_value}
-                  onChange={handleChange} min="0" step="0.01"
-                  placeholder={form.rate_type === 'flat' ? '120.00' : '1.5'} />
-              </div>
-            </div>
+            {/* Per-room pricing table */}
+            {(rooms ?? []).length > 0 && (
+              <div>
+                <div style={{
+                  fontSize: '0.78rem', fontWeight: 700, color: '#64748b',
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  marginBottom: 8, paddingBottom: 6,
+                  borderBottom: '2px solid var(--border)',
+                }}>
+                  Room Pricing
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {/* Header row */}
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: '1fr 90px 130px',
+                    padding: '4px 6px', fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8',
+                  }}>
+                    <span>Room</span>
+                    <span>Default</span>
+                    <span>Seasonal rate</span>
+                  </div>
+                  {(rooms ?? []).map(room => (
+                    <div key={room.id} style={{
+                      display: 'grid', gridTemplateColumns: '1fr 90px 130px',
+                      alignItems: 'center', padding: '5px 6px',
+                      borderBottom: '1px solid #f1f5f9',
+                    }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#1e293b' }}>
+                        {room.name}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                        {currencySymbol}{room.price_per_night}/nt
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: '0.82rem', color: '#64748b' }}>{currencySymbol}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0"
+                          value={form.roomRates[room.id] ?? ''}
+                          onChange={e => setRoomRate(room.id, e.target.value)}
+                          style={{
+                            width: 80, padding: '4px 8px', fontSize: '0.85rem',
+                            border: '1.5px solid #e2e8f0', borderRadius: 5,
+                            fontFamily: 'inherit', outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-            <div className="form-group" style={{ maxWidth: 160 }}>
-              <label className="form-label">{t('ratePeriodPriority')}</label>
-              <input name="priority" type="number" className="form-control" value={form.priority}
-                onChange={handleChange} min="0" step="1"
-                placeholder="0" />
-              <span className="form-hint" style={{ fontSize: '0.75rem' }}>0 = highest priority</span>
-            </div>
+                {/* Default fallback rate */}
+                <div style={{
+                  marginTop: 10, paddingTop: 10,
+                  borderTop: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+                }}>
+                  <span style={{ fontSize: '0.82rem', color: '#475569' }}>
+                    Default rate for unlisted rooms ({currencySymbol}):
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0"
+                    value={form.defaultRate}
+                    onChange={e => setForm(p => ({ ...p, defaultRate: e.target.value }))}
+                    style={{
+                      width: 90, padding: '4px 8px', fontSize: '0.85rem',
+                      border: '1.5px solid #e2e8f0', borderRadius: 5,
+                      fontFamily: 'inherit', outline: 'none',
+                    }}
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>0 = use room's default price</span>
+                </div>
+              </div>
+            )}
 
             {error && <div className="form-error">{error}</div>}
           </div>
