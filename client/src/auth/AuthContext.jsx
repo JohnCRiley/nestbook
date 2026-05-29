@@ -61,7 +61,10 @@ export function AuthProvider({ children }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.plan) updateUser({ plan: data.plan });
+      if (data.plan) updateUser({
+        plan: data.plan,
+        subscription_status: data.subscription_status ?? 'active',
+      });
     } catch {}
   }
 

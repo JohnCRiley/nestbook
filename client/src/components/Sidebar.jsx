@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
@@ -157,6 +157,20 @@ export default function Sidebar() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Past-due payment warning */}
+        {user?.subscription_status === 'past_due' && (
+          <div style={{
+            background: '#fef3c7', border: '1px solid #f59e0b',
+            borderRadius: 8, padding: '10px 14px', margin: '0 12px 12px',
+            fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5,
+          }}>
+            <strong>⚠️ Payment failed</strong> — your Pro access may be restricted soon.{' '}
+            <Link to="/settings" style={{ color: '#92400e', fontWeight: 700 }}>
+              Update billing →
+            </Link>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="sidebar-footer">

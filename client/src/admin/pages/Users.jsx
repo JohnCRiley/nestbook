@@ -590,6 +590,7 @@ export default function Users() {
                       {u.cancel_at_period_end ? (
                         <span className="sa-badge sa-badge-cancel">Cancelling</span>
                       ) : null}
+                      <SubStatusBadge status={u.subscription_status} pastDueSince={u.past_due_since} />
                     </div>
                   </td>
                   <td>
@@ -823,6 +824,31 @@ function CopyId({ id }) {
       </button>
     </span>
   );
+}
+
+// ── SubStatusBadge ────────────────────────────────────────────────────────────
+
+function SubStatusBadge({ status, pastDueSince }) {
+  if (!status || status === 'active') return null;
+  if (status === 'past_due') {
+    let daysLabel = '';
+    if (pastDueSince) {
+      const days = Math.floor((Date.now() - new Date(pastDueSince).getTime()) / 86400000);
+      daysLabel = ` (${days}d)`;
+    }
+    return (
+      <span className="sa-badge" style={{ background: '#fef9c3', color: '#854d0e', marginLeft: 4 }}>
+        🟡 Past due{daysLabel}
+      </span>
+    );
+  }
+  if (status === 'cancelled') {
+    return <span className="sa-badge sa-badge-cancel" style={{ marginLeft: 4 }}>🔴 Cancelled</span>;
+  }
+  if (status === 'trialing') {
+    return <span className="sa-badge" style={{ background: '#eff6ff', color: '#1d4ed8', marginLeft: 4 }}>🔵 Trialing</span>;
+  }
+  return null;
 }
 
 // ── PlanBadge ─────────────────────────────────────────────────────────────────

@@ -25,11 +25,19 @@ import { activityLogRouter }         from './routes/activityLog.js';
 import { chargesRouter }             from './routes/charges.js';
 import { marketingRouter }           from './routes/marketing.js';
 import { ratePeriodsRouter }         from './routes/ratePeriods.js';
+import { sendDowngradeEmail }        from './email/emailService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Database ──────────────────────────────────────────────────────────────────
-initSchema();
+const downgradedUsers = initSchema();
+// Send downgrade emails for any users demoted during this startup's dunning check
+if (downgradedUsers?.length > 0) {
+  for (const u of downgradedUsers) {
+    sendDowngradeEmail(u.email)
+      .catch(err => console.error('[dunning] Downgrade email failed:', u.email, err.message));
+  }
+}
 
 // ── App ───────────────────────────────────────────────────────────────────────
 const app = express();

@@ -746,6 +746,29 @@ John`
     console.log('✓ Seeded 5 default email templates.');
   }
 
+  // ── Dunning / payment failure tracking ───────────────────────────────────
+  try { db.exec(`ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'active'`); } catch {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN past_due_since TEXT`); } catch {}
+
+  // Downgrade users who have been past_due for more than 7 days
+  const graceCutoff = new Date();
+  graceCutoff.setDate(graceCutoff.getDate() - 7);
+  const dunningRows = db.prepare(`
+    SELECT id, email FROM users
+    WHERE subscription_status = 'past_due'
+      AND past_due_since < ?
+      AND plan != 'free'
+  `).all(graceCutoff.toISOString());
+  if (dunningRows.length > 0) {
+    const downgradeStmt = db.prepare(`
+      UPDATE users SET plan = 'free', subscription_status = 'cancelled', past_due_since = NULL WHERE id = ?
+    `);
+    for (const u of dunningRows) {
+      downgradeStmt.run(u.id);
+      console.log(`[dunning] Downgraded user ${u.email} to free after 7-day grace period.`);
+    }
+  }
+
   // Seasonal / rate periods — property-level nightly rate overrides
   db.exec(`
     CREATE TABLE IF NOT EXISTS rate_periods (
@@ -764,4 +787,5 @@ John`
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_periods_property ON rate_periods(property_id)`);
 
   console.log('✓ Database schema ready.');
+  return dunningRows; // caller sends downgrade emails asynchronously
 }

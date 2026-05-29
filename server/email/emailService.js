@@ -988,6 +988,64 @@ export async function sendPasswordResetEmail(email, token) {
   console.log('[email] Password reset sent →', email);
 }
 
+// ── Payment failure / dunning emails ─────────────────────────────────────────
+
+export async function sendPaymentFailedEmail(email, invoiceUrl) {
+  if (!resend) {
+    console.log('[email] SKIPPED payment-failed email to', email, '(no Resend key)');
+    return;
+  }
+  await resend.emails.send({
+    from: FROM,
+    to:   email,
+    subject: 'Action required — your NestBook payment failed',
+    html: `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a2e14">
+        <div style="margin-bottom:24px">
+          <span style="background:#1a4710;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
+        </div>
+        <h2 style="font-size:1.4rem;font-weight:800;margin:0 0 12px">We couldn't process your payment</h2>
+        <p style="color:#374151;line-height:1.6;margin:0 0 16px">Your recent NestBook subscription payment was unsuccessful.</p>
+        <p style="color:#374151;line-height:1.6;margin:0 0 24px">To keep your Pro access, please update your payment details:</p>
+        ${invoiceUrl ? `<a href="${invoiceUrl}" style="display:inline-block;background:#1a4710;color:#fff;padding:12px 24px;border-radius:7px;text-decoration:none;font-weight:700;margin-bottom:24px">Update payment details →</a>` : ''}
+        <p style="color:#374151;line-height:1.6;margin:0 0 16px">If your payment isn't resolved within 7 days, your account will be moved to the Free plan. Your data will be kept safe.</p>
+        <p style="color:#6b7280;font-size:0.875rem">Questions? Reply to this email or contact <a href="mailto:hello@nestbook.io" style="color:#1a4710">hello@nestbook.io</a></p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+        <p style="color:#9ca3af;font-size:0.78rem;margin:0">NestBook — Property Management Software</p>
+      </div>
+    `,
+  });
+  console.log('[email] Payment-failed email sent →', email);
+}
+
+export async function sendDowngradeEmail(email) {
+  if (!resend) {
+    console.log('[email] SKIPPED downgrade email to', email, '(no Resend key)');
+    return;
+  }
+  await resend.emails.send({
+    from: FROM,
+    to:   email,
+    subject: 'Your NestBook account has been moved to the Free plan',
+    html: `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a2e14">
+        <div style="margin-bottom:24px">
+          <span style="background:#1a4710;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
+        </div>
+        <h2 style="font-size:1.4rem;font-weight:800;margin:0 0 12px">Your account has been moved to the Free plan</h2>
+        <p style="color:#374151;line-height:1.6;margin:0 0 16px">Because we were unable to process your payment, your NestBook account has been moved to the Free plan.</p>
+        <p style="color:#374151;line-height:1.6;margin:0 0 16px">Your data is safe — all your bookings, guests and rooms are still there.</p>
+        <p style="color:#374151;line-height:1.6;margin:0 0 24px">To restore Pro access, simply update your payment details and resubscribe:</p>
+        <a href="https://nestbook.io/app/pricing" style="display:inline-block;background:#1a4710;color:#fff;padding:12px 24px;border-radius:7px;text-decoration:none;font-weight:700;margin-bottom:24px">Resubscribe to Pro →</a>
+        <p style="color:#6b7280;font-size:0.875rem">Questions? We're here at <a href="mailto:hello@nestbook.io" style="color:#1a4710">hello@nestbook.io</a></p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+        <p style="color:#9ca3af;font-size:0.78rem;margin:0">NestBook — Property Management Software</p>
+      </div>
+    `,
+  });
+  console.log('[email] Downgrade email sent →', email);
+}
+
 // ── Outreach / prospect email ─────────────────────────────────────────────────
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {

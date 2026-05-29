@@ -63,7 +63,11 @@ authRouter.post('/login', (req, res) => {
 
   res.json({
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role, property_id: user.property_id, email_verified: !!user.email_verified },
+    user: {
+      id: user.id, name: user.name, email: user.email, role: user.role,
+      property_id: user.property_id, email_verified: !!user.email_verified,
+      subscription_status: user.subscription_status ?? 'active',
+    },
   });
 });
 

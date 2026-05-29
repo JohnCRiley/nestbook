@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
 import db from '../db/database.js';
-import { sendUpgradeWelcome, sendMultiWelcome } from '../email/emailService.js';
+import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
@@ -16,12 +16,14 @@ const PLAN_PRICES = {
 // ── GET /api/stripe/subscription ─────────────────────────────────────────────
 // Returns the logged-in user's current plan and subscription status.
 stripeRouter.get('/subscription', (req, res) => {
-  const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+  const user = db.prepare('SELECT plan, subscription_status, past_due_since FROM users WHERE id = ?').get(req.user.userId);
   const sub  = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
 
   res.json({
     plan:                user?.plan                ?? 'free',
     status:              sub?.status               ?? 'active',
+    subscription_status: user?.subscription_status ?? 'active',
+    past_due_since:      user?.past_due_since       ?? null,
     current_period_end:  sub?.current_period_end   ?? null,
     cancel_at_period_end: sub?.cancel_at_period_end ?? 0,
     notes:               sub?.notes                ?? null,
@@ -322,6 +324,46 @@ export async function stripeWebhookHandler(req, res) {
           UPDATE users SET plan = ?
           WHERE id = (SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?)
         `).run(plan, sub.id);
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice    = event.data.object;
+        const customerId = invoice.customer;
+        const user = db.prepare(`
+          SELECT u.id, u.email FROM users u
+          JOIN subscriptions s ON s.user_id = u.id
+          WHERE s.stripe_customer_id = ?
+        `).get(customerId);
+        if (user) {
+          db.prepare(`
+            UPDATE users
+            SET subscription_status = 'past_due', past_due_since = datetime('now')
+            WHERE id = ? AND subscription_status != 'past_due'
+          `).run(user.id);
+          sendPaymentFailedEmail(user.email, invoice.hosted_invoice_url)
+            .catch(err => console.error('[stripe] Payment-failed email error:', err.message));
+          console.log('[webhook] Payment failed for user:', user.email);
+        }
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice    = event.data.object;
+        const customerId = invoice.customer;
+        const user = db.prepare(`
+          SELECT u.id, u.email FROM users u
+          JOIN subscriptions s ON s.user_id = u.id
+          WHERE s.stripe_customer_id = ?
+        `).get(customerId);
+        if (user) {
+          db.prepare(`
+            UPDATE users
+            SET subscription_status = 'active', past_due_since = NULL
+            WHERE id = ?
+          `).run(user.id);
+          console.log('[webhook] Payment succeeded for user:', user.email);
+        }
         break;
       }
 
