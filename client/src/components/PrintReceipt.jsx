@@ -141,6 +141,10 @@ export function buildReceiptHTML(d, format) {
     ? `${divider}<div class="section-label">${esc(d.chargesLabel)}</div>${chargeRows}`
     : '';
 
+  const roomRateRows = d.roomSegments?.length > 0
+    ? d.roomSegments.map((seg) => row(`  ${seg.label}`, seg.subtotalFmt, 'indent')).join('')
+    : row(`  ${d.nightsLine}`, d.roomSubtotalFmt, 'indent');
+
   const extras = [
     d.breakfastFree
       ? row(`  ${d.breakfastLabel}`, d.breakfastComplimentary, 'indent')
@@ -195,7 +199,7 @@ export function buildReceiptHTML(d, format) {
   <div class="section-label">${esc(d.stayLabel)}</div>
   <div class="receipt-row"><span class="label" style="font-weight:600">${esc(d.roomName)}</span></div>
   <div class="receipt-row indent"><span class="label">${esc(d.checkInOut)}</span></div>
-  ${row(`  ${d.nightsLine}`, d.roomSubtotalFmt, 'indent')}
+  ${roomRateRows}
   ${extras}
   ${chargesBlock}
   ${depositBlock ? `${divider}${depositBlock}` : ''}
@@ -228,6 +232,7 @@ export function buildReceiptHTML(d, format) {
 export default function PrintReceipt({
   booking: b, property,
   nights, pricePerNight, roomSubtotal,
+  roomBreakdown,
   breakfastFree, breakfastCharged, breakfastSubtotal, bfPricePerPerson,
   breakfastGuests, breakfastDays,
   depositPaid, depositAmount,
@@ -240,6 +245,14 @@ export default function PrintReceipt({
   const locale = property?.locale ?? 'en';
   const symbol = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' }[property?.currency ?? 'EUR'] ?? '€';
 
+  const roomSegments = Array.isArray(roomBreakdown?.breakdown) && roomBreakdown.breakdown.length > 0
+    ? roomBreakdown.breakdown.map((seg) => ({
+        label:       `${seg.nights} × ${fc(seg.ratePerNight, symbol)}${seg.periodName ? ` (${seg.periodName})` : ''}`,
+        subtotalFmt: fc(seg.subtotal, symbol),
+      }))
+    : null;
+  const totalRoomSub = roomBreakdown?.total ?? (roomSubtotal || 0);
+
   // Pre-resolve all strings (hooks can't be called inside buildReceiptHTML)
   const depositReqd   = property?.require_deposit === 1;
   const depPaidLine   = depositReqd && !!depositPaid && depositAmount > 0;
@@ -247,7 +260,7 @@ export default function PrintReceipt({
   const refund        = Number(refundAmount) || 0;
   // Compute total from raw components — never from a pre-calculated prop
   const chargesTotal    = (Array.isArray(roomCharges) ? roomCharges : []).reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const grossSubtotal   = (roomSubtotal || 0) + (breakfastSubtotal || 0) + chargesTotal;
+  const grossSubtotal   = totalRoomSub + (breakfastSubtotal || 0) + chargesTotal;
   const depositDeduction = depPaidLine ? depositAmount : 0;
   const grandTotal      = Math.max(0, grossSubtotal - depositDeduction - refund);
 
@@ -264,8 +277,9 @@ export default function PrintReceipt({
     bookingRef:  `#${b.id}`,
     roomName:    `${b.room_name ?? t('roomDeleted')} (${b.room_type ?? ''})`,
     checkInOut:  `${b.check_in_date} → ${b.check_out_date}`,
-    nightsLine:  `${nights} × ${fc(pricePerNight, symbol)}`,
-    roomSubtotalFmt: fc(roomSubtotal, symbol),
+    nightsLine:      roomSegments ? '' : `${nights} × ${fc(pricePerNight, symbol)}`,
+    roomSubtotalFmt: fc(totalRoomSub, symbol),
+    roomSegments,
     breakfastFree,
     breakfastLabel:       t('fBreakfast'),
     breakfastComplimentary: t('coComplimentary'),
@@ -394,7 +408,12 @@ export default function PrintReceipt({
           </div>
           <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1a2e14', padding: '2px 0' }}>{d.roomName}</div>
           <div style={{ fontSize: '0.8rem', color: '#64748b', paddingLeft: 12, padding: '2px 0' }}>{d.checkInOut}</div>
-          <PreviewRow label={`  ${d.nightsLine}`} value={d.roomSubtotalFmt} indent />
+          {d.roomSegments?.length > 0
+            ? d.roomSegments.map((seg, i) => (
+                <PreviewRow key={i} label={`  ${seg.label}`} value={seg.subtotalFmt} indent />
+              ))
+            : <PreviewRow label={`  ${d.nightsLine}`} value={d.roomSubtotalFmt} indent />
+          }
 
           {d.breakfastFree && (
             <PreviewRow label={`  ${d.breakfastLabel}`} value={d.breakfastComplimentary} indent credit />

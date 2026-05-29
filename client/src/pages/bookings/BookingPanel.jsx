@@ -96,6 +96,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const plan = usePlan();
   const { user } = useAuth();
   const [activeTab,          setActiveTab]          = useState('details');
+  const [roomBreakdown,      setRoomBreakdown]      = useState(null);
   const [charges,            setCharges]            = useState(null); // null = not loaded
   const [categories,         setCategories]         = useState([]);
   const [addChargeFor,       setAddChargeFor]       = useState(null);
@@ -112,6 +113,16 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const showChargesTab = plan === 'multi';
 
   const depositRequired = !!property?.require_deposit;
+
+  // Fetch room rate breakdown for accurate multi-period totals
+  useEffect(() => {
+    setRoomBreakdown(null);
+    if (!b.room_id || !b.check_in_date || !b.check_out_date) return;
+    apiFetch(`/api/rooms/${b.room_id}/rate-range?check_in=${b.check_in_date}&check_out=${b.check_out_date}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setRoomBreakdown)
+      .catch(() => {});
+  }, [b.room_id, b.check_in_date, b.check_out_date]);
 
   // Fetch charges eagerly so EstimatedTotal can include them
   useEffect(() => {
@@ -216,7 +227,13 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
       const rpNights    = nightsBetween(b.check_in_date, b.check_out_date);
       const rpRate      = b.price_per_night ?? (b.total_price && rpNights ? b.total_price / rpNights : 0);
-      const rpRoom      = rpNights * rpRate;
+      const rpRoom      = roomBreakdown?.total ?? rpNights * rpRate;
+      const rpSegments  = roomBreakdown?.breakdown?.length > 0
+        ? roomBreakdown.breakdown.map((seg) => ({
+            label:       `${seg.nights} × ${fc(seg.ratePerNight)}${seg.periodName ? ` (${seg.periodName})` : ''}`,
+            subtotalFmt: fc(seg.subtotal),
+          }))
+        : null;
       const rpBfFree    = !!(property?.breakfast_included || b.room_breakfast_included);
       const rpBfChg     = !!b.breakfast_added && !rpBfFree;
       const rpBfPrice   = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
@@ -248,8 +265,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         bookingRef:  `#${b.id}`,
         roomName:    `${b.room_name ?? t('roomDeleted')} (${b.room_type ?? ''})`,
         checkInOut:  `${b.check_in_date} → ${b.check_out_date}`,
-        nightsLine:  `${rpNights} × ${fc(rpRate)}`,
+        nightsLine:      rpSegments ? '' : `${rpNights} × ${fc(rpRate)}`,
         roomSubtotalFmt: fc(rpRoom),
+        roomSegments:    rpSegments,
         breakfastFree: rpBfFree,
         breakfastLabel: t('fBreakfast'),
         breakfastComplimentary: t('coComplimentary'),
@@ -567,7 +585,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       </div>
 
       {/* Estimated total breakdown */}
-      <EstimatedTotal b={b} nights={nights} property={property} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} t={t} charges={charges} />
+      <EstimatedTotal b={b} nights={nights} property={property} fmtCurrency={fmtCurrency} currencySymbol={currencySymbol} t={t} charges={charges} roomBreakdown={roomBreakdown} />
 
       {/* Refund info — shown when a refund has been recorded */}
       {b.refund_amount > 0 && (
@@ -662,7 +680,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {showReprint && (() => {
         const rpNights   = nightsBetween(b.check_in_date, b.check_out_date);
         const rpRate     = b.price_per_night ?? 0;
-        const rpRoom     = rpNights * rpRate;
+        const rpRoom     = roomBreakdown?.total ?? rpNights * rpRate;
         const rpBfFree   = !!(property?.breakfast_included || b.room_breakfast_included);
         const rpBfChg    = !!b.breakfast_added && !rpBfFree;
         const rpBfPrice  = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
@@ -679,6 +697,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           <PrintReceipt
             booking={b} property={property}
             nights={rpNights} pricePerNight={rpRate} roomSubtotal={rpRoom}
+            roomBreakdown={roomBreakdown}
             breakfastFree={rpBfFree} breakfastCharged={rpBfChg}
             breakfastSubtotal={rpBfSub} bfPricePerPerson={rpBfPrice}
             breakfastGuests={rpBfGuests} breakfastDays={rpBfDays}
@@ -1121,17 +1140,7 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
 
 // ── EstimatedTotal ────────────────────────────────────────────────────────────
 
-function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, charges }) {
-  const [roomBreakdown, setRoomBreakdown] = useState(null);
-
-  useEffect(() => {
-    if (!b.room_id || !b.check_in_date || !b.check_out_date) return;
-    apiFetch(`/api/rooms/${b.room_id}/rate-range?check_in=${b.check_in_date}&check_out=${b.check_out_date}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(setRoomBreakdown)
-      .catch(() => {});
-  }, [b.room_id, b.check_in_date, b.check_out_date]);
-
+function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, charges, roomBreakdown }) {
   const fallbackPerNight = b.price_per_night ?? 0;
   const roomSubtotal     = roomBreakdown?.total ?? (nights * fallbackPerNight);
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
