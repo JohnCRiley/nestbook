@@ -915,6 +915,7 @@ img { display: block; max-width: 100%; }
     <nav class="nav-links">
       <a href="#features"     class="nav-link" data-i18n="nav.features">Features</a>
       <a href="#pricing"      class="nav-link" data-i18n="nav.pricing">Pricing</a>
+      <a href="/compare.html" class="nav-link" data-i18n="nav.compare">Compare plans</a>
       <a href="#languages"    class="nav-link" data-i18n="nav.languages">Languages</a>
       <a href="/blog/"        class="nav-link" data-i18n="nav.blog">Blog</a>
       <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
@@ -943,6 +944,7 @@ img { display: block; max-width: 100%; }
 <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
   <a href="#features"      class="mobile-nav-link" data-i18n="nav.features">Features</a>
   <a href="#pricing"       class="mobile-nav-link" data-i18n="nav.pricing">Pricing</a>
+  <a href="/compare.html"  class="mobile-nav-link" data-i18n="nav.compare">Compare plans</a>
   <a href="#languages"     class="mobile-nav-link" data-i18n="nav.languages">Languages</a>
   <a href="/blog/"         class="mobile-nav-link" data-i18n="nav.blog">Blog</a>
   <a href="/widget-test.html" class="mobile-nav-link" data-i18n="nav.demo">Live demo</a>
@@ -1414,6 +1416,9 @@ img { display: block; max-width: 100%; }
 
     </div>
     <p class="pricing-adaptive-note" data-i18n="pricing.note">Price shown in your local currency at checkout</p>
+    <p style="text-align:center; margin-top:18px;">
+      <a href="/compare.html" style="font-size:0.88rem; font-weight:600; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:1px; transition:color 0.12s;" onmouseover="this.style.color='var(--dark)'" onmouseout="this.style.color='var(--muted)'" data-i18n="pricing.compare">Compare all features in detail →</a>
+    </p>
   </div>
 </section>
 
@@ -1506,6 +1511,7 @@ const I18N = {
     'meta.locale':      'en_GB',
     'nav.features':  'Features',
     'nav.pricing':   'Pricing',
+    'nav.compare':   'Compare plans',
     'nav.languages': 'Languages',
     'nav.blog':      'Blog',
     'nav.demo':      'Live demo',
@@ -1604,7 +1610,8 @@ const I18N = {
     'pricing.multi.f8': 'Full guest folio with itemised checkout',
     'pricing.multi.f9': 'Dedicated charges staff portal',
     'pricing.multi.cta': 'Get started',
-    'pricing.note': 'Price shown in your local currency at checkout',
+    'pricing.note':    'Price shown in your local currency at checkout',
+    'pricing.compare': 'Compare all features in detail →',
     'cta.heading': 'Ready to simplify your bookings?',
     'cta.sub':     'Join hundreds of small property owners across Europe who\'ve ditched the spreadsheet and the paper diary.',
     'cta.btn1':    'Start for free',
@@ -1638,6 +1645,7 @@ const I18N = {
     'meta.locale':      'fr_FR',
     'nav.features':  'Fonctionnalités',
     'nav.pricing':   'Tarifs',
+    'nav.compare':   'Comparer les offres',
     'nav.languages': 'Langues',
     'nav.blog':      'Blog',
     'nav.demo':      'Démo en direct',
@@ -1736,7 +1744,8 @@ const I18N = {
     'pricing.multi.f8': 'Folio complet avec départ détaillé',
     'pricing.multi.f9': 'Portail dédié au personnel de service',
     'pricing.multi.cta': 'Commencer',
-    'pricing.note': 'Prix affiché dans votre devise locale lors du paiement',
+    'pricing.note':    'Prix affiché dans votre devise locale lors du paiement',
+    'pricing.compare': 'Comparer toutes les fonctionnalités en détail →',
     'cta.heading': 'Prêt à simplifier vos réservations ?',
     'cta.sub':     'Rejoignez des centaines de petits hébergeurs en Europe qui ont abandonné le tableur et l\'agenda papier.',
     'cta.btn1':    'Commencer gratuitement',
@@ -1770,6 +1779,7 @@ const I18N = {
     'meta.locale':      'es_ES',
     'nav.features':  'Funciones',
     'nav.pricing':   'Precios',
+    'nav.compare':   'Comparar planes',
     'nav.languages': 'Idiomas',
     'nav.blog':      'Blog',
     'nav.demo':      'Demo en vivo',
@@ -1868,7 +1878,8 @@ const I18N = {
     'pricing.multi.f8': 'Folio completo con check-out detallado',
     'pricing.multi.f9': 'Portal dedicado para personal de servicio',
     'pricing.multi.cta': 'Empezar',
-    'pricing.note': 'Precio mostrado en tu moneda local en el momento del pago',
+    'pricing.note':    'Precio mostrado en tu moneda local en el momento del pago',
+    'pricing.compare': 'Comparar todas las funciones en detalle →',
     'cta.heading': '¿Listo para simplificar tus reservas?',
     'cta.sub':     'Únete a cientos de pequeños propietarios de toda Europa que han dejado atrás la hoja de cálculo y la agenda de papel.',
     'cta.btn1':    'Empezar gratis',
@@ -1902,6 +1913,7 @@ const I18N = {
     'meta.locale':      'de_DE',
     'nav.features':  'Funktionen',
     'nav.pricing':   'Preise',
+    'nav.compare':   'Pläne vergleichen',
     'nav.languages': 'Sprachen',
     'nav.blog':      'Blog',
     'nav.demo':      'Live-Demo',
@@ -2000,7 +2012,8 @@ const I18N = {
     'pricing.multi.f8': 'Vollständiges Gästefolio mit detailliertem Check-out',
     'pricing.multi.f9': 'Dediziertes Portal für Servicepersonal',
     'pricing.multi.cta': 'Jetzt starten',
-    'pricing.note': 'Preis in Ihrer Landeswährung beim Bezahlen angezeigt',
+    'pricing.note':    'Preis in Ihrer Landeswährung beim Bezahlen angezeigt',
+    'pricing.compare': 'Alle Funktionen im Detail vergleichen →',
     'cta.heading': 'Bereit, Ihre Buchungen zu vereinfachen?',
     'cta.sub':     'Schließen Sie sich Hunderten von kleinen Unterkunftsbetreibern in Europa an, die Tabelle und Papierkalender hinter sich gelassen haben.',
     'cta.btn1':    'Kostenlos starten',
@@ -2034,6 +2047,7 @@ const I18N = {
     'meta.locale':      'nl_NL',
     'nav.features':  'Functies',
     'nav.pricing':   'Prijzen',
+    'nav.compare':   'Plannen vergelijken',
     'nav.languages': 'Talen',
     'nav.blog':      'Blog',
     'nav.demo':      'Live demo',
@@ -2132,7 +2146,8 @@ const I18N = {
     'pricing.multi.f8': 'Volledig gastenfolio met gespecificeerd uitchecken',
     'pricing.multi.f9': 'Speciaal portaal voor servicepersoneel',
     'pricing.multi.cta': 'Aan de slag',
-    'pricing.note': 'Prijs weergegeven in uw lokale valuta bij het afrekenen',
+    'pricing.note':    'Prijs weergegeven in uw lokale valuta bij het afrekenen',
+    'pricing.compare': 'Vergelijk alle functies in detail →',
     'cta.heading': 'Klaar om uw reserveringen te vereenvoudigen?',
     'cta.sub':     'Sluit u aan bij duizenden kleine accommodatie-eigenaren die de papieren agenda hebben ingeruild voor iets beters.',
     'cta.btn1':    'Gratis starten',
