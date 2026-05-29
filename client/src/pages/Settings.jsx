@@ -1432,7 +1432,7 @@ function isRatePeriodActive(p) {
 
 function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit, onDelete }) {
   return (
-    <div className="settings-card">
+    <div className="settings-card" style={{ marginTop: 16 }}>
       <div className="settings-card-header">
         <h2>{t('seasonalPricingTitle')}</h2>
         <p>{t('seasonalPricingSubtitle')}</p>
