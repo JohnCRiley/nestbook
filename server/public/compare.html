@@ -268,11 +268,30 @@ img { display: block; max-width: 100%; }
 .footer-bottom  { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
 .footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0; }
 
+/* ── Print button ─────────────────────────────────────────────────────────── */
+.print-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 20px; padding: 9px 20px; border-radius: 8px; border: none;
+  background: rgba(255,255,255,0.18); color: var(--dark); font-family: inherit;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  border: 1.5px solid var(--border);
+}
+.print-btn:hover { background: #fff; box-shadow: 0 2px 10px rgba(26,71,16,0.12); }
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .nav-links  { display: none; }
   .nav-right  { display: none; }
   .footer-inner { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Print ────────────────────────────────────────────────────────────────── */
+@media print {
+  .navbar, .print-btn, .cta-strip, .footer { display: none !important; }
+  .page-hero { padding: 32px 0 24px; border-bottom: 1px solid #ccc; }
+  .compare-section { padding: 24px 0 32px; }
+  .compare-wrapper { box-shadow: none; border: 1px solid #ccc; }
+  body { color: #000; }
 }
 @media (max-width: 600px) {
   .footer-inner  { grid-template-columns: 1fr; }
@@ -321,6 +340,10 @@ img { display: block; max-width: 100%; }
     <div class="badge">Pricing</div>
     <h1>Compare plans</h1>
     <p>Booking software built for B&amp;Bs and guest houses — choose the plan that fits your property.</p>
+    <button class="print-btn" onclick="window.print()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / Save as PDF
+    </button>
   </div>
 </section>
 

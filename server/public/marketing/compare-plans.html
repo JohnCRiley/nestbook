@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestBook — Plan Comparison</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --dark:   #1a4710;
+  --mid:    #2f771b;
+  --light:  #d9f0cc;
+  --pale:   #f0fdf4;
+  --border: #d1e8c8;
+  --text:   #1a2e14;
+  --muted:  #557a4a;
+}
+@page {
+  size: A4;
+  margin: 14mm 14mm 14mm 14mm;
+}
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: #fff;
+  font-size: 9.5pt;
+  line-height: 1.4;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 2.5px solid var(--dark);
+  margin-bottom: 14px;
+}
+.doc-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-leaf {
+  width: 28px; height: 28px;
+}
+.doc-brand-name {
+  font-size: 16pt;
+  font-weight: 900;
+  color: var(--dark);
+  letter-spacing: -0.5px;
+}
+.doc-tagline {
+  font-size: 8pt;
+  color: var(--muted);
+  text-align: right;
+  max-width: 200px;
+  line-height: 1.4;
+}
+.doc-title {
+  font-size: 13pt;
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.3px;
+  margin-bottom: 2px;
+}
+.doc-subtitle {
+  font-size: 8pt;
+  color: var(--muted);
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+.compare-table .col-feature { width: 42%; }
+.compare-table .col-free    { width: 19%; }
+.compare-table .col-pro     { width: 20%; }
+.compare-table .col-multi   { width: 19%; }
+
+/* Plan header row */
+.compare-table thead th {
+  padding: 8px 7px 10px;
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  vertical-align: bottom;
+}
+.compare-table thead th.col-feature {
+  text-align: left;
+  background: #f6faf4;
+}
+.compare-table thead th.col-free  { background: #fff; }
+.compare-table thead th.col-pro   { background: var(--pale); }
+.compare-table thead th.col-multi { background: #fff; }
+
+.th-badge {
+  display: inline-block; font-size: 6.5pt; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: 10px; margin-bottom: 4px;
+}
+.th-badge.popular { background: var(--light); color: var(--dark); }
+.th-badge.multi   { background: var(--dark);  color: #fff; }
+
+.th-name  { font-size: 10pt; font-weight: 800; color: var(--dark); line-height: 1.2; }
+.th-price { font-size: 12pt; font-weight: 900; color: var(--dark); letter-spacing: -0.3px; }
+.th-price .eur { font-size: 8pt; font-weight: 500; color: var(--muted); }
+.th-period { font-size: 7pt; color: var(--muted); margin-top: 2px; }
+.th-url { font-size: 7pt; color: var(--mid); margin-top: 6px; font-weight: 600; }
+
+/* Group rows */
+.compare-table .group-row td {
+  background: var(--dark);
+  color: rgba(255,255,255,0.9);
+  font-size: 7pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 7px;
+}
+.compare-table .group-row td.col-pro-bg { background: #143a0c; }
+
+/* Feature rows */
+.compare-table .feat-row td {
+  padding: 6px 7px;
+  border-bottom: 0.5pt solid var(--border);
+  vertical-align: middle;
+  line-height: 1.3;
+}
+.compare-table .feat-row td.col-feature {
+  color: var(--text);
+  font-weight: 500;
+  background: #fff;
+}
+.compare-table .feat-row td.col-free  { text-align: center; background: #fff; }
+.compare-table .feat-row td.col-pro   { text-align: center; background: var(--pale); }
+.compare-table .feat-row td.col-multi { text-align: center; background: #fff; }
+
+.check { color: var(--dark); font-size: 10pt; font-weight: 700; }
+.cross { color: #ccc; font-size: 9pt; }
+.cell-text { font-size: 7.5pt; color: var(--muted); font-weight: 500; }
+.cell-text.hi { color: var(--dark); font-weight: 700; }
+
+/* ── Footer strip ────────────────────────────────────────────────────────── */
+.doc-footer {
+  margin-top: 14px;
+  padding-top: 8px;
+  border-top: 1.5px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 7.5pt;
+  color: var(--muted);
+}
+.doc-footer strong { color: var(--dark); }
+.doc-cta {
+  background: var(--dark);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 8pt;
+  font-weight: 700;
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="doc-header">
+  <div>
+    <div class="doc-brand">
+      <svg class="doc-leaf" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 8C8 10 5.9 16.17 3.82 19.34C2.7 21.07 2 21 2 21C2 21 3.5 13 10 10C10 10 6 14 6 19C6 19 10.5 11 20 9C22 8.5 22 6 20 4C18 2 12 3 12 3C12 3 18 4 17 8Z" fill="#1a4710"/>
+      </svg>
+      <span class="doc-brand-name">NestBook</span>
+    </div>
+    <div style="margin-top:3px">
+      <div class="doc-title">Plan Comparison</div>
+      <div class="doc-subtitle">Every feature across all three plans — no surprises</div>
+    </div>
+  </div>
+  <div class="doc-tagline">
+    Booking software built for<br>B&Bs and guest houses<br>
+    <strong style="color:var(--dark)">nestbook.io</strong>
+  </div>
+</div>
+
+<!-- Comparison Table -->
+<table class="compare-table">
+  <colgroup>
+    <col class="col-feature">
+    <col class="col-free">
+    <col class="col-pro">
+    <col class="col-multi">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="col-feature"></th>
+
+      <th class="col-free">
+        <div class="th-name">Free</div>
+        <div class="th-price" style="font-size:10pt;font-weight:700;letter-spacing:0">Free</div>
+        <div class="th-period">Free forever</div>
+        <div class="th-url">nestbook.io/app/register</div>
+      </th>
+
+      <th class="col-pro">
+        <div><span class="th-badge popular">Most popular</span></div>
+        <div class="th-name">Pro</div>
+        <div class="th-price">£19<span class="eur"> / €22</span></div>
+        <div class="th-period">per month · 30-day free trial</div>
+        <div class="th-url">nestbook.io/app/register</div>
+      </th>
+
+      <th class="col-multi">
+        <div><span class="th-badge multi">Multi-property</span></div>
+        <div class="th-name">Multi</div>
+        <div class="th-price">£39<span class="eur"> / €45</span></div>
+        <div class="th-period">per month · 30-day free trial</div>
+        <div class="th-url">nestbook.io/app/register</div>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <!-- Rooms & bookings -->
+    <tr class="group-row">
+      <td>Rooms &amp; bookings</td><td></td><td class="col-pro-bg"></td><td></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Number of rooms</td>
+      <td class="col-free"><span class="cell-text">Up to 3</span></td>
+      <td class="col-pro"><span class="cell-text hi">Unlimited</span></td>
+      <td class="col-multi"><span class="cell-text hi">Unlimited</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Visual room calendar</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Check-in / check-out</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Guest management</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Breakfast management</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Deposit tracking</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Receipt printing</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">7 colour themes</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">iCal sync (Booking.com, Airbnb)</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Interface languages</td>
+      <td class="col-free"><span class="cell-text">EN FR ES DE NL</span></td>
+      <td class="col-pro"><span class="cell-text">EN FR ES DE NL</span></td>
+      <td class="col-multi"><span class="cell-text">EN FR ES DE NL</span></td>
+    </tr>
+
+    <!-- Direct bookings & widget -->
+    <tr class="group-row">
+      <td>Direct bookings &amp; widget</td><td></td><td class="col-pro-bg"></td><td></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Booking widget for your website</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Zero commission on bookings</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Automated confirmation emails</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+
+    <!-- Pricing & reports -->
+    <tr class="group-row">
+      <td>Pricing &amp; reports</td><td></td><td class="col-pro-bg"></td><td></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Seasonal pricing per room</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="cell-text hi">Up to 5 periods</span></td>
+      <td class="col-multi"><span class="cell-text hi">Unlimited</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Revenue reports &amp; CSV exports</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Activity log &amp; audit trail</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+
+    <!-- Multi-property & staff -->
+    <tr class="group-row">
+      <td>Multi-property &amp; staff</td><td></td><td class="col-pro-bg"></td><td></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Number of properties</td>
+      <td class="col-free"><span class="cell-text">1</span></td>
+      <td class="col-pro"><span class="cell-text">1</span></td>
+      <td class="col-multi"><span class="cell-text hi">Unlimited</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Staff accounts &amp; roles</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Room charges (bar, restaurant)</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="cross">✗</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Service categories with tax rates</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="cross">✗</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+
+    <!-- Trial & pricing -->
+    <tr class="group-row">
+      <td>Trial &amp; pricing</td><td></td><td class="col-pro-bg"></td><td></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">30-day free trial</td>
+      <td class="col-free"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">No contract, cancel any time</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">No commission on bookings</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">No hidden fees</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<!-- Footer -->
+<div class="doc-footer">
+  <div>
+    <strong>NestBook</strong> · nestbook.io ·
+    No contract · No hidden fees · Cancel any time
+  </div>
+  <a href="https://nestbook.io/app/register" class="doc-cta">
+    Start your free 30-day trial →
+  </a>
+</div>
+
+</body>
+</html>

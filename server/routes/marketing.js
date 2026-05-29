@@ -29,6 +29,7 @@ const MARKETING_FILES = {
   'car-door-portrait':    { file: 'car-door-magnetic-portrait.html',    width: '300mm', height: '450mm' },
   'car-door-portrait-fr': { file: 'car-door-magnetic-portrait-fr.html', width: '300mm', height: '450mm' },
   'car-door-landscape':   { file: 'car-door-magnetic-landscape.html',   width: '450mm', height: '300mm' },
+  'compare-plans':        { file: 'compare-plans.html',                  format: 'A4' },
 };
 
 marketingRouter.get('/marketing/pdf/:name', async (req, res) => {

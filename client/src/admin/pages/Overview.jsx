@@ -52,6 +52,12 @@ const MARKETING_MATERIALS = [
       { lang: 'EN Landscape', name: 'car-door-landscape',   href: '/marketing/car-door-magnetic-landscape.html' },
     ],
   },
+  {
+    title: 'Plan Comparison', icon: '📊', spec: 'A4 · PDF-ready comparison table',
+    variants: [
+      { lang: 'EN', name: 'compare-plans', href: '/marketing/compare-plans.html' },
+    ],
+  },
 ];
 
 export default function Overview() {
