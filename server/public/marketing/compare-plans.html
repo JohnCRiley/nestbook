@@ -139,8 +139,26 @@ body {
 .compare-table .feat-row td.col-pro   { text-align: center; background: var(--pale); }
 .compare-table .feat-row td.col-multi { text-align: center; background: #fff; }
 
-.check { color: var(--dark); font-size: 10pt; font-weight: 700; }
-.cross { color: #ccc; font-size: 9pt; }
+.check {
+  display: inline-block;
+  width: 14px; height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='2,7 5.5,11 12,3' stroke='%231a4710' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  font-size: 0;
+  vertical-align: middle;
+}
+.cross {
+  display: inline-block;
+  width: 12px; height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cline x1='2' y1='2' x2='10' y2='10' stroke='%23cccccc' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='10' y1='2' x2='2' y2='10' stroke='%23cccccc' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  font-size: 0;
+  vertical-align: middle;
+}
 .cell-text { font-size: 7.5pt; color: var(--muted); font-weight: 500; }
 .cell-text.hi { color: var(--dark); font-weight: 700; }
 
