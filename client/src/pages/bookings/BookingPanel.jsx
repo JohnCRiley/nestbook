@@ -1122,8 +1122,18 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
 // ── EstimatedTotal ────────────────────────────────────────────────────────────
 
 function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, charges }) {
-  const pricePerNight    = b.price_per_night ?? 0;
-  const roomSubtotal     = nights * pricePerNight;
+  const [roomBreakdown, setRoomBreakdown] = useState(null);
+
+  useEffect(() => {
+    if (!b.room_id || !b.check_in_date || !b.check_out_date) return;
+    apiFetch(`/api/rooms/${b.room_id}/rate-range?check_in=${b.check_in_date}&check_out=${b.check_out_date}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setRoomBreakdown)
+      .catch(() => {});
+  }, [b.room_id, b.check_in_date, b.check_out_date]);
+
+  const fallbackPerNight = b.price_per_night ?? 0;
+  const roomSubtotal     = roomBreakdown?.total ?? (nights * fallbackPerNight);
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
   const bfPrice          = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
@@ -1139,13 +1149,24 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
   const refundAmt        = parseFloat(b.refund_amount) || 0;
   const total            = Math.max(0, roomSubtotal + breakfastSub + chargesTotal - (depositPaid ? depositAmount : 0) - refundAmt);
 
-  if (!pricePerNight && !breakfastCharged && !depositPaid && !chargesTotal) return null;
+  if (!roomSubtotal && !breakfastCharged && !depositPaid && !chargesTotal) return null;
 
   return (
     <div className="panel-section">
       <div className="panel-section-title">{t('coEstimatedTotal')}</div>
       <div style={{ fontSize: '0.85rem' }}>
-        <ERow label={`${currencySymbol}${pricePerNight.toFixed(2)} × ${t('nightWord')(nights)}`} value={fmtCurrency(roomSubtotal)} />
+        {/* Room rows — one per rate-period segment */}
+        {roomBreakdown?.breakdown?.length > 0 ? (
+          roomBreakdown.breakdown.map((seg, i) => (
+            <ERow
+              key={i}
+              label={`${currencySymbol}${seg.ratePerNight.toFixed(2)} × ${t('nightWord')(seg.nights)}${seg.periodName ? ` (${seg.periodName})` : ''}`}
+              value={fmtCurrency(seg.subtotal)}
+            />
+          ))
+        ) : (
+          <ERow label={`${currencySymbol}${fallbackPerNight.toFixed(2)} × ${t('nightWord')(nights)}`} value={fmtCurrency(roomSubtotal)} />
+        )}
         {breakfastFree && <ERow label={t('fBreakfast')} value={t('coComplimentary')} valueColor="var(--tint-text)" />}
         {breakfastCharged && (
           <ERow

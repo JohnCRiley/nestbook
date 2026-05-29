@@ -49,8 +49,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const [bookedRoomIds,     setBookedRoomIds]     = useState(new Set());
   const [availabilityError, setAvailabilityError] = useState(null);
 
-  // ── Seasonal rate ─────────────────────────────────────────────────────────
-  const [seasonalRate, setSeasonalRate] = useState(null); // { rate, periodName } | null
+  // ── Rate breakdown ────────────────────────────────────────────────────────
+  const [rateBreakdown, setRateBreakdown] = useState(null); // { total, breakdown: [...] } | null
 
   // ── Submit state ───────────────────────────────────────────────────────────
   const [submitting,  setSubmitting]  = useState(false);
@@ -132,15 +132,15 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       .catch(() => {});
   }, [form.roomId, form.checkIn, form.checkOut, t]);
 
-  // ── Seasonal rate — fetched when room + check-in date both selected ──────────
+  // ── Rate breakdown — fetched when room + both dates are set ──────────────
   useEffect(() => {
-    setSeasonalRate(null);
-    if (!form.roomId || !form.checkIn) return;
-    apiFetch(`/api/rooms/${form.roomId}/rate?date=${form.checkIn}`)
+    setRateBreakdown(null);
+    if (!form.roomId || !form.checkIn || !form.checkOut || form.checkOut <= form.checkIn) return;
+    apiFetch(`/api/rooms/${form.roomId}/rate-range?check_in=${form.checkIn}&check_out=${form.checkOut}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => setSeasonalRate(data))
+      .then(setRateBreakdown)
       .catch(() => {});
-  }, [form.roomId, form.checkIn]);
+  }, [form.roomId, form.checkIn, form.checkOut]);
 
   // ── Keep bfMorning inside valid range when dates or type change ────────────
   useEffect(() => {
@@ -187,8 +187,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const availableRooms    = datesValid
     ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
     : [];
-  const roomPricePerNight = seasonalRate?.rate ?? selectedRoom?.price_per_night ?? 0;
-  const roomSubtotal      = nightsCount ? nightsCount * roomPricePerNight : 0;
+  const roomSubtotal = rateBreakdown?.total ?? (nightsCount && selectedRoom ? nightsCount * selectedRoom.price_per_night : 0);
   const bfMinMorning      = form.checkIn  ? addDays(form.checkIn, 1) : '';
   const bfMaxMorning      = form.checkOut || '';
   const bfMorningOk       = form.breakfastType === 'paid' && !!form.bfMorning
@@ -655,24 +654,39 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                       background: '#f8fafc', border: '1px solid var(--border)',
                       borderRadius: 8, overflow: 'hidden', fontSize: '0.85rem',
                     }}>
-                      <div style={{
-                        display: 'flex', justifyContent: 'space-between',
-                        padding: '7px 12px', borderBottom: '1px solid var(--border)',
-                      }}>
-                        <span style={{ color: '#64748b' }}>
-                          {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${roomPricePerNight.toFixed(2)}`)}
-                          {seasonalRate?.periodName && (
-                            <span style={{
-                              marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
-                              background: '#fef9c3', color: '#854d0e',
-                              padding: '1px 6px', borderRadius: 4,
-                            }}>
-                              {t('nbSeasonalRate')(seasonalRate.periodName)}
+                      {/* Room row(s) — one per rate-period segment when breakdown is available */}
+                      {(rateBreakdown?.breakdown ?? []).length > 0 ? (
+                        rateBreakdown.breakdown.map((seg, i) => (
+                          <div key={i} style={{
+                            display: 'flex', justifyContent: 'space-between',
+                            padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                          }}>
+                            <span style={{ color: '#64748b' }}>
+                              {t('nbPriceBreakdownRoom')(t('nightWord')(seg.nights), `${currencySymbol}${seg.ratePerNight.toFixed(2)}`)}
+                              {seg.periodName && (
+                                <span style={{
+                                  marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
+                                  background: '#fef9c3', color: '#854d0e',
+                                  padding: '1px 6px', borderRadius: 4,
+                                }}>
+                                  {t('nbSeasonalRate')(seg.periodName)}
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </span>
-                        <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
-                      </div>
+                            <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(seg.subtotal)}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                        }}>
+                          <span style={{ color: '#64748b' }}>
+                            {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${(selectedRoom?.price_per_night ?? 0).toFixed(2)}`)}
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
+                        </div>
+                      )}
                       {form.breakfastType === 'paid' && bfSubtotal > 0 && (
                         <div style={{
                           display: 'flex', justifyContent: 'space-between',

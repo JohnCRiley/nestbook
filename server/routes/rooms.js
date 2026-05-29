@@ -113,6 +113,48 @@ roomsRouter.get('/:id/rate', (req, res) => {
   }
 });
 
+// ── GET /api/rooms/:id/rate-range?check_in=YYYY-MM-DD&check_out=YYYY-MM-DD ──
+roomsRouter.get('/:id/rate-range', (req, res) => {
+  try {
+    const rid      = Number(req.params.id);
+    const checkIn  = req.query.check_in;
+    const checkOut = req.query.check_out;
+    const dateRe   = /^\d{4}-\d{2}-\d{2}$/;
+    if (!checkIn || !dateRe.test(checkIn) || !checkOut || !dateRe.test(checkOut) || checkOut <= checkIn) {
+      return res.status(400).json({ error: 'check_in and check_out (YYYY-MM-DD) are required; check_out must be after check_in' });
+    }
+    const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    function addDaysIso(iso, n) {
+      const d = new Date(iso + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    }
+
+    const breakdown = [];
+    let current = checkIn;
+    while (current < checkOut) {
+      const result     = getRateForDate(room.property_id, rid, current);
+      const rate       = result?.rate ?? room.price_per_night;
+      const periodName = result?.periodName ?? null;
+      const last       = breakdown[breakdown.length - 1];
+      if (last && last.ratePerNight === rate && last.periodName === periodName) {
+        last.nights  += 1;
+        last.subtotal = Math.round(last.nights * last.ratePerNight * 100) / 100;
+      } else {
+        breakdown.push({ periodName, nights: 1, ratePerNight: rate, subtotal: rate });
+      }
+      current = addDaysIso(current, 1);
+    }
+
+    const total = Math.round(breakdown.reduce((s, seg) => s + seg.subtotal, 0) * 100) / 100;
+    res.json({ total, breakdown });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/rooms/:id ────────────────────────────────────────────────────
 roomsRouter.get('/:id', (req, res) => {
   try {
