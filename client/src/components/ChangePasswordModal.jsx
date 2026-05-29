@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import PasswordInput from './PasswordInput.jsx';
 
@@ -45,9 +45,26 @@ export default function ChangePasswordModal({ onClose }) {
     }
   };
 
+  const hasData = !!(form.currentPassword || form.newPassword);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
+
   return (
-    <div className="modal-overlay"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className="modal" style={{ maxWidth: 420 }} role="dialog" aria-label="Change password">
 
         <div className="modal-header">

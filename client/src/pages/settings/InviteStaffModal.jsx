@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
@@ -13,6 +13,24 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const hasData = !!(form.name || form.email || form.password);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,7 +77,7 @@ export default function InviteStaffModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className="modal" role="dialog" aria-label="Add staff member">
 
         <div className="modal-header">

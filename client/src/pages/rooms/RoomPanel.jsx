@@ -46,7 +46,7 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
 
   return (
     <>
-      <div className="panel-backdrop" onClick={onClose} />
+      <div className="panel-backdrop" onClick={mode === 'view' ? onClose : undefined} />
       <aside className="detail-panel" role="dialog" aria-label="Room details">
 
         {/* Header */}

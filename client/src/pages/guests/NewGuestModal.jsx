@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useT } from '../../i18n/LocaleContext.jsx';
 
@@ -12,6 +12,24 @@ export default function NewGuestModal({ onClose, onSuccess, propertyId }) {
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const hasData = !!(form.first_name || form.last_name || form.email || form.phone || form.notes);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +65,7 @@ export default function NewGuestModal({ onClose, onSuccess, propertyId }) {
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className="modal" role="dialog" aria-label="New guest">
 
         <div className="modal-header">

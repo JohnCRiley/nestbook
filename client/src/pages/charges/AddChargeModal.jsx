@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
 
@@ -53,6 +53,23 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
   };
 
   const selectedCat = categories.find((c) => c.id === Number(form.category_id));
+  const hasData = !!(form.description || form.amount);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
 
   return (
     <div style={{
@@ -61,7 +78,7 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16,
     }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={handleBackdropClick}
     >
       <div style={{
         background: '#fff', borderRadius: 12, width: '100%', maxWidth: 440,

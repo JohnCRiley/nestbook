@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatAmenity } from './RoomPanel.jsx';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
@@ -63,9 +63,26 @@ export default function NewRoomModal({ onClose, onSuccess }) {
   };
 
   const amenityPreview = parseAmenities(form.amenities);
+  const hasData = !!(form.name || form.price_per_night);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className="modal" role="dialog" aria-label={t('moRoomTitle')}>
 
         <div className="modal-header">

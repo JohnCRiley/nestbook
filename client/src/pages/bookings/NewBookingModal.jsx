@@ -298,8 +298,15 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    const hasData = form.firstName || form.lastName || form.email || form.checkIn || form.roomId || form.notes;
+    if (hasData) setShowDiscard(true);
+    else onClose();
+  }
+
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className="modal modal--new-booking" role="dialog" aria-label={t('moNewTitle')}>
 
         {/* Header */}

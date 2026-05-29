@@ -1515,6 +1515,24 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
 
   const isEdit = !!period;
 
+  const hasData = !!(form.name || form.date_from || form.date_to || form.rate_value);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
+
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
@@ -1554,7 +1572,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, onClose, onSav
   }
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="modal-box" style={{ maxWidth: 480 }}>
         <div className="modal-header">
           <h2>{isEdit ? t('ratePeriodEdit') : t('ratePeriodAdd')}</h2>
