@@ -582,22 +582,26 @@ export default function Settings() {
           </div>
 
           {/* Widget embed code (Pro) */}
-          <PlanGate requiredPlan="pro">
-            <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
-          </PlanGate>
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro">
+              <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
+            </PlanGate>
+          </div>
 
           {/* Seasonal Pricing — rate periods (Pro+) */}
-          <PlanGate requiredPlan="pro">
-            <SeasonalPricingSection
-              t={t}
-              ratePeriods={ratePeriods}
-              currencySymbol={currencySymbol}
-              onAdd={() => { setEditingRatePeriod(null); setShowRatePeriodModal(true); }}
-              onEdit={(p) => { setEditingRatePeriod(p); setShowRatePeriodModal(true); }}
-              onDelete={(p) => setRatePeriodDeleteTarget(p)}
-              rooms={rooms}
-            />
-          </PlanGate>
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro">
+              <SeasonalPricingSection
+                t={t}
+                ratePeriods={ratePeriods}
+                currencySymbol={currencySymbol}
+                onAdd={() => { setEditingRatePeriod(null); setShowRatePeriodModal(true); }}
+                onEdit={(p) => { setEditingRatePeriod(p); setShowRatePeriodModal(true); }}
+                onDelete={(p) => setRatePeriodDeleteTarget(p)}
+                rooms={rooms}
+              />
+            </PlanGate>
+          </div>
 
           {/* Calendar Sync — iCal export per room (collapsible) */}
           {rooms.length > 0 && (
@@ -672,7 +676,7 @@ export default function Settings() {
 
           {/* Subscription */}
           {user?.role === 'owner' && (
-            <div className="settings-card">
+            <div className="settings-card" style={{ marginTop: 16 }}>
               <div className="settings-card-header">
                 <h2>{t('subscriptionTitle')}</h2>
                 <p>{t('subscriptionSubtitle')}</p>
@@ -715,7 +719,7 @@ export default function Settings() {
 
           {/* Service Categories — Multi plan, owner only */}
           {plan === 'multi' && user?.role === 'owner' && (
-            <div className="settings-card">
+            <div className="settings-card" style={{ marginTop: 16 }}>
               <div className="settings-card-header">
                 <h2>{t('chargesCatTitle')}</h2>
                 <p>{t('chargesSubtitle')}</p>
@@ -891,7 +895,7 @@ export default function Settings() {
           )}
 
           {/* Access & Roles */}
-          <div className="settings-card">
+          <div className="settings-card" style={{ marginTop: 16 }}>
             <div className="settings-card-header">
               <h2>{t('access')}</h2>
               <p>{t('staffSubtitle')}</p>
@@ -929,7 +933,7 @@ export default function Settings() {
 
           {/* Manage Subscription — destructive actions accordion */}
           {user?.role === 'owner' && (
-            <div className="danger-zone-card">
+            <div className="danger-zone-card" style={{ marginTop: 16 }}>
               <button
                 className="danger-zone-toggle"
                 onClick={() => setDeleteAccountOpen((o) => !o)}
@@ -1434,7 +1438,7 @@ function isRatePeriodActive(p) {
 
 function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit, onDelete }) {
   return (
-    <div className="settings-card" style={{ marginTop: 16 }}>
+    <div className="settings-card">
       <div className="settings-card-header">
         <h2>{t('seasonalPricingTitle')}</h2>
         <p>{t('seasonalPricingSubtitle')}</p>
