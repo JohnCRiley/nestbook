@@ -767,9 +767,9 @@ export default function Outreach() {
                     </th>
                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Source</th>
+                    <th className="col-hide-mobile" style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Source</th>
                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Added</th>
+                    <th className="col-hide-mobile" style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Added</th>
                     <th style={{ padding: '8px 12px' }} />
                   </tr>
                 </thead>
@@ -791,9 +791,9 @@ export default function Outreach() {
                         {p.notes && <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 2 }}>{p.notes.slice(0, 50)}{p.notes.length > 50 ? '…' : ''}</div>}
                       </td>
                       <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
-                      <td style={{ padding: '8px 12px' }}><SourceBadge source={p.source} /></td>
+                      <td className="col-hide-mobile" style={{ padding: '8px 12px' }}><SourceBadge source={p.source} /></td>
                       <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
-                      <td style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.78rem' }}>
+                      <td className="col-hide-mobile" style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.78rem' }}>
                         {new Date(p.created_at).toLocaleDateString()}
                         {p.follow_up_date && <div style={{ color: '#92400e', fontWeight: 600 }}>Follow-up: {new Date(p.follow_up_date).toLocaleDateString()}</div>}
                         {p.converted_at && <div style={{ color: '#166534', fontWeight: 600 }}>Converted!</div>}

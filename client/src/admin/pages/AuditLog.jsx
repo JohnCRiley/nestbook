@@ -128,8 +128,17 @@ export default function AuditLog() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.81rem' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  {['When', 'Property', 'User', 'Action', 'Cat', 'Target', 'Detail', 'IP'].map((h) => (
-                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>{h}</th>
+                  {[
+                    { label: 'When' },
+                    { label: 'Property', hide: 'col-hide-mobile' },
+                    { label: 'User' },
+                    { label: 'Action' },
+                    { label: 'Cat' },
+                    { label: 'Target',  hide: 'col-hide-mobile' },
+                    { label: 'Detail',  hide: 'col-hide-mobile' },
+                    { label: 'IP',      hide: 'col-hide-mobile' },
+                  ].map(({ label, hide }) => (
+                    <th key={label} className={hide} style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>{label}</th>
                   ))}
                 </tr>
               </thead>
@@ -139,7 +148,7 @@ export default function AuditLog() {
                     <td style={{ padding: '7px 10px', color: '#94a3b8', whiteSpace: 'nowrap', fontSize: '0.77rem' }}>
                       {formatTs(log.timestamp)}
                     </td>
-                    <td style={{ padding: '7px 10px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="col-hide-mobile" style={{ padding: '7px 10px', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {log.property_name ?? (log.property_id ? `#${log.property_id}` : '—')}
                     </td>
                     <td style={{ padding: '7px 10px' }}>
@@ -157,13 +166,13 @@ export default function AuditLog() {
                         {log.category}
                       </span>
                     </td>
-                    <td style={{ padding: '7px 10px', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="col-hide-mobile" style={{ padding: '7px 10px', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {log.target_name ?? (log.target_id ? `#${log.target_id}` : '—')}
                     </td>
-                    <td style={{ padding: '7px 10px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64748b' }}>
+                    <td className="col-hide-mobile" style={{ padding: '7px 10px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64748b' }}>
                       {log.detail ?? '—'}
                     </td>
-                    <td style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: '0.72rem', color: '#94a3b8' }}>
+                    <td className="col-hide-mobile" style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: '0.72rem', color: '#94a3b8' }}>
                       {log.ip_address ?? '—'}
                     </td>
                   </tr>

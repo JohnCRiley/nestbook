@@ -278,11 +278,82 @@ img { display: block; max-width: 100%; }
 }
 .print-btn:hover { background: #fff; box-shadow: 0 2px 10px rgba(26,71,16,0.12); }
 
+/* ── Mobile plan cards (shown ≤ 767px, hidden on desktop/tablet) ──────────── */
+.mobile-plan-cards { display: none; }
+
+.mpc-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.mpc-card:last-child { margin-bottom: 0; }
+
+.mpc-header {
+  padding: 20px 20px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.mpc-header.pro-header { background: var(--pale); }
+.mpc-header.free-header, .mpc-header.multi-header { background: #fff; }
+
+.mpc-badge {
+  display: inline-block; font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 3px 10px; border-radius: 12px; margin-bottom: 8px;
+}
+.mpc-badge.popular  { background: var(--light); color: var(--dark); }
+.mpc-badge.multi    { background: var(--dark);  color: #fff; }
+
+.mpc-plan-name  { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin-bottom: 4px; }
+.mpc-price      { font-size: 1.6rem;  font-weight: 900; color: var(--dark); letter-spacing: -0.4px; line-height: 1; }
+.mpc-price .eur { font-size: 0.9rem;  font-weight: 500; color: var(--muted); }
+.mpc-period     { font-size: 0.72rem; color: var(--muted); margin: 4px 0 14px; }
+.mpc-cta {
+  display: block; padding: 9px 18px; border-radius: 8px;
+  font-size: 0.82rem; font-weight: 700; text-align: center;
+  transition: all 0.15s; font-family: inherit; border: 2px solid transparent;
+  cursor: pointer; white-space: nowrap;
+}
+.mpc-cta.cta-free  { background: transparent; color: var(--dark); border-color: var(--border); }
+.mpc-cta.cta-pro   { background: var(--mid); color: #fff; border-color: var(--mid); }
+.mpc-cta.cta-multi { background: var(--dark); color: #fff; border-color: var(--dark); }
+
+.mpc-features { padding: 16px 20px; background: #fff; }
+.mpc-group-label {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--muted); margin: 14px 0 8px;
+}
+.mpc-group-label:first-child { margin-top: 0; }
+.mpc-feat-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem;
+}
+.mpc-feat-row:last-child { border-bottom: none; }
+.mpc-feat-icon { flex-shrink: 0; width: 16px; height: 16px; }
+.mpc-feat-icon.check-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='2,7 5.5,11 12,3' stroke='%231a4710' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+.mpc-feat-icon.cross-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cline x1='2' y1='2' x2='10' y2='10' stroke='%23cccccc' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='10' y1='2' x2='2' y2='10' stroke='%23cccccc' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+.mpc-feat-label { flex: 1; color: var(--text); }
+.mpc-feat-value { color: var(--muted); font-size: 0.78rem; font-weight: 500; }
+.mpc-feat-value.accent { color: var(--dark); font-weight: 700; }
+
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .nav-links  { display: none; }
   .nav-right  { display: none; }
   .footer-inner { grid-template-columns: 1fr 1fr; }
+}
+
+@media screen and (max-width: 767px) {
+  .compare-wrapper    { display: none; }
+  .mobile-plan-cards  { display: block; }
 }
 
 /* ── Print ────────────────────────────────────────────────────────────────── */
@@ -588,6 +659,77 @@ img { display: block; max-width: 100%; }
     <p style="text-align:center; font-size:0.82rem; color:var(--muted); margin-top:16px;">
       Price shown in your local currency at checkout &middot; All plans include a 30-day money-back guarantee on paid tiers
     </p>
+
+    <!-- ── Mobile plan cards (stacked, ≤ 767px only) ─────────────────────── -->
+    <div class="mobile-plan-cards">
+
+      <!-- Free -->
+      <div class="mpc-card">
+        <div class="mpc-header free-header">
+          <div class="mpc-plan-name">Free</div>
+          <div class="mpc-price" style="font-size:1.3rem;font-weight:700;letter-spacing:0">Free</div>
+          <div class="mpc-period">Free forever</div>
+          <a href="/app/register" class="mpc-cta cta-free">Get started</a>
+        </div>
+        <div class="mpc-features">
+          <div class="mpc-group-label">Rooms &amp; bookings</div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Visual room calendar</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Rooms</span><span class="mpc-feat-value accent">Up to 3</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Guest management</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">iCal sync (Booking.com, Airbnb)</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">5 interface languages</span></div>
+          <div class="mpc-group-label">Not included</div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Booking widget</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Seasonal pricing</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Revenue reports</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Staff accounts</span></div>
+        </div>
+      </div>
+
+      <!-- Pro -->
+      <div class="mpc-card">
+        <div class="mpc-header pro-header">
+          <div><span class="mpc-badge popular">Most popular</span></div>
+          <div class="mpc-plan-name">Pro</div>
+          <div class="mpc-price">£19<span class="eur"> / €22</span></div>
+          <div class="mpc-period">per month, billed monthly</div>
+          <a href="/app/register" class="mpc-cta cta-pro">Start free trial</a>
+        </div>
+        <div class="mpc-features">
+          <div class="mpc-group-label">Everything in Free, plus</div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Rooms</span><span class="mpc-feat-value accent">Unlimited</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Booking widget for your website</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Zero commission on bookings</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Automated confirmation emails</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Seasonal pricing</span><span class="mpc-feat-value accent">Up to 5 periods</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Revenue reports &amp; CSV exports</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Activity log &amp; audit trail</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Staff accounts &amp; roles</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">30-day free trial</span></div>
+        </div>
+      </div>
+
+      <!-- Multi -->
+      <div class="mpc-card">
+        <div class="mpc-header multi-header">
+          <div><span class="mpc-badge multi">Multi-property</span></div>
+          <div class="mpc-plan-name">Multi</div>
+          <div class="mpc-price">£39<span class="eur"> / €45</span></div>
+          <div class="mpc-period">per month, billed monthly</div>
+          <a href="/app/register" class="mpc-cta cta-multi">Get started</a>
+        </div>
+        <div class="mpc-features">
+          <div class="mpc-group-label">Everything in Pro, plus</div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Properties</span><span class="mpc-feat-value accent">Unlimited</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Seasonal pricing periods</span><span class="mpc-feat-value accent">Unlimited</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Room charges (bar, restaurant)</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Service categories with tax rates</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Multi-property reports</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">30-day free trial</span></div>
+        </div>
+      </div>
+
+    </div><!-- /.mobile-plan-cards -->
 
   </div>
 </section>

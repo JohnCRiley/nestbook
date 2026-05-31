@@ -607,7 +607,7 @@ export default function Revenue() {
 
       {/* ── MRR section ──────────────────────────────────────────────────── */}
       <div className="admin-section-title">Monthly Recurring Revenue</div>
-      <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="admin-stats-grid">
         <div className="admin-stat-card accent">
           <div className="admin-stat-value">€{mrr}</div>
           <div className="admin-stat-label">Current MRR</div>
@@ -636,7 +636,7 @@ export default function Revenue() {
 
       {/* ── Growth metrics ───────────────────────────────────────────────── */}
       <div className="admin-section-title" style={{ marginTop: 32 }}>Growth Metrics</div>
-      <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="admin-stat-value">{conversionRate}%</div>
           <div className="admin-stat-label">Conversion rate (last 30 days)</div>
@@ -667,7 +667,7 @@ export default function Revenue() {
 
       {/* ── Stripe / billing section ─────────────────────────────────────── */}
       <div className="admin-section-title" style={{ marginTop: 32 }}>Billing Status</div>
-      <div className="admin-stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="admin-stats-grid">
         <div className={`admin-stat-card${trialsEndingSoon > 0 ? ' accent-warn' : ''}`}>
           <div className="admin-stat-value">{trialsEndingSoon}</div>
           <div className="admin-stat-label">Subscriptions ending in 7 days</div>
