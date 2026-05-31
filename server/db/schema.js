@@ -802,9 +802,21 @@ John`
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_period_rooms ON rate_period_rooms(rate_period_id)`);
 
   // Migration: custom booking page slug (clean URL for Facebook / external links)
-  try { db.exec(`ALTER TABLE properties ADD COLUMN booking_slug TEXT UNIQUE`); } catch { /* already exists */ }
+  // Note: SQLite does not allow UNIQUE on ALTER TABLE ADD COLUMN — add the column
+  // first, then enforce uniqueness via a separate index.
 
-  // Backfill any properties that don't yet have a slug
+  // Step 1 — Add column (safe to run on every start; ignore if already exists)
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN booking_slug TEXT`);
+    console.log('✓ Added booking_slug column to properties');
+  } catch (e) {
+    if (!e.message.includes('duplicate column name')) throw e;
+  }
+
+  // Step 2 — Ensure the unique index exists (idempotent)
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_properties_booking_slug ON properties(booking_slug)`);
+
+  // Step 3 — Backfill any properties that don't yet have a slug
   const propertiesWithoutSlug = db.prepare('SELECT id, name FROM properties WHERE booking_slug IS NULL').all();
   for (const p of propertiesWithoutSlug) {
     const slug = uniqueSlug(db, generateSlug(p.name));
