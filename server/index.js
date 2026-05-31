@@ -101,6 +101,11 @@ app.use('/api/activity-log', activityLogRouter);
 app.use('/api/charges',      chargesRouter);
 app.use('/api/rate-periods', ratePeriodsRouter);
 
+// ── Standalone per-property booking page — for Facebook "Book Now" etc. ──────
+app.get('/book/:propertyId', (req, res) => {
+  res.sendFile(join(__dirname, 'public', 'book.html'));
+});
+
 // ── React SPA catch-all — must be after all API routes ───────────────────────
 // Any /app/* path that isn't a static file is handed to React Router.
 app.get('/app/*', (req, res) => {

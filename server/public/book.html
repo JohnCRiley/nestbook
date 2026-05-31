@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book your stay</title>
+<meta name="robots" content="noindex, nofollow">
+
+<!-- Open Graph — property name injected by inline script -->
+<meta id="meta-og-title"       property="og:title"       content="Book your stay">
+<meta id="meta-og-desc"        property="og:description" content="Book your stay — secure direct booking, no fees.">
+<meta                          property="og:type"         content="website">
+<meta                          property="og:image"        content="https://nestbook.io/og-image.png">
+<meta                          property="og:image:width"  content="1200">
+<meta                          property="og:image:height" content="630">
+
+<!-- Twitter Card -->
+<meta name="twitter:card"  content="summary_large_image">
+<meta id="meta-tw-title"   name="twitter:title"       content="Book your stay">
+<meta id="meta-tw-desc"    name="twitter:description" content="Book your stay — secure direct booking, no fees.">
+<meta                      name="twitter:image"       content="https://nestbook.io/og-image.png">
+
+<!-- Theme colour for mobile browser chrome — updated by JS -->
+<meta id="meta-theme-color" name="theme-color" content="#1a4710">
+
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand:       #2f771b;
+  --brand-dark:  #1a4710;
+  --brand-light: #d9f0cc;
+}
+
+html { height: 100%; }
+body {
+  min-height: 100dvh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--brand-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px 56px;
+  color: rgba(255,255,255,0.9);
+}
+
+.page-center {
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+}
+
+/* Logo */
+.logo-img {
+  width: 60px; height: 60px;
+  border-radius: 15px;
+  display: block;
+  margin: 0 auto 22px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+
+/* Property name */
+.property-name {
+  font-size: clamp(1.3rem, 5vw, 1.7rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+  min-height: 2rem;
+}
+
+/* Tagline */
+.book-tagline {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.55);
+  font-weight: 400;
+  margin-bottom: 28px;
+  letter-spacing: 0.2px;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 28px; height: 28px;
+  border: 2.5px solid rgba(255,255,255,0.15);
+  border-top-color: rgba(255,255,255,0.65);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Fallback "Book Now" button — shown after modal first opens so users
+   can re-open the widget if they accidentally close the modal. */
+.open-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 20px auto 0;
+  padding: 14px 28px;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: background 0.15s, transform 0.1s;
+  letter-spacing: 0.1px;
+}
+.open-btn:hover {
+  background: color-mix(in srgb, var(--brand) 75%, black);
+  transform: translateY(-1px);
+  box-shadow: 0 7px 24px rgba(0,0,0,0.35);
+}
+.open-btn svg { flex-shrink: 0; }
+
+.hint-text {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.3);
+  margin-top: 14px;
+  min-height: 18px;
+}
+
+/* NestBook branding — fixed to foot of screen */
+.nb-branding {
+  position: fixed;
+  bottom: 12px;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.18);
+  pointer-events: none;
+  user-select: none;
+}
+.nb-branding a {
+  color: rgba(255,255,255,0.3);
+  text-decoration: none;
+  pointer-events: auto;
+}
+.nb-branding a:hover { color: rgba(255,255,255,0.55); }
+
+/* Ensure the widget modal sits over our background */
+#nb-root .nb-trigger {
+  /* Keep the floating button but align it with our dark background */
+  bottom: 32px; right: 24px;
+}
+@media (max-width: 540px) {
+  #nb-root .nb-trigger {
+    bottom: 24px; right: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="page-center">
+  <img src="/icon.svg" class="logo-img" alt="NestBook">
+  <div id="property-name" class="property-name"></div>
+  <div class="book-tagline">Book your stay</div>
+  <div class="spinner" id="spinner"></div>
+  <button class="open-btn" id="open-btn" onclick="window.__nbOpen && window.__nbOpen()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Book Now
+  </button>
+  <p id="hint-text" class="hint-text"></p>
+</div>
+
+<footer class="nb-branding">
+  Powered by <a href="https://nestbook.io" target="_blank" rel="noopener">NestBook</a>
+</footer>
+
+<script>
+(function () {
+  // ── Extract property ID from pathname: /book/14 ─────────────────────────────
+  var segments = window.location.pathname.replace(/\/+$/, '').split('/');
+  var PROPERTY_ID = segments[segments.length - 1];
+
+  if (!PROPERTY_ID || !/^\d+$/.test(PROPERTY_ID)) {
+    document.getElementById('property-name').textContent = 'Booking unavailable';
+    document.getElementById('hint-text').textContent     = 'No property specified in the URL.';
+    document.getElementById('spinner').style.display     = 'none';
+    return;
+  }
+
+  // ── Theme palettes — must stay in sync with widget.js THEME_COLOURS ─────────
+  var THEMES = {
+    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
+    ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
+    ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
+    sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6' },
+    lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
+    charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
+  };
+
+  function applyTheme(t) {
+    var p = THEMES[t] || THEMES.forest;
+    var r = document.documentElement.style;
+    r.setProperty('--brand',       p.brand);
+    r.setProperty('--brand-dark',  p.dark);
+    r.setProperty('--brand-light', p.light);
+    document.getElementById('meta-theme-color').setAttribute('content', p.dark);
+  }
+
+  // ── Helper: poll DOM until an element exists, then run callback ─────────────
+  function waitFor(selector, cb, maxMs) {
+    var t0    = Date.now();
+    var timer = setInterval(function () {
+      var el = document.querySelector(selector);
+      if (el) { clearInterval(timer); cb(el); return; }
+      if (Date.now() - t0 > (maxMs || 3000)) { clearInterval(timer); }
+    }, 80);
+  }
+
+  // ── Auto-open helper — exposed globally so the re-open button can call it ───
+  window.__nbOpen = function () {
+    var trigger = document.querySelector('.nb-trigger');
+    if (trigger) trigger.click();
+  };
+
+  // ── Fetch property name + theme, then inject widget ─────────────────────────
+  fetch('/api/widget/property?property_id=' + PROPERTY_ID)
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      var name  = (data && data.name)  || '';
+      var theme = (data && data.theme) || 'forest';
+
+      // Populate property name
+      document.getElementById('property-name').textContent = name;
+      if (name) {
+        document.title = name + ' — Book your stay';
+        var ogT = 'Book your stay at ' + name;
+        var ogD = 'Book directly at ' + name + ' — secure, no booking fees.';
+        document.getElementById('meta-og-title').setAttribute('content', ogT);
+        document.getElementById('meta-og-desc').setAttribute('content', ogD);
+        document.getElementById('meta-tw-title').setAttribute('content', ogT);
+        document.getElementById('meta-tw-desc').setAttribute('content', ogD);
+      }
+
+      // Apply theme colours to page background etc.
+      applyTheme(theme);
+
+      // Inject widget script with the correct property ID
+      var script = document.createElement('script');
+      script.src = '/widget.js';
+      script.setAttribute('data-property-id', PROPERTY_ID);
+      document.head.appendChild(script);
+
+      // Wait for the widget's trigger button, then auto-open the modal
+      waitFor('.nb-trigger', function (trigger) {
+        trigger.click();
+        document.getElementById('spinner').style.display = 'none';
+        // Show re-open button after a short delay (in case modal is closed)
+        setTimeout(function () {
+          var btn = document.getElementById('open-btn');
+          btn.style.display = 'inline-flex';
+        }, 600);
+      }, 3000);
+    })
+    .catch(function () {
+      document.getElementById('property-name').textContent = '';
+      document.getElementById('hint-text').textContent     = 'Unable to load this booking page. Please try again.';
+      document.getElementById('spinner').style.display     = 'none';
+    });
+})();
+</script>
+
+</body>
+</html>

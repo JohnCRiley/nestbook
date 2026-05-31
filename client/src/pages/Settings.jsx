@@ -588,6 +588,13 @@ export default function Settings() {
             </PlanGate>
           </div>
 
+          {/* Facebook Booking Button (Pro) */}
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro">
+              <FacebookBookingSection propertyId={activeProperty?.id} />
+            </PlanGate>
+          </div>
+
           {/* Seasonal Pricing — rate periods (Pro+) */}
           <div style={{ marginTop: 16 }}>
             <PlanGate requiredPlan="pro">
@@ -1180,6 +1187,78 @@ function EmbedSection({ snippet, t, propertyId }) {
             <span className="embed-step-num">3</span>
             <span>{t('embedStep3')}</span>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── FacebookBookingSection ────────────────────────────────────────────────────
+
+function FacebookBookingSection({ propertyId }) {
+  const [copied, setCopied] = useState(false);
+  const bookingUrl = `https://nestbook.io/book/${propertyId}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(bookingUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="embed-section">
+      <div className="embed-header">
+        <h2>Facebook Booking Button</h2>
+        <p>Link Facebook's "Book Now" button directly to your booking page</p>
+      </div>
+      <div className="embed-body">
+        <p className="embed-desc" style={{ marginBottom: 14 }}>
+          Your direct booking page — share this URL anywhere guests can book without creating an account:
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          <code style={{
+            flex: '1 1 200px', padding: '9px 13px', borderRadius: 7,
+            background: '#f8fafc', border: '1px solid #e2e8f0',
+            fontSize: '0.82rem', fontFamily: 'monospace',
+            color: '#1e293b', wordBreak: 'break-all',
+          }}>
+            {bookingUrl}
+          </code>
+          <button
+            onClick={handleCopy}
+            style={{
+              padding: '9px 16px', borderRadius: 7,
+              border: '1px solid #e2e8f0',
+              background: copied ? 'var(--tint-bg)' : '#fff',
+              color: copied ? 'var(--tint-text)' : '#64748b',
+              fontWeight: 600, fontSize: '0.82rem',
+              cursor: 'pointer', fontFamily: 'inherit',
+              whiteSpace: 'nowrap', flexShrink: 0,
+              transition: 'all 0.15s',
+            }}
+          >
+            {copied ? '✓ Copied!' : 'Copy URL'}
+          </button>
+        </div>
+
+        <div className="embed-steps">
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+            To add a Book Now button to your Facebook page:
+          </div>
+          {[
+            'Go to your Facebook business page.',
+            <span key="s2">Click <strong>"Add a button"</strong> below your cover photo.</span>,
+            <span key="s3">Select <strong>"Book Now"</strong> or <strong>"Book with you"</strong>.</span>,
+            'Paste your booking page URL above.',
+            <span key="s5">Click <strong>Save</strong>.</span>,
+          ].map((step, i) => (
+            <div key={i} className="embed-step">
+              <span className="embed-step-num">{i + 1}</span>
+              <span>{step}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
