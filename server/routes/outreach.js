@@ -190,11 +190,20 @@ outreachRouter.post('/send', async (req, res) => {
     const p = db.prepare(`SELECT * FROM prospects WHERE id = ?`).get(pid);
     if (!p || p.status === 'unsubscribed') { results.push({ id: pid, ok: false, reason: 'unsubscribed or not found' }); continue; }
 
-    // Replace template variables
-    const finalBody = body
-      .replace(/\{\{name\}\}/g, p.name)
-      .replace(/\{\{company\}\}/g, p.company || '')
-      .replace(/\{\{email\}\}/g, p.email);
+    // Apply merge fields to both subject and body
+    const substitutions = {
+      '{{name}}':       p.name || '',
+      '{{company}}':    p.company || '',
+      '{{first_name}}': (p.name || '').split(' ')[0] || '',
+      '{{email}}':      p.email || '',
+    };
+    let finalSubject = subject;
+    let finalBody    = body;
+    Object.entries(substitutions).forEach(([key, value]) => {
+      const regex = new RegExp(key.replace(/[{}]/g, '\\$&'), 'g');
+      finalSubject = finalSubject.replace(regex, value);
+      finalBody    = finalBody.replace(regex, value);
+    });
 
     // Convert plain text body to HTML: paragraphs separated by blank lines
     const bodyHtml = finalBody
@@ -254,10 +263,10 @@ outreachRouter.post('/send', async (req, res) => {
 </html>`;
 
     try {
-      await sendOutreachEmail({ to: p.email, subject, html: htmlBody });
+      await sendOutreachEmail({ to: p.email, subject: finalSubject, html: htmlBody });
       db.prepare(
         `INSERT INTO prospect_emails (prospect_id, campaign_id, template_id, subject, body) VALUES (?, ?, ?, ?, ?)`
-      ).run(pid, campaign_id || null, template_id || null, subject, finalBody);
+      ).run(pid, campaign_id || null, template_id || null, finalSubject, finalBody);
 
       const days = (Number.isInteger(followUpDays) && followUpDays > 0) ? followUpDays : 7;
       const followUpDate = new Date();

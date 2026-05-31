@@ -292,7 +292,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
         </div>
 
         <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 10px' }}>
-          Use {'{{name}}'}, {'{{company}}'} for personalisation
+          Available in subject and body: {'{{name}}'} {'{{company}}'} {'{{first_name}}'}
         </p>
 
         <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%', marginBottom: 10 }} />
