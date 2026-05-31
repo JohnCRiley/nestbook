@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
+import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 
 export const propertiesRouter = Router();
 
@@ -128,6 +129,11 @@ propertiesRouter.post('/', (req, res) => {
       locale         ?? 'en',
       req.user.userId
     );
+
+    // Auto-generate booking slug for the new property
+    const newId   = result.lastInsertRowid;
+    const newSlug = uniqueSlug(db, generateSlug(name));
+    db.prepare('UPDATE properties SET booking_slug = ? WHERE id = ?').run(newSlug, newId);
 
     const created = db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(created);
@@ -264,6 +270,43 @@ propertiesRouter.delete('/:id', (req, res) => {
       targetId: pid,
       ipAddress: getIp(req),
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PATCH /api/properties/:id/slug ────────────────────────────────────────────
+// Updates the custom booking page slug. Owners only.
+propertiesRouter.patch('/:id/slug', (req, res) => {
+  try {
+    const pid = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, pid)) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+    if (req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'Only account owners can change the booking URL.' });
+    }
+
+    const { booking_slug } = req.body;
+    if (!booking_slug) {
+      return res.status(400).json({ error: 'booking_slug is required.' });
+    }
+    if (!/^[a-z0-9-]+$/.test(booking_slug)) {
+      return res.status(400).json({ error: 'Slug may only contain lowercase letters, numbers and hyphens.' });
+    }
+    if (booking_slug.length > 60) {
+      return res.status(400).json({ error: 'Slug must be 60 characters or fewer.' });
+    }
+
+    // Uniqueness check — allow the property to keep its own existing slug
+    const conflict = db.prepare('SELECT id FROM properties WHERE booking_slug = ?').get(booking_slug);
+    if (conflict && Number(conflict.id) !== pid) {
+      return res.status(409).json({ error: 'This URL is already taken. Please choose a different one.' });
+    }
+
+    db.prepare('UPDATE properties SET booking_slug = ? WHERE id = ?').run(booking_slug, pid);
+    const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(pid);
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

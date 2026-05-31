@@ -24,6 +24,7 @@ import { reportsRouter }             from './routes/reports.js';
 import { activityLogRouter }         from './routes/activityLog.js';
 import { chargesRouter }             from './routes/charges.js';
 import { marketingRouter }           from './routes/marketing.js';
+import { bookingPageRouter }         from './routes/bookingPage.js';
 import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { sendDowngradeEmail }        from './email/emailService.js';
 
@@ -101,10 +102,8 @@ app.use('/api/activity-log', activityLogRouter);
 app.use('/api/charges',      chargesRouter);
 app.use('/api/rate-periods', ratePeriodsRouter);
 
-// ── Standalone per-property booking page — for Facebook "Book Now" etc. ──────
-app.get('/book/:propertyId', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'book.html'));
-});
+// ── Standalone per-property booking page — slug or numeric ID ────────────────
+app.use('/book', bookingPageRouter);
 
 // ── React SPA catch-all — must be after all API routes ───────────────────────
 // Any /app/* path that isn't a static file is handed to React Router.

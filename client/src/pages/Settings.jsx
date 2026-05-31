@@ -591,7 +591,10 @@ export default function Settings() {
           {/* Facebook Booking Button (Pro) */}
           <div style={{ marginTop: 16 }}>
             <PlanGate requiredPlan="pro">
-              <FacebookBookingSection propertyId={activeProperty?.id} />
+              <FacebookBookingSection
+                property={property}
+                onSaved={(updated) => { setProperty(updated); setContextProperty(updated); updatePropertyInList(updated); }}
+              />
             </PlanGate>
           </div>
 
@@ -1195,14 +1198,59 @@ function EmbedSection({ snippet, t, propertyId }) {
 
 // ── FacebookBookingSection ────────────────────────────────────────────────────
 
-function FacebookBookingSection({ propertyId }) {
-  const [copied, setCopied] = useState(false);
-  const bookingUrl = `https://nestbook.io/book/${propertyId}`;
+function FacebookBookingSection({ property, onSaved }) {
+  const [slug,       setSlug]       = useState(property?.booking_slug ?? '');
+  const [slugError,  setSlugError]  = useState('');
+  const [slugSaving, setSlugSaving] = useState(false);
+  const [slugSaved,  setSlugSaved]  = useState(false);
+  const [urlCopied,  setUrlCopied]  = useState(false);
 
-  const handleCopy = () => {
+  // Sync slug from property when it changes (e.g. after parent re-loads)
+  useEffect(() => {
+    setSlug(property?.booking_slug ?? '');
+  }, [property?.booking_slug]);
+
+  const bookingUrl  = `https://nestbook.io/book/${slug || property?.booking_slug || property?.id}`;
+  const slugChanged = slug !== (property?.booking_slug ?? '');
+
+  const handleSlugChange = (e) => {
+    const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setSlug(raw);
+    setSlugError('');
+    setSlugSaved(false);
+  };
+
+  const handleSaveSlug = async () => {
+    if (!slug) { setSlugError('URL cannot be empty.'); return; }
+    if (!/^[a-z0-9-]+$/.test(slug)) { setSlugError('Use lowercase letters, numbers and hyphens only.'); return; }
+    if (slug.length > 60) { setSlugError('Maximum 60 characters.'); return; }
+    setSlugSaving(true);
+    setSlugError('');
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/slug`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_slug: slug }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSlugError(data.error ?? 'Could not save. Please try again.');
+      } else {
+        const updated = await res.json();
+        setSlugSaved(true);
+        setTimeout(() => setSlugSaved(false), 3000);
+        onSaved && onSaved(updated);
+      }
+    } catch {
+      setSlugError('Network error. Please try again.');
+    }
+    setSlugSaving(false);
+  };
+
+  const handleCopyUrl = () => {
     navigator.clipboard.writeText(bookingUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
     });
   };
 
@@ -1213,36 +1261,81 @@ function FacebookBookingSection({ propertyId }) {
         <p>Link Facebook's "Book Now" button directly to your booking page</p>
       </div>
       <div className="embed-body">
-        <p className="embed-desc" style={{ marginBottom: 14 }}>
-          Your direct booking page — share this URL anywhere guests can book without creating an account:
-        </p>
 
+        {/* ── Slug editor ── */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+            Your booking page URL
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0 }}>
+            <span style={{
+              padding: '8px 11px', background: '#f1f5f9', border: '1px solid #e2e8f0',
+              borderRight: 'none', borderRadius: '7px 0 0 7px',
+              fontSize: '0.82rem', color: '#64748b', whiteSpace: 'nowrap', flexShrink: 0,
+            }}>
+              nestbook.io/book/
+            </span>
+            <input
+              value={slug}
+              onChange={handleSlugChange}
+              maxLength={60}
+              placeholder="your-property-name"
+              style={{
+                flex: '1 1 120px', minWidth: 80, padding: '8px 10px',
+                border: `1px solid ${slugError ? '#fca5a5' : '#e2e8f0'}`,
+                borderRight: 'none', fontSize: '0.82rem', fontFamily: 'monospace',
+                outline: 'none', background: '#fff', color: '#1e293b',
+              }}
+            />
+            <button
+              onClick={handleSaveSlug}
+              disabled={slugSaving || !slugChanged}
+              style={{
+                padding: '8px 16px', border: '1px solid',
+                borderColor: slugSaved ? 'var(--accent)' : slugChanged ? 'var(--accent)' : '#e2e8f0',
+                background: slugSaved ? 'var(--tint-bg)' : slugChanged ? 'var(--accent)' : '#f8fafc',
+                color: slugSaved ? 'var(--tint-text)' : slugChanged ? '#fff' : '#94a3b8',
+                fontWeight: 600, fontSize: '0.82rem',
+                cursor: (slugSaving || !slugChanged) ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', borderRadius: '0 7px 7px 0',
+                transition: 'all 0.15s', whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+            >
+              {slugSaving ? 'Saving…' : slugSaved ? '✓ Saved' : 'Save'}
+            </button>
+          </div>
+          {slugError && (
+            <div style={{ marginTop: 5, fontSize: '0.77rem', color: '#dc2626' }}>{slugError}</div>
+          )}
+        </div>
+
+        {/* ── Copy URL row ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
           <code style={{
-            flex: '1 1 200px', padding: '9px 13px', borderRadius: 7,
+            flex: '1 1 200px', padding: '8px 12px', borderRadius: 7,
             background: '#f8fafc', border: '1px solid #e2e8f0',
-            fontSize: '0.82rem', fontFamily: 'monospace',
-            color: '#1e293b', wordBreak: 'break-all',
+            fontSize: '0.8rem', fontFamily: 'monospace',
+            color: '#334155', wordBreak: 'break-all',
           }}>
             {bookingUrl}
           </code>
           <button
-            onClick={handleCopy}
+            onClick={handleCopyUrl}
             style={{
-              padding: '9px 16px', borderRadius: 7,
-              border: '1px solid #e2e8f0',
-              background: copied ? 'var(--tint-bg)' : '#fff',
-              color: copied ? 'var(--tint-text)' : '#64748b',
+              padding: '8px 14px', borderRadius: 7, border: '1px solid #e2e8f0',
+              background: urlCopied ? 'var(--tint-bg)' : '#fff',
+              color: urlCopied ? 'var(--tint-text)' : '#64748b',
               fontWeight: 600, fontSize: '0.82rem',
               cursor: 'pointer', fontFamily: 'inherit',
               whiteSpace: 'nowrap', flexShrink: 0,
               transition: 'all 0.15s',
             }}
           >
-            {copied ? '✓ Copied!' : 'Copy URL'}
+            {urlCopied ? '✓ Copied!' : 'Copy URL'}
           </button>
         </div>
 
+        {/* ── Facebook instructions ── */}
         <div className="embed-steps">
           <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
             To add a Book Now button to your Facebook page:
@@ -1251,7 +1344,7 @@ function FacebookBookingSection({ propertyId }) {
             'Go to your Facebook business page.',
             <span key="s2">Click <strong>"Add a button"</strong> below your cover photo.</span>,
             <span key="s3">Select <strong>"Book Now"</strong> or <strong>"Book with you"</strong>.</span>,
-            'Paste your booking page URL above.',
+            <span key="s4">Paste your booking page URL: <code style={{ fontFamily: 'monospace', fontSize: '0.85em', background: '#f1f5f9', padding: '1px 5px', borderRadius: 3 }}>{bookingUrl}</code></span>,
             <span key="s5">Click <strong>Save</strong>.</span>,
           ].map((step, i) => (
             <div key={i} className="embed-step">
@@ -1260,6 +1353,7 @@ function FacebookBookingSection({ propertyId }) {
             </div>
           ))}
         </div>
+
       </div>
     </div>
   );

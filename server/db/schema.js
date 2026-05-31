@@ -1,4 +1,5 @@
 import db from './database.js';
+import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 
 /**
  * Creates all NestBook tables if they don't already exist.
@@ -799,6 +800,19 @@ John`
     )
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rate_period_rooms ON rate_period_rooms(rate_period_id)`);
+
+  // Migration: custom booking page slug (clean URL for Facebook / external links)
+  try { db.exec(`ALTER TABLE properties ADD COLUMN booking_slug TEXT UNIQUE`); } catch { /* already exists */ }
+
+  // Backfill any properties that don't yet have a slug
+  const propertiesWithoutSlug = db.prepare('SELECT id, name FROM properties WHERE booking_slug IS NULL').all();
+  for (const p of propertiesWithoutSlug) {
+    const slug = uniqueSlug(db, generateSlug(p.name));
+    db.prepare('UPDATE properties SET booking_slug = ? WHERE id = ?').run(slug, p.id);
+  }
+  if (propertiesWithoutSlug.length > 0) {
+    console.log(`✓ Generated booking slugs for ${propertiesWithoutSlug.length} propert${propertiesWithoutSlug.length === 1 ? 'y' : 'ies'}.`);
+  }
 
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
