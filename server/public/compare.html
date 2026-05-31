@@ -245,6 +245,38 @@ img { display: block; max-width: 100%; }
 .feat-row:hover td.col-pro     { background: #e8faf0; }
 .feat-row:hover td.col-multi   { background: #f9fafb; }
 
+/* Click-to-expand rows */
+.feat-row[data-detail] { cursor: pointer; }
+.feat-row[data-detail] td.col-feature { position: relative; padding-right: 36px; }
+.feat-row[data-detail] td.col-feature::after {
+  content: '+';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--muted);
+  opacity: 0.4;
+  transition: opacity 0.12s;
+  line-height: 1;
+}
+.feat-row[data-detail]:hover td.col-feature::after { opacity: 0.9; }
+.feat-row.expanded td.col-feature::after { content: '−'; opacity: 0.9; }
+.detail-row td {
+  padding: 6px 20px 14px 20px;
+  font-size: 0.83rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--soft);
+  line-height: 1.65;
+}
+@keyframes detail-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.detail-row { animation: detail-in 0.15s ease; }
+
 /* ── CTA strip ────────────────────────────────────────────────────────────── */
 .cta-strip {
   background: var(--dark);
@@ -475,61 +507,61 @@ img { display: block; max-width: 100%; }
             <td class="col-pro-group"></td>
             <td></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Each 'room' is any bookable unit — a hotel room, apartment, cabin, or pitch. Free accounts can manage up to 3; Pro and Multi have no limit.">
             <td class="col-feature">Number of rooms</td>
             <td class="col-free"><span class="cell-text">Up to 3</span></td>
             <td class="col-pro"><span class="cell-text accent">Unlimited</span></td>
             <td class="col-multi"><span class="cell-text accent">Unlimited</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="A grid with all your rooms across the top and dates along the side. Click any empty cell to create a booking, click an existing booking to view or edit it. Drag to extend a stay. Colour-coded by booking status.">
             <td class="col-feature">Visual room calendar</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="One-click check-in marks a guest as arrived and unlocks their folio for extras. One-click check-out closes the folio, prompts for final payment, and frees the room for the next booking.">
             <td class="col-feature">Check-in / check-out</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="A searchable directory of every guest who has ever stayed. Stores contact details, full stay history across all bookings, private notes, and total lifetime spend. Quickly find returning guests and pre-fill their details on new bookings.">
             <td class="col-feature">Guest management</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Mark any booking as including breakfast, set a per-person price, and define the service window (e.g. 7:30–10:30). Breakfast charges can be added to the room folio automatically at check-out.">
             <td class="col-feature">Breakfast management</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Record an upfront deposit on any booking, mark it as received, and it's automatically deducted when the guest pays their final bill at check-out. Keeps cash flow simple and reduces no-shows.">
             <td class="col-feature">Deposit tracking</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Generate a clean, printable or PDF-ready receipt at any point during or after a stay. Itemises the nightly rate, extras, breakfast, taxes, and any deposit already paid. Use it as a VAT receipt if required.">
             <td class="col-feature">Receipt printing</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Choose from 7 built-in colour themes: Forest, Royal, Ember, Ruby, Sky, Lavender, and Charcoal. Your chosen theme applies across the dashboard, the booking widget on your website, and the standalone booking page.">
             <td class="col-feature">7 colour themes</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Export a live iCal feed URL for each room and paste it into Booking.com, Airbnb, or any channel manager. Dates blocked on external platforms are automatically reflected in your NestBook calendar, preventing double-bookings.">
             <td class="col-feature">iCal sync (Booking.com, Airbnb)</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="The entire dashboard — every menu, label, and message — is available in English, French, Spanish, German and Dutch. Each staff member can use their own preferred language independently, without affecting anyone else.">
             <td class="col-feature">Interface languages</td>
             <td class="col-free"><span class="cell-text">EN FR ES DE NL</span></td>
             <td class="col-pro"><span class="cell-text">EN FR ES DE NL</span></td>
@@ -543,20 +575,26 @@ img { display: block; max-width: 100%; }
             <td class="col-pro-group"></td>
             <td></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="One script tag embeds a floating 'Book Now' button on any website. Clicking it opens a branded availability calendar in a modal overlay — guests select dates, choose a room, and pay you directly. No platform account needed, no commission taken.">
             <td class="col-feature">Booking widget for your website</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Unlike Booking.com (12–18% commission) or Airbnb (3–5%), NestBook charges nothing per booking. Guests pay you directly. You keep 100% of every booking made through the widget or booking page.">
             <td class="col-feature">Zero commission on bookings</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="When a guest completes a widget or booking-page reservation, NestBook automatically sends a branded confirmation email with their dates, room details, check-in time, and any custom message you've configured.">
             <td class="col-feature">Automated confirmation emails</td>
+            <td class="col-free"><span class="cross">✗</span></td>
+            <td class="col-pro"><span class="check">✓</span></td>
+            <td class="col-multi"><span class="check">✓</span></td>
+          </tr>
+          <tr class="feat-row" data-detail="Every property gets a custom booking page at nestbook.io/book/your-name — no website needed. Add it to your Facebook 'Book Now' button, share it on Instagram, paste it in a WhatsApp message, or link to it anywhere.">
+            <td class="col-feature">Direct booking page (Facebook, social)</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -569,19 +607,19 @@ img { display: block; max-width: 100%; }
             <td class="col-pro-group"></td>
             <td></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Create named date ranges with different nightly rates — peak summer, school holidays, Christmas, quiet winter months. Pro allows up to 5 active pricing periods per room; Multi has no limit.">
             <td class="col-feature">Seasonal pricing per room</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="cell-text accent">Up to 5 periods</span></td>
             <td class="col-multi"><span class="cell-text accent">Unlimited</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Monthly and yearly revenue summaries broken down by room, booking source, and occupancy rate. Export to CSV for your accountant or generate a PDF for your own records. Filter by any date range and property.">
             <td class="col-feature">Revenue reports &amp; CSV exports</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Every action in the system — logins, bookings created, check-ins, cancellations, settings changes — is recorded with a timestamp, the staff member's name, and their IP address. Essential for accountability and dispute resolution.">
             <td class="col-feature">Activity log &amp; audit trail</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
@@ -595,25 +633,25 @@ img { display: block; max-width: 100%; }
             <td class="col-pro-group"></td>
             <td></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Free and Pro accounts manage a single property. Multi plan supports up to 5 separate properties under one login — each with their own rooms, staff, calendar and reports. Switch between properties with one click.">
             <td class="col-feature">Number of properties</td>
             <td class="col-free"><span class="cell-text">1</span></td>
             <td class="col-pro"><span class="cell-text">1</span></td>
-            <td class="col-multi"><span class="cell-text accent">Unlimited</span></td>
+            <td class="col-multi"><span class="cell-text accent">Up to 5</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Invite reception staff with a restricted login — they can manage the calendar, check guests in and out, and view bookings, but cannot access financial reports, settings, or billing. Pro allows up to 5 staff accounts; Multi has no limit.">
             <td class="col-feature">Staff accounts &amp; roles</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Staff at the bar, restaurant, spa or shop can charge items directly to a guest's room from a dedicated staff portal — no owner login required. All charges appear on the guest's folio and are settled at check-out.">
             <td class="col-feature">Room charges (bar, restaurant)</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="cross">✗</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Create charge categories — Food &amp; Drink, Spa, Activities, Transport — each with its own tax rate. Revenue reports and guest folios break down charges by category, making VAT reporting and reconciliation straightforward.">
             <td class="col-feature">Service categories with tax rates</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="cross">✗</span></td>
@@ -627,25 +665,25 @@ img { display: block; max-width: 100%; }
             <td class="col-pro-group"></td>
             <td></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Start Pro or Multi at no cost — no credit card required. You get full access to every feature in the plan for 30 days. After that, billing starts at £19/€22 per month for Pro or £39/€45 for Multi.">
             <td class="col-feature">30-day free trial</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="Month-to-month billing only — no annual commitment required. Cancel any time from the Settings page. No notice period, no cancellation fees, no data held hostage.">
             <td class="col-feature">No contract, cancel any time</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="NestBook is a flat monthly subscription. We never take a percentage of your booking revenue — regardless of how many guests book or how much they pay. Every pound your guests pay goes directly to you.">
             <td class="col-feature">No commission on bookings</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row">
+          <tr class="feat-row" data-detail="The price shown is all you pay. No setup fees, no extra charges for additional languages, no per-user fees beyond staff accounts, no API charges, no data export fees.">
             <td class="col-feature">No hidden fees</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
@@ -679,7 +717,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">iCal sync (Booking.com, Airbnb)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">5 interface languages</span></div>
           <div class="mpc-group-label">Not included</div>
-          <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Booking widget</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Booking widget &amp; direct booking page</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Seasonal pricing</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Revenue reports</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)">Staff accounts</span></div>
@@ -701,6 +739,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Booking widget for your website</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Zero commission on bookings</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Automated confirmation emails</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Direct booking page (Facebook, social)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Seasonal pricing</span><span class="mpc-feat-value accent">Up to 5 periods</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Revenue reports &amp; CSV exports</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label">Activity log &amp; audit trail</span></div>
@@ -802,6 +841,27 @@ img { display: block; max-width: 100%; }
     </div>
   </div>
 </footer>
+
+<script>
+document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
+  row.addEventListener('click', function() {
+    var next = row.nextElementSibling;
+    if (next && next.classList.contains('detail-row')) {
+      next.remove();
+      row.classList.remove('expanded');
+    } else {
+      var tr = document.createElement('tr');
+      tr.className = 'detail-row';
+      var td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = row.dataset.detail;
+      tr.appendChild(td);
+      row.after(tr);
+      row.classList.add('expanded');
+    }
+  });
+});
+</script>
 
 </body>
 </html>
