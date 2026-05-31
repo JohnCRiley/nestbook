@@ -1235,6 +1235,11 @@ img { display: block; max-width: 100%; }
         <div class="feature-desc" data-i18n="features.audit.desc">Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.</div>
       </div>
       <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <div class="feature-title" data-i18n="features.facebook.title">Direct Booking Page</div>
+        <div class="feature-desc" data-i18n="features.facebook.desc">Every property gets its own booking page at nestbook.io/book/your-name. Add it to Facebook's 'Book Now' button, share it on Instagram, or send it via WhatsApp — no website needed.</div>
+      </div>
+      <div class="feature-card">
         <div class="feature-icon">🍽️</div>
         <div class="feature-plan-badge" data-i18n="features.charges.badge">Multi plan</div>
         <div class="feature-title" data-i18n="features.charges.title">Resort-style room charging</div>
@@ -1414,8 +1419,8 @@ img { display: block; max-width: 100%; }
 
     </div>
     <p class="pricing-adaptive-note" data-i18n="pricing.note">Price shown in your local currency at checkout</p>
-    <p style="text-align:center; margin-top:18px;">
-      <a href="/compare.html" style="font-size:0.88rem; font-weight:600; color:var(--muted); border-bottom:1px solid var(--border); padding-bottom:1px; transition:color 0.12s;" onmouseover="this.style.color='var(--dark)'" onmouseout="this.style.color='var(--muted)'" data-i18n="pricing.compare">Compare all features in detail →</a>
+    <p style="text-align:center; margin-top:24px;">
+      <a href="/compare.html" class="btn btn-outline" data-i18n="pricing.compare">Compare all features in detail →</a>
     </p>
   </div>
 </section>
@@ -1546,6 +1551,8 @@ const I18N = {
     'features.reports.desc':  'Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.',
     'features.audit.title':   'Staff Activity Audit Log',
     'features.audit.desc':    'Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.',
+    'features.facebook.title': 'Direct Booking Page',
+    'features.facebook.desc':  "Every property gets its own booking page at nestbook.io/book/your-name. Add it to Facebook's 'Book Now' button, share it on Instagram, or send it via WhatsApp — no website needed.",
     'features.charges.badge': 'Multi plan',
     'features.charges.title': 'Resort-style room charging',
     'features.charges.desc':  'Bar, restaurant, shop and activities charged directly to the room. Full itemised folio at checkout. Dedicated portal for service staff.',
@@ -1680,6 +1687,8 @@ const I18N = {
     'features.reports.desc':  'Générez des rapports de revenus, exportez vos données en CSV ou PDF et téléchargez votre liste de contacts clients — filtrés par période et propriété.',
     'features.audit.title':   'Journal d\'activité du personnel',
     'features.audit.desc':    'Chaque connexion, réservation, enregistrement, annulation et modification de paramètre est consigné avec un horodatage, le nom du personnel et l\'adresse IP.',
+    'features.facebook.title': 'Page de réservation directe',
+    'features.facebook.desc':  "Chaque propriété dispose de sa propre page de réservation sur nestbook.io/book/votre-nom. Ajoutez-la au bouton 'Book Now' de Facebook, partagez-la sur Instagram ou envoyez-la par WhatsApp — sans site web.",
     'features.charges.badge': 'Plan Multi',
     'features.charges.title': 'Facturation en chambre style resort',
     'features.charges.desc':  'Bar, restaurant, boutique et activités facturés directement sur la chambre. Folio complet et détaillé au départ. Portail dédié au personnel de service.',
@@ -1814,6 +1823,8 @@ const I18N = {
     'features.reports.desc':  'Genera informes de ingresos, exporta datos a CSV o PDF y descarga tu lista de contactos de huéspedes — todo filtrado por fechas y propiedad.',
     'features.audit.title':   'Registro de actividad del personal',
     'features.audit.desc':    'Cada inicio de sesión, reserva, check-in, cancelación y cambio de configuración queda registrado con marca de tiempo, nombre del empleado y dirección IP.',
+    'features.facebook.title': 'Página de reserva directa',
+    'features.facebook.desc':  "Cada propiedad tiene su propia página de reserva en nestbook.io/book/tu-nombre. Agrégala al botón 'Book Now' de Facebook, compártela en Instagram o envíala por WhatsApp — sin necesidad de web.",
     'features.charges.badge': 'Plan Multi',
     'features.charges.title': 'Cargos a habitación estilo resort',
     'features.charges.desc':  'Bar, restaurante, tienda y actividades cargados directamente a la habitación. Folio completo y detallado al check-out. Portal dedicado para el personal de servicio.',
@@ -1948,6 +1959,8 @@ const I18N = {
     'features.reports.desc':  'Erstellen Sie Umsatzberichte, exportieren Sie Buchungsdaten als CSV oder PDF und laden Sie Ihre Gästekontaktliste herunter — gefiltert nach Zeitraum und Unterkunft.',
     'features.audit.title':   'Mitarbeiter-Aktivitätsprotokoll',
     'features.audit.desc':    'Jede Anmeldung, Buchung, Check-in, Stornierung und Einstellungsänderung wird mit Zeitstempel, Mitarbeitername und IP-Adresse protokolliert.',
+    'features.facebook.title': 'Direkte Buchungsseite',
+    'features.facebook.desc':  "Jede Unterkunft erhält eine eigene Buchungsseite unter nestbook.io/book/ihr-name. Fügen Sie sie dem Facebook-'Book Now'-Button hinzu, teilen Sie sie auf Instagram oder senden Sie sie per WhatsApp — ohne Website.",
     'features.charges.badge': 'Multi-Plan',
     'features.charges.title': 'Zimmerbelastung nach Resort-Art',
     'features.charges.desc':  'Bar, Restaurant, Shop und Aktivitäten direkt auf das Zimmer gebucht. Vollständiges, detailliertes Folio beim Check-out. Dediziertes Portal für Servicepersonal.',
@@ -2082,6 +2095,8 @@ const I18N = {
     'features.reports.desc':  'Genereer omzetrapporten, exporteer boekingsgegevens naar CSV of PDF en download uw gastencontactlijst — gefilterd op datumbereik en accommodatie.',
     'features.audit.title':   'Activiteitenlog van personeel',
     'features.audit.desc':    'Elke login, boeking, check-in, annulering en instellingswijziging wordt vastgelegd met tijdstempel, personeelsnaam en IP-adres.',
+    'features.facebook.title': 'Directe boekingspagina',
+    'features.facebook.desc':  "Elke accommodatie krijgt een eigen boekingspagina op nestbook.io/book/uw-naam. Voeg deze toe aan de Facebook 'Book Now'-knop, deel hem op Instagram of stuur hem via WhatsApp — geen website nodig.",
     'features.charges.badge': 'Multi-plan',
     'features.charges.title': 'Kamerbelasting op resort-stijl',
     'features.charges.desc':  'Bar, restaurant, winkel en activiteiten rechtstreeks op de kamer in rekening gebracht. Volledig gespecificeerd folio bij het uitchecken. Speciaal portaal voor servicepersoneel.',

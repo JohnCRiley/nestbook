@@ -11,8 +11,6 @@ export default function Pricing() {
   const [loading, setLoading] = useState(null);
   const [error,   setError]   = useState('');
 
-  console.log('[Pricing] Current plan:', currentPlan, typeof currentPlan);
-
   const PLANS = [
     {
       key:      'free',
@@ -139,6 +137,16 @@ export default function Pricing() {
         })}
       </div>
       <p className="pricing-adaptive-note">{t('planAdaptivePricingNote')}</p>
+      <p style={{ textAlign: 'center', marginTop: 20 }}>
+        <a
+          href="/compare.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--color-muted)', textDecoration: 'underline' }}
+        >
+          {t('planCompareLink')}
+        </a>
+      </p>
     </div>
   );
 }
