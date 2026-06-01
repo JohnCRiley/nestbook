@@ -169,7 +169,7 @@ roomsRouter.get('/:id', (req, res) => {
 // ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
@@ -191,8 +191,8 @@ roomsRouter.post('/', (req, res) => {
 
     const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, ical_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
@@ -200,6 +200,7 @@ roomsRouter.post('/', (req, res) => {
       amenities ?? null,
       status    ?? 'available',
       breakfast_included ? 1 : 0,
+      description || null,
       ical_token
     );
 
@@ -227,14 +228,14 @@ roomsRouter.put('/:id', (req, res) => {
     const existing = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Room not found' });
 
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description } = req.body;
 
     db.prepare(`
       UPDATE rooms
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
-          capacity = ?, amenities = ?, status = ?, breakfast_included = ?
+          capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?
       WHERE id = ?
-    `).run(property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, req.params.id);
+    `).run(property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null, req.params.id);
 
     const updated = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     res.json(updated);

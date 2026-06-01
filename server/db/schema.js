@@ -879,6 +879,13 @@ John`
     console.log(`✓ Generated booking slugs for ${propertiesWithoutSlug.length} propert${propertiesWithoutSlug.length === 1 ? 'y' : 'ies'}.`);
   }
 
+  // Property showcase fields
+  try { db.exec(`ALTER TABLE properties ADD COLUMN description TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN hero_image_url TEXT`); } catch {}
+
+  // Room description field
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN description TEXT`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

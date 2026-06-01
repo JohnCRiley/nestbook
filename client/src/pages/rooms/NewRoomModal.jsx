@@ -7,7 +7,7 @@ const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'
 
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
-  capacity: 2, amenities: '', status: 'available', breakfast_included: 0,
+  capacity: 2, amenities: '', status: 'available', breakfast_included: 0, description: '',
 };
 
 /** Parse amenities string → array, filtering blanks. */
@@ -49,6 +49,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
           amenities:          form.amenities.trim() || null,
           status:             form.status,
           breakfast_included: form.breakfast_included ? 1 : 0,
+          description:        form.description.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -157,6 +158,14 @@ export default function NewRoomModal({ onClose, onSuccess }) {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="form-group span-2">
+                <label className="form-label">Room description (optional)</label>
+                <textarea name="description" className="form-control" rows={2}
+                  value={form.description} onChange={handleChange}
+                  placeholder="Describe this room — the view, the bed, what makes it special..."
+                  style={{ resize: 'vertical' }} />
               </div>
             </div>
           </div>

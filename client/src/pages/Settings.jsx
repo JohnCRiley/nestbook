@@ -143,6 +143,7 @@ export default function Settings() {
         breakfast_price:      p.breakfast_price    ?? 0,
         breakfast_start_time: p.breakfast_start_time ?? '07:00',
         breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
+        description:          p.description          ?? '',
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -354,6 +355,18 @@ export default function Settings() {
                     </select>
                   </FormField>
                 </div>
+
+                <FormField label="About your property (optional)">
+                  <textarea
+                    name="description"
+                    className="form-control"
+                    rows={3}
+                    value={form.description}
+                    onChange={handleFormChange}
+                    placeholder="Tell guests what makes your property special — the location, the atmosphere, what to expect..."
+                    style={{ resize: 'vertical' }}
+                  />
+                </FormField>
 
                 <div className="settings-save-row">
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>

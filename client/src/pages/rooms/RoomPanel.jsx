@@ -190,6 +190,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
     amenities:          room.amenities          ?? '',
     status:             room.status             ?? 'available',
     breakfast_included: room.breakfast_included ?? 0,
+    description:        room.description        ?? '',
   });
   const [saving,             setSaving]             = useState(false);
   const [deleting,           setDeleting]           = useState(false);
@@ -222,6 +223,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
           amenities:          form.amenities.trim() || null,
           status:             form.status,
           breakfast_included: form.breakfast_included ? 1 : 0,
+          description:        form.description.trim() || null,
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -343,6 +345,19 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="panel-field">
+            <label className="panel-field-label">Room description (optional)</label>
+            <textarea
+              name="description"
+              className="panel-field-input"
+              rows={2}
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Describe this room — the view, the bed, what makes it special..."
+              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 'inherit' }}
+            />
           </div>
         </div>
       </div>

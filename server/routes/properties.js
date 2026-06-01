@@ -164,6 +164,7 @@ propertiesRouter.put('/:id', (req, res) => {
       check_in_time, check_out_time, currency, locale, theme,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time,
+      description, hero_image_url,
     } = req.body;
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     db.prepare(`
@@ -171,7 +172,8 @@ propertiesRouter.put('/:id', (req, res) => {
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
           check_in_time = ?, check_out_time = ?, currency = ?, locale = ?, theme = ?,
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
-          breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?
+          breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?,
+          description = ?, hero_image_url = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -183,6 +185,8 @@ propertiesRouter.put('/:id', (req, res) => {
       parseFloat(breakfast_price) || 0,
       breakfast_start_time ?? '07:00',
       breakfast_end_time   ?? '11:00',
+      description || null,
+      hero_image_url || null,
       req.params.id,
     );
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
