@@ -1,0 +1,224 @@
+/* ── NestBook site navbar — shared across all public pages ───────────────── */
+
+/* ── Navbar bar ──────────────────────────────────────────────────────────── */
+.navbar {
+  background: var(--dark, #1a4710);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Logo ────────────────────────────────────────────────────────────────── */
+.nb-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.nb-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* ── Right-side controls (lang + menu) ──────────────────────────────────── */
+.navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Language toggle button ─────────────────────────────────────────────── */
+.lang-dropdown { position: relative; }
+.lang-toggle {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.lang-toggle:hover { background: rgba(255,255,255,0.25); }
+
+/* ── Language panel dropdown ────────────────────────────────────────────── */
+.lang-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 155px;
+  z-index: 200;
+}
+.lang-panel.open { display: flex; }
+.lang-panel .lang-btn {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  text-align: left;
+  color: var(--text, #1a2e14);
+  font-family: inherit;
+  font-weight: 500;
+  transition: background 0.1s;
+}
+.lang-panel .lang-btn:hover { background: var(--soft, #f3f7f2); }
+.lang-panel .lang-btn.active {
+  background: var(--light, #d9f0cc);
+  color: var(--dark, #1a4710);
+  font-weight: 700;
+}
+
+/* ── Menu toggle button ─────────────────────────────────────────────────── */
+.menu-toggle {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.menu-toggle:hover { background: rgba(255,255,255,0.25); }
+
+/* ── Mega menu overlay ──────────────────────────────────────────────────── */
+.mega-menu {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+  border-top: 3px solid var(--light, #d9f0cc);
+  z-index: 99;
+  transform: translateY(-10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.mega-menu.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+.mega-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 32px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.mega-col { display: flex; flex-direction: column; gap: 4px; }
+.mega-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border, #e0ecdb);
+}
+.mega-col a {
+  color: var(--text, #1a2e14);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 7px 8px;
+  border-radius: 6px;
+  transition: all 0.12s;
+  display: block;
+}
+.mega-col a:hover { color: var(--dark, #1a4710); background: var(--soft, #f3f7f2); }
+
+/* CTA link in mega menu */
+.mega-cta {
+  background: var(--dark, #1a4710) !important;
+  color: #fff !important;
+  padding: 12px 14px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.mega-cta:hover { background: var(--mid, #2f771b) !important; color: #fff !important; }
+.mega-cta span { font-size: 0.72rem; opacity: 0.75; font-weight: 400; }
+
+/* Language buttons in mega menu */
+.mega-lang {
+  background: none;
+  border: 1px solid var(--border, #e0ecdb);
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text, #1a2e14);
+  font-family: inherit;
+  transition: all 0.12s;
+  width: 100%;
+}
+.mega-lang:hover { background: var(--soft, #f3f7f2); border-color: var(--light, #d9f0cc); }
+.mega-lang.active {
+  background: var(--light, #d9f0cc);
+  border-color: var(--mid, #2f771b);
+  color: var(--dark, #1a4710);
+  font-weight: 700;
+}
+
+/* ── Backdrop (closes mega menu on outside click) ───────────────────────── */
+.mega-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  display: none;
+}
+.mega-backdrop.open { display: block; }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .navbar-inner { padding: 0 16px; }
+  .lang-toggle  { font-size: 0.78rem; padding: 5px 9px; }
+  .menu-toggle  { font-size: 0.78rem; padding: 5px 12px; }
+  .mega-inner   { grid-template-columns: 1fr; padding: 20px 16px 24px; gap: 20px; }
+}

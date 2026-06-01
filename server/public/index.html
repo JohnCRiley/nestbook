@@ -63,6 +63,7 @@
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/navbar.css">
 <style>
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -172,85 +173,6 @@ img { display: block; max-width: 100%; }
 
 .btn-lg { padding: 15px 30px; font-size: 1rem; border-radius: 10px; }
 
-/* ── Navbar ───────────────────────────────────────────────────────────────── */
-.navbar {
-  position: sticky;
-  top: 0;
-  z-index: 1001;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-}
-.navbar-inner {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  height: 64px;
-}
-.nb-logo {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-weight: 800;
-  font-size: 1.15rem;
-  color: var(--dark);
-  letter-spacing: -0.4px;
-  margin-right: 32px;
-  flex-shrink: 0;
-}
-.nb-logo-img {
-  width: 32px; height: 32px;
-  border-radius: 7px;
-  display: block;
-  flex-shrink: 0;
-}
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-}
-.nav-link {
-  padding: 7px 13px;
-  border-radius: 7px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--muted);
-  transition: all 0.12s;
-}
-.nav-link:hover { color: var(--dark); background: var(--soft); }
-
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Language switcher */
-.lang-switcher {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: var(--soft);
-  border-radius: 8px;
-  padding: 3px;
-  margin-right: 6px;
-}
-.lang-btn {
-  background: transparent;
-  border: none;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  color: var(--muted);
-  transition: all 0.12s;
-  font-family: inherit;
-  letter-spacing: 0.3px;
-}
-.lang-btn:hover  { color: var(--dark); background: rgba(255,255,255,0.7); }
-.lang-btn.active { background: var(--dark); color: #fff; font-weight: 700; box-shadow: 0 1px 3px rgba(26,71,16,0.25); }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
 .hero {
@@ -763,115 +685,6 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
-/* ── Hamburger button ─────────────────────────────────────────────────────── */
-.hamburger {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 40px;
-  height: 40px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-.hamburger:hover { background: var(--soft); }
-.hamburger span {
-  display: block;
-  height: 2px;
-  background: var(--dark);
-  border-radius: 2px;
-  transition: transform 0.2s, opacity 0.2s;
-}
-.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.hamburger.open span:nth-child(2) { opacity: 0; }
-.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-/* ── Mobile nav overlay (fixed, slides from under the navbar) ─────────────── */
-.mobile-nav {
-  position: fixed;
-  top: 64px;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-  flex-direction: column;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-  padding: 12px 0 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  /* hidden state */
-  display: flex;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.mobile-nav.open {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-#mobile-nav-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: rgba(0,0,0,0.35);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-#mobile-nav-backdrop.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-.mobile-nav .mobile-nav-link {
-  padding: 11px 24px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--muted);
-  text-decoration: none;
-  transition: color 0.12s, background 0.12s;
-}
-.mobile-nav .mobile-nav-link:hover { color: var(--dark); background: var(--soft); }
-.mobile-nav .mobile-nav-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 8px 16px;
-}
-.mobile-nav .mobile-nav-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 16px 0;
-}
-.mobile-nav .mobile-lang-row {
-  display: flex;
-  gap: 4px;
-  padding: 8px 16px 0;
-  flex-wrap: wrap;
-}
-.mobile-nav .mobile-lang-btn {
-  background: var(--soft);
-  border: 1px solid var(--border);
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 5px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: var(--muted);
-  font-family: inherit;
-  transition: all 0.12s;
-}
-.mobile-nav .mobile-lang-btn.active,
-.mobile-nav .mobile-lang-btn:hover {
-  background: var(--dark);
-  color: #fff;
-  border-color: var(--dark);
-}
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
@@ -883,11 +696,8 @@ img { display: block; max-width: 100%; }
   .pricing-grid       { grid-template-columns: 1fr; }
   .pricing-card.highlight { transform: none; }
   .footer-inner       { grid-template-columns: 1fr 1fr; }
-  .nav-links          { display: none; }
 }
 @media (max-width: 767px) {
-  .nav-right          { display: none; }
-  .hamburger          { display: flex; }
   /* Single column features — also resets the desktop centering rule */
   .features-grid      { grid-template-columns: 1fr; }
   .features-grid .feature-card:last-child:nth-child(3n+1) { grid-column: 1; }
@@ -905,60 +715,58 @@ img { display: block; max-width: 100%; }
 <!--  NAVBAR                                                                   -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <header class="navbar">
-  <div class="container navbar-inner">
-
-    <a href="#" class="nb-logo">
-      <img src="/icon.svg" class="nb-logo-img" alt="NestBook" />
+  <div class="navbar-inner">
+    <a href="/" class="nb-logo">
+      <img src="/icon.svg" class="nb-logo-img" alt="NestBook">
       NestBook
     </a>
-
-    <nav class="nav-links">
-      <a href="#features"     class="nav-link" data-i18n="nav.features">Features</a>
-      <a href="#pricing"      class="nav-link" data-i18n="nav.pricing">Pricing</a>
-      <a href="#languages"    class="nav-link" data-i18n="nav.languages">Languages</a>
-      <a href="/blog/"        class="nav-link" data-i18n="nav.blog">Blog</a>
-      <a href="/widget-test.html" class="nav-link" data-i18n="nav.demo">Live demo</a>
-    </nav>
-
-    <div class="nav-right">
-      <div class="lang-switcher" role="group" aria-label="Language">
-        <button class="lang-btn active" data-lang="en">EN</button>
-        <button class="lang-btn" data-lang="fr">FR</button>
-        <button class="lang-btn" data-lang="es">ES</button>
-        <button class="lang-btn" data-lang="de">DE</button>
-        <button class="lang-btn" data-lang="nl">NL</button>
+    <div class="navbar-controls">
+      <div class="lang-dropdown">
+        <button class="lang-toggle">🌐 EN ▾</button>
+        <div class="lang-panel">
+          <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+          <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
+          <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+          <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+          <button class="lang-btn" data-lang="nl">🇳🇱 Nederlands</button>
+        </div>
       </div>
-      <a href="/app/login" class="btn btn-ghost" data-i18n="nav.signin">Sign in</a>
-      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+      <button class="menu-toggle">Menu ▾</button>
     </div>
-
-    <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
-      <span></span><span></span><span></span>
-    </button>
-
   </div>
 </header>
 
-<!-- Mobile nav dropdown (shown when hamburger is open) -->
-<nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
-  <a href="#features"      class="mobile-nav-link" data-i18n="nav.features">Features</a>
-  <a href="#pricing"       class="mobile-nav-link" data-i18n="nav.pricing">Pricing</a>
-  <a href="#languages"     class="mobile-nav-link" data-i18n="nav.languages">Languages</a>
-  <a href="/blog/"         class="mobile-nav-link" data-i18n="nav.blog">Blog</a>
-  <a href="/widget-test.html" class="mobile-nav-link" data-i18n="nav.demo">Live demo</a>
-  <div class="mobile-nav-divider"></div>
-  <div class="mobile-nav-actions">
-    <a href="/app/login"    class="btn btn-outline" data-i18n="nav.signin" style="justify-content:center">Sign in</a>
-    <a href="/app/register" class="btn btn-primary" data-i18n="nav.try"    style="justify-content:center">Try free</a>
+<div class="mega-menu" id="megaMenu">
+  <div class="mega-inner">
+    <div class="mega-col">
+      <div class="mega-label">NestBook</div>
+      <a href="/">Home</a>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+      <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
+      <a href="/blog/" data-i18n="nav.blog">Blog</a>
+      <a href="/widget-test.html" data-i18n="nav.demo">Live demo</a>
+    </div>
+    <div class="mega-col">
+      <div class="mega-label">Get started</div>
+      <a href="/app/register" class="mega-cta">
+        🌿 Start free trial
+        <span>No credit card needed</span>
+      </a>
+      <a href="/app/login" data-i18n="nav.signin">Sign in</a>
+      <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
+    </div>
+    <div class="mega-col">
+      <div class="mega-label">Language</div>
+      <button class="lang-btn mega-lang" data-lang="en">🇬🇧 English</button>
+      <button class="lang-btn mega-lang" data-lang="fr">🇫🇷 Français</button>
+      <button class="lang-btn mega-lang" data-lang="es">🇪🇸 Español</button>
+      <button class="lang-btn mega-lang" data-lang="de">🇩🇪 Deutsch</button>
+      <button class="lang-btn mega-lang" data-lang="nl">🇳🇱 Nederlands</button>
+    </div>
   </div>
-  <div class="mobile-nav-lang-row mobile-lang-row">
-    <button class="mobile-lang-btn active" data-mobile-lang="en">EN</button>
-    <button class="mobile-lang-btn" data-mobile-lang="fr">FR</button>
-    <button class="mobile-lang-btn" data-mobile-lang="es">ES</button>
-    <button class="mobile-lang-btn" data-mobile-lang="de">DE</button>
-    <button class="mobile-lang-btn" data-mobile-lang="nl">NL</button>
-  </div>
-</nav>
+</div>
+<div class="mega-backdrop"></div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  HERO                                                                     -->
@@ -2346,5 +2154,6 @@ window.addEventListener('scroll', () => {
   });
 })();
 </script>
+<script src="/navbar.js"></script>
 </body>
 </html>

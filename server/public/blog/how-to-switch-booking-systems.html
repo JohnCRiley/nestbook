@@ -66,6 +66,7 @@
 </script>
 
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="stylesheet" href="/navbar.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
@@ -79,19 +80,6 @@ img { display: block; max-width: 100%; }
 .btn-primary:hover { background: var(--dark); border-color: var(--dark); }
 .btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
 .btn-ghost:hover { color: var(--dark); }
-.navbar { position: sticky; top: 3px; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-.navbar-inner { display: flex; align-items: center; height: 64px; }
-.nb-logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.15rem; color: var(--dark); letter-spacing: -0.4px; margin-right: 32px; flex-shrink: 0; }
-.nb-logo-img { width: 32px; height: 32px; border-radius: 7px; display: block; }
-.nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
-.nav-link { padding: 7px 13px; border-radius: 7px; font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: all 0.12s; }
-.nav-link:hover { color: var(--dark); background: var(--soft); }
-.nav-link.active { color: var(--dark); background: var(--soft); font-weight: 600; }
-.nav-right { display: flex; align-items: center; gap: 8px; }
-.lang-switcher { display: flex; align-items: center; gap: 2px; background: var(--soft); border-radius: 8px; padding: 3px; margin-right: 6px; }
-.lang-btn { background: transparent; border: none; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 5px; cursor: pointer; color: var(--muted); transition: all 0.12s; font-family: inherit; }
-.lang-btn:hover { color: var(--dark); background: rgba(255,255,255,0.7); }
-.lang-btn.active { background: #fff; color: var(--dark); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 .breadcrumb { padding: 16px 0 0; }
 .breadcrumb-list { display: flex; align-items: center; gap: 6px; list-style: none; font-size: 0.8rem; color: var(--muted); flex-wrap: wrap; }
 .breadcrumb-list a { color: var(--muted); transition: color 0.12s; }
@@ -144,7 +132,7 @@ img { display: block; max-width: 100%; }
 .footer-link:hover { color: var(--light); }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
 .footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .nav-links { display: none; } .related-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .related-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .article-layout { padding: 0 20px; } .article-cta { padding: 28px 20px; } }
 </style>
 </head>
@@ -153,27 +141,58 @@ img { display: block; max-width: 100%; }
 <div id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Reading progress"></div>
 
 <header class="navbar">
-  <div class="container navbar-inner">
-    <a href="/" class="nb-logo"><img src="/icon.svg" class="nb-logo-img" alt="NestBook" />NestBook</a>
-    <nav class="nav-links">
-      <a href="/#features"  class="nav-link" data-i18n="nav.features">Features</a>
-      <a href="/#pricing"   class="nav-link" data-i18n="nav.pricing">Pricing</a>
-      <a href="/#languages" class="nav-link" data-i18n="nav.languages">Languages</a>
-      <a href="/blog/"      class="nav-link active" data-i18n="nav.blog">Blog</a>
-    </nav>
-    <div class="nav-right">
-      <div class="lang-switcher" role="group" aria-label="Language">
-        <button class="lang-btn active" data-lang="en">EN</button>
-        <button class="lang-btn" data-lang="fr">FR</button>
-        <button class="lang-btn" data-lang="es">ES</button>
-        <button class="lang-btn" data-lang="de">DE</button>
-        <button class="lang-btn" data-lang="nl">NL</button>
+  <div class="navbar-inner">
+    <a href="/" class="nb-logo">
+      <img src="/icon.svg" class="nb-logo-img" alt="NestBook">
+      NestBook
+    </a>
+    <div class="navbar-controls">
+      <div class="lang-dropdown">
+        <button class="lang-toggle">🌐 EN ▾</button>
+        <div class="lang-panel">
+          <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+          <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
+          <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+          <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+          <button class="lang-btn" data-lang="nl">🇳🇱 Nederlands</button>
+        </div>
       </div>
-      <a href="/app/login"    class="btn btn-ghost"   data-i18n="nav.signin">Sign in</a>
-      <a href="/app/register" class="btn btn-primary" data-i18n="nav.try">Try free</a>
+      <button class="menu-toggle">Menu ▾</button>
     </div>
   </div>
 </header>
+
+<div class="mega-menu" id="megaMenu">
+  <div class="mega-inner">
+    <div class="mega-col">
+      <div class="mega-label">NestBook</div>
+      <a href="/">Home</a>
+      <a href="/#features" data-i18n="nav.features">Features</a>
+      <a href="/#pricing" data-i18n="nav.pricing">Pricing</a>
+      <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
+      <a href="/blog/" data-i18n="nav.blog">Blog</a>
+      <a href="/widget-test.html" data-i18n="nav.demo">Live demo</a>
+    </div>
+    <div class="mega-col">
+      <div class="mega-label">Get started</div>
+      <a href="/app/register" class="mega-cta">
+        🌿 Start free trial
+        <span>No credit card needed</span>
+      </a>
+      <a href="/app/login" data-i18n="nav.signin">Sign in</a>
+      <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
+    </div>
+    <div class="mega-col">
+      <div class="mega-label">Language</div>
+      <button class="lang-btn mega-lang" data-lang="en">🇬🇧 English</button>
+      <button class="lang-btn mega-lang" data-lang="fr">🇫🇷 Français</button>
+      <button class="lang-btn mega-lang" data-lang="es">🇪🇸 Español</button>
+      <button class="lang-btn mega-lang" data-lang="de">🇩🇪 Deutsch</button>
+      <button class="lang-btn mega-lang" data-lang="nl">🇳🇱 Nederlands</button>
+    </div>
+  </div>
+</div>
+<div class="mega-backdrop"></div>
 
 <main>
   <div class="container">
@@ -386,5 +405,6 @@ document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('cl
 const nb = document.querySelector('.navbar');
 window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(26,71,16,0.10)' : ''; }, { passive: true });
 </script>
+<script src="/navbar.js"></script>
 </body>
 </html>
