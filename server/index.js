@@ -26,6 +26,7 @@ import { chargesRouter }             from './routes/charges.js';
 import { marketingRouter }           from './routes/marketing.js';
 import { bookingPageRouter }         from './routes/bookingPage.js';
 import { ratePeriodsRouter }         from './routes/ratePeriods.js';
+import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { sendDowngradeEmail }        from './email/emailService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,9 @@ app.post('/api/stripe/webhook',
 app.use(express.json());
 
 // ── Static files ──────────────────────────────────────────────────────────────
+// Uploaded images — must be before the React SPA catch-all
+app.use('/uploads', express.static(join(__dirname, 'uploads')));
+
 // Landing page, widget.js, widget-test.html
 app.use(express.static(join(__dirname, 'public')));
 
@@ -94,6 +98,7 @@ app.use('/api', requireAuth);
 app.use('/api/stripe',       stripeRouter);
 app.use('/api/properties',   propertiesRouter);
 app.use('/api/rooms',        roomsRouter);
+app.use('/api/rooms',        roomPhotosRouter);
 app.use('/api/guests',       guestsRouter);
 app.use('/api/bookings',     bookingsRouter);
 app.use('/api/users',        usersRouter);

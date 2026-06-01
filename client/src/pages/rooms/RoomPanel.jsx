@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BADGE_CLASS } from '../../utils/bookingConstants.js';
 import { nightsBetween, LOCALE_MAP } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+import { usePlan } from '../../hooks/usePlan.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+
+const PHOTO_LIMITS = { free: 1, pro: 5, multi: 10 };
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const STATUS_OPTIONS = ['available', 'occupied', 'maintenance'];
@@ -182,6 +185,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
 
 function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
   const { currencySymbol } = useLocale();
+  const plan = usePlan();
   const [form, setForm] = useState({
     name:               room.name               ?? '',
     type:               room.type               ?? 'double',
@@ -362,6 +366,8 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
         </div>
       </div>
 
+      <RoomPhotosSection room={room} plan={plan} />
+
       <div className="panel-actions">
         <button className="btn-panel-primary" onClick={handleSave} disabled={saving || deleting}>
           {saving ? t('saving') : t('saveChanges')}
@@ -442,6 +448,128 @@ function ScheduleRow({ booking: b, t, locale }) {
         </span>
         <span className="schedule-price">{fmtCurrency(b.total_price)}</span>
       </div>
+    </div>
+  );
+}
+
+// ── RoomPhotosSection ─────────────────────────────────────────────────────────
+
+function RoomPhotosSection({ room, plan }) {
+  const [photos,    setPhotos]    = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [error,     setError]     = useState(null);
+
+  const limit = PHOTO_LIMITS[plan] ?? 1;
+
+  useEffect(() => {
+    apiFetch(`/api/rooms/${room.id}/photos`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setPhotos)
+      .catch(() => {});
+  }, [room.id]);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    const fd = new FormData();
+    fd.append('photo', file);
+    try {
+      const res = await apiFetch(`/api/rooms/${room.id}/photos`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? 'Upload failed.');
+        return;
+      }
+      const photo = await res.json();
+      setPhotos(prev => [...prev, photo]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDelete = async (photoId) => {
+    try {
+      await apiFetch(`/api/rooms/${room.id}/photos/${photoId}`, { method: 'DELETE' });
+      setPhotos(prev => prev.filter(p => p.id !== photoId));
+    } catch {}
+  };
+
+  return (
+    <div className="panel-section">
+      <div className="panel-section-title" style={{ marginBottom: 10 }}>
+        Room photos
+        <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 8 }}>
+          {photos.length} of {limit} used — {plan} plan
+        </span>
+      </div>
+
+      {error && <div className="form-error" style={{ marginBottom: 10 }}>{error}</div>}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+        {photos.map(photo => (
+          <div key={photo.id} style={{ position: 'relative', width: 80, height: 80 }}>
+            <img
+              src={photo.url}
+              alt="Room photo"
+              style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }}
+            />
+            <button
+              onClick={() => handleDelete(photo.id)}
+              style={{
+                position: 'absolute', top: 2, right: 2,
+                width: 20, height: 20, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.7)', color: '#fff',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '0.65rem', fontWeight: 700, lineHeight: 1,
+              }}
+              title="Remove photo"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+
+        {photos.length < limit && (
+          <label style={{
+            width: 80, height: 80, borderRadius: 6,
+            border: '2px dashed var(--border)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            cursor: uploading ? 'wait' : 'pointer', color: 'var(--text-muted)',
+            fontSize: '0.7rem', gap: 4, background: '#f8fafc',
+          }}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleUpload}
+              disabled={uploading}
+              style={{ display: 'none' }}
+            />
+            {uploading ? '…' : (
+              <>
+                <i className="ti ti-camera-plus" style={{ fontSize: '1.2rem' }} />
+                Add photo
+              </>
+            )}
+          </label>
+        )}
+      </div>
+
+      {photos.length >= limit && plan !== 'multi' && (
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+          {plan === 'free'
+            ? 'Upgrade to Pro for up to 5 photos per room'
+            : 'Upgrade to Multi for up to 10 photos per room'}
+        </p>
+      )}
+      <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '4px 0 0' }}>
+        First photo shown on your booking page
+      </p>
     </div>
   );
 }

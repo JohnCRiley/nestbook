@@ -1,7 +1,31 @@
 import { Router } from 'express';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import multer from 'multer';
+import sharp from 'sharp';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PROP_UPLOAD_DIR = join(__dirname, '../uploads/properties');
+fs.mkdirSync(PROP_UPLOAD_DIR, { recursive: true });
+
+const propPhotoStorage = multer.diskStorage({
+  destination: PROP_UPLOAD_DIR,
+  filename: (req, file, cb) => {
+    cb(null, `prop-${req.params.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`);
+  },
+});
+const propPhotoUpload = multer({
+  storage: propPhotoStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Images only'));
+    cb(null, true);
+  },
+});
 
 export const propertiesRouter = Router();
 
@@ -310,6 +334,62 @@ propertiesRouter.patch('/:id/slug', (req, res) => {
 
     db.prepare('UPDATE properties SET booking_slug = ? WHERE id = ?').run(booking_slug, pid);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(pid);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/properties/:id/hero-photo ───────────────────────────────────────
+propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    // Resize to max 1920px wide, JPEG quality 85
+    const tmpPath = req.file.path + '.tmp';
+    await sharp(req.file.path)
+      .resize(1920, null, { withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toFile(tmpPath);
+    fs.unlinkSync(req.file.path);
+    fs.renameSync(tmpPath, req.file.path);
+
+    // Remove previous hero photo file if it exists
+    const existing = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(propId);
+    if (existing?.hero_photo) {
+      try { fs.unlinkSync(join(PROP_UPLOAD_DIR, existing.hero_photo)); } catch {}
+    }
+
+    db.prepare('UPDATE properties SET hero_photo = ? WHERE id = ?').run(req.file.filename, propId);
+    const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+    res.json(updated);
+  } catch (err) {
+    if (req.file?.path) {
+      try { fs.unlinkSync(req.file.path); } catch {}
+      try { fs.unlinkSync(req.file.path + '.tmp'); } catch {}
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/properties/:id/hero-photo ─────────────────────────────────────
+propertiesRouter.delete('/:id/hero-photo', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const existing = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(propId);
+    if (existing?.hero_photo) {
+      try { fs.unlinkSync(join(PROP_UPLOAD_DIR, existing.hero_photo)); } catch {}
+    }
+    db.prepare('UPDATE properties SET hero_photo = NULL WHERE id = ?').run(propId);
+    const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });

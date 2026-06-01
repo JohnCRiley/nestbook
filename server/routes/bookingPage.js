@@ -81,7 +81,7 @@ function calendarMonth(year, month, availMap, today, palette) {
   return h;
 }
 
-function roomCard(room, currSym, palette) {
+function roomCard(room, currSym, palette, photos) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const price = Number(room.price_per_night ?? 0).toFixed(0);
   const typeLabel = room.type
@@ -100,22 +100,34 @@ function roomCard(room, currSym, palette) {
     ? `<p class="room-desc">${esc(room.description)}</p>`
     : '';
 
+  const photoHtml = photos && photos.length > 0 ? `
+  <div class="room-photo">
+    <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
+  </div>
+  ${photos.length > 1 ? `
+  <div class="photo-strip">
+    ${photos.map(f => `<img src="/uploads/rooms/${esc(f)}" class="photo-strip-thumb" loading="lazy" alt="" />`).join('')}
+  </div>` : ''}` : '';
+
   return `
 <div class="room-card">
-  <div class="room-header">
-    <h3>${esc(room.name)}</h3>
-    <span class="room-type-badge">${esc(typeLabel)}</span>
+  ${photoHtml}
+  <div class="room-card-body">
+    <div class="room-header">
+      <h3>${esc(room.name)}</h3>
+      <span class="room-type-badge">${esc(typeLabel)}</span>
+    </div>
+    <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit">/night</span></div>
+    <div class="room-capacity">👥 Up to ${esc(String(room.capacity ?? 2))} guests</div>
+    ${descHtml}
+    ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
+    ${bfBadge}
+    <button class="btn-book" onclick="openWidget()">Book this room</button>
   </div>
-  <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit">/night</span></div>
-  <div class="room-capacity">👥 Up to ${esc(String(room.capacity ?? 2))} guests</div>
-  ${descHtml}
-  ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
-  ${bfBadge}
-  <button class="btn-book" onclick="openWidget()">Book this room</button>
 </div>`;
 }
 
-function generateBookingPage(property, rooms, availMap) {
+function generateBookingPage(property, rooms, availMap, photosByRoom) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -138,15 +150,23 @@ function generateBookingPage(property, rooms, availMap) {
   const cal0 = calendarMonth(m0.year, m0.month, availMap, today, palette);
   const cal1 = calendarMonth(m1.year, m1.month, availMap, today, palette);
 
-  const roomCards = rooms.map(r => roomCard(r, currSym, palette)).join('\n');
+  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id])).join('\n');
 
   const metaDesc = property.description
     ? esc(property.description.slice(0, 155))
     : `Book your stay at ${esc(name)} in ${esc(city)} directly — best rates guaranteed. ${rooms.length} room${rooms.length !== 1 ? 's' : ''} available.`;
 
+  const heroStyle = property.hero_photo
+    ? `background-image:url('/uploads/properties/${esc(property.hero_photo)}');background-size:cover;background-position:center;background-color:${esc(palette.dark)}`
+    : `background:${esc(palette.dark)}`;
+
+  const heroInner = property.hero_photo
+    ? `<div class="hero-overlay" style="background:linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.72));position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:flex-end;padding:28px 32px;">`
+    : `<div class="hero-overlay">`;
+
   const heroSection = `
-<div class="hero" style="background:${esc(palette.dark)}">
-  ${address ? `
+<div class="hero" style="${heroStyle}">
+  ${!property.hero_photo && address ? `
   <iframe
     src="https://maps.google.com/maps?q=${mapQuery}&output=embed&z=15"
     class="hero-map"
@@ -154,7 +174,7 @@ function generateBookingPage(property, rooms, availMap) {
     loading="lazy"
     referrerpolicy="no-referrer-when-downgrade">
   </iframe>` : ''}
-  <div class="hero-overlay">
+  ${heroInner}
     ${typeLabel ? `<div class="hero-badge">${esc(typeLabel)}</div>` : ''}
     <h1>${esc(name)}</h1>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
@@ -368,11 +388,51 @@ section h2 {
   border: 1px solid #e2e8f0;
   border-top: 4px solid ${esc(palette.brand)};
   border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.room-card-body {
   padding: 22px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
 }
+.room-photo {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.room-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+  display: block;
+}
+.room-card:hover .room-photo img { transform: scale(1.03); }
+.photo-strip {
+  display: flex;
+  gap: 4px;
+  padding: 8px 22px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.photo-strip::-webkit-scrollbar { display: none; }
+.photo-strip-thumb {
+  width: 56px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.photo-strip-thumb:hover { opacity: 1; }
 .room-header {
   display: flex;
   align-items: flex-start;
@@ -628,7 +688,20 @@ bookingPageRouter.get('/:identifier', (req, res) => {
 
     const availMap = getAvailabilityMap(bookings, rooms.length);
 
-    res.send(generateBookingPage(property, rooms, availMap));
+    const allPhotos = db.prepare(`
+      SELECT rp.room_id, rp.filename
+      FROM room_photos rp
+      JOIN rooms r ON r.id = rp.room_id
+      WHERE r.property_id = ?
+      ORDER BY rp.room_id, rp.display_order
+    `).all(property.id);
+    const photosByRoom = {};
+    for (const p of allPhotos) {
+      if (!photosByRoom[p.room_id]) photosByRoom[p.room_id] = [];
+      photosByRoom[p.room_id].push(p.filename);
+    }
+
+    res.send(generateBookingPage(property, rooms, availMap, photosByRoom));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');

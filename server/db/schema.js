@@ -882,9 +882,25 @@ John`
   // Property showcase fields
   try { db.exec(`ALTER TABLE properties ADD COLUMN description TEXT`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN hero_image_url TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN hero_photo TEXT`); } catch {}
 
   // Room description field
   try { db.exec(`ALTER TABLE rooms ADD COLUMN description TEXT`); } catch {}
+
+  // Room photos — plan-gated (free: 1, pro: 5, multi: 10 per room)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS room_photos (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      room_id       INTEGER NOT NULL,
+      property_id   INTEGER NOT NULL,
+      filename      TEXT    NOT NULL,
+      display_order INTEGER DEFAULT 0,
+      created_at    TEXT    DEFAULT (datetime('now')),
+      FOREIGN KEY (room_id)     REFERENCES rooms(id)      ON DELETE CASCADE,
+      FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_room_photos_room ON room_photos(room_id)`);
 
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously

@@ -617,6 +617,12 @@ img { display: block; max-width: 100%; }
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
+          <tr class="feat-row" data-detail-key="detail.photos" data-detail="Upload photos for each room and they appear on your booking page automatically. Photos are resized and optimised for fast loading. Free plan: 1 photo per room. Pro: 5 per room. Multi: 10 per room.">
+            <td class="col-feature" data-i18n="feat.photos">Room photos on booking page</td>
+            <td class="col-free"><span class="cell-text accent" data-i18n="cell.onePerRoom">1 photo/room</span></td>
+            <td class="col-pro"><span class="cell-text accent" data-i18n="cell.fivePerRoom">5 photos/room</span></td>
+            <td class="col-multi"><span class="cell-text accent" data-i18n="cell.tenPerRoom">10 photos/room</span></td>
+          </tr>
 
           <!-- ── Group: Pricing & reports ──────────────────────────────────── -->
           <tr class="group-row">
@@ -734,6 +740,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.guests">Guest management</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.ical">iCal sync (Booking.com, Airbnb)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.webpage">Free property webpage</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.photos">Room photos on booking page</span><span class="mpc-feat-value accent" data-i18n="cell.onePerRoom">1 photo/room</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="mpc.fiveLangs">5 interface languages</span></div>
           <div class="mpc-group-label" data-i18n="mpc.notIncluded">Not included</div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon cross-icon"></span><span class="mpc-feat-label" style="color:var(--muted)" data-i18n="mpc.widgetAndPage">Booking widget &amp; direct booking page</span></div>
@@ -760,6 +767,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.emails">Automated confirmation emails</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.bookingPage">Direct booking page (Facebook, social)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.facebook">Facebook Booking Button</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.photos">Room photos on booking page</span><span class="mpc-feat-value accent" data-i18n="cell.fivePerRoom">5 photos/room</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="mpc.seasonal">Seasonal pricing</span><span class="mpc-feat-value accent" data-i18n="cell.upTo5periods">Up to 5 periods</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.revenue">Revenue reports &amp; CSV exports</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.audit">Activity log &amp; audit trail</span></div>
@@ -781,6 +789,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-group-label" data-i18n="mpc.everyPro">Everything in Pro, plus</div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="mpc.properties">Properties</span><span class="mpc-feat-value accent" data-i18n="cell.unlimited">Unlimited</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="mpc.seasonalPeriods">Seasonal pricing periods</span><span class="mpc-feat-value accent" data-i18n="cell.unlimited">Unlimited</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.photos">Room photos on booking page</span><span class="mpc-feat-value accent" data-i18n="cell.tenPerRoom">10 photos/room</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.charges">Room charges (bar, restaurant)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.categories">Service categories with tax rates</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="mpc.multiReports">Multi-property reports</span></div>
@@ -888,6 +897,7 @@ var I18N = {
     'feat.bookingPage': 'Direct booking page (Facebook, social)',
     'feat.facebook': 'Facebook Booking Button',
     'feat.webpage': 'Free property webpage',
+    'feat.photos': 'Room photos on booking page',
     'feat.seasonal': 'Seasonal pricing per room',
     'feat.revenue': 'Revenue reports & CSV exports',
     'feat.audit': 'Activity log & audit trail',
@@ -898,6 +908,7 @@ var I18N = {
     'feat.noCommission': 'No commission on bookings', 'feat.noFees': 'No hidden fees',
     'cell.upTo3': 'Up to 3', 'cell.unlimited': 'Unlimited',
     'cell.upTo5periods': 'Up to 5 periods', 'cell.upTo5': 'Up to 5',
+    'cell.onePerRoom': '1 photo/room', 'cell.fivePerRoom': '5 photos/room', 'cell.tenPerRoom': '10 photos/room',
     'mpc.rooms': 'Rooms', 'mpc.fiveLangs': '5 interface languages',
     'mpc.notIncluded': 'Not included',
     'mpc.widgetAndPage': 'Booking widget & direct booking page',
@@ -934,6 +945,7 @@ var I18N = {
     'detail.bookingPage': "Every property gets a custom booking page at nestbook.io/book/your-name — no website needed. Add it to your Facebook 'Book Now' button, share it on Instagram, paste it in a WhatsApp message, or link to it anywhere.",
     'detail.facebook': "Add a Book Now button directly to your Facebook business page. When followers click it they go straight to your booking page — social media becomes a direct booking channel.",
     'detail.webpage': "Every NestBook property gets a beautiful free webpage at nestbook.io/book/your-property-name — complete with your rooms, prices, availability calendar and a direct booking button. Share it anywhere.",
+    'detail.photos': "Upload photos for each room and they appear on your booking page automatically. Photos are resized and optimised for fast loading. Free plan: 1 photo per room. Pro: 5 per room. Multi: 10 per room.",
     'detail.seasonal': 'Create named date ranges with different nightly rates — peak summer, school holidays, Christmas, quiet winter months. Pro allows up to 5 active pricing periods per room; Multi has no limit.',
     'detail.revenue': 'Monthly and yearly revenue summaries broken down by room, booking source, and occupancy rate. Export to CSV for your accountant or generate a PDF for your own records. Filter by any date range and property.',
     'detail.audit': 'Every action in the system — logins, bookings created, check-ins, cancellations, settings changes — is recorded with a timestamp, the staff member\'s name, and their IP address. Essential for accountability and dispute resolution.',
@@ -970,6 +982,7 @@ var I18N = {
     'feat.bookingPage': 'Page de réservation directe (Facebook, réseaux sociaux)',
     'feat.facebook': 'Bouton de réservation Facebook',
     'feat.webpage': 'Page web gratuite de votre propriété',
+    'feat.photos': 'Photos de chambre sur la page de réservation',
     'feat.seasonal': 'Tarification saisonnière par chambre',
     'feat.revenue': 'Rapports de revenus & exports CSV',
     'feat.audit': 'Journal d\'activité & piste d\'audit',
@@ -980,6 +993,7 @@ var I18N = {
     'feat.noCommission': 'Aucune commission sur les réservations', 'feat.noFees': 'Aucun frais caché',
     'cell.upTo3': 'Jusqu\'à 3', 'cell.unlimited': 'Illimité',
     'cell.upTo5periods': 'Jusqu\'à 5 périodes', 'cell.upTo5': 'Jusqu\'à 5',
+    'cell.onePerRoom': '1 photo/chambre', 'cell.fivePerRoom': '5 photos/chambre', 'cell.tenPerRoom': '10 photos/chambre',
     'mpc.rooms': 'Chambres', 'mpc.fiveLangs': '5 langues d\'interface',
     'mpc.notIncluded': 'Non inclus',
     'mpc.widgetAndPage': 'Widget de réservation et page de réservation directe',
@@ -1016,6 +1030,7 @@ var I18N = {
     'detail.bookingPage': "Chaque établissement dispose d'une page de réservation personnalisée sur nestbook.io/book/votre-nom — aucun site web requis. Ajoutez-la au bouton 'Réserver' de Facebook, partagez-la sur Instagram, collez-la dans un message WhatsApp ou créez un lien vers elle n'importe où.",
     'detail.facebook': "Ajoutez un bouton 'Réserver maintenant' directement sur votre page professionnelle Facebook. Lorsque vos abonnés cliquent dessus, ils accèdent directement à votre page de réservation — les réseaux sociaux deviennent un canal de réservation directe.",
     'detail.webpage': "Chaque propriété NestBook dispose d'une belle page web gratuite sur nestbook.io/book/votre-nom — avec vos chambres, prix, calendrier de disponibilité et un bouton de réservation directe. Partagez-la partout.",
+    'detail.photos': "Téléchargez des photos par chambre qui s'affichent sur votre page de réservation. Les photos sont redimensionnées et optimisées pour un chargement rapide. Plan gratuit : 1 photo par chambre. Pro : 5 par chambre. Multi : 10 par chambre.",
     'detail.seasonal': "Créez des plages de dates nommées avec différents tarifs nuitée — haute saison estivale, vacances scolaires, Noël, mois d'hiver calmes. Pro permet jusqu'à 5 périodes tarifaires actives par chambre ; Multi n'a pas de limite.",
     'detail.revenue': "Résumés mensuels et annuels des revenus ventilés par chambre, source de réservation et taux d'occupation. Exportez en CSV pour votre comptable ou générez un PDF pour vos propres dossiers. Filtrez par toute plage de dates et établissement.",
     'detail.audit': "Chaque action dans le système — connexions, réservations créées, enregistrements, annulations, modifications des paramètres — est enregistrée avec un horodatage, le nom du membre du personnel et son adresse IP. Essentiel pour la responsabilité et la résolution des litiges.",
@@ -1052,6 +1067,7 @@ var I18N = {
     'feat.bookingPage': 'Página de reserva directa (Facebook, redes sociales)',
     'feat.facebook': 'Botón de reserva de Facebook',
     'feat.webpage': 'Página web gratuita de su propiedad',
+    'feat.photos': 'Fotos de habitación en la página de reservas',
     'feat.seasonal': 'Precios estacionales por habitación',
     'feat.revenue': 'Informes de ingresos y exportaciones CSV',
     'feat.audit': 'Registro de actividad y auditoría',
@@ -1062,6 +1078,7 @@ var I18N = {
     'feat.noCommission': 'Sin comisión en reservas', 'feat.noFees': 'Sin cargos ocultos',
     'cell.upTo3': 'Hasta 3', 'cell.unlimited': 'Ilimitado',
     'cell.upTo5periods': 'Hasta 5 períodos', 'cell.upTo5': 'Hasta 5',
+    'cell.onePerRoom': '1 foto/habitación', 'cell.fivePerRoom': '5 fotos/habitación', 'cell.tenPerRoom': '10 fotos/habitación',
     'mpc.rooms': 'Habitaciones', 'mpc.fiveLangs': '5 idiomas de interfaz',
     'mpc.notIncluded': 'No incluido',
     'mpc.widgetAndPage': 'Widget de reservas y página de reserva directa',
@@ -1098,6 +1115,7 @@ var I18N = {
     'detail.bookingPage': "Cada propiedad tiene una página de reservas personalizada en nestbook.io/book/su-nombre — no necesita sitio web. Agréguela al botón 'Reservar ahora' de Facebook, compártala en Instagram, péguela en un mensaje de WhatsApp o enlácela donde quiera.",
     'detail.facebook': "Añada un botón 'Reservar ahora' directamente en su página de negocio de Facebook. Cuando sus seguidores hagan clic, irán directamente a su página de reservas — las redes sociales se convierten en un canal de reserva directa.",
     'detail.webpage': "Cada propiedad de NestBook tiene una bonita página web gratuita en nestbook.io/book/su-nombre — con sus habitaciones, precios, calendario de disponibilidad y un botón de reserva directa. Compártala en cualquier lugar.",
+    'detail.photos': "Sube fotos por habitación que aparecen en tu página de reservas automáticamente. Las fotos se redimensionan y optimizan para una carga rápida. Plan gratuito: 1 foto por habitación. Pro: 5 por habitación. Multi: 10 por habitación.",
     'detail.seasonal': 'Cree rangos de fechas con nombre con diferentes tarifas nocturnas — verano de temporada alta, vacaciones escolares, Navidad, meses de invierno tranquilos. Pro permite hasta 5 períodos de precios activos por habitación; Multi no tiene límite.',
     'detail.revenue': 'Resúmenes mensuales y anuales de ingresos desglosados por habitación, fuente de reserva y tasa de ocupación. Exporte a CSV para su contable o genere un PDF para sus propios registros. Filtre por cualquier rango de fechas y propiedad.',
     'detail.audit': 'Cada acción en el sistema — inicios de sesión, reservas creadas, check-ins, cancelaciones, cambios de configuración — se registra con una marca de tiempo, el nombre del miembro del personal y su dirección IP. Esencial para la responsabilidad y la resolución de disputas.',
@@ -1134,6 +1152,7 @@ var I18N = {
     'feat.bookingPage': 'Direkte Buchungsseite (Facebook, soziale Medien)',
     'feat.facebook': 'Facebook-Buchungsschaltfläche',
     'feat.webpage': 'Kostenlose Eigenschaftswebseite',
+    'feat.photos': 'Zimmerfotos auf der Buchungsseite',
     'feat.seasonal': 'Saisonale Preisgestaltung pro Zimmer',
     'feat.revenue': 'Umsatzberichte & CSV-Exporte',
     'feat.audit': 'Aktivitätsprotokoll & Prüfpfad',
@@ -1144,6 +1163,7 @@ var I18N = {
     'feat.noCommission': 'Keine Provision auf Buchungen', 'feat.noFees': 'Keine versteckten Gebühren',
     'cell.upTo3': 'Bis zu 3', 'cell.unlimited': 'Unbegrenzt',
     'cell.upTo5periods': 'Bis zu 5 Zeiträumen', 'cell.upTo5': 'Bis zu 5',
+    'cell.onePerRoom': '1 Foto/Zimmer', 'cell.fivePerRoom': '5 Fotos/Zimmer', 'cell.tenPerRoom': '10 Fotos/Zimmer',
     'mpc.rooms': 'Zimmer', 'mpc.fiveLangs': '5 Schnittstellensprachen',
     'mpc.notIncluded': 'Nicht enthalten',
     'mpc.widgetAndPage': 'Buchungs-Widget und direkte Buchungsseite',
@@ -1180,6 +1200,7 @@ var I18N = {
     'detail.bookingPage': "Jedes Objekt erhält eine eigene Buchungsseite unter nestbook.io/book/ihr-name — keine Website erforderlich. Fügen Sie es Ihrem Facebook-'Jetzt buchen'-Button hinzu, teilen Sie es auf Instagram, fügen Sie es in eine WhatsApp-Nachricht ein oder verlinken Sie es überall.",
     'detail.facebook': "Fügen Sie Ihrer Facebook-Unternehmensseite direkt einen 'Jetzt buchen'-Button hinzu. Wenn Follower darauf klicken, gelangen sie direkt zu Ihrer Buchungsseite — soziale Medien werden zum direkten Buchungskanal.",
     'detail.webpage': "Jedes NestBook-Objekt erhält eine schöne kostenlose Webseite unter nestbook.io/book/ihr-name — mit Ihren Zimmern, Preisen, Verfügbarkeitskalender und einem direkten Buchungsbutton. Teilen Sie sie überall.",
+    'detail.photos': "Laden Sie Fotos für jedes Zimmer hoch, die automatisch auf Ihrer Buchungsseite erscheinen. Fotos werden für schnelles Laden in der Größe angepasst und optimiert. Kostenloser Plan: 1 Foto pro Zimmer. Pro: 5 pro Zimmer. Multi: 10 pro Zimmer.",
     'detail.seasonal': 'Erstellen Sie benannte Datumsbereiche mit unterschiedlichen Nachtpreisen — Hochsommer, Schulferien, Weihnachten, ruhige Wintermonate. Pro erlaubt bis zu 5 aktive Preiszeiträume pro Zimmer; Multi hat kein Limit.',
     'detail.revenue': 'Monatliche und jährliche Umsatzzusammenfassungen aufgeschlüsselt nach Zimmer, Buchungsquelle und Auslastungsrate. Exportieren Sie als CSV für Ihren Buchhalter oder erstellen Sie ein PDF für Ihre eigenen Unterlagen. Nach Datumsbereich und Objekt filtern.',
     'detail.audit': 'Jede Aktion im System — Anmeldungen, erstellte Buchungen, Check-ins, Stornierungen, Einstellungsänderungen — wird mit Zeitstempel, dem Namen des Mitarbeiters und dessen IP-Adresse aufgezeichnet. Unverzichtbar für Verantwortlichkeit und Streitbeilegung.',
@@ -1216,6 +1237,7 @@ var I18N = {
     'feat.bookingPage': 'Directe boekingspagina (Facebook, social)',
     'feat.facebook': 'Facebook boekingsknop',
     'feat.webpage': 'Gratis accommodatiepagina',
+    'feat.photos': 'Kamerfotos op de boekingspagina',
     'feat.seasonal': 'Seizoensprijzen per kamer',
     'feat.revenue': 'Omzetrapporten & CSV-exports',
     'feat.audit': 'Activiteitenlog & auditspoor',
@@ -1226,6 +1248,7 @@ var I18N = {
     'feat.noCommission': 'Geen commissie op boekingen', 'feat.noFees': 'Geen verborgen kosten',
     'cell.upTo3': 'Tot 3', 'cell.unlimited': 'Onbeperkt',
     'cell.upTo5periods': 'Tot 5 periodes', 'cell.upTo5': 'Tot 5',
+    'cell.onePerRoom': "1 foto/kamer", 'cell.fivePerRoom': "5 foto's/kamer", 'cell.tenPerRoom': "10 foto's/kamer",
     'mpc.rooms': 'Kamers', 'mpc.fiveLangs': '5 interfacetalen',
     'mpc.notIncluded': 'Niet inbegrepen',
     'mpc.widgetAndPage': 'Boekingswidget en directe boekingspagina',
@@ -1262,6 +1285,7 @@ var I18N = {
     'detail.bookingPage': "Elke accommodatie krijgt een eigen boekingspagina op nestbook.io/book/uw-naam — geen website nodig. Voeg het toe aan uw Facebook 'Nu boeken'-knop, deel het op Instagram, plak het in een WhatsApp-bericht of link er overal naar toe.",
     'detail.facebook': "Voeg een 'Nu boeken'-knop direct toe aan uw Facebook-bedrijfspagina. Wanneer volgers erop klikken, gaan ze rechtstreeks naar uw boekingspagina — sociale media worden een direct boekingskanaal.",
     'detail.webpage': "Elke NestBook-accommodatie krijgt een mooie gratis webpagina op nestbook.io/book/uw-naam — compleet met uw kamers, prijzen, beschikbaarheidskalender en een directe boekingsknop. Deel het overal.",
+    'detail.photos': "Upload foto's per kamer die automatisch verschijnen op uw boekingspagina. Foto's worden verkleind en geoptimaliseerd voor snel laden. Gratis plan: 1 foto per kamer. Pro: 5 per kamer. Multi: 10 per kamer.",
     'detail.seasonal': 'Maak benoemde datumbereiken met verschillende nachttarieven — hoogzomer, schoolvakanties, Kerstmis, rustige wintermaanden. Pro staat tot 5 actieve prijsperiodes per kamer toe; Multi heeft geen limiet.',
     'detail.revenue': 'Maandelijkse en jaarlijkse omzetsamenvattingen uitgesplitst per kamer, boekingsbron en bezettingsgraad. Exporteer naar CSV voor uw accountant of genereer een PDF voor uw eigen administratie. Filter op elke datumrange en accommodatie.',
     'detail.audit': 'Elke actie in het systeem — inloggen, aangemaakte boekingen, inchecken, annuleringen, wijzigingen in instellingen — wordt geregistreerd met een tijdstempel, de naam van het personeelslid en hun IP-adres. Essentieel voor verantwoording en geschillenbeslechting.',

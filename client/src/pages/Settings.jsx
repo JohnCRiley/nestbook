@@ -368,6 +368,17 @@ export default function Settings() {
                   />
                 </FormField>
 
+                {property && (
+                  <PropertyHeroPhoto
+                    property={property}
+                    onUpdated={(updated) => {
+                      setProperty(updated);
+                      setContextProperty(updated);
+                      updatePropertyInList(updated);
+                    }}
+                  />
+                )}
+
                 <div className="settings-save-row">
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>
                     {saving ? t('saving') : t('saveChanges')}
@@ -1922,6 +1933,103 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, rooms, onClose
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ── PropertyHeroPhoto ─────────────────────────────────────────────────────────
+
+function PropertyHeroPhoto({ property, onUpdated }) {
+  const [uploading, setUploading] = useState(false);
+  const [removing,  setRemoving]  = useState(false);
+  const [error,     setError]     = useState(null);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    const fd = new FormData();
+    fd.append('photo', file);
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/hero-photo`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? 'Upload failed.');
+        return;
+      }
+      onUpdated(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemove = async () => {
+    setRemoving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/hero-photo`, { method: 'DELETE' });
+      if (res.ok) onUpdated(await res.json());
+    } catch {}
+    setRemoving(false);
+  };
+
+  return (
+    <div className="form-group">
+      <label className="form-label">Property photo (shown at top of your booking page)</label>
+      {error && <div style={{ color: '#dc2626', fontSize: '0.78rem', marginBottom: 6 }}>{error}</div>}
+
+      {property.hero_photo ? (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <img
+            src={`/uploads/properties/${property.hero_photo}`}
+            alt="Property hero"
+            style={{
+              width: 160, height: 90, objectFit: 'cover',
+              borderRadius: 6, border: '1px solid var(--border)',
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{
+              padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)',
+              fontSize: '0.82rem', cursor: uploading ? 'wait' : 'pointer',
+              background: '#fff', color: '#374151', fontWeight: 500,
+            }}>
+              <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
+              {uploading ? 'Uploading…' : 'Change photo'}
+            </label>
+            <button
+              onClick={handleRemove}
+              disabled={removing}
+              style={{
+                background: 'none', border: 'none', color: '#dc2626',
+                fontSize: '0.82rem', cursor: 'pointer', padding: '6px 4px',
+                fontFamily: 'inherit',
+              }}
+            >
+              {removing ? 'Removing…' : 'Remove'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '8px 16px', borderRadius: 6,
+          border: '1.5px dashed var(--border)',
+          fontSize: '0.82rem', cursor: uploading ? 'wait' : 'pointer',
+          color: 'var(--text-muted)', background: '#f8fafc', fontWeight: 500,
+        }}>
+          <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
+          <i className="ti ti-camera-plus" />
+          {uploading ? 'Uploading…' : 'Upload a photo'}
+        </label>
+      )}
+      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4 }}>
+        Replaces the map on your booking page. Max 10 MB. JPEG, PNG or WebP.
       </div>
     </div>
   );

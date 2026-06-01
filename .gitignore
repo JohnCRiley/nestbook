@@ -39,3 +39,6 @@ desktop.ini
 # Vite
 .vite/
 vite.config.js.timestamp-*
+
+# Uploaded images (persisted on server, never commit)
+server/uploads/
