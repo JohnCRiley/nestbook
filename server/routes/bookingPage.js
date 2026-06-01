@@ -47,45 +47,64 @@ function localDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-function getAvailabilityMap(bookings, totalRooms) {
+function getRoomAvailMap(bookings, roomId) {
+  const rb = bookings.filter(b => b.room_id === roomId);
   const map = {};
   const base = new Date();
   for (let i = 0; i < 62; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     const s = localDateStr(d);
-    const booked = bookings.filter(b => b.check_in_date <= s && b.check_out_date > s).length;
-    map[s] = (totalRooms === 0 || booked < totalRooms) ? 'available' : 'booked';
+    map[s] = rb.some(b => b.check_in_date <= s && b.check_out_date > s) ? 'booked' : 'available';
   }
   return map;
 }
 
-function calendarMonth(year, month, availMap, today, palette) {
-  const firstDow  = new Date(year, month, 1).getDay(); // 0=Sun
-  const offset    = (firstDow + 6) % 7;               // Monday-first
+function roomCalMonth(year, month, availMap, today) {
+  const firstDow  = new Date(year, month, 1).getDay();
+  const offset    = (firstDow + 6) % 7; // Monday-first
   const daysCount = new Date(year, month + 1, 0).getDate();
-  const headers   = ['Mo','Tu','We','Th','Fr','Sa','Su'];
 
-  let h = `<div class="cal-month">`;
-  h += `<h3>${MONTH_NAMES[month]} ${year}</h3>`;
-  h += `<div class="cal-days">`;
-  for (const d of headers) h += `<div class="cal-header">${d}</div>`;
-  for (let i = 0; i < offset; i++) h += `<div class="cal-day cal-empty"></div>`;
+  let h = `<div class="room-cal-month">`;
+  h += `<div class="room-cal-header">${MONTH_NAMES[month]} ${year}</div>`;
+  h += `<div class="room-cal-days">`;
+  for (const d of ['M','T','W','T','F','S','S']) h += `<span class="cal-dow">${d}</span>`;
+  for (let i = 0; i < offset; i++) h += `<span class="cal-day cal-empty"></span>`;
 
   for (let d = 1; d <= daysCount; d++) {
     const s = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     let cls = 'cal-day';
-    if (s === today)       cls += ' cal-today';
-    else if (s < today)    cls += ' cal-past';
+    if (s < today)                     cls += ' cal-empty';
+    else if (s === today)              cls += ' cal-today';
     else if (availMap[s] === 'booked') cls += ' cal-booked';
-    else                   cls += ' cal-available';
-    h += `<div class="${cls}">${d}</div>`;
+    else                               cls += ' cal-available';
+    h += `<span class="${cls}">${s >= today ? d : ''}</span>`;
   }
   h += `</div></div>`;
   return h;
 }
 
-function roomCard(room, currSym, palette, photos) {
+function roomCalendarSection(availMap) {
+  const today = localDateStr(new Date());
+  const now   = new Date();
+  const m0    = { year: now.getFullYear(), month: now.getMonth() };
+  const next  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const m1    = { year: next.getFullYear(), month: next.getMonth() };
+  return `
+<div class="room-availability">
+  <h4 class="avail-title">Availability</h4>
+  <div class="room-cal-grid">
+    ${roomCalMonth(m0.year, m0.month, availMap, today)}
+    ${roomCalMonth(m1.year, m1.month, availMap, today)}
+  </div>
+  <div class="cal-legend">
+    <span><span class="legend-dot legend-available"></span> Available</span>
+    <span><span class="legend-dot legend-booked"></span> Booked</span>
+  </div>
+</div>`;
+}
+
+function roomCard(room, currSym, palette, photos, availMap) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const price = Number(room.price_per_night ?? 0).toFixed(0);
   const typeLabel = room.type
@@ -126,12 +145,13 @@ function roomCard(room, currSym, palette, photos) {
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
+    ${availMap ? roomCalendarSection(availMap) : ''}
     <button class="btn-book" onclick="openWidget()">Book this room</button>
   </div>
 </div>`;
 }
 
-function generateBookingPage(property, rooms, availMap, photosByRoom) {
+function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -145,16 +165,10 @@ function generateBookingPage(property, rooms, availMap, photosByRoom) {
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
 
-  const today = localDateStr(new Date());
-  const now   = new Date();
-  const m0    = { year: now.getFullYear(), month: now.getMonth() };
-  const next  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const m1    = { year: next.getFullYear(), month: next.getMonth() };
+  const availMapsByRoom = {};
+  for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id);
 
-  const cal0 = calendarMonth(m0.year, m0.month, availMap, today, palette);
-  const cal1 = calendarMonth(m1.year, m1.month, availMap, today, palette);
-
-  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id])).join('\n');
+  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id])).join('\n');
 
   const metaDesc = property.description
     ? esc(property.description.slice(0, 155))
@@ -206,24 +220,6 @@ function generateBookingPage(property, rooms, availMap, photosByRoom) {
     </div>
   </div>
 </section>` : '';
-
-  const availSection = `
-<section class="availability">
-  <div class="section-inner">
-    <h2>Availability</h2>
-    <p class="avail-legend">
-      <span class="legend-dot legend-available"></span> Available &nbsp;
-      <span class="legend-dot legend-booked"></span> Booked
-    </p>
-    <div class="calendar-grid">
-      ${cal0}
-      ${cal1}
-    </div>
-    <p class="calendar-note">
-      Select your dates and click <strong>Book Now</strong> to check live availability and complete your reservation.
-    </p>
-  </div>
-</section>`;
 
   const ctaSection = `
 <section class="cta">
@@ -516,49 +512,43 @@ section h2 {
 }
 .btn-book:hover { background: ${esc(palette.brand)}; }
 
-/* ── Availability ──────────────────────────────────────────────────── */
-.availability { background: #fff; }
-.avail-legend {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-bottom: 24px;
+/* ── Room availability calendar ────────────────────────────────────── */
+.room-availability {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
 }
-.legend-dot {
-  display: inline-block;
-  width: 12px; height: 12px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-.legend-available { background: ${esc(palette.light)}; border: 1px solid ${esc(palette.brand)}; }
-.legend-booked    { background: #f1f5f9; border: 1px solid #cbd5e1; }
-.calendar-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
-  margin-bottom: 20px;
-}
-@media (max-width: 600px) { .calendar-grid { grid-template-columns: 1fr; } }
-.cal-month h3 {
-  font-size: 0.95rem;
+.avail-title {
+  font-size: 0.75rem;
   font-weight: 700;
   color: ${esc(palette.dark)};
-  text-align: center;
   margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
-.cal-days {
+.room-cal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.room-cal-header {
+  text-align: center;
+  font-weight: 600;
+  color: ${esc(palette.dark)};
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+.room-cal-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 1px;
 }
-.cal-header {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #94a3b8;
+.cal-dow {
   text-align: center;
-  padding: 4px 0;
+  font-size: 0.6rem;
+  color: #94a3b8;
+  padding: 2px 0;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .cal-day {
@@ -566,23 +556,32 @@ section h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  font-size: 0.82rem;
+  border-radius: 3px;
+  font-size: 0.68rem;
   font-weight: 500;
 }
-.cal-empty  { background: none; }
-.cal-past   { color: #cbd5e1; }
+.cal-empty     { background: none; color: transparent; }
 .cal-available { background: ${esc(palette.light)}; color: ${esc(palette.dark)}; }
-.cal-booked    { background: #f1f5f9; color: #94a3b8; }
-.cal-today  {
-  background: ${esc(palette.dark)};
-  color: #fff;
-  font-weight: 700;
-  border-radius: 50%;
+.cal-booked    { background: #f1f5f9; color: #cbd5e1; text-decoration: line-through; }
+.cal-today     { background: ${esc(palette.brand)}; color: #fff; font-weight: 700; border-radius: 50%; }
+.cal-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: #94a3b8;
 }
-.calendar-note {
-  font-size: 0.83rem;
-  color: #64748b;
+.legend-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.legend-available { background: ${esc(palette.light)}; }
+.legend-booked    { background: #f1f5f9; border: 1px solid #e2e8f0; }
+@media (max-width: 480px) {
+  .room-cal-grid { grid-template-columns: 1fr; }
 }
 
 /* ── CTA ───────────────────────────────────────────────────────────── */
@@ -634,7 +633,6 @@ footer a:hover { text-decoration: underline; }
 ${heroSection}
 ${aboutSection}
 ${roomsSection}
-${availSection}
 ${ctaSection}
 ${footerSection}
 
@@ -701,8 +699,6 @@ bookingPageRouter.get('/:identifier', (req, res) => {
         AND b.check_out_date >= date('now')
     `).all(property.id);
 
-    const availMap = getAvailabilityMap(bookings, rooms.length);
-
     const allPhotos = db.prepare(`
       SELECT rp.room_id, rp.filename
       FROM room_photos rp
@@ -716,7 +712,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
       photosByRoom[p.room_id].push(p.filename);
     }
 
-    res.send(generateBookingPage(property, rooms, availMap, photosByRoom));
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');
