@@ -318,14 +318,16 @@ body {
 }
 .hero-badge {
   display: inline-block;
-  background: rgba(255,255,255,0.18);
+  align-self: flex-start;
+  background: rgba(255,255,255,0.2);
   border: 1px solid rgba(255,255,255,0.3);
   border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 0.78rem;
+  padding: 4px 14px;
+  font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
   backdrop-filter: blur(4px);
 }
 .hero-overlay h1 {
