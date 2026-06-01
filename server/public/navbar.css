@@ -3,6 +3,7 @@
 /* ── Navbar bar ──────────────────────────────────────────────────────────── */
 .navbar {
   background: var(--dark, #1a4710);
+  width: 100%;
   position: sticky;
   top: 0;
   z-index: 100;
