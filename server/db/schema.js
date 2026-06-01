@@ -622,6 +622,59 @@ export function initSchema() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
 
+  // Add country / language columns (idempotent)
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN country  TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN language TEXT`); } catch {}
+
+  // Expand source + status CHECK constraints if needed.
+  // sqlite_master still holds the original CREATE TABLE sql — inspect it.
+  {
+    const row = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`).get();
+    const tblSql = row?.sql || '';
+    if (!tblSql.includes('follow_up_sent') || !tblSql.includes("'facebook'")) {
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE prospects_new (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            name              TEXT    NOT NULL,
+            company           TEXT,
+            email             TEXT    NOT NULL UNIQUE,
+            source            TEXT    NOT NULL DEFAULT 'manual'
+                                      CHECK(source IN ('manual','csv','auto_signup','website','facebook','google','booking_com','airbnb','referral','other')),
+            status            TEXT    NOT NULL DEFAULT 'new'
+                                      CHECK(status IN ('new','contacted','follow_up_sent','replied','converted','unsubscribed')),
+            notes             TEXT,
+            follow_up_date    TEXT,
+            country           TEXT,
+            language          TEXT,
+            unsubscribe_token TEXT    UNIQUE,
+            unsubscribed_at   TEXT,
+            converted_at      TEXT,
+            user_id           INTEGER REFERENCES users(id),
+            created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+          )
+        `);
+        db.exec(`
+          INSERT INTO prospects_new
+            (id,name,company,email,source,status,notes,follow_up_date,
+             country,language,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at)
+          SELECT id,name,company,email,source,status,notes,follow_up_date,
+                 country,language,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at
+          FROM prospects
+        `);
+        db.exec(`DROP TABLE prospects`);
+        db.exec(`ALTER TABLE prospects_new RENAME TO prospects`);
+        db.exec(`COMMIT`);
+      } catch (e) {
+        db.exec(`ROLLBACK`);
+        throw e;
+      }
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,

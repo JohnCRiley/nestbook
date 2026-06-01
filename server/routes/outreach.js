@@ -81,7 +81,7 @@ outreachRouter.get('/prospects/:id', (req, res) => {
 
 // ── Prospects — create ────────────────────────────────────────────────────────
 outreachRouter.post('/prospects', (req, res) => {
-  const { name, company, email, source = 'manual', notes, follow_up_date } = req.body;
+  const { name, company, email, source = 'manual', notes, follow_up_date, country, language } = req.body;
   if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
 
   const existing = db.prepare(`SELECT id FROM prospects WHERE email = ?`).get(email.toLowerCase().trim());
@@ -89,21 +89,22 @@ outreachRouter.post('/prospects', (req, res) => {
 
   const token = makeUnsubToken();
   const result = db.prepare(
-    `INSERT INTO prospects (name, company, email, source, notes, follow_up_date, unsubscribe_token) VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(name.trim(), company?.trim() || null, email.toLowerCase().trim(), source, notes || null, follow_up_date || null, token);
+    `INSERT INTO prospects (name, company, email, source, notes, follow_up_date, country, language, unsubscribe_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(name.trim(), company?.trim() || null, email.toLowerCase().trim(), source, notes || null, follow_up_date || null, country || null, language || null, token);
 
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
 // ── Prospects — update ────────────────────────────────────────────────────────
 outreachRouter.put('/prospects/:id', (req, res) => {
-  const { name, company, email, status, notes, follow_up_date } = req.body;
+  const { name, company, email, status, notes, follow_up_date, country, language } = req.body;
   const p = db.prepare(`SELECT * FROM prospects WHERE id = ?`).get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
 
   db.prepare(`
     UPDATE prospects SET
-      name = ?, company = ?, email = ?, status = ?, notes = ?, follow_up_date = ?
+      name = ?, company = ?, email = ?, status = ?, notes = ?, follow_up_date = ?,
+      country = ?, language = ?
     WHERE id = ?
   `).run(
     name ?? p.name,
@@ -112,6 +113,8 @@ outreachRouter.put('/prospects/:id', (req, res) => {
     status ?? p.status,
     notes !== undefined ? notes : p.notes,
     follow_up_date !== undefined ? follow_up_date : p.follow_up_date,
+    country !== undefined ? country : p.country,
+    language !== undefined ? language : p.language,
     req.params.id,
   );
   res.json({ ok: true });

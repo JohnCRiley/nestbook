@@ -23,7 +23,11 @@ function StatusBadge({ status }) {
 }
 
 function SourceBadge({ source }) {
-  const labels = { manual: 'Manual', csv: 'CSV', auto_signup: 'Signed up', website: 'Website' };
+  const labels = {
+    manual: 'Manual', csv: 'CSV', auto_signup: 'Signed up', website: 'Website',
+    facebook: 'Facebook', google: 'Google', booking_com: 'Booking.com',
+    airbnb: 'Airbnb', referral: 'Referral', other: 'Other',
+  };
   return (
     <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>
       {labels[source] ?? source}
@@ -121,6 +125,8 @@ function AddProspectModal({ onClose, onSaved }) {
   const [name, setName]       = useState('');
   const [company, setCompany] = useState('');
   const [email, setEmail]     = useState('');
+  const [country, setCountry] = useState('');
+  const [language, setLanguage] = useState('');
   const [notes, setNotes]     = useState('');
   const [saving, setSaving]   = useState(false);
   const [err, setErr]         = useState('');
@@ -131,7 +137,7 @@ function AddProspectModal({ onClose, onSaved }) {
     const res = await saApiFetch('/api/admin/outreach/prospects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, notes }),
+      body: JSON.stringify({ name, company, email, country, language, notes }),
     });
     setSaving(false);
     if (res.ok) { onSaved(); onClose(); }
@@ -147,6 +153,10 @@ function AddProspectModal({ onClose, onSaved }) {
           <Input value={name}    onChange={setName}    placeholder="Full name *" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property name" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email address *" type="email" style={{ width: '100%' }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
+            <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />
+          </div>
           <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes (optional)" />
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
@@ -164,6 +174,8 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
   const [company, setCompany]       = useState(prospect.company ?? '');
   const [email, setEmail]           = useState(prospect.email);
   const [status, setStatus]         = useState(prospect.status);
+  const [country, setCountry]       = useState(prospect.country ?? '');
+  const [language, setLanguage]     = useState(prospect.language ?? '');
   const [notes, setNotes]           = useState(prospect.notes ?? '');
   const [followUp, setFollowUp]     = useState(prospect.follow_up_date ?? '');
   const [saving, setSaving]         = useState(false);
@@ -173,7 +185,7 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
     await saApiFetch(`/api/admin/outreach/prospects/${prospect.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, status, notes, follow_up_date: followUp || null }),
+      body: JSON.stringify({ name, company, email, status, country, language, notes, follow_up_date: followUp || null }),
     });
     setSaving(false); onSaved(); onClose();
   }
@@ -186,6 +198,10 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
           <Input value={name}    onChange={setName}    placeholder="Full name" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email" type="email" style={{ width: '100%' }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
+            <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />
+          </div>
           <select
             value={status} onChange={e => setStatus(e.target.value)}
             style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
@@ -589,10 +605,13 @@ export default function Outreach() {
   const [campaigns, setCampaigns]   = useState([]);
   const [followUps, setFollowUps]   = useState([]);
 
-  // Filters
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterSource, setFilterSource] = useState('');
-  const [search, setSearch]             = useState('');
+  // Filters (all client-side)
+  const [search, setSearch]               = useState('');
+  const [filterStatus, setFilterStatus]   = useState('');
+  const [filterSource, setFilterSource]   = useState('');
+  const [filterCountry, setFilterCountry] = useState('');
+  const [filterLang, setFilterLang]       = useState('');
+  const [filterFollowUp, setFilterFollowUp] = useState('');
 
   // UI state
   const [selected, setSelected]         = useState([]);
@@ -605,13 +624,8 @@ export default function Outreach() {
   const [tab, setTab]                   = useState('prospects'); // prospects | followup
 
   const load = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (filterStatus) params.set('status', filterStatus);
-    if (filterSource) params.set('source', filterSource);
-    if (search)       params.set('q', search);
-
     const [pRes, sRes, tRes, cRes, fRes] = await Promise.all([
-      saApiFetch(`/api/admin/outreach/prospects?${params}`),
+      saApiFetch('/api/admin/outreach/prospects?limit=2000'),
       saApiFetch('/api/admin/outreach/stats'),
       saApiFetch('/api/admin/outreach/templates'),
       saApiFetch('/api/admin/outreach/campaigns'),
@@ -622,15 +636,74 @@ export default function Outreach() {
     if (tRes.ok) setTemplates(await tRes.json());
     if (cRes.ok) setCampaigns(await cRes.json());
     if (fRes.ok) setFollowUps(await fRes.json());
-  }, [filterStatus, filterSource, search]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Derived state — computed every render, no useMemo needed at this scale
+  const today = new Date().toISOString().split('T')[0];
+  const filteredProspects = prospects.filter(p => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!p.name?.toLowerCase().includes(q) && !p.email?.toLowerCase().includes(q) && !p.company?.toLowerCase().includes(q)) return false;
+    }
+    if (filterStatus  && p.status   !== filterStatus)  return false;
+    if (filterSource  && p.source   !== filterSource)  return false;
+    if (filterCountry && p.country  !== filterCountry) return false;
+    if (filterLang    && p.language !== filterLang)    return false;
+    if (filterFollowUp === 'today'   && p.follow_up_date !== today)                        return false;
+    if (filterFollowUp === 'overdue' && !(p.follow_up_date && p.follow_up_date < today))   return false;
+    if (filterFollowUp === 'set'     && !p.follow_up_date)                                 return false;
+    if (filterFollowUp === 'none'    && p.follow_up_date)                                  return false;
+    return true;
+  });
+
+  const countries = [...new Set(prospects.map(p => p.country).filter(Boolean))].sort();
+  const languages = [...new Set(prospects.map(p => p.language).filter(Boolean))].sort();
+
+  const anyFilter = search || filterStatus || filterSource || filterCountry || filterLang || filterFollowUp;
+
+  function clearFilters() {
+    setSearch(''); setFilterStatus(''); setFilterSource('');
+    setFilterCountry(''); setFilterLang(''); setFilterFollowUp('');
+    setSelected([]);
+  }
 
   function toggleSelect(id) {
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   }
   function toggleAll() {
-    setSelected(selected.length === prospects.length ? [] : prospects.map(p => p.id));
+    setSelected(selected.length === filteredProspects.length ? [] : filteredProspects.map(p => p.id));
+  }
+
+  async function bulkChangeStatus(newStatus) {
+    for (const id of selected) {
+      await saApiFetch(`/api/admin/outreach/prospects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    }
+    load(); setSelected([]);
+  }
+
+  async function bulkDelete() {
+    if (!window.confirm(`Delete ${selected.length} prospect(s)?`)) return;
+    for (const id of selected) {
+      await saApiFetch(`/api/admin/outreach/prospects/${id}`, { method: 'DELETE' });
+    }
+    load(); setSelected([]);
+  }
+
+  function exportCsv() {
+    const rows = filteredProspects.filter(p => selected.includes(p.id));
+    const header = ['id','name','company','email','country','language','source','status','follow_up_date','notes','created_at'];
+    const lines = [header.join(','), ...rows.map(p =>
+      header.map(k => JSON.stringify(p[k] ?? '')).join(',')
+    )];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'prospects-export.csv'; a.click(); URL.revokeObjectURL(a.href);
   }
 
   async function delProspect(id) {
@@ -672,6 +745,7 @@ export default function Outreach() {
         <button style={tabStyle(tab === 'prospects')} onClick={() => setTab('prospects')}>All Prospects ({total})</button>
         <button style={tabStyle(tab === 'followup')}  onClick={() => setTab('followup')}>Follow-up Queue ({followUps.length})</button>
       </div>
+
 
       {tab === 'followup' && (
         <Section title="Follow-up Queue" action={
@@ -719,51 +793,119 @@ export default function Outreach() {
       )}
 
       {tab === 'prospects' && (
-        <Section
-          title="Prospects"
-          action={
-            selected.length > 0 && (
-              <Btn small onClick={() => setShowCompose(true)}>
-                Compose to {selected.length}
-              </Btn>
-            )
-          }
-        >
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-            <Input value={search} onChange={v => { setSearch(v); setSelected([]); }} placeholder="Search name, email, company…" style={{ flex: '1 1 200px' }} />
+        <Section title="Prospects">
+          {/* ── Filter bar ── */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+            <Input
+              value={search} onChange={v => { setSearch(v); setSelected([]); }}
+              placeholder="Search name, email, company…"
+              style={{ flex: '2 1 180px', minWidth: 140 }}
+            />
             <select
               value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setSelected([]); }}
-              style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+              style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
             >
               <option value="">All statuses</option>
               <option value="new">New</option>
               <option value="contacted">Contacted</option>
+              <option value="follow_up_sent">Follow-up sent</option>
               <option value="replied">Replied</option>
               <option value="converted">Converted</option>
               <option value="unsubscribed">Unsubscribed</option>
             </select>
             <select
               value={filterSource} onChange={e => { setFilterSource(e.target.value); setSelected([]); }}
-              style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+              style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
             >
               <option value="">All sources</option>
               <option value="manual">Manual</option>
               <option value="csv">CSV</option>
               <option value="auto_signup">Signed up</option>
               <option value="website">Website</option>
+              <option value="facebook">Facebook</option>
+              <option value="google">Google</option>
+              <option value="booking_com">Booking.com</option>
+              <option value="airbnb">Airbnb</option>
+              <option value="referral">Referral</option>
+              <option value="other">Other</option>
             </select>
+            <select
+              value={filterCountry} onChange={e => { setFilterCountry(e.target.value); setSelected([]); }}
+              style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+            >
+              <option value="">All countries</option>
+              {countries.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select
+              value={filterLang} onChange={e => { setFilterLang(e.target.value); setSelected([]); }}
+              style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+            >
+              <option value="">All languages</option>
+              {languages.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <select
+              value={filterFollowUp} onChange={e => { setFilterFollowUp(e.target.value); setSelected([]); }}
+              style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+            >
+              <option value="">Follow-up: any</option>
+              <option value="today">Due today</option>
+              <option value="overdue">Overdue</option>
+              <option value="set">Date set</option>
+              <option value="none">No date</option>
+            </select>
+            {anyFilter && (
+              <Btn variant="secondary" small onClick={clearFilters} style={{ alignSelf: 'stretch' }}>Clear ✕</Btn>
+            )}
           </div>
+
+          {/* ── Showing count ── */}
+          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 10 }}>
+            {anyFilter
+              ? `Showing ${filteredProspects.length} of ${prospects.length} prospects`
+              : `${prospects.length} prospect${prospects.length !== 1 ? 's' : ''}`
+            }
+          </div>
+
+          {/* ── Bulk action bar ── */}
+          {selected.length > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              padding: '8px 12px', marginBottom: 12, fontSize: '0.85rem',
+            }}>
+              <span style={{ fontWeight: 600, color: '#166534', marginRight: 4 }}>
+                ✓ {selected.length} selected
+              </span>
+              <Btn small onClick={() => setShowCompose(true)}>Send email</Btn>
+              <select
+                value=""
+                onChange={e => { if (e.target.value) bulkChangeStatus(e.target.value); }}
+                style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}
+              >
+                <option value="">Change status ▾</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="follow_up_sent">Follow-up sent</option>
+                <option value="replied">Replied</option>
+                <option value="converted">Converted</option>
+                <option value="unsubscribed">Unsubscribed</option>
+              </select>
+              <Btn small variant="danger" onClick={bulkDelete}>Delete</Btn>
+              <Btn small variant="secondary" onClick={exportCsv}>Export CSV</Btn>
+            </div>
+          )}
 
           {prospects.length === 0 ? (
             <p style={{ color: '#94a3b8', margin: 0 }}>No prospects found. Add one or import a CSV.</p>
+          ) : filteredProspects.length === 0 ? (
+            <p style={{ color: '#94a3b8', margin: 0 }}>No prospects match the current filters.</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
                     <th style={{ padding: '8px 12px', textAlign: 'left', width: 32 }}>
-                      <input type="checkbox" checked={selected.length === prospects.length && prospects.length > 0} onChange={toggleAll} />
+                      <input type="checkbox" checked={selected.length === filteredProspects.length && filteredProspects.length > 0} onChange={toggleAll} />
                     </th>
                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
                     <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
@@ -774,7 +916,7 @@ export default function Outreach() {
                   </tr>
                 </thead>
                 <tbody>
-                  {prospects.map(p => (
+                  {filteredProspects.map(p => (
                     <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: selected.includes(p.id) ? '#f0fdf4' : undefined }}>
                       <td style={{ padding: '8px 12px' }}>
                         <input
@@ -790,7 +932,14 @@ export default function Outreach() {
                         <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span>
                         {p.notes && <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 2 }}>{p.notes.slice(0, 50)}{p.notes.length > 50 ? '…' : ''}</div>}
                       </td>
-                      <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
+                      <td style={{ padding: '8px 12px', color: '#475569' }}>
+                        {p.company || '—'}
+                        {(p.country || p.language) && (
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>
+                            {[p.country, p.language].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                      </td>
                       <td className="col-hide-mobile" style={{ padding: '8px 12px' }}><SourceBadge source={p.source} /></td>
                       <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
                       <td className="col-hide-mobile" style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.78rem' }}>
