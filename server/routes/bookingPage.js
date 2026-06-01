@@ -43,13 +43,17 @@ function fmtAmenity(str) {
   return AMENITY_LABELS[str.toLowerCase()] ?? (str.charAt(0).toUpperCase() + str.slice(1));
 }
 
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function getAvailabilityMap(bookings, totalRooms) {
   const map = {};
   const base = new Date();
   for (let i = 0; i < 62; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
-    const s = d.toISOString().split('T')[0];
+    const s = localDateStr(d);
     const booked = bookings.filter(b => b.check_in_date <= s && b.check_out_date > s).length;
     map[s] = (totalRooms === 0 || booked < totalRooms) ? 'available' : 'booked';
   }
@@ -106,7 +110,7 @@ function roomCard(room, currSym, palette, photos) {
   </div>
   ${photos.length > 1 ? `
   <div class="photo-strip">
-    ${photos.map(f => `<img src="/uploads/rooms/${esc(f)}" class="photo-strip-thumb" loading="lazy" alt="" />`).join('')}
+    ${photos.map((f, i) => `<img src="/uploads/rooms/${esc(f)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
   </div>` : ''}` : '';
 
   return `
@@ -141,7 +145,7 @@ function generateBookingPage(property, rooms, availMap, photosByRoom) {
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr(new Date());
   const now   = new Date();
   const m0    = { year: now.getFullYear(), month: now.getMonth() };
   const next  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -433,6 +437,7 @@ section h2 {
   transition: opacity 0.15s;
 }
 .photo-strip-thumb:hover { opacity: 1; }
+.photo-strip-thumb.active { opacity: 1; outline: 2px solid ${esc(palette.brand)}; outline-offset: 1px; }
 .room-header {
   display: flex;
   align-items: flex-start;
@@ -638,6 +643,16 @@ function openWidget() {
   var btn = document.querySelector('.nb-trigger');
   if (btn) btn.click();
 }
+
+document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
+  thumb.addEventListener('click', function() {
+    var card = this.closest('.room-card');
+    var mainImg = card.querySelector('.room-photo img');
+    if (mainImg) mainImg.src = this.src;
+    card.querySelectorAll('.photo-strip-thumb').forEach(function(t) { t.classList.remove('active'); });
+    this.classList.add('active');
+  });
+});
 </script>
 
 <script
@@ -682,7 +697,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
       FROM bookings b
       JOIN rooms r ON r.id = b.room_id
       WHERE r.property_id = ?
-        AND b.status IN ('confirmed', 'arriving')
+        AND b.status IN ('confirmed', 'arriving', 'in_house')
         AND b.check_out_date >= date('now')
     `).all(property.id);
 
