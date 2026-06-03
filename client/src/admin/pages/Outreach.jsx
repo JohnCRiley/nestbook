@@ -784,7 +784,7 @@ export default function Outreach() {
   const [campaigns, setCampaigns]   = useState([]);
   const [followUps, setFollowUps]   = useState([]);
 
-  // Filters (all client-side)
+  // Filters — shared across both tabs (all client-side)
   const [search, setSearch]               = useState('');
   const [filterStatus, setFilterStatus]   = useState('');
   const [filterSource, setFilterSource]   = useState('');
@@ -847,6 +847,27 @@ export default function Outreach() {
     return true;
   });
 
+  const filteredFollowUps = followUps.filter(p => {
+    if (search) {
+      const terms = search.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      const hit = t =>
+        p.name?.toLowerCase().includes(t) ||
+        p.email?.toLowerCase().includes(t) ||
+        p.company?.toLowerCase().includes(t) ||
+        p.source?.toLowerCase().includes(t) ||
+        p.notes?.toLowerCase().includes(t) ||
+        p.website?.toLowerCase().includes(t) ||
+        p.country?.toLowerCase().includes(t) ||
+        p.language?.toLowerCase().includes(t);
+      if (!terms.every(hit)) return false;
+    }
+    if (filterStatus  && p.status   !== filterStatus)  return false;
+    if (filterSource  && p.source   !== filterSource)  return false;
+    if (filterCountry && p.country  !== filterCountry) return false;
+    if (filterLang    && p.language !== filterLang)    return false;
+    return true;
+  });
+
   const countries = [...new Set(prospects.map(p => p.country).filter(Boolean))].sort();
   const languages = [...new Set(prospects.map(p => p.language).filter(Boolean))].sort();
   const sources   = [...new Set(prospects.map(p => p.source).filter(Boolean))].sort();
@@ -863,7 +884,8 @@ export default function Outreach() {
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   }
   function toggleAll() {
-    setSelected(selected.length === filteredProspects.length ? [] : filteredProspects.map(p => p.id));
+    const pool = tab === 'followup' ? filteredFollowUps : filteredProspects;
+    setSelected(selected.length === pool.length ? [] : pool.map(p => p.id));
   }
 
   async function bulkChangeStatus(newStatus) {
@@ -886,7 +908,8 @@ export default function Outreach() {
   }
 
   function exportCsv() {
-    const rows = filteredProspects.filter(p => selected.includes(p.id));
+    const pool = [...prospects, ...followUps.filter(f => !prospects.find(p => p.id === f.id))];
+    const rows = pool.filter(p => selected.includes(p.id));
     const header = ['id','name','company','email','country','language','source','status','follow_up_date','notes','created_at'];
     const lines = [header.join(','), ...rows.map(p =>
       header.map(k => JSON.stringify(p[k] ?? '')).join(',')
@@ -932,10 +955,108 @@ export default function Outreach() {
 
       {/* ── Tab bar ── */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button style={tabStyle(tab === 'prospects')} onClick={() => setTab('prospects')}>All Prospects ({total})</button>
-        <button style={tabStyle(tab === 'followup')}  onClick={() => setTab('followup')}>Follow-up Queue ({followUps.length})</button>
+        <button style={tabStyle(tab === 'prospects')} onClick={() => { setTab('prospects'); setSelected([]); }}>All Prospects ({total})</button>
+        <button style={tabStyle(tab === 'followup')}  onClick={() => { setTab('followup'); setSelected([]); }}>Follow-up Queue ({followUps.length})</button>
       </div>
 
+      {/* ── Shared filter bar ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        <Input
+          value={search} onChange={v => { setSearch(v); setSelected([]); }}
+          placeholder="Search… use commas for AND: uk, guesthouse"
+          style={{ flex: '2 1 180px', minWidth: 140 }}
+        />
+        <select
+          value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setSelected([]); }}
+          style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+        >
+          <option value="">All statuses</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="follow_up_sent">Follow-up sent</option>
+          <option value="replied">Replied</option>
+          <option value="converted">Converted</option>
+          <option value="unsubscribed">Unsubscribed</option>
+        </select>
+        <select
+          value={filterSource} onChange={e => { setFilterSource(e.target.value); setSelected([]); }}
+          style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+        >
+          <option value="">All sources</option>
+          {sources.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select
+          value={filterCountry} onChange={e => { setFilterCountry(e.target.value); setSelected([]); }}
+          style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+        >
+          <option value="">All countries</option>
+          {countries.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          value={filterLang} onChange={e => { setFilterLang(e.target.value); setSelected([]); }}
+          style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+        >
+          <option value="">All languages</option>
+          {languages.map(l => <option key={l} value={l}>{l}</option>)}
+        </select>
+        {tab === 'prospects' && (
+          <select
+            value={filterFollowUp} onChange={e => { setFilterFollowUp(e.target.value); setSelected([]); }}
+            style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+          >
+            <option value="">Follow-up: any</option>
+            <option value="today">Due today</option>
+            <option value="overdue">Overdue</option>
+            <option value="set">Date set</option>
+            <option value="none">No date</option>
+          </select>
+        )}
+        {anyFilter && (
+          <Btn variant="secondary" small onClick={clearFilters} style={{ alignSelf: 'stretch' }}>Clear ✕</Btn>
+        )}
+      </div>
+
+      {/* ── Showing count ── */}
+      <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 10 }}>
+        {tab === 'followup'
+          ? (anyFilter
+              ? `Showing ${filteredFollowUps.length} of ${followUps.length} follow-ups`
+              : `${followUps.length} follow-up${followUps.length !== 1 ? 's' : ''}`)
+          : (anyFilter
+              ? `Showing ${filteredProspects.length} of ${prospects.length} prospects`
+              : `${prospects.length} prospect${prospects.length !== 1 ? 's' : ''}`)
+        }
+      </div>
+
+      {/* ── Bulk action bar (shared) ── */}
+      {selected.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+          background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+          padding: '8px 12px', marginBottom: 12, fontSize: '0.85rem',
+        }}>
+          <span style={{ fontWeight: 600, color: '#166534', marginRight: 4 }}>
+            ✓ {selected.length} selected
+          </span>
+          <Btn small onClick={() => setShowCompose(true)}>Send email</Btn>
+          <Btn small variant="secondary" onClick={() => setShowBulkEdit(true)}>Bulk edit</Btn>
+          <select
+            value=""
+            onChange={e => { if (e.target.value) bulkChangeStatus(e.target.value); }}
+            style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            <option value="">Change status ▾</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="follow_up_sent">Follow-up sent</option>
+            <option value="replied">Replied</option>
+            <option value="converted">Converted</option>
+            <option value="unsubscribed">Unsubscribed</option>
+          </select>
+          <Btn small variant="danger" onClick={bulkDelete}>Delete</Btn>
+          <Btn small variant="secondary" onClick={exportCsv}>Export CSV</Btn>
+        </div>
+      )}
 
       {tab === 'followup' && (
         <Section title="Follow-up Queue" action={
@@ -943,140 +1064,70 @@ export default function Outreach() {
         }>
           {followUps.length === 0 ? (
             <p style={{ color: '#94a3b8', margin: 0 }}>No follow-ups due right now.</p>
+          ) : filteredFollowUps.length === 0 ? (
+            <p style={{ color: '#94a3b8', margin: 0 }}>No follow-ups match the current filters.</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Follow-up Date</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {followUps.map(p => {
-                  const today = new Date().toISOString().split('T')[0];
-                  const overdue = p.follow_up_date && p.follow_up_date < today;
-                  const dueToday = p.follow_up_date && p.follow_up_date === today;
-                  const rowBg = overdue ? '#fff7ed' : dueToday ? '#fefce8' : 'transparent';
-                  const dateColor = overdue ? '#b45309' : dueToday ? '#854d0e' : '#94a3b8';
-                  return (
-                    <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: rowBg }}>
-                      <td style={{ padding: '8px 12px' }}><strong>{p.name}</strong><br /><span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span></td>
-                      <td style={{ padding: '8px 12px', color: '#475569' }}>{p.company || '—'}</td>
-                      <td style={{ padding: '8px 12px', color: dateColor, fontSize: '0.8rem', fontWeight: overdue ? 600 : 400 }}>
-                        {p.follow_up_date ? new Date(p.follow_up_date + 'T00:00:00').toLocaleDateString() : 'Never contacted'}
-                        {overdue && <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#f97316' }}>overdue</span>}
-                      </td>
-                      <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
-                      <td style={{ padding: '8px 12px' }}>
-                        <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Compose</Btn>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', width: 32 }}>
+                      <input type="checkbox" checked={selected.length === filteredFollowUps.length && filteredFollowUps.length > 0} onChange={toggleAll} />
+                    </th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Name</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Company</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Follow-up Date</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFollowUps.map(p => {
+                    const overdue  = p.follow_up_date && p.follow_up_date < today;
+                    const dueToday = p.follow_up_date && p.follow_up_date === today;
+                    const rowBg    = selected.includes(p.id) ? '#f0fdf4' : overdue ? '#fff7ed' : dueToday ? '#fefce8' : 'transparent';
+                    const dateColor = overdue ? '#b45309' : dueToday ? '#854d0e' : '#94a3b8';
+                    return (
+                      <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: rowBg }}>
+                        <td style={{ padding: '8px 12px' }}>
+                          <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} />
+                        </td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <strong>{p.name}</strong>
+                          <br /><span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span>
+                          {p.notes && <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 2 }}>{p.notes.slice(0, 50)}{p.notes.length > 50 ? '…' : ''}</div>}
+                        </td>
+                        <td style={{ padding: '8px 12px', color: '#475569' }}>
+                          {p.company || '—'}
+                          {(p.country || p.language) && (
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>
+                              {[p.country, p.language].filter(Boolean).join(' · ')}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 12px', color: dateColor, fontSize: '0.8rem', fontWeight: overdue ? 600 : 400 }}>
+                          {p.follow_up_date ? new Date(p.follow_up_date + 'T00:00:00').toLocaleDateString() : '—'}
+                          {overdue && <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#f97316' }}>overdue</span>}
+                        </td>
+                        <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
+                        <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <Btn small variant="secondary" onClick={() => setEditing(p)}>Edit</Btn>
+                            <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Email</Btn>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </Section>
       )}
 
       {tab === 'prospects' && (
         <Section title="Prospects">
-          {/* ── Filter bar ── */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-            <Input
-              value={search} onChange={v => { setSearch(v); setSelected([]); }}
-              placeholder="Search… use commas for AND: uk, guesthouse"
-              style={{ flex: '2 1 180px', minWidth: 140 }}
-            />
-            <select
-              value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setSelected([]); }}
-              style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
-            >
-              <option value="">All statuses</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="follow_up_sent">Follow-up sent</option>
-              <option value="replied">Replied</option>
-              <option value="converted">Converted</option>
-              <option value="unsubscribed">Unsubscribed</option>
-            </select>
-            <select
-              value={filterSource} onChange={e => { setFilterSource(e.target.value); setSelected([]); }}
-              style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
-            >
-              <option value="">All sources</option>
-              {sources.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <select
-              value={filterCountry} onChange={e => { setFilterCountry(e.target.value); setSelected([]); }}
-              style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
-            >
-              <option value="">All countries</option>
-              {countries.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select
-              value={filterLang} onChange={e => { setFilterLang(e.target.value); setSelected([]); }}
-              style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
-            >
-              <option value="">All languages</option>
-              {languages.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-            <select
-              value={filterFollowUp} onChange={e => { setFilterFollowUp(e.target.value); setSelected([]); }}
-              style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
-            >
-              <option value="">Follow-up: any</option>
-              <option value="today">Due today</option>
-              <option value="overdue">Overdue</option>
-              <option value="set">Date set</option>
-              <option value="none">No date</option>
-            </select>
-            {anyFilter && (
-              <Btn variant="secondary" small onClick={clearFilters} style={{ alignSelf: 'stretch' }}>Clear ✕</Btn>
-            )}
-          </div>
-
-          {/* ── Showing count ── */}
-          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 10 }}>
-            {anyFilter
-              ? `Showing ${filteredProspects.length} of ${prospects.length} prospects`
-              : `${prospects.length} prospect${prospects.length !== 1 ? 's' : ''}`
-            }
-          </div>
-
-          {/* ── Bulk action bar ── */}
-          {selected.length > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
-              padding: '8px 12px', marginBottom: 12, fontSize: '0.85rem',
-            }}>
-              <span style={{ fontWeight: 600, color: '#166534', marginRight: 4 }}>
-                ✓ {selected.length} selected
-              </span>
-              <Btn small onClick={() => setShowCompose(true)}>Send email</Btn>
-              <Btn small variant="secondary" onClick={() => setShowBulkEdit(true)}>Bulk edit</Btn>
-              <select
-                value=""
-                onChange={e => { if (e.target.value) bulkChangeStatus(e.target.value); }}
-                style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.8rem', fontFamily: 'inherit', cursor: 'pointer' }}
-              >
-                <option value="">Change status ▾</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="follow_up_sent">Follow-up sent</option>
-                <option value="replied">Replied</option>
-                <option value="converted">Converted</option>
-                <option value="unsubscribed">Unsubscribed</option>
-              </select>
-              <Btn small variant="danger" onClick={bulkDelete}>Delete</Btn>
-              <Btn small variant="secondary" onClick={exportCsv}>Export CSV</Btn>
-            </div>
-          )}
-
           {prospects.length === 0 ? (
             <p style={{ color: '#94a3b8', margin: 0 }}>No prospects found. Add one or import a CSV.</p>
           ) : filteredProspects.length === 0 ? (
