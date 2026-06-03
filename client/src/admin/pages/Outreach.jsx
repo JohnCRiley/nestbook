@@ -357,10 +357,17 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
 
         {/* ── Header — always visible ── */}
         <div style={{ padding: '18px 24px 14px', flexShrink: 0, borderBottom: '1px solid #f1f5f9' }}>
-          <h3 style={{ margin: '0 0 3px', fontSize: '1rem' }}>Compose Email</h3>
-          <p style={{ color: '#64748b', fontSize: '0.82rem', margin: 0 }}>
-            To: {selected.map(p => p.name).join(', ')} ({selected.length} recipient{selected.length !== 1 ? 's' : ''})
-          </p>
+          <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>Compose Email</h3>
+          <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: 6 }}>
+            Sending to {selected.length} prospect{selected.length !== 1 ? 's' : ''}
+          </div>
+          <div style={{ maxHeight: 80, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 6, padding: '6px 10px', background: '#f8fafc', display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {selected.map(p => (
+              <span key={p.id} style={{ background: '#e8f5e2', color: '#1a4710', padding: '2px 10px', borderRadius: 20, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+                {p.name || p.email}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* ── Scrollable body ── */}
