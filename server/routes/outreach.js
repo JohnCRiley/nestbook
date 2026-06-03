@@ -81,7 +81,7 @@ outreachRouter.get('/prospects/:id', (req, res) => {
 
 // ── Prospects — create ────────────────────────────────────────────────────────
 outreachRouter.post('/prospects', (req, res) => {
-  const { name, company, email, source = 'manual', notes, follow_up_date, country, language } = req.body;
+  const { name, company, email, source = 'manual', notes, follow_up_date, country, language, website } = req.body;
   if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
 
   const existing = db.prepare(`SELECT id FROM prospects WHERE email = ?`).get(email.toLowerCase().trim());
@@ -89,22 +89,22 @@ outreachRouter.post('/prospects', (req, res) => {
 
   const token = makeUnsubToken();
   const result = db.prepare(
-    `INSERT INTO prospects (name, company, email, source, notes, follow_up_date, country, language, unsubscribe_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(name.trim(), company?.trim() || null, email.toLowerCase().trim(), source, notes || null, follow_up_date || null, country || null, language || null, token);
+    `INSERT INTO prospects (name, company, email, source, notes, follow_up_date, country, language, website, unsubscribe_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(name.trim(), company?.trim() || null, email.toLowerCase().trim(), source, notes || null, follow_up_date || null, country || null, language || null, website?.trim() || null, token);
 
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
 // ── Prospects — update ────────────────────────────────────────────────────────
 outreachRouter.put('/prospects/:id', (req, res) => {
-  const { name, company, email, status, notes, follow_up_date, country, language } = req.body;
+  const { name, company, email, status, notes, follow_up_date, country, language, website } = req.body;
   const p = db.prepare(`SELECT * FROM prospects WHERE id = ?`).get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
 
   db.prepare(`
     UPDATE prospects SET
       name = ?, company = ?, email = ?, status = ?, notes = ?, follow_up_date = ?,
-      country = ?, language = ?
+      country = ?, language = ?, website = ?
     WHERE id = ?
   `).run(
     name ?? p.name,
@@ -115,6 +115,7 @@ outreachRouter.put('/prospects/:id', (req, res) => {
     follow_up_date !== undefined ? follow_up_date : p.follow_up_date,
     country !== undefined ? country : p.country,
     language !== undefined ? language : p.language,
+    website !== undefined ? (website?.trim() || null) : p.website,
     req.params.id,
   );
   res.json({ ok: true });
@@ -134,7 +135,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
   if (!Array.isArray(rows) || rows.length === 0) return res.status(400).json({ error: 'rows array required' });
 
   const insert      = db.prepare(
-    `INSERT INTO prospects (name, company, email, source, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?)`
+    `INSERT INTO prospects (name, company, email, source, country, language, website, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?, ?, ?, ?)`
   );
   const checkEmail  = db.prepare(`SELECT id FROM prospects WHERE email = ?`);
 
@@ -151,7 +152,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
       if (checkEmail.get(normalEmail)) { skipped++; continue; } // duplicate
       try {
         const token = makeUnsubToken();
-        insert.run(r.name.trim(), r.company?.trim() || null, normalEmail, r.notes?.trim() || null, token);
+        insert.run(r.name.trim(), r.company?.trim() || null, normalEmail, r.country?.trim() || null, r.language?.trim() || null, r.website?.trim() || null, r.notes?.trim() || null, token);
         imported++;
       } catch (err) {
         errors.push(`Row "${r.name}" (${r.email}): ${err.message}`);

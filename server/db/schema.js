@@ -622,9 +622,10 @@ export function initSchema() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
 
-  // Add country / language columns (idempotent)
+  // Add country / language / website columns (idempotent)
   try { db.exec(`ALTER TABLE prospects ADD COLUMN country  TEXT`); } catch {}
   try { db.exec(`ALTER TABLE prospects ADD COLUMN language TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN website  TEXT`); } catch {}
 
   // Expand source + status CHECK constraints if needed.
   // sqlite_master still holds the original CREATE TABLE sql — inspect it.

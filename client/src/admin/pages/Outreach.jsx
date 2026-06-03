@@ -122,14 +122,15 @@ function StatsBar({ stats }) {
 
 // ── Add Prospect modal ────────────────────────────────────────────────────────
 function AddProspectModal({ onClose, onSaved }) {
-  const [name, setName]       = useState('');
-  const [company, setCompany] = useState('');
-  const [email, setEmail]     = useState('');
-  const [country, setCountry] = useState('');
+  const [name, setName]         = useState('');
+  const [company, setCompany]   = useState('');
+  const [email, setEmail]       = useState('');
+  const [country, setCountry]   = useState('');
   const [language, setLanguage] = useState('');
-  const [notes, setNotes]     = useState('');
-  const [saving, setSaving]   = useState(false);
-  const [err, setErr]         = useState('');
+  const [website, setWebsite]   = useState('');
+  const [notes, setNotes]       = useState('');
+  const [saving, setSaving]     = useState(false);
+  const [err, setErr]           = useState('');
 
   async function save() {
     if (!name.trim() || !email.trim()) { setErr('Name and email are required.'); return; }
@@ -137,7 +138,7 @@ function AddProspectModal({ onClose, onSaved }) {
     const res = await saApiFetch('/api/admin/outreach/prospects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, country, language, notes }),
+      body: JSON.stringify({ name, company, email, country, language, website, notes }),
     });
     setSaving(false);
     if (res.ok) { onSaved(); onClose(); }
@@ -153,6 +154,7 @@ function AddProspectModal({ onClose, onSaved }) {
           <Input value={name}    onChange={setName}    placeholder="Full name *" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property name" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email address *" type="email" style={{ width: '100%' }} />
+          <Input value={website} onChange={setWebsite} placeholder="Website / Facebook URL" style={{ width: '100%' }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
             <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />
@@ -176,6 +178,7 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
   const [status, setStatus]         = useState(prospect.status);
   const [country, setCountry]       = useState(prospect.country ?? '');
   const [language, setLanguage]     = useState(prospect.language ?? '');
+  const [website, setWebsite]       = useState(prospect.website ?? '');
   const [notes, setNotes]           = useState(prospect.notes ?? '');
   const [followUp, setFollowUp]     = useState(prospect.follow_up_date ?? '');
   const [saving, setSaving]         = useState(false);
@@ -185,7 +188,7 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
     await saApiFetch(`/api/admin/outreach/prospects/${prospect.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, status, country, language, notes, follow_up_date: followUp || null }),
+      body: JSON.stringify({ name, company, email, status, country, language, website, notes, follow_up_date: followUp || null }),
     });
     setSaving(false); onSaved(); onClose();
   }
@@ -198,6 +201,7 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
           <Input value={name}    onChange={setName}    placeholder="Full name" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email" type="email" style={{ width: '100%' }} />
+          <Input value={website} onChange={setWebsite} placeholder="Website / Facebook URL" style={{ width: '100%' }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
             <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />
@@ -502,10 +506,13 @@ function CsvImportModal({ onClose, onImported }) {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
       return {
-        name:    obj.name          || obj['full name']   || '',
-        company: obj.property_name || obj.company        || obj.property || '',
-        email:   obj.email                               || '',
-        notes:   obj.notes                               || '',
+        name:     obj.name          || obj['full name']   || '',
+        company:  obj.property_name || obj.company        || obj.property || '',
+        email:    obj.email                               || '',
+        country:  obj.country                             || '',
+        language: obj.language                            || '',
+        website:  obj.website                             || '',
+        notes:    obj.notes                               || '',
       };
     }).filter(r => r.email && r.name);
   }
@@ -548,7 +555,7 @@ function CsvImportModal({ onClose, onImported }) {
       <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 500 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '1rem' }}>Bulk Import from CSV</h3>
         <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px' }}>
-          Required columns: <code>name</code>, <code>email</code>. Optional: <code>property_name</code>, <code>notes</code>. Use ↓ CSV template for the full format.
+          Required columns: <code>name</code>, <code>email</code>. Optional: <code>property_name</code>, <code>website</code>, <code>country</code>, <code>language</code>, <code>notes</code>. Use ↓ CSV template for the full format.
         </p>
 
         {result ? (
@@ -651,6 +658,7 @@ export default function Outreach() {
         p.company?.toLowerCase().includes(t) ||
         p.source?.toLowerCase().includes(t) ||
         p.notes?.toLowerCase().includes(t) ||
+        p.website?.toLowerCase().includes(t) ||
         p.country?.toLowerCase().includes(t) ||
         p.language?.toLowerCase().includes(t);
       if (!terms.every(hit)) return false;
