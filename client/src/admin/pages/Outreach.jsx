@@ -261,7 +261,7 @@ function injectQuillStyles() {
   document.head.appendChild(s);
 }
 
-function QuillEditor({ value, onChange, placeholder = 'Write your email here…', minHeight = 180 }) {
+function QuillEditor({ value, onChange, placeholder = 'Write your email here…', minHeight = 180, style: styleProp = {} }) {
   const containerRef = useRef(null);
   const quillRef     = useRef(null);
   const onChangeRef  = useRef(onChange);
@@ -293,7 +293,7 @@ function QuillEditor({ value, onChange, placeholder = 'Write your email here…'
     }
   }, [value]);
 
-  return <div ref={containerRef} style={{ minHeight }} />;
+  return <div ref={containerRef} style={{ minHeight, ...styleProp }} />;
 }
 
 // ── Email Composer modal ──────────────────────────────────────────────────────
@@ -352,65 +352,76 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 580, boxSizing: 'border-box', overflowX: 'hidden' }}>
-        <h3 style={{ margin: '0 0 4px', fontSize: '1rem' }}>Compose Email</h3>
-        <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 16px' }}>
-          To: {selected.map(p => p.name).join(', ')} ({selected.length} recipient{selected.length !== 1 ? 's' : ''})
-        </p>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 580, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <select
-            value={tmplId} onChange={e => loadTemplate(e.target.value)}
-            style={{ flex: 1, minWidth: 0, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
-          >
-            <option value="">— Load a template —</option>
-            {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-          <select
-            value={campId} onChange={e => setCampId(e.target.value)}
-            style={{ flex: 1, minWidth: 0, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
-          >
-            <option value="">— Campaign (optional) —</option>
-            {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+        {/* ── Header — always visible ── */}
+        <div style={{ padding: '18px 24px 14px', flexShrink: 0, borderBottom: '1px solid #f1f5f9' }}>
+          <h3 style={{ margin: '0 0 3px', fontSize: '1rem' }}>Compose Email</h3>
+          <p style={{ color: '#64748b', fontSize: '0.82rem', margin: 0 }}>
+            To: {selected.map(p => p.name).join(', ')} ({selected.length} recipient{selected.length !== 1 ? 's' : ''})
+          </p>
         </div>
 
-        <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 10px' }}>
-          Available in subject and body: {'{{name}}'} {'{{company}}'} {'{{first_name}}'}
-        </p>
+        {/* ── Scrollable body ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <select
+              value={tmplId} onChange={e => loadTemplate(e.target.value)}
+              style={{ flex: 1, minWidth: 0, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
+            >
+              <option value="">— Load a template —</option>
+              {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            <select
+              value={campId} onChange={e => setCampId(e.target.value)}
+              style={{ flex: 1, minWidth: 0, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
+            >
+              <option value="">— Campaign (optional) —</option>
+              {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
 
-        <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%', marginBottom: 10 }} />
-        <QuillEditor value={body} onChange={setBody} placeholder="Write your email here… use {{name}}, {{company}}" />
+          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+            Merge fields: {'{{name}}'} {'{{company}}'} {'{{first_name}}'}
+          </p>
 
-        <div style={{ marginTop: 14, padding: '10px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
-          <span style={{ fontSize: '0.8rem', color: '#475569' }}>
-            Follow-up reminder in:&nbsp;
-          </span>
-          {[7, 14, 21].map(d => (
-            <button
-              key={d}
-              onClick={() => setFollowUpDays(d)}
-              style={{
-                marginRight: 6, padding: '3px 10px', borderRadius: 4, border: '1px solid',
-                borderColor: followUpDays === d ? 'var(--accent)' : '#d1d5db',
-                background: followUpDays === d ? 'var(--light-green)' : '#fff',
-                color: followUpDays === d ? 'var(--heading-text)' : '#475569',
-                fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >{d} days</button>
-          ))}
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-            — sets follow-up date automatically after sending
-          </span>
+          <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%' }} />
+
+          <QuillEditor
+            value={body}
+            onChange={setBody}
+            placeholder="Write your email here… use {{name}}, {{company}}"
+            style={{ height: 240, overflowY: 'auto', minHeight: 0 }}
+          />
+
+          <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+            <span style={{ fontSize: '0.8rem', color: '#475569' }}>Follow-up reminder in:&nbsp;</span>
+            {[7, 14, 21].map(d => (
+              <button
+                key={d}
+                onClick={() => setFollowUpDays(d)}
+                style={{
+                  marginRight: 6, padding: '3px 10px', borderRadius: 4, border: '1px solid',
+                  borderColor: followUpDays === d ? '#1a4710' : '#d1d5db',
+                  background: followUpDays === d ? '#d9f0cc' : '#fff',
+                  color: followUpDays === d ? '#1a4710' : '#475569',
+                  fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >{d} days</button>
+            ))}
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>— sets follow-up date after sending</span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+        {/* ── Footer — always visible ── */}
+        <div style={{ padding: '12px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0 }}>
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
           <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>'}>
             {sending ? 'Sending…' : `Send to ${selected.length}`}
           </Btn>
         </div>
+
       </div>
     </div>
   );
