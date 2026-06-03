@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -67,6 +67,15 @@ img { display: block; max-width: 100%; }
 @media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .rights-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 40px; } .prose-body { padding: 40px 0 64px; } }
 </style>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5R87S4LXP6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-5R87S4LXP6');
+</script>
 </head>
 <body>
 
@@ -164,7 +173,7 @@ img { display: block; max-width: 100%; }
       <h3 data-i18n="priv.collect.payment.h">Payment information</h3>
       <p data-i18n="priv.collect.payment.p">We do not store credit card details. Payments are processed by Stripe, who holds payment card data under PCI-DSS compliance. We receive confirmation of successful payment and a subscription status from Stripe.</p>
       <h3 data-i18n="priv.collect.technical.h">Technical data</h3>
-      <p data-i18n="priv.collect.technical.p">Our server logs may record IP addresses, browser type, and request timestamps for security and debugging purposes. We do not use analytics tools or tracking cookies.</p>
+      <p data-i18n="priv.collect.technical.p">Our server logs may record IP addresses, browser type, and request timestamps for security and debugging purposes. Our public website also uses Google Analytics 4 to collect anonymised traffic data (page views, traffic sources). No personally identifiable information is included in analytics data.</p>
 
       <h2 id="use" data-i18n="priv.use.heading">3. How we use your data</h2>
       <p data-i18n="priv.use.intro">We use your personal data only to:</p>
@@ -189,8 +198,9 @@ img { display: block; max-width: 100%; }
         <li data-i18n="priv.third.stripe"><strong>Stripe</strong> (payments) — processes subscription payment card data. Stripe is PCI-DSS Level 1 certified and GDPR-compliant. Privacy policy: stripe.com/privacy.</li>
         <li data-i18n="priv.third.resend"><strong>Resend</strong> (transactional email) — used to send booking confirmation and welcome emails. Resend processes recipient email addresses and email content. Privacy policy: resend.com/legal/privacy-policy.</li>
         <li data-i18n="priv.third.zoho"><strong>Zoho</strong> (support email) — our support mailbox hello@nestbook.io is hosted by Zoho. Messages you send to us are stored in Zoho Mail. Privacy policy: zoho.com/privacy.html.</li>
+        <li data-i18n="priv.third.ga"><strong>Google Analytics 4</strong> (website analytics) — we use Google Analytics on our public website to understand how visitors find and use NestBook. It collects anonymised data such as page views and traffic sources. No personal account or booking data is shared with Google. You can opt out using the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>. Google's privacy policy: policies.google.com/privacy.</li>
       </ul>
-      <p data-i18n="priv.third.no">We do not use Google Analytics, Facebook Pixel, or any other advertising or analytics trackers.</p>
+      <p data-i18n="priv.third.no">We do not use Facebook Pixel or any other advertising or behavioural trackers.</p>
 
       <h2 id="retention" data-i18n="priv.retention.heading">6. Data retention</h2>
       <p data-i18n="priv.retention.p1">We retain your account data for as long as your account is active. If you close your account, we will delete or anonymise your personal data within 90 days, except where we are required to retain it for legal or tax compliance purposes (typically up to 7 years for financial records).</p>
@@ -229,7 +239,7 @@ img { display: block; max-width: 100%; }
       <p data-i18n="priv.rights.exercise">To exercise any of these rights, email us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>. We will respond within 30 days. We may ask you to verify your identity before fulfilling a request.</p>
 
       <h2 id="cookies" data-i18n="priv.cookies.heading">8. Cookies</h2>
-      <p data-i18n="priv.cookies.p1">We use only essential cookies and browser localStorage. We do not use tracking, advertising, or analytics cookies. For full details, see our <a href="/cookies.html">Cookie Policy</a>.</p>
+      <p data-i18n="priv.cookies.p1">The NestBook app uses only essential cookies and browser localStorage. Our public website also uses Google Analytics cookies for anonymised traffic analysis. We do not use advertising or behavioural tracking cookies. For full details, see our <a href="/cookies.html">Cookie Policy</a>.</p>
 
       <h2 id="children" data-i18n="priv.children.heading">9. Children</h2>
       <p data-i18n="priv.children.p1">NestBook is not directed at children under 18. We do not knowingly collect personal data from anyone under 18. If you believe we have inadvertently collected data from a minor, please contact us and we will delete it promptly.</p>
@@ -304,7 +314,7 @@ const I18N = {
     'priv.collect.payment.h':'Payment information',
     'priv.collect.payment.p':'We do not store credit card details. Payments are processed by Stripe under PCI-DSS compliance. We receive subscription status from Stripe.',
     'priv.collect.technical.h':'Technical data',
-    'priv.collect.technical.p':'Server logs may record IP addresses and request timestamps for security purposes. We do not use analytics tools or tracking cookies.',
+    'priv.collect.technical.p':'Server logs may record IP addresses and request timestamps for security purposes. Our public website also uses Google Analytics 4 to collect anonymised traffic data (page views, traffic sources). No personally identifiable information is included in analytics data.',
     'priv.use.heading':'3. How we use your data',
     'priv.use.intro':'We use your personal data only to:',
     'priv.use.1':'Create and manage your NestBook account',
@@ -323,7 +333,8 @@ const I18N = {
     'priv.third.stripe':'Stripe (payments) — processes subscription payment data. PCI-DSS Level 1, GDPR-compliant. stripe.com/privacy.',
     'priv.third.resend':'Resend (transactional email) — sends booking confirmation and welcome emails. resend.com/legal/privacy-policy.',
     'priv.third.zoho':'Zoho (support email) — our support mailbox hello@nestbook.io is hosted by Zoho Mail. zoho.com/privacy.html.',
-    'priv.third.no':'We do not use Google Analytics, Facebook Pixel, or any advertising or analytics trackers.',
+    'priv.third.ga':'Google Analytics 4 (website analytics) — we use Google Analytics on our public website to understand how visitors find and use NestBook. It collects anonymised data such as page views and traffic sources. No personal account or booking data is shared with Google. You can opt out using the Google Analytics opt-out browser add-on. policies.google.com/privacy.',
+    'priv.third.no':'We do not use Facebook Pixel or any other advertising or behavioural trackers.',
     'priv.retention.heading':'6. Data retention',
     'priv.retention.p1':'We retain account data while your account is active. After account closure we delete or anonymise personal data within 90 days (except financial records, retained up to 7 years for legal compliance).',
     'priv.retention.p2':'Server logs are retained for a maximum of 30 days.',
@@ -337,7 +348,7 @@ const I18N = {
     'priv.right6.title':'Right to restrict','priv.right6.desc':'Request that we limit processing in certain circumstances.',
     'priv.rights.exercise':'To exercise your rights, email hello@nestbook.io. We respond within 30 days.',
     'priv.cookies.heading':'8. Cookies',
-    'priv.cookies.p1':'We use only essential cookies and localStorage. No tracking, advertising, or analytics cookies. See our Cookie Policy for full details.',
+    'priv.cookies.p1':'The NestBook app uses only essential cookies and localStorage. Our public website uses Google Analytics cookies for anonymised traffic analysis. No advertising or behavioural tracking cookies. See our Cookie Policy for full details.',
     'priv.children.heading':'9. Children',
     'priv.children.p1':'NestBook is not for children under 18. We do not knowingly collect data from minors. Contact us to remove any such data.',
     'priv.contact.heading':'10. Contact & complaints',

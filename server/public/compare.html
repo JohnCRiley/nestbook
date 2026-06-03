@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -381,6 +381,15 @@ img { display: block; max-width: 100%; }
   .cta-strip { padding: 48px 0; }
 }
 </style>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5R87S4LXP6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-5R87S4LXP6');
+</script>
 </head>
 <body>
 
@@ -422,7 +431,7 @@ img { display: block; max-width: 100%; }
     </div>
     <div class="mega-col">
       <div class="mega-label">Get started</div>
-      <a href="/app/register" class="mega-cta">
+      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mega-cta">
         🌿 Start free trial
         <span>No credit card needed</span>
       </a>
@@ -481,7 +490,7 @@ img { display: block; max-width: 100%; }
               <div class="th-plan-name">Free</div>
               <div class="th-plan-price" style="font-size:1.3rem;font-weight:700;letter-spacing:0">Free</div>
               <div class="th-plan-period" data-i18n="thead.freePeriod">Free forever</div>
-              <a href="/app/register" class="th-plan-cta cta-free" data-i18n="thead.freeCta">Get started</a>
+              <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="th-plan-cta cta-free" data-i18n="thead.freeCta">Get started</a>
             </th>
 
             <!-- Pro (highlighted) -->
@@ -490,7 +499,7 @@ img { display: block; max-width: 100%; }
               <div class="th-plan-name">Pro</div>
               <div class="th-plan-price">£19<span class="eur"> / €22</span></div>
               <div class="th-plan-period" data-i18n="thead.period">per month, billed monthly</div>
-              <a href="/app/register" class="th-plan-cta cta-pro" data-i18n="thead.proCta">Start free trial</a>
+              <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="th-plan-cta cta-pro" data-i18n="thead.proCta">Start free trial</a>
             </th>
 
             <!-- Multi -->
@@ -499,7 +508,7 @@ img { display: block; max-width: 100%; }
               <div class="th-plan-name">Multi</div>
               <div class="th-plan-price">£39<span class="eur"> / €45</span></div>
               <div class="th-plan-period" data-i18n="thead.period">per month, billed monthly</div>
-              <a href="/app/register" class="th-plan-cta cta-multi" data-i18n="thead.freeCta">Get started</a>
+              <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="th-plan-cta cta-multi" data-i18n="thead.freeCta">Get started</a>
             </th>
           </tr>
         </thead>
@@ -731,7 +740,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-plan-name">Free</div>
           <div class="mpc-price" style="font-size:1.3rem;font-weight:700;letter-spacing:0">Free</div>
           <div class="mpc-period" data-i18n="thead.freePeriod">Free forever</div>
-          <a href="/app/register" class="mpc-cta cta-free" data-i18n="thead.freeCta">Get started</a>
+          <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mpc-cta cta-free" data-i18n="thead.freeCta">Get started</a>
         </div>
         <div class="mpc-features">
           <div class="mpc-group-label" data-i18n="group.rooms">Rooms &amp; bookings</div>
@@ -757,7 +766,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-plan-name">Pro</div>
           <div class="mpc-price">£19<span class="eur"> / €22</span></div>
           <div class="mpc-period" data-i18n="thead.period">per month, billed monthly</div>
-          <a href="/app/register" class="mpc-cta cta-pro" data-i18n="thead.proCta">Start free trial</a>
+          <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mpc-cta cta-pro" data-i18n="thead.proCta">Start free trial</a>
         </div>
         <div class="mpc-features">
           <div class="mpc-group-label" data-i18n="mpc.everyFree">Everything in Free, plus</div>
@@ -783,7 +792,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-plan-name">Multi</div>
           <div class="mpc-price">£39<span class="eur"> / €45</span></div>
           <div class="mpc-period" data-i18n="thead.period">per month, billed monthly</div>
-          <a href="/app/register" class="mpc-cta cta-multi" data-i18n="thead.freeCta">Get started</a>
+          <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mpc-cta cta-multi" data-i18n="thead.freeCta">Get started</a>
         </div>
         <div class="mpc-features">
           <div class="mpc-group-label" data-i18n="mpc.everyPro">Everything in Pro, plus</div>
@@ -809,7 +818,7 @@ img { display: block; max-width: 100%; }
   <div class="container">
     <h2 data-i18n="cta.h2">Start your free 30-day trial</h2>
     <p data-i18n="cta.p">No credit card required. No setup fee. Cancel any time.</p>
-    <a href="/app/register" class="btn btn-primary btn-lg" style="background:#fff; color:var(--dark); border-color:rgba(255,255,255,0.3);" data-i18n="cta.btn">
+    <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-primary btn-lg" style="background:#fff; color:var(--dark); border-color:rgba(255,255,255,0.3);" data-i18n="cta.btn">
       Get started free →
     </a>
     <p class="note" data-i18n="cta.note">No contract. No hidden fees. Cancel any time.</p>

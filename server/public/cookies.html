@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -67,6 +67,15 @@ img { display: block; max-width: 100%; }
 @media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 40px; } .prose-body { padding: 40px 0 64px; } .cookie-table { font-size: 0.78rem; } }
 </style>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5R87S4LXP6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-5R87S4LXP6');
+</script>
 </head>
 <body>
 
@@ -138,8 +147,8 @@ img { display: block; max-width: 100%; }
       <div class="no-track-banner">
         <div class="no-track-icon">🛡️</div>
         <div class="no-track-text">
-          <strong data-i18n="cookies.nottrack.title">No tracking. No advertising. Essential only.</strong>
-          <p data-i18n="cookies.nottrack.desc">NestBook uses only the cookies strictly necessary to make the service work. We do not use analytics cookies, advertising cookies, or any third-party tracking.</p>
+          <strong data-i18n="cookies.nottrack.title">No advertising. No behavioural tracking.</strong>
+          <p data-i18n="cookies.nottrack.desc">The NestBook app uses only essential cookies. Our public website uses Google Analytics 4 for anonymised traffic analysis. We do not use advertising cookies, retargeting cookies, or any behavioural tracking.</p>
         </div>
       </div>
 
@@ -183,19 +192,24 @@ img { display: block; max-width: 100%; }
             <td data-i18n="cookies.row4.duration">Session / 1 year</td>
             <td data-i18n="cookies.row4.type">Essential</td>
           </tr>
+          <tr>
+            <td><code>_ga</code>, <code>_ga_*</code></td>
+            <td data-i18n="cookies.row5.purpose">Google Analytics 4 — anonymised website analytics on our public pages. Tracks page views and traffic sources. No personal or booking data is collected.</td>
+            <td data-i18n="cookies.row5.duration">2 years</td>
+            <td data-i18n="cookies.row5.type">Analytics</td>
+          </tr>
         </tbody>
       </table>
 
       <h2 data-i18n="cookies.notuse.heading">Cookies we do NOT use</h2>
       <ul>
-        <li data-i18n="cookies.notuse.1">Analytics or visitor tracking cookies (e.g. Google Analytics)</li>
         <li data-i18n="cookies.notuse.2">Advertising or retargeting cookies</li>
         <li data-i18n="cookies.notuse.3">Social media tracking pixels</li>
         <li data-i18n="cookies.notuse.4">Third-party profiling or behavioural tracking of any kind</li>
       </ul>
 
       <h2 data-i18n="cookies.manage.heading">How to manage cookies</h2>
-      <p data-i18n="cookies.manage.p1">Because we only use essential cookies, disabling them will affect the functionality of NestBook. However, you can control cookies through your browser settings:</p>
+      <p data-i18n="cookies.manage.p1">You can control or delete cookies through your browser settings. Note that disabling essential cookies will affect the functionality of the NestBook app. To opt out of Google Analytics specifically, you can use the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics opt-out browser add-on</a>.</p>
       <ul>
         <li data-i18n="cookies.manage.chrome"><strong>Chrome:</strong> Settings → Privacy and security → Cookies and other site data</li>
         <li data-i18n="cookies.manage.firefox"><strong>Firefox:</strong> Settings → Privacy &amp; Security → Cookies and Site Data</li>
@@ -258,8 +272,8 @@ const I18N = {
   en: {
     'nav.features':'Features','nav.pricing':'Pricing','nav.languages':'Languages','nav.demo':'Live demo','nav.signin':'Sign in','nav.try':'Try free',
     'cookies.title':'Cookie Policy','cookies.updated':'Last updated: April 2026',
-    'cookies.nottrack.title':'No tracking. No advertising. Essential only.',
-    'cookies.nottrack.desc':'NestBook uses only the cookies strictly necessary to make the service work. We do not use analytics cookies, advertising cookies, or any third-party tracking.',
+    'cookies.nottrack.title':'No advertising. No behavioural tracking.',
+    'cookies.nottrack.desc':'The NestBook app uses only essential cookies. Our public website uses Google Analytics 4 for anonymised traffic analysis. We do not use advertising cookies, retargeting cookies, or any behavioural tracking.',
     'cookies.what.heading':'What are cookies?',
     'cookies.what.p1':'Cookies are small text files stored in your browser when you visit a website. They allow the website to remember information about your visit — such as whether you are logged in — and are essential for many website features to function correctly.',
     'cookies.use.heading':'Cookies we use',
@@ -274,13 +288,14 @@ const I18N = {
     'cookies.row4.name':'Stripe cookies',
     'cookies.row4.purpose':'Payment processing — set by Stripe when you complete a subscription payment. Used for fraud prevention and payment security only.',
     'cookies.row4.duration':'Session / 1 year','cookies.row4.type':'Essential',
+    'cookies.row5.purpose':'Google Analytics 4 — anonymised website analytics on our public pages. Tracks page views and traffic sources. No personal or booking data is collected.',
+    'cookies.row5.duration':'2 years','cookies.row5.type':'Analytics',
     'cookies.notuse.heading':'Cookies we do NOT use',
-    'cookies.notuse.1':'Analytics or visitor tracking cookies (e.g. Google Analytics)',
     'cookies.notuse.2':'Advertising or retargeting cookies',
     'cookies.notuse.3':'Social media tracking pixels',
     'cookies.notuse.4':'Third-party profiling or behavioural tracking of any kind',
     'cookies.manage.heading':'How to manage cookies',
-    'cookies.manage.p1':'Because we only use essential cookies, disabling them will affect the functionality of NestBook. However, you can control cookies through your browser settings:',
+    'cookies.manage.p1':'You can control or delete cookies through your browser settings. Disabling essential cookies will affect the NestBook app. To opt out of Google Analytics, use the Google Analytics opt-out browser add-on (tools.google.com/dlpage/gaoptout).',
     'cookies.manage.chrome':'Chrome: Settings → Privacy and security → Cookies and other site data',
     'cookies.manage.firefox':'Firefox: Settings → Privacy & Security → Cookies and Site Data',
     'cookies.manage.safari':'Safari: Preferences → Privacy → Manage Website Data',

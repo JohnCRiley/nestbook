@@ -629,6 +629,15 @@ footer a:hover { text-decoration: underline; }
   #nb-root .nb-trigger { bottom: 20px; right: 16px; }
 }
 </style>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5R87S4LXP6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-5R87S4LXP6');
+</script>
 </head>
 <body>
 

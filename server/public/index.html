@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -708,6 +708,15 @@ img { display: block; max-width: 100%; }
   .section { padding: 60px 0; }
 }
 </style>
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5R87S4LXP6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-5R87S4LXP6');
+</script>
 </head>
 <body>
 
@@ -749,7 +758,7 @@ img { display: block; max-width: 100%; }
     </div>
     <div class="mega-col">
       <div class="mega-label">Get started</div>
-      <a href="/app/register" class="mega-cta">
+      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mega-cta">
         🌿 Start free trial
         <span>No credit card needed</span>
       </a>
@@ -791,7 +800,7 @@ img { display: block; max-width: 100%; }
         </p>
 
         <div class="hero-btns">
-          <a href="/app/register" class="btn btn-primary btn-lg" data-i18n="hero.cta">Start free — no card needed</a>
+          <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-primary btn-lg" data-i18n="hero.cta">Start free — no card needed</a>
           <a href="/widget-test.html" class="btn btn-outline btn-lg" data-i18n="hero.demo">See live demo →</a>
         </div>
 
@@ -1182,7 +1191,7 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.starter.f5">Email confirmations</li>
           <li data-i18n="pricing.starter.f6">Mobile app (PWA)</li>
         </ul>
-        <a href="/app/register" class="btn btn-outline" style="width:100%; justify-content:center" data-i18n="pricing.starter.cta">Get started free</a>
+        <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-outline" style="width:100%; justify-content:center" data-i18n="pricing.starter.cta">Get started free</a>
       </div>
 
       <!-- Pro (highlighted) -->
@@ -1203,7 +1212,7 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.pro.f10">Staff activity audit log</li>
           <li data-i18n="pricing.pro.f7">Priority support</li>
         </ul>
-        <a href="/app/register" class="btn btn-white" style="width:100%; justify-content:center" data-i18n="pricing.pro.cta">Start 30-day free trial</a>
+        <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-white" style="width:100%; justify-content:center" data-i18n="pricing.pro.cta">Start 30-day free trial</a>
       </div>
 
       <!-- Multi-property -->
@@ -1222,7 +1231,7 @@ img { display: block; max-width: 100%; }
           <li data-i18n="pricing.multi.f8">Full guest folio with itemised checkout</li>
           <li data-i18n="pricing.multi.f9">Dedicated charges staff portal</li>
         </ul>
-        <a href="/app/register" class="btn btn-primary" style="width:100%; justify-content:center" data-i18n="pricing.multi.cta">Get started</a>
+        <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-primary" style="width:100%; justify-content:center" data-i18n="pricing.multi.cta">Get started</a>
       </div>
 
     </div>
@@ -1241,7 +1250,7 @@ img { display: block; max-width: 100%; }
     <h2 data-i18n="cta.heading">Ready to simplify your bookings?</h2>
     <p data-i18n="cta.sub">Join hundreds of small property owners across Europe who've ditched the spreadsheet and the paper diary.</p>
     <div class="cta-buttons">
-      <a href="/app/register" class="btn btn-white btn-lg" data-i18n="cta.btn1">Start for free</a>
+      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-white btn-lg" data-i18n="cta.btn1">Start for free</a>
       <a href="/widget-test.html" class="btn btn-lg" style="background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.25)" data-i18n="cta.btn2">See the booking widget →</a>
     </div>
     <p class="cta-note" data-i18n="cta.note">No credit card required · Cancel any time · GDPR compliant</p>

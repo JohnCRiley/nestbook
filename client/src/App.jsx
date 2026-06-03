@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { LocaleProvider, useLocale, useT } from './i18n/LocaleContext.jsx';
 import ProtectedRoute   from './components/ProtectedRoute.jsx';
@@ -86,6 +86,16 @@ function PropertyBanner() {
   );
 }
 
+function RouteTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag('config', 'G-5R87S4LXP6', { page_path: location.pathname });
+    }
+  }, [location]);
+  return null;
+}
+
 // Full-screen layout for charges_staff — no sidebar, just the charges page
 function ChargesStaffShell() {
   const { user, logout } = useAuth();
@@ -165,6 +175,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter basename="/app">
+      <RouteTracker />
       <LocaleProvider>
         <Routes>
           <Route path="/login"        element={<Login          />} />
