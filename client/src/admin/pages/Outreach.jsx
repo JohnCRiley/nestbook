@@ -590,6 +590,178 @@ function CsvImportModal({ onClose, onImported }) {
   );
 }
 
+// ── Bulk Edit modal ───────────────────────────────────────────────────────────
+function BulkEditModal({ selectedIds, onClose, onSaved }) {
+  const [fields, setFields] = useState({
+    website: false, source: false, country: false,
+    language: false, status: false, notes: false,
+  });
+  const [website, setWebsite]   = useState('');
+  const [source, setSource]     = useState('csv');
+  const [country, setCountry]   = useState('');
+  const [language, setLanguage] = useState('');
+  const [status, setStatus]     = useState('new');
+  const [notes, setNotes]       = useState('');
+  const [notesMode, setNotesMode] = useState('replace'); // replace | append
+  const [saving, setSaving]     = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  function toggleField(f) {
+    setFields(prev => ({ ...prev, [f]: !prev[f] }));
+  }
+
+  const activeFields = Object.keys(fields).filter(f => fields[f]);
+
+  async function save() {
+    if (activeFields.length === 0) return;
+    setSaving(true);
+    const body = {};
+    if (fields.website)  body.website  = website.trim()  || null;
+    if (fields.source)   body.source   = source;
+    if (fields.country)  body.country  = country.trim()  || null;
+    if (fields.language) body.language = language.trim() || null;
+    if (fields.status)   body.status   = status;
+    if (fields.notes)    body.notes    = notes.trim()    || null;
+    if (fields.notes && notesMode === 'append') body._notesAppend = true;
+
+    let done = 0;
+    for (const id of selectedIds) {
+      const payload = { ...body };
+      if (fields.notes && notesMode === 'append') {
+        // fetch current notes and append
+        const res = await saApiFetch(`/api/admin/outreach/prospects/${id}`);
+        if (res.ok) {
+          const p = await res.json();
+          const existing = p.notes ? p.notes.trim() : '';
+          payload.notes = existing ? `${existing}\n${notes.trim()}` : notes.trim();
+        }
+        delete payload._notesAppend;
+      }
+      await saApiFetch(`/api/admin/outreach/prospects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      done++;
+      setProgress(done);
+    }
+    setSaving(false);
+    onSaved();
+    onClose();
+  }
+
+  const selStyle = { padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit', width: '100%' };
+  const rowStyle = (active) => ({
+    display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0',
+    borderBottom: '1px solid #f1f5f9', opacity: active ? 1 : 0.45,
+  });
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: '1rem' }}>Bulk Edit</h3>
+        <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: '#64748b' }}>
+          Check a field to update it across all {selectedIds.length} selected prospect{selectedIds.length !== 1 ? 's' : ''}. Unchecked fields are left unchanged.
+        </p>
+
+        {/* Website */}
+        <div style={rowStyle(fields.website)}>
+          <input type="checkbox" checked={fields.website} onChange={() => toggleField('website')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Website / Facebook URL</div>
+            <Input value={website} onChange={setWebsite} placeholder="e.g. https://facebook.com/myguesthouse" style={{ width: '100%' }} />
+          </div>
+        </div>
+
+        {/* Source */}
+        <div style={rowStyle(fields.source)}>
+          <input type="checkbox" checked={fields.source} onChange={() => toggleField('source')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Source</div>
+            <select value={source} onChange={e => setSource(e.target.value)} style={selStyle}>
+              <option value="manual">Manual</option>
+              <option value="csv">CSV</option>
+              <option value="facebook">Facebook</option>
+              <option value="google">Google</option>
+              <option value="booking_com">Booking.com</option>
+              <option value="airbnb">Airbnb</option>
+              <option value="website">Website</option>
+              <option value="referral">Referral</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Country */}
+        <div style={rowStyle(fields.country)}>
+          <input type="checkbox" checked={fields.country} onChange={() => toggleField('country')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Country</div>
+            <Input value={country} onChange={setCountry} placeholder="e.g. UK" style={{ width: '100%' }} />
+          </div>
+        </div>
+
+        {/* Language */}
+        <div style={rowStyle(fields.language)}>
+          <input type="checkbox" checked={fields.language} onChange={() => toggleField('language')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Language</div>
+            <Input value={language} onChange={setLanguage} placeholder="e.g. en" style={{ width: '100%' }} />
+          </div>
+        </div>
+
+        {/* Status */}
+        <div style={rowStyle(fields.status)}>
+          <input type="checkbox" checked={fields.status} onChange={() => toggleField('status')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Status</div>
+            <select value={status} onChange={e => setStatus(e.target.value)} style={selStyle}>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="follow_up_sent">Follow-up sent</option>
+              <option value="replied">Replied</option>
+              <option value="converted">Converted</option>
+              <option value="unsubscribed">Unsubscribed</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div style={rowStyle(fields.notes)}>
+          <input type="checkbox" checked={fields.notes} onChange={() => toggleField('notes')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>Notes</span>
+              <label style={{ fontSize: '0.78rem', color: '#64748b', cursor: 'pointer' }}>
+                <input type="radio" name="notesMode" value="replace" checked={notesMode === 'replace'} onChange={() => setNotesMode('replace')} style={{ marginRight: 3 }} />
+                Replace
+              </label>
+              <label style={{ fontSize: '0.78rem', color: '#64748b', cursor: 'pointer' }}>
+                <input type="radio" name="notesMode" value="append" checked={notesMode === 'append'} onChange={() => setNotesMode('append')} style={{ marginRight: 3 }} />
+                Append
+              </label>
+            </div>
+            <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes text…" />
+          </div>
+        </div>
+
+        {saving && (
+          <div style={{ margin: '12px 0', fontSize: '0.82rem', color: '#475569' }}>
+            Updating… {progress} / {selectedIds.length}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+          <Btn variant="secondary" onClick={onClose} disabled={saving}>Cancel</Btn>
+          <Btn onClick={save} disabled={saving || activeFields.length === 0}>
+            {saving ? 'Saving…' : `Apply to ${selectedIds.length}`}
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 function downloadCsvTemplate() {
   const csv = [
@@ -628,6 +800,7 @@ export default function Outreach() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showCampaigns, setShowCampaigns] = useState(false);
   const [showCsv, setShowCsv]           = useState(false);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [tab, setTab]                   = useState('prospects'); // prospects | followup
 
   const load = useCallback(async () => {
@@ -885,6 +1058,7 @@ export default function Outreach() {
                 ✓ {selected.length} selected
               </span>
               <Btn small onClick={() => setShowCompose(true)}>Send email</Btn>
+              <Btn small variant="secondary" onClick={() => setShowBulkEdit(true)}>Bulk edit</Btn>
               <select
                 value=""
                 onChange={e => { if (e.target.value) bulkChangeStatus(e.target.value); }}
@@ -989,6 +1163,7 @@ export default function Outreach() {
       {showTemplates && <TemplateManager templates={templates} onClose={() => setShowTemplates(false)} onChanged={load} />}
       {showCampaigns && <CampaignManager campaigns={campaigns} onClose={() => setShowCampaigns(false)} onChanged={load} />}
       {showCsv       && <CsvImportModal  onClose={() => setShowCsv(false)} onImported={load} />}
+      {showBulkEdit  && <BulkEditModal  selectedIds={selected} onClose={() => setShowBulkEdit(false)} onSaved={() => { load(); setSelected([]); }} />}
     </div>
   );
 }
