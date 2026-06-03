@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -232,6 +234,68 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
   );
 }
 
+// ── Quill rich-text editor ────────────────────────────────────────────────────
+const QUILL_TOOLBAR = [
+  ['bold', 'italic', 'underline'],
+  [{ list: 'ordered' }, { list: 'bullet' }],
+  ['link'],
+  ['clean'],
+];
+
+let quillStylesInjected = false;
+function injectQuillStyles() {
+  if (quillStylesInjected) return;
+  quillStylesInjected = true;
+  const s = document.createElement('style');
+  s.textContent = `
+    .ql-toolbar.ql-snow{border:1px solid #d1d5db!important;border-bottom:none!important;border-radius:8px 8px 0 0!important;background:#f8fafc!important;padding:6px 8px!important;}
+    .ql-container.ql-snow{border:1px solid #d1d5db!important;border-radius:0 0 8px 8px!important;font-family:inherit!important;font-size:0.9rem!important;}
+    .ql-editor{min-height:180px;color:#1e293b!important;line-height:1.6!important;}
+    .ql-editor.ql-blank::before{color:#94a3b8!important;font-style:normal!important;}
+    .ql-toolbar.ql-snow .ql-stroke{stroke:#475569!important;}
+    .ql-toolbar.ql-snow .ql-fill{fill:#475569!important;}
+    .ql-toolbar.ql-snow button:hover .ql-stroke,.ql-toolbar.ql-snow button.ql-active .ql-stroke{stroke:#1a4710!important;}
+    .ql-toolbar.ql-snow button:hover .ql-fill,.ql-toolbar.ql-snow button.ql-active .ql-fill{fill:#1a4710!important;}
+    .ql-toolbar.ql-snow .ql-picker-label:hover,.ql-toolbar.ql-snow .ql-picker-item:hover{color:#1a4710!important;}
+  `;
+  document.head.appendChild(s);
+}
+
+function QuillEditor({ value, onChange, placeholder = 'Write your email here…', minHeight = 180 }) {
+  const containerRef = useRef(null);
+  const quillRef     = useRef(null);
+  const onChangeRef  = useRef(onChange);
+
+  useEffect(() => { onChangeRef.current = onChange; });
+
+  useEffect(() => {
+    injectQuillStyles();
+    if (!containerRef.current || quillRef.current) return;
+    quillRef.current = new Quill(containerRef.current, {
+      theme: 'snow',
+      placeholder,
+      modules: { toolbar: QUILL_TOOLBAR },
+    });
+    if (value) quillRef.current.root.innerHTML = value;
+    quillRef.current.on('text-change', () => {
+      onChangeRef.current(quillRef.current.root.innerHTML);
+    });
+    return () => {
+      quillRef.current?.off('text-change');
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync external value into editor (e.g. template loaded)
+  useEffect(() => {
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      quillRef.current.root.innerHTML = value || '';
+    }
+  }, [value]);
+
+  return <div ref={containerRef} style={{ minHeight }} />;
+}
+
 // ── Email Composer modal ──────────────────────────────────────────────────────
 function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, onSent }) {
   const selected = prospects
@@ -249,6 +313,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   function loadTemplate(id) {
     const t = templates.find(t => t.id === Number(id));
     if (t) { setSubject(t.subject); setBody(t.body); setTmplId(id); }
+    // QuillEditor syncs from the body value via its useEffect
   }
 
   async function send() {
@@ -316,7 +381,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
         </p>
 
         <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%', marginBottom: 10 }} />
-        <Textarea value={body} onChange={setBody} rows={10} placeholder="Email body *" />
+        <QuillEditor value={body} onChange={setBody} placeholder="Write your email here… use {{name}}, {{company}}" />
 
         <div style={{ marginTop: 14, padding: '10px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
           <span style={{ fontSize: '0.8rem', color: '#475569' }}>
@@ -342,7 +407,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
 
         <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-          <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim()}>
+          <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>'}>
             {sending ? 'Sending…' : `Send to ${selected.length}`}
           </Btn>
         </div>
@@ -400,7 +465,7 @@ function TemplateManager({ templates, onClose, onChanged }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Input value={name}    onChange={setName}    placeholder="Template name" style={{ width: '100%' }} />
               <Input value={subject} onChange={setSubject} placeholder="Email subject" style={{ width: '100%' }} />
-              <Textarea value={body} onChange={setBody} rows={8} placeholder="Email body (use {{name}}, {{company}})" />
+              <QuillEditor value={body} onChange={setBody} placeholder="Email body — use {{name}}, {{company}}, {{first_name}}" minHeight={160} />
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <Btn onClick={save} small disabled={saving}>{saving ? 'Saving…' : 'Save'}</Btn>

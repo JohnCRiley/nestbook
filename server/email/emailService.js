@@ -1052,6 +1052,7 @@ export async function sendOutreachEmail({ to, subject, html }) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');
     return;
   }
-  const result = await resend.emails.send({ from: FROM, to, subject, html });
+  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const result = await resend.emails.send({ from: FROM, to, subject, html, text });
   console.log('[email] Outreach email sent →', to, '| id:', result?.id ?? result?.data?.id);
 }

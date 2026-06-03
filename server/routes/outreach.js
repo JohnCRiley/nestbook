@@ -209,11 +209,13 @@ outreachRouter.post('/send', async (req, res) => {
       finalBody    = finalBody.replace(regex, value);
     });
 
-    // Convert plain text body to HTML: paragraphs separated by blank lines
-    const bodyHtml = finalBody
-      .split(/\n{2,}/)
-      .map(para => `<p style="margin:0 0 16px 0;line-height:1.7">${para.replace(/\n/g, '<br>')}</p>`)
-      .join('\n');
+    // Body is HTML when sent from Quill editor; fall back to wrapping plain text for old templates
+    const bodyHtml = finalBody.trim().startsWith('<')
+      ? finalBody
+      : finalBody
+          .split(/\n{2,}/)
+          .map(para => `<p style="margin:0 0 16px 0;line-height:1.7">${para.replace(/\n/g, '<br>')}</p>`)
+          .join('\n');
 
     const unsubUrl = `${process.env.BASE_URL || 'https://nestbook.io'}/api/outreach/unsubscribe?token=${p.unsubscribe_token}`;
 
