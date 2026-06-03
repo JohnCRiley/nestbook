@@ -125,6 +125,9 @@
   top: 60px;
   left: 0;
   right: 0;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fff;
   box-shadow: 0 8px 40px rgba(0,0,0,0.15);
   border-top: 3px solid var(--light, #d9f0cc);
@@ -221,5 +224,7 @@
   .navbar-inner { padding: 0 16px; }
   .lang-toggle  { font-size: 0.78rem; padding: 5px 9px; }
   .menu-toggle  { font-size: 0.78rem; padding: 5px 12px; }
-  .mega-inner   { grid-template-columns: 1fr; padding: 20px 16px 24px; gap: 20px; }
+  .mega-inner   { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+  .mega-col     { border-bottom: 1px solid #f0fdf4; padding-bottom: 16px; }
+  .mega-col:last-child { border-bottom: none; }
 }

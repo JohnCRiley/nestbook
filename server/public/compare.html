@@ -1329,19 +1329,24 @@ document.querySelectorAll('.lang-btn').forEach(function(btn) {
 
 document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
   row.addEventListener('click', function() {
-    var next = row.nextElementSibling;
-    if (next && next.classList.contains('detail-row')) {
-      next.remove();
-      row.classList.remove('expanded');
-    } else {
+    var isOpen = this.classList.contains('expanded');
+    document.querySelectorAll('.feat-row.expanded').forEach(function(openRow) {
+      openRow.classList.remove('expanded');
+      var detailRow = openRow.nextElementSibling;
+      if (detailRow && detailRow.classList.contains('detail-row')) {
+        detailRow.remove();
+      }
+    });
+    if (!isOpen) {
+      this.classList.add('expanded');
       var tr = document.createElement('tr');
       tr.className = 'detail-row';
       var td = document.createElement('td');
       td.colSpan = 4;
-      td.textContent = row.dataset.detail;
+      td.className = 'detail-cell';
+      td.textContent = this.dataset.detail;
       tr.appendChild(td);
-      row.after(tr);
-      row.classList.add('expanded');
+      this.after(tr);
     }
   });
 });

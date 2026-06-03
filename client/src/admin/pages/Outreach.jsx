@@ -284,23 +284,23 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 580 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 580, boxSizing: 'border-box', overflowX: 'hidden' }}>
         <h3 style={{ margin: '0 0 4px', fontSize: '1rem' }}>Compose Email</h3>
         <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '0 0 16px' }}>
           To: {selected.map(p => p.name).join(', ')} ({selected.length} recipient{selected.length !== 1 ? 's' : ''})
         </p>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <select
             value={tmplId} onChange={e => loadTemplate(e.target.value)}
-            style={{ flex: 1, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
+            style={{ flex: 1, minWidth: 0, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
           >
             <option value="">— Load a template —</option>
             {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <select
             value={campId} onChange={e => setCampId(e.target.value)}
-            style={{ flex: 1, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
+            style={{ flex: 1, minWidth: 0, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.82rem', fontFamily: 'inherit' }}
           >
             <option value="">— Campaign (optional) —</option>
             {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -645,7 +645,7 @@ export default function Outreach() {
   const filteredProspects = prospects.filter(p => {
     if (search) {
       const q = search.toLowerCase();
-      if (!p.name?.toLowerCase().includes(q) && !p.email?.toLowerCase().includes(q) && !p.company?.toLowerCase().includes(q)) return false;
+      if (!p.name?.toLowerCase().includes(q) && !p.email?.toLowerCase().includes(q) && !p.company?.toLowerCase().includes(q) && !p.source?.toLowerCase().includes(q) && !p.notes?.toLowerCase().includes(q)) return false;
     }
     if (filterStatus  && p.status   !== filterStatus)  return false;
     if (filterSource  && p.source   !== filterSource)  return false;
@@ -660,6 +660,7 @@ export default function Outreach() {
 
   const countries = [...new Set(prospects.map(p => p.country).filter(Boolean))].sort();
   const languages = [...new Set(prospects.map(p => p.language).filter(Boolean))].sort();
+  const sources   = [...new Set(prospects.map(p => p.source).filter(Boolean))].sort();
 
   const anyFilter = search || filterStatus || filterSource || filterCountry || filterLang || filterFollowUp;
 
@@ -818,16 +819,7 @@ export default function Outreach() {
               style={{ flex: '1 1 110px', minWidth: 100, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
             >
               <option value="">All sources</option>
-              <option value="manual">Manual</option>
-              <option value="csv">CSV</option>
-              <option value="auto_signup">Signed up</option>
-              <option value="website">Website</option>
-              <option value="facebook">Facebook</option>
-              <option value="google">Google</option>
-              <option value="booking_com">Booking.com</option>
-              <option value="airbnb">Airbnb</option>
-              <option value="referral">Referral</option>
-              <option value="other">Other</option>
+              {sources.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <select
               value={filterCountry} onChange={e => { setFilterCountry(e.target.value); setSelected([]); }}
