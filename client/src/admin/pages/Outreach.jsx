@@ -644,8 +644,16 @@ export default function Outreach() {
   const today = new Date().toISOString().split('T')[0];
   const filteredProspects = prospects.filter(p => {
     if (search) {
-      const q = search.toLowerCase();
-      if (!p.name?.toLowerCase().includes(q) && !p.email?.toLowerCase().includes(q) && !p.company?.toLowerCase().includes(q) && !p.source?.toLowerCase().includes(q) && !p.notes?.toLowerCase().includes(q)) return false;
+      const terms = search.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      const hit = t =>
+        p.name?.toLowerCase().includes(t) ||
+        p.email?.toLowerCase().includes(t) ||
+        p.company?.toLowerCase().includes(t) ||
+        p.source?.toLowerCase().includes(t) ||
+        p.notes?.toLowerCase().includes(t) ||
+        p.country?.toLowerCase().includes(t) ||
+        p.language?.toLowerCase().includes(t);
+      if (!terms.every(hit)) return false;
     }
     if (filterStatus  && p.status   !== filterStatus)  return false;
     if (filterSource  && p.source   !== filterSource)  return false;
@@ -799,7 +807,7 @@ export default function Outreach() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
             <Input
               value={search} onChange={v => { setSearch(v); setSelected([]); }}
-              placeholder="Search name, email, company…"
+              placeholder="Search… use commas for AND: uk, guesthouse"
               style={{ flex: '2 1 180px', minWidth: 140 }}
             />
             <select
