@@ -2023,11 +2023,11 @@ function PropertyHeroPhoto({ property, onUpdated }) {
         }}>
           <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
           <i className="ti ti-camera-plus" />
-          {uploading ? 'Uploading…' : 'Upload a photo'}
+          {uploading ? 'Uploading…' : t('settings.uploadPhoto')}
         </label>
       )}
       <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4 }}>
-        Replaces the map on your booking page. Max 10 MB. JPEG, PNG or WebP.
+        {t('settings.uploadPhotoHint')}
       </div>
     </div>
   );
