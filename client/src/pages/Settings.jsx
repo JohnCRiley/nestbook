@@ -612,14 +612,12 @@ export default function Settings() {
             </PlanGate>
           </div>
 
-          {/* Facebook Booking Button (Pro) */}
+          {/* Facebook Booking Button & slug editor — available on all plans */}
           <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro">
-              <FacebookBookingSection
-                property={property}
-                onSaved={(updated) => { setProperty(updated); setContextProperty(updated); updatePropertyInList(updated); }}
-              />
-            </PlanGate>
+            <FacebookBookingSection
+              property={property}
+              onSaved={(updated) => { setProperty(updated); setContextProperty(updated); updatePropertyInList(updated); }}
+            />
           </div>
 
           {/* Seasonal Pricing — rate periods (Pro+) */}
