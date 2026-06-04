@@ -1937,6 +1937,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, rooms, onClose
 // ── PropertyHeroPhoto ─────────────────────────────────────────────────────────
 
 function PropertyHeroPhoto({ property, onUpdated }) {
+  const t = useT();
   const [uploading, setUploading] = useState(false);
   const [removing,  setRemoving]  = useState(false);
   const [error,     setError]     = useState(null);
@@ -1976,7 +1977,8 @@ function PropertyHeroPhoto({ property, onUpdated }) {
 
   return (
     <div className="form-group">
-      <label className="form-label">Property photo (shown at top of your booking page)</label>
+      <label className="form-label">{t('settings.heroPhoto')}</label>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '2px 0 8px' }}>{t('settings.heroPhotoHint')}</p>
       {error && <div style={{ color: '#dc2626', fontSize: '0.78rem', marginBottom: 6 }}>{error}</div>}
 
       {property.hero_photo ? (
