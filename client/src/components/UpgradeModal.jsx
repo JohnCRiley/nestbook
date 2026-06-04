@@ -20,7 +20,7 @@ const MODAL_T = {
     proAdds:      'With Pro you also get:',
     freeFeatures: [
       '1 property',
-      'Up to 5 rooms',
+      'Up to 3 rooms',
       'Unlimited bookings (manual)',
       'Guest management',
       'Booking calendar & availability',
@@ -36,7 +36,7 @@ const MODAL_T = {
     ],
     proFeatures: [
       { icon: '🚀', name: 'Unlimited Rooms',
-        desc: 'The Free plan allows up to 5 rooms. With Pro, add as many rooms as your property has — no arbitrary limits, no upgrades needed as you grow.' },
+        desc: 'The Free plan allows up to 3 rooms. With Pro, add as many rooms as your property has — no arbitrary limits, no upgrades needed as you grow.' },
       { icon: '🌐', name: 'Booking Widget for Your Website',
         desc: 'Add a "Book Now" button to your own website and let guests book directly — without going through Airbnb or Booking.com. Payments go straight to you.' },
       { icon: '📧', name: 'Automated Guest Emails',
@@ -87,7 +87,7 @@ const MODAL_T = {
     proAdds:      'Avec Pro, vous bénéficiez aussi de :',
     freeFeatures: [
       '1 hébergement',
-      "Jusqu'à 5 chambres",
+      "Jusqu'à 3 chambres",
       'Réservations illimitées (manuelles)',
       'Gestion des voyageurs',
       'Calendrier et disponibilités',
@@ -103,7 +103,7 @@ const MODAL_T = {
     ],
     proFeatures: [
       { icon: '🚀', name: 'Chambres illimitées',
-        desc: 'Le plan gratuit permet jusqu\'à 5 chambres. Avec Pro, ajoutez autant de chambres que votre hébergement en compte — sans limite, quelle que soit votre croissance.' },
+        desc: 'Le plan gratuit permet jusqu\'à 3 chambres. Avec Pro, ajoutez autant de chambres que votre hébergement en compte — sans limite, quelle que soit votre croissance.' },
       { icon: '🌐', name: 'Widget de réservation pour votre site',
         desc: 'Ajoutez un bouton « Réserver » sur votre site et laissez vos voyageurs réserver directement — sans commission Airbnb, sans frais Booking.com. Les paiements vont directement chez vous.' },
       { icon: '📧', name: 'E-mails automatiques aux voyageurs',
@@ -154,7 +154,7 @@ const MODAL_T = {
     proAdds:      'Con Pro, además obtiene:',
     freeFeatures: [
       '1 alojamiento',
-      'Hasta 5 habitaciones',
+      'Hasta 3 habitaciones',
       'Reservas ilimitadas (manuales)',
       'Gestión de huéspedes',
       'Calendario de reservas y disponibilidad',
@@ -170,7 +170,7 @@ const MODAL_T = {
     ],
     proFeatures: [
       { icon: '🚀', name: 'Habitaciones ilimitadas',
-        desc: 'El plan gratuito permite hasta 5 habitaciones. Con Pro, añada tantas habitaciones como tenga su propiedad — sin límites arbitrarios, sin necesidad de actualizaciones futuras.' },
+        desc: 'El plan gratuito permite hasta 3 habitaciones. Con Pro, añada tantas habitaciones como tenga su propiedad — sin límites arbitrarios, sin necesidad de actualizaciones futuras.' },
       { icon: '🌐', name: 'Widget de reservas para su web',
         desc: 'Añada un botón «Reservar ahora» a su propia web y deje que sus huéspedes reserven directamente — sin comisiones de Airbnb ni cargos de Booking.com. Los pagos van directamente a usted.' },
       { icon: '📧', name: 'Correos automáticos a huéspedes',
@@ -221,7 +221,7 @@ const MODAL_T = {
     proAdds:      'Mit Pro erhalten Sie zusätzlich:',
     freeFeatures: [
       '1 Unterkunft',
-      'Bis zu 5 Zimmer',
+      'Bis zu 3 Zimmer',
       'Unbegrenzte Buchungen (manuell)',
       'Gästeverwaltung',
       'Buchungskalender und Verfügbarkeit',
@@ -237,7 +237,7 @@ const MODAL_T = {
     ],
     proFeatures: [
       { icon: '🚀', name: 'Unbegrenzte Zimmer',
-        desc: 'Der kostenlose Plan erlaubt bis zu 5 Zimmer. Mit Pro fügen Sie so viele Zimmer hinzu, wie Ihre Unterkunft hat — ohne künstliche Beschränkungen.' },
+        desc: 'Der kostenlose Plan erlaubt bis zu 3 Zimmer. Mit Pro fügen Sie so viele Zimmer hinzu, wie Ihre Unterkunft hat — ohne künstliche Beschränkungen.' },
       { icon: '🌐', name: 'Buchungs-Widget für Ihre Website',
         desc: 'Fügen Sie Ihrer Website einen „Jetzt buchen"-Button hinzu und lassen Sie Gäste direkt buchen — ohne Airbnb-Provision, ohne Booking.com-Gebühren. Zahlungen gehen direkt an Sie.' },
       { icon: '📧', name: 'Automatische Gäste-E-Mails',
@@ -288,7 +288,7 @@ const MODAL_T = {
     proAdds:      'Met Pro krijgt u ook:',
     freeFeatures: [
       '1 accommodatie',
-      'Tot 5 kamers',
+      'Tot 3 kamers',
       'Onbeperkte boekingen (handmatig)',
       'Gastenbeheer',
       'Boekingskalender en beschikbaarheid',
@@ -304,7 +304,7 @@ const MODAL_T = {
     ],
     proFeatures: [
       { icon: '🚀', name: 'Onbeperkte kamers',
-        desc: 'Het gratis plan staat maximaal 5 kamers toe. Met Pro voegt u zoveel kamers toe als uw accommodatie heeft — geen kunstmatige limieten, geen upgrades nodig als u groeit.' },
+        desc: 'Het gratis plan staat maximaal 3 kamers toe. Met Pro voegt u zoveel kamers toe als uw accommodatie heeft — geen kunstmatige limieten, geen upgrades nodig als u groeit.' },
       { icon: '🌐', name: 'Boekingswidget voor uw website',
         desc: 'Voeg een „Nu boeken"-knop toe aan uw eigen website en laat gasten rechtstreeks boeken — zonder Airbnb-commissie, zonder Booking.com-kosten. Betalingen gaan direct naar u.' },
       { icon: '📧', name: 'Automatische e-mails aan gasten',
