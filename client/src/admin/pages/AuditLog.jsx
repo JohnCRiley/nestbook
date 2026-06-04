@@ -29,6 +29,8 @@ export default function AuditLog() {
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading,    setLoading]    = useState(true);
+  const [oldest,     setOldest]     = useState(null);
+  const [todayCount, setTodayCount] = useState(0);
   const [page,       setPage]       = useState(1);
   const [category,   setCategory]   = useState('');
   const [from,       setFrom]       = useState('');
@@ -66,10 +68,12 @@ export default function AuditLog() {
 
     saApiFetch(`/api/admin/audit-log?${params}`)
       .then((r) => r.ok ? r.json() : { logs: [], total: 0, totalPages: 0 })
-      .then(({ logs: rows, total: tot, totalPages: tp }) => {
+      .then(({ logs: rows, total: tot, totalPages: tp, oldest: old, todayCount: td }) => {
         setLogs(rows);
         setTotal(tot);
         setTotalPages(tp);
+        if (old !== undefined) setOldest(old);
+        if (td !== undefined)  setTodayCount(td);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -81,11 +85,30 @@ export default function AuditLog() {
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 16 }}>
         <h2 style={{ margin: '0 0 4px', fontSize: '1.3rem', fontWeight: 700 }}>Audit Log</h2>
         <div style={{ color: '#64748b', fontSize: '0.85rem' }}>
-          Cross-property activity trail — {total.toLocaleString()} entries
+          Cross-property activity trail
         </div>
+      </div>
+
+      {/* Stats bar */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16,
+        background: '#f8fafc', border: '1px solid #e2e8f0',
+        borderRadius: 8, padding: '10px 14px', fontSize: '0.8rem', color: '#475569',
+      }}>
+        <span><strong>{total.toLocaleString()}</strong> total entries</span>
+        <span style={{ color: '#cbd5e1' }}>·</span>
+        <span><strong>{todayCount.toLocaleString()}</strong> today</span>
+        {oldest && (
+          <>
+            <span style={{ color: '#cbd5e1' }}>·</span>
+            <span>Oldest: <strong>{fmtDay(oldest)}</strong></span>
+          </>
+        )}
+        <span style={{ color: '#cbd5e1' }}>·</span>
+        <span style={{ color: '#94a3b8' }}>Auto-cleanup: property logs 30 days · system logs 90 days</span>
       </div>
 
       {/* Filters */}
@@ -202,6 +225,12 @@ export default function AuditLog() {
       )}
     </div>
   );
+}
+
+function fmtDay(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts.endsWith('Z') ? ts : ts + 'Z');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatTs(ts) {

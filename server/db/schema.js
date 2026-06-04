@@ -434,6 +434,7 @@ export function initSchema() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_property  ON audit_log(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_category  ON audit_log(category)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_user      ON audit_log(user_id)`);
 
   // Performance indexes for paginated list queries
   db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property  ON bookings(property_id)`);
@@ -450,6 +451,24 @@ export function initSchema() {
        AND status NOT IN ('cancelled', 'checked_out')`
   ).run();
   if (advanced.changes > 0) console.log(`✓ Auto-advanced ${advanced.changes} past booking(s) to checked_out.`);
+
+  // Audit log rotation — prevent unbounded growth
+  // Property-scoped entries kept 30 days; system-level entries kept 90 days.
+  try {
+    const del30 = db.prepare(`
+      DELETE FROM audit_log
+      WHERE timestamp < datetime('now', '-30 days')
+        AND property_id IS NOT NULL
+    `).run();
+    const del90 = db.prepare(`
+      DELETE FROM audit_log
+      WHERE timestamp < datetime('now', '-90 days')
+    `).run();
+    const total = del30.changes + del90.changes;
+    if (total > 0) console.log(`✓ Cleaned up ${total} old audit log entries (${del30.changes} property, ${del90.changes} system)`);
+  } catch (e) {
+    console.error('Audit log cleanup failed:', e.message);
+  }
 
   // Migration: add charges_staff role to users table
   const usersSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='users'`).get()?.sql ?? '';

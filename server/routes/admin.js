@@ -883,7 +883,10 @@ adminRouter.get('/audit-log', (req, res) => {
        ${where} ORDER BY a.timestamp DESC LIMIT ? OFFSET ?`
     ).all(...params, pageLimit, offset);
 
-    res.json({ logs: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+    const oldest  = db.prepare(`SELECT MIN(timestamp) as ts FROM audit_log`).get()?.ts ?? null;
+    const todayCt = db.prepare(`SELECT COUNT(*) as n FROM audit_log WHERE date(timestamp) = date('now')`).get().n;
+
+    res.json({ logs: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit), oldest, todayCount: todayCt });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1124,4 +1127,38 @@ adminRouter.patch('/error-reports/:id', (req, res) => {
   db.prepare('UPDATE error_reports SET status = ?, admin_notes = ? WHERE id = ?')
     .run(status ?? 'new', admin_notes ?? null, req.params.id);
   res.json({ success: true });
+});
+
+// ── Database maintenance ──────────────────────────────────────────────────────
+
+adminRouter.get('/maintenance/stats', (req, res) => {
+  try {
+    const logCount  = db.prepare('SELECT COUNT(*) as n FROM audit_log').get().n;
+    const pageCount = db.prepare('PRAGMA page_count').get().page_count;
+    const pageSize  = db.prepare('PRAGMA page_size').get().page_size;
+    const dbSizeBytes = pageCount * pageSize;
+    res.json({ logCount, dbSizeBytes });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+adminRouter.post('/maintenance/cleanup', (req, res) => {
+  try {
+    const del30 = db.prepare(`
+      DELETE FROM audit_log
+      WHERE timestamp < datetime('now', '-30 days') AND property_id IS NOT NULL
+    `).run();
+    const del90 = db.prepare(`
+      DELETE FROM audit_log WHERE timestamp < datetime('now', '-90 days')
+    `).run();
+    const deleted = del30.changes + del90.changes;
+    db.exec('VACUUM');
+    res.json({
+      deleted,
+      message: `Removed ${deleted} old log entries and optimised database`,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });

@@ -746,6 +746,99 @@ export default function BusinessFinances() {
       <DividendCalculator annualSalary={annualSalary} />
       <AnnualSummary />
       <TaxCalendar />
+      <MaintenanceSection />
+    </div>
+  );
+}
+
+// ── Database Maintenance ──────────────────────────────────────────────────────
+
+function MaintenanceSection() {
+  const [stats,    setStats]    = useState(null);
+  const [running,  setRunning]  = useState(false);
+  const [result,   setResult]   = useState(null);
+
+  useEffect(() => {
+    apiFetch('/api/admin/maintenance/stats')
+      .then((r) => r.ok ? r.json() : null)
+      .then(setStats)
+      .catch(() => {});
+  }, []);
+
+  async function runCleanup() {
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await apiFetch('/api/admin/maintenance/cleanup', { method: 'POST' });
+      const data = await res.json();
+      setResult(data.message ?? 'Done.');
+      apiFetch('/api/admin/maintenance/stats').then((r) => r.ok ? r.json() : null).then(setStats).catch(() => {});
+    } catch {
+      setResult('Cleanup failed — check server logs.');
+    }
+    setRunning(false);
+  }
+
+  function fmtBytes(bytes) {
+    if (!bytes) return '—';
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  const card = {
+    background: '#1e293b', border: '1px solid #334155', borderRadius: 10,
+    padding: '20px 24px', marginTop: 24, color: '#f1f5f9',
+  };
+
+  return (
+    <div style={card}>
+      <h3 style={{ margin: '0 0 4px', fontSize: '1rem', fontWeight: 700 }}>Database maintenance</h3>
+      <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: '#94a3b8' }}>
+        Manual cleanup — removes old audit log entries and compacts the database file.
+      </p>
+
+      <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
+            {stats ? stats.logCount.toLocaleString() : '…'}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>Activity log entries</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 700 }}>
+            {stats ? fmtBytes(stats.dbSizeBytes) : '…'}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>Database size</div>
+        </div>
+      </div>
+
+      <button
+        onClick={runCleanup}
+        disabled={running}
+        style={{
+          padding: '8px 20px', borderRadius: 7, border: 'none',
+          background: running ? '#334155' : '#3b82f6', color: '#fff',
+          fontWeight: 600, fontSize: '0.875rem', cursor: running ? 'not-allowed' : 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        {running ? 'Running…' : 'Run cleanup now'}
+      </button>
+
+      <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 8, marginBottom: 0 }}>
+        Removes property logs older than 30 days and system logs older than 90 days,
+        then runs VACUUM to reclaim disk space. Locks the database briefly — run during low traffic.
+      </p>
+
+      {result && (
+        <div style={{
+          marginTop: 12, padding: '8px 12px', borderRadius: 6,
+          background: '#0f172a', border: '1px solid #334155',
+          fontSize: '0.82rem', color: '#86efac', fontFamily: 'monospace',
+        }}>
+          ✓ {result}
+        </div>
+      )}
     </div>
   );
 }
