@@ -339,7 +339,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   onClick={handleRequestDeposit}
                   disabled={depositWorking}
                 >
-                  {t('requestDepositBtn')}
+                  {t('booking.requestDeposit')}
                 </button>
               )}
               <button
@@ -348,7 +348,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                 onClick={handleMarkDepositPaid}
                 disabled={depositWorking}
               >
-                {t('markDepositPaidBtn')}
+                {t('booking.markPaid')}
               </button>
             </div>
           )}
@@ -612,7 +612,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
             }}
           >
-            {t('refundRecord')}
+            {t('booking.recordRefund')}
           </button>
         </div>
       )}
@@ -628,20 +628,20 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               color: '#374151', cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            {t('coReprintReceipt')}
+            {t('booking.reprintReceipt')}
           </button>
         </div>
       )}
 
       <div className="panel-actions">
-        <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
+        <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
         {b.status === 'confirmed' && (
           <button
             className="btn-panel-danger"
             style={{ fontSize: '0.82rem', padding: '7px 12px' }}
             onClick={() => setShowCancelConfirm(true)}
           >
-            {t('cancelBookingBtn')}
+            {t('booking.cancelBooking')}
           </button>
         )}
       </div>
@@ -650,9 +650,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
       <ConfirmModal
         isOpen={showCancelConfirm}
-        title={t('cancelBookingBtn')}
+        title={t('booking.cancelBooking')}
         message={t('cancelBookingConfirm')}
-        confirmLabel={t('cancelBookingBtn')}
+        confirmLabel={t('booking.cancelBooking')}
         cancelLabel={t('cancel')}
         variant="danger"
         onConfirm={() => { setShowCancelConfirm(false); onStatusUpdate(b.id, 'cancelled'); }}
@@ -845,7 +845,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
   return (
     <>
       <div className="panel-section">
-        <div className="panel-section-title">{t('editBookingLink').replace(' →', '')}</div>
+        <div className="panel-section-title">{t('booking.editBooking')}</div>
 
         {error && <div className="form-error" style={{ marginBottom: 12 }}>{error}</div>}
 
@@ -1028,7 +1028,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
               <button
                 style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
                 onClick={handleRemove}
-              >{t('bfRemove')}</button>
+              >{t('booking.removeBreakfast')}</button>
             </div>
           </div>
         ) : (
@@ -1057,7 +1057,7 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
             color: 'var(--tint-text)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
           }}
           onClick={() => setEditing(true)}
-        >{t('bfAddTitle')}</button>
+        >{t('booking.addBreakfast')}</button>
       ) : (
         <AddBreakfastForm
           b={b} bfMorning={bfMorning} bfGuests={bfGuests} bfPrice={bfPrice}
@@ -1128,7 +1128,7 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
           style={{ fontSize: '0.82rem', padding: '7px 14px' }}
           onClick={onSave}
           disabled={saving || servings <= 0}
-        >{saving ? t('saving') : t('bfAddBtn')}</button>
+        >{saving ? t('saving') : t('booking.addBreakfast')}</button>
         <button
           className="btn-secondary"
           style={{ fontSize: '0.82rem', padding: '7px 12px', border: '1.5px solid var(--border)' }}
@@ -1222,9 +1222,9 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
           style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
           onClick={onCheckOut}
         >
-          {t('checkOutBtn')}
+          {t('booking.checkOut')}
         </button>
-        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>}
+        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
       </div>
     );
   }
@@ -1237,10 +1237,10 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
           style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
           onClick={onCheckIn ?? (() => onStatusUpdate(bookingId, 'arriving'))}
         >
-          {t('checkInBtn')}
+          {t('booking.checkIn')}
         </button>
-        {!prominent && <button className="btn-panel-danger" onClick={onCancelClick}>{t('cancelBookingBtn')}</button>}
-        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>}
+        {!prominent && <button className="btn-panel-danger" onClick={onCancelClick}>{t('booking.cancelBooking')}</button>}
+        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
       </div>
     );
   }
@@ -1248,7 +1248,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
   if (!prominent) {
     return (
       <div className="panel-actions">
-        <button className="btn-panel-secondary" onClick={onEdit}>{t('editBookingLink')}</button>
+        <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
       </div>
     );
   }
