@@ -356,14 +356,14 @@ export default function Settings() {
                   </FormField>
                 </div>
 
-                <FormField label="About your property (optional)">
+                <FormField label={t('settings.aboutProperty')}>
                   <textarea
                     name="description"
                     className="form-control"
                     rows={3}
                     value={form.description}
                     onChange={handleFormChange}
-                    placeholder="Tell guests what makes your property special — the location, the atmosphere, what to expect..."
+                    placeholder={t('settings.aboutPropertyHint')}
                     style={{ resize: 'vertical' }}
                   />
                 </FormField>
@@ -494,8 +494,8 @@ export default function Settings() {
           {user?.role === 'owner' && (
             <div className="settings-card">
               <div className="settings-card-header">
-                <h2>Appearance</h2>
-                <p>Choose a colour theme for your property dashboard. Your booking widget will automatically match.</p>
+                <h2>{t('settings.appearance')}</h2>
+                <p>{t('settings.appearanceHint')}</p>
               </div>
               <div className="settings-card-body">
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -644,10 +644,10 @@ export default function Settings() {
                 aria-expanded={calendarSyncOpen}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-                  <span>Calendar Sync</span>
+                  <span>{t('settings.calendarSync')}</span>
                   {!calendarSyncOpen && (
                     <span style={{ fontSize: '0.78rem', fontWeight: 400, color: 'var(--accent)', opacity: 0.8 }}>
-                      Sync your NestBook calendar with Booking.com and Airbnb
+                      {t('settings.calendarSyncHint')}
                     </span>
                   )}
                 </div>
@@ -657,7 +657,7 @@ export default function Settings() {
               {calendarSyncOpen && (
                 <div className="danger-zone-body" style={{ padding: '16px 20px' }}>
                   <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16, lineHeight: 1.55 }}>
-                    Share these links with Booking.com, Airbnb or any other platform to automatically block dates when you receive a NestBook booking. Updates every few hours.
+                    {t('settings.calendarSyncInstructions')}
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     {rooms.map((room) => {
@@ -688,7 +688,7 @@ export default function Settings() {
                                   });
                                 }}
                               >
-                                {copiedRoomId === room.id ? 'Copied!' : 'Copy URL'}
+                                {copiedRoomId === room.id ? t('settings.copied') : t('settings.copyUrl')}
                               </button>
                             </div>
                           ) : (
@@ -1221,6 +1221,7 @@ function EmbedSection({ snippet, t, propertyId }) {
 // ── FacebookBookingSection ────────────────────────────────────────────────────
 
 function FacebookBookingSection({ property, onSaved }) {
+  const t = useT();
   const [slug,       setSlug]       = useState(property?.booking_slug ?? '');
   const [slugError,  setSlugError]  = useState('');
   const [slugSaving, setSlugSaving] = useState(false);
@@ -1279,15 +1280,15 @@ function FacebookBookingSection({ property, onSaved }) {
   return (
     <div className="embed-section">
       <div className="embed-header">
-        <h2>Facebook Booking Button</h2>
-        <p>Link Facebook's "Book Now" button directly to your booking page</p>
+        <h2>{t('settings.facebookBtn')}</h2>
+        <p>{t('settings.facebookBtnHint')}</p>
       </div>
       <div className="embed-body">
 
         {/* ── Slug editor ── */}
         <div style={{ marginBottom: 18 }}>
           <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
-            Your booking page URL
+            {t('settings.bookingPageUrl')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0 }}>
             <span style={{
@@ -1323,7 +1324,7 @@ function FacebookBookingSection({ property, onSaved }) {
                 transition: 'all 0.15s', whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
-              {slugSaving ? 'Saving…' : slugSaved ? '✓ Saved' : 'Save'}
+              {slugSaving ? 'Saving…' : slugSaved ? '✓ Saved' : t('settings.slugSave')}
             </button>
           </div>
           {slugError && (
@@ -1353,21 +1354,18 @@ function FacebookBookingSection({ property, onSaved }) {
               transition: 'all 0.15s',
             }}
           >
-            {urlCopied ? '✓ Copied!' : 'Copy URL'}
+            {urlCopied ? t('settings.slugCopied') : t('settings.slugCopy')}
           </button>
         </div>
 
         {/* ── Facebook instructions ── */}
         <div className="embed-steps">
-          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-            To add a Book Now button to your Facebook page:
-          </div>
           {[
-            'Go to your Facebook business page.',
-            <span key="s2">Click <strong>"Add a button"</strong> below your cover photo.</span>,
-            <span key="s3">Select <strong>"Book Now"</strong> or <strong>"Book with you"</strong>.</span>,
-            <span key="s4">Paste your booking page URL: <code style={{ fontFamily: 'monospace', fontSize: '0.85em', background: '#f1f5f9', padding: '1px 5px', borderRadius: 3 }}>{bookingUrl}</code></span>,
-            <span key="s5">Click <strong>Save</strong>.</span>,
+            t('settings.facebookStep1'),
+            t('settings.facebookStep2'),
+            t('settings.facebookStep3'),
+            t('settings.facebookStep4'),
+            t('settings.facebookStep5'),
           ].map((step, i) => (
             <div key={i} className="embed-step">
               <span className="embed-step-num">{i + 1}</span>
