@@ -103,6 +103,13 @@ export default function Settings() {
   const [editingRatePeriod,   setEditingRatePeriod]   = useState(null); // period object | null
   const [ratePeriodDeleteTarget, setRatePeriodDeleteTarget] = useState(null);
 
+  // Bug report form
+  const [bugReportingEnabled, setBugReportingEnabled] = useState(false);
+  const [reportCategory,    setReportCategory]    = useState('calculation');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportStatus,      setReportStatus]      = useState(null); // null | 'success' | 'error'
+  const [reportSubmitting,  setReportSubmitting]  = useState(false);
+
   // Non-persisted feature toggles (widget, email_confirmations, offline)
   const [features, setFeatures] = useState(() =>
     Object.fromEntries(FEATURES.map((f) => [f.key, f.default]))
@@ -154,6 +161,41 @@ export default function Settings() {
       setRatePeriods(Array.isArray(rp) ? rp : []);
     });
   }, [activeProperty?.id, plan]);
+
+  useEffect(() => {
+    apiFetch('/api/error-reports/enabled')
+      .then((r) => r.ok ? r.json() : { enabled: false })
+      .then(({ enabled }) => setBugReportingEnabled(enabled))
+      .catch(() => {});
+  }, []);
+
+  // ── Bug report handler ────────────────────────────────────────────────────
+  async function handleSubmitReport() {
+    setReportSubmitting(true);
+    setReportStatus(null);
+    try {
+      const res = await apiFetch('/api/error-reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category:    reportCategory,
+          description: reportDescription,
+          page_url:    window.location.href,
+        }),
+      });
+      if (res.ok) {
+        setReportStatus('success');
+        setReportDescription('');
+        setReportCategory('calculation');
+      } else {
+        setReportStatus('error');
+      }
+    } catch {
+      setReportStatus('error');
+    } finally {
+      setReportSubmitting(false);
+    }
+  }
 
   // ── Toast helper ───────────────────────────────────────────────────────────
   const showToast = useCallback((msg, type = 'success') => {
@@ -539,6 +581,89 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Report an issue */}
+          {bugReportingEnabled && (
+            <div className="settings-card" style={{ marginTop: 0 }}>
+              <div className="settings-card-header">
+                <h2>🐛 {t('settings.reportIssue')}</h2>
+                <p>{t('settings.reportIssueHint')}</p>
+              </div>
+              <div className="settings-card-body">
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.55 }}>
+                  {t('settings.reportDescription')}
+                </p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.55 }}>
+                  {t('settings.reportExamples')}
+                </p>
+
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>
+                  {t('settings.reportCategory')}
+                </label>
+                <select
+                  className="form-control"
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  style={{ width: '100%', marginBottom: 12 }}
+                >
+                  <option value="calculation">{t('settings.reportCatCalculation')}</option>
+                  <option value="booking">{t('settings.reportCatBooking')}</option>
+                  <option value="payment">{t('settings.reportCatPayment')}</option>
+                  <option value="display">{t('settings.reportCatDisplay')}</option>
+                  <option value="email">{t('settings.reportCatEmail')}</option>
+                  <option value="performance">{t('settings.reportCatPerformance')}</option>
+                  <option value="other">{t('settings.reportCatOther')}</option>
+                </select>
+
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>
+                  {t('settings.reportDescriptionLabel')}
+                </label>
+                <textarea
+                  className="form-control"
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  rows={4}
+                  placeholder={t('settings.reportPlaceholder')}
+                  style={{ width: '100%', marginBottom: 12, resize: 'vertical' }}
+                />
+
+                {reportStatus === 'success' && (
+                  <div style={{
+                    background: 'var(--tint-bg)', color: 'var(--tint-text)',
+                    padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
+                  }}>
+                    ✅ {t('settings.reportSuccess')}
+                  </div>
+                )}
+                {reportStatus === 'error' && (
+                  <div style={{
+                    background: '#fef2f2', color: '#dc2626',
+                    padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
+                  }}>
+                    ❌ {t('settings.reportError')}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubmitReport}
+                  disabled={reportSubmitting || reportDescription.trim().length < 10}
+                  style={{
+                    width: '100%', padding: '10px',
+                    background: reportDescription.trim().length < 10 ? 'var(--border)' : 'var(--accent)',
+                    color: '#fff', border: 'none', borderRadius: 8,
+                    fontWeight: 600, fontFamily: 'inherit',
+                    cursor: reportDescription.trim().length < 10 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {reportSubmitting ? t('settings.reportSending') : t('settings.reportSend')}
+                </button>
+
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
+                  {t('settings.reportContact')}
+                </p>
               </div>
             </div>
           )}

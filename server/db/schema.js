@@ -903,6 +903,35 @@ John`
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_room_photos_room ON room_photos(room_id)`);
 
+  // ── Error reports — user-submitted bug/issue reports ─────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS error_reports (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id      INTEGER NOT NULL,
+      property_id  INTEGER,
+      user_name    TEXT,
+      user_email   TEXT,
+      plan         TEXT,
+      category     TEXT,
+      description  TEXT NOT NULL,
+      page_url     TEXT,
+      created_at   TEXT DEFAULT (datetime('now')),
+      status       TEXT DEFAULT 'new',
+      admin_notes  TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_error_reports_status ON error_reports(status)`);
+
+  // ── App settings — key-value config store ────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    )
+  `);
+  db.prepare(`INSERT OR IGNORE INTO app_settings (key, value) VALUES ('bug_reporting_enabled', 'true')`).run();
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

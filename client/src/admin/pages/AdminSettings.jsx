@@ -11,10 +11,37 @@ export default function AdminSettings() {
   });
   const [creating,         setCreating]         = useState(false);
   const [pendingDeactivate, setPendingDeactivate] = useState(null); // { id, code }
+  const [bugReportingEnabled, setBugReportingEnabled] = useState(true);
+  const [togglingBugReports,  setTogglingBugReports]  = useState(false);
 
   useEffect(() => {
     apiFetch('/api/admin/discount-codes').then(r => r.json()).then(setCodes).catch(() => {});
+    apiFetch('/api/admin/app-settings/bug_reporting_enabled')
+      .then((r) => r.ok ? r.json() : { value: 'true' })
+      .then(({ value }) => setBugReportingEnabled(value === 'true'))
+      .catch(() => {});
   }, []);
+
+  async function toggleBugReporting() {
+    setTogglingBugReports(true);
+    const newVal = !bugReportingEnabled;
+    try {
+      const res = await apiFetch('/api/admin/app-settings/bug_reporting_enabled', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: String(newVal) }),
+      });
+      if (res.ok) {
+        setBugReportingEnabled(newVal);
+        showToast(`Bug reporting ${newVal ? 'enabled' : 'disabled'}.`);
+      } else {
+        showToast('Failed to update setting.', 'error');
+      }
+    } catch {
+      showToast('Network error.', 'error');
+    }
+    setTogglingBugReports(false);
+  }
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
@@ -225,6 +252,37 @@ export default function AdminSettings() {
           </table>
           </div>
         )}
+      </div>
+
+      {/* ── Feature toggles ─────────────────────────────────────────────────── */}
+      <div className="admin-card" style={{ marginBottom: 24 }}>
+        <div className="admin-card-header">
+          <h2>Feature Toggles</h2>
+        </div>
+        <div style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>🐛 Bug Reporting</div>
+              <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
+                Show the "Report an issue" section in user Settings pages.
+                Disable to hide it from all users without any code changes.
+              </div>
+            </div>
+            <button
+              onClick={toggleBugReporting}
+              disabled={togglingBugReports}
+              style={{
+                padding: '6px 18px', borderRadius: 6, border: 'none',
+                background: bugReportingEnabled ? '#22c55e' : '#e2e8f0',
+                color: bugReportingEnabled ? '#fff' : '#475569',
+                fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: '0.85rem', flexShrink: 0,
+              }}
+            >
+              {bugReportingEnabled ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {toast && (

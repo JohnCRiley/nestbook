@@ -1046,6 +1046,32 @@ export async function sendDowngradeEmail(email) {
   console.log('[email] Downgrade email sent →', email);
 }
 
+// ── Bug report alert ─────────────────────────────────────────────────────────
+export async function sendBugReportAlert({ userName, userEmail, plan, category, description }) {
+  if (!resend) return;
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      'hello@nestbook.io',
+      subject: `🐛 New error report — ${category} from ${userEmail}`,
+      html: `
+        <h2 style="margin:0 0 16px">New error report received</h2>
+        <p><strong>From:</strong> ${userName} (${userEmail})</p>
+        <p><strong>Plan:</strong> ${plan}</p>
+        <p><strong>Category:</strong> ${category}</p>
+        <p><strong>Description:</strong></p>
+        <blockquote style="border-left:3px solid #e2e8f0;margin:8px 0;padding:8px 16px;color:#475569">
+          ${description.replace(/\n/g, '<br>')}
+        </blockquote>
+        <p><a href="https://nestbook.io/app/super-admin/error-reports">View in Super Admin →</a></p>
+      `,
+    });
+    console.log(`[email] Bug report alert sent for ${userEmail}`);
+  } catch (err) {
+    console.error('[email] Failed to send bug report alert:', err.message);
+  }
+}
+
 // ── Outreach / prospect email ─────────────────────────────────────────────────
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {

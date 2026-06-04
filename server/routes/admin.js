@@ -1064,3 +1064,64 @@ adminRouter.get('/business/annual', (req, res) => {
     res.status(500).json({ error: 'Database error.' });
   }
 });
+
+// ── App settings (key-value config) ──────────────────────────────────────────
+
+adminRouter.get('/app-settings/:key', (req, res) => {
+  const row = db.prepare('SELECT value FROM app_settings WHERE key = ?').get(req.params.key);
+  if (!row) return res.status(404).json({ error: 'Setting not found.' });
+  res.json({ key: req.params.key, value: row.value });
+});
+
+adminRouter.put('/app-settings/:key', (req, res) => {
+  const { value } = req.body;
+  if (value === undefined) return res.status(400).json({ error: 'value required' });
+  db.prepare('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)')
+    .run(req.params.key, String(value));
+  res.json({ success: true });
+});
+
+// ── Error reports ─────────────────────────────────────────────────────────────
+
+adminRouter.get('/error-reports/count', (req, res) => {
+  const { count } = db.prepare(`SELECT COUNT(*) as count FROM error_reports WHERE status = 'new'`).get();
+  res.json({ count });
+});
+
+adminRouter.get('/error-reports', (req, res) => {
+  try {
+    const { status, category, page = 1, limit = 50 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const conditions = [];
+    const params     = [];
+    if (status)   { conditions.push('status = ?');   params.push(status); }
+    if (category) { conditions.push('category = ?'); params.push(category); }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const total = db.prepare(`SELECT COUNT(*) as count FROM error_reports ${where}`)
+      .get(...params).count;
+
+    const reports = db.prepare(`
+      SELECT * FROM error_reports ${where}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(...params, Number(limit), offset);
+
+    const newCount        = db.prepare(`SELECT COUNT(*) as n FROM error_reports WHERE status='new'`).get().n;
+    const inProgressCount = db.prepare(`SELECT COUNT(*) as n FROM error_reports WHERE status='in_progress'`).get().n;
+    const resolvedCount   = db.prepare(`SELECT COUNT(*) as n FROM error_reports WHERE status='resolved'`).get().n;
+
+    res.json({ reports, total, page: Number(page), pages: Math.ceil(total / Number(limit)), newCount, inProgressCount, resolvedCount });
+  } catch (e) {
+    console.error('[admin/error-reports]', e);
+    res.status(500).json({ error: 'Database error.' });
+  }
+});
+
+adminRouter.patch('/error-reports/:id', (req, res) => {
+  const { status, admin_notes } = req.body;
+  db.prepare('UPDATE error_reports SET status = ?, admin_notes = ? WHERE id = ?')
+    .run(status ?? 'new', admin_notes ?? null, req.params.id);
+  res.json({ success: true });
+});

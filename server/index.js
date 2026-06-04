@@ -27,6 +27,7 @@ import { marketingRouter }           from './routes/marketing.js';
 import { bookingPageRouter }         from './routes/bookingPage.js';
 import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
+import { errorReportsRouter }        from './routes/errorReports.js';
 import { sendDowngradeEmail }        from './email/emailService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -105,7 +106,8 @@ app.use('/api/users',        usersRouter);
 app.use('/api/reports',      reportsRouter);
 app.use('/api/activity-log', activityLogRouter);
 app.use('/api/charges',      chargesRouter);
-app.use('/api/rate-periods', ratePeriodsRouter);
+app.use('/api/rate-periods',   ratePeriodsRouter);
+app.use('/api/error-reports', errorReportsRouter);
 
 // ── Standalone per-property booking page — slug or numeric ID ────────────────
 app.use('/book', bookingPageRouter);

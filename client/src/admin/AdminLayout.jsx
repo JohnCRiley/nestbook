@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, Routes, Route } from 'react-router-dom';
 import Overview          from './pages/Overview.jsx';
 import Properties        from './pages/Properties.jsx';
@@ -9,23 +9,33 @@ import MailingList       from './pages/MailingList.jsx';
 import AuditLog          from './pages/AuditLog.jsx';
 import BusinessFinances  from './pages/BusinessFinances.jsx';
 import Outreach          from './pages/Outreach.jsx';
-import { clearSASession } from './saApiFetch.js';
+import ErrorReports      from './pages/ErrorReports.jsx';
+import { clearSASession, saApiFetch } from './saApiFetch.js';
 
 const NAV = [
-  { to: '/super-admin',              label: 'Overview',     end: true,  icon: <IconOverview /> },
-  { to: '/super-admin/properties',   label: 'Properties',               icon: <IconProperties /> },
-  { to: '/super-admin/users',        label: 'Users',                    icon: <IconUsers /> },
-  { to: '/super-admin/revenue',      label: 'Revenue',                  icon: <IconRevenue /> },
-  { to: '/super-admin/audit-log',    label: 'Audit Log',                icon: <IconAuditLog /> },
-  { to: '/super-admin/mailing-list', label: 'Mailing List',             icon: <IconMail /> },
-  { to: '/super-admin/outreach',    label: 'Outreach CRM',             icon: <IconOutreach /> },
-  { to: '/super-admin/settings',          label: 'Settings',          icon: <IconSettings /> },
-  { to: '/super-admin/business-finances', label: 'NestBook Business', icon: <IconFinances /> },
+  { to: '/super-admin',                   label: 'Overview',         end: true, icon: <IconOverview /> },
+  { to: '/super-admin/properties',        label: 'Properties',                  icon: <IconProperties /> },
+  { to: '/super-admin/users',             label: 'Users',                       icon: <IconUsers /> },
+  { to: '/super-admin/revenue',           label: 'Revenue',                     icon: <IconRevenue /> },
+  { to: '/super-admin/audit-log',         label: 'Audit Log',                   icon: <IconAuditLog /> },
+  { to: '/super-admin/mailing-list',      label: 'Mailing List',                icon: <IconMail /> },
+  { to: '/super-admin/outreach',          label: 'Outreach CRM',                icon: <IconOutreach /> },
+  { to: '/super-admin/error-reports',     label: 'Error Reports',               icon: <IconBug />, badgeKey: 'errorReports' },
+  { to: '/super-admin/settings',          label: 'Settings',                    icon: <IconSettings /> },
+  { to: '/super-admin/business-finances', label: 'NestBook Business',           icon: <IconFinances /> },
 ];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [badges, setBadges] = useState({ errorReports: 0 });
+
+  useEffect(() => {
+    saApiFetch('/api/admin/error-reports/count')
+      .then((r) => r.ok ? r.json() : { count: 0 })
+      .then(({ count }) => setBadges((b) => ({ ...b, errorReports: count })))
+      .catch(() => {});
+  }, []);
 
   function handleLogout() {
     clearSASession();
@@ -67,7 +77,7 @@ export default function AdminLayout() {
         </div>
 
         <nav className="admin-nav">
-          {NAV.map(({ to, label, end, icon }) => (
+          {NAV.map(({ to, label, end, icon, badgeKey }) => (
             <NavLink
               key={to}
               to={to}
@@ -78,6 +88,15 @@ export default function AdminLayout() {
             >
               <span className="admin-nav-icon">{icon}</span>
               <span className="admin-nav-text">{label}</span>
+              {badgeKey && badges[badgeKey] > 0 && (
+                <span style={{
+                  marginLeft: 'auto', background: '#ef4444', color: '#fff',
+                  borderRadius: 10, padding: '1px 6px', fontSize: '0.7rem',
+                  fontWeight: 700, lineHeight: 1.4,
+                }}>
+                  {badges[badgeKey]}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -112,6 +131,7 @@ export default function AdminLayout() {
           <Route path="audit-log"         element={<AuditLog      />} />
           <Route path="mailing-list"      element={<MailingList       />} />
           <Route path="outreach"          element={<Outreach           />} />
+          <Route path="error-reports"     element={<ErrorReports       />} />
           <Route path="settings"          element={<AdminSettings      />} />
           <Route path="business-finances" element={<BusinessFinances   />} />
         </Routes>
@@ -121,6 +141,19 @@ export default function AdminLayout() {
 }
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
+
+function IconBug() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2l1.5 1.5"/><path d="M14.5 3.5L16 2"/>
+      <path d="M9 7a5 5 0 0 1 6 0"/>
+      <path d="M12 19c-4 0-7-3-7-7v-1a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v1c0 4-3 7-7 7z"/>
+      <path d="M5 11H3"/><path d="M19 11h2"/>
+      <path d="M5 15H2"/><path d="M19 15h3"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+    </svg>
+  );
+}
 
 function IconOverview() {
   return (
