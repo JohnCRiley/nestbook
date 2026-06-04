@@ -3109,6 +3109,13 @@ a { text-decoration: none; }
   margin: 0;
 }
 
+.plan-gate-detail {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
 .plan-gate-actions {
   display: flex;
   gap: 10px;

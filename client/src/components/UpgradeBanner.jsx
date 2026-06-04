@@ -15,7 +15,7 @@ export default function UpgradeBanner() {
     <>
       <div className="upgrade-banner">
         <span className="upgrade-banner-text">
-          ✨ {t('upgradeBannerText')}
+          🌿 {t('upgradeBannerText')}
         </span>
         <button
           className="upgrade-banner-cta"

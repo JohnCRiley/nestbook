@@ -63,7 +63,7 @@ export default function Reports() {
         <h1>{t('reportsTitle')}</h1>
         <div className="page-date">{t('reportsSubtitle')}</div>
       </div>
-      <PlanGate requiredPlan="pro">
+      <PlanGate requiredPlan="pro" title="Revenue reports & income summaries" detail="Monthly income summaries, occupancy rates and a P&L your accountant can use directly. Export to CSV.">
         <ReportsContent />
       </PlanGate>
     </>

@@ -6,7 +6,7 @@ import UpgradeModal from './UpgradeModal.jsx';
 
 const RANK = { free: 0, pro: 1, multi: 2 };
 
-export default function PlanGate({ requiredPlan = 'pro', children }) {
+export default function PlanGate({ requiredPlan = 'pro', title, detail, children }) {
   const plan = usePlan();
   const t    = useT();
   const [showModal, setShowModal] = useState(false);
@@ -35,7 +35,8 @@ export default function PlanGate({ requiredPlan = 'pro', children }) {
     <>
       <div className="plan-gate">
         <div className="plan-gate-lock">🔒</div>
-        <h3 className="plan-gate-title">{t(badgeKey)}</h3>
+        <h3 className="plan-gate-title">{title || t(badgeKey)}</h3>
+        {detail && <p className="plan-gate-detail">{detail}</p>}
 
         <div className="plan-gate-actions">
           <button

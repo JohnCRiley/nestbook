@@ -57,7 +57,7 @@ export default function ActivityLog() {
         <h1>{t('activityLog')}</h1>
         <div className="page-date">{t('activityLogSubtitle')}</div>
       </div>
-      <PlanGate requiredPlan="pro">
+      <PlanGate requiredPlan="pro" title="Track every change in your account" detail="A complete record of every booking, change and checkout — useful for staff management and resolving disputes.">
         <ActivityLogContent />
       </PlanGate>
     </>

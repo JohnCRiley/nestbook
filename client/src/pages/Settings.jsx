@@ -607,7 +607,7 @@ export default function Settings() {
 
           {/* Widget embed code (Pro) */}
           <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro">
+            <PlanGate requiredPlan="pro" title="Let guests book directly from your website" detail="Add a booking widget to your own site — zero commission, payments straight to you.">
               <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
             </PlanGate>
           </div>
@@ -622,7 +622,7 @@ export default function Settings() {
 
           {/* Seasonal Pricing — rate periods (Pro+) */}
           <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro">
+            <PlanGate requiredPlan="pro" title="Set different rates for peak season" detail="Define date ranges and NestBook prices each night automatically — no spreadsheets, no manual overrides.">
               <SeasonalPricingSection
                 t={t}
                 ratePeriods={ratePeriods}
@@ -945,7 +945,7 @@ export default function Settings() {
                 ))}
               </div>
               <div style={{ marginTop: 14 }}>
-                <PlanGate requiredPlan="pro">
+                <PlanGate requiredPlan="pro" title="Invite your team" detail="Give staff their own login to manage check-ins and check-outs without sharing your owner account.">
                   <button className="btn-secondary" onClick={() => setShowInvite(true)}>
                     {t('inviteStaff')}
                   </button>
