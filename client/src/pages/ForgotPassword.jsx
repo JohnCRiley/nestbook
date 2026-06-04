@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useT } from '../i18n/LocaleContext.jsx';
 
 export default function ForgotPassword() {
+  const t            = useT();
   const [email,     setEmail]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -51,7 +53,7 @@ export default function ForgotPassword() {
           </>
         ) : (
           <>
-            <h1 className="auth-heading">Forgot password?</h1>
+            <h1 className="auth-heading">{t('auth.forgotPassword')}</h1>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: 24, lineHeight: 1.6 }}>
               Enter your email and we'll send you a reset link.
             </p>
@@ -60,7 +62,7 @@ export default function ForgotPassword() {
 
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="auth-field">
-                <label className="auth-label" htmlFor="email">Email address</label>
+                <label className="auth-label" htmlFor="email">{t('auth.emailAddress')}</label>
                 <input
                   id="email"
                   type="email"

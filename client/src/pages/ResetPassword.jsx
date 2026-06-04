@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useT } from '../i18n/LocaleContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 
 export default function ResetPassword() {
-  const [searchParams]    = useSearchParams();
-  const navigate          = useNavigate();
-  const token             = searchParams.get('token') ?? '';
+  const t                      = useT();
+  const [searchParams]         = useSearchParams();
+  const navigate               = useNavigate();
+  const token                  = searchParams.get('token') ?? '';
 
   const [newPassword,     setNewPassword]     = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -87,7 +89,7 @@ export default function ResetPassword() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field">
-            <label className="auth-label" htmlFor="new-password">New password</label>
+            <label className="auth-label" htmlFor="new-password">{t('auth.newPassword')}</label>
             <PasswordInput
               id="new-password"
               className="auth-input"
@@ -100,7 +102,7 @@ export default function ResetPassword() {
           </div>
 
           <div className="auth-field">
-            <label className="auth-label" htmlFor="confirm-password">Confirm new password</label>
+            <label className="auth-label" htmlFor="confirm-password">{t('auth.confirmPassword')}</label>
             <PasswordInput
               id="confirm-password"
               className="auth-input"

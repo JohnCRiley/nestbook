@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { useT } from '../i18n/LocaleContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 
 const PROPERTY_TYPES = [
@@ -13,6 +14,7 @@ const PROPERTY_TYPES = [
 ];
 
 export default function Register() {
+  const t          = useT();
   const { login }  = useAuth();
   const navigate   = useNavigate();
 
@@ -93,7 +95,7 @@ export default function Register() {
                 onChange={set('name')} placeholder="Jane Smith" required autoFocus />
             </div>
             <div className="auth-field">
-              <label className="auth-label" htmlFor="reg-email">Email address</label>
+              <label className="auth-label" htmlFor="reg-email">{t('auth.emailAddress')}</label>
               <input id="reg-email" type="email" className="auth-input" value={form.email}
                 onChange={set('email')} placeholder="you@example.com" required />
             </div>
@@ -106,7 +108,7 @@ export default function Register() {
                 onChange={set('password')} placeholder="At least 8 characters" required />
             </div>
             <div className="auth-field">
-              <label className="auth-label" htmlFor="confirm">Confirm password</label>
+              <label className="auth-label" htmlFor="confirm">{t('auth.confirmPassword')}</label>
               <PasswordInput id="confirm" className="auth-input" value={form.confirmPassword}
                 onChange={set('confirmPassword')} placeholder="••••••••" required />
             </div>
@@ -145,7 +147,7 @@ export default function Register() {
 
         <p className="auth-switch">
           Already have an account?{' '}
-          <Link to="/login">Sign in</Link>
+          <Link to="/login">{t('auth.signIn')}</Link>
         </p>
       </div>
     </div>

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
+import { useT } from '../i18n/LocaleContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 
 const KIOSK_KEY = 'nb_kiosk';
 
 export default function Login() {
+  const t            = useT();
   const { login }    = useAuth();
   const navigate     = useNavigate();
   const location     = useLocation();
@@ -61,7 +63,7 @@ export default function Login() {
         </div>
         <p className="auth-tagline">Property Management</p>
 
-        <h1 className="auth-heading">Sign in</h1>
+        <h1 className="auth-heading">{t('auth.signIn')}</h1>
 
         {resetSuccess && (
           <div className="auth-success" style={{
@@ -76,7 +78,7 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field">
-            <label className="auth-label" htmlFor="email">Email address</label>
+            <label className="auth-label" htmlFor="email">{t('auth.emailAddress')}</label>
             <input
               id="email"
               type="email"
@@ -92,7 +94,7 @@ export default function Login() {
           <div className="auth-field">
             <div className="auth-label-row">
               <label className="auth-label" htmlFor="password">Password</label>
-              <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
+              <Link to="/forgot-password" className="auth-forgot">{t('auth.forgotPassword')}</Link>
             </div>
             <PasswordInput
               id="password"
@@ -105,7 +107,7 @@ export default function Login() {
           </div>
 
           <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Signing in…' : t('auth.signIn')}
           </button>
         </form>
 
