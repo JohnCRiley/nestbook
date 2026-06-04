@@ -607,7 +607,7 @@ export default function Settings() {
 
           {/* Widget embed code (Pro) */}
           <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro" title="Let guests book directly from your website" detail="Add a booking widget to your own site — zero commission, payments straight to you.">
+            <PlanGate requiredPlan="pro" title={t('settings.widgetEmbed')} detail={t('settings.widgetEmbedHint')}>
               <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
             </PlanGate>
           </div>
@@ -622,7 +622,7 @@ export default function Settings() {
 
           {/* Seasonal Pricing — rate periods (Pro+) */}
           <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro" title="Set different rates for peak season" detail="Define date ranges and NestBook prices each night automatically — no spreadsheets, no manual overrides.">
+            <PlanGate requiredPlan="pro" title={t('settings.seasonalPricing')} detail={t('settings.seasonalPricingHint')}>
               <SeasonalPricingSection
                 t={t}
                 ratePeriods={ratePeriods}
@@ -945,7 +945,7 @@ export default function Settings() {
                 ))}
               </div>
               <div style={{ marginTop: 14 }}>
-                <PlanGate requiredPlan="pro" title="Invite your team" detail="Give staff their own login to manage check-ins and check-outs without sharing your owner account.">
+                <PlanGate requiredPlan="pro" title={t('settings.accessRolesHint')} detail={t('settings.staffHint')}>
                   <button className="btn-secondary" onClick={() => setShowInvite(true)}>
                     {t('inviteStaff')}
                   </button>
@@ -957,7 +957,7 @@ export default function Settings() {
                   background: '#f0f9ff', border: '1px solid #bae6fd',
                   borderRadius: 8, fontSize: '0.82rem', color: '#0c4a6e', lineHeight: 1.55,
                 }}>
-                  ℹ️ {t('staffAccessInfo')}
+                  ℹ️ {t('settings.staffHint')}
                 </div>
               )}
             </div>

@@ -2855,7 +2855,7 @@ a { text-decoration: none; }
 }
 /* Mobile — main-content has padding-left/right: 20px */
 @media (max-width: 767px) {
-  .verify-email-banner { margin: -80px -20px 24px; padding: 11px 20px; }
+  .verify-email-banner { margin: -24px -20px 24px; padding: 11px 20px; }
 }
 
 /* ── Sidebar user + logout ───────────────────────────────────────────────── */
@@ -3205,7 +3205,7 @@ a { text-decoration: none; }
   .upgrade-banner { margin: -36px -24px 24px; padding: 8px 24px; }
 }
 @media (max-width: 767px) {
-  .upgrade-banner { margin: -80px -20px 20px; padding: 8px 20px; }
+  .upgrade-banner { margin: -24px -20px 20px; padding: 8px 20px; }
   .upgrade-banner-text { font-size: 0.78rem; }
 }
 
@@ -3942,7 +3942,7 @@ a { text-decoration: none; }
 }
 
 @media (max-width: 767px) {
-  .property-banner { margin: -80px -20px 16px; padding: 7px 20px; }
+  .property-banner { margin: -24px -20px 16px; padding: 7px 20px; }
 }
 
 /* ── Danger zone accordion (Settings — "Manage Subscription") ────────────── */
