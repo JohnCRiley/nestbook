@@ -837,12 +837,13 @@ function applyLang(lang) {
   } catch(_) {}
 }
 
-(function() {
-  var saved = '';
-  try { saved = localStorage.getItem('nb-lang') || ''; } catch(_) {}
-  var defaultLang = "${esc(defaultLang)}";
-  applyLang(I18N[saved] ? saved : defaultLang);
-})();
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[NestBook booking page] I18N keys:', Object.keys(I18N));
+  console.log('[NestBook booking page] lang:', localStorage.getItem('nb-lang'));
+  var lang = localStorage.getItem('nb-lang') || '${esc(defaultLang)}';
+  applyLang(I18N[lang] ? lang : '${esc(defaultLang)}');
+  console.log('[NestBook booking page] applyLang called with:', lang);
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 function openWidget() {
