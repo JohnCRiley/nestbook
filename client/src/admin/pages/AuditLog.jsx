@@ -33,6 +33,7 @@ export default function AuditLog() {
   const [todayCount, setTodayCount] = useState(0);
   const [page,       setPage]       = useState(1);
   const [category,   setCategory]   = useState('');
+  const [userFilter, setUserFilter] = useState('');
   const [from,       setFrom]       = useState('');
   const [to,         setTo]         = useState('');
   const [csvLoading, setCsvLoading] = useState(false);
@@ -41,9 +42,10 @@ export default function AuditLog() {
     setCsvLoading(true);
     try {
       const params = new URLSearchParams();
-      if (category) params.set('category', category);
-      if (from)     params.set('from', from);
-      if (to)       params.set('to', to);
+      if (category)   params.set('category', category);
+      if (userFilter) params.set('user', userFilter);
+      if (from)       params.set('from', from);
+      if (to)         params.set('to', to);
       const res = await saApiFetch(`/api/admin/audit-log/export?${params}`);
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
@@ -62,9 +64,10 @@ export default function AuditLog() {
   const fetchLogs = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page, limit: LIMIT });
-    if (category) params.set('category', category);
-    if (from)     params.set('from', from);
-    if (to)       params.set('to', to);
+    if (category)   params.set('category', category);
+    if (userFilter) params.set('user', userFilter);
+    if (from)       params.set('from', from);
+    if (to)         params.set('to', to);
 
     saApiFetch(`/api/admin/audit-log?${params}`)
       .then((r) => r.ok ? r.json() : { logs: [], total: 0, totalPages: 0 })
@@ -77,11 +80,12 @@ export default function AuditLog() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [page, category, from, to]);
+  }, [page, category, userFilter, from, to]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  const CATS = ['', 'auth', 'booking', 'guest', 'room', 'property', 'user'];
+  const CATS  = ['', 'auth', 'booking', 'guest', 'room', 'property', 'user'];
+  const users = [...new Set(logs.map(l => l.user_email).filter(Boolean))].sort();
 
   return (
     <div>
@@ -120,6 +124,16 @@ export default function AuditLog() {
         >
           {CATS.map((c) => (
             <option key={c} value={c}>{c || 'All categories'}</option>
+          ))}
+        </select>
+        <select
+          value={userFilter}
+          onChange={(e) => { setUserFilter(e.target.value); setPage(1); }}
+          style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.83rem', minWidth: 140 }}
+        >
+          <option value="">All users</option>
+          {users.map(email => (
+            <option key={email} value={email}>{email}</option>
           ))}
         </select>
         <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }}

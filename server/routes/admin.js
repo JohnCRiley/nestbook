@@ -858,7 +858,7 @@ adminRouter.get('/mailing-list', (req, res) => {
 // Query params: property_id, category, action, from, to, page, limit
 adminRouter.get('/audit-log', (req, res) => {
   try {
-    const { property_id, category, action, from, to, page, limit } = req.query;
+    const { property_id, category, action, from, to, user, page, limit } = req.query;
 
     const conditions = [];
     const params     = [];
@@ -868,6 +868,7 @@ adminRouter.get('/audit-log', (req, res) => {
     if (action)      { conditions.push('a.action = ?');           params.push(action); }
     if (from)        { conditions.push("date(a.timestamp) >= ?"); params.push(from); }
     if (to)          { conditions.push("date(a.timestamp) <= ?"); params.push(to); }
+    if (user)        { conditions.push('u.email = ?');            params.push(user); }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
@@ -875,11 +876,17 @@ adminRouter.get('/audit-log', (req, res) => {
     const pageLimit = Math.min(200, Math.max(1, Number(limit) || 50));
     const offset    = (pageNum - 1) * pageLimit;
 
-    const total = db.prepare(`SELECT COUNT(*) as n FROM audit_log a ${where}`).get(...params).n;
+    const total = db.prepare(
+      `SELECT COUNT(*) as n
+       FROM audit_log a
+       LEFT JOIN users u ON a.user_id = u.id
+       ${where}`
+    ).get(...params).n;
     const rows  = db.prepare(
-      `SELECT a.*, p.name as property_name
+      `SELECT a.*, p.name as property_name, u.email as user_email, u.name as user_name
        FROM audit_log a
        LEFT JOIN properties p ON a.property_id = p.id
+       LEFT JOIN users u ON a.user_id = u.id
        ${where} ORDER BY a.timestamp DESC LIMIT ? OFFSET ?`
     ).all(...params, pageLimit, offset);
 
