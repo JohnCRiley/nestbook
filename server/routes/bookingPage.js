@@ -831,9 +831,12 @@ var I18N = {
 
 function applyLang(lang) {
   var t = I18N[lang] || I18N.en;
+  var elements = document.querySelectorAll('[data-i18n]');
+  console.log('[NestBook] data-i18n elements found:', elements.length);
   document.documentElement.lang = lang;
-  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+  elements.forEach(function(el) {
     var key = el.getAttribute('data-i18n');
+    console.log('[NestBook] updating:', key, '→', t[key]);
     if (t[key] !== undefined) el.textContent = t[key];
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
