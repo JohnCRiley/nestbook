@@ -306,6 +306,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   const [tmplId, setTmplId]         = useState('');
   const [campId, setCampId]         = useState('');
   const [followUpDays, setFollowUpDays] = useState(7);
+  const [sendLimit, setSendLimit]   = useState(100);
   const [sending, setSending]       = useState(false);
   const [result, setResult]         = useState(null);
   const sendingRef                  = useRef(false); // synchronous guard against double-click
@@ -321,10 +322,11 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
     sendingRef.current = true;
     setSending(true);
     try {
+      const toSend = sendLimit === null ? selected : selected.slice(0, sendLimit);
       const res = await saApiFetch('/api/admin/outreach/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prospect_ids: selected.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null, followUpDays }),
+        body: JSON.stringify({ prospect_ids: toSend.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null, followUpDays }),
       });
       const data = await res.json();
       setResult(data.results);
@@ -372,6 +374,17 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
 
         {/* ── Scrollable body ── */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+          {selected.length > 100 && sendLimit === null && (
+            <div style={{
+              background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8,
+              padding: '10px 14px', fontSize: '0.82rem', color: '#92400e',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              ⚠️ <strong>Resend daily limit:</strong> Sending more than 100 emails per day may trigger account suspension. Use the send limit selector below or upgrade your Resend plan.
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <select
               value={tmplId} onChange={e => loadTemplate(e.target.value)}
@@ -419,13 +432,59 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
             ))}
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>— sets follow-up date after sending</span>
           </div>
+
+          {/* ── Send limit selector ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+              Send limit:
+            </label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[
+                { label: '60',  value: 60  },
+                { label: '80',  value: 80  },
+                { label: '100', value: 100 },
+                { label: 'All', value: null },
+              ].map(opt => (
+                <button
+                  key={opt.label}
+                  onClick={() => setSendLimit(opt.value)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 6, border: '1px solid #d1d5db',
+                    background: sendLimit === opt.value ? '#1a4710' : '#fff',
+                    color:      sendLimit === opt.value ? '#fff'    : '#374151',
+                    fontWeight: sendLimit === opt.value ? 600       : 400,
+                    cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {sendLimit === null && selected.length > 100 && (
+              <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 600 }}>
+                ⚠️ {selected.length} emails exceeds Resend's 100/day limit!
+              </div>
+            )}
+            {sendLimit !== null && (
+              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                Will send to {Math.min(sendLimit, selected.length)} of {selected.length} prospects
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '-4px 0 4px' }}>
+            Resend free plan: 100 emails/day.{' '}
+            <a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer" style={{ color: '#1a4710' }}>
+              Upgrade Resend ($20/mo)
+            </a>{' '}for unlimited sending.
+          </p>
+
         </div>
 
         {/* ── Footer — always visible ── */}
         <div style={{ padding: '12px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0 }}>
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
           <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>'}>
-            {sending ? 'Sending…' : `Send to ${selected.length}`}
+            {sending ? 'Sending…' : `Send to ${Math.min(sendLimit ?? selected.length, selected.length)}`}
           </Btn>
         </div>
 
