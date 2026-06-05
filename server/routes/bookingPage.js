@@ -256,6 +256,13 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
 <footer>
   <p>© ${new Date().getFullYear()} ${esc(name)}</p>
   <p><span data-i18n="page.poweredBy">Powered by</span> <a href="https://nestbook.io" target="_blank" rel="noopener">NestBook</a> — booking software for independent properties</p>
+  <div class="lang-switcher">
+    <button class="lang-btn" data-lang="en" onclick="applyLang('en')">EN</button>
+    <button class="lang-btn" data-lang="fr" onclick="applyLang('fr')">FR</button>
+    <button class="lang-btn" data-lang="es" onclick="applyLang('es')">ES</button>
+    <button class="lang-btn" data-lang="de" onclick="applyLang('de')">DE</button>
+    <button class="lang-btn" data-lang="nl" onclick="applyLang('nl')">NL</button>
+  </div>
 </footer>`;
 
   return `<!DOCTYPE html>
@@ -318,33 +325,28 @@ body {
   line-height: 1.6;
 }
 
-/* ── Language switcher ─────────────────────────────────────────────── */
+/* ── Language switcher (subtle footer) ─────────────────────────────── */
 .lang-switcher {
-  position: fixed;
-  top: 0; right: 0;
   display: flex;
+  justify-content: center;
   gap: 4px;
-  padding: 7px 10px;
-  z-index: 200;
-  background: rgba(0,0,0,0.32);
-  border-radius: 0 0 0 8px;
-  backdrop-filter: blur(4px);
+  padding: 10px 0 2px;
 }
 .lang-btn {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.35);
-  color: rgba(255,255,255,0.75);
-  padding: 3px 7px;
+  border: 1px solid #e2e8f0;
+  color: #94a3b8;
+  padding: 2px 7px;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   letter-spacing: 0.06em;
   transition: background 0.12s, color 0.12s;
 }
-.lang-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
-.lang-btn.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.6); }
+.lang-btn:hover { background: #f1f5f9; color: #475569; }
+.lang-btn.active { background: #e2e8f0; color: #475569; border-color: #cbd5e1; }
 
 /* ── Hero ──────────────────────────────────────────────────────────── */
 .hero {
@@ -697,14 +699,6 @@ footer a:hover { text-decoration: underline; }
 </head>
 <body>
 
-<div class="lang-switcher">
-  <button class="lang-btn" data-lang="en" onclick="applyLang('en')">EN</button>
-  <button class="lang-btn" data-lang="fr" onclick="applyLang('fr')">FR</button>
-  <button class="lang-btn" data-lang="es" onclick="applyLang('es')">ES</button>
-  <button class="lang-btn" data-lang="de" onclick="applyLang('de')">DE</button>
-  <button class="lang-btn" data-lang="nl" onclick="applyLang('nl')">NL</button>
-</div>
-
 ${heroSection}
 ${aboutSection}
 ${roomsSection}
@@ -846,16 +840,15 @@ function applyLang(lang) {
   document.querySelectorAll('.lang-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
   });
-  try {
-    localStorage.setItem('nb-lang', lang);
-    localStorage.setItem('nestbook_lang', lang);
-  } catch(_) {}
+  try { sessionStorage.setItem('nb-guest-lang', lang); } catch(_) {}
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('[NestBook] Script executing');
-  var lang = '${escapeJs(defaultLang)}';
-  try { lang = localStorage.getItem('nb-lang') || lang; } catch(_) {}
+  var propertyLang = '${escapeJs(defaultLang)}';
+  var guestLang = null;
+  try { guestLang = sessionStorage.getItem('nb-guest-lang'); } catch(_) {}
+  var lang = (guestLang && I18N[guestLang]) ? guestLang : propertyLang;
   console.log('[NestBook] Language:', lang);
   applyLang(lang);
   console.log('[NestBook] applyLang called with:', lang);
