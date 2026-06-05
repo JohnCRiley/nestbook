@@ -732,6 +732,21 @@ export function initSchema() {
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_prospect_emails_prospect ON prospect_emails(prospect_id)`);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS outreach_send_log (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      sent_at         TEXT    DEFAULT (datetime('now')),
+      recipient_email TEXT,
+      prospect_id     INTEGER,
+      campaign        TEXT
+    )
+  `);
+
+  // Cleanup outreach send log entries older than 7 days — only today's count matters
+  try {
+    db.prepare(`DELETE FROM outreach_send_log WHERE sent_at < datetime('now', '-7 days')`).run();
+  } catch {}
+
   // Seed 5 default email templates (only if none exist yet)
   const tmplCount = db.prepare(`SELECT COUNT(*) AS n FROM email_templates`).get().n;
   if (tmplCount === 0) {

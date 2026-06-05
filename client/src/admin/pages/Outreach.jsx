@@ -297,7 +297,7 @@ function QuillEditor({ value, onChange, placeholder = 'Write your email here…'
 }
 
 // ── Email Composer modal ──────────────────────────────────────────────────────
-function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, onSent }) {
+function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount = 0, onClose, onSent }) {
   const selected = prospects
     .filter(p => selectedIds.includes(p.id) && p.status !== 'unsubscribed')
     .filter((p, i, self) => self.findIndex(t => t.email === p.email) === i);
@@ -308,6 +308,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
   const [followUpDays, setFollowUpDays] = useState(7);
   const [sendLimit, setSendLimit]   = useState(100);
   const [sending, setSending]       = useState(false);
+  const [sendError, setSendError]   = useState(null);
   const [result, setResult]         = useState(null);
   const sendingRef                  = useRef(false); // synchronous guard against double-click
 
@@ -321,8 +322,20 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
     if (sendingRef.current || !subject.trim() || !body.trim()) return;
     sendingRef.current = true;
     setSending(true);
+    setSendError(null);
     try {
-      const toSend = sendLimit === null ? selected : selected.slice(0, sendLimit);
+      // Fresh daily capacity check before sending
+      const dcRes = await saApiFetch('/api/admin/outreach/daily-count');
+      const { remaining: freshRemaining } = await dcRes.json();
+      if (freshRemaining === 0) {
+        setSendError('Daily email limit reached (100/day on Resend free plan). Try again tomorrow.');
+        sendingRef.current = false;
+        setSending(false);
+        return;
+      }
+      // Cap by both the selector limit and fresh remaining capacity
+      const cap = sendLimit === null ? freshRemaining : Math.min(sendLimit, freshRemaining);
+      const toSend = selected.slice(0, cap);
       const res = await saApiFetch('/api/admin/outreach/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -434,6 +447,9 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
           </div>
 
           {/* ── Send limit selector ── */}
+          {(() => {
+            const remaining = Math.max(0, 100 - dailyCount);
+            return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
             <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
               Send limit:
@@ -444,33 +460,41 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
                 { label: '80',  value: 80  },
                 { label: '100', value: 100 },
                 { label: 'All', value: null },
-              ].map(opt => (
-                <button
-                  key={opt.label}
-                  onClick={() => setSendLimit(opt.value)}
-                  style={{
-                    padding: '5px 12px', borderRadius: 6, border: '1px solid #d1d5db',
-                    background: sendLimit === opt.value ? '#1a4710' : '#fff',
-                    color:      sendLimit === opt.value ? '#fff'    : '#374151',
-                    fontWeight: sendLimit === opt.value ? 600       : 400,
-                    cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              ].map(opt => {
+                const overLimit = opt.value !== null && opt.value > remaining;
+                return (
+                  <button
+                    key={opt.label}
+                    onClick={() => !overLimit && setSendLimit(opt.value)}
+                    disabled={overLimit}
+                    style={{
+                      padding: '5px 12px', borderRadius: 6, border: '1px solid #d1d5db',
+                      background: sendLimit === opt.value ? '#1a4710' : '#fff',
+                      color:      sendLimit === opt.value ? '#fff'    : '#374151',
+                      fontWeight: sendLimit === opt.value ? 600       : 400,
+                      cursor: overLimit ? 'not-allowed' : 'pointer',
+                      opacity: overLimit ? 0.4 : 1,
+                      fontSize: '0.85rem', fontFamily: 'inherit',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
-            {sendLimit === null && selected.length > 100 && (
-              <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 600 }}>
-                ⚠️ {selected.length} emails exceeds Resend's 100/day limit!
-              </div>
-            )}
-            {sendLimit !== null && (
-              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                Will send to {Math.min(sendLimit, selected.length)} of {selected.length} prospects
-              </div>
-            )}
+            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: remaining === 0 ? '#dc2626' : remaining < 20 ? '#92400e' : '#64748b' }}>
+              {remaining === 0
+                ? '⛔ Daily limit reached — try again tomorrow'
+                : `${remaining} emails remaining today`}
+            </div>
           </div>
+            );
+          })()}
+          {sendLimit !== null && (
+            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: -8 }}>
+              Will send to {Math.min(sendLimit, Math.max(0, 100 - dailyCount), selected.length)} of {selected.length} prospects
+            </div>
+          )}
           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '-4px 0 4px' }}>
             Resend free plan: 100 emails/day.{' '}
             <a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer" style={{ color: '#1a4710' }}>
@@ -481,10 +505,18 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, onClose, o
         </div>
 
         {/* ── Footer — always visible ── */}
-        <div style={{ padding: '12px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0 }}>
+        <div style={{ padding: '12px 24px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0, flexWrap: 'wrap' }}>
+          {sendError && (
+            <div style={{ width: '100%', fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>
+              ⛔ {sendError}
+            </div>
+          )}
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-          <Btn onClick={send} disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>'}>
-            {sending ? 'Sending…' : `Send to ${Math.min(sendLimit ?? selected.length, selected.length)}`}
+          <Btn
+            onClick={send}
+            disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>' || dailyCount >= 100}
+          >
+            {sending ? 'Sending…' : `Send to ${Math.min(sendLimit ?? selected.length, Math.max(0, 100 - dailyCount), selected.length)}`}
           </Btn>
         </div>
 
@@ -925,6 +957,7 @@ export default function Outreach() {
   const [templates, setTemplates]   = useState([]);
   const [campaigns, setCampaigns]   = useState([]);
   const [followUps, setFollowUps]   = useState([]);
+  const [dailyCount, setDailyCount] = useState(0);
 
   // Filters — shared across both tabs (all client-side)
   const [search, setSearch]               = useState('');
@@ -946,18 +979,20 @@ export default function Outreach() {
   const [tab, setTab]                   = useState('prospects'); // prospects | followup
 
   const load = useCallback(async () => {
-    const [pRes, sRes, tRes, cRes, fRes] = await Promise.all([
+    const [pRes, sRes, tRes, cRes, fRes, dcRes] = await Promise.all([
       saApiFetch('/api/admin/outreach/prospects?limit=2000'),
       saApiFetch('/api/admin/outreach/stats'),
       saApiFetch('/api/admin/outreach/templates'),
       saApiFetch('/api/admin/outreach/campaigns'),
       saApiFetch('/api/admin/outreach/prospects/follow-up'),
+      saApiFetch('/api/admin/outreach/daily-count'),
     ]);
     if (pRes.ok) { const d = await pRes.json(); setProspects(d.prospects); setTotal(d.total); }
     if (sRes.ok) setStats(await sRes.json());
     if (tRes.ok) setTemplates(await tRes.json());
     if (cRes.ok) setCampaigns(await cRes.json());
     if (fRes.ok) setFollowUps(await fRes.json());
+    if (dcRes.ok) { const d = await dcRes.json(); setDailyCount(d.count); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -1094,6 +1129,21 @@ export default function Outreach() {
       </div>
 
       <StatsBar stats={stats} />
+
+      {/* ── Daily send counter ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '8px 14px', borderRadius: 8, marginBottom: 16,
+        background: dailyCount >= 100 ? '#fef2f2' : dailyCount >= 80 ? '#fef3c7' : '#f0fdf4',
+        border: `1px solid ${dailyCount >= 100 ? '#fca5a5' : dailyCount >= 80 ? '#fbbf24' : '#bbf7d0'}`,
+        fontSize: '0.85rem', fontWeight: 600,
+        color: dailyCount >= 100 ? '#dc2626' : dailyCount >= 80 ? '#92400e' : '#166534',
+      }}>
+        📧 Today: {dailyCount}/100 emails sent
+        {dailyCount >= 100
+          ? ' — Daily limit reached!'
+          : ` — ${100 - dailyCount} remaining`}
+      </div>
 
       {/* ── Tab bar ── */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -1349,6 +1399,7 @@ export default function Outreach() {
           prospects={prospects.concat(followUps)}
           templates={templates}
           campaigns={campaigns}
+          dailyCount={dailyCount}
           onClose={() => setShowCompose(false)}
           onSent={load}
         />

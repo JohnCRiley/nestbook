@@ -273,6 +273,9 @@ outreachRouter.post('/send', async (req, res) => {
       db.prepare(
         `INSERT INTO prospect_emails (prospect_id, campaign_id, template_id, subject, body) VALUES (?, ?, ?, ?, ?)`
       ).run(pid, campaign_id || null, template_id || null, finalSubject, finalBody);
+      db.prepare(
+        `INSERT INTO outreach_send_log (recipient_email, prospect_id, campaign) VALUES (?, ?, ?)`
+      ).run(p.email, pid, campaign_id ? String(campaign_id) : '');
 
       const days = (Number.isInteger(followUpDays) && followUpDays > 0) ? followUpDays : 7;
       const followUpDate = new Date();
@@ -296,6 +299,14 @@ outreachRouter.post('/send', async (req, res) => {
   }
 
   res.json({ results });
+});
+
+// ── Daily send count ─────────────────────────────────────────────────────────
+outreachRouter.get('/daily-count', (req, res) => {
+  const count = db.prepare(
+    `SELECT COUNT(*) as count FROM outreach_send_log WHERE date(sent_at) = date('now')`
+  ).get().count;
+  res.json({ count, limit: 100, remaining: Math.max(0, 100 - count), canSend: count < 100 });
 });
 
 // ── Templates — list ──────────────────────────────────────────────────────────
