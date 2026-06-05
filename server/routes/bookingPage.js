@@ -39,6 +39,17 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
+function escapeJs(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '\\"')
+    .replace(/`/g, '\\`')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+}
+
 function fmtAmenity(str) {
   return AMENITY_LABELS[str.toLowerCase()] ?? (str.charAt(0).toUpperCase() + str.slice(1));
 }
@@ -701,6 +712,7 @@ ${ctaSection}
 ${footerSection}
 
 <script>
+try {
 // ── i18n ──────────────────────────────────────────────────────────────────────
 // Add zh-CN, ja, th, vi, ms, id etc. here when nestbook.asia launches.
 var I18N = {
@@ -838,13 +850,18 @@ function applyLang(lang) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('[NestBook booking page] I18N keys:', Object.keys(I18N));
-  console.log('[NestBook booking page] lang:', localStorage.getItem('nb-lang'));
-  var lang = localStorage.getItem('nb-lang') || '${esc(defaultLang)}';
-  applyLang(I18N[lang] ? lang : '${esc(defaultLang)}');
-  console.log('[NestBook booking page] applyLang called with:', lang);
+  console.log('[NestBook] Script executing');
+  var lang = '${escapeJs(defaultLang)}';
+  try { lang = localStorage.getItem('nb-lang') || lang; } catch(_) {}
+  console.log('[NestBook] Language:', lang);
+  applyLang(lang);
+  console.log('[NestBook] applyLang called with:', lang);
 });
 // ─────────────────────────────────────────────────────────────────────────────
+
+} catch(e) {
+  console.error('[NestBook] Script error:', e.message, e.stack);
+}
 
 function openWidget() {
   var btn = document.querySelector('.nb-trigger');
