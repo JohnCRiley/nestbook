@@ -18,7 +18,7 @@ const TYPE_LABELS = {
   bnb: 'B&B', gite: 'Gîte', guesthouse: 'Guest House', hotel: 'Hotel', other: '',
 };
 
-const CURRENCY_SYMBOLS = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' };
+const CURRENCY_SYMBOLS = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' };
 
 const AMENITY_LABELS = {
   wifi: 'WiFi', ensuite: 'En-suite', balcony: 'Balcony', terrace: 'Terrace',
@@ -92,14 +92,15 @@ function roomCalendarSection(availMap) {
   const m1    = { year: next.getFullYear(), month: next.getMonth() };
   return `
 <div class="room-availability">
-  <h4 class="avail-title">Availability</h4>
+  <h4 class="avail-title" data-i18n="page.availability">Availability</h4>
   <div class="room-cal-grid">
     ${roomCalMonth(m0.year, m0.month, availMap, today)}
     ${roomCalMonth(m1.year, m1.month, availMap, today)}
   </div>
+  <p class="avail-hint" data-i18n="page.availabilityHint">Select your dates and click Book Now to check availability and complete your reservation.</p>
   <div class="cal-legend">
-    <span><span class="legend-dot legend-available"></span> Available</span>
-    <span><span class="legend-dot legend-booked"></span> Booked</span>
+    <span><span class="legend-dot legend-available"></span> <span data-i18n="page.available">Available</span></span>
+    <span><span class="legend-dot legend-booked"></span> <span data-i18n="page.booked">Booked</span></span>
   </div>
 </div>`;
 }
@@ -116,7 +117,7 @@ function roomCard(room, currSym, palette, photos, availMap) {
   ).join('');
 
   const bfBadge = room.breakfast_included
-    ? `<div class="room-breakfast">🍳 Breakfast included</div>`
+    ? `<div class="room-breakfast">🍳 <span data-i18n="page.breakfastIncluded">Breakfast included</span></div>`
     : '';
 
   const descHtml = room.description
@@ -140,16 +141,25 @@ function roomCard(room, currSym, palette, photos, availMap) {
       <h3>${esc(room.name)}</h3>
       <span class="room-type-badge">${esc(typeLabel)}</span>
     </div>
-    <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit">/night</span></div>
-    <div class="room-capacity">👥 Up to ${esc(String(room.capacity ?? 2))} guests</div>
+    <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
+    <div class="room-capacity">👥 <span data-i18n="page.upTo">Up to</span> ${esc(String(room.capacity ?? 2))} <span data-i18n="page.guests">guests</span></div>
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
     ${availMap ? roomCalendarSection(availMap) : ''}
-    <button class="btn-book" onclick="openWidget()">Book this room</button>
+    <button class="btn-book" onclick="openWidget()" data-i18n="page.bookThisRoom">Book this room</button>
   </div>
 </div>`;
 }
+
+// Map property locale to 2-letter page language code
+const LANG_MAP = {
+  'en': 'en', 'en-GB': 'en', 'en-US': 'en',
+  'fr': 'fr', 'fr-FR': 'fr',
+  'de': 'de', 'de-DE': 'de',
+  'es': 'es', 'es-ES': 'es',
+  'nl': 'nl', 'nl-NL': 'nl',
+};
 
 function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
@@ -160,8 +170,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const mapQuery = encodeURIComponent(address || name);
   const propId   = property.id;
   const lang     = property.locale   ?? 'en';
+  const defaultLang = LANG_MAP[lang] || 'en';
   const currency = property.currency ?? 'EUR';
-  const currSym  = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
+  const currSym  = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
 
@@ -197,8 +208,8 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
     <h1>${esc(name)}</h1>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     <div class="hero-meta">
-      <span>🕐 Check-in from ${esc(property.check_in_time ?? '15:00')}</span>
-      <span>🕐 Check-out by ${esc(property.check_out_time ?? '11:00')}</span>
+      <span>🕐 <span data-i18n="page.checkIn">Check-in from</span> ${esc(property.check_in_time ?? '15:00')}</span>
+      <span>🕐 <span data-i18n="page.checkOut">Check-out by</span> ${esc(property.check_out_time ?? '11:00')}</span>
     </div>
   </div>
 </div>`;
@@ -206,7 +217,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const aboutSection = property.description ? `
 <section class="about">
   <div class="section-inner">
-    <h2>About us</h2>
+    <h2 data-i18n="page.aboutUs">About us</h2>
     <p>${esc(property.description)}</p>
   </div>
 </section>` : '';
@@ -214,7 +225,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const roomsSection = rooms.length > 0 ? `
 <section class="rooms">
   <div class="section-inner">
-    <h2>Our Rooms</h2>
+    <h2 data-i18n="page.ourRooms">Our Rooms</h2>
     <div class="rooms-grid">
       ${roomCards}
     </div>
@@ -224,20 +235,20 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const ctaSection = `
 <section class="cta">
   <div class="section-inner cta-inner">
-    <h2>Ready to book?</h2>
-    <p>Book directly with us for the best rates — no booking fees, payment goes straight to us.</p>
-    <button class="btn-primary-large" onclick="openWidget()">Check availability &amp; book →</button>
+    <h2 data-i18n="page.bookNow">Ready to book?</h2>
+    <p data-i18n="page.ctaHint">Book directly with us for the best rates — no booking fees, payment goes straight to us.</p>
+    <button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
   </div>
 </section>`;
 
   const footerSection = `
 <footer>
   <p>© ${new Date().getFullYear()} ${esc(name)}</p>
-  <p>Powered by <a href="https://nestbook.io" target="_blank" rel="noopener">NestBook</a> — booking software for independent properties</p>
+  <p><span data-i18n="page.poweredBy">Powered by</span> <a href="https://nestbook.io" target="_blank" rel="noopener">NestBook</a> — booking software for independent properties</p>
 </footer>`;
 
   return `<!DOCTYPE html>
-<html lang="${esc(lang)}">
+<html lang="${esc(defaultLang)}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -295,6 +306,34 @@ body {
   color: #1e293b;
   line-height: 1.6;
 }
+
+/* ── Language switcher ─────────────────────────────────────────────── */
+.lang-switcher {
+  position: fixed;
+  top: 0; right: 0;
+  display: flex;
+  gap: 4px;
+  padding: 7px 10px;
+  z-index: 200;
+  background: rgba(0,0,0,0.32);
+  border-radius: 0 0 0 8px;
+  backdrop-filter: blur(4px);
+}
+.lang-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.75);
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  transition: background 0.12s, color 0.12s;
+}
+.lang-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.lang-btn.active { background: rgba(255,255,255,0.22); color: #fff; border-color: rgba(255,255,255,0.6); }
 
 /* ── Hero ──────────────────────────────────────────────────────────── */
 .hero {
@@ -566,10 +605,16 @@ section h2 {
 .cal-available { background: ${esc(palette.light)}; color: ${esc(palette.dark)}; }
 .cal-booked    { background: #f1f5f9; color: #cbd5e1; text-decoration: line-through; }
 .cal-today     { background: ${esc(palette.brand)}; color: #fff; font-weight: 700; border-radius: 50%; }
+.avail-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 8px 0 4px;
+  line-height: 1.4;
+}
 .cal-legend {
   display: flex;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 4px;
   font-size: 0.72rem;
   color: #94a3b8;
 }
@@ -641,6 +686,14 @@ footer a:hover { text-decoration: underline; }
 </head>
 <body>
 
+<div class="lang-switcher">
+  <button class="lang-btn" data-lang="en" onclick="applyLang('en')">EN</button>
+  <button class="lang-btn" data-lang="fr" onclick="applyLang('fr')">FR</button>
+  <button class="lang-btn" data-lang="es" onclick="applyLang('es')">ES</button>
+  <button class="lang-btn" data-lang="de" onclick="applyLang('de')">DE</button>
+  <button class="lang-btn" data-lang="nl" onclick="applyLang('nl')">NL</button>
+</div>
+
 ${heroSection}
 ${aboutSection}
 ${roomsSection}
@@ -648,6 +701,150 @@ ${ctaSection}
 ${footerSection}
 
 <script>
+// ── i18n ──────────────────────────────────────────────────────────────────────
+// Add zh-CN, ja, th, vi, ms, id etc. here when nestbook.asia launches.
+var I18N = {
+  en: {
+    "page.aboutUs":           "About us",
+    "page.ourRooms":          "Our Rooms",
+    "page.availability":      "Availability",
+    "page.bookNow":           "Ready to book?",
+    "page.perNight":          "per night",
+    "page.upTo":              "Up to",
+    "page.guests":            "guests",
+    "page.breakfastIncluded": "Breakfast included",
+    "page.bookThisRoom":      "Book this room",
+    "page.availabilityHint":  "Select your dates and click Book Now to check availability and complete your reservation.",
+    "page.available":         "Available",
+    "page.booked":            "Booked",
+    "page.ctaHint":           "Book directly with us for the best rates — no booking fees, payment goes straight to us.",
+    "page.checkAvailability": "Check availability & book →",
+    "page.poweredBy":         "Powered by",
+    "page.demoNotice":        "This is a NestBook demonstration page — rooms shown are for illustration only. No real bookings will be processed.",
+    "page.checkIn":           "Check-in from",
+    "page.checkOut":          "Check-out by",
+    "page.noDescription":     "",
+    "page.bookDirect":        "Book your stay directly — best rates guaranteed"
+  },
+  fr: {
+    "page.aboutUs":           "À propos de nous",
+    "page.ourRooms":          "Nos chambres",
+    "page.availability":      "Disponibilités",
+    "page.bookNow":           "Prêt à réserver ?",
+    "page.perNight":          "par nuit",
+    "page.upTo":              "Jusqu'à",
+    "page.guests":            "personnes",
+    "page.breakfastIncluded": "Petit-déjeuner inclus",
+    "page.bookThisRoom":      "Réserver cette chambre",
+    "page.availabilityHint":  "Sélectionnez vos dates et cliquez sur Réserver pour vérifier les disponibilités.",
+    "page.available":         "Disponible",
+    "page.booked":            "Réservé",
+    "page.ctaHint":           "Réservez directement avec nous pour les meilleurs tarifs — sans frais de réservation.",
+    "page.checkAvailability": "Vérifier les disponibilités →",
+    "page.poweredBy":         "Propulsé par",
+    "page.demoNotice":        "Ceci est une page de démonstration NestBook — les chambres affichées sont à titre d'illustration uniquement.",
+    "page.checkIn":           "Arrivée à partir de",
+    "page.checkOut":          "Départ avant",
+    "page.noDescription":     "",
+    "page.bookDirect":        "Réservez votre séjour directement — meilleurs tarifs garantis"
+  },
+  de: {
+    "page.aboutUs":           "Über uns",
+    "page.ourRooms":          "Unsere Zimmer",
+    "page.availability":      "Verfügbarkeit",
+    "page.bookNow":           "Bereit zu buchen?",
+    "page.perNight":          "pro Nacht",
+    "page.upTo":              "Bis zu",
+    "page.guests":            "Gäste",
+    "page.breakfastIncluded": "Frühstück inklusive",
+    "page.bookThisRoom":      "Dieses Zimmer buchen",
+    "page.availabilityHint":  "Wählen Sie Ihre Daten und klicken Sie auf Buchen, um die Verfügbarkeit zu prüfen.",
+    "page.available":         "Verfügbar",
+    "page.booked":            "Gebucht",
+    "page.ctaHint":           "Buchen Sie direkt bei uns für die besten Preise — keine Buchungsgebühren.",
+    "page.checkAvailability": "Verfügbarkeit prüfen →",
+    "page.poweredBy":         "Unterstützt von",
+    "page.demoNotice":        "Dies ist eine NestBook-Demonstrationsseite — die gezeigten Zimmer dienen nur zur Illustration.",
+    "page.checkIn":           "Check-in ab",
+    "page.checkOut":          "Check-out bis",
+    "page.noDescription":     "",
+    "page.bookDirect":        "Buchen Sie Ihren Aufenthalt direkt — beste Preise garantiert"
+  },
+  es: {
+    "page.aboutUs":           "Sobre nosotros",
+    "page.ourRooms":          "Nuestras habitaciones",
+    "page.availability":      "Disponibilidad",
+    "page.bookNow":           "¿Listo para reservar?",
+    "page.perNight":          "por noche",
+    "page.upTo":              "Hasta",
+    "page.guests":            "personas",
+    "page.breakfastIncluded": "Desayuno incluido",
+    "page.bookThisRoom":      "Reservar esta habitación",
+    "page.availabilityHint":  "Seleccione sus fechas y haga clic en Reservar para comprobar disponibilidad.",
+    "page.available":         "Disponible",
+    "page.booked":            "Reservado",
+    "page.ctaHint":           "Reserve directamente con nosotros para las mejores tarifas — sin gastos de reserva.",
+    "page.checkAvailability": "Comprobar disponibilidad →",
+    "page.poweredBy":         "Desarrollado por",
+    "page.demoNotice":        "Esta es una página de demostración de NestBook — las habitaciones mostradas son solo ilustrativas.",
+    "page.checkIn":           "Entrada a partir de",
+    "page.checkOut":          "Salida antes de",
+    "page.noDescription":     "",
+    "page.bookDirect":        "Reserve su estancia directamente — mejores tarifas garantizadas"
+  },
+  nl: {
+    "page.aboutUs":           "Over ons",
+    "page.ourRooms":          "Onze kamers",
+    "page.availability":      "Beschikbaarheid",
+    "page.bookNow":           "Klaar om te boeken?",
+    "page.perNight":          "per nacht",
+    "page.upTo":              "Tot",
+    "page.guests":            "personen",
+    "page.breakfastIncluded": "Ontbijt inbegrepen",
+    "page.bookThisRoom":      "Deze kamer boeken",
+    "page.availabilityHint":  "Selecteer uw datums en klik op Boeken om beschikbaarheid te controleren.",
+    "page.available":         "Beschikbaar",
+    "page.booked":            "Geboekt",
+    "page.ctaHint":           "Boek rechtstreeks bij ons voor de beste tarieven — geen boekingskosten.",
+    "page.checkAvailability": "Beschikbaarheid controleren →",
+    "page.poweredBy":         "Mogelijk gemaakt door",
+    "page.demoNotice":        "Dit is een NestBook-demonstratiepagina — de getoonde kamers zijn alleen ter illustratie.",
+    "page.checkIn":           "Inchecken vanaf",
+    "page.checkOut":          "Uitchecken voor",
+    "page.noDescription":     "",
+    "page.bookDirect":        "Boek uw verblijf direct — beste tarieven gegarandeerd"
+  }
+  // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
+};
+
+function applyLang(lang) {
+  var t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-placeholder');
+    if (t[key] !== undefined) el.placeholder = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+  });
+  try {
+    localStorage.setItem('nb-lang', lang);
+    localStorage.setItem('nestbook_lang', lang);
+  } catch(_) {}
+}
+
+(function() {
+  var saved = '';
+  try { saved = localStorage.getItem('nb-lang') || ''; } catch(_) {}
+  var defaultLang = "${esc(defaultLang)}";
+  applyLang(I18N[saved] ? saved : defaultLang);
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 function openWidget() {
   var btn = document.querySelector('.nb-trigger');
   if (btn) btn.click();
