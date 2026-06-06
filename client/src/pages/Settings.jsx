@@ -22,13 +22,45 @@ const THEMES = [
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const PROPERTY_TYPES = [
-  { value: 'bnb',        label: 'B&B' },
-  { value: 'gite',       label: 'Gîte / Holiday Cottage' },
-  { value: 'guesthouse', label: 'Guest House' },
-  { value: 'hotel',      label: 'Small Hotel' },
-  { value: 'other',      label: 'Other' },
+const PROPERTY_GROUPS = [
+  { group: 'Hospitality', options: [
+    { value: 'bnb',        label: 'B&B (Bed & Breakfast)' },
+    { value: 'guesthouse', label: 'Guest House' },
+    { value: 'inn',        label: 'Inn / Pub with rooms' },
+    { value: 'hotel',      label: 'Small Hotel' },
+    { value: 'hostel',     label: 'Hostel' },
+  ]},
+  { group: 'Self-catering', options: [
+    { value: 'gite',         label: 'Gîte' },
+    { value: 'cottage',      label: 'Holiday Cottage' },
+    { value: 'villa',        label: 'Villa' },
+    { value: 'apartment',    label: 'Holiday Apartment' },
+    { value: 'lodge',        label: 'Lodge' },
+    { value: 'caravan',      label: 'Static Caravan / Chalet' },
+    { value: 'glamping',     label: 'Glamping (Pod / Bell Tent / Yurt)' },
+    { value: 'shepherds_hut',label: "Shepherd's Hut" },
+    { value: 'treehouse',    label: 'Treehouse' },
+    { value: 'narrowboat',   label: 'Narrowboat / Houseboat' },
+    { value: 'farmhouse',    label: 'Farmhouse' },
+    { value: 'chateau',      label: 'Château / Manor House' },
+  ]},
+  { group: 'Asian accommodation', options: [
+    { value: 'ryokan',      label: 'Ryokan (Japan)' },
+    { value: 'minsu',       label: '民宿 Minsu (China/Taiwan)' },
+    { value: 'homestay',    label: 'Homestay' },
+    { value: 'resort_villa',label: 'Resort Villa' },
+  ]},
+  { group: 'Other', options: [
+    { value: 'other', label: 'Other' },
+  ]},
 ];
+
+const WHOLE_PROPERTY_TYPES = new Set([
+  'gite', 'cottage', 'villa', 'apartment', 'lodge',
+  'caravan', 'glamping', 'shepherds_hut', 'treehouse',
+  'narrowboat', 'farmhouse', 'chateau',
+  'ryokan', 'minsu', 'homestay', 'resort_villa',
+]);
 
 const CURRENCIES = [
   { value: 'EUR', label: '€ EUR — Euro' },
@@ -102,6 +134,8 @@ export default function Settings() {
   const [showRatePeriodModal, setShowRatePeriodModal] = useState(false);
   const [editingRatePeriod,   setEditingRatePeriod]   = useState(null); // period object | null
   const [ratePeriodDeleteTarget, setRatePeriodDeleteTarget] = useState(null);
+
+  const [rentalTypeHint, setRentalTypeHint] = useState(null);
 
   // Bug report form
   const [bugReportingEnabled, setBugReportingEnabled] = useState(false);
@@ -211,6 +245,20 @@ export default function Settings() {
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleFormChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handlePropertyTypeChange = (type) => {
+    const suggestWhole = WHOLE_PROPERTY_TYPES.has(type);
+    setForm((f) => ({
+      ...f,
+      type,
+      rental_type: suggestWhole ? 'whole_property' : 'rooms',
+    }));
+    if (suggestWhole) {
+      setRentalTypeHint('We\'ve set this to "Whole property" as this property type is usually rented entirely. Change it if needed.');
+    } else {
+      setRentalTypeHint(null);
+    }
+  };
 
   const handleThemeChange = async (newTheme) => {
     setTheme(newTheme);
@@ -347,9 +395,14 @@ export default function Settings() {
 
                 <FormField label={t('propType')}>
                   <select name="type" className="form-control"
-                    value={form.type} onChange={handleFormChange}>
-                    {PROPERTY_TYPES.map((tp) => (
-                      <option key={tp.value} value={tp.value}>{tp.label}</option>
+                    value={form.type}
+                    onChange={e => handlePropertyTypeChange(e.target.value)}>
+                    {PROPERTY_GROUPS.map((grp) => (
+                      <optgroup key={grp.group} label={grp.group}>
+                        {grp.options.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </FormField>
@@ -402,6 +455,12 @@ export default function Settings() {
                       </div>
                     </button>
                   </div>
+
+                  {rentalTypeHint && (
+                    <div style={{ marginTop: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', padding: '6px 10px', background: 'var(--tint-bg)', borderRadius: 6 }}>
+                      {rentalTypeHint}
+                    </div>
+                  )}
 
                   {form.rental_type === 'whole_property' && (
                     <div style={{
@@ -1627,13 +1686,7 @@ function FacebookBookingSection({ property, onSaved }) {
 
 // ── AddPropertyForm ───────────────────────────────────────────────────────────
 
-const PROPERTY_TYPES_LIST = [
-  { value: 'bnb',        label: 'B&B' },
-  { value: 'gite',       label: 'Gîte / Holiday Cottage' },
-  { value: 'guesthouse', label: 'Guest House' },
-  { value: 'hotel',      label: 'Small Hotel' },
-  { value: 'other',      label: 'Other' },
-];
+// Reuse the same groups defined at top of file
 
 function AddPropertyForm({ onSave, onCancel }) {
   const t = useT();
@@ -1663,8 +1716,12 @@ function AddPropertyForm({ onSave, onCancel }) {
       <div className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('typeLabel')}</label>
         <select name="type" className="form-control" value={form.type} onChange={handleChange} style={{ marginTop: 4 }}>
-          {PROPERTY_TYPES_LIST.map((tp) => (
-            <option key={tp.value} value={tp.value}>{tp.label}</option>
+          {PROPERTY_GROUPS.map((grp) => (
+            <optgroup key={grp.group} label={grp.group}>
+              {grp.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>

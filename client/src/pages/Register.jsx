@@ -4,13 +4,35 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 
-const PROPERTY_TYPES = [
-  { value: '',            label: 'Select a type…' },
-  { value: 'bnb',         label: 'Bed & Breakfast' },
-  { value: 'gite',        label: 'Gîte / Holiday Cottage' },
-  { value: 'guesthouse',  label: 'Guest House' },
-  { value: 'hotel',       label: 'Hotel' },
-  { value: 'other',       label: 'Other' },
+const PROPERTY_GROUPS = [
+  { group: 'Hospitality', options: [
+    { value: 'bnb',         label: 'B&B (Bed & Breakfast)' },
+    { value: 'guesthouse',  label: 'Guest House' },
+    { value: 'inn',         label: 'Inn / Pub with rooms' },
+    { value: 'hotel',       label: 'Small Hotel' },
+    { value: 'hostel',      label: 'Hostel' },
+  ]},
+  { group: 'Self-catering', options: [
+    { value: 'gite',          label: 'Gîte' },
+    { value: 'cottage',       label: 'Holiday Cottage' },
+    { value: 'villa',         label: 'Villa' },
+    { value: 'apartment',     label: 'Holiday Apartment' },
+    { value: 'lodge',         label: 'Lodge' },
+    { value: 'caravan',       label: 'Static Caravan / Chalet' },
+    { value: 'glamping',      label: 'Glamping (Pod / Bell Tent / Yurt)' },
+    { value: 'shepherds_hut', label: "Shepherd's Hut" },
+    { value: 'treehouse',     label: 'Treehouse' },
+    { value: 'narrowboat',    label: 'Narrowboat / Houseboat' },
+    { value: 'farmhouse',     label: 'Farmhouse' },
+    { value: 'chateau',       label: 'Château / Manor House' },
+  ]},
+  { group: 'Asian accommodation', options: [
+    { value: 'ryokan',      label: 'Ryokan (Japan)' },
+    { value: 'minsu',       label: '民宿 Minsu (China/Taiwan)' },
+    { value: 'homestay',    label: 'Homestay' },
+    { value: 'resort_villa', label: 'Resort Villa' },
+  ]},
+  { group: 'Other', options: [{ value: 'other', label: 'Other' }] },
 ];
 
 export default function Register() {
@@ -124,8 +146,13 @@ export default function Register() {
               <label className="auth-label" htmlFor="propType">Property type</label>
               <select id="propType" className="auth-input auth-select" value={form.propertyType}
                 onChange={set('propertyType')} required>
-                {PROPERTY_TYPES.map(({ value, label }) => (
-                  <option key={value} value={value} disabled={value === ''}>{label}</option>
+                <option value="" disabled>Select a type…</option>
+                {PROPERTY_GROUPS.map((grp) => (
+                  <optgroup key={grp.group} label={grp.group}>
+                    {grp.options.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>
