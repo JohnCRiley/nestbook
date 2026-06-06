@@ -141,58 +141,79 @@ export default function Rooms() {
     apiFetch(`/api/bookings?property_id=${property?.id}`).then((r) => r.json()).then(setBookings);
   };
 
+  const isWholeProp = property?.rental_type === 'whole_property';
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="page-toolbar">
-        <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1>{t('rooms')}</h1>
-          <div className="page-date">{rooms.length} {t('roomsCount')}</div>
-        </div>
-        <button className="btn-primary" onClick={() => setShowNewRoom(true)}>
-          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          {t('addRoom').replace('+ ', '')}
-        </button>
-      </div>
-
-      {/* ── Stat bar ─────────────────────────────────────────────────────── */}
-      <div className="stat-bar">
-        <StatBarItem value={stats.total}       label={t('totalRooms')} />
-        <StatBarItem value={stats.available}   label={t('availableTonight')} accent="var(--accent)" />
-        <StatBarItem value={stats.occupied}    label={t('occupied')}         accent="#f59e0b" />
-        <StatBarItem value={stats.maintenance} label={t('maintenance')}      accent="#94a3b8" />
-      </div>
-
-      {/* ── Card grid ────────────────────────────────────────────────────── */}
-      {loading ? (
-        <div className="loading-screen">{t('loadingRooms')}</div>
+      {isWholeProp ? (
+        /* ── Whole-property bedrooms view ──────────────────────────────── */
+        <WholePropertyPage
+          rooms={rooms}
+          loading={loading}
+          today={today}
+          activeByRoom={activeByRoom}
+          selectedRoom={selectedRoom}
+          onCardClick={handleCardClick}
+          onAddBedroom={() => setShowNewRoom(true)}
+          stats={stats}
+          t={t}
+          locale={locale}
+        />
       ) : (
-        <div className="room-grid">
-          {pagedRooms.map((room) => (
-            <RoomCard
-              key={room.id}
-              room={room}
-              activeBooking={activeByRoom[room.id] ?? null}
-              isSelected={selectedRoom?.id === room.id}
-              today={today}
-              onClick={handleCardClick}
-              onBook={handleBook}
-              t={t}
-              currencySymbol={currencySymbol}
-              locale={locale}
-              breakfastIncluded={!!property?.breakfast_included || !!room.breakfast_included}
-            />
-          ))}
-        </div>
+        /* ── B&B rooms view ────────────────────────────────────────────── */
+        <>
+          {/* ── Page header ────────────────────────────────────────────── */}
+          <div className="page-toolbar">
+            <div className="page-header" style={{ marginBottom: 0 }}>
+              <h1>{t('rooms')}</h1>
+              <div className="page-date">{rooms.length} {t('roomsCount')}</div>
+            </div>
+            <button className="btn-primary" onClick={() => setShowNewRoom(true)}>
+              <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+              {t('addRoom').replace('+ ', '')}
+            </button>
+          </div>
+
+          {/* ── Stat bar ───────────────────────────────────────────────── */}
+          <div className="stat-bar">
+            <StatBarItem value={stats.total}       label={t('totalRooms')} />
+            <StatBarItem value={stats.available}   label={t('availableTonight')} accent="var(--accent)" />
+            <StatBarItem value={stats.occupied}    label={t('occupied')}         accent="#f59e0b" />
+            <StatBarItem value={stats.maintenance} label={t('maintenance')}      accent="#94a3b8" />
+          </div>
+
+          {/* ── Card grid ──────────────────────────────────────────────── */}
+          {loading ? (
+            <div className="loading-screen">{t('loadingRooms')}</div>
+          ) : (
+            <div className="room-grid">
+              {pagedRooms.map((room) => (
+                <RoomCard
+                  key={room.id}
+                  room={room}
+                  activeBooking={activeByRoom[room.id] ?? null}
+                  isSelected={selectedRoom?.id === room.id}
+                  today={today}
+                  onClick={handleCardClick}
+                  onBook={handleBook}
+                  t={t}
+                  currencySymbol={currencySymbol}
+                  locale={locale}
+                  breakfastIncluded={!!property?.breakfast_included || !!room.breakfast_included}
+                />
+              ))}
+            </div>
+          )}
+          <Pagination
+            page={page}
+            totalPages={totalRoomPages}
+            total={rooms.length}
+            limit={pageSize}
+            onPage={setPage}
+          />
+        </>
       )}
-      <Pagination
-        page={page}
-        totalPages={totalRoomPages}
-        total={rooms.length}
-        limit={pageSize}
-        onPage={setPage}
-      />
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedRoom && (
@@ -358,4 +379,91 @@ function formatCheckOut(dateStr, locale = 'en') {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', { day: 'numeric', month: 'short' });
+}
+
+// ── WholePropertyPage ─────────────────────────────────────────────────────────
+
+function BedroomCard({ room, activeBooking, isSelected, today, onClick, t, locale }) {
+  const isOccupied    = !!activeBooking;
+  const isMaintenance = room.status === 'maintenance';
+
+  return (
+    <div
+      className={`room-card${isSelected ? ' is-selected' : ''}`}
+      onClick={() => onClick(room)}
+      style={{ cursor: 'pointer' }}
+    >
+      <div className="room-card-body">
+        <div className="room-name">{room.name}</div>
+        <div className="room-facts">
+          <span className="room-fact">
+            <GuestIcon />
+            {t('rooms.sleeps')} {room.capacity}
+          </span>
+        </div>
+        <StatusPill status={isOccupied ? 'occupied' : room.status} />
+      </div>
+
+      {isOccupied && (
+        <div className="room-occupied-strip">
+          <span>🛏</span>
+          <span>
+            <strong>{activeBooking.guest_first_name} {activeBooking.guest_last_name}</strong>
+            {' '}— {t('checksOut')} {formatCheckOut(activeBooking.check_out_date, locale)}
+          </span>
+        </div>
+      )}
+      {isMaintenance && (
+        <div className="room-occupied-strip" style={{ background: '#f8fafc', borderTopColor: '#cbd5e1', color: '#475569' }}>
+          <span>🔧</span>
+          <span>{t('underMaintenance')}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, onCardClick, onAddBedroom, stats, t, locale }) {
+  const totalCapacity = rooms.reduce((sum, r) => sum + (r.capacity || 0), 0);
+
+  return (
+    <>
+      <div className="page-toolbar">
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <h1>{t('nav.property')}</h1>
+          <div className="page-date">{rooms.length} {t('roomsCount')}</div>
+        </div>
+        <button className="btn-primary" onClick={onAddBedroom}>
+          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+          {t('rooms.addBedroom')}
+        </button>
+      </div>
+
+      <div className="stat-bar">
+        <StatBarItem value={rooms.length}      label={t('totalRooms')} />
+        <StatBarItem value={totalCapacity}     label={t('guestWord')(totalCapacity)} />
+        <StatBarItem value={stats.occupied}    label={t('occupied')} accent="#f59e0b" />
+        <StatBarItem value={stats.maintenance} label={t('maintenance')} accent="#94a3b8" />
+      </div>
+
+      {loading ? (
+        <div className="loading-screen">{t('loadingRooms')}</div>
+      ) : (
+        <div className="room-grid">
+          {rooms.map((room) => (
+            <BedroomCard
+              key={room.id}
+              room={room}
+              activeBooking={activeByRoom[room.id] ?? null}
+              isSelected={selectedRoom?.id === room.id}
+              today={today}
+              onClick={onCardClick}
+              t={t}
+              locale={locale}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
 }

@@ -145,17 +145,22 @@ export default function Sidebar() {
         <nav className="sidebar-nav">
           <div className="nav-section-label">{t('main')}</div>
 
-          {navItems.map(({ to, key, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              data-tooltip={t(key)}
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-            >
-              <Icon />
-              <span className="nav-link-label">{t(key)}</span>
-            </NavLink>
-          ))}
+          {navItems.map(({ to, key, Icon }) => {
+            const label = key === 'rooms' && property?.rental_type === 'whole_property'
+              ? t('nav.property')
+              : t(key);
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                data-tooltip={label}
+                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              >
+                <Icon />
+                <span className="nav-link-label">{label}</span>
+              </NavLink>
+            );
+          })}
         </nav>
 
         {/* Past-due payment warning */}

@@ -247,8 +247,18 @@ export default function Calendar() {
     refreshBookings();
   };
 
+  const handleWpEmptyClick = useCallback((dayIso) => {
+    const roomId = rooms[0]?.id;
+    if (!roomId) return;
+    setSelectedBooking(null);
+    const nextDay = toIso(addDays(parseDate(dayIso), 1));
+    setNewModalValues({ room_id: String(roomId), check_in_date: dayIso, check_out_date: nextDay });
+  }, [rooms]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) return <div className="loading-screen">{t('loadingCalendar')}</div>;
+
+  const isWholeProp = property?.rental_type === 'whole_property';
 
   const isCurrentPeriod = isMobile
     ? toIso(mobileCenter) === today
@@ -267,79 +277,93 @@ export default function Calendar() {
           <div className="page-date">{t('calHint')}</div>
         </div>
 
-        {/* Week navigation */}
-        <div className="calendar-nav">
-          <button className="cal-nav-btn" onClick={goPrev} aria-label="Previous">‹</button>
+        {/* Week navigation — B&B mode only */}
+        {!isWholeProp && (
+          <div className="calendar-nav">
+            <button className="cal-nav-btn" onClick={goPrev} aria-label="Previous">‹</button>
 
-          <span className="cal-week-label">
-            {isMobile ? mobileDayLabel(days, MONTH_NAMES) : weekLabel(days, MONTH_NAMES)}
-          </span>
+            <span className="cal-week-label">
+              {isMobile ? mobileDayLabel(days, MONTH_NAMES) : weekLabel(days, MONTH_NAMES)}
+            </span>
 
-          <button className="cal-nav-btn" onClick={goNext} aria-label="Next">›</button>
+            <button className="cal-nav-btn" onClick={goNext} aria-label="Next">›</button>
 
-          {!isCurrentPeriod && (
-            <button className="btn-secondary" onClick={goToday} style={{ padding: '7px 14px' }}>
-              {t('today')}
-            </button>
-          )}
-        </div>
+            {!isCurrentPeriod && (
+              <button className="btn-secondary" onClick={goToday} style={{ padding: '7px 14px' }}>
+                {t('today')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Legend ──────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 14 }}>
-        <Legend t={t} />
+        <Legend t={t} showBreakfast={!isWholeProp} />
       </div>
 
-      {/* ── Grid ────────────────────────────────────────────────────────── */}
-      <div className="calendar-scroll">
-        <div className="calendar-grid">
+      {isWholeProp ? (
+        /* ── Whole-property monthly calendar ──────────────────────────── */
+        <WholePropertyCalendar
+          bookings={bookings}
+          today={today}
+          t={t}
+          locale={locale}
+          onBookedClick={handleBookedClick}
+          onEmptyClick={handleWpEmptyClick}
+        />
+      ) : (
+        /* ── B&B week grid ────────────────────────────────────────────── */
+        <div className="calendar-scroll">
+          <div className="calendar-grid">
 
-          {/* ── Header row ─────────────────────────────────────────────── */}
-          <div className="cal-corner" />
-          {days.map((day) => {
-            const iso         = toIso(day);
-            const isToday     = iso === today;
-            const activePeriod = getActivePeriod(ratePeriods, iso);
-            const { name, num } = fmtDayHeader(day, DAY_NAMES);
-            return (
-              <div key={iso} className={`cal-day-header${isToday ? ' is-today' : ''}`}>
-                <div className="cal-day-name">{name}</div>
-                <div className="cal-day-num">{num}</div>
-                {activePeriod && (
-                  <div
-                    title={`${t('calRatePeriodDot')}: ${activePeriod.name}`}
-                    style={{
-                      width: 6, height: 6, borderRadius: '50%',
-                      background: '#f59e0b', margin: '2px auto 0',
-                      flexShrink: 0,
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
+            {/* ── Header row ───────────────────────────────────────────── */}
+            <div className="cal-corner" />
+            {days.map((day) => {
+              const iso          = toIso(day);
+              const isToday      = iso === today;
+              const activePeriod = getActivePeriod(ratePeriods, iso);
+              const { name, num } = fmtDayHeader(day, DAY_NAMES);
+              return (
+                <div key={iso} className={`cal-day-header${isToday ? ' is-today' : ''}`}>
+                  <div className="cal-day-name">{name}</div>
+                  <div className="cal-day-num">{num}</div>
+                  {activePeriod && (
+                    <div
+                      title={`${t('calRatePeriodDot')}: ${activePeriod.name}`}
+                      style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: '#f59e0b', margin: '2px auto 0',
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
 
-          {/* ── Room rows ──────────────────────────────────────────────── */}
-          {rooms.map((room) => (
-            <RoomRow
-              key={room.id}
-              room={room}
-              days={days}
-              today={today}
-              todayIso={today}
-              bookings={bookings}
-              selectedBookingId={selectedBooking?.id}
-              onBookedClick={handleBookedClick}
-              onEmptyClick={handleEmptyClick}
-              t={t}
-              locale={locale}
-              property={property}
-              isMobile={isMobile}
-            />
-          ))}
+            {/* ── Room rows ────────────────────────────────────────────── */}
+            {rooms.map((room) => (
+              <RoomRow
+                key={room.id}
+                room={room}
+                days={days}
+                today={today}
+                todayIso={today}
+                bookings={bookings}
+                selectedBookingId={selectedBooking?.id}
+                onBookedClick={handleBookedClick}
+                onEmptyClick={handleEmptyClick}
+                t={t}
+                locale={locale}
+                property={property}
+                isMobile={isMobile}
+              />
+            ))}
 
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Detail panel ─────────────────────────────────────────────────── */}
       {selectedBooking && (
@@ -370,6 +394,135 @@ export default function Calendar() {
         />
       )}
     </>
+  );
+}
+
+// ── WholePropertyCalendar ─────────────────────────────────────────────────────
+
+function daysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function firstDowOfMonth(year, month) {
+  const d = new Date(year, month, 1).getDay();
+  return d === 0 ? 6 : d - 1; // 0=Mon … 6=Sun
+}
+
+function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, monthNames, dayNames }) {
+  const numDays  = daysInMonth(year, month);
+  const startDow = firstDowOfMonth(year, month);
+
+  const cells = [];
+  for (let i = 0; i < startDow; i++) {
+    cells.push(<div key={`pad-${i}`} className="wpc-cell wpc-pad" />);
+  }
+  for (let d = 1; d <= numDays; d++) {
+    const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isPast = iso < today;
+    const isToday = iso === today;
+    const booking = bookings.find(b =>
+      b.status !== 'cancelled' && b.status !== 'checked_out' &&
+      b.check_in_date <= iso && b.check_out_date > iso
+    );
+    const historical = !booking ? bookings.find(b =>
+      b.status === 'checked_out' && b.check_in_date <= iso && b.check_out_date > iso
+    ) : null;
+
+    if (booking) {
+      const isCheckin = booking.check_in_date === iso;
+      cells.push(
+        <div
+          key={iso}
+          className={`wpc-cell wpc-booked${isToday ? ' wpc-today' : ''}`}
+          onClick={() => onBookedClick(booking)}
+          title={`${booking.guest_first_name} ${booking.guest_last_name}`}
+        >
+          <span className="wpc-day-num">{d}</span>
+          {isCheckin && <span className="wpc-guest">{booking.guest_last_name}</span>}
+        </div>
+      );
+    } else if (historical) {
+      cells.push(
+        <div
+          key={iso}
+          className={`wpc-cell wpc-historical${isToday ? ' wpc-today' : ''}`}
+          onClick={isPast ? undefined : () => onEmptyClick(iso)}
+          title={`${historical.guest_first_name} ${historical.guest_last_name} — checked out`}
+        >
+          <span className="wpc-day-num">{d}</span>
+        </div>
+      );
+    } else {
+      cells.push(
+        <div
+          key={iso}
+          className={`wpc-cell wpc-available${isPast ? ' wpc-past' : ''}${isToday ? ' wpc-today' : ''}`}
+          onClick={isPast ? undefined : () => onEmptyClick(iso)}
+        >
+          <span className="wpc-day-num">{d}</span>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <div className="wpc-month">
+      <div className="wpc-month-title">{monthNames[month]} {year}</div>
+      <div className="wpc-grid">
+        {dayNames.map((n) => <div key={n} className="wpc-dow">{n}</div>)}
+        {cells}
+      </div>
+    </div>
+  );
+}
+
+function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEmptyClick }) {
+  const todayDate = parseDate(today);
+  const [offset, setOffset] = useState(0);
+  const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
+
+  useEffect(() => {
+    const h = () => setIsWide(window.innerWidth >= 900);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+
+  const DAY_NAMES   = t('dayNames');
+  const MONTH_NAMES = t('monthNames');
+
+  const baseMonth = todayDate.getMonth() + offset;
+  const year1     = todayDate.getFullYear() + Math.floor(baseMonth / 12);
+  const month1    = ((baseMonth % 12) + 12) % 12;
+  const month2raw = month1 + 1;
+  const year2     = month2raw > 11 ? year1 + 1 : year1;
+  const month2    = month2raw > 11 ? 0 : month2raw;
+
+  return (
+    <div className="wpc-container">
+      <div className="wpc-nav">
+        <button className="cal-nav-btn" onClick={() => setOffset((o) => o - 1)}>‹</button>
+        {offset !== 0 && (
+          <button className="btn-secondary" onClick={() => setOffset(0)} style={{ padding: '7px 14px' }}>
+            {t('today')}
+          </button>
+        )}
+        <button className="cal-nav-btn" onClick={() => setOffset((o) => o + 1)}>›</button>
+      </div>
+      <div className={`wpc-months${isWide ? ' wpc-two-up' : ''}`}>
+        <MonthGrid
+          year={year1} month={month1} bookings={bookings} today={today}
+          onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
+          monthNames={MONTH_NAMES} dayNames={DAY_NAMES}
+        />
+        {isWide && (
+          <MonthGrid
+            year={year2} month={month2} bookings={bookings} today={today}
+            onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
+            monthNames={MONTH_NAMES} dayNames={DAY_NAMES}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -450,7 +603,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
   const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
 
-  const showBfBadge = !!cellDate && isEligibleForBreakfast(b, null, property, addDaysStr(cellDate, 1));
+  const showBfBadge = property?.rental_type !== 'whole_property' && !!cellDate && isEligibleForBreakfast(b, null, property, addDaysStr(cellDate, 1));
 
   return (
     <div
@@ -515,7 +668,7 @@ function HistoricalCell({ booking: b, onClick }) {
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-function Legend({ t }) {
+function Legend({ t, showBreakfast = true }) {
   const items = [
     { cls: 'sw-arriving',    label: t('calLegendInHouse') },
     { cls: 'sw-booked',      label: t('calLegendConfirmed') },
@@ -539,10 +692,12 @@ function Legend({ t }) {
         <span className="cal-action-badge cal-co-badge" style={{ position: 'static' }}>{t('calCoBadge')}</span>
         {t('calLegendCO')}
       </div>
-      <div className="legend-item">
-        <span className="legend-swatch sw-breakfast" />
-        {t('calLegendBreakfast')}
-      </div>
+      {showBreakfast && (
+        <div className="legend-item">
+          <span className="legend-swatch sw-breakfast" />
+          {t('calLegendBreakfast')}
+        </div>
+      )}
     </div>
   );
 }

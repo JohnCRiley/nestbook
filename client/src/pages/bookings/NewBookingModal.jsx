@@ -480,7 +480,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                 </div>
 
                 {/* ── Breakfast options ──────────────────────────────────── */}
-                {selectedRoom?.breakfast_included ? (
+                {property?.rental_type !== 'whole_property' && (selectedRoom?.breakfast_included ? (
                   <div className="form-group span-2" style={{ marginTop: 8 }}>
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
@@ -605,7 +605,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     </label>
 
                   </div>
-                ) : null}
+                ) : null)}
 
               </div>
             </div>

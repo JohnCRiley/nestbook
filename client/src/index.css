@@ -1803,6 +1803,142 @@ a { text-decoration: none; }
   height: 14px;
 }
 
+/* ── Whole-property monthly calendar ────────────────────────────────────── */
+
+.wpc-container {
+  margin-top: 4px;
+}
+
+.wpc-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.wpc-months {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.wpc-two-up {
+  flex-direction: row;
+  gap: 32px;
+}
+
+.wpc-two-up .wpc-month {
+  flex: 1;
+  min-width: 0;
+}
+
+.wpc-month {
+  max-width: 380px;
+}
+
+.wpc-month-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.wpc-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.wpc-dow {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 3px 0 5px;
+}
+
+.wpc-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 36px;
+  max-height: 52px;
+}
+
+.wpc-pad {
+  cursor: default;
+  background: none;
+}
+
+.wpc-day-num {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.wpc-guest {
+  font-size: 0.6rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+  color: var(--on-accent, #fff);
+  opacity: 0.9;
+  margin-top: 1px;
+}
+
+.wpc-available {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.wpc-available:hover {
+  background: var(--tint-bg);
+  border-color: var(--accent);
+}
+
+.wpc-past {
+  background: #f8fafc;
+  border: 1px solid #eee;
+  color: #aaa;
+  cursor: default;
+}
+
+.wpc-past:hover {
+  background: #f8fafc;
+  border-color: #eee;
+}
+
+.wpc-booked {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent-dark);
+}
+
+.wpc-booked:hover {
+  opacity: 0.88;
+}
+
+.wpc-historical {
+  background: #e2e8f0;
+  color: #94a3b8;
+  border: 1px solid #cbd5e1;
+}
+
+.wpc-today {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: -2px;
+  font-weight: 700;
+}
+
 /* ── Calendar responsive ─────────────────────────────────────────────────── */
 
 /* Narrow desktop (1024–1259px): full 240px sidebar leaves ~704px for content,

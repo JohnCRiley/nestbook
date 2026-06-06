@@ -356,7 +356,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Breakfast strip ───────────────────────────────────────────────── */}
-      {(!!property?.breakfast_included || !!b.room_breakfast_included || !!b.breakfast_added) && (() => {
+      {property?.rental_type !== 'whole_property' && (!!property?.breakfast_included || !!b.room_breakfast_included || !!b.breakfast_added) && (() => {
         const bfStartDate  = (!property?.breakfast_included && !b.room_breakfast_included && b.breakfast_start_date)
           ? b.breakfast_start_date
           : b.check_in_date;

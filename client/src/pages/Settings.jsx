@@ -672,7 +672,7 @@ export default function Settings() {
           )}
 
           {/* Breakfast service hours */}
-          {form && (
+          {form && activeProperty?.rental_type !== 'whole_property' && (
             <div className="settings-card">
               <div className="settings-card-header">
                 <h2>{t('bfTimesLabel')}</h2>
@@ -868,7 +868,7 @@ export default function Settings() {
                     onChange={() => handleFeatureToggle(f.key)}
                   />
                 ))}
-                {form && (
+                {form && activeProperty?.rental_type !== 'whole_property' && (
                   <>
                     <ToggleRow
                       label={t('bfPropertyToggleLabel')}

@@ -468,7 +468,7 @@ export default function Dashboard() {
                 }
                 nightWord={t('nightWord')}
                 showDue
-                showBreakfast
+                showBreakfast={property?.rental_type !== 'whole_property'}
                 onClick={() => setSelectedBooking(b)}
               />
             ))
@@ -478,7 +478,9 @@ export default function Dashboard() {
       </div>
 
       {/* ── Breakfast service list ─────────────────────────────────────── */}
-      <BreakfastServiceList bookings={bookings} property={property} t={t} />
+      {property?.rental_type !== 'whole_property' && (
+        <BreakfastServiceList bookings={bookings} property={property} t={t} />
+      )}
 
       {/* ── Upcoming ───────────────────────────────────────────────────── */}
       <div className="section-card" style={{ marginTop: 20 }}>
