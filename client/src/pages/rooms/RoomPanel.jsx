@@ -37,7 +37,24 @@ function upcomingBookings(bookings, today) {
 export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdated, onBook, onRoomDeleted }) {
   const [mode, setMode] = useState('view');
   const t = useT();
-  const { locale } = useLocale();
+  const { locale, property } = useLocale();
+  const isWP = property?.rental_type === 'whole_property';
+
+  if (isWP) {
+    return (
+      <>
+        <div className="panel-backdrop" onClick={onClose} />
+        <aside className="detail-panel" role="dialog" aria-label="Bedroom details">
+          <WPBedroomPanel
+            room={room}
+            onClose={onClose}
+            onRoomUpdated={onRoomUpdated}
+            onRoomDeleted={onRoomDeleted}
+          />
+        </aside>
+      </>
+    );
+  }
 
   const activeBooking = bookings.find((b) =>
     b.status !== 'cancelled' &&
@@ -81,6 +98,156 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
         </div>
 
       </aside>
+    </>
+  );
+}
+
+// ── Whole-property bedroom panel ──────────────────────────────────────────────
+
+function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
+  const t    = useT();
+  const plan = usePlan();
+
+  const [description,     setDescription]     = useState(room.description ?? '');
+  const [amenities,       setAmenities]       = useState(room.amenities   ?? '');
+  const [saving,          setSaving]          = useState(false);
+  const [error,           setError]           = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/rooms/${room.id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          property_id:        room.property_id,
+          name:               room.name,
+          type:               room.type,
+          price_per_night:    room.price_per_night ?? 0,
+          capacity:           room.capacity,
+          amenities:          amenities.trim() || null,
+          status:             room.status,
+          breakfast_included: 0,
+          description:        description.trim() || null,
+        }),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      onRoomUpdated(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setError(null);
+    try {
+      let res = await apiFetch(`/api/rooms/${room.id}`, { method: 'DELETE' });
+      if (res.status === 409) {
+        res = await apiFetch(`/api/rooms/${room.id}?force=true`, { method: 'DELETE' });
+      }
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      onRoomDeleted(room.id);
+    } catch (err) {
+      setError(err.message);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const amenityPreview = parseAmenities(amenities);
+
+  return (
+    <>
+      <div className="panel-header">
+        <button className="panel-close" onClick={onClose} aria-label="Close">✕</button>
+        <div className="panel-guest-name" style={{ marginBottom: 4 }}>{room.name}</div>
+        <div style={{ fontSize: '0.82rem', opacity: 0.7, marginTop: 2 }}>
+          {t('rooms.sleeps')} {room.capacity}
+        </div>
+      </div>
+
+      <div className="panel-scroll">
+        <div className="panel-body">
+
+          {error && <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>}
+
+          <div className="panel-section">
+            <div className="panel-section-title" style={{ marginBottom: 10 }}>{t('rooms.photos')}</div>
+            <RoomPhotosSection room={room} plan={plan} />
+          </div>
+
+          <div className="panel-section">
+            <div className="panel-section-title">{t('rooms.description')}</div>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+              className="panel-field-input"
+              placeholder={t('rooms.descriptionPlaceholder')}
+              style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: 'inherit', marginTop: 6 }}
+            />
+          </div>
+
+          <div className="panel-section">
+            <div className="panel-section-title">{t('rooms.amenities')}</div>
+            <input
+              className="panel-field-input"
+              value={amenities}
+              onChange={e => setAmenities(e.target.value)}
+              placeholder="wifi, ensuite, balcony, parking…"
+              style={{ width: '100%', marginTop: 6 }}
+            />
+            {amenityPreview.length > 0 && (
+              <div className="amenity-preview" style={{ marginTop: 8 }}>
+                {amenityPreview.map(a => (
+                  <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="panel-actions">
+            <button className="btn-panel-primary" onClick={handleSave} disabled={saving}>
+              {saving ? t('saving') : t('saveChanges')}
+            </button>
+          </div>
+
+          <div style={{ padding: '0 0 8px' }}>
+            {room.is_demo ? (
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                🔒 {t('demoRoomLocked')}
+              </span>
+            ) : (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                disabled={saving}
+                style={{
+                  background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem',
+                  cursor: 'pointer', padding: '6px 0', textDecoration: 'underline',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {t('rooms.deleteBedroom')}
+              </button>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title={t('deleteRoomTitle')}
+        message={t('deleteRoomConfirm')(room.name)}
+        confirmLabel={t('deleteRoomBtn')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </>
   );
 }
