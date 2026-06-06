@@ -151,6 +151,11 @@ export default function Settings() {
         breakfast_start_time: p.breakfast_start_time ?? '07:00',
         breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
         description:          p.description          ?? '',
+        rental_type:          p.rental_type          ?? 'rooms',
+        total_capacity:       p.total_capacity       ?? '',
+        bedroom_count:        p.bedroom_count        ?? '',
+        bathroom_count:       p.bathroom_count       ?? '',
+        whole_property_rate:  p.whole_property_rate  ?? '',
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -348,6 +353,122 @@ export default function Settings() {
                     ))}
                   </select>
                 </FormField>
+
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                    {t('settings.rentalType')}
+                  </label>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, rental_type: 'rooms' })}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        borderRadius: 8,
+                        border: `2px solid ${form.rental_type === 'rooms' ? 'var(--accent)' : 'var(--border)'}`,
+                        background: form.rental_type === 'rooms' ? 'var(--tint-bg)' : 'var(--card-bg)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                        🛏️ {t('settings.rentalTypeRooms')}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                        {t('settings.rentalTypeRoomsHint')}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
+                      style={{
+                        flex: 1,
+                        padding: '12px 16px',
+                        borderRadius: 8,
+                        border: `2px solid ${form.rental_type === 'whole_property' ? 'var(--accent)' : 'var(--border)'}`,
+                        background: form.rental_type === 'whole_property' ? 'var(--tint-bg)' : 'var(--card-bg)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                        🏡 {t('settings.rentalTypeWhole')}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                        {t('settings.rentalTypeWholeHint')}
+                      </div>
+                    </button>
+                  </div>
+
+                  {form.rental_type === 'whole_property' && (
+                    <div style={{
+                      marginTop: 16,
+                      padding: 16,
+                      background: 'var(--tint-bg)',
+                      borderRadius: 8,
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 12,
+                    }}>
+                      <div>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                          {t('settings.totalCapacity')}
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="form-control"
+                          value={form.total_capacity}
+                          onChange={e => setForm({ ...form, total_capacity: e.target.value })}
+                          placeholder="12"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                          {t('settings.bedroomCount')}
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="form-control"
+                          value={form.bedroom_count}
+                          onChange={e => setForm({ ...form, bedroom_count: e.target.value })}
+                          placeholder="6"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                          {t('settings.bathroomCount')}
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          className="form-control"
+                          value={form.bathroom_count}
+                          onChange={e => setForm({ ...form, bathroom_count: e.target.value })}
+                          placeholder="4"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+                          {t('settings.wholePropertyRate')}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="form-control"
+                          value={form.whole_property_rate}
+                          onChange={e => setForm({ ...form, whole_property_rate: e.target.value })}
+                          placeholder="450"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <FormField label={t('address')}>
                   <input name="address" className="form-control"

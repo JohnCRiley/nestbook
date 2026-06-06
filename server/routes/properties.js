@@ -189,15 +189,19 @@ propertiesRouter.put('/:id', (req, res) => {
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time,
       description, hero_image_url,
+      rental_type, total_capacity, bedroom_count, bathroom_count, whole_property_rate,
     } = req.body;
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
+    const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
           check_in_time = ?, check_out_time = ?, currency = ?, locale = ?, theme = ?,
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
           breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?,
-          description = ?, hero_image_url = ?
+          description = ?, hero_image_url = ?,
+          rental_type = ?, total_capacity = ?, bedroom_count = ?, bathroom_count = ?,
+          whole_property_rate = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -211,6 +215,11 @@ propertiesRouter.put('/:id', (req, res) => {
       breakfast_end_time   ?? '11:00',
       description || null,
       hero_image_url || null,
+      VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : 'rooms',
+      total_capacity  ? parseInt(total_capacity,  10) : null,
+      bedroom_count   ? parseInt(bedroom_count,   10) : null,
+      bathroom_count  ? parseInt(bathroom_count,  10) : null,
+      whole_property_rate ? parseFloat(whole_property_rate) : null,
       req.params.id,
     );
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);

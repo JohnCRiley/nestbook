@@ -116,6 +116,72 @@ function roomCalendarSection(availMap) {
 </div>`;
 }
 
+function getPropertyAvailMap(bookings) {
+  const map = {};
+  const base = new Date();
+  for (let i = 0; i < 62; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    const s = localDateStr(d);
+    map[s] = bookings.some(b => b.check_in_date <= s && b.check_out_date > s) ? 'booked' : 'available';
+  }
+  return map;
+}
+
+function propertyCalendarSection(availMap) {
+  const today = localDateStr(new Date());
+  const now   = new Date();
+  const m0    = { year: now.getFullYear(), month: now.getMonth() };
+  const next  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const m1    = { year: next.getFullYear(), month: next.getMonth() };
+  return `
+<div class="room-availability">
+  <div class="room-cal-grid">
+    ${roomCalMonth(m0.year, m0.month, availMap, today)}
+    ${roomCalMonth(m1.year, m1.month, availMap, today)}
+  </div>
+  <p class="avail-hint" data-i18n="page.wholePropertyAvailability">Check when the whole property is available for your dates.</p>
+  <div class="cal-legend">
+    <span><span class="legend-dot legend-available"></span> <span data-i18n="page.available">Available</span></span>
+    <span><span class="legend-dot legend-booked"></span> <span data-i18n="page.booked">Booked</span></span>
+  </div>
+</div>`;
+}
+
+function showcaseRoomCard(room, palette, photos) {
+  const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
+  const typeLabel = room.type
+    ? room.type.charAt(0).toUpperCase() + room.type.slice(1)
+    : '';
+
+  const amenityTags = amenities.map(a =>
+    `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`
+  ).join('');
+
+  const descHtml = room.description
+    ? `<p class="room-desc">${esc(room.description)}</p>`
+    : '';
+
+  const photoHtml = photos && photos.length > 0 ? `
+  <div class="room-photo">
+    <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
+  </div>` : '';
+
+  return `
+<div class="room-card room-card-showcase">
+  ${photoHtml}
+  <div class="room-card-body">
+    <div class="room-header">
+      <h3>${esc(room.name)}</h3>
+      <span class="room-type-badge">${esc(typeLabel)}</span>
+    </div>
+    <div class="room-capacity">👥 <span data-i18n="page.upTo">Up to</span> ${esc(String(room.capacity ?? 2))} <span data-i18n="page.guests">guests</span></div>
+    ${descHtml}
+    ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
+  </div>
+</div>`;
+}
+
 function roomCard(room, currSym, palette, photos, availMap) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const price = Number(room.price_per_night ?? 0).toFixed(0);
@@ -186,6 +252,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const currSym  = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
+  const isWholeProperty = property.rental_type === 'whole_property';
 
   const availMapsByRoom = {};
   for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id);
@@ -204,16 +271,40 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
     ? `<div class="hero-overlay" style="background:linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.72));position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:flex-end;padding:28px 32px;">`
     : `<div class="hero-overlay">`;
 
-  const heroSection = `
-<div class="hero" style="${heroStyle}">
-  ${!property.hero_photo && address ? `
+  const mapIframe = !property.hero_photo && address ? `
   <iframe
     src="https://maps.google.com/maps?q=${mapQuery}&output=embed&z=15"
     class="hero-map"
     allowfullscreen=""
     loading="lazy"
     referrerpolicy="no-referrer-when-downgrade">
-  </iframe>` : ''}
+  </iframe>` : '';
+
+  let heroSection;
+  if (isWholeProperty) {
+    const rate = property.whole_property_rate;
+    const rateDisplay = rate ? `${esc(currSym)}${esc(Number(rate).toFixed(0))}` : '';
+    const statsHtml = [
+      property.total_capacity ? `<span>👥 ${esc(String(property.total_capacity))} <span data-i18n="page.guests">guests</span></span>` : '',
+      property.bedroom_count  ? `<span>🛏️ ${esc(String(property.bedroom_count))} bedrooms</span>` : '',
+      property.bathroom_count ? `<span>🚿 ${esc(String(property.bathroom_count))} bathrooms</span>` : '',
+    ].filter(Boolean).join('');
+    heroSection = `
+<div class="hero hero-whole" style="${heroStyle}">
+  ${mapIframe}
+  ${heroInner}
+    <div class="hero-badge" data-i18n="page.wholeProperty">Entire property</div>
+    <h1>${esc(name)}</h1>
+    ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
+    ${statsHtml ? `<div class="hero-stats">${statsHtml}</div>` : ''}
+    ${rateDisplay ? `<div class="hero-price">${rateDisplay}<span class="room-price-unit"> / <span data-i18n="page.perNight">per night</span></span></div>` : ''}
+    <button class="btn-hero" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
+  </div>
+</div>`;
+  } else {
+    heroSection = `
+<div class="hero" style="${heroStyle}">
+  ${mapIframe}
   ${heroInner}
     ${typeLabel ? `<div class="hero-badge">${esc(typeLabel)}</div>` : ''}
     <h1>${esc(name)}</h1>
@@ -224,6 +315,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
     </div>
   </div>
 </div>`;
+  }
 
   const aboutSection = property.description ? `
 <section class="about">
@@ -233,7 +325,29 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   </div>
 </section>` : '';
 
-  const roomsSection = rooms.length > 0 ? `
+  let roomsSection;
+  if (isWholeProperty) {
+    const showcaseCards = rooms.map(r => showcaseRoomCard(r, palette, photosByRoom?.[r.id])).join('\n');
+    const propAvailMap  = getPropertyAvailMap(bookings);
+    roomsSection = `
+${rooms.length > 0 ? `
+<section class="whats-included">
+  <div class="section-inner">
+    <h2 data-i18n="page.whatsIncluded">What's included</h2>
+    <p data-i18n="page.whatsIncludedHint">This property is rented as a whole — all rooms are yours for your stay.</p>
+    <div class="rooms-grid rooms-grid-showcase">
+      ${showcaseCards}
+    </div>
+  </div>
+</section>` : ''}
+<section class="availability">
+  <div class="section-inner">
+    <h2 data-i18n="page.availability">Availability</h2>
+    ${propertyCalendarSection(propAvailMap)}
+  </div>
+</section>`;
+  } else {
+    roomsSection = rooms.length > 0 ? `
 <section class="rooms">
   <div class="section-inner">
     <h2 data-i18n="page.ourRooms">Our Rooms</h2>
@@ -242,8 +356,25 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
     </div>
   </div>
 </section>` : '';
+  }
 
-  const ctaSection = `
+  let ctaSection;
+  if (isWholeProperty) {
+    const rate = property.whole_property_rate;
+    const priceHtml = rate
+      ? `<div class="price-display">${esc(currSym)}${esc(Number(rate).toFixed(0))}<span class="price-unit"> / <span data-i18n="page.perNight">night</span></span></div>`
+      : '';
+    ctaSection = `
+<section class="cta cta-whole">
+  <div class="section-inner cta-inner">
+    <h2 data-i18n="page.bookTheProperty">Book the whole property</h2>
+    ${priceHtml}
+    <p data-i18n="page.ctaWholeHint">Book directly — best rates guaranteed, no booking fees.</p>
+    <button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
+  </div>
+</section>`;
+  } else {
+    ctaSection = `
 <section class="cta">
   <div class="section-inner cta-inner">
     <h2 data-i18n="page.bookNow">Ready to book?</h2>
@@ -251,6 +382,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
     <button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
   </div>
 </section>`;
+  }
 
   const footerSection = `
 <footer>
@@ -668,6 +800,78 @@ section h2 {
 }
 .btn-primary-large:hover { background: ${esc(palette.brand)}; }
 
+/* ── Whole property hero ───────────────────────────────────────────── */
+.hero-whole { height: 520px; }
+.hero-stats {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+  font-size: 0.88rem;
+  opacity: 0.9;
+}
+.hero-price {
+  font-size: 1.4rem;
+  font-weight: 700;
+  opacity: 0.95;
+  margin: 8px 0 10px;
+}
+.btn-hero {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.5);
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s;
+  backdrop-filter: blur(4px);
+}
+.btn-hero:hover { background: rgba(255,255,255,0.25); }
+@media (max-width: 540px) { .hero-whole { height: 420px; } }
+
+/* ── What's included (whole property showcase) ─────────────────────── */
+.whats-included { background: #f8f9fa; }
+.whats-included > .section-inner > p {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.rooms-grid-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+.room-card-showcase {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid ${esc(palette.brand)};
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Availability section (whole property) ─────────────────────────── */
+.availability { background: #fff; }
+
+/* ── CTA whole property ─────────────────────────────────────────────── */
+.cta-whole { background: ${esc(palette.dark)}; }
+.cta-whole h2 { color: #fff; }
+.cta-whole p { color: rgba(255,255,255,0.82); }
+.price-display {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 8px 0 16px;
+  line-height: 1.1;
+}
+.price-unit { font-size: 1rem; font-weight: 400; opacity: 0.8; }
+
 /* ── Footer ────────────────────────────────────────────────────────── */
 footer {
   text-align: center;
@@ -729,8 +933,14 @@ var I18N = {
     "page.demoNotice":        "This is a NestBook demonstration page — rooms shown are for illustration only. No real bookings will be processed.",
     "page.checkIn":           "Check-in from",
     "page.checkOut":          "Check-out by",
-    "page.noDescription":     "",
-    "page.bookDirect":        "Book your stay directly — best rates guaranteed"
+    "page.noDescription":             "",
+    "page.bookDirect":                "Book your stay directly — best rates guaranteed",
+    "page.wholeProperty":             "Entire property",
+    "page.whatsIncluded":             "What's included",
+    "page.whatsIncludedHint":         "This property is rented as a whole — all rooms are yours for your stay.",
+    "page.wholePropertyAvailability": "Check when the whole property is available for your dates.",
+    "page.bookTheProperty":           "Book the whole property",
+    "page.ctaWholeHint":              "Book directly — best rates guaranteed, no booking fees."
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -751,8 +961,14 @@ var I18N = {
     "page.demoNotice":        "Ceci est une page de démonstration NestBook — les chambres affichées sont à titre d'illustration uniquement.",
     "page.checkIn":           "Arrivée à partir de",
     "page.checkOut":          "Départ avant",
-    "page.noDescription":     "",
-    "page.bookDirect":        "Réservez votre séjour directement — meilleurs tarifs garantis"
+    "page.noDescription":             "",
+    "page.bookDirect":                "Réservez votre séjour directement — meilleurs tarifs garantis",
+    "page.wholeProperty":             "Propriété entière",
+    "page.whatsIncluded":             "Ce qui est inclus",
+    "page.whatsIncludedHint":         "Cette propriété est louée en totalité — toutes les chambres sont à vous pendant votre séjour.",
+    "page.wholePropertyAvailability": "Vérifiez quand la propriété entière est disponible pour vos dates.",
+    "page.bookTheProperty":           "Réserver la propriété entière",
+    "page.ctaWholeHint":              "Réservez directement — meilleurs tarifs garantis, sans frais de réservation."
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -773,8 +989,14 @@ var I18N = {
     "page.demoNotice":        "Dies ist eine NestBook-Demonstrationsseite — die gezeigten Zimmer dienen nur zur Illustration.",
     "page.checkIn":           "Check-in ab",
     "page.checkOut":          "Check-out bis",
-    "page.noDescription":     "",
-    "page.bookDirect":        "Buchen Sie Ihren Aufenthalt direkt — beste Preise garantiert"
+    "page.noDescription":             "",
+    "page.bookDirect":                "Buchen Sie Ihren Aufenthalt direkt — beste Preise garantiert",
+    "page.wholeProperty":             "Gesamtes Objekt",
+    "page.whatsIncluded":             "Was enthalten ist",
+    "page.whatsIncludedHint":         "Dieses Objekt wird als Ganzes vermietet — alle Zimmer gehören Ihnen für Ihren Aufenthalt.",
+    "page.wholePropertyAvailability": "Prüfen Sie, wann das gesamte Objekt für Ihre Daten verfügbar ist.",
+    "page.bookTheProperty":           "Das gesamte Objekt buchen",
+    "page.ctaWholeHint":              "Direkt buchen — beste Preise garantiert, keine Buchungsgebühren."
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -795,8 +1017,14 @@ var I18N = {
     "page.demoNotice":        "Esta es una página de demostración de NestBook — las habitaciones mostradas son solo ilustrativas.",
     "page.checkIn":           "Entrada a partir de",
     "page.checkOut":          "Salida antes de",
-    "page.noDescription":     "",
-    "page.bookDirect":        "Reserve su estancia directamente — mejores tarifas garantizadas"
+    "page.noDescription":             "",
+    "page.bookDirect":                "Reserve su estancia directamente — mejores tarifas garantizadas",
+    "page.wholeProperty":             "Propiedad completa",
+    "page.whatsIncluded":             "Qué está incluido",
+    "page.whatsIncludedHint":         "Esta propiedad se alquila completa — todas las habitaciones son suyas durante su estancia.",
+    "page.wholePropertyAvailability": "Compruebe cuándo está disponible la propiedad completa para sus fechas.",
+    "page.bookTheProperty":           "Reservar la propiedad completa",
+    "page.ctaWholeHint":              "Reserve directamente — mejores tarifas garantizadas, sin gastos de reserva."
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -817,8 +1045,14 @@ var I18N = {
     "page.demoNotice":        "Dit is een NestBook-demonstratiepagina — de getoonde kamers zijn alleen ter illustratie.",
     "page.checkIn":           "Inchecken vanaf",
     "page.checkOut":          "Uitchecken voor",
-    "page.noDescription":     "",
-    "page.bookDirect":        "Boek uw verblijf direct — beste tarieven gegarandeerd"
+    "page.noDescription":             "",
+    "page.bookDirect":                "Boek uw verblijf direct — beste tarieven gegarandeerd",
+    "page.wholeProperty":             "Hele accommodatie",
+    "page.whatsIncluded":             "Wat is inbegrepen",
+    "page.whatsIncludedHint":         "Deze accommodatie wordt als geheel verhuurd — alle kamers zijn van u tijdens uw verblijf.",
+    "page.wholePropertyAvailability": "Controleer wanneer de hele accommodatie beschikbaar is voor uw data.",
+    "page.bookTheProperty":           "De hele accommodatie boeken",
+    "page.ctaWholeHint":              "Boek direct — beste tarieven gegarandeerd, geen boekingskosten."
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };

@@ -200,9 +200,19 @@ widgetRouter.get('/property', (req, res) => {
   try {
     const { property_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id is required' });
-    const row = db.prepare('SELECT name, theme FROM properties WHERE id = ?').get(property_id);
+    const row = db.prepare(`
+      SELECT name, theme, currency, rental_type, whole_property_rate, total_capacity
+      FROM properties WHERE id = ?
+    `).get(property_id);
     if (!row) return res.status(404).json({ error: 'Property not found' });
-    res.json({ theme: row.theme ?? 'forest', name: row.name ?? '' });
+    res.json({
+      theme:               row.theme              ?? 'forest',
+      name:                row.name               ?? '',
+      currency:            row.currency           ?? 'EUR',
+      rental_type:         row.rental_type        ?? 'rooms',
+      whole_property_rate: row.whole_property_rate ?? null,
+      total_capacity:      row.total_capacity      ?? null,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

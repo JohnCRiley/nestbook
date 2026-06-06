@@ -614,6 +614,13 @@ export function initSchema() {
   // Property theme
   try { db.exec(`ALTER TABLE properties ADD COLUMN theme TEXT NOT NULL DEFAULT 'forest'`); } catch {}
 
+  // Whole property rental mode
+  try { db.exec(`ALTER TABLE properties ADD COLUMN rental_type TEXT DEFAULT 'rooms'`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN total_capacity INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN bedroom_count INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN bathroom_count INTEGER`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN whole_property_rate REAL`); } catch {}
+
   // iCal sync token per room — unguessable URL for calendar feed export
   try { db.exec(`ALTER TABLE rooms ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
   db.prepare(`UPDATE rooms SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
