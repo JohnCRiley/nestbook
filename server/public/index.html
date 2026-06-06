@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ── Primary SEO ──────────────────────────────────────────────────────── -->
-<title>NestBook — Simple Booking Management for B&Bs, Gîtes &amp; Guest Houses</title>
-<meta name="description" content="NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B&Bs, gîtes, guest houses and small hotels across Europe. Free to start.">
-<meta name="keywords" content="b&b booking software, gite management, guest house booking system, small hotel software, property management Europe, booking calendar, chambres d'hôtes logiciel">
+<title>NestBook — Booking software for B&Bs, Gîtes, Lodges &amp; Holiday Rentals</title>
+<meta name="description" content="NestBook gives independent property owners a professional booking system — B&Bs, gîtes, holiday cottages, lodges, villas and glamping. Direct bookings, zero commission, from £19/month. Free plan available.">
+<meta name="keywords" content="booking software, B&B booking system, gite booking software, holiday cottage booking, lodge booking system, glamping booking, villa booking, self catering booking software, direct booking, no commission booking, property management system, PMS small hotel">
 <link rel="canonical" href="https://nestbook.io">
 <meta name="robots" content="index, follow">
 <meta name="author" content="NestBook">
@@ -16,13 +16,13 @@
 <!-- ── Open Graph ───────────────────────────────────────────────────────── -->
 <meta property="og:type"        content="website">
 <meta property="og:url"         content="https://nestbook.io">
-<meta property="og:title"       content="NestBook — Simple Booking Management for B&Bs, Gîtes &amp; Guest Houses">
-<meta property="og:description" content="NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B&Bs, gîtes, guest houses and small hotels across Europe. Free to start.">
+<meta property="og:title"       content="NestBook — Booking software for independent properties">
+<meta property="og:description" content="Direct bookings for B&Bs, gîtes, holiday cottages, lodges and villas. Zero commission. From £19/month. Free plan available.">
 <meta property="og:image"        content="https://nestbook.io/og-image.png">
 <meta property="og:image:width"  content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:type"   content="image/png">
-<meta property="og:image:alt"    content="NestBook — Booking software built for B&Bs and guest houses">
+<meta property="og:image:alt"    content="NestBook — Booking software for independent properties">
 <meta property="og:locale"      content="en_GB">
 <meta property="og:locale:alternate" content="fr_FR">
 <meta property="og:locale:alternate" content="es_ES">
@@ -32,8 +32,8 @@
 
 <!-- ── Twitter Card ─────────────────────────────────────────────────────── -->
 <meta name="twitter:card"        content="summary_large_image">
-<meta name="twitter:title"       content="NestBook — Simple Booking Management for B&Bs, Gîtes &amp; Guest Houses">
-<meta name="twitter:description" content="NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B&Bs, gîtes, guest houses and small hotels across Europe. Free to start.">
+<meta name="twitter:title"       content="NestBook — Booking software for independent properties">
+<meta name="twitter:description" content="Direct bookings for B&Bs, gîtes, holiday cottages, lodges and villas. Zero commission. From £19/month.">
 <meta name="twitter:image"       content="https://nestbook.io/og-image.png">
 
 <!-- ── Structured data ──────────────────────────────────────────────────── -->
@@ -43,15 +43,48 @@
   "@type": "SoftwareApplication",
   "name": "NestBook",
   "url": "https://nestbook.io",
-  "description": "Simple, affordable booking and property management for B&Bs, gîtes, guest houses and small hotels across Europe.",
+  "description": "Booking management software for independent accommodation — B&Bs, gîtes, holiday cottages, lodges, villas, glamping and self-catering properties.",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "EUR",
-    "description": "Free to start — no credit card required"
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Free Plan",
+      "price": "0",
+      "priceCurrency": "GBP"
+    },
+    {
+      "@type": "Offer",
+      "name": "Pro Plan",
+      "price": "19",
+      "priceCurrency": "GBP",
+      "billingIncrement": "month"
+    },
+    {
+      "@type": "Offer",
+      "name": "Multi Plan",
+      "price": "39",
+      "priceCurrency": "GBP",
+      "billingIncrement": "month"
+    }
+  ],
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Independent accommodation owners — B&Bs, gîtes, holiday cottages, lodges, villas, glamping"
   },
+  "availableLanguage": ["English", "French", "German", "Spanish", "Dutch"],
+  "featureList": [
+    "Visual room calendar",
+    "Direct booking widget",
+    "Whole property rental mode",
+    "Seasonal pricing",
+    "iCal sync with Booking.com and Airbnb",
+    "Facebook Booking Button",
+    "Free property webpage",
+    "Revenue reports",
+    "Multilingual — 5 languages",
+    "Zero commission on bookings"
+  ],
   "creator": {
     "@type": "Organization",
     "name": "NestBook",
@@ -228,7 +261,15 @@ img { display: block; max-width: 100%; }
   color: var(--mid);
 }
 .hero-sub {
-  font-size: 1.1rem;
+  font-size: 1rem;
+  color: var(--mid);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-bottom: 12px;
+  max-width: 480px;
+}
+.hero-description {
+  font-size: 1.05rem;
   color: var(--muted);
   line-height: 1.75;
   margin-bottom: 32px;
@@ -707,6 +748,35 @@ img { display: block; max-width: 100%; }
   .footer-inner  { grid-template-columns: 1fr; }
   .section { padding: 60px 0; }
 }
+
+/* ── Property types SEO section ───────────────────────────────────────────── */
+.property-types-seo {
+  padding: 60px 0;
+  background: var(--soft);
+  border-top: 1px solid var(--border);
+}
+.property-types-seo h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--dark);
+  text-align: center;
+  margin-bottom: 32px;
+  letter-spacing: -0.3px;
+}
+.property-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.property-types-grid div {
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+}
 </style>
 
 <!-- Google Analytics -->
@@ -796,7 +866,10 @@ img { display: block; max-width: 100%; }
         </h1>
 
         <p class="hero-sub" data-i18n="hero.sub">
-          NestBook is the simple, elegant booking and property management system built for independent properties across Europe — B&Bs, gîtes, cottages, villas and more.
+          B&Bs · Gîtes · Holiday Cottages · Lodges · Villas · Glamping · And more
+        </p>
+        <p class="hero-description" data-i18n="hero.description">
+          Stop juggling spreadsheets and sticky notes. NestBook gives independent property owners a professional booking system — simple, affordable, and yours to keep.
         </p>
 
         <div class="hero-btns">
@@ -1258,6 +1331,29 @@ img { display: block; max-width: 100%; }
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  PROPERTY TYPES                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="property-types-seo">
+  <div class="container">
+    <h2>Built for every type of independent property</h2>
+    <div class="property-types-grid">
+      <div>🛏️ B&Bs and Bed &amp; Breakfasts</div>
+      <div>🏡 Gîtes and holiday cottages</div>
+      <div>🌿 Guest houses and inns</div>
+      <div>🏕️ Glamping and camping pods</div>
+      <div>🏰 Villas and apartments</div>
+      <div>🚐 Lodges and static caravans</div>
+      <div>🌾 Farmhouses and rural retreats</div>
+      <div>🛖 Shepherd's huts and treehouses</div>
+      <div>🏔️ Mountain chalets</div>
+      <div>⛵ Narrowboats and houseboats</div>
+      <div>🏯 Châteaux and manor houses</div>
+      <div>🌴 Resort villas</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  FOOTER                                                                    -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <footer class="footer">
@@ -1327,8 +1423,8 @@ img { display: block; max-width: 100%; }
 <script>
 const I18N = {
   en: {
-    'meta.title':       'NestBook \u2014 Simple Booking Management for B\u0026Bs, G\u00eetes \u0026 Guest Houses',
-    'meta.description': 'NestBook is the simple, affordable booking and property management system for small hospitality businesses. Built for B\u0026Bs, g\u00eetes, guest houses and small hotels across Europe. Free to start.',
+    'meta.title':       'NestBook — Booking software for B&Bs, Gîtes, Lodges & Holiday Rentals',
+    'meta.description': 'NestBook gives independent property owners a professional booking system — B&Bs, gîtes, holiday cottages, lodges, villas and glamping. Direct bookings, zero commission, from £19/month. Free plan available.',
     'meta.locale':      'en_GB',
     'nav.features':  'Features',
     'nav.pricing':   'Pricing',
@@ -1338,9 +1434,11 @@ const I18N = {
     'nav.demo':      'Live demo',
     'nav.signin':    'Sign in',
     'nav.try':       'Try free',
-    'hero.kicker':   'Made for small European properties',
+    'hero.kicker':   'Booking software for independent properties',
     'hero.headline': 'Your guests deserve a smooth welcome. <em>So do you.</em>',
-    'hero.sub':      'NestBook is the simple, elegant booking and property management system built for independent properties across Europe — B&Bs, gîtes, cottages, villas and more.',
+    'hero.sub':      'B&Bs · Gîtes · Holiday Cottages · Lodges · Villas · Glamping · And more',
+    'hero.tagline':  'Booking software for independent properties',
+    'hero.description': 'Stop juggling spreadsheets and sticky notes. NestBook gives independent property owners a professional booking system — simple, affordable, and yours to keep.',
     'hero.cta':      'Start free — no card needed',
     'hero.demo':     'See live demo →',
     'hero.trust1':   'No setup fee',
@@ -1463,8 +1561,8 @@ const I18N = {
   },
 
   fr: {
-    'meta.title':       'NestBook \u2014 Gestion de r\u00e9servations simple pour B\u0026Bs, g\u00eetes et chambres d\u2019h\u00f4tes',
-    'meta.description': 'NestBook est le syst\u00e8me simple et abordable de gestion des r\u00e9servations pour les petits h\u00e9bergements. Con\u00e7u pour les B\u0026Bs, g\u00eetes, chambres d\u2019h\u00f4tes et petits h\u00f4tels en Europe. Gratuit pour commencer.',
+    'meta.title':       'NestBook — Logiciel de réservation pour gîtes, B&Bs et locations de vacances',
+    'meta.description': 'NestBook offre aux propriétaires indépendants un système de réservation professionnel — B&Bs, gîtes, cottages, lodges, villas et glamping. Réservations directes, sans commission, à partir de 19 £/mois. Forfait gratuit disponible.',
     'meta.locale':      'fr_FR',
     'nav.features':  'Fonctionnalités',
     'nav.pricing':   'Tarifs',
@@ -1474,9 +1572,11 @@ const I18N = {
     'nav.demo':      'Démo en direct',
     'nav.signin':    'Connexion',
     'nav.try':       'Essai gratuit',
-    'hero.kicker':   'Conçu pour les petites propriétés européennes',
+    'hero.kicker':   'Logiciel de réservation pour les propriétés indépendantes',
     'hero.headline': 'Vos hôtes méritent un accueil parfait. <em>Vous aussi.</em>',
-    'hero.sub':      'NestBook est le système de gestion de réservations simple et élégant, conçu pour les hébergements indépendants en Europe — B&Bs, gîtes, cottages, villas et plus.',
+    'hero.sub':      'Chambres d'hôtes · Gîtes · Cottages · Lodges · Villas · Glamping · Et plus',
+    'hero.tagline':  'Logiciel de réservation pour les propriétés indépendantes',
+    'hero.description': 'Arrêtez de jongler avec des feuilles de calcul. NestBook donne aux propriétaires indépendants un système de réservation professionnel — simple, abordable et à vous.',
     'hero.cta':      'Commencer gratuitement',
     'hero.demo':     'Voir la démo en direct →',
     'hero.trust1':   'Sans frais d\'installation',
@@ -1600,7 +1700,7 @@ const I18N = {
 
   es: {
     'meta.title':       'NestBook \u2014 Gesti\u00f3n de reservas sencilla para B\u0026Bs, casas rurales y casas de hu\u00e9spedes',
-    'meta.description': 'NestBook es el sistema simple y asequible de gesti\u00f3n de reservas para peque\u00f1os alojamientos. Dise\u00f1ado para B\u0026Bs, casas rurales, casas de hu\u00e9spedes y hoteles peque\u00f1os en Europa. Gratis para empezar.',
+    'meta.description': 'NestBook ofrece a los propietarios independientes un sistema de reservas profesional — B&Bs, gîtes, casas rurales, lodges, villas y glamping. Reservas directas, sin comisión, desde 19 £/mes. Plan gratuito disponible.',
     'meta.locale':      'es_ES',
     'nav.features':  'Funciones',
     'nav.pricing':   'Precios',
@@ -1610,9 +1710,11 @@ const I18N = {
     'nav.demo':      'Demo en vivo',
     'nav.signin':    'Iniciar sesión',
     'nav.try':       'Prueba gratis',
-    'hero.kicker':   'Diseñado para pequeñas propiedades europeas',
+    'hero.kicker':   'Software de reservas para propiedades independientes',
     'hero.headline': 'Tus huéspedes merecen una bienvenida perfecta. <em>Tú también.</em>',
-    'hero.sub':      'NestBook es el sistema de gestión de reservas sencillo y elegante, diseñado para propiedades independientes en Europa — B&Bs, gîtes, casas rurales, villas y más.',
+    'hero.sub':      'B&Bs · Gîtes · Casas rurales · Lodges · Villas · Glamping · Y más',
+    'hero.tagline':  'Software de reservas para propiedades independientes',
+    'hero.description': 'Deje de hacer malabares con hojas de cálculo. NestBook ofrece a los propietarios independientes un sistema de reservas profesional — simple, asequible y suyo.',
     'hero.cta':      'Empezar gratis — sin tarjeta',
     'hero.demo':     'Ver demo en vivo →',
     'hero.trust1':   'Sin cuota de alta',
@@ -1735,8 +1837,8 @@ const I18N = {
   },
 
   de: {
-    'meta.title':       'NestBook \u2014 Einfache Buchungsverwaltung f\u00fcr B\u0026Bs, G\u00eetes \u0026 Pensionen',
-    'meta.description': 'NestBook ist das einfache und g\u00fcnstige Buchungs- und Verwaltungssystem f\u00fcr kleine Beherbergungsbetriebe. F\u00fcr B\u0026Bs, G\u00eetes, Pensionen und kleine Hotels in Europa entwickelt. Kostenlos starten.',
+    'meta.title':       'NestBook — Buchungssoftware für Gîtes, B&Bs und Ferienunterkünfte',
+    'meta.description': 'NestBook gibt unabhängigen Unterkunftsbetreibern ein professionelles Buchungssystem — B&Bs, Gîtes, Ferienhäuser, Lodges, Villen und Glamping. Direktbuchungen, keine Provision, ab 19 £/Monat. Kostenloser Plan verfügbar.',
     'meta.locale':      'de_DE',
     'nav.features':  'Funktionen',
     'nav.pricing':   'Preise',
@@ -1746,9 +1848,11 @@ const I18N = {
     'nav.demo':      'Live-Demo',
     'nav.signin':    'Anmelden',
     'nav.try':       'Kostenlos testen',
-    'hero.kicker':   'Für kleine europäische Unterkünfte entwickelt',
+    'hero.kicker':   'Buchungssoftware für unabhängige Unterkünfte',
     'hero.headline': 'Ihre Gäste verdienen einen reibungslosen Empfang. <em>Sie auch.</em>',
-    'hero.sub':      'NestBook ist das einfache, elegante Buchungs- und Verwaltungssystem für unabhängige Unterkünfte in ganz Europa — B&Bs, Gîtes, Ferienhäuser, Villen und mehr.',
+    'hero.sub':      'B&Bs · Gîtes · Ferienhäuser · Lodges · Villen · Glamping · Und mehr',
+    'hero.tagline':  'Buchungssoftware für unabhängige Unterkünfte',
+    'hero.description': 'Schluss mit Tabellenkalkulationen. NestBook gibt unabhängigen Unterkunftsbetreibern ein professionelles Buchungssystem — einfach, erschwinglich und Ihres.',
     'hero.cta':      'Kostenlos starten — keine Karte nötig',
     'hero.demo':     'Live-Demo ansehen →',
     'hero.trust1':   'Keine Einrichtungsgebühr',
@@ -1871,8 +1975,8 @@ const I18N = {
   },
 
   nl: {
-    'meta.title':       'NestBook \u2014 Eenvoudig boekingsbeheer voor B\u0026Bs, g\u00eetes en gasthuizen',
-    'meta.description': 'NestBook is het eenvoudige en betaalbare boekings- en beheersysteem voor kleine horecabedrijven. Gebouwd voor B\u0026Bs, g\u00eetes, gasthuizen en kleine hotels in Europa. Gratis om te starten.',
+    'meta.title':       'NestBook — Boekingssoftware voor gîtes, B&B's en vakantieverhuur',
+    'meta.description': 'NestBook geeft onafhankelijke accommodatie-eigenaren een professioneel boekingssysteem — B&B's, gîtes, vakantiewoningen, lodges, villa's en glamping. Directe boekingen, geen commissie, vanaf £19/maand. Gratis plan beschikbaar.',
     'meta.locale':      'nl_NL',
     'nav.features':  'Functies',
     'nav.pricing':   'Prijzen',
@@ -1882,9 +1986,11 @@ const I18N = {
     'nav.demo':      'Live demo',
     'nav.signin':    'Inloggen',
     'nav.try':       'Gratis proberen',
-    'hero.kicker':   'Eenvoudig reserveringsbeheer voor kleine accommodaties',
+    'hero.kicker':   'Boekingssoftware voor onafhankelijke accommodaties',
     'hero.headline': 'Uw gasten verdienen een warm welkom. <em>U ook.</em>',
-    'hero.sub':      'NestBook is het eenvoudige, elegante boekings- en beheersysteem voor onafhankelijke accommodaties in Europa — B&B\'s, gîtes, vakantiehuizen, villa\'s en meer.',
+    'hero.sub':      'B&B's · Gîtes · Vakantiehuizen · Lodges · Villa's · Glamping · En meer's, gîtes, vakantiehuizen, villa\'s en meer.',
+    'hero.tagline':  'Boekingssoftware voor onafhankelijke accommodaties',
+    'hero.description': 'Stop met jongleren met spreadsheets. NestBook geeft onafhankelijke accommodatie-eigenaren een professioneel boekingssysteem — eenvoudig, betaalbaar en van u.',
     'hero.cta':      'Gratis starten — geen creditcard nodig',
     'hero.demo':     'Bekijk live demo →',
     'hero.trust1':   'Geen installatiekosten',

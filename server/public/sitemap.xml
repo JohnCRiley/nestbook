@@ -5,8 +5,8 @@
   <!-- Landing page (default: English) -->
   <url>
     <loc>https://nestbook.io/</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-06-06</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://nestbook.io/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://nestbook.io/"/>
@@ -31,7 +31,7 @@
   <!-- Static pages -->
   <url>
     <loc>https://nestbook.io/about.html</loc>
-    <lastmod>2026-04-08</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -40,6 +40,12 @@
     <lastmod>2026-04-08</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://nestbook.io/help.html</loc>
+    <lastmod>2026-06-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://nestbook.io/privacy.html</loc>
@@ -63,83 +69,89 @@
   <!-- Plan comparison -->
   <url>
     <loc>https://nestbook.io/compare.html</loc>
-    <lastmod>2026-05-29</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
 
   <!-- Blog -->
   <url>
     <loc>https://nestbook.io/blog/</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://nestbook.io/blog/whole-property-rental-booking-software.html</loc>
+    <lastmod>2026-06-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://nestbook.io/blog/how-to-switch-booking-systems.html</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/what-does-a-bnb-need-from-a-pms.html</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/why-we-built-nestbook.html</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/5-questions-before-choosing-booking-software.html</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/ical-vs-channel-management.html</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/are-you-paying-too-much-for-your-booking-system.html</loc>
-    <lastmod>2026-05-27</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/why-multilingual-booking-matters.html</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/the-hidden-cost-of-airbnb-and-booking-com.html</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/how-to-get-your-first-direct-booking.html</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/five-things-gite-owners-wish-they-knew.html</loc>
-    <lastmod>2026-04-09</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nestbook.io/blog/why-small-bbs-are-switching-to-booking-software.html</loc>
-    <lastmod>2026-04-08</lastmod>
+    <lastmod>2026-06-06</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.85</priority>
+    <priority>0.9</priority>
   </url>
 
 </urlset>

@@ -1,12 +1,9 @@
 User-agent: *
 Allow: /
+Allow: /book/
+Allow: /blog/
+Allow: /compare.html
+Disallow: /app/
 Disallow: /api/
-Disallow: /app/dashboard
-Disallow: /app/bookings
-Disallow: /app/calendar
-Disallow: /app/guests
-Disallow: /app/rooms
-Disallow: /app/settings
-Disallow: /app/super-admin/
 
 Sitemap: https://nestbook.io/sitemap.xml
