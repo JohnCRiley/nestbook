@@ -28,6 +28,7 @@ import { bookingPageRouter }         from './routes/bookingPage.js';
 import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { errorReportsRouter }        from './routes/errorReports.js';
+import { enquiriesRouter }           from './routes/enquiries.js';
 import { sendDowngradeEmail }        from './email/emailService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -77,6 +78,7 @@ app.use('/app', express.static(join(__dirname, '../client/dist')));
 app.use('/api',                healthRouter);
 app.use('/api/auth',           authRouter);
 app.use('/api/contact',        contactRouter);
+app.use('/api/enquiries',      enquiriesRouter);
 app.use('/api/widget',         widgetRouter);
 app.use('/api/super-admin',    superAdminAuthRouter);
 app.use('/api',               marketingRouter);

@@ -204,7 +204,7 @@ function showcaseRoomCard(room, palette, photos) {
 </div>`;
 }
 
-function roomCard(room, currSym, palette, photos, availMap) {
+function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const price = Number(room.price_per_night ?? 0).toFixed(0);
   const typeLabel = room.type
@@ -246,7 +246,7 @@ function roomCard(room, currSym, palette, photos, availMap) {
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
     ${availMap ? roomCalendarSection(availMap) : ''}
-    <button class="btn-book" onclick="openWidget()" data-i18n="page.bookThisRoom">Book this room</button>
+    <button class="btn-book" onclick="${isPaidPlan ? 'openWidget()' : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
   </div>
 </div>`;
 }
@@ -260,7 +260,7 @@ const LANG_MAP = {
   'nl': 'nl', 'nl-NL': 'nl',
 };
 
-function generateBookingPage(property, rooms, bookings, photosByRoom) {
+function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -279,7 +279,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
   const availMapsByRoom = {};
   for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id);
 
-  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id])).join('\n');
+  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan)).join('\n');
 
   const metaDesc = property.description
     ? esc(property.description.slice(0, 155))
@@ -320,7 +320,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom) {
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     ${statsHtml ? `<div class="hero-stats">${statsHtml}</div>` : ''}
     ${rateDisplay ? `<div class="hero-price">${rateDisplay}<span class="room-price-unit"> / <span data-i18n="page.perNight">per night</span></span></div>` : ''}
-    <button class="btn-hero" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
+    <button class="btn-hero" onclick="${isPaidPlan ? 'openWidget()' : 'scrollToEnquiry()'}" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
   </div>
 </div>`;
   } else {
@@ -380,6 +380,10 @@ ${rooms.length > 0 ? `
 </section>` : '';
   }
 
+  const bookOrEnquiryBtn = isPaidPlan
+    ? `<button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>`
+    : `<button class="btn-primary-large" onclick="scrollToEnquiry()" data-i18n="page.sendEnquiry">Send a booking enquiry</button>`;
+
   let ctaSection;
   if (isWholeProperty) {
     const rate = property.whole_property_rate;
@@ -392,7 +396,7 @@ ${rooms.length > 0 ? `
     <h2 data-i18n="page.bookTheProperty">Book the whole property</h2>
     ${priceHtml}
     <p data-i18n="page.ctaWholeHint">Book directly — best rates guaranteed, no booking fees.</p>
-    <button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
+    ${bookOrEnquiryBtn}
   </div>
 </section>`;
   } else {
@@ -401,7 +405,7 @@ ${rooms.length > 0 ? `
   <div class="section-inner cta-inner">
     <h2 data-i18n="page.bookNow">Ready to book?</h2>
     <p data-i18n="page.ctaHint">Book directly with us for the best rates — no booking fees, payment goes straight to us.</p>
-    <button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
+    ${bookOrEnquiryBtn}
   </div>
 </section>`;
   }
@@ -912,6 +916,57 @@ footer a:hover { text-decoration: underline; }
 @media (max-width: 540px) {
   #nb-root .nb-trigger { bottom: 20px; right: 16px; }
 }
+
+/* ── Enquiry form (Free plan) ───────────────────────────────────────── */
+.enquiry-section { background: #f8f9fa; }
+.enquiry-hint {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 24px;
+  max-width: 560px;
+}
+.booking-request-form {
+  max-width: 560px;
+}
+.booking-request-form .form-group {
+  margin-bottom: 14px;
+}
+.booking-request-form label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+}
+.booking-request-form input,
+.booking-request-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1e293b;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+.booking-request-form input:focus,
+.booking-request-form textarea:focus {
+  outline: none;
+  border-color: ${esc(palette.brand)};
+  box-shadow: 0 0 0 3px ${esc(palette.light)};
+}
+.booking-request-form textarea { resize: vertical; }
+#enquirySuccess {
+  padding: 20px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  color: #166534;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+}
 </style>
 
 <!-- Google Analytics -->
@@ -929,6 +984,83 @@ ${heroSection}
 ${aboutSection}
 ${roomsSection}
 ${ctaSection}
+${isPaidPlan ? '' : `
+<section id="booking-enquiry" class="enquiry-section">
+  <div class="section-inner">
+    <h2 data-i18n="page.sendEnquiry">Send a booking enquiry</h2>
+    <p class="enquiry-hint" data-i18n="page.enquiryHint">Fill in your details and the property owner will contact you to confirm availability and arrange payment.</p>
+    <div class="booking-request-form">
+      <form id="enquiryForm">
+        <div class="form-group">
+          <label data-i18n="page.yourName">Your name</label>
+          <input type="text" id="guestName" required />
+        </div>
+        <div class="form-group">
+          <label data-i18n="page.yourEmail">Email address</label>
+          <input type="email" id="guestEmail" required />
+        </div>
+        <div class="form-group">
+          <label data-i18n="page.checkIn">Check-in date</label>
+          <input type="date" id="checkIn" required />
+        </div>
+        <div class="form-group">
+          <label data-i18n="page.checkOut">Check-out date</label>
+          <input type="date" id="checkOut" required />
+        </div>
+        <div class="form-group">
+          <label data-i18n="page.guests">Number of guests</label>
+          <input type="number" id="guestCount" min="1" value="2" required />
+        </div>
+        <div class="form-group">
+          <label data-i18n="page.message">Message (optional)</label>
+          <textarea id="message" rows="3" data-i18n-placeholder="page.message"></textarea>
+        </div>
+        <button type="submit" class="btn-primary-large" data-i18n="page.sendEnquiry">Send enquiry</button>
+      </form>
+      <div id="enquirySuccess" style="display:none;">
+        <p data-i18n="page.enquirySuccess">✅ Your enquiry has been sent! The property owner will be in touch shortly.</p>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:0.78rem;color:#94a3b8;margin-top:20px;">
+      Are you the owner of this property?
+      <a href="https://nestbook.io/app/pricing" style="color:#1a4710;">Upgrade to Pro</a>
+      to accept direct online bookings.
+    </p>
+  </div>
+</section>
+
+<script>
+document.getElementById('enquiryForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn = this.querySelector('[type="submit"]');
+  btn.disabled = true;
+  var data = {
+    propertyId: ${propId},
+    guestName:  document.getElementById('guestName').value,
+    guestEmail: document.getElementById('guestEmail').value,
+    checkIn:    document.getElementById('checkIn').value,
+    checkOut:   document.getElementById('checkOut').value,
+    guests:     document.getElementById('guestCount').value,
+    message:    document.getElementById('message').value,
+  };
+  try {
+    var res = await fetch('/api/enquiries', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(data),
+    });
+    if (res.ok) {
+      document.getElementById('enquiryForm').style.display = 'none';
+      document.getElementById('enquirySuccess').style.display = 'block';
+    } else {
+      btn.disabled = false;
+    }
+  } catch(err) {
+    console.error('Enquiry failed:', err);
+    btn.disabled = false;
+  }
+});
+</script>`}
 ${footerSection}
 
 <script>
@@ -962,7 +1094,13 @@ var I18N = {
     "page.whatsIncludedHint":         "This property is rented as a whole — all rooms are yours for your stay.",
     "page.wholePropertyAvailability": "Check when the whole property is available for your dates.",
     "page.bookTheProperty":           "Book the whole property",
-    "page.ctaWholeHint":              "Book directly — best rates guaranteed, no booking fees."
+    "page.ctaWholeHint":              "Book directly — best rates guaranteed, no booking fees.",
+    "page.sendEnquiry":               "Send a booking enquiry",
+    "page.enquiryHint":               "Fill in your details and the property owner will contact you to confirm availability and arrange payment.",
+    "page.yourName":                  "Your name",
+    "page.yourEmail":                 "Email address",
+    "page.message":                   "Message (optional)",
+    "page.enquirySuccess":            "✅ Your enquiry has been sent! The property owner will be in touch shortly."
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -990,7 +1128,13 @@ var I18N = {
     "page.whatsIncludedHint":         "Cette propriété est louée en totalité — toutes les chambres sont à vous pendant votre séjour.",
     "page.wholePropertyAvailability": "Vérifiez quand la propriété entière est disponible pour vos dates.",
     "page.bookTheProperty":           "Réserver la propriété entière",
-    "page.ctaWholeHint":              "Réservez directement — meilleurs tarifs garantis, sans frais de réservation."
+    "page.ctaWholeHint":              "Réservez directement — meilleurs tarifs garantis, sans frais de réservation.",
+    "page.sendEnquiry":               "Envoyer une demande de réservation",
+    "page.enquiryHint":               "Remplissez vos coordonnées et le propriétaire vous contactera pour confirmer la disponibilité et organiser le paiement.",
+    "page.yourName":                  "Votre nom",
+    "page.yourEmail":                 "Adresse e-mail",
+    "page.message":                   "Message (optionnel)",
+    "page.enquirySuccess":            "✅ Votre demande a été envoyée ! Le propriétaire vous contactera prochainement."
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -1018,7 +1162,13 @@ var I18N = {
     "page.whatsIncludedHint":         "Dieses Objekt wird als Ganzes vermietet — alle Zimmer gehören Ihnen für Ihren Aufenthalt.",
     "page.wholePropertyAvailability": "Prüfen Sie, wann das gesamte Objekt für Ihre Daten verfügbar ist.",
     "page.bookTheProperty":           "Das gesamte Objekt buchen",
-    "page.ctaWholeHint":              "Direkt buchen — beste Preise garantiert, keine Buchungsgebühren."
+    "page.ctaWholeHint":              "Direkt buchen — beste Preise garantiert, keine Buchungsgebühren.",
+    "page.sendEnquiry":               "Buchungsanfrage senden",
+    "page.enquiryHint":               "Füllen Sie Ihre Daten aus und der Eigentümer wird sich mit Ihnen in Verbindung setzen, um die Verfügbarkeit zu bestätigen.",
+    "page.yourName":                  "Ihr Name",
+    "page.yourEmail":                 "E-Mail-Adresse",
+    "page.message":                   "Nachricht (optional)",
+    "page.enquirySuccess":            "✅ Ihre Anfrage wurde gesendet! Der Eigentümer wird sich in Kürze melden."
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -1046,7 +1196,13 @@ var I18N = {
     "page.whatsIncludedHint":         "Esta propiedad se alquila completa — todas las habitaciones son suyas durante su estancia.",
     "page.wholePropertyAvailability": "Compruebe cuándo está disponible la propiedad completa para sus fechas.",
     "page.bookTheProperty":           "Reservar la propiedad completa",
-    "page.ctaWholeHint":              "Reserve directamente — mejores tarifas garantizadas, sin gastos de reserva."
+    "page.ctaWholeHint":              "Reserve directamente — mejores tarifas garantizadas, sin gastos de reserva.",
+    "page.sendEnquiry":               "Enviar una consulta de reserva",
+    "page.enquiryHint":               "Complete sus datos y el propietario se pondrá en contacto para confirmar la disponibilidad y organizar el pago.",
+    "page.yourName":                  "Su nombre",
+    "page.yourEmail":                 "Correo electrónico",
+    "page.message":                   "Mensaje (opcional)",
+    "page.enquirySuccess":            "✅ ¡Su consulta ha sido enviada! El propietario se pondrá en contacto pronto."
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -1074,7 +1230,13 @@ var I18N = {
     "page.whatsIncludedHint":         "Deze accommodatie wordt als geheel verhuurd — alle kamers zijn van u tijdens uw verblijf.",
     "page.wholePropertyAvailability": "Controleer wanneer de hele accommodatie beschikbaar is voor uw data.",
     "page.bookTheProperty":           "De hele accommodatie boeken",
-    "page.ctaWholeHint":              "Boek direct — beste tarieven gegarandeerd, geen boekingskosten."
+    "page.ctaWholeHint":              "Boek direct — beste tarieven gegarandeerd, geen boekingskosten.",
+    "page.sendEnquiry":               "Stuur een boekingsaanvraag",
+    "page.enquiryHint":               "Vul uw gegevens in en de eigenaar neemt contact met u op om de beschikbaarheid te bevestigen en de betaling te regelen.",
+    "page.yourName":                  "Uw naam",
+    "page.yourEmail":                 "E-mailadres",
+    "page.message":                   "Bericht (optioneel)",
+    "page.enquirySuccess":            "✅ Uw aanvraag is verzonden! De eigenaar neemt binnenkort contact met u op."
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
@@ -1120,6 +1282,11 @@ function openWidget() {
   if (btn) btn.click();
 }
 
+function scrollToEnquiry() {
+  var el = document.getElementById('booking-enquiry');
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
 document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
   thumb.addEventListener('click', function() {
     var card = this.closest('.room-card');
@@ -1131,13 +1298,13 @@ document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
 });
 </script>
 
-<script
+${isPaidPlan ? `<script
   src="https://nestbook.io/widget.js"
   data-property-id="${esc(String(propId))}"
   data-lang="${esc(lang)}"
   data-currency="${esc(currency)}"
   async>
-</script>
+</script>` : ''}
 
 </body>
 </html>`;
@@ -1150,10 +1317,15 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     const { identifier } = req.params;
     let property;
 
+    const propQuery = `
+      SELECT p.*, u.plan
+      FROM properties p
+      JOIN users u ON u.id = p.owner_id
+      WHERE `;
     if (/^\d+$/.test(identifier)) {
-      property = db.prepare('SELECT * FROM properties WHERE id = ?').get(Number(identifier));
+      property = db.prepare(propQuery + 'p.id = ?').get(Number(identifier));
     } else {
-      property = db.prepare('SELECT * FROM properties WHERE booking_slug = ?').get(identifier);
+      property = db.prepare(propQuery + 'p.booking_slug = ?').get(identifier);
     }
 
     if (!property) {
@@ -1190,7 +1362,8 @@ bookingPageRouter.get('/:identifier', (req, res) => {
       photosByRoom[p.room_id].push(p.filename);
     }
 
-    res.send(generateBookingPage(property, rooms, bookings, photosByRoom));
+    const isPaidPlan = ['pro', 'multi'].includes(property.plan);
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');
