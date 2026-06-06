@@ -28,6 +28,7 @@ const EMPTY = {
 export default function NewBookingModal({ rooms, onClose, onSuccess, initialValues }) {
   const { currencySymbol, property, fmtCurrency } = useLocale();
   const t = useT();
+  const isWP = property?.rental_type === 'whole_property';
 
   const [form, setForm] = useState({
     ...EMPTY,
@@ -187,7 +188,11 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const availableRooms    = datesValid
     ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
     : [];
-  const roomSubtotal = rateBreakdown?.total ?? (nightsCount && selectedRoom ? nightsCount * selectedRoom.price_per_night : 0);
+  const wpRate            = parseFloat(property?.whole_property_rate) || 0;
+  const wpPropertyBooked  = isWP && datesValid && bookedRoomIds.has(Number(rooms[0]?.id));
+  const roomSubtotal      = isWP
+    ? (nightsCount ? nightsCount * wpRate : 0)
+    : (rateBreakdown?.total ?? (nightsCount && selectedRoom ? nightsCount * selectedRoom.price_per_night : 0));
   const bfMinMorning      = form.checkIn  ? addDays(form.checkIn, 1) : '';
   const bfMaxMorning      = form.checkOut || '';
   const bfMorningOk       = form.breakfastType === 'paid' && !!form.bfMorning
@@ -199,7 +204,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const bfPriceNum        = parseFloat(form.bfPrice) || 0;
   const bfGuestsNum       = parseInt(form.bfGuests, 10) || 1;
   const bfSubtotal        = form.breakfastType === 'paid' ? bfGuestsNum * bfServings * bfPriceNum : 0;
-  const totalPrice        = roomSubtotal + bfSubtotal;
+  const totalPrice        = roomSubtotal + (isWP ? 0 : bfSubtotal);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
   async function handleSubmit(e) {
@@ -214,7 +219,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       setError(t('checkoutAfterCheckin'));
       return;
     }
-    if (!form.roomId) {
+    if (!isWP && !form.roomId) {
       setError(t('requiredFields'));
       return;
     }
@@ -267,7 +272,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
         signal:  controller.signal,
         body: JSON.stringify({
           property_id:          property?.id ?? 1,
-          room_id:              Number(form.roomId),
+          room_id:              isWP ? (rooms[0]?.id ?? null) : Number(form.roomId),
           guest_id:             resolvedGuestId,
           check_in_date:        form.checkIn,
           check_out_date:       form.checkOut,
@@ -450,32 +455,54 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
               </div>
             </div>
 
-            {/* ── Section 3: Room ─────────────────────────────────────────── */}
+            {/* ── Section 3: Room / Property ──────────────────────────────── */}
             <div className="nbm-section">
-              <div className="nbm-section-title">{t('nbSectionRoom')}</div>
+              <div className="nbm-section-title">{isWP ? t('booking.wholeProperty') : t('nbSectionRoom')}</div>
               <div className="form-grid">
                 <div className="form-group span-2">
-                  {!datesValid ? (
-                    <select className="form-control" disabled>
-                      <option>{t('nbSelectDatesFirst')}</option>
-                    </select>
-                  ) : availableRooms.length === 0 ? (
-                    <div className="form-error" style={{ display: 'inline-block' }}>
-                      {t('noRoomsForDates')}
-                    </div>
+                  {isWP ? (
+                    !datesValid ? (
+                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{t('nbSelectDatesFirst')}</span>
+                    ) : wpPropertyBooked ? (
+                      <div className="form-error" style={{ display: 'inline-block' }}>
+                        {t('noRoomsForDates')}
+                      </div>
+                    ) : (
+                      <div style={{
+                        background: 'var(--tint-bg)', border: '1px solid var(--tint-border)',
+                        borderRadius: 8, padding: '10px 14px', fontSize: '0.875rem', color: 'var(--accent-dark)',
+                      }}>
+                        <span style={{ fontWeight: 600 }}>{t('booking.wholeProperty')}</span>
+                        {nightsCount && wpRate > 0 && (
+                          <span style={{ marginLeft: 12, color: '#6b7280' }}>
+                            {nightsCount} × {currencySymbol}{wpRate.toFixed(2)}{t('perNight')} = {fmtCurrency(roomSubtotal)}
+                          </span>
+                        )}
+                      </div>
+                    )
                   ) : (
-                    <select
-                      className="form-control"
-                      value={form.roomId}
-                      onChange={set('roomId')}
-                    >
-                      <option value="">{t('selectRoom')}</option>
-                      {availableRooms.map(r => (
-                        <option key={r.id} value={r.id}>
-                          {r.name} ({r.type}) · {t('guestWord')(r.capacity)} · {currencySymbol}{r.price_per_night}{t('perNight')}
-                        </option>
-                      ))}
-                    </select>
+                    !datesValid ? (
+                      <select className="form-control" disabled>
+                        <option>{t('nbSelectDatesFirst')}</option>
+                      </select>
+                    ) : availableRooms.length === 0 ? (
+                      <div className="form-error" style={{ display: 'inline-block' }}>
+                        {t('noRoomsForDates')}
+                      </div>
+                    ) : (
+                      <select
+                        className="form-control"
+                        value={form.roomId}
+                        onChange={set('roomId')}
+                      >
+                        <option value="">{t('selectRoom')}</option>
+                        {availableRooms.map(r => (
+                          <option key={r.id} value={r.id}>
+                            {r.name} ({r.type}) · {t('guestWord')(r.capacity)} · {currencySymbol}{r.price_per_night}{t('perNight')}
+                          </option>
+                        ))}
+                      </select>
+                    )
                   )}
                 </div>
 
@@ -623,12 +650,17 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     className="form-control"
                     value={form.numGuests}
                     min="1"
-                    max={selectedRoom?.capacity ?? 20}
+                    max={isWP ? (property?.total_capacity ?? 20) : (selectedRoom?.capacity ?? 20)}
                     onChange={set('numGuests')}
                   />
-                  {selectedRoom && (
-                    <span className="form-hint">{t('capacity')}: {selectedRoom.capacity}</span>
-                  )}
+                  {isWP
+                    ? property?.total_capacity
+                      ? <span className="form-hint">{t('booking.maxGuests')}: {property.total_capacity}</span>
+                      : null
+                    : selectedRoom
+                      ? <span className="form-hint">{t('capacity')}: {selectedRoom.capacity}</span>
+                      : null
+                  }
                 </div>
 
                 {/* Source */}
@@ -647,15 +679,25 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                   </select>
                 </div>
 
-                {/* Price breakdown — shown once room + dates are selected */}
-                {selectedRoom && nightsCount && (
+                {/* Price breakdown — shown once room/property + dates are set */}
+                {((isWP && nightsCount && wpRate > 0) || (!isWP && selectedRoom && nightsCount)) && (
                   <div className="form-group span-2">
                     <div style={{
                       background: '#f8fafc', border: '1px solid var(--border)',
                       borderRadius: 8, overflow: 'hidden', fontSize: '0.85rem',
                     }}>
-                      {/* Room row(s) — one per rate-period segment when breakdown is available */}
-                      {(rateBreakdown?.breakdown ?? []).length > 0 ? (
+                      {/* Room row(s) */}
+                      {isWP ? (
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between',
+                          padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                        }}>
+                          <span style={{ color: '#64748b' }}>
+                            {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${wpRate.toFixed(2)}`)}
+                          </span>
+                          <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
+                        </div>
+                      ) : (rateBreakdown?.breakdown ?? []).length > 0 ? (
                         rateBreakdown.breakdown.map((seg, i) => (
                           <div key={i} style={{
                             display: 'flex', justifyContent: 'space-between',
@@ -736,7 +778,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
             <button
               type="submit"
               className="btn-primary"
-              disabled={submitting || !!availabilityError || (datesValid && availableRooms.length === 0)}
+              disabled={submitting || !!availabilityError || wpPropertyBooked || (!isWP && datesValid && availableRooms.length === 0)}
             >
               {submitting ? t('creating') : t('createBooking')}
             </button>

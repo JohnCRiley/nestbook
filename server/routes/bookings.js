@@ -258,19 +258,31 @@ bookingsRouter.get('/:id', (req, res) => {
 bookingsRouter.post('/', (req, res) => {
   try {
     const {
-      property_id, room_id, guest_id,
+      property_id, guest_id,
       check_in_date, check_out_date,
       num_guests, status, source, notes, total_price, breakfast_added,
       breakfast_start_date, breakfast_guests, breakfast_price_per_person
     } = req.body;
 
-    if (!property_id || !room_id || !guest_id || !check_in_date || !check_out_date) {
+    if (!property_id || !guest_id || !check_in_date || !check_out_date) {
       return res.status(400).json({
-        error: 'property_id, room_id, guest_id, check_in_date and check_out_date are required'
+        error: 'property_id, guest_id, check_in_date and check_out_date are required'
       });
     }
     if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
       return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    // For whole_property rentals, auto-assign to the first room if room_id not provided
+    let room_id = req.body.room_id;
+    const prop = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(property_id);
+    if (prop?.rental_type === 'whole_property' && !room_id) {
+      const firstRoom = db.prepare('SELECT id FROM rooms WHERE property_id = ? ORDER BY id LIMIT 1').get(property_id);
+      room_id = firstRoom?.id;
+    }
+
+    if (!room_id) {
+      return res.status(400).json({ error: 'room_id is required' });
     }
 
     if (check_out_date <= check_in_date) {

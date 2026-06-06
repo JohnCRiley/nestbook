@@ -1806,6 +1806,7 @@ a { text-decoration: none; }
 /* ── Whole-property monthly calendar ────────────────────────────────────── */
 
 .wpc-container {
+  width: 100%;
   margin-top: 4px;
 }
 
@@ -1820,20 +1821,19 @@ a { text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 28px;
+  width: 100%;
 }
 
 .wpc-two-up {
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 32px;
-}
-
-.wpc-two-up .wpc-month {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
 }
 
 .wpc-month {
-  max-width: 380px;
+  width: 100%;
+  min-width: 0;
 }
 
 .wpc-month-title {
@@ -1846,7 +1846,7 @@ a { text-decoration: none; }
 .wpc-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
+  gap: 8px;
 }
 
 .wpc-dow {
@@ -1868,8 +1868,7 @@ a { text-decoration: none; }
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 36px;
-  max-height: 52px;
+  min-height: 60px;
 }
 
 .wpc-pad {
