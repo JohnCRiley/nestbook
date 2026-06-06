@@ -704,6 +704,11 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE rooms ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
   db.prepare(`UPDATE rooms SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
 
+  // iCal sync token for whole-property mode — one feed covering all rooms
+  try { db.exec(`ALTER TABLE properties ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
+  db.prepare(`UPDATE properties SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
+  console.log('✓ Property iCal tokens backfilled.');
+
   // ── Prospect Outreach CRM ─────────────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS prospects (

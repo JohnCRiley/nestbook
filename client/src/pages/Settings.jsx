@@ -940,8 +940,8 @@ export default function Settings() {
             </PlanGate>
           </div>
 
-          {/* Calendar Sync — iCal export per room (collapsible) */}
-          {rooms.length > 0 && (
+          {/* Calendar Sync — iCal export (collapsible) */}
+          {(rooms.length > 0 || activeProperty?.rental_type === 'whole_property') && (
             <div className="danger-zone-card" style={{ marginTop: 16 }}>
               <button
                 className="danger-zone-toggle"
@@ -961,25 +961,23 @@ export default function Settings() {
 
               {calendarSyncOpen && (
                 <div className="danger-zone-body" style={{ padding: '16px 20px' }}>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16, lineHeight: 1.55 }}>
-                    {t('settings.calendarSyncInstructions')}
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    {rooms.map((room) => {
-                      const icalUrl = room.ical_token
-                        ? `${window.location.origin}/api/ical/${room.property_id}/${room.id}/${room.ical_token}`
-                        : null;
-                      return (
-                        <div key={room.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
+                  {activeProperty?.rental_type === 'whole_property' ? (
+                    /* ── Whole property: single iCal feed ── */
+                    <>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16, lineHeight: 1.55 }}>
+                        {t('settings.icalWholeHint')}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div>
                           <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a', marginBottom: 6 }}>
-                            {room.name}
+                            {t('settings.icalPropertyLabel')}
                           </div>
-                          {icalUrl ? (
+                          {property?.ical_token ? (
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                               <input
                                 readOnly
-                                value={icalUrl}
-                                onFocus={(e) => e.target.select()}
+                                value={`${window.location.origin}/api/ical/${activeProperty.id}/property/${property.ical_token}`}
+                                onClick={(e) => e.target.select()}
                                 className="form-control"
                                 style={{ flex: 1, minWidth: 220, fontSize: '0.78rem', color: '#475569', fontFamily: 'monospace' }}
                               />
@@ -987,22 +985,69 @@ export default function Settings() {
                                 className="btn-secondary"
                                 style={{ flexShrink: 0, fontSize: '0.8rem', padding: '6px 14px' }}
                                 onClick={() => {
-                                  navigator.clipboard.writeText(icalUrl).then(() => {
-                                    setCopiedRoomId(room.id);
+                                  const url = `${window.location.origin}/api/ical/${activeProperty.id}/property/${property.ical_token}`;
+                                  navigator.clipboard.writeText(url).then(() => {
+                                    setCopiedRoomId('property');
                                     setTimeout(() => setCopiedRoomId(null), 2000);
                                   });
                                 }}
                               >
-                                {copiedRoomId === room.id ? t('settings.copied') : t('settings.copyUrl')}
+                                {copiedRoomId === 'property' ? t('settings.copied') : t('settings.copyUrl')}
                               </button>
                             </div>
                           ) : (
-                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Token not yet generated — save the room to create one.</span>
+                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Token not yet generated — reload the page to create one.</span>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* ── B&B / rooms mode: one URL per room ── */
+                    <>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16, lineHeight: 1.55 }}>
+                        {t('settings.calendarSyncInstructions')}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        {rooms.map((room) => {
+                          const icalUrl = room.ical_token
+                            ? `${window.location.origin}/api/ical/${room.property_id}/${room.id}/${room.ical_token}`
+                            : null;
+                          return (
+                            <div key={room.id} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0f172a', marginBottom: 6 }}>
+                                {room.name}
+                              </div>
+                              {icalUrl ? (
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <input
+                                    readOnly
+                                    value={icalUrl}
+                                    onFocus={(e) => e.target.select()}
+                                    className="form-control"
+                                    style={{ flex: 1, minWidth: 220, fontSize: '0.78rem', color: '#475569', fontFamily: 'monospace' }}
+                                  />
+                                  <button
+                                    className="btn-secondary"
+                                    style={{ flexShrink: 0, fontSize: '0.8rem', padding: '6px 14px' }}
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(icalUrl).then(() => {
+                                        setCopiedRoomId(room.id);
+                                        setTimeout(() => setCopiedRoomId(null), 2000);
+                                      });
+                                    }}
+                                  >
+                                    {copiedRoomId === room.id ? t('settings.copied') : t('settings.copyUrl')}
+                                  </button>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Token not yet generated — save the room to create one.</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                   <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '14px 0 0' }}>
                     Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong> or <strong>Airbnb → Availability → Sync calendars</strong>.
                   </p>
