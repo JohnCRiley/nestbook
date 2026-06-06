@@ -15,7 +15,29 @@ const THEME_COLOURS = {
 };
 
 const TYPE_LABELS = {
-  bnb: 'B&B', gite: 'Gîte', guesthouse: 'Guest House', hotel: 'Hotel', other: '',
+  bnb:          'B&B',
+  bb:           'B&B',
+  guesthouse:   'Guest House',
+  inn:          'Inn',
+  hotel:        'Hotel',
+  hostel:       'Hostel',
+  gite:         'Gîte',
+  cottage:      'Holiday Cottage',
+  villa:        'Villa',
+  apartment:    'Holiday Apartment',
+  lodge:        'Lodge',
+  caravan:      'Holiday Chalet',
+  glamping:     'Glamping',
+  shepherds_hut: "Shepherd's Hut",
+  treehouse:    'Treehouse',
+  narrowboat:   'Narrowboat',
+  farmhouse:    'Farmhouse',
+  chateau:      'Château',
+  ryokan:       'Ryokan',
+  minsu:        '民宿',
+  homestay:     'Homestay',
+  resort_villa: 'Resort Villa',
+  other:        '',
 };
 
 const CURRENCY_SYMBOLS = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' };

@@ -621,6 +621,85 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE properties ADD COLUMN bathroom_count INTEGER`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN whole_property_rate REAL`); } catch {}
 
+  // Expand properties.type CHECK constraint to include the full accommodation type list.
+  // Detects by checking for 'cottage' (not in old constraint).
+  {
+    const propSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='properties'`).get()?.sql ?? '';
+    if (!propSql.includes("'cottage'")) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE properties_v3 (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            name                 TEXT    NOT NULL,
+            type                 TEXT    NOT NULL DEFAULT 'other'
+                                 CHECK(type IN (
+                                   'bnb','bb','guesthouse','inn','hotel','hostel',
+                                   'gite','cottage','villa','apartment','lodge',
+                                   'caravan','glamping','shepherds_hut','treehouse',
+                                   'narrowboat','farmhouse','chateau',
+                                   'ryokan','minsu','homestay','resort_villa','other'
+                                 )),
+            address              TEXT,
+            city                 TEXT,
+            country              TEXT,
+            check_in_time        TEXT    NOT NULL DEFAULT '15:00',
+            check_out_time       TEXT    NOT NULL DEFAULT '11:00',
+            currency             TEXT    NOT NULL DEFAULT 'EUR',
+            locale               TEXT    NOT NULL DEFAULT 'en' CHECK(locale IN ('en','fr','es','de','nl')),
+            owner_id             INTEGER REFERENCES users(id),
+            created_at           TEXT    NOT NULL DEFAULT (datetime('now')),
+            breakfast_included   INTEGER NOT NULL DEFAULT 0,
+            require_deposit      INTEGER NOT NULL DEFAULT 0,
+            deposit_amount       REAL    NOT NULL DEFAULT 0,
+            breakfast_price      REAL    NOT NULL DEFAULT 0,
+            breakfast_start_time TEXT    DEFAULT '07:00',
+            breakfast_end_time   TEXT    DEFAULT '11:00',
+            theme                TEXT    NOT NULL DEFAULT 'forest',
+            booking_slug         TEXT,
+            description          TEXT,
+            hero_image_url       TEXT,
+            hero_photo           TEXT,
+            rental_type          TEXT    DEFAULT 'rooms',
+            total_capacity       INTEGER,
+            bedroom_count        INTEGER,
+            bathroom_count       INTEGER,
+            whole_property_rate  REAL
+          )
+        `);
+        db.exec(`
+          INSERT INTO properties_v3
+            (id, name, type, address, city, country, check_in_time, check_out_time,
+             currency, locale, owner_id, created_at,
+             breakfast_included, require_deposit, deposit_amount, breakfast_price,
+             breakfast_start_time, breakfast_end_time, theme, booking_slug,
+             description, hero_image_url, hero_photo,
+             rental_type, total_capacity, bedroom_count, bathroom_count, whole_property_rate)
+          SELECT
+            id, name, type, address, city, country, check_in_time, check_out_time,
+            currency, locale, owner_id, created_at,
+            COALESCE(breakfast_included, 0), COALESCE(require_deposit, 0),
+            COALESCE(deposit_amount, 0), COALESCE(breakfast_price, 0),
+            COALESCE(breakfast_start_time, '07:00'), COALESCE(breakfast_end_time, '11:00'),
+            COALESCE(theme, 'forest'), booking_slug,
+            description, hero_image_url, hero_photo,
+            COALESCE(rental_type, 'rooms'), total_capacity, bedroom_count, bathroom_count, whole_property_rate
+          FROM properties
+        `);
+        db.exec(`DROP TABLE properties`);
+        db.exec(`ALTER TABLE properties_v3 RENAME TO properties`);
+        db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_properties_booking_slug ON properties(booking_slug)`);
+        db.exec(`COMMIT`);
+      } catch (e) {
+        db.exec(`ROLLBACK`);
+        throw e;
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+      console.log('✓ properties.type constraint expanded to full accommodation type list.');
+    }
+  }
+
   // iCal sync token per room — unguessable URL for calendar feed export
   try { db.exec(`ALTER TABLE rooms ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
   db.prepare(`UPDATE rooms SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
