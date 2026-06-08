@@ -487,31 +487,6 @@ const nb = document.querySelector('.navbar');
 window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
 </script>
 <script src="/navbar.js"></script>
-
-<div id="cookieBanner" style="display:none; position:fixed; bottom:0; left:0; right:0;
-  background:#1a4710; color:#fff; padding:16px 24px; z-index:9999;
-  align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-  <p style="margin:0; font-size:0.85rem; line-height:1.5;">
-    We use cookies to improve your experience on NestBook.
-    <a href="/cookies.html" style="color:#d9f0cc; text-decoration:underline;">Learn more</a>
-  </p>
-  <button id="cookieAccept" style="background:#fff; color:#1a4710; border:none;
-    padding:8px 20px; border-radius:6px; font-weight:600; cursor:pointer;
-    font-family:inherit; white-space:nowrap; flex-shrink:0;">Got it</button>
-</div>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var banner = document.getElementById('cookieBanner');
-    var btn    = document.getElementById('cookieAccept');
-    if (!banner || !btn) return;
-    try {
-      if (localStorage.getItem('nb-cookies') !== 'accepted') banner.style.display = 'flex';
-    } catch(e) { banner.style.display = 'flex'; }
-    btn.addEventListener('click', function() {
-      banner.style.display = 'none';
-      try { localStorage.setItem('nb-cookies', 'accepted'); } catch(e) {}
-    });
-  });
-</script>
+<script src="/cookie-banner.js"></script>
 </body>
 </html>

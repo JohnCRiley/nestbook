@@ -489,25 +489,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 </script>
 
-<!-- ── Cookie consent banner ─────────────────────────────────────────── -->
-<div id="cookieBanner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:999; background:#0f2909; color:rgba(255,255,255,0.85); padding:16px 24px; align-items:center; gap:16px; flex-wrap:wrap; font-size:0.875rem; box-shadow:0 -2px 16px rgba(0,0,0,0.2);">
-  <span style="flex:1; min-width:200px;">We use essential cookies only — for login sessions and language preferences. No tracking, no advertising. <a href="/cookies.html" style="color:#d9f0cc; text-decoration:underline;">Learn more</a></span>
-  <button id="cookieAccept" style="background:#2f771b; color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:0.875rem; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap; flex-shrink:0;">Got it</button>
-</div>
-<script>
-(function () {
-  var banner = document.getElementById('cookieBanner');
-  var btn    = document.getElementById('cookieAccept');
-  if (!banner || !btn) return;
-  var ok = false;
-  try { ok = localStorage.getItem('nb-cookies') === 'accepted'; } catch (_) {}
-  if (!ok) banner.style.display = 'flex';
-  btn.addEventListener('click', function () {
-    banner.style.display = 'none';
-    try { localStorage.setItem('nb-cookies', 'accepted'); } catch (_) {}
-  });
-})();
-</script>
+<script src="/cookie-banner.js"></script>
 <script src="/navbar.js"></script>
 </body>
 </html>
