@@ -1787,6 +1787,7 @@ a { text-decoration: none; }
   flex-shrink: 0;
 }
 .legend-swatch.sw-arriving    { background: var(--light-green); border: 1px solid var(--tint-border); }
+.legend-swatch.sw-wp-arriving { background: var(--accent-dark); }
 .legend-swatch.sw-booked      { background: var(--accent); }
 .legend-swatch.sw-checked-out { background: #e2e8f0; }
 .legend-swatch.sw-available   { background: white; border: 1px solid var(--border); }

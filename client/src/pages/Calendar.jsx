@@ -299,7 +299,7 @@ export default function Calendar() {
 
       {/* ── Legend ──────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 14 }}>
-        <Legend t={t} showBreakfast={!isWholeProp} />
+        <Legend t={t} showBreakfast={!isWholeProp} isWholeProp={isWholeProp} />
       </div>
 
       {isWholeProp ? (
@@ -669,9 +669,9 @@ function HistoricalCell({ booking: b, onClick }) {
 
 // ── Legend ────────────────────────────────────────────────────────────────────
 
-function Legend({ t, showBreakfast = true }) {
+function Legend({ t, showBreakfast = true, isWholeProp = false }) {
   const items = [
-    { cls: 'sw-arriving',    label: t('calLegendInHouse') },
+    { cls: isWholeProp ? 'sw-wp-arriving' : 'sw-arriving', label: t('calLegendInHouse') },
     { cls: 'sw-booked',      label: t('calLegendConfirmed') },
     { cls: 'sw-checked-out', label: t('calLegendCheckedOut') },
     { cls: 'sw-available',   label: t('calLegendAvailable') },
