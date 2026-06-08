@@ -369,7 +369,7 @@ export default function Calendar() {
       {selectedBooking && (
         <BookingPanel
           booking={selectedBooking}
-          onClose={() => setSelectedBooking(null)}
+          onClose={() => { setSelectedBooking(null); if (isWholeProp) refreshBookings(); }}
           onStatusUpdate={handlePanelStatusUpdate}
           onSave={(updated) => {
             setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
@@ -430,10 +430,11 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
 
     if (booking) {
       const isCheckin = booking.check_in_date === iso;
+      const statusCls = booking.status === 'arriving' ? 'wpc-arriving' : 'wpc-booked';
       cells.push(
         <div
           key={iso}
-          className={`wpc-cell wpc-booked${isToday ? ' wpc-today' : ''}`}
+          className={`wpc-cell ${statusCls}${isToday ? ' wpc-today' : ''}`}
           onClick={() => onBookedClick(booking)}
           title={`${booking.guest_first_name} ${booking.guest_last_name}`}
         >

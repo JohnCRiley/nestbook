@@ -1926,6 +1926,16 @@ a { text-decoration: none; }
   opacity: 0.88;
 }
 
+.wpc-arriving {
+  background: var(--accent-dark, #166534);
+  color: #fff;
+  border: 1px solid #14532d;
+}
+
+.wpc-arriving:hover {
+  opacity: 0.88;
+}
+
 .wpc-historical {
   background: #e2e8f0;
   color: #94a3b8;
