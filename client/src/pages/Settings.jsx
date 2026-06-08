@@ -1682,6 +1682,12 @@ function FacebookBookingSection({ property, onSaved }) {
           </button>
         </div>
 
+        {property?.plan === 'free' && (
+          <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>
+            {t('settings.webpageFreeTip')}
+          </p>
+        )}
+
         {/* ── Facebook instructions ── */}
         <div className="embed-steps">
           {[
