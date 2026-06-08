@@ -228,23 +228,25 @@ export default function Dashboard() {
             <h1>{greeting}</h1>
             <div className="page-date">{formatDateLong(today, locale)}</div>
           </div>
-          {/* Quick action buttons */}
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-            <button
-              className="btn-secondary"
-              onClick={() => navigate('/bookings', { state: { openModal: true } })}
-              title={t('newBookingTooltip')}
-            >
-              {t('newBooking')}
-            </button>
-            <button
-              className="btn-primary"
-              onClick={() => navigate('/guests?newguest=true')}
-              title={t('newGuestTooltip')}
-            >
-              {t('newGuest')}
-            </button>
-          </div>
+          {/* Quick action buttons — hidden in whole_property mode */}
+          {property.rental_type !== 'whole_property' && (
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button
+                className="btn-secondary"
+                onClick={() => navigate('/bookings', { state: { openModal: true } })}
+                title={t('newBookingTooltip')}
+              >
+                {t('newBooking')}
+              </button>
+              <button
+                className="btn-primary"
+                onClick={() => navigate('/guests?newguest=true')}
+                title={t('newGuestTooltip')}
+              >
+                {t('newGuest')}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
