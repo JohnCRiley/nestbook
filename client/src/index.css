@@ -1691,6 +1691,8 @@ a { text-decoration: none; }
   background: var(--light-green);
 }
 .cal-cell.is-arriving:hover { background: var(--tint-border); }
+.cal-cell.is-arriving:hover .cal-guest-name,
+.cal-cell.is-arriving:hover .cal-booking-nights { color: white; }
 
 /* checked out */
 .cal-cell.is-checked-out {
@@ -1769,7 +1771,7 @@ a { text-decoration: none; }
   line-height: 1;
 }
 .cal-cell.is-empty:hover .cal-empty-hint {
-  color: var(--accent);
+  color: var(--tint-text);
 }
 
 /* ── Legend ── */
