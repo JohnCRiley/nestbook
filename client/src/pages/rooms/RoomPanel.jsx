@@ -135,6 +135,7 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       onRoomUpdated(await res.json());
+      onClose();
     } catch (err) {
       setError(err.message);
     } finally {

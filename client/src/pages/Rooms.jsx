@@ -383,8 +383,21 @@ function formatCheckOut(dateStr, locale = 'en') {
 
 // ── WholePropertyPage ─────────────────────────────────────────────────────────
 
+const ROOM_TYPE_LABELS = {
+  double: 'Double bedroom', twin: 'Twin bedroom', single: 'Single bedroom',
+  bunk: 'Bunk room', master: 'Master suite', kids: 'Kids room',
+  bathroom: 'Bathroom', ensuite: 'En-suite', shower_room: 'Shower room', wc: 'WC / Cloakroom',
+  living_room: 'Living room', kitchen: 'Kitchen', kitchen_diner: 'Kitchen / Diner',
+  dining_room: 'Dining room', study: 'Study / Office', games_room: 'Games room',
+  cinema_room: 'Cinema room', playroom: 'Playroom',
+  garden: 'Garden', terrace: 'Terrace / Patio', pool: 'Swimming pool',
+  hot_tub: 'Hot tub', sauna: 'Sauna', gym: 'Gym',
+  garage: 'Garage / Parking', games_area: 'Outdoor games area', other: 'Other',
+};
+
 function BedroomCard({ room, isSelected, onClick, t }) {
   const amenities = (room.amenities ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const typeLabel = ROOM_TYPE_LABELS[room.type] ?? room.type;
 
   return (
     <div
@@ -394,7 +407,7 @@ function BedroomCard({ room, isSelected, onClick, t }) {
     >
       <div className="room-card-body">
         <div className="room-name">{room.name}</div>
-        {room.type && <div className="room-card-type">{room.type}</div>}
+        {typeLabel && <div className="room-card-type">{typeLabel}</div>}
         <div className="room-facts">
           <span className="room-fact">
             <GuestIcon />
@@ -416,6 +429,27 @@ function BedroomCard({ room, isSelected, onClick, t }) {
             )}
           </div>
         )}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)',
+        }}>
+          {room.photo_count > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>
+              {room.primary_photo && (
+                <img
+                  src={`/uploads/rooms/${room.primary_photo}`}
+                  alt=""
+                  style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }}
+                />
+              )}
+              <span>📸 {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.78rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
+              📷 No photos yet
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -433,7 +467,7 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
         </div>
         <button className="btn-primary" onClick={onAddBedroom}>
           <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          {t('rooms.addBedroom')}
+          {t('rooms.addRoom')}
         </button>
       </div>
 

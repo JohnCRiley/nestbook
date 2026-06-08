@@ -900,6 +900,7 @@ export const LANGS = {
     'prop.other':         'Other',
     'nav.property':          'Property',
     'rooms.addBedroom':      'Add Bedroom',
+    'rooms.addRoom':         'Add room',
     'rooms.bedroomName':     'Bedroom Name',
     'rooms.bedroomHint':     'e.g. Master Bedroom, Loft, Room 1',
     'rooms.sleeps':          'Sleeps',

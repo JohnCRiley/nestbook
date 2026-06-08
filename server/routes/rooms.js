@@ -81,14 +81,22 @@ roomsRouter.get('/', (req, res) => {
       const offset    = (pageNum - 1) * pageLimit;
 
       const total = db.prepare(`SELECT COUNT(*) as n FROM rooms ${where}`).get(...params).n;
-      const rows  = db.prepare(
-        `SELECT * FROM rooms ${where} ORDER BY id LIMIT ? OFFSET ?`
-      ).all(...params, pageLimit, offset);
+      const rows  = db.prepare(`
+        SELECT *,
+          (SELECT COUNT(*) FROM room_photos WHERE room_id = id) AS photo_count,
+          (SELECT filename FROM room_photos WHERE room_id = id ORDER BY display_order ASC LIMIT 1) AS primary_photo
+        FROM rooms ${where} ORDER BY id LIMIT ? OFFSET ?
+      `).all(...params, pageLimit, offset);
 
       return res.json({ rooms: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
     }
 
-    res.json(db.prepare(`SELECT * FROM rooms ${where} ORDER BY id`).all(...params));
+    res.json(db.prepare(`
+      SELECT *,
+        (SELECT COUNT(*) FROM room_photos WHERE room_id = id) AS photo_count,
+        (SELECT filename FROM room_photos WHERE room_id = id ORDER BY display_order ASC LIMIT 1) AS primary_photo
+      FROM rooms ${where} ORDER BY id
+    `).all(...params));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

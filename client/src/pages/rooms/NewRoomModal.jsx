@@ -44,7 +44,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
         body: JSON.stringify({
           property_id:        property?.id ?? 1,
           name:               form.name.trim(),
-          type:               isWP ? 'double' : form.type,
+          type:               form.type,
           price_per_night:    isWP ? 0 : Number(form.price_per_night),
           capacity:           Number(form.capacity),
           amenities:          form.amenities.trim() || null,
@@ -83,7 +83,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
     onClose();
   }
 
-  const modalTitle = isWP ? t('rooms.addBedroom') : t('moRoomTitle');
+  const modalTitle = isWP ? t('rooms.addRoom') : t('moRoomTitle');
 
   return (
     <div className="modal-overlay" onClick={handleBackdropClick}>
@@ -98,15 +98,66 @@ export default function NewRoomModal({ onClose, onSuccess }) {
           <div className="modal-body">
             {error && <div className="form-error">{error}</div>}
 
+            {isWP && (
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)', marginBottom: 12 }}>
+                Add every room and space in your property — bedrooms, bathrooms, living areas, outdoor spaces. Each one can have photos and a description that appears on your booking page.
+              </p>
+            )}
+
             <div className="form-grid">
               <div className="form-group span-2">
                 <label className="form-label">
-                  {isWP ? t('rooms.bedroomName') : t('roomNameLabel')} *
+                  {isWP ? 'Room name' : t('roomNameLabel')} *
                 </label>
                 <input name="name" className="form-control" value={form.name}
                   onChange={handleChange} required autoFocus
-                  placeholder={isWP ? t('rooms.bedroomHint') : 'e.g. La Suite Lavande'} />
+                  placeholder={isWP ? 'e.g. Master Bedroom, Kitchen, Garden' : 'e.g. La Suite Lavande'} />
               </div>
+
+              {isWP && (
+                <div className="form-group span-2">
+                  <label className="form-label">Room type</label>
+                  <select name="type" className="form-control" value={form.type} onChange={handleChange}>
+                    <optgroup label="Bedrooms">
+                      <option value="double">Double bedroom</option>
+                      <option value="twin">Twin bedroom</option>
+                      <option value="single">Single bedroom</option>
+                      <option value="bunk">Bunk room</option>
+                      <option value="master">Master suite</option>
+                      <option value="kids">Kids room</option>
+                    </optgroup>
+                    <optgroup label="Bathrooms">
+                      <option value="bathroom">Bathroom</option>
+                      <option value="ensuite">En-suite</option>
+                      <option value="shower_room">Shower room</option>
+                      <option value="wc">WC / Cloakroom</option>
+                    </optgroup>
+                    <optgroup label="Living spaces">
+                      <option value="living_room">Living room</option>
+                      <option value="kitchen">Kitchen</option>
+                      <option value="kitchen_diner">Kitchen / Diner</option>
+                      <option value="dining_room">Dining room</option>
+                      <option value="study">Study / Office</option>
+                      <option value="games_room">Games room</option>
+                      <option value="cinema_room">Cinema room</option>
+                      <option value="playroom">Playroom</option>
+                    </optgroup>
+                    <optgroup label="Outdoor &amp; leisure">
+                      <option value="garden">Garden</option>
+                      <option value="terrace">Terrace / Patio</option>
+                      <option value="pool">Swimming pool</option>
+                      <option value="hot_tub">Hot tub</option>
+                      <option value="sauna">Sauna</option>
+                      <option value="gym">Gym</option>
+                      <option value="garage">Garage / Parking</option>
+                      <option value="games_area">Outdoor games area</option>
+                    </optgroup>
+                    <optgroup label="Other">
+                      <option value="other">Other</option>
+                    </optgroup>
+                  </select>
+                </div>
+              )}
 
               {!isWP && (
                 <div className="form-group">
