@@ -314,7 +314,6 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 <div class="hero hero-whole" style="${heroStyle}">
   ${mapIframe}
   ${heroInner}
-    <div class="hero-badge" data-i18n="page.wholeProperty">Entire property</div>
     <h1>${esc(name)}</h1>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     ${statsHtml ? `<div class="hero-stats">${statsHtml}</div>` : ''}
