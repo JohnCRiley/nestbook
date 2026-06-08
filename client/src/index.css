@@ -1079,7 +1079,7 @@ a { text-decoration: none; }
 }
 .bookings-table tbody tr:last-child td { border-bottom: none; }
 .bookings-table tbody tr:hover td,
-.data-table tr:hover td                 { background: var(--accent-dark); color: var(--header-text); }
+.data-table tr:hover td                 { background: var(--accent-dark); color: white; }
 .bookings-table tbody tr.row-selected   { background: var(--tint-bg); }
 
 .cell-guest-name { font-weight: 600; }
@@ -1670,7 +1670,7 @@ a { text-decoration: none; }
 .cal-cell:hover,
 .calendar-tile:hover {
   background: var(--accent-dark);
-  color: var(--header-text);
+  color: white;
 }
 .cal-cell.is-empty:hover {
   background: var(--tint-bg);
@@ -1683,7 +1683,7 @@ a { text-decoration: none; }
 }
 .cal-cell.is-booked:hover {
   background: var(--accent-dark);
-  color: var(--header-text);
+  color: white;
 }
 
 /* arriving today */
