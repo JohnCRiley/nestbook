@@ -321,7 +321,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Room availability bar ───────────────────────────────────────── */}
-      {rooms.length > 0 && (
+      {rooms.length > 0 && property.rental_type !== 'whole_property' && (
         <div className="stat-bar" style={{ marginBottom: 24 }}>
           {/* Available Tonight — clickable */}
           <button
@@ -379,7 +379,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Close popover on outside click ─────────────────────────────── */}
-      {showAvailablePopover && (
+      {showAvailablePopover && property.rental_type !== 'whole_property' && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 99 }}
           onClick={() => setShowAvailablePopover(false)}
