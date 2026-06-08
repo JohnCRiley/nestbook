@@ -107,22 +107,24 @@ export default function Dashboard() {
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
+  const norm = (s) => (s ?? '').split('T')[0];
+
   const occupiedTonight = bookings.filter((b) => b.status === 'arriving');
 
-  const arrivalsToday = bookings.filter((b) => b.check_in_date === today);
+  const arrivalsToday = bookings.filter((b) => norm(b.check_in_date) === today);
 
   const departuresToday = bookings.filter(
-    (b) => b.check_out_date === today && b.status !== 'cancelled'
+    (b) => norm(b.check_out_date) === today && b.status !== 'cancelled'
   );
 
   const monthStart   = today.slice(0, 7) + '-01';
   const monthRevenue = bookings
-    .filter((b) => b.status !== 'cancelled' && b.check_in_date >= monthStart && b.check_in_date <= today)
+    .filter((b) => b.status !== 'cancelled' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
     .reduce((sum, b) => sum + (b.total_price || 0), 0);
 
   const in7Days = addDays(today, 7);
   const upcoming = bookings.filter(
-    (b) => b.status === 'confirmed' && b.check_in_date > today && b.check_in_date <= in7Days
+    (b) => b.status === 'confirmed' && norm(b.check_in_date) > today && norm(b.check_in_date) <= in7Days
   );
 
   // Room stats — only confirmed/arriving bookings occupy a room
@@ -131,8 +133,8 @@ export default function Dashboard() {
       .filter((b) =>
         b.status !== 'cancelled' &&
         b.status !== 'checked_out' &&
-        b.check_in_date <= today &&
-        b.check_out_date > today
+        norm(b.check_in_date) <= today &&
+        norm(b.check_out_date) > today
       )
       .map((b) => b.room_id)
   );

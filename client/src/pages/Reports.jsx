@@ -77,6 +77,7 @@ function ReportsContent() {
   const plan = usePlan();
   const { property, properties } = useLocale();
   const currency = property?.currency ?? 'EUR';
+  const isWP     = property?.rental_type === 'whole_property';
 
   // ── Revenue report state ───────────────────────────────────────────────────
   const [preset,     setPreset]     = useState('this_month');
@@ -128,6 +129,16 @@ function ReportsContent() {
   }, [propFilter, property?.id]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function formatMonthKey(key) {
+    if (!key) return '—';
+    const [y, m] = key.split('-').map(Number);
+    try {
+      return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1));
+    } catch {
+      return key;
+    }
+  }
 
   function fmtMoney(n) {
     try {
@@ -272,6 +283,63 @@ function ReportsContent() {
     const totalRefunds = results.reduce((s, b) => s + (b.refund_amount || 0), 0);
     return { totalBookings, totalNights, totalRevenue, totalTax, netRevenue, avgBookingValue, occupancy, totalRefunds };
   }, [results, tax, from, to, rooms]);
+
+  const wpStats = useMemo(() => {
+    if (!results || !isWP) return null;
+    const stayLengths = results
+      .map(b => Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000)))
+      .filter(n => n > 0);
+    const avgStay      = stayLengths.length
+      ? Math.round((stayLengths.reduce((s, n) => s + n, 0) / stayLengths.length) * 10) / 10
+      : 0;
+    const longestStay  = stayLengths.length ? Math.max(...stayLengths) : 0;
+    const shortestStay = stayLengths.length ? Math.min(...stayLengths) : 0;
+    const byMonth = {};
+    for (const b of results) {
+      const m = (b.check_in_date ?? '').slice(0, 7);
+      if (!m) continue;
+      byMonth[m] = (byMonth[m] ?? 0) + (b.total_price || 0);
+    }
+    const busiestMonthKey = Object.keys(byMonth).sort((a, bk) => byMonth[bk] - byMonth[a])[0] ?? null;
+    return { avgStay, longestStay, shortestStay, busiestMonthKey };
+  }, [results, isWP]);
+
+  const wpMonthlyOcc = useMemo(() => {
+    if (!results || !isWP) return [];
+    const bookedDates = new Set();
+    for (const b of results) {
+      if (b.status === 'cancelled') continue;
+      let cur = new Date((b.check_in_date  ?? '').slice(0, 10) + 'T00:00:00Z');
+      const end = new Date((b.check_out_date ?? '').slice(0, 10) + 'T00:00:00Z');
+      while (cur < end) {
+        bookedDates.add(cur.toISOString().slice(0, 10));
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    }
+    const months     = [];
+    const startDate  = new Date(from + 'T00:00:00Z');
+    const endDate    = new Date(to   + 'T00:00:00Z');
+    let mDate = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), 1));
+    while (mDate < endDate) {
+      const y = mDate.getUTCFullYear();
+      const m = mDate.getUTCMonth();
+      const monthStart = new Date(Date.UTC(y, m, 1));
+      const monthEnd   = new Date(Date.UTC(y, m + 1, 1));
+      const rangeStart = startDate > monthStart ? startDate : monthStart;
+      const rangeEnd   = endDate   < monthEnd   ? endDate   : monthEnd;
+      let total = 0, booked = 0;
+      let cur = new Date(rangeStart);
+      while (cur < rangeEnd) {
+        total++;
+        if (bookedDates.has(cur.toISOString().slice(0, 10))) booked++;
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+      const pct = total > 0 ? Math.round((booked / total) * 100) : 0;
+      months.push({ key: `${y}-${String(m + 1).padStart(2, '0')}`, y, m, booked, total, pct });
+      mDate = new Date(Date.UTC(y, m + 1, 1));
+    }
+    return months;
+  }, [results, isWP, from, to]);
 
   // ── P&L summary ────────────────────────────────────────────────────────────
 
@@ -431,6 +499,220 @@ function ReportsContent() {
     }
 
     triggerDownload(csvBlocks.join('\n'), 'text/csv', `nestbook-report-${from}-${to}.csv`);
+  }
+
+  // ── WP CSV export ──────────────────────────────────────────────────────────
+
+  function downloadWPCSV() {
+    if (!results) return;
+    const headers = ['Guest name', 'Email', 'Check-in', 'Check-out', 'Nights', 'Rate per night', 'Total', 'Status', 'Source', 'Notes'];
+    const dataRows = results.map(b => {
+      const nights = Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000));
+      const total  = b.total_price || 0;
+      const rate   = nights > 0 ? total / nights : 0;
+      return [
+        `"${(`${b.guest_first_name || ''} ${b.guest_last_name || ''}`).trim()}"`,
+        `"${b.guest_email || ''}"`,
+        `"${b.check_in_date}"`,
+        `"${b.check_out_date}"`,
+        nights,
+        rate.toFixed(2),
+        total.toFixed(2),
+        `"${b.status || ''}"`,
+        `"${b.source || ''}"`,
+        `"${b.notes || ''}"`,
+      ].join(',');
+    });
+    const csvBlocks = [[headers.join(','), ...dataRows].join('\n')];
+
+    if (summary) {
+      const sumRow = ['""', '""', '""', '"TOTAL"',
+        summary.totalNights, '', summary.totalRevenue.toFixed(2),
+        '""', '""', '""'].join(',');
+      csvBlocks[0] += '\n' + sumRow;
+    }
+
+    const expenseHasData = EXPENSE_CATS.some(k => Number(expenses[k].amount) > 0);
+    const adjHasData = adjustments.some(a => Number(a.amount) > 0 || a.note);
+    if (adjHasData) {
+      csvBlocks.push('');
+      csvBlocks.push(t('reportAdjustments'));
+      csvBlocks.push([t('reportAdjNote'), t('reportAdjAmount')].join(','));
+      for (const a of adjustments) {
+        if (a.note || a.amount) csvBlocks.push([`"${a.note || '—'}"`, (-Number(a.amount || 0)).toFixed(2)].join(','));
+      }
+    }
+    if (expenseHasData) {
+      csvBlocks.push('');
+      csvBlocks.push(t('reportBusinessExpenses'));
+      csvBlocks.push([t('reportChargesCategory'), t('reportExpDescription'), t('reportExpAmount')].join(','));
+      for (const k of EXPENSE_CATS) {
+        const amt = Number(expenses[k].amount) || 0;
+        if (amt > 0 || expenses[k].desc) {
+          csvBlocks.push([`"${t(`expCat_${k}`)}"`, `"${expenses[k].desc}"`, amt.toFixed(2)].join(','));
+        }
+      }
+    }
+    if (plSummary) {
+      csvBlocks.push('');
+      csvBlocks.push(t('reportPL'));
+      csvBlocks.push([`"${t('reportPLBookingRevenue')}"`, plSummary.bookingRev.toFixed(2)].join(','));
+      csvBlocks.push([`"${t('reportPLTotalIncome')}"`, plSummary.totalIncome.toFixed(2)].join(','));
+      if (plSummary.totalRefunds > 0) csvBlocks.push([`"${t('reportPLLessRefunds')}"`, (-plSummary.totalRefunds).toFixed(2)].join(','));
+      if (plSummary.adjAmt > 0) csvBlocks.push([`"${t('reportPLLessAdj')}"`, (-plSummary.adjAmt).toFixed(2)].join(','));
+      csvBlocks.push([`"${t('reportPLTotalExpenses')}"`, (-plSummary.totalExpenses).toFixed(2)].join(','));
+      csvBlocks.push([`"${t('reportPLNetProfit')}"`, plSummary.netProfit.toFixed(2)].join(','));
+    }
+
+    triggerDownload(csvBlocks.join('\n'), 'text/csv', `nestbook-report-${from}-${to}.csv`);
+  }
+
+  // ── WP PDF export ──────────────────────────────────────────────────────────
+
+  function downloadWPPDF() {
+    if (!results || !summary) return;
+    const propName    = property?.name ?? 'Property';
+    const propAddress = property?.address ?? '';
+    const genDate     = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const tableRows = results.map(b => {
+      const nights = Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000));
+      const total  = b.total_price || 0;
+      const rate   = nights > 0 ? total / nights : 0;
+      const name   = `${b.guest_first_name || ''} ${b.guest_last_name || ''}`.trim();
+      return `<tr>
+        <td style="font-weight:500">${name}</td>
+        <td class="muted">${b.check_in_date}</td>
+        <td class="muted">${b.check_out_date}</td>
+        <td style="text-align:right">${nights}</td>
+        <td style="text-align:right">${fmtMoney(rate)}</td>
+        <td style="text-align:right;font-weight:600">${fmtMoney(total)}</td>
+      </tr>`;
+    }).join('');
+
+    const occRows = wpMonthlyOcc.map(mo => {
+      const label = formatMonthKey(mo.key);
+      const bar   = Math.round(mo.pct * 1.2);
+      return `<tr>
+        <td style="width:120px;font-weight:500">${label}</td>
+        <td>
+          <div style="background:#e2e8f0;border-radius:4px;height:12px;width:100%">
+            <div style="background:#1a4710;border-radius:4px;height:12px;width:${bar}%"></div>
+          </div>
+        </td>
+        <td style="width:200px;text-align:right;font-size:11px;color:#374151">${mo.booked} / ${mo.total} nights (${mo.pct}%)</td>
+      </tr>`;
+    }).join('');
+
+    let plSection = '';
+    if (plSummary) {
+      const expRows = EXPENSE_CATS
+        .filter(k => Number(expenses[k].amount) > 0)
+        .map(k => `<div class="pl-row"><span>${t(`expCat_${k}`)}${expenses[k].desc ? ` <small style="color:#64748b;font-size:10px">${expenses[k].desc}</small>` : ''}</span><span>${fmtMoney(Number(expenses[k].amount))}</span></div>`)
+        .join('');
+      plSection = `<div class="pl-box">
+  <h2>${t('reportPL')}</h2>
+  <div class="pl-group">
+    <div class="pl-label">${t('reportPLIncome')}</div>
+    <div class="pl-row"><span>${t('reportPLBookingRevenue')}</span><span>${fmtMoney(plSummary.bookingRev)}</span></div>
+    <div class="pl-row pl-subtotal"><span>${t('reportPLTotalIncome')}</span><span>${fmtMoney(plSummary.totalIncome)}</span></div>
+    ${plSummary.totalRefunds > 0 ? `<div class="pl-row pl-adj"><span>${t('reportPLLessRefunds')}</span><span>-${fmtMoney(plSummary.totalRefunds)}</span></div>` : ''}
+    ${adjustments.filter(a => Number(a.amount) > 0).map(a =>
+      `<div class="pl-row pl-adj"><span>${t('reportPLLessAdj')}${a.note ? ` (${a.note})` : ''}</span><span>-${fmtMoney(Number(a.amount))}</span></div>`
+    ).join('')}
+  </div>
+  ${expRows ? `<div class="pl-group" style="margin-top:12px">
+    <div class="pl-label">${t('reportPLExpenses')}</div>
+    ${expRows}
+    <div class="pl-row pl-subtotal"><span>${t('reportPLTotalExpenses')}</span><span>${fmtMoney(plSummary.totalExpenses)}</span></div>
+  </div>` : ''}
+  <div class="pl-net">
+    <span>${t('reportPLNetProfit')}</span>
+    <span style="color:${plSummary.netProfit >= 0 ? '#166534' : '#dc2626'}">${fmtMoney(plSummary.netProfit)}</span>
+  </div>
+  <div class="pl-disclaimer">${t('reportPLDisclaimer')}</div>
+</div>`;
+    }
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Revenue Report — ${propName}</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:40px;color:#0f172a;font-size:12px}
+  .prop-name{font-size:18px;font-weight:700;margin-bottom:2px}
+  .prop-addr{color:#64748b;margin-bottom:24px}
+  h1{font-size:22px;margin:0 0 4px}
+  h2{font-size:15px;margin:20px 0 10px}
+  .subtitle{color:#64748b;font-size:13px;margin-bottom:28px}
+  .summary{background:#f1f5f9;border-radius:8px;padding:18px;margin-bottom:28px}
+  .summary h2{margin:0 0 14px;font-size:15px}
+  .sum-grid{display:flex;flex-wrap:wrap;gap:12px}
+  .sum-item label{font-size:10px;color:#64748b;display:block;margin-bottom:2px}
+  .sum-item span{font-size:15px;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-bottom:28px;font-size:11px}
+  th{background:#1a4710;color:#fff;padding:7px 6px;text-align:left;white-space:nowrap}
+  td{padding:5px 6px;border-bottom:1px solid #e2e8f0}
+  tr:nth-child(even) td{background:#f8fafc}
+  .muted{color:#64748b}
+  .footer{color:#94a3b8;font-size:10px;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:8px}
+  .leaf{font-size:18px;float:right;opacity:.3}
+  .pl-box{background:#f0fdf4;border:2px solid #1a4710;border-radius:8px;padding:20px;margin:28px 0}
+  .pl-box h2{margin:0 0 14px;font-size:15px;color:#1a4710}
+  .pl-group{margin-bottom:8px}
+  .pl-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin:8px 0 4px}
+  .pl-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
+  .pl-subtotal{border-top:1px solid #1a4710;font-weight:700;margin-top:4px;padding-top:4px}
+  .pl-adj{color:#b45309}
+  .pl-net{display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:3px double #1a4710;margin-top:12px;padding-top:10px}
+  .pl-disclaimer{font-size:9px;color:#94a3b8;margin-top:10px;font-style:italic}
+  @media print{body{margin:20px}}
+</style>
+</head><body>
+<div class="leaf">🌿</div>
+<div class="prop-name">${propName}</div>
+<div class="prop-addr">${propAddress}</div>
+<h1>${t('revenueReportTitle')}</h1>
+<div class="subtitle">${from} – ${to}</div>
+<div class="summary">
+  <h2>${t('reportSummaryTitle')}</h2>
+  <div class="sum-grid">
+    <div class="sum-item"><label>${t('reportSumRevenue')}</label><span>${fmtMoney(summary.totalRevenue)}</span></div>
+    <div class="sum-item"><label>${t('reportSumBookings')}</label><span>${summary.totalBookings}</span></div>
+    <div class="sum-item"><label>${t('reportSumAvg')}</label><span>${fmtMoney(summary.avgBookingValue)}</span></div>
+    ${wpStats ? `
+    <div class="sum-item"><label>${t('reportWPAvgStay')}</label><span>${wpStats.avgStay} ${t('reportWPNights')}</span></div>
+    <div class="sum-item"><label>${t('reportWPLongestStay')}</label><span>${wpStats.longestStay} ${t('reportWPNights')}</span></div>
+    <div class="sum-item"><label>${t('reportWPShortestStay')}</label><span>${wpStats.shortestStay} ${t('reportWPNights')}</span></div>
+    <div class="sum-item"><label>${t('reportWPBusiestMonth')}</label><span>${formatMonthKey(wpStats.busiestMonthKey)}</span></div>
+    ` : ''}
+  </div>
+</div>
+<table>
+  <thead><tr>
+    <th>${t('reportField_guestName')}</th>
+    <th>${t('reportField_checkIn')}</th>
+    <th>${t('reportField_checkOut')}</th>
+    <th style="text-align:right">${t('reportWPNights')}</th>
+    <th style="text-align:right">${t('reportField_rate')}</th>
+    <th style="text-align:right">${t('reportField_total')}</th>
+  </tr></thead>
+  <tbody>${tableRows}</tbody>
+</table>
+${wpMonthlyOcc.length > 0 ? `
+<h2>${t('reportWPMonthlyOcc')}</h2>
+<table>
+  <tbody>${occRows}</tbody>
+</table>` : ''}
+${plSection}
+<div class="footer">${t('reportGeneratedBy')} ${genDate}</div>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
   }
 
   // ── PDF export ─────────────────────────────────────────────────────────────
@@ -693,25 +975,27 @@ ${plSection}
           </div>
         </div>
 
-        {/* Field selection */}
-        <div style={{ padding: '20px', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 12 }}>
-            {t('reportSelectFields')}
+        {/* Field selection — B&B only */}
+        {!isWP && (
+          <div style={{ padding: '20px', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 12 }}>
+              {t('reportSelectFields')}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {ALL_FIELDS.map(f => (
+                <label key={f} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.84rem', cursor: 'pointer', color: '#334155' }}>
+                  <input
+                    type="checkbox"
+                    checked={fields.has(f)}
+                    onChange={() => toggleField(f)}
+                    style={{ accentColor: 'var(--accent)', width: 14, height: 14 }}
+                  />
+                  {fieldLabel(f)}
+                </label>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {ALL_FIELDS.map(f => (
-              <label key={f} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.84rem', cursor: 'pointer', color: '#334155' }}>
-                <input
-                  type="checkbox"
-                  checked={fields.has(f)}
-                  onChange={() => toggleField(f)}
-                  style={{ accentColor: 'var(--accent)', width: 14, height: 14 }}
-                />
-                {fieldLabel(f)}
-              </label>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Generate */}
         <div style={{ padding: '16px 20px', borderBottom: results !== null ? '1px solid #f1f5f9' : 'none' }}>
@@ -744,7 +1028,16 @@ ${plSection}
                     </div>
                   ) : null}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                    {[
+                    {(isWP ? [
+                      [t('reportSumRevenue'),        fmtMoney(summary.totalRevenue)],
+                      [t('reportSumBookings'),        summary.totalBookings],
+                      [t('reportSumAvg'),             fmtMoney(summary.avgBookingValue)],
+                      [t('reportWPAvgStay'),          `${wpStats?.avgStay ?? 0} ${t('reportWPNights')}`],
+                      [t('reportWPLongestStay'),      `${wpStats?.longestStay ?? 0} ${t('reportWPNights')}`],
+                      [t('reportWPShortestStay'),     `${wpStats?.shortestStay ?? 0} ${t('reportWPNights')}`],
+                      [t('reportWPBusiestMonth'),     formatMonthKey(wpStats?.busiestMonthKey ?? null)],
+                      ...(summary.totalRefunds > 0 ? [[t('reportSumRefunds'), `-${fmtMoney(summary.totalRefunds)}`]] : []),
+                    ] : [
                       [t('reportSumBookings'),  summary.totalBookings],
                       [t('reportSumNights'),    summary.totalNights],
                       [t('reportSumRevenue'),   fmtMoney(summary.totalRevenue)],
@@ -753,7 +1046,7 @@ ${plSection}
                       [t('reportSumAvg'),       fmtMoney(summary.avgBookingValue)],
                       [t('reportSumOccupancy'), `${summary.occupancy}%`],
                       ...(summary.totalRefunds > 0 ? [[t('reportSumRefunds'), `-${fmtMoney(summary.totalRefunds)}`]] : []),
-                    ].map(([label, value]) => (
+                    ]).map(([label, value]) => (
                       <div key={label} className="report-summary-card">
                         <div className="report-summary-label">{label}</div>
                         <div className="report-summary-value">{value}</div>
@@ -800,49 +1093,113 @@ ${plSection}
 
               {/* Export buttons */}
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button className="btn-secondary" onClick={downloadCSV}>⬇ {t('reportDownloadCSV')}</button>
-                <button className="btn-secondary" onClick={downloadPDF}>⬇ {t('reportDownloadPDF')}</button>
+                <button className="btn-secondary" onClick={isWP ? downloadWPCSV : downloadCSV}>⬇ {t('reportDownloadCSV')}</button>
+                <button className="btn-secondary" onClick={isWP ? downloadWPPDF : downloadPDF}>⬇ {t('reportDownloadPDF')}</button>
               </div>
 
-              {/* Data table */}
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      {ALL_FIELDS.filter(f => fields.has(f)).map(f => <th key={f}>{fieldLabel(f)}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map(b => {
-                      const cells = buildRow(b);
-                      return (
-                        <tr key={b.id}>
-                          {fields.has('ref')        && <td><code style={{ fontSize: '0.78rem', background: '#f1f5f9', padding: '2px 5px', borderRadius: 3 }}>{cells.ref}</code></td>}
-                          {fields.has('guestName')  && <td style={{ fontWeight: 500 }}>{cells.guestName}</td>}
-                          {fields.has('guestEmail') && <td className="admin-muted">{cells.guestEmail}</td>}
-                          {fields.has('room')       && <td>{cells.room}</td>}
-                          {fields.has('checkIn')    && <td className="admin-muted">{cells.checkIn}</td>}
-                          {fields.has('checkOut')   && <td className="admin-muted">{cells.checkOut}</td>}
-                          {fields.has('duration')   && <td>{cells.duration}</td>}
-                          {fields.has('rate')       && <td>{cells.rate}</td>}
-                          {fields.has('total')      && <td style={{ fontWeight: 600 }}>{cells.total}</td>}
-                          {fields.has('taxRate')    && <td>{cells.taxRate}</td>}
-                          {fields.has('taxAmount')  && <td>{cells.taxAmount}</td>}
-                          {fields.has('net')        && <td style={{ fontWeight: 600 }}>{cells.net}</td>}
-                          {fields.has('source')     && <td className="admin-muted">{cells.source}</td>}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* Data table — WP mode: per-booking fixed columns */}
+              {isWP ? (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{t('reportField_guestName')}</th>
+                        <th>{t('reportField_checkIn')}</th>
+                        <th>{t('reportField_checkOut')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('reportWPNights')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('reportField_rate')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('reportField_total')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map(b => {
+                        const nights = Math.max(0, Math.round((new Date(b.check_out_date) - new Date(b.check_in_date)) / 86400000));
+                        const total  = b.total_price || 0;
+                        const rate   = nights > 0 ? total / nights : 0;
+                        const name   = `${b.guest_first_name || ''} ${b.guest_last_name || ''}`.trim();
+                        return (
+                          <tr key={b.id}>
+                            <td style={{ fontWeight: 500 }}>{name}</td>
+                            <td className="admin-muted">{b.check_in_date}</td>
+                            <td className="admin-muted">{b.check_out_date}</td>
+                            <td style={{ textAlign: 'right' }}>{nights}</td>
+                            <td style={{ textAlign: 'right' }}>{fmtMoney(rate)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{fmtMoney(total)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                /* Data table — B&B mode: configurable columns */
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        {ALL_FIELDS.filter(f => fields.has(f)).map(f => <th key={f}>{fieldLabel(f)}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map(b => {
+                        const cells = buildRow(b);
+                        return (
+                          <tr key={b.id}>
+                            {fields.has('ref')        && <td><code style={{ fontSize: '0.78rem', background: '#f1f5f9', padding: '2px 5px', borderRadius: 3 }}>{cells.ref}</code></td>}
+                            {fields.has('guestName')  && <td style={{ fontWeight: 500 }}>{cells.guestName}</td>}
+                            {fields.has('guestEmail') && <td className="admin-muted">{cells.guestEmail}</td>}
+                            {fields.has('room')       && <td>{cells.room}</td>}
+                            {fields.has('checkIn')    && <td className="admin-muted">{cells.checkIn}</td>}
+                            {fields.has('checkOut')   && <td className="admin-muted">{cells.checkOut}</td>}
+                            {fields.has('duration')   && <td>{cells.duration}</td>}
+                            {fields.has('rate')       && <td>{cells.rate}</td>}
+                            {fields.has('total')      && <td style={{ fontWeight: 600 }}>{cells.total}</td>}
+                            {fields.has('taxRate')    && <td>{cells.taxRate}</td>}
+                            {fields.has('taxAmount')  && <td>{cells.taxAmount}</td>}
+                            {fields.has('net')        && <td style={{ fontWeight: 600 }}>{cells.net}</td>}
+                            {fields.has('source')     && <td className="admin-muted">{cells.source}</td>}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Monthly occupancy chart — WP mode only */}
+              {isWP && wpMonthlyOcc.length > 0 && (
+                <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: 14 }}>
+                    {t('reportWPMonthlyOcc')}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {wpMonthlyOcc.map(mo => (
+                      <div key={mo.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ minWidth: 110, fontSize: '0.82rem', fontWeight: 500, color: '#374151' }}>
+                          {formatMonthKey(mo.key)}
+                        </div>
+                        <div style={{ flex: 1, background: '#e2e8f0', borderRadius: 4, height: 14, overflow: 'hidden' }}>
+                          <div style={{
+                            width: `${mo.pct}%`, height: '100%', borderRadius: 4,
+                            background: mo.pct >= 80 ? '#166534' : mo.pct >= 50 ? '#1a4710' : '#4ade80',
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                        <div style={{ minWidth: 180, fontSize: '0.8rem', color: '#64748b', textAlign: 'right' }}>
+                          {t('reportWPNightsBooked')(mo.booked, mo.total, mo.pct)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )
         )}
       </div>
 
-      {/* ── Room Charges Report (Multi plan only) ──────────────────────────── */}
-      {plan === 'multi' && (
+      {/* ── Room Charges Report (Multi plan only, not applicable for whole_property) ── */}
+      {plan === 'multi' && !isWP && (
         <div className="admin-card" style={{ marginBottom: 24 }}>
           <div className="admin-card-header">
             <h2>{t('reportRoomChargesTitle')}</h2>
