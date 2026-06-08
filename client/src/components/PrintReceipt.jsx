@@ -245,13 +245,14 @@ export default function PrintReceipt({
   const locale = property?.locale ?? 'en';
   const symbol = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' }[property?.currency ?? 'EUR'] ?? '€';
 
-  const roomSegments = Array.isArray(roomBreakdown?.breakdown) && roomBreakdown.breakdown.length > 0
+  const isWP         = property?.rental_type === 'whole_property';
+  const totalRoomSub = roomSubtotal || 0;
+  const roomSegments = !isWP && Array.isArray(roomBreakdown?.breakdown) && roomBreakdown.breakdown.length > 0
     ? roomBreakdown.breakdown.map((seg) => ({
         label:       `${seg.nights} × ${fc(seg.ratePerNight, symbol)}${seg.periodName ? ` (${seg.periodName})` : ''}`,
         subtotalFmt: fc(seg.subtotal, symbol),
       }))
     : null;
-  const totalRoomSub = roomBreakdown?.total ?? (roomSubtotal || 0);
 
   // Pre-resolve all strings (hooks can't be called inside buildReceiptHTML)
   const depositReqd   = property?.require_deposit === 1;
