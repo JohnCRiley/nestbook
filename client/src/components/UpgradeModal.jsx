@@ -2,6 +2,23 @@ import { useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 
+const ICON_MAP = {
+  '🚀': 'ti ti-rocket',
+  '🌐': 'ti ti-world',
+  '📧': 'ti ti-mail',
+  '📅': 'ti ti-calendar',
+  '📸': 'ti ti-camera',
+  '📊': 'ti ti-chart-bar',
+  '📋': 'ti ti-clipboard-list',
+  '👥': 'ti ti-users',
+  '💰': 'ti ti-cash',
+  '🏠': 'ti ti-home',
+  '🍷': 'ti ti-glass-full',
+  '🏷️': 'ti ti-tag',
+  '📈': 'ti ti-trending-up',
+  '👤': 'ti ti-user',
+};
+
 // ── Translations (self-contained — feature descriptions are too long for i18n/index.js) ──
 
 const MODAL_T = {
@@ -501,7 +518,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
                   alignItems: 'flex-start',
                 }}
               >
-                <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1, marginTop: 1 }}>{f.icon}</span>
+                <i className={ICON_MAP[f.icon] ?? 'ti ti-circle'} style={{ fontSize: 20, flexShrink: 0, lineHeight: 1, marginTop: 2, color: '#94a3b8' }} />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f5f9', marginBottom: 5 }}>{f.name}</div>
                   <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>{f.desc}</div>

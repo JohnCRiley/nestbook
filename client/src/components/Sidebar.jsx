@@ -170,7 +170,7 @@ export default function Sidebar() {
             borderRadius: 8, padding: '10px 14px', margin: '0 12px 12px',
             fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5,
           }}>
-            <strong>⚠️ Payment failed</strong> — your Pro access may be restricted soon.{' '}
+            <strong><i className="ti ti-alert-triangle" /> Payment failed</strong> — your Pro access may be restricted soon.{' '}
             <Link to="/settings" style={{ color: '#92400e', fontWeight: 700 }}>
               Update billing →
             </Link>

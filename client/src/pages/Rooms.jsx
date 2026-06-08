@@ -323,7 +323,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
       {/* Occupied strip */}
       {isOccupied && (
         <div className="room-occupied-strip">
-          <span>🛏</span>
+          <i className="ti ti-bed" />
           <span>
             <strong>{activeBooking.guest_first_name} {activeBooking.guest_last_name}</strong>
             {' '}— {t('checksOut')} {formatCheckOut(activeBooking.check_out_date, locale)}
@@ -437,11 +437,11 @@ function BedroomCard({ room, isSelected, onClick, t }) {
                   style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0 }}
                 />
               )}
-              <span>📸 {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
+              <span><i className="ti ti-camera" /> {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
             </div>
           ) : (
             <div style={{ fontSize: '0.78rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
-              📷 No photos yet
+              <i className="ti ti-camera" /> No photos yet
             </div>
           )}
         </div>

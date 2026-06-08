@@ -3,7 +3,7 @@ import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
 const MARKETING_MATERIALS = [
   {
-    title: 'A4 Flyer',     icon: '🗒️', spec: 'A4 · 170gsm gloss',
+    title: 'A4 Flyer',     icon: 'ti ti-file-text', spec: 'A4 · 170gsm gloss',
     variants: [
       { lang: 'EN', name: 'flyer-a4',    href: '/marketing/flyer-a4.html' },
       { lang: 'FR', name: 'flyer-a4-fr', href: '/marketing/flyer-a4-fr.html' },
@@ -13,7 +13,7 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'A5 Handout',   icon: '📋', spec: 'A5 · 150gsm silk · double-sided',
+    title: 'A5 Handout',   icon: 'ti ti-clipboard', spec: 'A5 · 150gsm silk · double-sided',
     variants: [
       { lang: 'EN', name: 'handout-a5',    href: '/marketing/handout-a5.html' },
       { lang: 'FR', name: 'handout-a5-fr', href: '/marketing/handout-a5-fr.html' },
@@ -23,7 +23,7 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'A-Frame Poster', icon: '🪧', spec: 'A1 · vinyl or foam board',
+    title: 'A-Frame Poster', icon: 'ti ti-layout-board', spec: 'A1 · vinyl or foam board',
     variants: [
       { lang: 'EN', name: 'aframe',    href: '/marketing/aframe.html' },
       { lang: 'FR', name: 'aframe-fr', href: '/marketing/aframe-fr.html' },
@@ -33,19 +33,19 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'Feather Flag',  icon: '🚩', spec: 'Dye-sub fabric · 50cm × 150cm',
+    title: 'Feather Flag',  icon: 'ti ti-flag', spec: 'Dye-sub fabric · 50cm × 150cm',
     variants: [
       { lang: 'EN', name: 'feather-flag', href: '/marketing/feather-flag.html' },
     ],
   },
   {
-    title: 'Business Card', icon: '💳', spec: 'A4 sheet · 85×55mm cards · 400gsm',
+    title: 'Business Card', icon: 'ti ti-id-badge', spec: 'A4 sheet · 85×55mm cards · 400gsm',
     variants: [
       { lang: 'EN', name: 'business-card', href: '/marketing/business-card.html' },
     ],
   },
   {
-    title: 'Car Door Magnet', icon: '🚗', spec: 'Magnetic vinyl · 3mm bleed',
+    title: 'Car Door Magnet', icon: 'ti ti-car', spec: 'Magnetic vinyl · 3mm bleed',
     variants: [
       { lang: 'EN Portrait',  name: 'car-door-portrait',    href: '/marketing/car-door-magnetic-portrait.html' },
       { lang: 'FR Portrait',  name: 'car-door-portrait-fr', href: '/marketing/car-door-magnetic-portrait-fr.html' },
@@ -53,7 +53,7 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'Plan Comparison', icon: '📊', spec: 'A4 · PDF-ready comparison table',
+    title: 'Plan Comparison', icon: 'ti ti-table', spec: 'A4 · PDF-ready comparison table',
     variants: [
       { lang: 'EN', name: 'compare-plans', href: '/marketing/compare-plans.html' },
     ],
@@ -101,7 +101,7 @@ export default function Overview() {
               overflow: 'hidden', background: '#fff',
             }}>
               <div style={{ background: '#f0fdf4', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1a2e14' }}>{icon} {title}</div>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1a2e14' }}><i className={icon} /> {title}</div>
                 <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>{spec}</div>
               </div>
               <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>

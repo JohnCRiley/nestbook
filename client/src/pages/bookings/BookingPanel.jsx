@@ -880,7 +880,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
               <select name="guest_id" className="panel-field-input" value={form.guest_id} onChange={handleChange}>
                 {guests.filter((g) => !g.deleted).map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.blacklisted ? '⚠️ ' : ''}{g.first_name} {g.last_name}
+                    {g.blacklisted ? '[!] ' : ''}{g.first_name} {g.last_name}
                   </option>
                 ))}
               </select>

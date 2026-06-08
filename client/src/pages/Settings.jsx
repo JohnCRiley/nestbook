@@ -415,42 +415,24 @@ export default function Settings() {
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, rental_type: 'rooms' })}
-                      style={{
-                        flex: 1,
-                        padding: '12px 16px',
-                        borderRadius: 8,
-                        border: `2px solid ${form.rental_type === 'rooms' ? 'var(--accent)' : 'var(--border)'}`,
-                        background: form.rental_type === 'rooms' ? 'var(--tint-bg)' : 'var(--card-bg)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontFamily: 'inherit',
-                      }}
+                      className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
                     >
                       <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                        🛏️ {t('settings.rentalTypeRooms')}
+                        <i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                      <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
                         {t('settings.rentalTypeRoomsHint')}
                       </div>
                     </button>
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
-                      style={{
-                        flex: 1,
-                        padding: '12px 16px',
-                        borderRadius: 8,
-                        border: `2px solid ${form.rental_type === 'whole_property' ? 'var(--accent)' : 'var(--border)'}`,
-                        background: form.rental_type === 'whole_property' ? 'var(--tint-bg)' : 'var(--card-bg)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontFamily: 'inherit',
-                      }}
+                      className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
                     >
                       <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                        🏡 {t('settings.rentalTypeWhole')}
+                        <i className="ti ti-home" /> {t('settings.rentalTypeWhole')}
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                      <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
                         {t('settings.rentalTypeWholeHint')}
                       </div>
                     </button>
@@ -463,15 +445,7 @@ export default function Settings() {
                   )}
 
                   {form.rental_type === 'whole_property' && (
-                    <div style={{
-                      marginTop: 16,
-                      padding: 16,
-                      background: 'var(--tint-bg)',
-                      borderRadius: 8,
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: 12,
-                    }}>
+                    <div className="wp-inputs-container">
                       <div>
                         <label style={{ fontSize: '0.82rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>
                           {t('settings.totalCapacity')}
@@ -769,7 +743,7 @@ export default function Settings() {
           {bugReportingEnabled && (
             <div className="settings-card" style={{ marginTop: 0 }}>
               <div className="settings-card-header">
-                <h2>🐛 {t('settings.reportIssue')}</h2>
+                <h2><i className="ti ti-bug" /> {t('settings.reportIssue')}</h2>
                 <p>{t('settings.reportIssueHint')}</p>
               </div>
               <div className="settings-card-body">
@@ -815,7 +789,7 @@ export default function Settings() {
                     background: 'var(--tint-bg)', color: 'var(--tint-text)',
                     padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
                   }}>
-                    ✅ {t('settings.reportSuccess')}
+                    <i className="ti ti-check" /> {t('settings.reportSuccess')}
                   </div>
                 )}
                 {reportStatus === 'error' && (
@@ -823,7 +797,7 @@ export default function Settings() {
                     background: '#fef2f2', color: '#dc2626',
                     padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
                   }}>
-                    ❌ {t('settings.reportError')}
+                    <i className="ti ti-x" /> {t('settings.reportError')}
                   </div>
                 )}
 
@@ -880,7 +854,7 @@ export default function Settings() {
                       background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6,
                       fontSize: '0.78rem', color: '#92400e', lineHeight: 1.5,
                     }}>
-                      ⚠️ {t('bfPropertyToggleWarn')}
+                      <i className="ti ti-alert-triangle" /> {t('bfPropertyToggleWarn')}
                     </div>
                     <ToggleRow
                       label={t('fDeposit')}

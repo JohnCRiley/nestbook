@@ -11,7 +11,7 @@ function UpgradeGate() {
   const t = useT();
   return (
     <div style={{ padding: '40px 24px', maxWidth: 520, margin: '0 auto', textAlign: 'center' }}>
-      <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>🏨</div>
+      <div style={{ fontSize: '2.5rem', marginBottom: 16, color: 'var(--accent)' }}><i className="ti ti-building" /></div>
       <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 10, color: '#1a2e14' }}>
         {t('chargesUpgradeTitle')}
       </div>

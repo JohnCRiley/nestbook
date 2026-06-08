@@ -310,7 +310,7 @@ export default function MailingList() {
                 disabled={exporting || total === 0}
                 title="Copy all matching email addresses to clipboard"
               >
-                {exporting ? '…' : '📋 Copy emails'}
+                {exporting ? '…' : <><i className="ti ti-clipboard" /> Copy emails</>}
               </button>
               <button
                 className="ml-btn ml-btn-csv"

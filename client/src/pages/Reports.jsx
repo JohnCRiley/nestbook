@@ -668,7 +668,6 @@ function ReportsContent() {
   @media print{body{margin:20px}}
 </style>
 </head><body>
-<div class="leaf">🌿</div>
 <div class="prop-name">${propName}</div>
 <div class="prop-addr">${propAddress}</div>
 <h1>${t('revenueReportTitle')}</h1>
@@ -835,7 +834,6 @@ ${plSection}
   @media print{body{margin:20px}}
 </style>
 </head><body>
-<div class="leaf">🌿</div>
 <div class="prop-name">${propName}</div>
 <div class="prop-addr">${propAddress}</div>
 <h1>${t('revenueReportTitle')}</h1>
@@ -1024,7 +1022,7 @@ ${plSection}
                       background: '#fffbeb', border: '1px solid #fde68a',
                       fontSize: '0.84rem', color: '#92400e', fontWeight: 500,
                     }}>
-                      💰 Deposit required per booking: {fmtMoney(property.deposit_amount)}
+                      <i className="ti ti-cash" /> Deposit required per booking: {fmtMoney(property.deposit_amount)}
                     </div>
                   ) : null}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>

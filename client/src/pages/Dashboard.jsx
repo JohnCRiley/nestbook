@@ -298,7 +298,7 @@ export default function Dashboard() {
           background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 10,
           padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10,
         }}>
-          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>⚠️</span>
+          <i className="ti ti-alert-triangle" style={{ fontSize: '1.2rem', lineHeight: 1 }} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>
               {t('flaggedBookingsTitle')} ({flaggedBookings.length})

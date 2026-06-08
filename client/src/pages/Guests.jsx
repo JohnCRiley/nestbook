@@ -257,7 +257,7 @@ function GuestCard({ guest, bookingCount, isActive, onClick }) {
               marginLeft: 6, fontSize: '0.68rem', fontWeight: 700, color: '#dc2626',
               background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '1px 5px',
             }}>
-              ⚠️ {t('blacklistedBadge')}
+              {t('blacklistedBadge')}
             </span>
           ) : null}
         </div>

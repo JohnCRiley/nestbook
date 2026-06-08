@@ -399,7 +399,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           </div>
           {blockedCount > 0 && (
             <div style={{ marginTop: 8, padding: '6px 10px', background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 6, fontSize: '0.8rem', color: '#92400e' }}>
-              ⚠️ {blockedCount} prospect{blockedCount !== 1 ? 's' : ''} excluded — already unsubscribed, complained, or converted
+              {blockedCount} prospect{blockedCount !== 1 ? 's' : ''} excluded — already unsubscribed, complained, or converted
             </div>
           )}
         </div>
@@ -413,7 +413,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               padding: '10px 14px', fontSize: '0.82rem', color: '#92400e',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              ⚠️ <strong>Resend daily limit:</strong> Sending more than 100 emails per day may trigger account suspension. Use the send limit selector below or upgrade your Resend plan.
+              <i className="ti ti-alert-triangle" /> <strong>Resend daily limit:</strong> Sending more than 100 emails per day may trigger account suspension. Use the send limit selector below or upgrade your Resend plan.
             </div>
           )}
 
@@ -753,7 +753,7 @@ function CsvImportModal({ onClose, onImported }) {
 
         {result ? (
           <div>
-            {result.imported > 0 && <div style={{ color: '#166534', marginBottom: 6 }}>✅ {result.imported} prospect{result.imported !== 1 ? 's' : ''} imported successfully.</div>}
+            {result.imported > 0 && <div style={{ color: '#166534', marginBottom: 6 }}><i className="ti ti-check" /> {result.imported} prospect{result.imported !== 1 ? 's' : ''} imported successfully.</div>}
             {result.skipped  > 0 && <div style={{ color: '#92400e', marginBottom: 6 }}>⚠ {result.skipped} skipped (duplicates or missing name/email).</div>}
             {result.errors?.map((e, i) => <div key={i} style={{ color: '#dc2626', marginBottom: 6 }}>✗ {e}</div>)}
             {result.imported === 0 && !result.errors?.length && <div style={{ color: '#64748b', marginBottom: 6 }}>No new prospects added.</div>}
@@ -1179,7 +1179,7 @@ export default function Outreach() {
         fontSize: '0.85rem', fontWeight: 600,
         color: dailyCount >= 100 ? '#dc2626' : dailyCount >= 80 ? '#92400e' : '#166534',
       }}>
-        📧 Today: {dailyCount}/100 emails sent
+        <i className="ti ti-mail" /> Today: {dailyCount}/100 emails sent
         {dailyCount >= 100
           ? ' — Daily limit reached!'
           : ` — ${100 - dailyCount} remaining`}

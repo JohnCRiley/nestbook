@@ -1078,7 +1078,8 @@ a { text-decoration: none; }
   transition: background 0.1s;
 }
 .bookings-table tbody tr:last-child td { border-bottom: none; }
-.bookings-table tbody tr:hover          { background: var(--tint-bg); }
+.bookings-table tbody tr:hover td,
+.data-table tr:hover td                 { background: var(--accent-dark); color: var(--header-text); }
 .bookings-table tbody tr.row-selected   { background: var(--tint-bg); }
 
 .cell-guest-name { font-weight: 600; }
@@ -1666,6 +1667,11 @@ a { text-decoration: none; }
 .cal-cell:last-child { border-right: none; }
 
 /* empty cell hover */
+.cal-cell:hover,
+.calendar-tile:hover {
+  background: var(--accent-dark);
+  color: var(--header-text);
+}
 .cal-cell.is-empty:hover {
   background: var(--tint-bg);
 }
@@ -1677,6 +1683,7 @@ a { text-decoration: none; }
 }
 .cal-cell.is-booked:hover {
   background: var(--accent-dark);
+  color: var(--header-text);
 }
 
 /* arriving today */
@@ -2507,6 +2514,41 @@ a { text-decoration: none; }
   align-items: center;
   gap: 12px;
   padding-top: 4px;
+}
+
+/* Rental type selector buttons */
+.rental-type-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.rental-type-btn.active,
+.rental-type-btn:hover {
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-color: var(--accent);
+}
+
+/* Whole-property inputs container */
+.wp-inputs-container {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.wp-inputs-container label {
+  color: var(--header-text);
 }
 
 /* ── Toggle switches ─────────────────────────────────────────────────────── */

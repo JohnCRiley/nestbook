@@ -83,7 +83,7 @@ export default function ChangePasswordModal({ onClose }) {
                 color: '#3a6e2a',
                 fontSize: '0.9rem',
               }}>
-                ✅ Your password has been changed successfully.
+                <i className="ti ti-check" /> Your password has been changed successfully.
               </div>
             </div>
             <div className="modal-footer">

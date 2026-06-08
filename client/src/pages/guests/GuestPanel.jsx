@@ -133,7 +133,7 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
           background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 8,
           padding: '8px 12px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <span>⚠️</span>
+          <i className="ti ti-alert-triangle" />
           <span style={{ fontSize: '0.875rem', color: '#dc2626', fontWeight: 600 }}>
             {t('blacklistedBadge')}
           </span>

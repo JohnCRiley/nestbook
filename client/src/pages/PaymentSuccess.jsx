@@ -35,7 +35,7 @@ export default function PaymentSuccess() {
   return (
     <div className="auth-page">
       <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
+        <div style={{ fontSize: '3rem', marginBottom: 16, color: 'var(--accent)' }}><i className="ti ti-circle-check" /></div>
         <h1 className="auth-heading">{t('paySuccessTitle')}</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: 8, marginBottom: 24 }}>
           {t('paySuccessMsg')(planLabel)}
