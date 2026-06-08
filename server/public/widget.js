@@ -81,6 +81,8 @@
       checking: 'Checking availability…',
       demoNote: 'Demo mode — no real booking was made',
       breakfastIncluded: 'Breakfast included',
+      checkAvailabilityBook: 'Check Availability & Book',
+      propertyNotAvailable: 'The property is not available for those dates. Please try different dates.',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -108,6 +110,8 @@
       checking: 'Vérification de la disponibilité…',
       demoNote: 'Mode démo — aucune vraie réservation n\'a été effectuée',
       breakfastIncluded: 'Petit-déjeuner inclus',
+      checkAvailabilityBook: 'Vérifier et réserver',
+      propertyNotAvailable: 'La propriété n\'est pas disponible pour ces dates. Veuillez essayer d\'autres dates.',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -135,6 +139,8 @@
       checking: 'Comprobando disponibilidad…',
       demoNote: 'Modo demo — no se ha realizado ninguna reserva real',
       breakfastIncluded: 'Desayuno incluido',
+      checkAvailabilityBook: 'Comprobar y reservar',
+      propertyNotAvailable: 'La propiedad no está disponible para esas fechas. Pruebe otras fechas.',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -162,6 +168,8 @@
       checking: 'Beschikbaarheid controleren…',
       demoNote: 'Demo modus — er is geen echte reservering gemaakt',
       breakfastIncluded: 'Ontbijt inbegrepen',
+      checkAvailabilityBook: 'Beschikbaarheid & boeken',
+      propertyNotAvailable: 'Het verblijf is niet beschikbaar voor deze datums. Kies andere datums.',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -189,6 +197,8 @@
       checking: 'Verfügbarkeit wird geprüft…',
       demoNote: 'Demo-Modus — keine echte Buchung wurde vorgenommen',
       breakfastIncluded: 'Frühstück inbegriffen',
+      checkAvailabilityBook: 'Verfügbarkeit prüfen & buchen',
+      propertyNotAvailable: 'Das Objekt ist für diese Daten nicht verfügbar. Bitte andere Daten wählen.',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -204,10 +214,13 @@
     availableRooms: [],
     selectedRoom:   null,
     guest:          { firstName: '', lastName: '', email: '', phone: '', notes: '' },
-    bookingRef:     null,
-    loading:        false,
-    error:          null,
-    isDemo:         false,
+    bookingRef:        null,
+    loading:           false,
+    error:             null,
+    isDemo:            false,
+    wholeProperty:     false,
+    wholePropertyRate: 0,
+    totalCapacity:     10,
   };
 
   // ── Date helpers ───────────────────────────────────────────────────────────
@@ -282,6 +295,7 @@
         S.allBookings    = [];
         S.availableRooms = DEMO_ROOMS_DATA.filter((r) => r.capacity >= S.numGuests);
         console.log('[NestBook widget] Demo mode: loaded', S.availableRooms.length, 'available rooms (client-side)');
+        S.step = 2;
       } else {
         console.log('[NestBook widget] Fetching rooms for property', PROPERTY_ID);
         const [rooms, bookings] = await Promise.all([
@@ -289,12 +303,33 @@
           apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
         ]);
         console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length);
-        S.allRooms       = rooms;
-        S.allBookings    = bookings;
-        S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
-        console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
+        S.allRooms    = rooms;
+        S.allBookings = bookings;
+        if (S.wholeProperty) {
+          const propertyBooked = bookings.some((b) =>
+            b.status !== 'cancelled' &&
+            b.status !== 'checked_out' &&
+            b.check_in_date < S.checkOut &&
+            b.check_out_date > S.checkIn
+          );
+          if (propertyBooked) {
+            S.error = T.propertyNotAvailable;
+            S.step  = 1;
+          } else {
+            S.selectedRoom = {
+              id:              rooms[0]?.id ?? null,
+              name:            'Whole property',
+              price_per_night: S.wholePropertyRate,
+              capacity:        S.totalCapacity,
+            };
+            S.step = 3;
+          }
+        } else {
+          S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
+          console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
+          S.step = 2;
+        }
       }
-      S.step = 2;
     } catch (err) {
       console.error('[NestBook widget] loadAvailability failed:', err);
       S.error = T.errServer;
@@ -900,11 +935,19 @@
     const plusBtn = el('button', 'nb-guests-btn');
     plusBtn.appendChild(txt('+'));
     plusBtn.addEventListener('click', () => {
-      if (S.numGuests < 10) { S.numGuests++; numEl.textContent = S.numGuests; }
+      const max = S.wholeProperty ? S.totalCapacity : 10;
+      if (S.numGuests < max) { S.numGuests++; numEl.textContent = S.numGuests; }
     });
     ctrl.appendChild(minusBtn); ctrl.appendChild(numEl); ctrl.appendChild(plusBtn);
     guestRow.appendChild(gLabel); guestRow.appendChild(ctrl);
     body.appendChild(guestRow);
+
+    if (S.wholeProperty && S.totalCapacity > 0) {
+      const capHint = el('div', 'nb-field-hint');
+      capHint.style.cssText = 'font-size:0.8rem;color:#64748b;margin-top:-4px;margin-bottom:4px;';
+      capHint.appendChild(txt(T.capacity + ' ' + S.totalCapacity + ' ' + (S.totalCapacity === 1 ? 'guest' : 'guests')));
+      body.appendChild(capHint);
+    }
 
     // Footer: Check Availability
     const checkBtn = el('button', 'nb-btn-main');
@@ -1046,7 +1089,7 @@
     // Footer
     const backBtn = el('button', 'nb-btn-back');
     backBtn.appendChild(txt(T.back));
-    backBtn.addEventListener('click', () => { S.step = 2; S.error = null; render(); });
+    backBtn.addEventListener('click', () => { S.step = S.wholeProperty ? 1 : 2; S.error = null; render(); });
 
     const nextBtn = el('button', 'nb-btn-main');
     nextBtn.appendChild(txt(T.step4Title + ' →'));
@@ -1227,6 +1270,9 @@
           BRAND       = palette.brand;
           BRAND_DARK  = palette.dark;
           BRAND_LIGHT = palette.light;
+          S.wholeProperty    = data.rental_type === 'whole_property';
+          S.wholePropertyRate = data.whole_property_rate || 0;
+          S.totalCapacity    = data.total_capacity || 10;
         }
       } catch (_) { /* network error — fall back to forest colours */ }
     }
@@ -1249,7 +1295,7 @@
     const p2 = document.createElementNS('http://www.w3.org/2000/svg', 'polyline'); p2.setAttribute('points', '9 22 9 12 15 12 15 22'); houseSvg.appendChild(p2);
     icon.appendChild(houseSvg);
     trigger.appendChild(icon);
-    trigger.appendChild(txt(' ' + T.bookNow));
+    trigger.appendChild(txt(' ' + (S.wholeProperty ? T.checkAvailabilityBook : T.bookNow)));
     trigger.addEventListener('click', openModal);
     root.appendChild(trigger);
 
