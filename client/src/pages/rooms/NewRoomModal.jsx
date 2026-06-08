@@ -98,12 +98,6 @@ export default function NewRoomModal({ onClose, onSuccess }) {
           <div className="modal-body">
             {error && <div className="form-error">{error}</div>}
 
-            {isWP && (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #64748b)', marginBottom: 12 }}>
-                Add every room and space in your property — bedrooms, bathrooms, living areas, outdoor spaces. Each one can have photos and a description that appears on your booking page.
-              </p>
-            )}
-
             <div className="form-grid">
               <div className="form-group span-2">
                 <label className="form-label">

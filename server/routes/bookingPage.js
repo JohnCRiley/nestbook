@@ -356,7 +356,6 @@ ${rooms.length > 0 ? `
 <section class="whats-included">
   <div class="section-inner">
     <h2 data-i18n="page.whatsIncluded">What's included</h2>
-    <p data-i18n="page.whatsIncludedHint">This property is rented as a whole — all rooms are yours for your stay.</p>
     <div class="rooms-grid rooms-grid-showcase">
       ${showcaseCards}
     </div>
@@ -1091,7 +1090,7 @@ var I18N = {
     "page.bookDirect":                "Book your stay directly — best rates guaranteed",
     "page.wholeProperty":             "Entire property",
     "page.whatsIncluded":             "What's included",
-    "page.whatsIncludedHint":         "This property is rented as a whole — all rooms are yours for your stay.",
+    "page.whatsIncludedHint":         "",
     "page.wholePropertyAvailability": "Check when the whole property is available for your dates.",
     "page.bookTheProperty":           "Book the whole property",
     "page.ctaWholeHint":              "Book directly — best rates guaranteed, no booking fees.",
@@ -1125,7 +1124,7 @@ var I18N = {
     "page.bookDirect":                "Réservez votre séjour directement — meilleurs tarifs garantis",
     "page.wholeProperty":             "Propriété entière",
     "page.whatsIncluded":             "Ce qui est inclus",
-    "page.whatsIncludedHint":         "Cette propriété est louée en totalité — toutes les chambres sont à vous pendant votre séjour.",
+    "page.whatsIncludedHint":         "",
     "page.wholePropertyAvailability": "Vérifiez quand la propriété entière est disponible pour vos dates.",
     "page.bookTheProperty":           "Réserver la propriété entière",
     "page.ctaWholeHint":              "Réservez directement — meilleurs tarifs garantis, sans frais de réservation.",
@@ -1159,7 +1158,7 @@ var I18N = {
     "page.bookDirect":                "Buchen Sie Ihren Aufenthalt direkt — beste Preise garantiert",
     "page.wholeProperty":             "Gesamtes Objekt",
     "page.whatsIncluded":             "Was enthalten ist",
-    "page.whatsIncludedHint":         "Dieses Objekt wird als Ganzes vermietet — alle Zimmer gehören Ihnen für Ihren Aufenthalt.",
+    "page.whatsIncludedHint":         "",
     "page.wholePropertyAvailability": "Prüfen Sie, wann das gesamte Objekt für Ihre Daten verfügbar ist.",
     "page.bookTheProperty":           "Das gesamte Objekt buchen",
     "page.ctaWholeHint":              "Direkt buchen — beste Preise garantiert, keine Buchungsgebühren.",
@@ -1193,7 +1192,7 @@ var I18N = {
     "page.bookDirect":                "Reserve su estancia directamente — mejores tarifas garantizadas",
     "page.wholeProperty":             "Propiedad completa",
     "page.whatsIncluded":             "Qué está incluido",
-    "page.whatsIncludedHint":         "Esta propiedad se alquila completa — todas las habitaciones son suyas durante su estancia.",
+    "page.whatsIncludedHint":         "",
     "page.wholePropertyAvailability": "Compruebe cuándo está disponible la propiedad completa para sus fechas.",
     "page.bookTheProperty":           "Reservar la propiedad completa",
     "page.ctaWholeHint":              "Reserve directamente — mejores tarifas garantizadas, sin gastos de reserva.",
@@ -1227,7 +1226,7 @@ var I18N = {
     "page.bookDirect":                "Boek uw verblijf direct — beste tarieven gegarandeerd",
     "page.wholeProperty":             "Hele accommodatie",
     "page.whatsIncluded":             "Wat is inbegrepen",
-    "page.whatsIncludedHint":         "Deze accommodatie wordt als geheel verhuurd — alle kamers zijn van u tijdens uw verblijf.",
+    "page.whatsIncludedHint":         "",
     "page.wholePropertyAvailability": "Controleer wanneer de hele accommodatie beschikbaar is voor uw data.",
     "page.bookTheProperty":           "De hele accommodatie boeken",
     "page.ctaWholeHint":              "Boek direct — beste tarieven gegarandeerd, geen boekingskosten.",

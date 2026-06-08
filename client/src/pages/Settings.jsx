@@ -254,7 +254,7 @@ export default function Settings() {
       rental_type: suggestWhole ? 'whole_property' : 'rooms',
     }));
     if (suggestWhole) {
-      setRentalTypeHint('We\'ve set this to "Whole property" as this property type is usually rented entirely. Change it if needed.');
+      setRentalTypeHint('We\'ve set this to "Whole property" for this property type. Change it if needed.');
     } else {
       setRentalTypeHint(null);
     }
