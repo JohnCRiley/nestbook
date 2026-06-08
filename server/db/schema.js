@@ -737,64 +737,24 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE prospects ADD COLUMN language TEXT`); } catch {}
   try { db.exec(`ALTER TABLE prospects ADD COLUMN website  TEXT`); } catch {}
 
-  // Expand source + status CHECK constraints if needed.
-  // sqlite_master still holds the original CREATE TABLE sql — inspect it.
+  // Migration: ensure prospects table accepts the 9-status pipeline values.
+  // Uses a test-and-rebuild pattern so it is safe to run on every startup:
+  //   Step 1 — probe the constraint; rebuild the table if it rejects new values.
+  //   Step 2 — data migration (idempotent UPDATEs; no-ops if already done).
   {
-    const row = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`).get();
-    const tblSql = row?.sql || '';
-    if (!tblSql.includes('follow_up_sent') || !tblSql.includes("'facebook'")) {
+    let needsRebuild = false;
+    try {
+      db.prepare(`UPDATE prospects SET status = status WHERE status = '1st_contact_sent'`).run();
+    } catch (e) {
+      if (e.message.includes('CHECK constraint')) needsRebuild = true;
+      else throw e;
+    }
+
+    if (needsRebuild) {
       db.exec(`BEGIN`);
       try {
         db.exec(`
           CREATE TABLE prospects_new (
-            id                INTEGER PRIMARY KEY AUTOINCREMENT,
-            name              TEXT    NOT NULL,
-            company           TEXT,
-            email             TEXT    NOT NULL UNIQUE,
-            source            TEXT    NOT NULL DEFAULT 'manual'
-                                      CHECK(source IN ('manual','csv','auto_signup','website','facebook','google','booking_com','airbnb','referral','other')),
-            status            TEXT    NOT NULL DEFAULT 'new'
-                                      CHECK(status IN ('new','contacted','follow_up_sent','replied','converted','unsubscribed')),
-            notes             TEXT,
-            follow_up_date    TEXT,
-            country           TEXT,
-            language          TEXT,
-            unsubscribe_token TEXT    UNIQUE,
-            unsubscribed_at   TEXT,
-            converted_at      TEXT,
-            user_id           INTEGER REFERENCES users(id),
-            created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
-          )
-        `);
-        db.exec(`
-          INSERT INTO prospects_new
-            (id,name,company,email,source,status,notes,follow_up_date,
-             country,language,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at)
-          SELECT id,name,company,email,source,status,notes,follow_up_date,
-                 country,language,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at
-          FROM prospects
-        `);
-        db.exec(`DROP TABLE prospects`);
-        db.exec(`ALTER TABLE prospects_new RENAME TO prospects`);
-        db.exec(`COMMIT`);
-      } catch (e) {
-        db.exec(`ROLLBACK`);
-        throw e;
-      }
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
-    }
-  }
-
-  // Migration: expand prospects status to 9-status pipeline
-  {
-    const row2 = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`).get();
-    const tblSql2 = row2?.sql || '';
-    if (!tblSql2.includes('3rd_followup_sent')) {
-      db.exec(`BEGIN`);
-      try {
-        db.exec(`
-          CREATE TABLE prospects_v2 (
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
             name              TEXT    NOT NULL,
             company           TEXT,
@@ -816,7 +776,7 @@ export function initSchema() {
           )
         `);
         db.exec(`
-          INSERT INTO prospects_v2
+          INSERT INTO prospects_new
             (id,name,company,email,source,status,notes,follow_up_date,
              country,language,website,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at)
           SELECT id,name,company,email,source,
@@ -830,15 +790,23 @@ export function initSchema() {
           FROM prospects
         `);
         db.exec(`DROP TABLE prospects`);
-        db.exec(`ALTER TABLE prospects_v2 RENAME TO prospects`);
+        db.exec(`ALTER TABLE prospects_new RENAME TO prospects`);
         db.exec(`COMMIT`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+        console.log('✓ Prospects table rebuilt with 9-status pipeline CHECK constraint.');
       } catch (e) {
         db.exec(`ROLLBACK`);
         throw e;
       }
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
-      console.log('✓ Prospects status migrated to 9-status pipeline.');
+    }
+
+    // Idempotent data migration — no-ops if already done
+    try {
+      db.prepare(`UPDATE prospects SET status = '1st_contact_sent' WHERE status = 'contacted'`).run();
+      db.prepare(`UPDATE prospects SET status = '1st_followup_sent' WHERE status = 'follow_up_sent'`).run();
+    } catch (e) {
+      console.error('[schema] Status migration error:', e.message);
     }
   }
 
