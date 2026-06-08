@@ -36,8 +36,12 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
     : [];
 
   const nights          = nightsBetween(b.check_in_date, b.check_out_date);
-  const pricePerNight   = b.price_per_night || (nights > 0 ? (parseFloat(b.total_price) || 0) / nights : 0);
-  const roomSubtotal    = roomBreakdown?.total ?? nights * pricePerNight;
+  const isWP            = property?.rental_type === 'whole_property';
+  const wpTotal         = parseFloat(b.total_price) || 0;
+  const pricePerNight   = isWP
+    ? (nights > 0 ? wpTotal / nights : 0)
+    : (b.price_per_night || (nights > 0 ? wpTotal / nights : 0));
+  const roomSubtotal    = isWP ? wpTotal : (roomBreakdown?.total ?? nights * pricePerNight);
 
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
@@ -104,7 +108,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
             <LineRow label={t('moCinLbl')}    value={b.check_in_date} />
             <LineRow label={t('moCoutLbl')}   value={b.check_out_date} />
             <LineRow label={t('labelDuration')} value={t('nightWord')(nights)} />
-            {roomBreakdown?.breakdown?.length > 0 ? (
+            {!isWP && roomBreakdown?.breakdown?.length > 0 ? (
               <>
                 {roomBreakdown.breakdown.map((seg, i) => (
                   <LineRow

@@ -42,8 +42,11 @@ export default function BookingPanel({ booking: initialBooking, rooms = [], gues
 
   const b = localBooking;
   console.log('[BookingPanel] booking status:', b?.status, 'breakfast_added:', b?.breakfast_added);
-  const nights = nightsBetween(b.check_in_date, b.check_out_date);
-  const perNight = b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null);
+  const nights   = nightsBetween(b.check_in_date, b.check_out_date);
+  const isWP     = property?.rental_type === 'whole_property';
+  const perNight = isWP
+    ? (nights > 0 && b.total_price ? b.total_price / nights : null)
+    : (b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null));
   const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
 
   return (
@@ -226,9 +229,13 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       const fc  = (amount) => (amount == null ? '—' : `${sym}${Number(amount).toFixed(2)}`);
 
       const rpNights    = nightsBetween(b.check_in_date, b.check_out_date);
-      const rpRate      = b.price_per_night || (rpNights > 0 ? (parseFloat(b.total_price) || 0) / rpNights : 0);
-      const rpRoom      = roomBreakdown?.total ?? rpNights * rpRate;
-      const rpSegments  = roomBreakdown?.breakdown?.length > 0
+      const rpIsWP      = property?.rental_type === 'whole_property';
+      const rpWPTotal   = parseFloat(b.total_price) || 0;
+      const rpRate      = rpIsWP
+        ? (rpNights > 0 ? rpWPTotal / rpNights : 0)
+        : (b.price_per_night || (rpNights > 0 ? rpWPTotal / rpNights : 0));
+      const rpRoom      = rpIsWP ? rpWPTotal : (roomBreakdown?.total ?? rpNights * rpRate);
+      const rpSegments  = !rpIsWP && roomBreakdown?.breakdown?.length > 0
         ? roomBreakdown.breakdown.map((seg) => ({
             label:       `${seg.nights} × ${fc(seg.ratePerNight)}${seg.periodName ? ` (${seg.periodName})` : ''}`,
             subtotalFmt: fc(seg.subtotal),
@@ -680,8 +687,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {/* ── Reprint receipt ───────────────────────────────────────────────── */}
       {showReprint && (() => {
         const rpNights   = nightsBetween(b.check_in_date, b.check_out_date);
-        const rpRate     = b.price_per_night || (rpNights > 0 ? (parseFloat(b.total_price) || 0) / rpNights : 0);
-        const rpRoom     = roomBreakdown?.total ?? rpNights * rpRate;
+        const rpIsWP     = property?.rental_type === 'whole_property';
+        const rpWPTotal  = parseFloat(b.total_price) || 0;
+        const rpRate     = rpIsWP
+          ? (rpNights > 0 ? rpWPTotal / rpNights : 0)
+          : (b.price_per_night || (rpNights > 0 ? rpWPTotal / rpNights : 0));
+        const rpRoom     = rpIsWP ? rpWPTotal : (roomBreakdown?.total ?? rpNights * rpRate);
         const rpBfFree   = !!(property?.breakfast_included || b.room_breakfast_included);
         const rpBfChg    = !!b.breakfast_added && !rpBfFree;
         const rpBfPrice  = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
@@ -1142,8 +1153,10 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
 // ── EstimatedTotal ────────────────────────────────────────────────────────────
 
 function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, charges, roomBreakdown }) {
-  const fallbackPerNight = b.price_per_night ?? 0;
-  const roomSubtotal     = roomBreakdown?.total ?? (nights * fallbackPerNight);
+  const isWP             = property?.rental_type === 'whole_property';
+  const wpTotal          = parseFloat(b.total_price) || 0;
+  const fallbackPerNight = isWP ? (nights > 0 ? wpTotal / nights : 0) : (b.price_per_night ?? 0);
+  const roomSubtotal     = isWP ? wpTotal : (roomBreakdown?.total ?? (nights * fallbackPerNight));
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
   const bfPrice          = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
@@ -1166,7 +1179,7 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
       <div className="panel-section-title">{t('coEstimatedTotal')}</div>
       <div style={{ fontSize: '0.85rem' }}>
         {/* Room rows — one per rate-period segment */}
-        {roomBreakdown?.breakdown?.length > 0 ? (
+        {!isWP && roomBreakdown?.breakdown?.length > 0 ? (
           roomBreakdown.breakdown.map((seg, i) => (
             <ERow
               key={i}
