@@ -197,7 +197,6 @@ function showcaseRoomCard(room, palette, photos) {
       <h3>${esc(room.name)}</h3>
       <span class="room-type-badge">${esc(typeLabel)}</span>
     </div>
-    <div class="room-capacity">👥 <span data-i18n="page.upTo">Up to</span> ${esc(String(room.capacity ?? 2))} <span data-i18n="page.guests">guests</span></div>
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
   </div>

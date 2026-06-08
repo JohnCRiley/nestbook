@@ -408,12 +408,6 @@ function BedroomCard({ room, isSelected, onClick, t }) {
       <div className="room-card-body">
         <div className="room-name">{room.name}</div>
         {typeLabel && <div className="room-card-type">{typeLabel}</div>}
-        <div className="room-facts">
-          <span className="room-fact">
-            <GuestIcon />
-            {t('rooms.sleeps')} {room.capacity}
-          </span>
-        </div>
         {room.description && (
           <p style={{ margin: '6px 0 4px', fontSize: '0.82rem', color: 'var(--text-muted, #6b7280)', lineHeight: 1.4 }}>
             {room.description}
