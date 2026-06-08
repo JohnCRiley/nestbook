@@ -1883,15 +1883,32 @@ a { text-decoration: none; }
 }
 
 .wpc-guest {
+  display: block;
+  width: 100%;
   font-size: 0.6rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90%;
+  text-align: center;
   color: var(--on-accent, #fff);
   opacity: 0.9;
   margin-top: 1px;
+  padding: 0 2px;
+}
+
+.wpc-badge {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  letter-spacing: 0.02em;
 }
 
 .wpc-available {

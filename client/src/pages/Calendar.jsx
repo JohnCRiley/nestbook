@@ -408,7 +408,7 @@ function firstDowOfMonth(year, month) {
   return d === 0 ? 6 : d - 1; // 0=Mon … 6=Sun
 }
 
-function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, monthNames, dayNames }) {
+function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, monthNames, dayNames, t }) {
   const numDays  = daysInMonth(year, month);
   const startDow = firstDowOfMonth(year, month);
 
@@ -429,17 +429,23 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
     ) : null;
 
     if (booking) {
-      const isCheckin = booking.check_in_date === iso;
-      const statusCls = booking.status === 'arriving' ? 'wpc-arriving' : 'wpc-booked';
+      const isCheckin   = booking.check_in_date === iso;
+      const nextIso     = toIso(new Date(year, month, d + 1));
+      const isLastNight = nextIso === booking.check_out_date;
+      const statusCls   = booking.status === 'arriving' ? 'wpc-arriving' : 'wpc-booked';
+      const fullName    = `${booking.guest_first_name ?? ''} ${booking.guest_last_name ?? ''}`.trim();
+      const displayName = isCheckin ? fullName : (booking.guest_first_name ?? fullName);
       cells.push(
         <div
           key={iso}
           className={`wpc-cell ${statusCls}${isToday ? ' wpc-today' : ''}`}
           onClick={() => onBookedClick(booking)}
-          title={`${booking.guest_first_name} ${booking.guest_last_name}`}
+          title={fullName}
         >
+          {isCheckin                    && <span className="wpc-badge">{t ? t('calCiBadge') : 'CI'}</span>}
+          {isLastNight && !isCheckin    && <span className="wpc-badge">{t ? t('calCoBadge') : 'CO'}</span>}
           <span className="wpc-day-num">{d}</span>
-          {isCheckin && <span className="wpc-guest">{booking.guest_last_name}</span>}
+          <span className="wpc-guest">{displayName}</span>
         </div>
       );
     } else if (historical) {
@@ -513,13 +519,13 @@ function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEm
         <MonthGrid
           year={year1} month={month1} bookings={bookings} today={today}
           onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
-          monthNames={MONTH_NAMES} dayNames={DAY_NAMES}
+          monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t}
         />
         {isWide && (
           <MonthGrid
             year={year2} month={month2} bookings={bookings} today={today}
             onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
-            monthNames={MONTH_NAMES} dayNames={DAY_NAMES}
+            monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t}
           />
         )}
       </div>
