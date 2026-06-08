@@ -446,8 +446,8 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
           onClick={() => onBookedClick(booking)}
           title={fullName}
         >
-          {isCheckin                    && <span className="wpc-badge">{t ? t('calCiBadge') : 'CI'}</span>}
-          {isLastNight && !isCheckin    && <span className="wpc-badge">{t ? t('calCoBadge') : 'CO'}</span>}
+          {isCheckin   && iso === today && booking.status === 'confirmed' && <span className="wpc-badge">{t ? t('calCiBadge') : 'CI'}</span>}
+          {isLastNight && iso === today && booking.status === 'arriving'  && <span className="wpc-badge">{t ? t('calCoBadge') : 'CO'}</span>}
           <span className="wpc-day-num">{d}</span>
           <span className="wpc-guest">{displayName}</span>
         </div>
