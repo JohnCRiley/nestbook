@@ -61,8 +61,9 @@ const MARKETING_MATERIALS = [
 ];
 
 export default function Overview() {
-  const [stats,   setStats]   = useState(null);
-  const [signups, setSignups] = useState([]);
+  const [stats,    setStats]    = useState(null);
+  const [signups,  setSignups]  = useState([]);
+  const [activeMat, setActiveMat] = useState(null);
 
   useEffect(() => {
     apiFetch('/api/admin/stats').then(r => r.json()).then(setStats).catch(() => {});
@@ -78,12 +79,12 @@ export default function Overview() {
 
       {/* Stat cards */}
       <div className="admin-stats-grid">
-        <StatCard label="Total Properties"  value={stats?.totalProperties ?? '—'} />
-        <StatCard label="Total Users"       value={stats?.totalUsers      ?? '—'} />
-        <StatCard label="Pro Subscriptions" value={stats?.proSubs         ?? '—'} />
-        <StatCard label="Multi Subscriptions" value={stats?.multiSubs     ?? '—'} />
-        <StatCard label="MRR"               value={stats ? `€${stats.mrr}` : '—'} accent />
-        <StatCard label="New this week"     value={stats?.newThisWeek     ?? '—'} />
+        <StatCard label="Total Properties"    value={stats?.totalProperties ?? '—'} />
+        <StatCard label="Total Users"         value={stats?.totalUsers      ?? '—'} />
+        <StatCard label="Pro Subscriptions"   value={stats?.proSubs         ?? '—'} />
+        <StatCard label="Multi Subscriptions" value={stats?.multiSubs       ?? '—'} />
+        <StatCard label="MRR"                 value={stats ? `€${stats.mrr}` : '—'} accent />
+        <StatCard label="New this week"       value={stats?.newThisWeek     ?? '—'} />
       </div>
 
       {/* Marketing Materials — Download Centre */}
@@ -92,51 +93,92 @@ export default function Overview() {
           <h2>Marketing Materials — Download Centre</h2>
           <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>Server-generated PDFs · Full colour · Correct dimensions</span>
         </div>
-
-        {/* Material cards grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, padding: '16px 0 4px' }}>
-          {MARKETING_MATERIALS.map(({ title, icon, spec, variants }) => (
-            <div key={title} style={{
-              border: '1.5px solid #e2e8f0', borderRadius: 10,
-              overflow: 'hidden', background: '#fff',
-            }}>
-              <div style={{ background: '#f0fdf4', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1a2e14' }}><i className={icon} /> {title}</div>
-                <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>{spec}</div>
-              </div>
-              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {variants.map(({ lang, name, href }) => (
-                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', minWidth: 28 }}>{lang}</span>
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        padding: '4px 10px', borderRadius: 5, fontSize: '0.75rem', fontWeight: 600,
-                        background: '#f0fdf4', border: '1px solid #86efac', color: '#166534',
-                        textDecoration: 'none', whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Preview
-                    </a>
-                    <a
-                      href={`/api/marketing/pdf/${name}`}
-                      style={{
-                        padding: '4px 10px', borderRadius: 5, fontSize: '0.75rem', fontWeight: 600,
-                        background: '#1a4710', color: '#fff',
-                        textDecoration: 'none', whiteSpace: 'nowrap',
-                      }}
-                    >
-                      PDF
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '14px 0 4px' }}>
+          {MARKETING_MATERIALS.map((mat) => (
+            <button
+              key={mat.title}
+              onClick={() => setActiveMat(mat)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 7,
+                border: '1.5px solid #e2e8f0', background: '#f8fafc',
+                fontSize: '0.82rem', fontWeight: 600, color: '#1a2e14',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              <i className={mat.icon} style={{ fontSize: '0.95rem' }} />
+              {mat.title}
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Material modal */}
+      {activeMat && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setActiveMat(null)}
+        >
+          <div
+            style={{
+              background: '#fff', borderRadius: 12, width: 340, maxWidth: '92vw',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)', overflow: 'hidden',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div style={{ background: '#f0fdf4', padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a2e14' }}>
+                  <i className={activeMat.icon} /> {activeMat.title}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>{activeMat.spec}</div>
+              </div>
+              <button
+                onClick={() => setActiveMat(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '1.1rem', lineHeight: 1, padding: '2px 4px' }}
+              >
+                <i className="ti ti-x" />
+              </button>
+            </div>
+            {/* Variants */}
+            <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {activeMat.variants.map(({ lang, name, href }) => (
+                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', minWidth: 90 }}>{lang}</span>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      padding: '5px 12px', borderRadius: 5, fontSize: '0.78rem', fontWeight: 600,
+                      background: '#f0fdf4', border: '1px solid #86efac', color: '#166534',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Preview
+                  </a>
+                  <a
+                    href={`/api/marketing/pdf/${name}`}
+                    style={{
+                      padding: '5px 12px', borderRadius: 5, fontSize: '0.78rem', fontWeight: 600,
+                      background: '#1a4710', color: '#fff',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    PDF
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Print shop instructions */}
       <div className="admin-card" style={{ marginTop: 16 }}>
