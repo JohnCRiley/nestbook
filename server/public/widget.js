@@ -298,11 +298,19 @@
         S.step = 2;
       } else {
         console.log('[NestBook widget] Fetching rooms for property', PROPERTY_ID);
-        const [rooms, bookings] = await Promise.all([
-          apiFetch('/api/widget/rooms?property_id=' + PROPERTY_ID),
+        const [rooms, bookings, freshProp] = await Promise.all([
+          apiFetch('/api/widget/rooms?property_id='    + PROPERTY_ID),
           apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
+          apiFetch('/api/widget/property?property_id=' + PROPERTY_ID).catch(() => null),
         ]);
-        console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length);
+        // Re-confirm WP status from a fresh property fetch — makes the check
+        // authoritative at availability time and not dependent on init() succeeding.
+        if (freshProp) {
+          S.wholeProperty     = freshProp.rental_type === 'whole_property';
+          S.wholePropertyRate = freshProp.whole_property_rate || 0;
+          S.totalCapacity     = freshProp.total_capacity || 10;
+        }
+        console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length, '| WP mode:', S.wholeProperty);
         S.allRooms    = rooms;
         S.allBookings = bookings;
         if (S.wholeProperty) {
@@ -1125,7 +1133,7 @@
       return r;
     }
 
-    summary.appendChild(row(T.summaryRoom,   S.selectedRoom.name));
+    if (!S.wholeProperty) summary.appendChild(row(T.summaryRoom, S.selectedRoom.name));
     summary.appendChild(row(T.summaryDates,  fmtDate(S.checkIn) + ' → ' + fmtDate(S.checkOut)));
     summary.appendChild(row(T.summaryNights, T.nights(nights)));
     summary.appendChild(row(T.summaryGuests, S.numGuests + ' ' + (S.numGuests === 1 ? 'guest' : 'guests')));
@@ -1140,7 +1148,11 @@
     const pcBig = el('div', 'nb-price-big');
     pcBig.appendChild(txt(CUR_SYMBOL + totalPrice.toLocaleString()));
     const pcDesc = el('div', 'nb-price-desc');
-    pcDesc.appendChild(txt(CUR_SYMBOL + S.selectedRoom.price_per_night + T.perNight + ' × ' + T.nights(nights)));
+    const ratePerNight = S.selectedRoom.price_per_night;
+    const priceDescTxt = ratePerNight > 0
+      ? CUR_SYMBOL + ratePerNight + T.perNight + ' × ' + T.nights(nights)
+      : T.nights(nights);
+    pcDesc.appendChild(txt(priceDescTxt));
     pcL.appendChild(pcBig); pcL.appendChild(pcDesc);
 
     const pcR = el('div', '');
@@ -1225,6 +1237,9 @@
       renderLoading(S.step === 1 ? T.checking : T.confirming);
       return;
     }
+
+    // WP mode never shows step 2 (room selection)
+    if (S.step === 2 && S.wholeProperty) S.step = 3;
 
     switch (S.step) {
       case 1: renderStep1(); break;
