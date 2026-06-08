@@ -220,11 +220,25 @@ outreachRouter.post('/send', async (req, res) => {
     }
 
     // Apply merge fields to both subject and body
+    const SOURCE_LABELS = {
+      facebook:    'Facebook',
+      instagram:   'Instagram',
+      google:      'Google',
+      booking_com: 'Booking.com',
+      airbnb:      'Airbnb',
+      referral:    'a referral',
+      manual:      'my research',
+      csv:         'my research',
+      other:       'my research',
+    };
     const substitutions = {
-      '{{name}}':       p.name || '',
-      '{{company}}':    p.company || '',
-      '{{first_name}}': (p.name || '').split(' ')[0] || '',
+      '{{name}}':       p.name || 'there',
+      '{{company}}':    p.company || p.name || '',
+      '{{first_name}}': (p.name || '').split(' ')[0] || 'there',
       '{{email}}':      p.email || '',
+      '{{source}}':     SOURCE_LABELS[p.source] || p.source || 'my research',
+      '{{website}}':    p.website || '',
+      '{{country}}':    p.country || '',
     };
     let finalSubject = subject;
     let finalBody    = body;

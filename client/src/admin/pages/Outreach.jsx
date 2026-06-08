@@ -435,7 +435,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           </div>
 
           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
-            Merge fields: {'{{name}}'} {'{{company}}'} {'{{first_name}}'}
+            Merge fields: {'{{name}}'} {'{{first_name}}'} {'{{company}}'} {'{{source}}'} {'{{website}}'} {'{{country}}'}
           </p>
 
           <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%' }} />
