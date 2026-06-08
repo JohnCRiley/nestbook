@@ -187,7 +187,10 @@ function showcaseRoomCard(room, palette, photos) {
   const photoHtml = photos && photos.length > 0 ? `
   <div class="room-photo">
     <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
-  </div>` : '';
+  </div>
+  ${photos.length > 1 ? `<div class="photo-strip">
+    ${photos.map((f, i) => `<img src="/uploads/rooms/${esc(f)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('\n    ')}
+  </div>` : ''}` : '';
 
   return `
 <div class="room-card room-card-showcase">
@@ -383,19 +386,7 @@ ${rooms.length > 0 ? `
 
   let ctaSection;
   if (isWholeProperty) {
-    const rate = property.whole_property_rate;
-    const priceHtml = rate
-      ? `<div class="price-display">${esc(currSym)}${esc(Number(rate).toFixed(0))}<span class="price-unit"> / <span data-i18n="page.perNight">night</span></span></div>`
-      : '';
-    ctaSection = `
-<section class="cta cta-whole">
-  <div class="section-inner cta-inner">
-    <h2 data-i18n="page.bookTheProperty">Book the whole property</h2>
-    ${priceHtml}
-    <p data-i18n="page.ctaWholeHint">Book directly — best rates guaranteed, no booking fees.</p>
-    ${bookOrEnquiryBtn}
-  </div>
-</section>`;
+    ctaSection = '';
   } else {
     ctaSection = `
 <section class="cta">
