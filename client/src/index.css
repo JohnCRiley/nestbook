@@ -4116,7 +4116,7 @@ a { text-decoration: none; }
 }
 
 .danger-zone-toggle:hover {
-  background: #cce8bc;
+  background: var(--tint-bg);
 }
 
 .danger-zone-chevron {
