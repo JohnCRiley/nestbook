@@ -36,7 +36,7 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
     : [];
 
   const nights          = nightsBetween(b.check_in_date, b.check_out_date);
-  const pricePerNight   = b.price_per_night ?? 0;
+  const pricePerNight   = b.price_per_night || (nights > 0 ? (parseFloat(b.total_price) || 0) / nights : 0);
   const roomSubtotal    = roomBreakdown?.total ?? nights * pricePerNight;
 
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);

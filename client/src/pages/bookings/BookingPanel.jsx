@@ -226,7 +226,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       const fc  = (amount) => (amount == null ? '—' : `${sym}${Number(amount).toFixed(2)}`);
 
       const rpNights    = nightsBetween(b.check_in_date, b.check_out_date);
-      const rpRate      = b.price_per_night ?? (b.total_price && rpNights ? b.total_price / rpNights : 0);
+      const rpRate      = b.price_per_night || (rpNights > 0 ? (parseFloat(b.total_price) || 0) / rpNights : 0);
       const rpRoom      = roomBreakdown?.total ?? rpNights * rpRate;
       const rpSegments  = roomBreakdown?.breakdown?.length > 0
         ? roomBreakdown.breakdown.map((seg) => ({
@@ -576,7 +576,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         <div className="panel-section-title">{t('sectionPricing')}</div>
         <div className="panel-price-callout">
           <div className="panel-price-main">{fmtCurrency(b.total_price)}</div>
-          {perNight && (
+          {perNight > 0 && (
             <div className="panel-price-detail">
               {fmtCurrency(perNight)}{t('perNight')} × {t('nightWord')(nights)}
             </div>
@@ -680,7 +680,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {/* ── Reprint receipt ───────────────────────────────────────────────── */}
       {showReprint && (() => {
         const rpNights   = nightsBetween(b.check_in_date, b.check_out_date);
-        const rpRate     = b.price_per_night ?? 0;
+        const rpRate     = b.price_per_night || (rpNights > 0 ? (parseFloat(b.total_price) || 0) / rpNights : 0);
         const rpRoom     = roomBreakdown?.total ?? rpNights * rpRate;
         const rpBfFree   = !!(property?.breakfast_included || b.room_breakfast_included);
         const rpBfChg    = !!b.breakfast_added && !rpBfFree;

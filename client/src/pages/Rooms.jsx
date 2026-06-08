@@ -383,9 +383,8 @@ function formatCheckOut(dateStr, locale = 'en') {
 
 // ── WholePropertyPage ─────────────────────────────────────────────────────────
 
-function BedroomCard({ room, activeBooking, isSelected, today, onClick, t, locale }) {
-  const isOccupied    = !!activeBooking;
-  const isMaintenance = room.status === 'maintenance';
+function BedroomCard({ room, isSelected, onClick, t }) {
+  const amenities = (room.amenities ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
   return (
     <div
@@ -395,30 +394,29 @@ function BedroomCard({ room, activeBooking, isSelected, today, onClick, t, local
     >
       <div className="room-card-body">
         <div className="room-name">{room.name}</div>
+        {room.type && <div className="room-card-type">{room.type}</div>}
         <div className="room-facts">
           <span className="room-fact">
             <GuestIcon />
             {t('rooms.sleeps')} {room.capacity}
           </span>
         </div>
-        <StatusPill status={isOccupied ? 'occupied' : room.status} />
+        {room.description && (
+          <p style={{ margin: '6px 0 4px', fontSize: '0.82rem', color: 'var(--text-muted, #6b7280)', lineHeight: 1.4 }}>
+            {room.description}
+          </p>
+        )}
+        {amenities.length > 0 && (
+          <div className="amenity-list">
+            {amenities.slice(0, 4).map((a) => (
+              <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
+            ))}
+            {amenities.length > 4 && (
+              <span className="amenity-tag">{t('moreAmenities')(amenities.length - 4)}</span>
+            )}
+          </div>
+        )}
       </div>
-
-      {isOccupied && (
-        <div className="room-occupied-strip">
-          <span>🛏</span>
-          <span>
-            <strong>{activeBooking.guest_first_name} {activeBooking.guest_last_name}</strong>
-            {' '}— {t('checksOut')} {formatCheckOut(activeBooking.check_out_date, locale)}
-          </span>
-        </div>
-      )}
-      {isMaintenance && (
-        <div className="room-occupied-strip" style={{ background: '#f8fafc', borderTopColor: '#cbd5e1', color: '#475569' }}>
-          <span>🔧</span>
-          <span>{t('underMaintenance')}</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -440,10 +438,8 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
       </div>
 
       <div className="stat-bar">
-        <StatBarItem value={rooms.length}      label={t('totalRooms')} />
-        <StatBarItem value={totalCapacity}     label={t('guestWord')(totalCapacity)} />
-        <StatBarItem value={stats.occupied}    label={t('occupied')} accent="#f59e0b" />
-        <StatBarItem value={stats.maintenance} label={t('maintenance')} accent="#94a3b8" />
+        <StatBarItem value={rooms.length}  label={t('totalRooms')} />
+        <StatBarItem value={totalCapacity} label={t('guestWord')(totalCapacity)} />
       </div>
 
       {loading ? (
@@ -454,12 +450,9 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
             <BedroomCard
               key={room.id}
               room={room}
-              activeBooking={activeByRoom[room.id] ?? null}
               isSelected={selectedRoom?.id === room.id}
-              today={today}
               onClick={onCardClick}
               t={t}
-              locale={locale}
             />
           ))}
         </div>

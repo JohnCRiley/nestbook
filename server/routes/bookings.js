@@ -275,7 +275,7 @@ bookingsRouter.post('/', (req, res) => {
 
     // For whole_property rentals, auto-assign to the first room if room_id not provided
     let room_id = req.body.room_id;
-    const prop = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(property_id);
+    const prop = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(property_id);
     if (prop?.rental_type === 'whole_property' && !room_id) {
       const firstRoom = db.prepare('SELECT id FROM rooms WHERE property_id = ? ORDER BY id LIMIT 1').get(property_id);
       room_id = firstRoom?.id;
@@ -293,6 +293,13 @@ bookingsRouter.post('/', (req, res) => {
       return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
+    let finalTotalPrice = total_price ?? null;
+    if (!finalTotalPrice && prop?.rental_type === 'whole_property' && prop?.whole_property_rate) {
+      const msPerDay = 86400000;
+      const nights = Math.max(0, Math.round((new Date(check_out_date) - new Date(check_in_date)) / msPerDay));
+      finalTotalPrice = nights * prop.whole_property_rate;
+    }
+
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
@@ -306,7 +313,7 @@ bookingsRouter.post('/', (req, res) => {
       status          ?? 'confirmed',
       source          ?? 'direct',
       notes           ?? null,
-      total_price     ?? null,
+      finalTotalPrice,
       breakfast_added ? 1 : 0,
       breakfast_start_date         ?? null,
       breakfast_guests             ?? 0,
