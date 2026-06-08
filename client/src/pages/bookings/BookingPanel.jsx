@@ -538,7 +538,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Mid-stay breakfast management ──────────────────────────────────── */}
-      {b.status === 'arriving' && !property?.breakfast_included && !b.room_breakfast_included && (
+      {b.status === 'arriving' && property?.rental_type !== 'whole_property' && !property?.breakfast_included && !b.room_breakfast_included && (
         <AddBreakfastSection
           b={b} property={property}
           onBookingUpdated={onBookingUpdated}
