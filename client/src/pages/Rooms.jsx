@@ -433,7 +433,8 @@ function BedroomCard({ room, isSelected, onClick, t }) {
                 <img
                   src={`/uploads/rooms/${room.primary_photo}`}
                   alt=""
-                  style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                  style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0 }}
                 />
               )}
               <span>📸 {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>

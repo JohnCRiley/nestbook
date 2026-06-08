@@ -82,20 +82,20 @@ roomsRouter.get('/', (req, res) => {
 
       const total = db.prepare(`SELECT COUNT(*) as n FROM rooms ${where}`).get(...params).n;
       const rows  = db.prepare(`
-        SELECT *,
-          (SELECT COUNT(*) FROM room_photos WHERE room_id = id) AS photo_count,
-          (SELECT filename FROM room_photos WHERE room_id = id ORDER BY display_order ASC LIMIT 1) AS primary_photo
-        FROM rooms ${where} ORDER BY id LIMIT ? OFFSET ?
+        SELECT r.*,
+          (SELECT COUNT(*) FROM room_photos WHERE room_id = r.id) AS photo_count,
+          (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo
+        FROM rooms r ${where} ORDER BY r.id LIMIT ? OFFSET ?
       `).all(...params, pageLimit, offset);
 
       return res.json({ rooms: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
     }
 
     res.json(db.prepare(`
-      SELECT *,
-        (SELECT COUNT(*) FROM room_photos WHERE room_id = id) AS photo_count,
-        (SELECT filename FROM room_photos WHERE room_id = id ORDER BY display_order ASC LIMIT 1) AS primary_photo
-      FROM rooms ${where} ORDER BY id
+      SELECT r.*,
+        (SELECT COUNT(*) FROM room_photos WHERE room_id = r.id) AS photo_count,
+        (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo
+      FROM rooms r ${where} ORDER BY r.id
     `).all(...params));
   } catch (err) {
     res.status(500).json({ error: err.message });
