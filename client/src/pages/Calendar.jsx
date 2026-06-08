@@ -420,18 +420,22 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
     const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const isPast = iso < today;
     const isToday = iso === today;
+    const norm = (s) => (s ?? '').split('T')[0];
     const booking = bookings.find(b =>
       b.status !== 'cancelled' && b.status !== 'checked_out' &&
-      b.check_in_date <= iso && b.check_out_date > iso
+      norm(b.check_in_date) <= iso && norm(b.check_out_date) > iso
     );
     const historical = !booking ? bookings.find(b =>
-      b.status === 'checked_out' && b.check_in_date <= iso && b.check_out_date > iso
+      b.status === 'checked_out' &&
+      norm(b.check_in_date) <= iso && norm(b.check_out_date) > iso
     ) : null;
 
     if (booking) {
-      const isCheckin   = booking.check_in_date === iso;
-      const nextIso     = toIso(new Date(year, month, d + 1));
-      const isLastNight = nextIso === booking.check_out_date;
+      const checkInNorm  = norm(booking.check_in_date);
+      const checkOutNorm = norm(booking.check_out_date);
+      const isCheckin    = checkInNorm === iso;
+      const nextIso      = toIso(new Date(year, month, d + 1));
+      const isLastNight  = nextIso === checkOutNorm;
       const statusCls   = booking.status === 'arriving' ? 'wpc-arriving' : 'wpc-booked';
       const fullName    = `${booking.guest_first_name ?? ''} ${booking.guest_last_name ?? ''}`.trim();
       const displayName = isCheckin ? fullName : (booking.guest_first_name ?? fullName);
