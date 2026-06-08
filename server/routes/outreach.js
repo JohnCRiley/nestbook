@@ -5,6 +5,19 @@ import { sendOutreachEmail } from '../email/emailService.js';
 
 export const outreachRouter = Router();
 
+// ── Status pipeline ───────────────────────────────────────────────────────────
+const BLOCKED_STATUSES = new Set(['unsubscribed', 'complained', 'converted']);
+
+function getNextStatus(current) {
+  const pipeline = {
+    'new':               '1st_contact_sent',
+    '1st_contact_sent':  '1st_followup_sent',
+    '1st_followup_sent': '2nd_followup_sent',
+    '2nd_followup_sent': '3rd_followup_sent',
+  };
+  return pipeline[current] ?? current;
+}
+
 // ── Unsubscribe token generator ───────────────────────────────────────────────
 function makeUnsubToken() {
   return crypto.randomBytes(24).toString('hex');
@@ -57,7 +70,7 @@ outreachRouter.get('/prospects/follow-up', (req, res) => {
     SELECT p.*, MAX(pe.sent_at) AS last_contacted
     FROM prospects p
     LEFT JOIN prospect_emails pe ON pe.prospect_id = p.id
-    WHERE p.status NOT IN ('unsubscribed', 'converted', 'replied')
+    WHERE p.status NOT IN ('unsubscribed', 'complained', 'converted', 'replied')
       AND (
         (p.follow_up_date IS NOT NULL AND p.follow_up_date <= date('now'))
         OR (p.follow_up_date IS NULL AND p.status = 'new')
@@ -190,9 +203,21 @@ outreachRouter.post('/send', async (req, res) => {
   if (!subject || !body) return res.status(400).json({ error: 'subject and body required' });
 
   const results = [];
+  let sent = 0;
+  let skipped = 0;
+  const skippedReasons = [];
   for (const pid of prospect_ids) {
     const p = db.prepare(`SELECT * FROM prospects WHERE id = ?`).get(pid);
-    if (!p || p.status === 'unsubscribed') { results.push({ id: pid, ok: false, reason: 'unsubscribed or not found' }); continue; }
+    if (!p) {
+      results.push({ id: pid, ok: false, reason: 'not found' });
+      skipped++; skippedReasons.push(`${pid}: not found`);
+      continue;
+    }
+    if (BLOCKED_STATUSES.has(p.status)) {
+      results.push({ id: pid, ok: false, reason: p.status });
+      skipped++; skippedReasons.push(`${p.email}: ${p.status}`);
+      continue;
+    }
 
     // Apply merge fields to both subject and body
     const substitutions = {
@@ -281,24 +306,23 @@ outreachRouter.post('/send', async (req, res) => {
       const followUpDate = new Date();
       followUpDate.setDate(followUpDate.getDate() + days);
       const followUpStr = followUpDate.toISOString().split('T')[0];
-      db.prepare(`
-        UPDATE prospects
-        SET follow_up_date = ?,
-            status = CASE WHEN status = 'new' THEN 'contacted' WHEN status = 'contacted' THEN 'follow_up_sent' ELSE status END
-        WHERE id = ?
-      `).run(followUpStr, pid);
+      db.prepare(`UPDATE prospects SET follow_up_date = ?, status = ? WHERE id = ?`)
+        .run(followUpStr, getNextStatus(p.status), pid);
       results.push({ id: pid, ok: true });
+      sent++;
     } catch (err) {
       results.push({ id: pid, ok: false, reason: err.message });
     }
   }
 
   if (campaign_id) {
-    const sentCount = results.filter(r => r.ok).length;
-    db.prepare(`UPDATE outreach_campaigns SET sent_count = sent_count + ? WHERE id = ?`).run(sentCount, campaign_id);
+    db.prepare(`UPDATE outreach_campaigns SET sent_count = sent_count + ? WHERE id = ?`).run(sent, campaign_id);
   }
 
-  res.json({ results });
+  const message = skipped > 0
+    ? `Sent ${sent}, skipped ${skipped} (${skippedReasons.slice(0, 3).join(', ')}${skippedReasons.length > 3 ? '…' : ''})`
+    : `Sent ${sent}`;
+  res.json({ sent, skipped, skippedReasons, results, message });
 });
 
 // ── Daily send count ─────────────────────────────────────────────────────────

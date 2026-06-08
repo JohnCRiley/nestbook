@@ -786,6 +786,62 @@ export function initSchema() {
     }
   }
 
+  // Migration: expand prospects status to 9-status pipeline
+  {
+    const row2 = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`).get();
+    const tblSql2 = row2?.sql || '';
+    if (!tblSql2.includes('3rd_followup_sent')) {
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE prospects_v2 (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            name              TEXT    NOT NULL,
+            company           TEXT,
+            email             TEXT    NOT NULL UNIQUE,
+            source            TEXT    NOT NULL DEFAULT 'manual'
+                                      CHECK(source IN ('manual','csv','auto_signup','website','facebook','google','booking_com','airbnb','referral','other')),
+            status            TEXT    NOT NULL DEFAULT 'new'
+                                      CHECK(status IN ('new','1st_contact_sent','1st_followup_sent','2nd_followup_sent','3rd_followup_sent','replied','converted','unsubscribed','complained')),
+            notes             TEXT,
+            follow_up_date    TEXT,
+            country           TEXT,
+            language          TEXT,
+            website           TEXT,
+            unsubscribe_token TEXT    UNIQUE,
+            unsubscribed_at   TEXT,
+            converted_at      TEXT,
+            user_id           INTEGER REFERENCES users(id),
+            created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+          )
+        `);
+        db.exec(`
+          INSERT INTO prospects_v2
+            (id,name,company,email,source,status,notes,follow_up_date,
+             country,language,website,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at)
+          SELECT id,name,company,email,source,
+            CASE status
+              WHEN 'contacted'      THEN '1st_contact_sent'
+              WHEN 'follow_up_sent' THEN '1st_followup_sent'
+              ELSE status
+            END,
+            notes,follow_up_date,
+            country,language,website,unsubscribe_token,unsubscribed_at,converted_at,user_id,created_at
+          FROM prospects
+        `);
+        db.exec(`DROP TABLE prospects`);
+        db.exec(`ALTER TABLE prospects_v2 RENAME TO prospects`);
+        db.exec(`COMMIT`);
+      } catch (e) {
+        db.exec(`ROLLBACK`);
+        throw e;
+      }
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+      console.log('✓ Prospects status migrated to 9-status pipeline.');
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,

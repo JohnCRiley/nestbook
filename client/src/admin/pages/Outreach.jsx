@@ -6,14 +6,19 @@ import 'quill/dist/quill.snow.css';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
 
+const BLOCKED_STATUSES = new Set(['unsubscribed', 'complained', 'converted']);
+
 function StatusBadge({ status }) {
   const colours = {
-    new:              { bg: '#eff6ff', color: '#1d4ed8', label: 'New' },
-    contacted:        { bg: '#fef9c3', color: '#92400e', label: 'Contacted' },
-    follow_up_sent:   { bg: '#fff7ed', color: '#c2410c', label: 'Follow-up sent' },
-    replied:          { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
-    converted:        { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
-    unsubscribed:     { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
+    new:                  { bg: '#eff6ff', color: '#1d4ed8', label: 'New' },
+    '1st_contact_sent':   { bg: '#fef9c3', color: '#92400e', label: '1st contact' },
+    '1st_followup_sent':  { bg: '#fff7ed', color: '#c2410c', label: '1st follow-up' },
+    '2nd_followup_sent':  { bg: '#fef2f2', color: '#b91c1c', label: '2nd follow-up' },
+    '3rd_followup_sent':  { bg: '#fce7f3', color: '#9d174d', label: '3rd follow-up' },
+    replied:              { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
+    converted:            { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
+    unsubscribed:         { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
+    complained:           { bg: '#fee2e2', color: '#991b1b', label: 'Complained' },
   };
   const s = colours[status] || colours.new;
   return (
@@ -213,11 +218,14 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
             style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
           >
             <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="follow_up_sent">Follow-up sent</option>
+            <option value="1st_contact_sent">1st contact sent</option>
+            <option value="1st_followup_sent">1st follow-up sent</option>
+            <option value="2nd_followup_sent">2nd follow-up sent</option>
+            <option value="3rd_followup_sent">3rd follow-up sent</option>
             <option value="replied">Replied</option>
             <option value="converted">Converted</option>
             <option value="unsubscribed">Unsubscribed</option>
+            <option value="complained">Complained</option>
           </select>
           <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes" />
           <div>
@@ -299,8 +307,12 @@ function QuillEditor({ value, onChange, placeholder = 'Write your email here…'
 // ── Email Composer modal ──────────────────────────────────────────────────────
 function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount = 0, onClose, onSent }) {
   const selected = prospects
-    .filter(p => selectedIds.includes(p.id) && p.status !== 'unsubscribed')
+    .filter(p => selectedIds.includes(p.id) && !BLOCKED_STATUSES.has(p.status))
     .filter((p, i, self) => self.findIndex(t => t.email === p.email) === i);
+  const blockedCount = selectedIds.filter(id => {
+    const p = prospects.find(q => q.id === id);
+    return p && BLOCKED_STATUSES.has(p.status);
+  }).length;
   const [subject, setSubject]       = useState('');
   const [body, setBody]             = useState('');
   const [tmplId, setTmplId]         = useState('');
@@ -342,7 +354,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
         body: JSON.stringify({ prospect_ids: toSend.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null, followUpDays }),
       });
       const data = await res.json();
-      setResult(data.results);
+      setResult(data);
       onSent();
     } catch {
       // Only re-enable on network error so the user can retry
@@ -352,14 +364,16 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   }
 
   if (result) {
-    const ok = result.filter(r => r.ok).length;
-    const fail = result.length - ok;
+    const ok      = result.sent  ?? (result.results?.filter(r => r.ok).length ?? 0);
+    const fail    = result.results?.filter(r => !r.ok && result.skippedReasons?.every(sr => !sr.startsWith(String(r.id) + ':'))).length ?? 0;
+    const skipped = result.skipped ?? 0;
     return (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-        <div style={{ background: '#fff', borderRadius: 10, padding: 28, maxWidth: 380 }}>
+        <div style={{ background: '#fff', borderRadius: 10, padding: 28, maxWidth: 400 }}>
           <h3 style={{ margin: '0 0 12px' }}>Email sent</h3>
-          <p style={{ color: '#166534' }}>✓ {ok} sent successfully</p>
-          {fail > 0 && <p style={{ color: '#dc2626' }}>✗ {fail} failed</p>}
+          <p style={{ color: '#166534', margin: '0 0 8px' }}>✓ {ok} sent successfully</p>
+          {skipped > 0 && <p style={{ color: '#92400e', margin: '0 0 8px' }}>⏭ {skipped} skipped (unsubscribed / complained / converted)</p>}
+          {fail > 0 && <p style={{ color: '#dc2626', margin: '0 0 8px' }}>✗ {fail} failed to send</p>}
           <Btn onClick={onClose} style={{ marginTop: 12 }}>Close</Btn>
         </div>
       </div>
@@ -383,6 +397,11 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               </span>
             ))}
           </div>
+          {blockedCount > 0 && (
+            <div style={{ marginTop: 8, padding: '6px 10px', background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 6, fontSize: '0.8rem', color: '#92400e' }}>
+              ⚠️ {blockedCount} prospect{blockedCount !== 1 ? 's' : ''} excluded — already unsubscribed, complained, or converted
+            </div>
+          )}
         </div>
 
         {/* ── Scrollable body ── */}
@@ -891,11 +910,14 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
             <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Status</div>
             <select value={status} onChange={e => setStatus(e.target.value)} style={selStyle}>
               <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="follow_up_sent">Follow-up sent</option>
+              <option value="1st_contact_sent">1st contact sent</option>
+              <option value="1st_followup_sent">1st follow-up sent</option>
+              <option value="2nd_followup_sent">2nd follow-up sent</option>
+              <option value="3rd_followup_sent">3rd follow-up sent</option>
               <option value="replied">Replied</option>
               <option value="converted">Converted</option>
               <option value="unsubscribed">Unsubscribed</option>
+              <option value="complained">Complained</option>
             </select>
           </div>
         </div>
@@ -961,7 +983,7 @@ export default function Outreach() {
 
   // Filters — shared across both tabs (all client-side)
   const [search, setSearch]               = useState('');
-  const [filterStatus, setFilterStatus]   = useState('');
+  const [filterStatus, setFilterStatus]   = useState('actionable');
   const [filterSource, setFilterSource]   = useState('');
   const [filterCountry, setFilterCountry] = useState('');
   const [filterLang, setFilterLang]       = useState('');
@@ -1013,7 +1035,11 @@ export default function Outreach() {
         p.language?.toLowerCase().includes(t);
       if (!terms.every(hit)) return false;
     }
-    if (filterStatus  && p.status   !== filterStatus)  return false;
+    if (filterStatus === 'actionable') {
+      if (BLOCKED_STATUSES.has(p.status)) return false;
+    } else if (filterStatus) {
+      if (p.status !== filterStatus) return false;
+    }
     if (filterSource  && p.source   !== filterSource)  return false;
     if (filterCountry && p.country  !== filterCountry) return false;
     if (filterLang    && p.language !== filterLang)    return false;
@@ -1038,7 +1064,11 @@ export default function Outreach() {
         p.language?.toLowerCase().includes(t);
       if (!terms.every(hit)) return false;
     }
-    if (filterStatus  && p.status   !== filterStatus)  return false;
+    if (filterStatus === 'actionable') {
+      if (BLOCKED_STATUSES.has(p.status)) return false;
+    } else if (filterStatus) {
+      if (p.status !== filterStatus) return false;
+    }
     if (filterSource  && p.source   !== filterSource)  return false;
     if (filterCountry && p.country  !== filterCountry) return false;
     if (filterLang    && p.language !== filterLang)    return false;
@@ -1049,10 +1079,10 @@ export default function Outreach() {
   const languages = [...new Set(prospects.map(p => p.language).filter(Boolean))].sort();
   const sources   = [...new Set(prospects.map(p => p.source).filter(Boolean))].sort();
 
-  const anyFilter = search || filterStatus || filterSource || filterCountry || filterLang || filterFollowUp;
+  const anyFilter = search || filterStatus !== 'actionable' || filterSource || filterCountry || filterLang || filterFollowUp;
 
   function clearFilters() {
-    setSearch(''); setFilterStatus(''); setFilterSource('');
+    setSearch(''); setFilterStatus('actionable'); setFilterSource('');
     setFilterCountry(''); setFilterLang(''); setFilterFollowUp('');
     setSelected([]);
   }
@@ -1082,6 +1112,16 @@ export default function Outreach() {
       await saApiFetch(`/api/admin/outreach/prospects/${id}`, { method: 'DELETE' });
     }
     load(); setSelected([]);
+  }
+
+  async function markComplained(id) {
+    if (!window.confirm('Mark this prospect as complained? They will be blocked from future sends.')) return;
+    await saApiFetch(`/api/admin/outreach/prospects/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'complained' }),
+    });
+    load();
   }
 
   function exportCsv() {
@@ -1163,12 +1203,16 @@ export default function Outreach() {
           style={{ flex: '1 1 120px', minWidth: 110, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
         >
           <option value="">All statuses</option>
+          <option value="actionable">Actionable</option>
           <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="follow_up_sent">Follow-up sent</option>
+          <option value="1st_contact_sent">1st contact sent</option>
+          <option value="1st_followup_sent">1st follow-up sent</option>
+          <option value="2nd_followup_sent">2nd follow-up sent</option>
+          <option value="3rd_followup_sent">3rd follow-up sent</option>
           <option value="replied">Replied</option>
           <option value="converted">Converted</option>
           <option value="unsubscribed">Unsubscribed</option>
+          <option value="complained">Complained</option>
         </select>
         <select
           value={filterSource} onChange={e => { setFilterSource(e.target.value); setSelected([]); }}
@@ -1239,11 +1283,14 @@ export default function Outreach() {
           >
             <option value="">Change status ▾</option>
             <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="follow_up_sent">Follow-up sent</option>
+            <option value="1st_contact_sent">1st contact sent</option>
+            <option value="1st_followup_sent">1st follow-up sent</option>
+            <option value="2nd_followup_sent">2nd follow-up sent</option>
+            <option value="3rd_followup_sent">3rd follow-up sent</option>
             <option value="replied">Replied</option>
             <option value="converted">Converted</option>
             <option value="unsubscribed">Unsubscribed</option>
+            <option value="complained">Complained</option>
           </select>
           <Btn small variant="danger" onClick={bulkDelete}>Delete</Btn>
           <Btn small variant="secondary" onClick={exportCsv}>Export CSV</Btn>
@@ -1348,7 +1395,7 @@ export default function Outreach() {
                           type="checkbox"
                           checked={selected.includes(p.id)}
                           onChange={() => toggleSelect(p.id)}
-                          disabled={p.status === 'unsubscribed'}
+                          disabled={BLOCKED_STATUSES.has(p.status)}
                         />
                       </td>
                       <td style={{ padding: '8px 12px' }}>
@@ -1375,8 +1422,11 @@ export default function Outreach() {
                       <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: 4 }}>
                           <Btn small variant="secondary" onClick={() => setEditing(p)}>Edit</Btn>
-                          {p.status !== 'unsubscribed' && (
+                          {!BLOCKED_STATUSES.has(p.status) && (
                             <Btn small onClick={() => { setSelected([p.id]); setShowCompose(true); }}>Email</Btn>
+                          )}
+                          {p.status !== 'complained' && (
+                            <Btn small variant="danger" onClick={() => markComplained(p.id)} title="Mark as complained" style={{ padding: '4px 7px' }}>!</Btn>
                           )}
                           <Btn small variant="danger" onClick={() => delProspect(p.id)}>✕</Btn>
                         </div>
