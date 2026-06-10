@@ -70,7 +70,8 @@ app.use(express.json());
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
 // Landing page, widget.js, widget-test.html
-app.use(express.static(join(__dirname, 'public')));
+// extensions:['html'] lets /about, /compare, /how-it-works etc. serve without the .html suffix
+app.use(express.static(join(__dirname, 'public'), { extensions: ['html'] }));
 
 // React SPA assets (JS, CSS, icons) — served at /app/*
 app.use('/app', express.static(join(__dirname, '../client/dist')));
