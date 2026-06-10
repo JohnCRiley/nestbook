@@ -170,6 +170,83 @@ function propertyCalendarSection(availMap) {
 </div>`;
 }
 
+function wpGallerySection(allPhotos, totalCount) {
+  if (!allPhotos || allPhotos.length === 0) return '';
+
+  if (allPhotos.length === 1) {
+    return `
+<div class="wp-gallery">
+  <div class="wp-gallery-solo">
+    <img src="/uploads/rooms/${esc(allPhotos[0])}" alt="" loading="eager" />
+  </div>
+</div>`;
+  }
+
+  const sidePhotos = allPhotos.slice(1, allPhotos.length >= 4 ? 3 : allPhotos.length);
+  const seeAllBtn = totalCount > 4
+    ? `<button class="wp-gallery-btn" onclick="document.querySelector('.wp-showcase-wrap')?.scrollIntoView({behavior:'smooth'})">
+        <i class="ti ti-photo"></i> See all ${totalCount} photos
+      </button>`
+    : '';
+
+  return `
+<div class="wp-gallery">
+  <div class="wp-gallery-grid">
+    <div class="wp-gallery-main">
+      <img src="/uploads/rooms/${esc(allPhotos[0])}" alt="" loading="eager" />
+    </div>
+    <div class="wp-gallery-side${sidePhotos.length >= 2 ? ' has-four' : ''}">
+      ${sidePhotos.map(f => `<div class="wp-gal-thumb"><img src="/uploads/rooms/${esc(f)}" alt="" loading="lazy" /></div>`).join('\n      ')}
+    </div>
+  </div>
+  ${seeAllBtn}
+</div>`;
+}
+
+function wpAlternatingShowcase(rooms, photosByRoom, palette) {
+  if (!rooms || rooms.length === 0) return '';
+
+  const rows = rooms.map((room, index) => {
+    const photos  = photosByRoom?.[room.id] ?? [];
+    const reversed = index % 2 === 1;
+    const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
+    const typeLabel = room.type ? room.type.charAt(0).toUpperCase() + room.type.slice(1) : '';
+    const descHtml  = room.description ? `<p class="room-desc">${esc(room.description)}</p>` : '';
+    const amenityHtml = amenities.length > 0
+      ? `<div class="amenities">${amenities.map(a => `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`).join('')}</div>`
+      : '';
+
+    const photoSection = photos.length > 0
+      ? `<div class="wp-showcase-photos" style="${reversed ? 'order:2' : 'order:1'}">
+          <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
+          ${photos.length > 1 ? `<div class="wp-showcase-photo-strip">
+            ${photos.slice(0, 5).map((f, i) => `<img src="/uploads/rooms/${esc(f)}" class="wp-showcase-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
+          </div>` : ''}
+        </div>`
+      : `<div class="wp-showcase-photos wp-showcase-no-photo" style="${reversed ? 'order:2' : 'order:1'}"><i class="ti ti-bed"></i></div>`;
+
+    return `
+    <div class="wp-showcase-row">
+      ${photoSection}
+      <div class="wp-showcase-content" style="${reversed ? 'order:1' : 'order:2'}">
+        ${typeLabel ? `<span class="room-type-badge">${esc(typeLabel)}</span>` : ''}
+        <h3>${esc(room.name)}</h3>
+        ${descHtml}
+        ${amenityHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+<div class="wp-showcase-wrap">
+  <div style="max-width:1100px;margin:0 auto;padding:40px 0 0;">
+    <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.5rem,3.5vw,1.9rem);font-weight:700;color:${esc(palette.dark)};padding:0 24px 24px;"
+        data-i18n="page.whatsIncluded">What's included</h2>
+  </div>
+  ${rows}
+</div>`;
+}
+
 function showcaseRoomCard(room, palette, photos) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const typeLabel = room.type
@@ -304,16 +381,44 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     referrerpolicy="no-referrer-when-downgrade">
   </iframe>` : '';
 
+  // Collect all room photos in display order for the WP gallery
+  const allRoomPhotos = rooms.flatMap(r => photosByRoom?.[r.id] ?? []);
+  const gallerySection = isWholeProperty ? wpGallerySection(allRoomPhotos, allRoomPhotos.length) : '';
+
   let heroSection;
   if (isWholeProperty) {
     const rate = property.whole_property_rate;
     const rateDisplay = rate ? `${esc(currSym)}${esc(Number(rate).toFixed(0))}` : '';
-    const statsHtml = [
-      property.total_capacity ? `<span><i class="ti ti-users"></i> ${esc(String(property.total_capacity))} <span data-i18n="page.guests">guests</span></span>` : '',
-      property.bedroom_count  ? `<span><i class="ti ti-bed"></i> ${esc(String(property.bedroom_count))} bedrooms</span>` : '',
-      property.bathroom_count ? `<span><i class="ti ti-bath"></i> ${esc(String(property.bathroom_count))} bathrooms</span>` : '',
+
+    // Build stats bar for WP (sticky below gallery)
+    const statsDetails = [
+      property.total_capacity ? `<span><i class="ti ti-users"></i> ${esc(String(property.total_capacity))} guests</span>` : '',
+      property.bedroom_count  ? `<span class="wp-stats-sep">·</span><span><i class="ti ti-bed"></i> ${esc(String(property.bedroom_count))} bedrooms</span>` : '',
+      property.bathroom_count ? `<span class="wp-stats-sep">·</span><span><i class="ti ti-bath"></i> ${esc(String(property.bathroom_count))} bathrooms</span>` : '',
+      rateDisplay             ? `<span class="wp-stats-sep">·</span><span class="wp-stats-rate">${rateDisplay} <span class="room-price-unit">/ night</span></span>` : '',
     ].filter(Boolean).join('');
-    heroSection = `
+
+    // If photos exist, use gallery as hero; if not, fall back to the photo/map hero
+    if (allRoomPhotos.length > 0) {
+      heroSection = `${gallerySection}
+<div class="wp-stats-bar">
+  <div class="wp-stats-inner">
+    <div class="wp-stats-name">
+      ${typeLabel ? `<div class="hero-badge" style="position:relative;background:${esc(palette.light)};border-color:${esc(palette.brand)};color:${esc(palette.dark)}">${esc(typeLabel)}</div>` : ''}
+      <h1>${esc(name)}</h1>
+    </div>
+    ${statsDetails ? `<div class="wp-stats-details">${statsDetails}</div>` : ''}
+    ${isPaidPlan ? `<button class="wp-stats-btn" onclick="openWidget()">Check availability →</button>` : `<button class="wp-stats-btn" onclick="scrollToEnquiry()">Send enquiry</button>`}
+  </div>
+</div>`;
+    } else {
+      // No photos — use existing hero style
+      const statsHtml = [
+        property.total_capacity ? `<span><i class="ti ti-users"></i> ${esc(String(property.total_capacity))} <span data-i18n="page.guests">guests</span></span>` : '',
+        property.bedroom_count  ? `<span><i class="ti ti-bed"></i> ${esc(String(property.bedroom_count))} bedrooms</span>` : '',
+        property.bathroom_count ? `<span><i class="ti ti-bath"></i> ${esc(String(property.bathroom_count))} bathrooms</span>` : '',
+      ].filter(Boolean).join('');
+      heroSection = `
 <div class="hero hero-whole" style="${heroStyle}">
   ${mapIframe}
   ${heroInner}
@@ -324,6 +429,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     ${rateDisplay ? `<div class="hero-price">${rateDisplay}<span class="room-price-unit"> / <span data-i18n="page.perNight">per night</span></span></div>` : ''}
   </div>
 </div>`;
+    }
   } else {
     heroSection = `
 <div class="hero" style="${heroStyle}">
@@ -350,18 +456,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 
   let roomsSection;
   if (isWholeProperty) {
-    const showcaseCards = rooms.map(r => showcaseRoomCard(r, palette, photosByRoom?.[r.id])).join('\n');
-    const propAvailMap  = getPropertyAvailMap(bookings);
+    const propAvailMap = getPropertyAvailMap(bookings);
     roomsSection = `
-${rooms.length > 0 ? `
-<section class="whats-included">
-  <div class="section-inner">
-    <h2 data-i18n="page.whatsIncluded">What's included</h2>
-    <div class="rooms-grid rooms-grid-showcase">
-      ${showcaseCards}
-    </div>
-  </div>
-</section>` : ''}
+${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
 <section class="availability">
   <div class="section-inner">
     <h2 data-i18n="page.availability">Availability</h2>
@@ -560,6 +657,199 @@ body {
 @media (max-width: 540px) {
   .hero { height: 320px; }
   .hero-overlay { padding: 20px 18px; }
+}
+
+/* ── WP Photo Gallery ─────────────────────────────────────────────── */
+.wp-gallery {
+  position: relative;
+  background: #111;
+  overflow: hidden;
+}
+.wp-gallery-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  height: 60vh;
+  min-height: 380px;
+  max-height: 600px;
+  gap: 3px;
+}
+.wp-gallery-main { overflow: hidden; }
+.wp-gallery-main img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wp-gallery-side {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 3px;
+}
+.wp-gallery-side.has-four { grid-template-rows: 1fr 1fr; }
+.wp-gal-thumb { overflow: hidden; }
+.wp-gal-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wp-gallery-solo { height: 60vh; min-height: 380px; max-height: 600px; overflow: hidden; }
+.wp-gallery-solo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wp-gallery-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.92);
+  border: 1.5px solid rgba(0,0,0,0.15);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+  transition: background 0.12s;
+}
+.wp-gallery-btn:hover { background: #fff; }
+@media (max-width: 640px) {
+  .wp-gallery-grid { grid-template-columns: 1fr; height: 55vw; min-height: 220px; }
+  .wp-gallery-side { display: none; }
+}
+
+/* ── WP Stats Bar ─────────────────────────────────────────────────── */
+.wp-stats-bar {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.wp-stats-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.wp-stats-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 180px;
+}
+.wp-stats-name h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wp-stats-details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #475569;
+}
+.wp-stats-sep { color: #cbd5e1; }
+.wp-stats-rate { font-weight: 700; color: ${esc(palette.dark)}; }
+.wp-stats-btn {
+  background: ${esc(palette.dark)};
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.14s;
+  flex-shrink: 0;
+}
+.wp-stats-btn:hover { background: ${esc(palette.brand)}; }
+@media (max-width: 640px) {
+  .wp-stats-details { gap: 10px; font-size: 0.78rem; }
+  .wp-stats-btn { width: 100%; }
+}
+
+/* ── WP Alternating Showcase ─────────────────────────────────────── */
+.wp-showcase-wrap { background: #fff; }
+.wp-showcase-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 420px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.wp-showcase-row:last-child { border-bottom: none; }
+.wp-showcase-photos {
+  overflow: hidden;
+  position: relative;
+}
+.wp-showcase-photos img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 320px;
+}
+.wp-showcase-photo-strip {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.4));
+}
+.wp-showcase-strip-thumb {
+  width: 48px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: opacity 0.12s;
+  border: 1.5px solid transparent;
+}
+.wp-showcase-strip-thumb:hover, .wp-showcase-strip-thumb.active {
+  opacity: 1;
+  border-color: #fff;
+}
+.wp-showcase-content {
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.wp-showcase-content h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.3rem, 2.5vw, 1.6rem);
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+.wp-showcase-no-photo {
+  background: ${esc(palette.light)};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${esc(palette.dark)};
+  opacity: 0.5;
+  font-size: 3rem;
+}
+@media (max-width: 768px) {
+  .wp-showcase-row {
+    grid-template-columns: 1fr;
+  }
+  .wp-showcase-photos img { min-height: 240px; max-height: 320px; }
+  .wp-showcase-content { padding: 28px 24px; }
 }
 
 /* ── Sections ──────────────────────────────────────────────────────── */
@@ -1370,7 +1660,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
       FROM bookings b
       JOIN rooms r ON r.id = b.room_id
       WHERE r.property_id = ?
-        AND b.status IN ('confirmed', 'arriving', 'in_house')
+        AND b.status IN ('confirmed', 'arriving', 'in_house', 'pending_owner_approval')
         AND b.check_out_date >= date('now')
     `).all(property.id);
 

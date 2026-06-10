@@ -29,7 +29,8 @@ import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { errorReportsRouter }        from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
-import { sendDowngradeEmail }        from './email/emailService.js';
+import { sendDowngradeEmail, sendAccessEmail } from './email/emailService.js';
+import db from './db/database.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -120,9 +121,52 @@ app.get('/app/*', (req, res) => {
   res.sendFile(join(__dirname, '../client/dist/index.html'));
 });
 
+// ── WP access code auto-send ──────────────────────────────────────────────────
+async function sendPendingAccessEmails() {
+  try {
+    const properties = db.prepare(`
+      SELECT p.*, u.email AS owner_email
+      FROM properties p
+      JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
+      WHERE p.rental_type = 'whole_property'
+        AND p.access_method IS NOT NULL AND p.access_method != '' AND p.access_method != 'none'
+        AND (p.arrival_instructions IS NOT NULL OR p.access_code IS NOT NULL)
+    `).all();
+
+    for (const property of properties) {
+      const hoursAhead = Math.max(1, parseInt(property.send_access_hours, 10) || 48);
+      const cutoff = new Date();
+      cutoff.setHours(cutoff.getHours() + hoursAhead);
+      const cutoffDate = cutoff.toISOString().slice(0, 10);
+
+      const bookings = db.prepare(`
+        SELECT b.*, g.email AS guest_email, g.first_name AS guest_first_name, g.last_name AS guest_last_name
+        FROM bookings b
+        JOIN guests g ON g.id = b.guest_id
+        WHERE b.property_id = ?
+          AND b.status = 'confirmed'
+          AND b.check_in_date <= ?
+          AND b.check_in_date >= date('now')
+          AND (b.access_email_sent IS NULL OR b.access_email_sent = 0)
+      `).all(property.id, cutoffDate);
+
+      for (const booking of bookings) {
+        await sendAccessEmail(booking, property);
+        db.prepare(`UPDATE bookings SET access_email_sent = 1 WHERE id = ?`).run(booking.id);
+      }
+    }
+  } catch (err) {
+    console.error('[access-email] Scheduler error:', err.message);
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`NestBook server running on http://localhost:${PORT}`);
   const saPassword = (process.env.SUPER_ADMIN_PASSWORD ?? '').trim();
   console.log(`SA password loaded: ${saPassword.length > 0 ? `YES [length: ${saPassword.length}]` : 'NO — set SUPER_ADMIN_PASSWORD in .env'}`);
+
+  // Run access email check on startup and every 6 hours
+  sendPendingAccessEmails();
+  setInterval(sendPendingAccessEmails, 6 * 60 * 60 * 1000);
 });

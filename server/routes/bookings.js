@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/database.js';
-import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation } from '../email/emailService.js';
+import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const bookingsRouter = Router();
@@ -354,8 +354,23 @@ bookingsRouter.put('/:id', (req, res) => {
       room_id, guest_id, check_in_date, check_out_date,
       num_guests, status, source, notes, total_price, breakfast_added,
       breakfast_start_date, breakfast_guests, breakfast_price_per_person,
-      payment_method, checked_out_at,
+      payment_method, checked_out_at, _wp_action,
     } = req.body;
+
+    // WP approve/decline from dashboard — status-only update + email
+    if (_wp_action === 'approve' || _wp_action === 'decline') {
+      const newStatus = _wp_action === 'approve' ? 'confirmed' : 'declined';
+      db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(newStatus, req.params.id);
+      const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+      res.json(updated);
+      const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
+      if (_wp_action === 'approve') {
+        sendBookingApprovedEmail(updated, property).catch(() => {});
+      } else {
+        sendBookingDeclinedEmail(updated, property).catch(() => {});
+      }
+      return;
+    }
 
     if (check_out_date <= check_in_date) {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });

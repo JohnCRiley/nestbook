@@ -61,6 +61,7 @@
       step2Title: 'Select a Room',
       step3Title: 'Your Details',
       step4Title: 'Confirm Booking',
+      wpStep4Title: 'Review your request',
       checkIn: 'Check-in', checkOut: 'Check-out', guests: 'Guests',
       checkAvailability: 'Check Availability',
       noRooms: 'No rooms are available for those dates. Please try different dates.',
@@ -72,8 +73,11 @@
       summaryNights: 'Duration', summaryTotal: 'Total',
       nights: (n) => `${n} ${n === 1 ? 'night' : 'nights'}`,
       confirmBtn: 'Confirm Booking', confirming: 'Confirming…',
+      wpConfirmBtn: 'Send Booking Request', wpConfirming: 'Sending…',
       successTitle: 'Booking Confirmed!',
+      wpSuccessTitle: 'Request Submitted!',
       successMsg: 'Thank you! Your booking reference is:',
+      wpSuccessMsg: 'Your request has been received. The owner will review it and confirm within 24 hours.',
       successClose: 'Close',
       errRequired: 'Please fill in all required fields.',
       errDates: 'Check-out must be after check-in.',
@@ -90,6 +94,7 @@
       step2Title: 'Choisir une chambre',
       step3Title: 'Vos coordonnées',
       step4Title: 'Confirmer la réservation',
+      wpStep4Title: 'Votre demande',
       checkIn: 'Arrivée', checkOut: 'Départ', guests: 'Voyageurs',
       checkAvailability: 'Vérifier la disponibilité',
       noRooms: 'Aucune chambre disponible pour ces dates. Veuillez essayer d\'autres dates.',
@@ -101,8 +106,11 @@
       summaryNights: 'Durée', summaryTotal: 'Total',
       nights: (n) => `${n} ${n === 1 ? 'nuit' : 'nuits'}`,
       confirmBtn: 'Confirmer la réservation', confirming: 'Confirmation…',
+      wpConfirmBtn: 'Envoyer la demande', wpConfirming: 'Envoi…',
       successTitle: 'Réservation confirmée !',
+      wpSuccessTitle: 'Demande envoyée !',
       successMsg: 'Merci ! Votre numéro de référence est :',
+      wpSuccessMsg: 'Votre demande a été reçue. Le propriétaire la confirmera dans les 24 heures.',
       successClose: 'Fermer',
       errRequired: 'Veuillez remplir tous les champs obligatoires.',
       errDates: 'La date de départ doit être postérieure à l\'arrivée.',
@@ -119,6 +127,7 @@
       step2Title: 'Seleccione una habitación',
       step3Title: 'Sus datos',
       step4Title: 'Confirmar reserva',
+      wpStep4Title: 'Su solicitud',
       checkIn: 'Llegada', checkOut: 'Salida', guests: 'Huéspedes',
       checkAvailability: 'Comprobar disponibilidad',
       noRooms: 'No hay habitaciones disponibles para esas fechas. Pruebe otras fechas.',
@@ -130,8 +139,11 @@
       summaryNights: 'Duración', summaryTotal: 'Total',
       nights: (n) => `${n} ${n === 1 ? 'noche' : 'noches'}`,
       confirmBtn: 'Confirmar reserva', confirming: 'Confirmando…',
+      wpConfirmBtn: 'Enviar solicitud', wpConfirming: 'Enviando…',
       successTitle: '¡Reserva confirmada!',
+      wpSuccessTitle: '¡Solicitud enviada!',
       successMsg: '¡Gracias! Su número de referencia es:',
+      wpSuccessMsg: 'Su solicitud ha sido recibida. El propietario la confirmará en 24 horas.',
       successClose: 'Cerrar',
       errRequired: 'Por favor, complete todos los campos obligatorios.',
       errDates: 'La fecha de salida debe ser posterior a la llegada.',
@@ -148,6 +160,7 @@
       step2Title: 'Kamer kiezen',
       step3Title: 'Uw gegevens',
       step4Title: 'Reservering bevestigen',
+      wpStep4Title: 'Uw aanvraag',
       checkIn: 'Aankomst', checkOut: 'Vertrek', guests: 'Personen',
       checkAvailability: 'Beschikbaarheid controleren',
       noRooms: 'Geen kamers beschikbaar voor deze datums. Kies andere datums.',
@@ -159,8 +172,11 @@
       summaryNights: 'Verblijfsduur', summaryTotal: 'Totaal',
       nights: (n) => `${n} nacht${n !== 1 ? 'en' : ''}`,
       confirmBtn: 'Reservering bevestigen', confirming: 'Bezig met bevestigen…',
+      wpConfirmBtn: 'Aanvraag verzenden', wpConfirming: 'Verzenden…',
       successTitle: 'Reservering bevestigd!',
+      wpSuccessTitle: 'Aanvraag verzonden!',
       successMsg: 'Bedankt! Uw referentienummer is:',
+      wpSuccessMsg: 'Uw aanvraag is ontvangen. De eigenaar bevestigt binnen 24 uur.',
       successClose: 'Sluiten',
       errRequired: 'Vul alle verplichte velden in.',
       errDates: 'Vertrekdatum moet na aankomstdatum liggen.',
@@ -177,6 +193,7 @@
       step2Title: 'Zimmer wählen',
       step3Title: 'Ihre Daten',
       step4Title: 'Buchung bestätigen',
+      wpStep4Title: 'Ihre Anfrage',
       checkIn: 'Anreise', checkOut: 'Abreise', guests: 'Gäste',
       checkAvailability: 'Verfügbarkeit prüfen',
       noRooms: 'Keine Zimmer verfügbar für diese Daten. Bitte andere Daten wählen.',
@@ -188,8 +205,11 @@
       summaryNights: 'Dauer', summaryTotal: 'Gesamt',
       nights: (n) => `${n} ${n === 1 ? 'Nacht' : 'Nächte'}`,
       confirmBtn: 'Buchung bestätigen', confirming: 'Wird bestätigt…',
+      wpConfirmBtn: 'Anfrage senden', wpConfirming: 'Senden…',
       successTitle: 'Buchung bestätigt!',
+      wpSuccessTitle: 'Anfrage gesendet!',
       successMsg: 'Vielen Dank! Ihre Referenznummer lautet:',
+      wpSuccessMsg: 'Ihre Anfrage wurde empfangen. Der Gastgeber bestätigt innerhalb von 24 Stunden.',
       successClose: 'Schließen',
       errRequired: 'Bitte füllen Sie alle Pflichtfelder aus.',
       errDates: 'Abreise muss nach Anreise liegen.',
@@ -373,6 +393,7 @@
         // 2. Create the booking
         const nights     = nightsBetween(S.checkIn, S.checkOut);
         const totalPrice = S.selectedRoom.price_per_night * nights;
+        const bookingStatus = S.wholeProperty ? 'pending_owner_approval' : 'confirmed';
         const booking = await apiFetch('/api/widget/bookings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -383,7 +404,7 @@
             check_in_date:  S.checkIn,
             check_out_date: S.checkOut,
             num_guests:     S.numGuests,
-            status:         'confirmed',
+            status:         bookingStatus,
             source:         'direct',
             notes:          S.guest.notes.trim() || null,
             total_price:    totalPrice,
@@ -1170,7 +1191,7 @@
     backBtn.addEventListener('click', () => { S.step = 3; S.error = null; render(); });
 
     const confirmBtn = el('button', 'nb-btn-main');
-    confirmBtn.appendChild(txt(S.loading ? T.confirming : T.confirmBtn));
+    confirmBtn.appendChild(txt(S.wholeProperty ? (S.loading ? T.wpConfirming : T.wpConfirmBtn) : (S.loading ? T.confirming : T.confirmBtn)));
     confirmBtn.disabled = S.loading;
     confirmBtn.addEventListener('click', () => { confirmBooking(); });
 
@@ -1182,17 +1203,22 @@
   function renderSuccess() {
     const wrap = el('div', 'nb-success');
 
-    const icon = el('div', 'nb-success-icon'); icon.appendChild(txt('✓'));
-    const title = el('h2', 'nb-success-title'); title.appendChild(txt(T.successTitle));
-    const msg   = el('p', 'nb-success-msg'); msg.appendChild(txt(T.successMsg));
-    const ref   = el('div', 'nb-ref'); ref.appendChild(txt('#' + String(S.bookingRef).padStart(4, '0')));
+    const icon = el('div', 'nb-success-icon'); icon.appendChild(txt(S.wholeProperty ? '⏳' : '✓'));
+    const title = el('h2', 'nb-success-title'); title.appendChild(txt(S.wholeProperty ? T.wpSuccessTitle : T.successTitle));
+    const msg   = el('p', 'nb-success-msg'); msg.appendChild(txt(S.wholeProperty ? T.wpSuccessMsg : T.successMsg));
+
+    if (!S.wholeProperty) {
+      const ref = el('div', 'nb-ref'); ref.appendChild(txt('#' + String(S.bookingRef).padStart(4, '0')));
+      wrap.appendChild(ref);
+    }
+
     const sub   = el('p', 'nb-success-sub');
     sub.appendChild(txt(S.guest.email
       ? (LANG === 'fr' ? 'Un récapitulatif sera envoyé à ' : LANG === 'de' ? 'Eine Bestätigung wird gesendet an ' : LANG === 'es' ? 'Se enviará una confirmación a ' : 'A confirmation will be sent to ') + S.guest.email
       : ''));
 
     wrap.appendChild(icon); wrap.appendChild(title); wrap.appendChild(msg);
-    wrap.appendChild(ref); if (S.guest.email && !S.isDemo) wrap.appendChild(sub);
+    if (S.guest.email && !S.isDemo) wrap.appendChild(sub);
 
     if (S.isDemo) {
       const demoNote = el('p', 'nb-demo-note');
@@ -1231,7 +1257,9 @@
 
     // Update the title row
     const titleRow = modal.querySelector('.nb-hd-title-row');
-    titleRow.textContent = S.step < 5 ? STEP_LABELS[S.step - 1] : T.successTitle;
+    titleRow.textContent = S.step === 5 ? (S.wholeProperty ? T.wpSuccessTitle : T.successTitle)
+      : (S.step === 4 && S.wholeProperty) ? T.wpStep4Title
+      : STEP_LABELS[S.step - 1];
 
     if (S.loading) {
       renderLoading(S.step === 1 ? T.checking : T.confirming);

@@ -2,9 +2,15 @@
 // These endpoints are called by the embedded booking widget from guest-facing
 // websites. They expose only the minimum data needed for public availability
 // checks and booking creation.
+import crypto from 'crypto';
 import { Router } from 'express';
 import db from '../db/database.js';
-import { sendBookingConfirmation } from '../email/emailService.js';
+import {
+  sendBookingConfirmation,
+  sendApprovalRequestEmail,
+  sendBookingApprovedEmail,
+  sendBookingDeclinedEmail,
+} from '../email/emailService.js';
 
 // ── Demo mode rooms (static, never blocked, no DB dependency) ─────────────────
 // These match the Domaine des Lavandes demo property rooms shown on widget-test.html.
@@ -154,11 +160,14 @@ widgetRouter.post('/bookings', (req, res) => {
       if (bl) flagged = 1;
     }
 
+    const isWpRequest = (status === 'pending_owner_approval');
+    const approvalToken = isWpRequest ? crypto.randomBytes(32).toString('hex') : null;
+
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price, flagged)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         num_guests, status, source, notes, total_price, flagged, approval_token)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
@@ -168,6 +177,7 @@ widgetRouter.post('/bookings', (req, res) => {
       notes        ?? null,
       total_price  ?? null,
       flagged,
+      approvalToken,
     );
 
     const newBooking = db.prepare(`
@@ -185,13 +195,102 @@ widgetRouter.post('/bookings', (req, res) => {
 
     res.status(201).json(newBooking);
 
-    // Fire-and-forget — email must not delay or break the HTTP response
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(newBooking.property_id);
-    sendBookingConfirmation(newBooking, property).catch(() => {});
+    // Fire-and-forget emails — must not delay or break the HTTP response
+    const property = db.prepare('SELECT p.*, u.email AS owner_email FROM properties p LEFT JOIN users u ON u.id = p.owner_id AND u.role = \'owner\' WHERE p.id = ?').get(newBooking.property_id);
+    if (isWpRequest && approvalToken) {
+      const base = process.env.APP_URL ?? 'https://nestbook.io';
+      const approveUrl = `${base}/api/widget/bookings/${newBooking.id}/approve?token=${approvalToken}`;
+      const declineUrl = `${base}/api/widget/bookings/${newBooking.id}/decline?token=${approvalToken}`;
+      sendApprovalRequestEmail(newBooking, property, approveUrl, declineUrl).catch(() => {});
+    } else {
+      sendBookingConfirmation(newBooking, property).catch(() => {});
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── GET /api/widget/bookings/:id/approve?token=... ───────────────────────────
+// Public endpoint — called from the approval email link. No auth required.
+widgetRouter.get('/bookings/:id/approve', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { token } = req.query;
+    if (!token) return res.status(400).send(approvalPage('Missing token', false));
+
+    const booking = db.prepare(
+      `SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+              g.email AS guest_email, g.phone AS guest_phone
+       FROM bookings b LEFT JOIN guests g ON g.id = b.guest_id
+       WHERE b.id = ?`
+    ).get(Number(id));
+    if (!booking)                               return res.status(404).send(approvalPage('Booking not found.', false));
+    if (booking.approval_token !== token)       return res.status(403).send(approvalPage('Invalid or expired link.', false));
+    if (booking.status === 'confirmed')         return res.send(approvalPage('This booking has already been approved.', true));
+    if (booking.status === 'declined')          return res.send(approvalPage('This booking was previously declined.', false));
+    if (booking.status !== 'pending_owner_approval') return res.send(approvalPage('This booking cannot be approved.', false));
+
+    db.prepare(`UPDATE bookings SET status = 'confirmed', approval_token = NULL WHERE id = ?`).run(Number(id));
+
+    const property = db.prepare(
+      `SELECT p.*, u.email AS owner_email FROM properties p LEFT JOIN users u ON u.id = p.owner_id AND u.role = 'owner' WHERE p.id = ?`
+    ).get(booking.property_id);
+    const approved = { ...booking, status: 'confirmed' };
+    sendBookingApprovedEmail(approved, property).catch(() => {});
+
+    res.send(approvalPage(`Booking approved! ${booking.guest_first_name} ${booking.guest_last_name} has been notified by email.`, true));
+  } catch (err) {
+    res.status(500).send(approvalPage('Server error. Please try again.', false));
+  }
+});
+
+// ── GET /api/widget/bookings/:id/decline?token=... ────────────────────────────
+widgetRouter.get('/bookings/:id/decline', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { token } = req.query;
+    if (!token) return res.status(400).send(approvalPage('Missing token', false));
+
+    const booking = db.prepare(
+      `SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+              g.email AS guest_email
+       FROM bookings b LEFT JOIN guests g ON g.id = b.guest_id
+       WHERE b.id = ?`
+    ).get(Number(id));
+    if (!booking)                               return res.status(404).send(approvalPage('Booking not found.', false));
+    if (booking.approval_token !== token)       return res.status(403).send(approvalPage('Invalid or expired link.', false));
+    if (booking.status === 'declined')          return res.send(approvalPage('This booking has already been declined.', false));
+    if (booking.status === 'confirmed')         return res.send(approvalPage('This booking has already been approved.', true));
+    if (booking.status !== 'pending_owner_approval') return res.send(approvalPage('This booking cannot be declined.', false));
+
+    db.prepare(`UPDATE bookings SET status = 'declined', approval_token = NULL WHERE id = ?`).run(Number(id));
+
+    const property = db.prepare(`SELECT * FROM properties WHERE id = ?`).get(booking.property_id);
+    const declined = { ...booking, status: 'declined' };
+    sendBookingDeclinedEmail(declined, property).catch(() => {});
+
+    res.send(approvalPage(`Booking declined. ${booking.guest_first_name} ${booking.guest_last_name} has been notified.`, false));
+  } catch (err) {
+    res.status(500).send(approvalPage('Server error. Please try again.', false));
+  }
+});
+
+function approvalPage(message, success) {
+  const colour = success ? '#1a4710' : '#dc2626';
+  const icon   = success ? '✓' : '✕';
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NestBook — Booking ${success ? 'Approved' : 'Declined'}</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f0faf0}
+.card{background:#fff;border-radius:14px;padding:40px 48px;max-width:480px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.icon{width:64px;height:64px;border-radius:50%;background:${colour}20;color:${colour};font-size:2rem;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+h1{color:${colour};font-size:1.5rem;margin:0 0 12px}p{color:#374151;line-height:1.6;margin:0 0 24px}
+a{color:#1a4710;font-weight:600}</style></head>
+<body><div class="card"><div class="icon">${icon}</div>
+<h1>${success ? 'Booking Approved' : 'Booking Declined'}</h1>
+<p>${message}</p>
+<p><a href="https://nestbook.io/app">Go to your NestBook dashboard →</a></p>
+</div></body></html>`;
+}
 
 // ── GET /api/widget/property?property_id=X ───────────────────────────────────
 // Returns the theme for a property so the widget can style itself correctly.

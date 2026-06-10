@@ -757,6 +757,8 @@ a { text-decoration: none; }
 .badge-confirmed   { background: #dbeafe;            color: #1d4ed8; }
 .badge-checked_out { background: #f1f5f9;            color: #64748b; }
 .badge-cancelled   { background: #fee2e2;            color: #dc2626; }
+.badge-pending     { background: #fef3c7;            color: #b45309; }
+.badge-declined    { background: #fee2e2;            color: #dc2626; }
 
 /* ─── Check-in / Check-out action buttons (dashboard rows) ──────────────── */
 .btn-checkin {

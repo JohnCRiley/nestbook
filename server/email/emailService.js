@@ -1072,6 +1072,228 @@ export async function sendBugReportAlert({ userName, userEmail, plan, category, 
   }
 }
 
+// ── WP booking approval request (to property owner) ─────────────────────────
+export async function sendApprovalRequestEmail(booking, property, approveUrl, declineUrl) {
+  if (!resend) return;
+  const ownerEmail = property?.owner_email;
+  if (!ownerEmail) return;
+
+  const guestName  = `${booking.guest_first_name} ${booking.guest_last_name}`;
+  const subject    = `New booking request — ${guestName} · ${property?.name ?? 'NestBook'}`;
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">New Booking Request</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      A guest has submitted a booking request for <strong>${property?.name ?? ''}</strong>.
+      Please review the details below and approve or decline.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">Guest</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${guestName}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Email</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.guest_email ?? '—'}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Phone</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.guest_phone ?? '—'}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-in</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-out</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Guests</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.num_guests ?? 1}</td>
+      </tr>
+      ${booking.notes ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#6b7280;vertical-align:top;">Notes</td><td style="padding:10px 0;font-size:0.875rem;color:#111827;">${booking.notes}</td></tr>` : ''}
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="padding-right:8px;">
+          <a href="${approveUrl}" style="display:block;text-align:center;padding:14px 0;background:#1a4710;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
+            ✓ Approve Booking
+          </a>
+        </td>
+        <td style="padding-left:8px;">
+          <a href="${declineUrl}" style="display:block;text-align:center;padding:14px 0;background:#dc2626;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
+            ✕ Decline Booking
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0;font-size:0.82rem;color:#6b7280;line-height:1.6;">
+      You can also manage this booking from your <a href="https://nestbook.io/app" style="color:#1a4710;">NestBook dashboard</a>.
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: ownerEmail, subject, html: shell(body) });
+    console.log(`[email] Approval request sent → ${ownerEmail}`);
+  } catch (err) {
+    console.error('[email] Failed to send approval request:', err.message);
+  }
+}
+
+// ── WP booking approved (to guest) ───────────────────────────────────────────
+export async function sendBookingApprovedEmail(booking, property) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const subject = `Booking confirmed — ${property?.name ?? 'NestBook'}`;
+  const nights  = Math.round((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000);
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">Your booking is confirmed!</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      Great news, ${booking.guest_first_name}! Your booking at <strong>${property?.name ?? ''}</strong> has been approved.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">Property</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${property?.name ?? '—'}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-in</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-out</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Duration</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${nights} night${nights !== 1 ? 's' : ''}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Guests</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.num_guests ?? 1}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;font-size:0.82rem;color:#6b7280;vertical-align:top;">Booking ref</td>
+        <td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">#${booking.id}</td>
+      </tr>
+    </table>
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+      Questions? Reply to this email and we'll get back to you.
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    console.log(`[email] Booking approved email sent → ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[email] Failed to send booking approved email:', err.message);
+  }
+}
+
+// ── WP booking declined (to guest) ───────────────────────────────────────────
+export async function sendBookingDeclinedEmail(booking, property) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const subject = `Booking request update — ${property?.name ?? 'NestBook'}`;
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#111827;">Booking request update</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      Dear ${booking.guest_first_name}, unfortunately your booking request at <strong>${property?.name ?? ''}</strong>
+      for ${booking.check_in_date} – ${booking.check_out_date} could not be accommodated at this time.
+    </p>
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+      We're sorry for any inconvenience. If you'd like to try alternative dates, please visit our booking page or contact us directly.
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    console.log(`[email] Booking declined email sent → ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[email] Failed to send booking declined email:', err.message);
+  }
+}
+
+// ── WP access code / arrival instructions (to guest before check-in) ─────────
+export async function sendAccessEmail(booking, property) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+  if (!property?.arrival_instructions && !property?.access_code) return;
+
+  const ACCESS_METHOD_LABELS = {
+    code:   'Keypad / door code',
+    keybox: 'Key lockbox',
+    keyed:  'Physical key',
+    app:    'Smart lock app',
+    other:  'Access details',
+  };
+  const methodLabel = ACCESS_METHOD_LABELS[property.access_method] ?? 'Access details';
+  const guestName   = `${booking.guest_first_name} ${booking.guest_last_name}`;
+  const subject     = `Your access details for ${property.name} — ${booking.check_in_date}`;
+
+  const accessBlock = property.access_code ? `
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;">${methodLabel}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:1.1rem;color:#1a4710;font-weight:800;letter-spacing:2px;">${property.access_code}</td>
+      </tr>
+      ${property.check_in_time ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#6b7280;">Check-in from</td><td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">${property.check_in_time}</td></tr>` : ''}
+    </table>` : '';
+
+  const instructionsBlock = property.arrival_instructions ? `
+    <div style="background:#fffbf0;border:1px solid #fcd34d;border-radius:8px;padding:18px 20px;margin-bottom:24px;">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b45309;margin-bottom:8px;">Arrival Instructions</div>
+      <div style="font-size:0.9rem;color:#374151;line-height:1.7;white-space:pre-line;">${property.arrival_instructions}</div>
+    </div>` : '';
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">Your access details are ready</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      Hi ${guestName}, your stay at <strong>${property.name}</strong> starts on <strong>${booking.check_in_date}</strong>.
+      Here is everything you need to access the property.
+    </p>
+    ${accessBlock}
+    ${instructionsBlock}
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:40%;">Check-in date</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-out date</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Guests</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${booking.num_guests ?? 1}</td>
+      </tr>
+    </table>
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+      If you have any questions, please reply to this email to contact the owner directly.
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    console.log(`[email] Access details sent → ${booking.guest_email} (booking ${booking.id})`);
+  } catch (err) {
+    console.error('[email] Failed to send access email:', err.message);
+  }
+}
+
 // ── Outreach / prospect email ─────────────────────────────────────────────────
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {

@@ -190,6 +190,10 @@ export default function Settings() {
         bedroom_count:        p.bedroom_count        ?? '',
         bathroom_count:       p.bathroom_count       ?? '',
         whole_property_rate:  p.whole_property_rate  ?? '',
+        access_method:        p.access_method        ?? '',
+        access_code:          p.access_code          ?? '',
+        arrival_instructions: p.arrival_instructions ?? '',
+        send_access_hours:    p.send_access_hours    ?? 24,
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -899,6 +903,13 @@ export default function Settings() {
             />
           </div>
 
+          {/* Guest Access — WP mode only */}
+          {form && activeProperty?.rental_type === 'whole_property' && (
+            <div style={{ marginTop: 16 }}>
+              <AccessCodeSection form={form} onChange={handleFormChange} t={t} />
+            </div>
+          )}
+
           {/* Seasonal Pricing — rate periods (Pro+) */}
           <div style={{ marginTop: 16 }}>
             <PlanGate requiredPlan="pro" title={t('settings.seasonalPricing')} detail={t('settings.seasonalPricingHint')}>
@@ -1459,6 +1470,72 @@ export default function Settings() {
         onCancel={() => setCatDeleteTarget(null)}
       />
     </>
+  );
+}
+
+// ── AccessCodeSection ─────────────────────────────────────────────────────────
+
+const ACCESS_METHOD_OPTIONS = ['code', 'keybox', 'keyed', 'app', 'other'];
+
+function AccessCodeSection({ form, onChange, t }) {
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.accessTitle')}</h2>
+      </div>
+      <div className="settings-card-body">
+        <div className="settings-field">
+          <label className="settings-label">{t('settings.accessMethodLabel')}</label>
+          <select
+            name="access_method"
+            className="settings-input"
+            value={form.access_method ?? ''}
+            onChange={onChange}
+          >
+            <option value="">—</option>
+            {ACCESS_METHOD_OPTIONS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+        <div className="settings-field">
+          <label className="settings-label">{t('settings.accessCodeLabel')}</label>
+          <input
+            type="text"
+            name="access_code"
+            className="settings-input"
+            value={form.access_code ?? ''}
+            onChange={onChange}
+            placeholder="e.g. 1234"
+          />
+        </div>
+        <div className="settings-field">
+          <label className="settings-label">{t('settings.accessInstructionsLabel')}</label>
+          <textarea
+            name="arrival_instructions"
+            className="settings-input"
+            value={form.arrival_instructions ?? ''}
+            onChange={onChange}
+            rows={4}
+            placeholder={t('settings.accessInstructionsHint')}
+            style={{ resize: 'vertical' }}
+          />
+        </div>
+        <div className="settings-field">
+          <label className="settings-label">{t('settings.accessSendHoursLabel')}</label>
+          <input
+            type="number"
+            name="send_access_hours"
+            className="settings-input"
+            value={form.send_access_hours ?? 24}
+            onChange={onChange}
+            min={1}
+            max={168}
+            style={{ maxWidth: 120 }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 

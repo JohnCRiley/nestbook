@@ -23,7 +23,7 @@ const SOURCE_OPTIONS = [
   { value: 'other',       label: 'Other' },
 ];
 
-const STATUS_OPTIONS = ['confirmed', 'arriving', 'checked_out', 'cancelled'];
+const STATUS_OPTIONS = ['confirmed', 'arriving', 'checked_out', 'cancelled', 'pending_owner_approval', 'declined'];
 
 export default function BookingPanel({ booking: initialBooking, rooms = [], guests = [], onClose, onStatusUpdate, onSave }) {
   const { fmtCurrency, locale, property, currencySymbol } = useLocale();
@@ -47,7 +47,14 @@ export default function BookingPanel({ booking: initialBooking, rooms = [], gues
   const perNight = isWP
     ? (nights > 0 && b.total_price ? b.total_price / nights : null)
     : (b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null));
-  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
+  const statusLabel = {
+    arriving:               t('calLegendInHouse'),
+    confirmed:              t('confirmed'),
+    checked_out:            t('checkedOut'),
+    cancelled:              t('cancelled'),
+    pending_owner_approval: t('wpPendingApprovalStatus'),
+    declined:               t('wpDeclinedStatus'),
+  }[b.status] ?? b.status;
 
   return (
     <>
@@ -323,6 +330,24 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
   return (
     <>
+      {/* ── WP approval banner ───────────────────────────────────────────── */}
+      {isWP && b.status === 'pending_owner_approval' && (
+        <WpApprovalBanner bookingId={b.id} onBookingUpdated={onBookingUpdated} t={t} />
+      )}
+
+      {/* ── WP declined banner ───────────────────────────────────────────── */}
+      {isWP && b.status === 'declined' && (
+        <div style={{
+          padding: '12px 22px', borderBottom: '1px solid var(--border)',
+          background: '#fee2e2', display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>✕</span>
+          <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#dc2626' }}>
+            {t('wpDeclinedBannerMsg')}
+          </span>
+        </div>
+      )}
+
       {/* ── Deposit strip ─────────────────────────────────────────────────── */}
       {depositRequired && (b.status === 'confirmed' || b.status === 'arriving') && (
         <div style={{
@@ -542,6 +567,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           onCheckIn={handleCheckIn}
           onCheckOut={() => setShowCheckout(true)}
         />
+      )}
+
+      {b.status === 'pending_owner_approval' && (
+        <div className="panel-actions" style={{ padding: '14px 22px 10px', borderBottom: '1px solid var(--border)' }}>
+          <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
+        </div>
       )}
 
       {/* ── Mid-stay breakfast management ──────────────────────────────────── */}
@@ -912,7 +943,14 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
               <select name="status" className="panel-field-input" value={form.status} onChange={handleChange}>
                 {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>
-                    {{ confirmed: t('confirmed'), arriving: t('calLegendInHouse'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[s] ?? s}
+                    {{
+                      confirmed:              t('confirmed'),
+                      arriving:               t('calLegendInHouse'),
+                      checked_out:            t('checkedOut'),
+                      cancelled:              t('cancelled'),
+                      pending_owner_approval: t('wpPendingApprovalStatus'),
+                      declined:               t('wpDeclinedStatus'),
+                    }[s] ?? s}
                   </option>
                 ))}
               </select>
@@ -1274,6 +1312,86 @@ function PanelRow({ label, value }) {
     <div className="panel-row">
       <span className="panel-row-label">{label}</span>
       <span className="panel-row-value">{value}</span>
+    </div>
+  );
+}
+
+// ── Refund modal ──────────────────────────────────────────────────────────────
+
+// ── WP Approval Banner ────────────────────────────────────────────────────────
+
+function WpApprovalBanner({ bookingId, onBookingUpdated, t }) {
+  const [working, setWorking] = useState(null); // 'approve' | 'decline' | null
+  const [error,   setError]   = useState(null);
+
+  const handleAction = async (action) => {
+    setWorking(action);
+    setError(null);
+    try {
+      const newStatus = action === 'approve' ? 'confirmed' : 'declined';
+      const res = await apiFetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, _wp_action: action }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Error ${res.status}`);
+      }
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  return (
+    <div style={{
+      padding: '12px 22px', borderBottom: '1px solid var(--border)',
+      background: '#fef3c7', display: 'flex', flexDirection: 'column', gap: 8,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: '1.1rem' }}>⏳</span>
+        <div>
+          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#b45309' }}>
+            {t('wpPendingBannerTitle')}
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#78350f' }}>
+            {t('wpPendingBannerMsg')}
+          </div>
+        </div>
+      </div>
+      {error && (
+        <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>{error}</div>
+      )}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => handleAction('approve')}
+          disabled={!!working}
+          style={{
+            padding: '7px 18px', borderRadius: 7, border: 'none',
+            background: 'var(--accent)', color: '#fff',
+            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
+            opacity: working ? 0.6 : 1,
+          }}
+        >
+          {working === 'approve' ? '…' : t('wpApproveBtnLabel')}
+        </button>
+        <button
+          onClick={() => handleAction('decline')}
+          disabled={!!working}
+          style={{
+            padding: '7px 14px', borderRadius: 7, border: '1px solid #fca5a5',
+            background: '#fff', color: '#dc2626',
+            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
+            opacity: working ? 0.6 : 1,
+          }}
+        >
+          {working === 'decline' ? '…' : t('wpDeclineBtnLabel')}
+        </button>
+      </div>
     </div>
   );
 }

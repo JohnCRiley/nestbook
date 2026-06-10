@@ -448,7 +448,7 @@ export function initSchema() {
   const advanced = db.prepare(
     `UPDATE bookings SET status = 'checked_out'
      WHERE check_out_date < date('now')
-       AND status NOT IN ('cancelled', 'checked_out')`
+       AND status NOT IN ('cancelled', 'checked_out', 'declined')`
   ).run();
   if (advanced.changes > 0) console.log(`✓ Auto-advanced ${advanced.changes} past booking(s) to checked_out.`);
 
@@ -1080,6 +1080,84 @@ John`
     )
   `);
   db.prepare(`INSERT OR IGNORE INTO app_settings (key, value) VALUES ('bug_reporting_enabled', 'true')`).run();
+
+  // ── WP owner-approval booking flow ─────────────────────────────────────────
+  // Expand bookings.status CHECK to include pending_owner_approval and declined.
+  {
+    const bookingSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
+    if (!bookingSql.includes('pending_owner_approval')) {
+      const existingCols = new Set(db.prepare(`PRAGMA table_info(bookings)`).all().map(c => c.name));
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE bookings_wp (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL REFERENCES properties(id),
+            room_id INTEGER REFERENCES rooms(id),
+            guest_id INTEGER NOT NULL REFERENCES guests(id),
+            check_in_date TEXT NOT NULL,
+            check_out_date TEXT NOT NULL,
+            num_guests INTEGER NOT NULL DEFAULT 1,
+            status TEXT NOT NULL DEFAULT 'confirmed'
+              CHECK(status IN ('confirmed','arriving','checked_out','cancelled','pending_owner_approval','declined')),
+            source TEXT NOT NULL DEFAULT 'direct'
+              CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
+            notes TEXT,
+            total_price REAL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            flagged INTEGER NOT NULL DEFAULT 0,
+            breakfast_added INTEGER NOT NULL DEFAULT 0,
+            deposit_paid INTEGER NOT NULL DEFAULT 0,
+            deposit_requested_at TEXT,
+            deposit_paid_at TEXT,
+            payment_method TEXT,
+            checked_out_at TEXT,
+            breakfast_start_date TEXT,
+            breakfast_guests INTEGER DEFAULT 0,
+            breakfast_price_per_person REAL DEFAULT 0,
+            refund_amount REAL DEFAULT 0,
+            refund_reason TEXT,
+            refunded_at TEXT,
+            refunded_by TEXT,
+            approval_token TEXT,
+            access_email_sent INTEGER DEFAULT 0
+          )
+        `);
+        const toCopy = [
+          'id','property_id','room_id','guest_id','check_in_date','check_out_date',
+          'num_guests','status','source','notes','total_price','created_at','flagged',
+          'breakfast_added','deposit_paid','deposit_requested_at','deposit_paid_at',
+          'payment_method','checked_out_at','breakfast_start_date','breakfast_guests',
+          'breakfast_price_per_person','refund_amount','refund_reason','refunded_at','refunded_by',
+        ].filter(c => existingCols.has(c));
+        if (toCopy.length > 0) {
+          const colList = toCopy.join(', ');
+          db.exec(`INSERT INTO bookings_wp (${colList}) SELECT ${colList} FROM bookings`);
+        }
+        db.exec(`DROP TABLE bookings`);
+        db.exec(`ALTER TABLE bookings_wp RENAME TO bookings`);
+        db.exec(`COMMIT`);
+        console.log('✓ bookings status expanded with pending_owner_approval and declined.');
+      } catch (e) {
+        db.exec(`ROLLBACK`);
+        throw e;
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property ON bookings(property_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin  ON bookings(check_in_date)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_status   ON bookings(status)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_room     ON bookings(room_id)`);
+    }
+  }
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN approval_token TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN access_email_sent INTEGER DEFAULT 0`); } catch {}
+
+  // WP property access code / arrival instructions
+  try { db.exec(`ALTER TABLE properties ADD COLUMN access_method TEXT DEFAULT 'code'`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN access_code TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN arrival_instructions TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN send_access_hours INTEGER DEFAULT 24`); } catch {}
 
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously

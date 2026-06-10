@@ -190,9 +190,11 @@ propertiesRouter.put('/:id', (req, res) => {
       breakfast_start_time, breakfast_end_time,
       description, hero_image_url,
       rental_type, total_capacity, bedroom_count, bathroom_count, whole_property_rate,
+      access_method, access_code, arrival_instructions, send_access_hours,
     } = req.body;
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
+    const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
@@ -201,7 +203,8 @@ propertiesRouter.put('/:id', (req, res) => {
           breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?,
           description = ?, hero_image_url = ?,
           rental_type = ?, total_capacity = ?, bedroom_count = ?, bathroom_count = ?,
-          whole_property_rate = ?
+          whole_property_rate = ?,
+          access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -220,6 +223,10 @@ propertiesRouter.put('/:id', (req, res) => {
       bedroom_count   ? parseInt(bedroom_count,   10) : null,
       bathroom_count  ? parseInt(bathroom_count,  10) : null,
       whole_property_rate ? parseFloat(whole_property_rate) : null,
+      VALID_ACCESS_METHODS.includes(access_method) ? access_method : 'code',
+      access_code || null,
+      arrival_instructions || null,
+      send_access_hours ? parseInt(send_access_hours, 10) : 24,
       req.params.id,
     );
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
