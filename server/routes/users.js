@@ -190,13 +190,7 @@ usersRouter.put('/:id', (req, res) => {
   }
 });
 
-// ── DELETE /api/users/:id ─────────────────────────────────────────────────
-usersRouter.delete('/:id', (req, res) => {
-  try {
-    const result = db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
-    if (result.changes === 0) return res.status(404).json({ error: 'User not found' });
-    res.status(204).end();
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Account deletion is handled by:
+// - DELETE /api/auth/account        (self-service, auth.js)
+// - DELETE /api/admin/users/:id     (super admin, admin.js)
+// No bare DELETE on /api/users/:id — would leave orphaned data and active Stripe subscriptions
