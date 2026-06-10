@@ -876,6 +876,7 @@ body {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
+  object-position: center;
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -918,15 +919,24 @@ body {
 .wpc-thumbs::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
 .wpc-thumb {
   flex-shrink: 0;
-  width: 58px; height: 42px;
+  width: 72px; height: 52px;
   border-radius: 5px; overflow: hidden;
   cursor: pointer; border: 2px solid transparent;
   opacity: 0.55; transition: all 0.15s;
-  background: none; padding: 0;
+  background: none; padding: 0; display: block;
 }
-.wpc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wpc-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+}
 .wpc-thumb:hover { opacity: 0.82; }
-.wpc-thumb.active { opacity: 1; border-color: ${esc(palette.dark)}; }
+.wpc-thumb.active {
+  opacity: 1;
+  border-color: ${esc(palette.dark)};
+  outline: 2px solid ${esc(palette.dark)};
+  outline-offset: 1px;
+}
 
 @media (max-width: 768px) {
   .wp-showcase-row {
@@ -936,7 +946,7 @@ body {
   .wp-showcase-content { padding: 28px 24px; }
   .wpc-main { min-height: 220px; }
   .wpc-btn { width: 30px; height: 30px; font-size: 0.9rem; }
-  .wpc-thumb { width: 46px; height: 34px; }
+  .wpc-thumb { width: 52px; height: 38px; }
 }
 
 /* ── Sections ──────────────────────────────────────────────────────── */

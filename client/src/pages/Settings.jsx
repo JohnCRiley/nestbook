@@ -1475,64 +1475,81 @@ export default function Settings() {
 
 // ── AccessCodeSection ─────────────────────────────────────────────────────────
 
-const ACCESS_METHOD_OPTIONS = ['code', 'keybox', 'keyed', 'app', 'other'];
+const ACCESS_METHOD_OPTIONS = [
+  { value: '',        label: '— Not specified —' },
+  { value: 'code',    label: 'Keypad / door code' },
+  { value: 'keybox',  label: 'Key lockbox' },
+  { value: 'keyed',   label: 'Physical key (collect at office)' },
+  { value: 'app',     label: 'Smart lock app' },
+  { value: 'other',   label: 'Other — see arrival instructions' },
+];
+
+const SEND_ACCESS_OPTIONS = [
+  { value: '72',  label: '72 hours before arrival' },
+  { value: '48',  label: '48 hours before arrival' },
+  { value: '24',  label: '24 hours before arrival' },
+  { value: '12',  label: '12 hours before arrival' },
+];
 
 function AccessCodeSection({ form, onChange, t }) {
   return (
     <div className="settings-card">
       <div className="settings-card-header">
         <h2>{t('settings.accessTitle')}</h2>
+        <p>{t('settings.accessInstructionsHint')}</p>
       </div>
       <div className="settings-card-body">
-        <div className="settings-field">
-          <label className="settings-label">{t('settings.accessMethodLabel')}</label>
-          <select
-            name="access_method"
-            className="settings-input"
-            value={form.access_method ?? ''}
-            onChange={onChange}
-          >
-            <option value="">—</option>
-            {ACCESS_METHOD_OPTIONS.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-        </div>
-        <div className="settings-field">
-          <label className="settings-label">{t('settings.accessCodeLabel')}</label>
-          <input
-            type="text"
-            name="access_code"
-            className="settings-input"
-            value={form.access_code ?? ''}
-            onChange={onChange}
-            placeholder="e.g. 1234"
-          />
-        </div>
-        <div className="settings-field">
-          <label className="settings-label">{t('settings.accessInstructionsLabel')}</label>
-          <textarea
-            name="arrival_instructions"
-            className="settings-input"
-            value={form.arrival_instructions ?? ''}
-            onChange={onChange}
-            rows={4}
-            placeholder={t('settings.accessInstructionsHint')}
-            style={{ resize: 'vertical' }}
-          />
-        </div>
-        <div className="settings-field">
-          <label className="settings-label">{t('settings.accessSendHoursLabel')}</label>
-          <input
-            type="number"
-            name="send_access_hours"
-            className="settings-input"
-            value={form.send_access_hours ?? 24}
-            onChange={onChange}
-            min={1}
-            max={168}
-            style={{ maxWidth: 120 }}
-          />
+        <div className="settings-form">
+
+          <FormField label={t('settings.accessMethodLabel')}>
+            <select
+              name="access_method"
+              className="form-control"
+              value={form.access_method ?? ''}
+              onChange={onChange}
+            >
+              {ACCESS_METHOD_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField label={t('settings.accessCodeLabel')}>
+            <input
+              type="text"
+              name="access_code"
+              className="form-control"
+              value={form.access_code ?? ''}
+              onChange={onChange}
+              placeholder="e.g. 1234 or A-2468"
+            />
+          </FormField>
+
+          <FormField label={t('settings.accessInstructionsLabel')}>
+            <textarea
+              name="arrival_instructions"
+              className="form-control"
+              value={form.arrival_instructions ?? ''}
+              onChange={onChange}
+              rows={5}
+              placeholder="e.g. The key safe is on the right of the front door. Code is 1234. Parking available on the driveway..."
+              style={{ resize: 'vertical' }}
+            />
+          </FormField>
+
+          <FormField label={t('settings.accessSendHoursLabel')}>
+            <select
+              name="send_access_hours"
+              className="form-control"
+              value={String(form.send_access_hours ?? '48')}
+              onChange={onChange}
+            >
+              {SEND_ACCESS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </FormField>
+
         </div>
       </div>
     </div>

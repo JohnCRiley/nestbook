@@ -87,6 +87,15 @@
       breakfastIncluded: 'Breakfast included',
       checkAvailabilityBook: 'Check Availability & Book',
       propertyNotAvailable: 'The property is not available for those dates. Please try different dates.',
+      wpStep2Title:  'Your Booking',
+      wpAvailBadge:  'Available for your dates!',
+      wpRequestBtn:  'Request this booking →',
+      wpChangeDates: '← Change dates',
+      wpWhatNext:    'What happens next?',
+      wpNextStep1:   'Fill in your details and send your request',
+      wpNextStep2:   'The owner reviews and confirms within 24 hours',
+      wpNextStep3:   "You'll receive a confirmation email with payment details",
+      wpNextStep4:   'Access details sent before your arrival',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -120,6 +129,15 @@
       breakfastIncluded: 'Petit-déjeuner inclus',
       checkAvailabilityBook: 'Vérifier et réserver',
       propertyNotAvailable: 'La propriété n\'est pas disponible pour ces dates. Veuillez essayer d\'autres dates.',
+      wpStep2Title:  'Votre réservation',
+      wpAvailBadge:  'Disponible pour vos dates !',
+      wpRequestBtn:  'Demander cette réservation →',
+      wpChangeDates: '← Modifier les dates',
+      wpWhatNext:    'Que se passe-t-il ensuite ?',
+      wpNextStep1:   'Remplissez vos coordonnées et envoyez votre demande',
+      wpNextStep2:   'Le propriétaire examine et confirme dans les 24 heures',
+      wpNextStep3:   'Vous recevrez un e-mail de confirmation avec les modalités de paiement',
+      wpNextStep4:   'Les informations d\'accès seront envoyées avant votre arrivée',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -153,6 +171,15 @@
       breakfastIncluded: 'Desayuno incluido',
       checkAvailabilityBook: 'Comprobar y reservar',
       propertyNotAvailable: 'La propiedad no está disponible para esas fechas. Pruebe otras fechas.',
+      wpStep2Title:  'Su reserva',
+      wpAvailBadge:  '¡Disponible para sus fechas!',
+      wpRequestBtn:  'Solicitar esta reserva →',
+      wpChangeDates: '← Cambiar fechas',
+      wpWhatNext:    '¿Qué ocurre después?',
+      wpNextStep1:   'Rellene sus datos y envíe su solicitud',
+      wpNextStep2:   'El propietario revisa y confirma en 24 horas',
+      wpNextStep3:   'Recibirá un correo de confirmación con los detalles de pago',
+      wpNextStep4:   'Datos de acceso enviados antes de su llegada',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -186,6 +213,15 @@
       breakfastIncluded: 'Ontbijt inbegrepen',
       checkAvailabilityBook: 'Beschikbaarheid & boeken',
       propertyNotAvailable: 'Het verblijf is niet beschikbaar voor deze datums. Kies andere datums.',
+      wpStep2Title:  'Uw boeking',
+      wpAvailBadge:  'Beschikbaar voor uw datums!',
+      wpRequestBtn:  'Boekingsverzoek indienen →',
+      wpChangeDates: '← Datums wijzigen',
+      wpWhatNext:    'Wat gebeurt er daarna?',
+      wpNextStep1:   'Vul uw gegevens in en stuur uw verzoek',
+      wpNextStep2:   'De eigenaar beoordeelt en bevestigt binnen 24 uur',
+      wpNextStep3:   'U ontvangt een bevestigingsmail met betalingsgegevens',
+      wpNextStep4:   'Toegangsgegevens worden voor aankomst gestuurd',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -219,6 +255,15 @@
       breakfastIncluded: 'Frühstück inbegriffen',
       checkAvailabilityBook: 'Verfügbarkeit prüfen & buchen',
       propertyNotAvailable: 'Das Objekt ist für diese Daten nicht verfügbar. Bitte andere Daten wählen.',
+      wpStep2Title:  'Ihre Buchung',
+      wpAvailBadge:  'Verfügbar für Ihre Daten!',
+      wpRequestBtn:  'Diese Buchung anfragen →',
+      wpChangeDates: '← Daten ändern',
+      wpWhatNext:    'Was passiert als nächstes?',
+      wpNextStep1:   'Geben Sie Ihre Daten ein und senden Sie Ihre Anfrage',
+      wpNextStep2:   'Der Gastgeber prüft und bestätigt innerhalb von 24 Stunden',
+      wpNextStep3:   'Sie erhalten eine Bestätigungs-E-Mail mit Zahlungsdetails',
+      wpNextStep4:   'Zugangsdetails werden vor Ihrer Ankunft gesendet',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -350,7 +395,7 @@
               price_per_night: S.wholePropertyRate,
               capacity:        S.totalCapacity,
             };
-            S.step = 3;
+            S.step = 2;
           }
         } else {
           S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
@@ -798,6 +843,63 @@
 }
 @keyframes nb-spin { to { transform: rotate(360deg); } }
 
+/* WP step 2 — availability confirmed */
+.nb-avail-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: #f0fdf4; color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px; padding: 10px 14px;
+  font-weight: 600; font-size: 0.88rem;
+  margin-bottom: 14px;
+}
+.nb-avail-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #16a34a; color: #fff;
+  font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+}
+.nb-wp-summary {
+  background: ${BRAND_LIGHT};
+  border: 1px solid ${BRAND};
+  border-radius: 10px; padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.nb-wp-dates {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.nb-wp-date-col { flex: 1; }
+.nb-wp-date-lbl {
+  font-size: 0.7rem; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;
+}
+.nb-wp-date-val { font-weight: 600; font-size: 0.88rem; color: ${BRAND_DARK}; }
+.nb-wp-date-arr { color: #94a3b8; font-size: 1.1rem; flex-shrink: 0; }
+.nb-wp-price-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.88rem; color: #1e293b;
+  padding-top: 10px; border-top: 1px solid #e2e8f0;
+}
+.nb-wp-capacity {
+  font-size: 0.75rem; color: #94a3b8; margin-top: 6px;
+}
+.nb-wp-what { margin-bottom: 14px; }
+.nb-wp-what-title {
+  font-size: 0.85rem; font-weight: 600; color: #1e293b;
+  margin-bottom: 10px;
+}
+.nb-wp-what-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 0.82rem; color: #475569; line-height: 1.5;
+  margin-bottom: 8px;
+}
+.nb-wp-what-num {
+  background: ${BRAND_DARK}; color: #fff;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+
 /* Success screen */
 .nb-success {
   text-align: center;
@@ -990,6 +1092,80 @@
     const spacer = el('div', '');
     footer.appendChild(spacer);
     footer.appendChild(checkBtn);
+  }
+
+  // ── Step 2 (WP): Availability confirmed + summary ─────────────────────────
+  function renderStep2WP() {
+    const nights    = nightsBetween(S.checkIn, S.checkOut);
+    const total     = S.wholePropertyRate * nights;
+    const rate      = S.wholePropertyRate;
+
+    // Available badge
+    const badge = el('div', 'nb-avail-badge');
+    const badgeIcon = el('span', 'nb-avail-icon'); badgeIcon.textContent = '✓';
+    badge.appendChild(badgeIcon);
+    badge.appendChild(txt(' ' + T.wpAvailBadge));
+    body.appendChild(badge);
+
+    // Summary card
+    const card = el('div', 'nb-wp-summary');
+
+    const datesRow = el('div', 'nb-wp-dates');
+    function dateCol(labelTxt, valTxt) {
+      const col = el('div', 'nb-wp-date-col');
+      const lbl = el('div', 'nb-wp-date-lbl'); lbl.appendChild(txt(labelTxt));
+      const val = el('div', 'nb-wp-date-val'); val.appendChild(txt(valTxt));
+      col.appendChild(lbl); col.appendChild(val);
+      return col;
+    }
+    datesRow.appendChild(dateCol(T.checkIn,  fmtDate(S.checkIn)));
+    const arr = el('div', 'nb-wp-date-arr'); arr.appendChild(txt('→'));
+    datesRow.appendChild(arr);
+    datesRow.appendChild(dateCol(T.checkOut, fmtDate(S.checkOut)));
+    card.appendChild(datesRow);
+
+    if (rate > 0) {
+      const priceRow = el('div', 'nb-wp-price-row');
+      const priceLeft = el('span', '');
+      priceLeft.appendChild(txt(T.nights(nights) + ' × ' + CUR_SYMBOL + rate));
+      const priceRight = el('strong', '');
+      priceRight.appendChild(txt(CUR_SYMBOL + total.toLocaleString()));
+      priceRow.appendChild(priceLeft);
+      priceRow.appendChild(priceRight);
+      card.appendChild(priceRow);
+    }
+
+    if (S.totalCapacity > 0) {
+      const cap = el('div', 'nb-wp-capacity');
+      cap.appendChild(txt('Sleeps up to ' + S.totalCapacity + ' guests'));
+      card.appendChild(cap);
+    }
+    body.appendChild(card);
+
+    // "What happens next?" section
+    const whatWrap = el('div', 'nb-wp-what');
+    const whatTitle = el('h4', 'nb-wp-what-title'); whatTitle.appendChild(txt(T.wpWhatNext));
+    whatWrap.appendChild(whatTitle);
+    [T.wpNextStep1, T.wpNextStep2, T.wpNextStep3, T.wpNextStep4].forEach((text, i) => {
+      const item = el('div', 'nb-wp-what-item');
+      const num  = el('span', 'nb-wp-what-num'); num.appendChild(txt(String(i + 1)));
+      const lbl  = el('span', ''); lbl.appendChild(txt(text));
+      item.appendChild(num); item.appendChild(lbl);
+      whatWrap.appendChild(item);
+    });
+    body.appendChild(whatWrap);
+
+    // Footer buttons
+    const backBtn = el('button', 'nb-btn-back');
+    backBtn.appendChild(txt(T.wpChangeDates));
+    backBtn.addEventListener('click', () => { S.step = 1; S.error = null; render(); });
+
+    const nextBtn = el('button', 'nb-btn-main');
+    nextBtn.appendChild(txt(T.wpRequestBtn));
+    nextBtn.addEventListener('click', () => { S.step = 3; render(); });
+
+    footer.appendChild(backBtn);
+    footer.appendChild(nextBtn);
   }
 
   // ── Step 2: Room selection ─────────────────────────────────────────────────
@@ -1259,6 +1435,7 @@
     const titleRow = modal.querySelector('.nb-hd-title-row');
     titleRow.textContent = S.step === 5 ? (S.wholeProperty ? T.wpSuccessTitle : T.successTitle)
       : (S.step === 4 && S.wholeProperty) ? T.wpStep4Title
+      : (S.step === 2 && S.wholeProperty) ? T.wpStep2Title
       : STEP_LABELS[S.step - 1];
 
     if (S.loading) {
@@ -1266,12 +1443,9 @@
       return;
     }
 
-    // WP mode never shows step 2 (room selection)
-    if (S.step === 2 && S.wholeProperty) S.step = 3;
-
     switch (S.step) {
       case 1: renderStep1(); break;
-      case 2: renderStep2(); break;
+      case 2: S.wholeProperty ? renderStep2WP() : renderStep2(); break;
       case 3: renderStep3(); break;
       case 4: renderStep4(); break;
       case 5: renderSuccess(); break;
