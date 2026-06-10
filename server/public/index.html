@@ -97,6 +97,7 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/navbar.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -494,6 +495,19 @@ img { display: block; max-width: 100%; }
   font-size: 1.4rem;
   margin-bottom: 16px;
 }
+.feature-icon .ti {
+  font-size: 1.6rem;
+  color: var(--dark);
+}
+.ti {
+  vertical-align: middle;
+  color: var(--dark, #1a4710);
+}
+.property-types-grid .ti {
+  font-size: 1.1rem;
+  margin-right: 6px;
+  color: var(--muted);
+}
 .feature-title {
   font-size: 1rem;
   font-weight: 700;
@@ -801,7 +815,7 @@ img { display: block; max-width: 100%; }
     </a>
     <div class="navbar-controls">
       <div class="lang-dropdown">
-        <button class="lang-toggle">🌐 EN ▾</button>
+        <button class="lang-toggle"><i class="ti ti-world"></i> EN ▾</button>
         <div class="lang-panel">
           <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
           <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
@@ -935,7 +949,7 @@ img { display: block; max-width: 100%; }
             </div>
             <!-- Content -->
             <div class="preview-content">
-              <div class="preview-pg-title">Good morning ☀️</div>
+              <div class="preview-pg-title">Good morning <i class="ti ti-sun" style="font-size:1rem;color:#f59e0b"></i></div>
               <!-- Stat cards -->
               <div class="preview-stats">
                 <div class="preview-stat">
@@ -1085,52 +1099,52 @@ img { display: block; max-width: 100%; }
 
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">📅</div>
+        <div class="feature-icon"><i class="ti ti-calendar"></i></div>
         <div class="feature-title" data-i18n="features.cal.title">Visual Calendar</div>
         <div class="feature-desc" data-i18n="features.cal.desc">Week-view availability grid — rooms across the top, dates down the side. Click any cell to book or view details instantly.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">👥</div>
+        <div class="feature-icon"><i class="ti ti-users"></i></div>
         <div class="feature-title" data-i18n="features.guests.title">Guest Records</div>
         <div class="feature-desc" data-i18n="features.guests.desc">A full guest directory with contact details, stay history, notes and total spend — searchable by name or email.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔌</div>
+        <div class="feature-icon"><i class="ti ti-plug"></i></div>
         <div class="feature-title" data-i18n="features.widget.title">Booking Widget</div>
         <div class="feature-desc" data-i18n="features.widget.desc">One script tag turns your existing website into a direct booking engine — no third-party fees, no commission.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📶</div>
+        <div class="feature-icon"><i class="ti ti-wifi-off"></i></div>
         <div class="feature-title" data-i18n="features.offline.title">Works Offline</div>
         <div class="feature-desc" data-i18n="features.offline.desc">Check guests in and manage bookings even without internet. Everything syncs when you reconnect.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔑</div>
+        <div class="feature-icon"><i class="ti ti-key"></i></div>
         <div class="feature-title" data-i18n="features.roles.title">Owner & Staff Roles</div>
         <div class="feature-desc" data-i18n="features.roles.desc">Invite reception staff with limited access. Owners keep full control over settings, pricing and reports.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🌍</div>
+        <div class="feature-icon"><i class="ti ti-world"></i></div>
         <div class="feature-title" data-i18n="features.i18n.title">5 Languages Built In</div>
         <div class="feature-desc" data-i18n="features.i18n.desc">The dashboard and the guest-facing booking widget both work in English, French, Spanish, German and Dutch — no plugins needed.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📊</div>
+        <div class="feature-icon"><i class="ti ti-chart-bar"></i></div>
         <div class="feature-title" data-i18n="features.reports.title">Financial Reports &amp; Exports</div>
         <div class="feature-desc" data-i18n="features.reports.desc">Generate revenue reports, export booking data to CSV or PDF, and download your guest contact list — all filtered by date range and property.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔍</div>
+        <div class="feature-icon"><i class="ti ti-search"></i></div>
         <div class="feature-title" data-i18n="features.audit.title">Staff Activity Audit Log</div>
         <div class="feature-desc" data-i18n="features.audit.desc">Every login, booking, check-in, cancellation and settings change is logged with a timestamp, staff name and IP address — giving owners a full accountability trail.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔗</div>
+        <div class="feature-icon"><i class="ti ti-link"></i></div>
         <div class="feature-title" data-i18n="features.facebook.title">Direct Booking Page</div>
         <div class="feature-desc" data-i18n="features.facebook.desc">Every property gets its own booking page at nestbook.io/book/your-name. Add it to Facebook's 'Book Now' button, share it on Instagram, or send it via WhatsApp — no website needed.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🍽️</div>
+        <div class="feature-icon"><i class="ti ti-tools-kitchen-2"></i></div>
         <div class="feature-plan-badge" data-i18n="features.charges.badge">Multi plan</div>
         <div class="feature-title" data-i18n="features.charges.title">Resort-style room charging</div>
         <div class="feature-desc" data-i18n="features.charges.desc">Bar, restaurant, shop and activities charged directly to the room. Full itemised folio at checkout. Dedicated portal for service staff.</div>
@@ -1340,18 +1354,18 @@ img { display: block; max-width: 100%; }
   <div class="container">
     <h2>Built for every type of independent property</h2>
     <div class="property-types-grid">
-      <div>🛏️ B&Bs and Bed &amp; Breakfasts</div>
-      <div>🏡 Gîtes and holiday cottages</div>
-      <div>🌿 Guest houses and inns</div>
-      <div>🏕️ Glamping and camping pods</div>
-      <div>🏰 Villas and apartments</div>
-      <div>🚐 Lodges and static caravans</div>
-      <div>🌾 Farmhouses and rural retreats</div>
-      <div>🛖 Shepherd's huts and treehouses</div>
-      <div>🏔️ Mountain chalets</div>
-      <div>⛵ Narrowboats and houseboats</div>
-      <div>🏯 Châteaux and manor houses</div>
-      <div>🌴 Resort villas</div>
+      <div><i class="ti ti-bed"></i> B&Bs and Bed &amp; Breakfasts</div>
+      <div><i class="ti ti-home"></i> Gîtes and holiday cottages</div>
+      <div><i class="ti ti-leaf"></i> Guest houses and inns</div>
+      <div><i class="ti ti-tent"></i> Glamping and camping pods</div>
+      <div><i class="ti ti-building"></i> Villas and apartments</div>
+      <div><i class="ti ti-bus"></i> Lodges and static caravans</div>
+      <div><i class="ti ti-plant-2"></i> Farmhouses and rural retreats</div>
+      <div><i class="ti ti-home-eco"></i> Shepherd's huts and treehouses</div>
+      <div><i class="ti ti-mountain"></i> Mountain chalets</div>
+      <div><i class="ti ti-sailboat"></i> Narrowboats and houseboats</div>
+      <div><i class="ti ti-building-castle"></i> Châteaux and manor houses</div>
+      <div><i class="ti ti-palm-tree"></i> Resort villas</div>
     </div>
   </div>
 </section>
