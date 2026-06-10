@@ -218,7 +218,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
   ).join('');
 
   const bfBadge = room.breakfast_included
-    ? `<div class="room-breakfast">🍳 <span data-i18n="page.breakfastIncluded">Breakfast included</span></div>`
+    ? `<div class="room-breakfast"><i class="ti ti-coffee"></i> <span data-i18n="page.breakfastIncluded">Breakfast included</span></div>`
     : '';
 
   const descHtml = room.description
@@ -243,7 +243,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
       <span class="room-type-badge">${esc(typeLabel)}</span>
     </div>
     <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    <div class="room-capacity">👥 <span data-i18n="page.upTo">Up to</span> ${esc(String(room.capacity ?? 2))} <span data-i18n="page.guests">guests</span></div>
+    <div class="room-capacity"><i class="ti ti-users"></i> <span data-i18n="page.upTo">Up to</span> ${esc(String(room.capacity ?? 2))} <span data-i18n="page.guests">guests</span></div>
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
@@ -309,9 +309,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     const rate = property.whole_property_rate;
     const rateDisplay = rate ? `${esc(currSym)}${esc(Number(rate).toFixed(0))}` : '';
     const statsHtml = [
-      property.total_capacity ? `<span>👥 ${esc(String(property.total_capacity))} <span data-i18n="page.guests">guests</span></span>` : '',
-      property.bedroom_count  ? `<span>🛏️ ${esc(String(property.bedroom_count))} bedrooms</span>` : '',
-      property.bathroom_count ? `<span>🚿 ${esc(String(property.bathroom_count))} bathrooms</span>` : '',
+      property.total_capacity ? `<span><i class="ti ti-users"></i> ${esc(String(property.total_capacity))} <span data-i18n="page.guests">guests</span></span>` : '',
+      property.bedroom_count  ? `<span><i class="ti ti-bed"></i> ${esc(String(property.bedroom_count))} bedrooms</span>` : '',
+      property.bathroom_count ? `<span><i class="ti ti-bath"></i> ${esc(String(property.bathroom_count))} bathrooms</span>` : '',
     ].filter(Boolean).join('');
     heroSection = `
 <div class="hero hero-whole" style="${heroStyle}">
@@ -333,8 +333,8 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     <h1>${esc(name)}</h1>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     <div class="hero-meta">
-      <span>🕐 <span data-i18n="page.checkIn">Check-in from</span> ${esc(property.check_in_time ?? '15:00')}</span>
-      <span>🕐 <span data-i18n="page.checkOut">Check-out by</span> ${esc(property.check_out_time ?? '11:00')}</span>
+      <span><i class="ti ti-clock"></i> <span data-i18n="page.checkIn">Check-in from</span> ${esc(property.check_in_time ?? '15:00')}</span>
+      <span><i class="ti ti-clock"></i> <span data-i18n="page.checkOut">Check-out by</span> ${esc(property.check_out_time ?? '11:00')}</span>
     </div>
   </div>
 </div>`;
@@ -386,7 +386,14 @@ ${rooms.length > 0 ? `
 
   let ctaSection;
   if (isWholeProperty) {
-    ctaSection = '';
+    ctaSection = `
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2 data-i18n="page.bookNow">Ready to book?</h2>
+    <p data-i18n="page.ctaHint">Book directly with us for the best rates — no booking fees, payment goes straight to us.</p>
+    ${bookOrEnquiryBtn}
+  </div>
+</section>`;
   } else {
     ctaSection = `
 <section class="cta">
@@ -443,6 +450,8 @@ ${rooms.length > 0 ? `
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<!-- Tabler Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
 <!-- Structured data -->
 <script type="application/ld+json">
@@ -790,6 +799,12 @@ section h2 {
   .room-cal-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Tabler icons ──────────────────────────────────────────────────── */
+.ti { vertical-align: middle; }
+.hero-stats .ti, .hero-meta .ti { font-size: 0.95rem; opacity: 0.85; }
+.room-capacity .ti, .room-breakfast .ti { font-size: 0.9rem; }
+#enquirySuccess .ti { font-size: 1.1rem; color: #16a34a; margin-right: 4px; }
+
 /* ── CTA ───────────────────────────────────────────────────────────── */
 .cta { background: ${esc(palette.light)}; }
 .cta-inner { text-align: center; }
@@ -877,6 +892,28 @@ section h2 {
 .cta-whole { background: ${esc(palette.dark)}; }
 .cta-whole h2 { color: #fff; }
 .cta-whole p { color: rgba(255,255,255,0.82); }
+.cta-section {
+  background: ${esc(palette.dark)};
+  color: #ffffff;
+  padding: 60px 24px;
+  text-align: center;
+}
+.cta-section .cta-inner { max-width: 600px; margin: 0 auto; }
+.cta-section h2 { font-size: 2rem; font-weight: 700; color: #ffffff; margin-bottom: 12px; }
+.cta-section p { font-size: 1.1rem; color: rgba(255,255,255,0.85); margin-bottom: 24px; }
+.btn-cta {
+  background: #ffffff;
+  color: ${esc(palette.dark)};
+  border: none;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-cta:hover { background: #f0fdf4; transform: translateY(-1px); }
 .price-display {
   font-size: 2.2rem;
   font-weight: 700;
@@ -1006,7 +1043,7 @@ ${isPaidPlan ? '' : `
         <button type="submit" class="btn-primary-large" data-i18n="page.sendEnquiry">Send enquiry</button>
       </form>
       <div id="enquirySuccess" style="display:none;">
-        <p data-i18n="page.enquirySuccess">✅ Your enquiry has been sent! The property owner will be in touch shortly.</p>
+        <p><i class="ti ti-circle-check"></i> <span data-i18n="page.enquirySuccess">Your enquiry has been sent! The property owner will be in touch shortly.</span></p>
       </div>
     </div>
     <p style="text-align:center;font-size:0.78rem;color:#94a3b8;margin-top:20px;">
@@ -1088,7 +1125,7 @@ var I18N = {
     "page.yourName":                  "Your name",
     "page.yourEmail":                 "Email address",
     "page.message":                   "Message (optional)",
-    "page.enquirySuccess":            "✅ Your enquiry has been sent! The property owner will be in touch shortly."
+    "page.enquirySuccess":            "Your enquiry has been sent! The property owner will be in touch shortly."
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -1122,7 +1159,7 @@ var I18N = {
     "page.yourName":                  "Votre nom",
     "page.yourEmail":                 "Adresse e-mail",
     "page.message":                   "Message (optionnel)",
-    "page.enquirySuccess":            "✅ Votre demande a été envoyée ! Le propriétaire vous contactera prochainement."
+    "page.enquirySuccess":            "Votre demande a été envoyée ! Le propriétaire vous contactera prochainement."
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -1156,7 +1193,7 @@ var I18N = {
     "page.yourName":                  "Ihr Name",
     "page.yourEmail":                 "E-Mail-Adresse",
     "page.message":                   "Nachricht (optional)",
-    "page.enquirySuccess":            "✅ Ihre Anfrage wurde gesendet! Der Eigentümer wird sich in Kürze melden."
+    "page.enquirySuccess":            "Ihre Anfrage wurde gesendet! Der Eigentümer wird sich in Kürze melden."
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -1190,7 +1227,7 @@ var I18N = {
     "page.yourName":                  "Su nombre",
     "page.yourEmail":                 "Correo electrónico",
     "page.message":                   "Mensaje (opcional)",
-    "page.enquirySuccess":            "✅ ¡Su consulta ha sido enviada! El propietario se pondrá en contacto pronto."
+    "page.enquirySuccess":            "¡Su consulta ha sido enviada! El propietario se pondrá en contacto pronto."
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -1224,7 +1261,7 @@ var I18N = {
     "page.yourName":                  "Uw naam",
     "page.yourEmail":                 "E-mailadres",
     "page.message":                   "Bericht (optioneel)",
-    "page.enquirySuccess":            "✅ Uw aanvraag is verzonden! De eigenaar neemt binnenkort contact met u op."
+    "page.enquirySuccess":            "Uw aanvraag is verzonden! De eigenaar neemt binnenkort contact met u op."
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
