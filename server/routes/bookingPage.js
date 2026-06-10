@@ -317,11 +317,11 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 <div class="hero hero-whole" style="${heroStyle}">
   ${mapIframe}
   ${heroInner}
+    ${typeLabel ? `<div class="hero-badge">${esc(typeLabel)}</div>` : ''}
     <h1>${esc(name)}</h1>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     ${statsHtml ? `<div class="hero-stats">${statsHtml}</div>` : ''}
     ${rateDisplay ? `<div class="hero-price">${rateDisplay}<span class="room-price-unit"> / <span data-i18n="page.perNight">per night</span></span></div>` : ''}
-    <button class="btn-hero" onclick="${isPaidPlan ? 'openWidget()' : 'scrollToEnquiry()'}" data-i18n="page.checkAvailability">Check availability &amp; book →</button>
   </div>
 </div>`;
   } else {
