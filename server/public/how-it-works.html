@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How NestBook works — Direct bookings for independent properties</title>
+  <meta name="description" content="See exactly how NestBook works in 3 minutes. Free property webpage, direct booking widget, Facebook button, zero commission. Free plan available.">
+  <link rel="canonical" href="https://nestbook.io/how-it-works">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content="https://nestbook.io/how-it-works">
+  <meta property="og:title"       content="How NestBook works — stop paying commission">
+  <meta property="og:description" content="Your own booking page, Facebook button, iCal sync. Zero commission. Takes 20 minutes to set up.">
+  <meta property="og:image"       content="https://nestbook.io/og-image.png">
+  <meta property="og:site_name"   content="NestBook">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="How NestBook works — stop paying commission">
+  <meta name="twitter:description" content="Your own booking page, Facebook button, iCal sync. Zero commission. Takes 20 minutes to set up.">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+
+  <!-- Tabler icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <!-- Navbar CSS -->
+  <link rel="stylesheet" href="/navbar.css">
+
+  <!-- GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5R87S4LXP6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-5R87S4LXP6');
+  </script>
+
+  <style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         color: #1a2e14; background: #fff; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── HERO ── */
+  .hiw-hero {
+    background: #1a4710;
+    padding: 64px 24px 56px;
+    text-align: center;
+    color: white;
+  }
+
+  .hiw-hero-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.9);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .hiw-hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hiw-hero p {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.8);
+    max-width: 560px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+  }
+
+  .hiw-hero-cta {
+    display: inline-block;
+    background: white;
+    color: #1a4710;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .hiw-hero-cta:hover {
+    background: #f0fdf4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  .hiw-hero-sub {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 12px;
+  }
+
+  /* ── COMMISSION HOOK ── */
+  .commission-hook {
+    background: #fff8ed;
+    border-bottom: 1px solid #fde8b0;
+    padding: 28px 24px;
+    text-align: center;
+  }
+
+  .commission-hook p {
+    font-size: 1rem;
+    color: #78350f;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .commission-hook strong {
+    color: #92400e;
+  }
+
+  /* ── STEPS ── */
+  .hiw-steps {
+    padding: 64px 0;
+  }
+
+  .hiw-steps-title {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a2e14;
+    margin-bottom: 8px;
+  }
+
+  .hiw-steps-sub {
+    text-align: center;
+    color: #64748b;
+    font-size: 1rem;
+    margin-bottom: 48px;
+  }
+
+  .hiw-step {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 24px;
+    margin-bottom: 48px;
+    align-items: flex-start;
+  }
+
+  .hiw-step-num {
+    width: 64px;
+    height: 64px;
+    background: #1a4710;
+    color: white;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .hiw-step-content h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a2e14;
+    margin-bottom: 6px;
+  }
+
+  .hiw-step-content p {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+
+  .hiw-step-detail {
+    background: #f8fbf6;
+    border: 1px solid #d9f0cc;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: #1a4710;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hiw-step-detail .ti {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  /* ── LIVE EXAMPLE ── */
+  .live-example {
+    background: #f0fdf4;
+    border: 1.5px solid #d9f0cc;
+    border-radius: 12px;
+    padding: 32px;
+    margin: 0 0 64px;
+    text-align: center;
+  }
+
+  .live-example-tag {
+    display: inline-block;
+    background: #1a4710;
+    color: white;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+
+  .live-example h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a2e14;
+    margin-bottom: 8px;
+  }
+
+  .live-example p {
+    color: #475569;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .live-example-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a4710;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+
+  .live-example-link:hover {
+    background: #2f771b;
+    transform: translateY(-1px);
+  }
+
+  /* ── COMMISSION CALCULATOR ── */
+  .commission-calc {
+    padding: 0 0 64px;
+  }
+
+  .commission-calc-title {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1a2e14;
+    margin-bottom: 8px;
+  }
+
+  .commission-calc-sub {
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 32px;
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .calc-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .calc-card.nestbook {
+    border-color: #1a4710;
+    background: #f0fdf4;
+  }
+
+  .calc-platform {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .calc-card.nestbook .calc-platform {
+    color: #1a4710;
+  }
+
+  .calc-rate {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #dc2626;
+    margin-bottom: 4px;
+  }
+
+  .calc-card.nestbook .calc-rate {
+    color: #1a4710;
+  }
+
+  .calc-desc {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-bottom: 12px;
+  }
+
+  .calc-example {
+    background: #fef2f2;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 0.8rem;
+    color: #dc2626;
+  }
+
+  .calc-card.nestbook .calc-example {
+    background: #d9f0cc;
+    color: #1a4710;
+  }
+
+  .calc-example strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 2px;
+  }
+
+  /* ── FEATURES ── */
+  .hiw-features {
+    background: #1a4710;
+    padding: 56px 24px;
+    margin: 0 0 64px;
+  }
+
+  .hiw-features-title {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+  }
+
+  .hiw-features-sub {
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white;
+    font-size: 1rem;
+  }
+
+  .feature-text h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 3px;
+  }
+
+  .feature-text p {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+  }
+
+  /* ── PRICING ── */
+  .hiw-pricing {
+    padding: 0 0 64px;
+    text-align: center;
+  }
+
+  .hiw-pricing-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1a2e14;
+    margin-bottom: 8px;
+  }
+
+  .hiw-pricing-sub {
+    color: #64748b;
+    margin-bottom: 32px;
+  }
+
+  .pricing-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    max-width: 680px;
+    margin: 0 auto 24px;
+  }
+
+  .pricing-strip-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 16px;
+  }
+
+  .pricing-strip-card.featured {
+    border-color: #1a4710;
+    background: #f0fdf4;
+  }
+
+  .pricing-plan {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    margin-bottom: 8px;
+  }
+
+  .pricing-strip-card.featured .pricing-plan {
+    color: #1a4710;
+  }
+
+  .pricing-amount {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1a2e14;
+    margin-bottom: 4px;
+  }
+
+  .pricing-period {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-bottom: 12px;
+  }
+
+  .pricing-key-feature {
+    font-size: 0.78rem;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .pricing-strip-card.featured .pricing-key-feature {
+    color: #1a4710;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #1a2e14;
+    color: rgba(255,255,255,0.85);
+    padding: 48px 0 24px;
+  }
+
+  .footer-inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  .footer-brand-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 10px;
+  }
+
+  .footer-leaf-img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .footer-tagline {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+    max-width: 220px;
+  }
+
+  .footer-col h4 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .footer-link {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .footer-link:hover { color: white; }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── FINAL CTA ── */
+  .hiw-final-cta {
+    background: #f8fbf6;
+    border-top: 1px solid #d9f0cc;
+    padding: 56px 24px;
+    text-align: center;
+  }
+
+  .hiw-final-cta h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1a2e14;
+    margin-bottom: 12px;
+  }
+
+  .hiw-final-cta p {
+    color: #475569;
+    font-size: 1rem;
+    margin-bottom: 28px;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .hiw-cta-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary-large {
+    background: #1a4710;
+    color: white;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+
+  .btn-primary-large:hover {
+    background: #2f771b;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary-large {
+    background: white;
+    color: #1a4710;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    border: 1.5px solid #1a4710;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+
+  .btn-secondary-large:hover {
+    background: #f0fdf4;
+  }
+
+  .hiw-guarantee {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-top: 16px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .calc-grid { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .pricing-strip { grid-template-columns: 1fr; max-width: 320px; }
+    .hiw-step { grid-template-columns: 48px 1fr; gap: 16px; }
+    .hiw-step-num { width: 48px; height: 48px; font-size: 1.2rem; border-radius: 12px; }
+    .hiw-cta-buttons { flex-direction: column; align-items: center; }
+    .footer-inner { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 480px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .footer-inner { grid-template-columns: 1fr; }
+  }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<header class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="nb-logo">
+      <img src="/icon.svg" class="nb-logo-img" alt="NestBook">
+      NestBook
+    </a>
+    <div class="navbar-controls">
+      <div class="lang-dropdown">
+        <button class="lang-toggle"><i class="ti ti-world"></i> EN ▾</button>
+        <div class="lang-panel">
+          <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
+          <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
+          <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+          <button class="lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+          <button class="lang-btn" data-lang="nl">🇳🇱 Nederlands</button>
+        </div>
+      </div>
+      <button class="menu-toggle">Menu ▾</button>
+    </div>
+  </div>
+</header>
+
+<div class="mega-menu" id="megaMenu">
+  <div class="mega-inner">
+    <div class="mega-col">
+      <div class="mega-label">NestBook</div>
+      <a href="/">Home</a>
+      <a href="/#features" data-i18n="nav.features">Features</a>
+      <a href="/#pricing" data-i18n="nav.pricing">Pricing</a>
+      <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
+      <a href="/blog/" data-i18n="nav.blog">Blog</a>
+      <a href="/widget-test.html" data-i18n="nav.demo">Live demo</a>
+    </div>
+    <div class="mega-col">
+      <div class="mega-label">Get started</div>
+      <a href="/app/register" class="mega-cta">
+        🌿 Start free trial
+        <span>No credit card needed</span>
+      </a>
+      <a href="/app/login" data-i18n="nav.signin">Sign in</a>
+      <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
+    </div>
+    <div class="mega-col">
+      <div class="mega-label">Language</div>
+      <button class="lang-btn mega-lang" data-lang="en">🇬🇧 English</button>
+      <button class="lang-btn mega-lang" data-lang="fr">🇫🇷 Français</button>
+      <button class="lang-btn mega-lang" data-lang="es">🇪🇸 Español</button>
+      <button class="lang-btn mega-lang" data-lang="de">🇩🇪 Deutsch</button>
+      <button class="lang-btn mega-lang" data-lang="nl">🇳🇱 Nederlands</button>
+    </div>
+  </div>
+</div>
+<div class="mega-backdrop"></div>
+
+<!-- HERO -->
+<div class="hiw-hero">
+  <div class="hiw-hero-tag">How it works</div>
+  <h1>Stop paying commission.<br>Start keeping what you earn.</h1>
+  <p>
+    NestBook gives independent B&amp;Bs, gîtes, lodges and holiday rentals
+    their own booking page — so guests book directly with you.
+    Zero commission. Always.
+  </p>
+  <a
+    href="/app/register"
+    class="hiw-hero-cta"
+    onclick="gtag('event','signup_click',{event_category:'conversion',event_label:'hiw_hero'})">
+    Start free — no card needed →
+  </a>
+  <p class="hiw-hero-sub">Free plan available · Pro from £19/month · 30-day trial</p>
+</div>
+
+<!-- COMMISSION HOOK -->
+<div class="commission-hook">
+  <p>
+    Booking.com charges <strong>15–18% commission</strong> on every booking.
+    Airbnb takes <strong>3% from you and up to 14% from your guest.</strong>
+    On 20 bookings at £150/night, that's over <strong>£500 straight to them</strong> — not you.
+    NestBook charges a flat monthly fee. Commission: zero.
+  </p>
+</div>
+
+<!-- STEPS -->
+<div class="hiw-steps">
+  <div class="container">
+    <h2 class="hiw-steps-title">Up and running in 20 minutes</h2>
+    <p class="hiw-steps-sub">Four steps. No technical knowledge needed.</p>
+
+    <div class="hiw-step">
+      <div class="hiw-step-num">1</div>
+      <div class="hiw-step-content">
+        <h3>Sign up free</h3>
+        <p>
+          Create your account in under a minute. No credit card, no contract,
+          no commitment. The Free plan is free forever — upgrade only if you want more.
+        </p>
+        <div class="hiw-step-detail">
+          <i class="ti ti-clock"></i>
+          Takes about 60 seconds
+        </div>
+      </div>
+    </div>
+
+    <div class="hiw-step">
+      <div class="hiw-step-num">2</div>
+      <div class="hiw-step-content">
+        <h3>Add your property and rooms</h3>
+        <p>
+          Enter your property details, add your rooms or bedrooms,
+          set your prices, upload photos and write descriptions.
+          NestBook works for B&amp;Bs, gîtes, lodges, villas, glamping
+          and everything in between.
+        </p>
+        <div class="hiw-step-detail">
+          <i class="ti ti-clock"></i>
+          Takes about 15–20 minutes
+        </div>
+      </div>
+    </div>
+
+    <div class="hiw-step">
+      <div class="hiw-step-num">3</div>
+      <div class="hiw-step-content">
+        <h3>Share your booking page</h3>
+        <p>
+          Every NestBook property gets a free booking page —
+          your rooms, your photos, your availability calendar,
+          your prices. Share the link anywhere.
+        </p>
+        <div class="hiw-step-detail">
+          <i class="ti ti-link"></i>
+          Your page: nestbook.io/book/your-property-name
+        </div>
+      </div>
+    </div>
+
+    <div class="hiw-step">
+      <div class="hiw-step-num">4</div>
+      <div class="hiw-step-content">
+        <h3>Add a Book Now button to Facebook</h3>
+        <p>
+          Copy your booking page link and add it as a Book Now button
+          on your Facebook business page. Takes two minutes.
+          Guests click it and book directly with you —
+          no Airbnb, no Booking.com, no commission.
+        </p>
+        <div class="hiw-step-detail">
+          <i class="ti ti-brand-facebook"></i>
+          Works on Facebook, Instagram, WhatsApp, email signatures — anywhere
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LIVE EXAMPLE -->
+<div class="container">
+  <div class="live-example">
+    <div class="live-example-tag">Live example</div>
+    <h3>See what your booking page could look like</h3>
+    <p>
+      This is a real NestBook property page — rooms, photos,
+      availability calendar and a direct booking button.
+      This is what your guests would see.
+    </p>
+    <a
+      href="/book/domaine-des-lavandes"
+      target="_blank"
+      class="live-example-link"
+      onclick="gtag('event','demo_click',{event_category:'engagement',event_label:'hiw_live_example'})">
+      <i class="ti ti-external-link"></i>
+      See a live NestBook property page →
+    </a>
+  </div>
+</div>
+
+<!-- COMMISSION CALCULATOR -->
+<div class="commission-calc">
+  <div class="container">
+    <h2 class="commission-calc-title">What you're currently paying</h2>
+    <p class="commission-calc-sub">Based on 20 bookings per year at £150/night average</p>
+
+    <div class="calc-grid">
+
+      <div class="calc-card">
+        <div class="calc-platform">Booking.com</div>
+        <div class="calc-rate">15–18%</div>
+        <div class="calc-desc">Commission per booking</div>
+        <div class="calc-example">
+          <strong>£450–£540/year</strong>
+          paid in commission
+        </div>
+      </div>
+
+      <div class="calc-card">
+        <div class="calc-platform">Airbnb</div>
+        <div class="calc-rate">3%+</div>
+        <div class="calc-desc">Host fee + guest service fee</div>
+        <div class="calc-example">
+          <strong>£90+ per year</strong>
+          plus guests pay extra on top
+        </div>
+      </div>
+
+      <div class="calc-card nestbook">
+        <div class="calc-platform">NestBook Pro</div>
+        <div class="calc-rate">£0</div>
+        <div class="calc-desc">Commission on direct bookings</div>
+        <div class="calc-example">
+          <strong>£228/year flat</strong>
+          everything included
+        </div>
+      </div>
+
+    </div>
+
+    <p style="text-align:center;font-size:0.82rem;color:#94a3b8;margin-top:20px;">
+      NestBook works alongside Booking.com and Airbnb —
+      use iCal sync to prevent double bookings.
+      Keep the platforms for discovery. Take direct bookings commission-free.
+    </p>
+
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="hiw-features">
+  <h2 class="hiw-features-title">Everything included</h2>
+  <p class="hiw-features-sub">No add-ons. No hidden fees. Everything in one place.</p>
+
+  <div class="features-grid">
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-world"></i></div>
+      <div class="feature-text">
+        <h4>Free property webpage</h4>
+        <p>Your own booking page at nestbook.io/book/your-name</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-brand-facebook"></i></div>
+      <div class="feature-text">
+        <h4>Facebook Booking Button</h4>
+        <p>Book Now button on your Facebook page — guests book direct</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-calendar-sync"></i></div>
+      <div class="feature-text">
+        <h4>iCal sync</h4>
+        <p>Stay connected to Booking.com and Airbnb — no double bookings</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-language"></i></div>
+      <div class="feature-text">
+        <h4>5 languages</h4>
+        <p>English, French, German, Spanish, Dutch — switch instantly</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-calendar"></i></div>
+      <div class="feature-text">
+        <h4>Visual booking calendar</h4>
+        <p>See every room, every booking at a glance</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-photo"></i></div>
+      <div class="feature-text">
+        <h4>Room photos</h4>
+        <p>Upload photos that appear on your booking page</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-trending-up"></i></div>
+      <div class="feature-text">
+        <h4>Seasonal pricing</h4>
+        <p>Set peak season rates — applied automatically</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-users"></i></div>
+      <div class="feature-text">
+        <h4>Guest management</h4>
+        <p>Full guest records, history and contact details</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon"><i class="ti ti-device-mobile"></i></div>
+      <div class="feature-text">
+        <h4>Works on any device</h4>
+        <p>Phone, tablet or desktop — NestBook works everywhere</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="hiw-pricing">
+  <div class="container">
+    <h2 class="hiw-pricing-title">Simple, honest pricing</h2>
+    <p class="hiw-pricing-sub">One flat fee. Zero commission. Cancel anytime.</p>
+
+    <div class="pricing-strip">
+
+      <div class="pricing-strip-card">
+        <div class="pricing-plan">Free</div>
+        <div class="pricing-amount">£0</div>
+        <div class="pricing-period">forever</div>
+        <div class="pricing-key-feature">
+          Up to 3 rooms · Property webpage · Facebook button · iCal sync
+        </div>
+      </div>
+
+      <div class="pricing-strip-card featured">
+        <div class="pricing-plan">Pro — most popular</div>
+        <div class="pricing-amount">£19</div>
+        <div class="pricing-period">per month</div>
+        <div class="pricing-key-feature">
+          Unlimited rooms · Booking widget · Seasonal pricing · 5 photos/room · Reports
+        </div>
+      </div>
+
+      <div class="pricing-strip-card">
+        <div class="pricing-plan">Multi</div>
+        <div class="pricing-amount">£39</div>
+        <div class="pricing-period">per month</div>
+        <div class="pricing-key-feature">
+          Everything in Pro · Unlimited properties · Room charges
+        </div>
+      </div>
+
+    </div>
+
+    <a href="/compare.html" style="font-size:0.85rem;color:#1a4710;text-decoration:none;">
+      Compare all plan features in detail →
+    </a>
+
+  </div>
+</div>
+
+<!-- FINAL CTA -->
+<div class="hiw-final-cta">
+  <h2>Ready to keep more of what you earn?</h2>
+  <p>
+    Free plan available — no credit card, no contract.
+    Your booking page will be live in under 20 minutes.
+  </p>
+  <div class="hiw-cta-buttons">
+    <a
+      href="/app/register"
+      class="btn-primary-large"
+      onclick="gtag('event','signup_click',{event_category:'conversion',event_label:'hiw_footer'})">
+      Start free →
+    </a>
+    <a href="/book/domaine-des-lavandes" target="_blank" class="btn-secondary-large">
+      See live example
+    </a>
+  </div>
+  <p class="hiw-guarantee">
+    30-day free trial on Pro · Cancel anytime · No commission ever
+  </p>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+
+      <div>
+        <div class="footer-brand-name">
+          <img src="/icon.svg" class="footer-leaf-img" alt="" />
+          NestBook
+        </div>
+        <p class="footer-tagline" data-i18n="footer.tagline">Simple, elegant booking management for small hospitality businesses across Europe.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4 data-i18n="footer.product">Product</h4>
+        <div class="footer-links">
+          <a href="/#features"  class="footer-link" data-i18n="footer.features">Features</a>
+          <a href="/#pricing"   class="footer-link" data-i18n="footer.pricing">Pricing</a>
+          <a href="/compare.html" class="footer-link" data-i18n="nav.compare">Compare plans</a>
+          <a href="/#languages" class="footer-link" data-i18n="footer.languages">Languages</a>
+          <a href="/widget-test.html" class="footer-link" data-i18n="footer.widget">Booking widget</a>
+          <a href="/app/login" class="footer-link" data-i18n="footer.signin">Sign in to your dashboard</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4 data-i18n="footer.company">Company</h4>
+        <div class="footer-links">
+          <a href="/about.html"   class="footer-link" data-i18n="footer.about">About</a>
+          <a href="/blog/"        class="footer-link" data-i18n="footer.blog">Blog</a>
+          <a href="/contact.html" class="footer-link" data-i18n="footer.contact">Contact</a>
+          <a href="/help.html"    class="footer-link" data-i18n="footer.help">Help</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal">Legal</h4>
+        <div class="footer-links">
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/terms.html"   class="footer-link" data-i18n="footer.terms">Terms of Service</a>
+          <a href="/privacy.html" class="footer-link" data-i18n="footer.gdpr">GDPR</a>
+          <a href="/cookies.html" class="footer-link" data-i18n="footer.cookies">Cookies</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
+      <span>EN · FR · ES · DE · NL</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  en: {
+    'nav.features': 'Features', 'nav.pricing': 'Pricing', 'nav.compare': 'Compare plans',
+    'nav.languages': 'Languages', 'nav.blog': 'Blog', 'nav.demo': 'Live demo', 'nav.signin': 'Sign in',
+    'footer.tagline': 'Simple, elegant booking management for small hospitality businesses across Europe.',
+    'footer.product': 'Product', 'footer.features': 'Features', 'footer.pricing': 'Pricing',
+    'footer.languages': 'Languages', 'footer.widget': 'Booking widget', 'footer.signin': 'Sign in to your dashboard',
+    'footer.company': 'Company', 'footer.about': 'About', 'footer.blog': 'Blog',
+    'footer.contact': 'Contact', 'footer.help': 'Help',
+    'footer.legal': 'Legal', 'footer.privacy': 'Privacy Policy', 'footer.terms': 'Terms of Service',
+    'footer.gdpr': 'GDPR', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Made with ♥ for small hospitality businesses.',
+  },
+  fr: {
+    'nav.features': 'Fonctionnalités', 'nav.pricing': 'Tarifs', 'nav.compare': 'Comparer les offres',
+    'nav.languages': 'Langues', 'nav.blog': 'Blog', 'nav.demo': 'Démo en direct', 'nav.signin': 'Connexion',
+    'footer.tagline': 'Gestion de réservations simple et élégante pour les petits hébergements en Europe.',
+    'footer.product': 'Produit', 'footer.features': 'Fonctionnalités', 'footer.pricing': 'Tarifs',
+    'footer.languages': 'Langues', 'footer.widget': 'Widget de réservation', 'footer.signin': 'Connexion au tableau de bord',
+    'footer.company': 'Entreprise', 'footer.about': 'À propos', 'footer.blog': 'Blog',
+    'footer.contact': 'Contact', 'footer.help': 'Aide',
+    'footer.legal': 'Mentions légales', 'footer.privacy': 'Politique de confidentialité', 'footer.terms': 'Conditions d\'utilisation',
+    'footer.gdpr': 'RGPD', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Fait avec ♥ pour les petits hébergeurs.',
+  },
+  es: {
+    'nav.features': 'Funciones', 'nav.pricing': 'Precios', 'nav.compare': 'Comparar planes',
+    'nav.languages': 'Idiomas', 'nav.blog': 'Blog', 'nav.demo': 'Demo en vivo', 'nav.signin': 'Iniciar sesión',
+    'footer.tagline': 'Gestión de reservas sencilla y elegante para pequeños alojamientos en Europa.',
+    'footer.product': 'Producto', 'footer.features': 'Funciones', 'footer.pricing': 'Precios',
+    'footer.languages': 'Idiomas', 'footer.widget': 'Widget de reservas', 'footer.signin': 'Iniciar sesión en el panel',
+    'footer.company': 'Empresa', 'footer.about': 'Sobre nosotros', 'footer.blog': 'Blog',
+    'footer.contact': 'Contacto', 'footer.help': 'Ayuda',
+    'footer.legal': 'Legal', 'footer.privacy': 'Política de privacidad', 'footer.terms': 'Términos de servicio',
+    'footer.gdpr': 'RGPD', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Hecho con ♥ para pequeños alojamientos.',
+  },
+  de: {
+    'nav.features': 'Funktionen', 'nav.pricing': 'Preise', 'nav.compare': 'Pläne vergleichen',
+    'nav.languages': 'Sprachen', 'nav.blog': 'Blog', 'nav.demo': 'Live-Demo', 'nav.signin': 'Anmelden',
+    'footer.tagline': 'Einfaches, elegantes Buchungsmanagement für kleine Beherbergungsbetriebe in Europa.',
+    'footer.product': 'Produkt', 'footer.features': 'Funktionen', 'footer.pricing': 'Preise',
+    'footer.languages': 'Sprachen', 'footer.widget': 'Buchungs-Widget', 'footer.signin': 'Zum Dashboard anmelden',
+    'footer.company': 'Unternehmen', 'footer.about': 'Über uns', 'footer.blog': 'Blog',
+    'footer.contact': 'Kontakt', 'footer.help': 'Hilfe',
+    'footer.legal': 'Rechtliches', 'footer.privacy': 'Datenschutzrichtlinie', 'footer.terms': 'Nutzungsbedingungen',
+    'footer.gdpr': 'DSGVO', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Mit ♥ für kleine Beherbergungsbetriebe gemacht.',
+  },
+  nl: {
+    'nav.features': 'Functies', 'nav.pricing': 'Prijzen', 'nav.compare': 'Plannen vergelijken',
+    'nav.languages': 'Talen', 'nav.blog': 'Blog', 'nav.demo': 'Live demo', 'nav.signin': 'Inloggen',
+    'footer.tagline': 'Eenvoudig, elegant reserveringsbeheer voor kleine horecabedrijven in Europa.',
+    'footer.product': 'Product', 'footer.features': 'Functies', 'footer.pricing': 'Prijzen',
+    'footer.languages': 'Talen', 'footer.widget': 'Boekingswidget', 'footer.signin': 'Inloggen op dashboard',
+    'footer.company': 'Bedrijf', 'footer.about': 'Over ons', 'footer.blog': 'Blog',
+    'footer.contact': 'Contact', 'footer.help': 'Hulp',
+    'footer.legal': 'Juridisch', 'footer.privacy': 'Privacybeleid', 'footer.terms': 'Gebruiksvoorwaarden',
+    'footer.gdpr': 'AVG', 'footer.cookies': 'Cookies',
+    'footer.copy': '© 2026 NestBook. Gemaakt met ♥ voor kleine horecabedrijven.',
+  },
+};
+
+function applyLang(lang) {
+  const t = I18N[lang] || I18N.en;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  try { localStorage.setItem('nb-lang', lang); localStorage.setItem('nestbook_lang', lang); } catch (_) {}
+}
+
+document.querySelectorAll('.lang-btn').forEach((btn) => {
+  btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+});
+
+(function () {
+  let lang = 'en';
+  try { lang = localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
+  if (lang !== 'en') applyLang(lang);
+})();
+
+const navbar = document.querySelector('.navbar');
+window.addEventListener('scroll', () => {
+  navbar.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(26,71,16,0.10)' : '';
+}, { passive: true });
+</script>
+
+<script src="/cookie-banner.js"></script>
+<script src="/navbar.js"></script>
+</body>
+</html>
