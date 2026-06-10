@@ -203,6 +203,31 @@ function wpGallerySection(allPhotos, totalCount) {
 </div>`;
 }
 
+function wpRoomCarousel(photos, roomName, index) {
+  if (!photos || photos.length === 0) {
+    return `<i class="ti ti-bed"></i>`;
+  }
+  if (photos.length === 1) {
+    return `<img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(roomName)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" />`;
+  }
+  const id = `wpc-${index}`;
+  const imgs = photos.map((f, i) =>
+    `<img src="/uploads/rooms/${esc(f)}" alt="${esc(roomName)} — photo ${i + 1}" class="wpc-img${i === 0 ? ' active' : ''}" data-index="${i}" loading="${i === 0 ? 'eager' : 'lazy'}" />`
+  ).join('');
+  const thumbs = photos.map((f, i) =>
+    `<button class="wpc-thumb${i === 0 ? ' active' : ''}" onclick="wpcGoTo('${id}',${i})" aria-label="Photo ${i + 1}"><img src="/uploads/rooms/${esc(f)}" alt="" loading="lazy" /></button>`
+  ).join('');
+  return `<div class="wpc" id="${id}" data-total="${photos.length}">
+  <div class="wpc-main">
+    ${imgs}
+    <button class="wpc-btn wpc-prev" onclick="wpcPrev('${id}')" aria-label="Previous photo"><i class="ti ti-chevron-left"></i></button>
+    <button class="wpc-btn wpc-next" onclick="wpcNext('${id}')" aria-label="Next photo"><i class="ti ti-chevron-right"></i></button>
+    <div class="wpc-counter"><span class="wpc-cur">1</span> / ${photos.length}</div>
+  </div>
+  <div class="wpc-thumbs">${thumbs}</div>
+</div>`;
+}
+
 function wpAlternatingShowcase(rooms, photosByRoom, palette) {
   if (!rooms || rooms.length === 0) return '';
 
@@ -216,14 +241,7 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
       ? `<div class="amenities">${amenities.map(a => `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`).join('')}</div>`
       : '';
 
-    const photoSection = photos.length > 0
-      ? `<div class="wp-showcase-photos" style="${reversed ? 'order:2' : 'order:1'}">
-          <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
-          ${photos.length > 1 ? `<div class="wp-showcase-photo-strip">
-            ${photos.slice(0, 5).map((f, i) => `<img src="/uploads/rooms/${esc(f)}" class="wp-showcase-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
-          </div>` : ''}
-        </div>`
-      : `<div class="wp-showcase-photos wp-showcase-no-photo" style="${reversed ? 'order:2' : 'order:1'}"><i class="ti ti-bed"></i></div>`;
+    const photoSection = `<div class="wp-showcase-photos${photos.length === 0 ? ' wp-showcase-no-photo' : ''}" style="${reversed ? 'order:2' : 'order:1'}">${wpRoomCarousel(photos, room.name, index)}</div>`;
 
     return `
     <div class="wp-showcase-row">
@@ -844,12 +862,81 @@ body {
   opacity: 0.5;
   font-size: 3rem;
 }
+
+/* ── WP Room Carousel ─────────────────────────────────────────────── */
+.wpc { display: flex; flex-direction: column; height: 100%; }
+.wpc-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #0f172a;
+  min-height: 280px;
+}
+.wpc-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.wpc-img.active { opacity: 1; pointer-events: auto; }
+.wpc-btn {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  background: rgba(255,255,255,0.9);
+  border: none; border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1rem; color: #1a2e14;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: all 0.15s; z-index: 2;
+}
+.wpc-btn:hover {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.24);
+  transform: translateY(-50%) scale(1.06);
+}
+.wpc-prev { left: 10px; }
+.wpc-next { right: 10px; }
+.wpc-counter {
+  position: absolute; bottom: 10px; right: 12px;
+  background: rgba(0,0,0,0.52);
+  color: #fff; padding: 3px 10px;
+  border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  pointer-events: none;
+}
+.wpc-thumbs {
+  display: flex; gap: 5px;
+  padding: 7px 8px;
+  background: #fff;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  flex-shrink: 0;
+}
+.wpc-thumbs::-webkit-scrollbar { height: 3px; }
+.wpc-thumbs::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+.wpc-thumb {
+  flex-shrink: 0;
+  width: 58px; height: 42px;
+  border-radius: 5px; overflow: hidden;
+  cursor: pointer; border: 2px solid transparent;
+  opacity: 0.55; transition: all 0.15s;
+  background: none; padding: 0;
+}
+.wpc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wpc-thumb:hover { opacity: 0.82; }
+.wpc-thumb.active { opacity: 1; border-color: ${esc(palette.dark)}; }
+
 @media (max-width: 768px) {
   .wp-showcase-row {
     grid-template-columns: 1fr;
   }
   .wp-showcase-photos img { min-height: 240px; max-height: 320px; }
   .wp-showcase-content { padding: 28px 24px; }
+  .wpc-main { min-height: 220px; }
+  .wpc-btn { width: 30px; height: 30px; font-size: 0.9rem; }
+  .wpc-thumb { width: 46px; height: 34px; }
 }
 
 /* ── Sections ──────────────────────────────────────────────────────── */
@@ -1610,6 +1697,50 @@ document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
     card.querySelectorAll('.photo-strip-thumb').forEach(function(t) { t.classList.remove('active'); });
     this.classList.add('active');
   });
+});
+
+// ── WP room carousels ─────────────────────────────────────────────────────────
+var wpcState = {};
+function wpcGoTo(id, idx) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var total = parseInt(el.dataset.total, 10);
+  var i = Math.max(0, Math.min(idx, total - 1));
+  wpcState[id] = i;
+  el.querySelectorAll('.wpc-img').forEach(function(img, n) { img.classList.toggle('active', n === i); });
+  el.querySelectorAll('.wpc-thumb').forEach(function(t, n) { t.classList.toggle('active', n === i); });
+  var cur = el.querySelector('.wpc-cur');
+  if (cur) cur.textContent = i + 1;
+  var activeThumb = el.querySelectorAll('.wpc-thumb')[i];
+  if (activeThumb) activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+function wpcNext(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var total = parseInt(el.dataset.total, 10);
+  wpcGoTo(id, ((wpcState[id] || 0) + 1) % total);
+}
+function wpcPrev(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var total = parseInt(el.dataset.total, 10);
+  wpcGoTo(id, ((wpcState[id] || 0) - 1 + total) % total);
+}
+document.addEventListener('keydown', function(e) {
+  var hovered = document.querySelector('.wpc:hover');
+  if (!hovered) return;
+  if (e.key === 'ArrowRight') wpcNext(hovered.id);
+  if (e.key === 'ArrowLeft')  wpcPrev(hovered.id);
+});
+document.querySelectorAll('.wpc-main').forEach(function(main) {
+  var startX = 0;
+  main.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
+  main.addEventListener('touchend', function(e) {
+    var diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) < 50) return;
+    var id = main.closest('.wpc').id;
+    if (diff > 0) wpcNext(id); else wpcPrev(id);
+  }, { passive: true });
 });
 </script>
 
