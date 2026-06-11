@@ -84,7 +84,8 @@ roomsRouter.get('/', (req, res) => {
       const rows  = db.prepare(`
         SELECT r.*,
           (SELECT COUNT(*) FROM room_photos WHERE room_id = r.id) AS photo_count,
-          (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo
+          (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo,
+          (SELECT thumb_filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_thumb
         FROM rooms r ${where} ORDER BY r.id LIMIT ? OFFSET ?
       `).all(...params, pageLimit, offset);
 
@@ -94,7 +95,8 @@ roomsRouter.get('/', (req, res) => {
     res.json(db.prepare(`
       SELECT r.*,
         (SELECT COUNT(*) FROM room_photos WHERE room_id = r.id) AS photo_count,
-        (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo
+        (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo,
+        (SELECT thumb_filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_thumb
       FROM rooms r ${where} ORDER BY r.id
     `).all(...params));
   } catch (err) {

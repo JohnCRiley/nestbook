@@ -218,13 +218,13 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
     const cid       = `room-${room.id}`;
 
     const mainImgHtml = primary
-      ? `<img src="/uploads/rooms/${esc(primary)}" alt="${esc(room.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
+      ? `<img src="/uploads/rooms/${esc(primary.filename)}" alt="${esc(room.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
       : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
 
     const thumbsHtml = photos.length > 1
       ? `<div class="ws-thumbs">${
-          photos.map((f, i) =>
-            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(f)}',this)"><img src="/uploads/rooms/${esc(f)}" alt="${esc(room.name)} ${i + 1}" loading="lazy" /></div>`
+          photos.map((photo, i) =>
+            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(photo.filename)}',this)"><img src="/uploads/rooms/${esc(photo.thumb_filename || photo.filename)}" alt="${esc(room.name)} ${i + 1}" loading="lazy" /></div>`
           ).join('')
         }</div>`
       : '';
@@ -1762,7 +1762,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     `).all(property.id);
 
     const allPhotos = db.prepare(`
-      SELECT rp.room_id, rp.filename
+      SELECT rp.room_id, rp.filename, rp.thumb_filename
       FROM room_photos rp
       JOIN rooms r ON r.id = rp.room_id
       WHERE r.property_id = ?
@@ -1771,7 +1771,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     const photosByRoom = {};
     for (const p of allPhotos) {
       if (!photosByRoom[p.room_id]) photosByRoom[p.room_id] = [];
-      photosByRoom[p.room_id].push(p.filename);
+      photosByRoom[p.room_id].push({ filename: p.filename, thumb_filename: p.thumb_filename });
     }
 
     const isPaidPlan = ['pro', 'multi'].includes(property.plan);

@@ -1051,6 +1051,29 @@ John`
     )
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_room_photos_room ON room_photos(room_id)`);
+  try { db.exec(`ALTER TABLE room_photos ADD COLUMN thumb_filename TEXT`); } catch {}
+
+  // Backfill thumbnails for existing photos that have no thumb yet
+  (async () => {
+    const sharp = (await import('sharp')).default;
+    const { join: pj, dirname: pd } = await import('path');
+    const { fileURLToPath: ftu } = await import('url');
+    const { default: fss } = await import('fs');
+    const uploadDir = pj(pd(ftu(import.meta.url)), '../uploads/rooms');
+    const rows = db.prepare(`SELECT id, filename FROM room_photos WHERE thumb_filename IS NULL`).all();
+    for (const row of rows) {
+      const thumbName = `thumb_${row.filename}`;
+      try {
+        await sharp(pj(uploadDir, row.filename))
+          .resize(400, null, { withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toFile(pj(uploadDir, thumbName));
+        db.prepare(`UPDATE room_photos SET thumb_filename = ? WHERE id = ?`).run(thumbName, row.id);
+      } catch (e) {
+        console.error('[schema backfill thumb]', row.filename, e.message);
+      }
+    }
+  })().catch(e => console.error('[schema backfill thumb]', e));
 
   // ── Error reports — user-submitted bug/issue reports ─────────────────────
   db.exec(`

@@ -431,7 +431,7 @@ function BedroomCard({ room, isSelected, onClick, t }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>
               {room.primary_photo && (
                 <img
-                  src={`/uploads/rooms/${room.primary_photo}`}
+                  src={`/uploads/rooms/${room.primary_thumb || room.primary_photo}`}
                   alt=""
                   onError={(e) => { e.target.style.display = 'none'; }}
                   style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0 }}
