@@ -327,7 +327,6 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   } else {
     for (const r of rooms) availJson[String(r.id)] = availMapsByRoom[r.id];
   }
-  const availScript = `<script>var NB_AVAILABILITY = ${JSON.stringify(availJson)};<\/script>`;
 
   const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan)).join('\n');
 
@@ -1363,7 +1362,6 @@ footer a:hover { text-decoration: underline; }
   gtag('js', new Date());
   gtag('config', 'G-5R87S4LXP6');
 </script>
-${availScript}
 </head>
 <body>
 
@@ -1451,6 +1449,91 @@ document.getElementById('enquiryForm').addEventListener('submit', async function
 ${footerSection}
 
 <script>
+// ── Availability data (server-injected) ──────────────────────────────────────
+var NB_AVAILABILITY = ${JSON.stringify(availJson)};
+
+// ── Navigable availability calendars ─────────────────────────────────────────
+var calState = {};
+
+function renderCalendar(roomId, startMonth, startYear) {
+  var container = document.querySelector('[data-room-id="' + roomId + '"]');
+  if (!container) return;
+
+  var avail = NB_AVAILABILITY[roomId] || {};
+  var today = new Date();
+  var todayStr = today.getFullYear() + '-'
+    + String(today.getMonth() + 1).padStart(2, '0') + '-'
+    + String(today.getDate()).padStart(2, '0');
+  var minYear  = today.getFullYear();
+  var minMonth = today.getMonth();
+  var canPrev  = !(startYear === minYear && startMonth === minMonth);
+
+  var html = '<div class="nb-cal-wrapper">';
+
+  for (var m = 0; m < 2; m++) {
+    var mo = startMonth + m;
+    var yr = startYear;
+    if (mo > 11) { mo -= 12; yr++; }
+
+    var firstDow    = new Date(yr, mo, 1).getDay();
+    var offset      = (firstDow + 6) % 7;
+    var daysInMonth = new Date(yr, mo + 1, 0).getDate();
+    var monthLabel  = new Date(yr, mo, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    html += '<div class="nb-cal-month">';
+    html += '<div class="nb-cal-header">';
+
+    if (m === 0) {
+      html += canPrev
+        ? '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',-1)"><i class="ti ti-chevron-left"></i></button>'
+        : '<span class="nb-cal-nav-disabled"><i class="ti ti-chevron-left"></i></span>';
+    } else {
+      html += '<span></span>';
+    }
+
+    html += '<span class="nb-cal-month-name">' + monthLabel + '</span>';
+
+    if (m === 1) {
+      html += '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',1)"><i class="ti ti-chevron-right"></i></button>';
+    } else {
+      html += '<span></span>';
+    }
+
+    html += '</div><div class="nb-cal-grid">';
+
+    var dows = ['M','T','W','T','F','S','S'];
+    for (var di = 0; di < 7; di++) html += '<span class="nb-cal-dow">' + dows[di] + '</span>';
+    for (var ei = 0; ei < offset; ei++) html += '<span class="nb-cal-day nb-cal-empty"></span>';
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      var ds = yr + '-' + String(mo + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var isPast  = ds < todayStr;
+      var isToday = ds === todayStr;
+      var status  = isPast ? 'past' : (avail[ds] || 'available');
+      var cls     = 'nb-cal-day nb-cal-' + status + (isToday ? ' nb-cal-today' : '');
+      html += '<span class="' + cls + '">' + (isPast ? '' : d) + '</span>';
+    }
+    html += '</div></div>';
+  }
+
+  html += '<div class="nb-cal-legend">'
+    + '<span><span class="nb-leg-dot nb-leg-available"></span> Available</span>'
+    + '<span><span class="nb-leg-dot nb-leg-booked"></span> Booked</span>'
+    + '</div></div>';
+
+  container.innerHTML = html;
+  calState[roomId] = { month: startMonth, year: startYear };
+}
+
+function calNav(roomId, curMonth, curYear, dir) {
+  var nm = curMonth + dir, ny = curYear;
+  if (nm < 0)  { nm = 11; ny--; }
+  if (nm > 11) { nm = 0;  ny++; }
+  var t = new Date();
+  if (ny < t.getFullYear() || (ny === t.getFullYear() && nm < t.getMonth())) return;
+  renderCalendar(roomId, nm, ny);
+}
+
 try {
 // ── i18n ──────────────────────────────────────────────────────────────────────
 // Add zh-CN, ja, th, vi, ms, id etc. here when nestbook.asia launches.
@@ -1678,92 +1761,6 @@ function openWidget() {
 function scrollToEnquiry() {
   var el = document.getElementById('booking-enquiry');
   if (el) el.scrollIntoView({ behavior: 'smooth' });
-}
-
-// ── Navigable availability calendars ────────────────────────────────────────
-var calState = {};
-
-function renderCalendar(roomId, startMonth, startYear) {
-  var container = document.querySelector('[data-room-id="' + roomId + '"]');
-  if (!container) return;
-
-  var avail = NB_AVAILABILITY[roomId] || {};
-  var today = new Date();
-  var todayStr = today.getFullYear() + '-'
-    + String(today.getMonth() + 1).padStart(2, '0') + '-'
-    + String(today.getDate()).padStart(2, '0');
-  var minYear  = today.getFullYear();
-  var minMonth = today.getMonth();
-  var canPrev  = !(startYear === minYear && startMonth === minMonth);
-
-  var html = '<div class="nb-cal-wrapper">';
-
-  for (var m = 0; m < 2; m++) {
-    var month = startMonth + m;
-    var year  = startYear;
-    if (month > 11) { month -= 12; year++; }
-
-    var firstDow   = new Date(year, month, 1).getDay();
-    var offset     = (firstDow + 6) % 7;
-    var daysInMonth = new Date(year, month + 1, 0).getDate();
-    var monthLabel = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
-
-    html += '<div class="nb-cal-month">';
-    html += '<div class="nb-cal-header">';
-
-    if (m === 0) {
-      html += canPrev
-        ? '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',-1)"><i class="ti ti-chevron-left"></i></button>'
-        : '<span class="nb-cal-nav-disabled"><i class="ti ti-chevron-left"></i></span>';
-    } else {
-      html += '<span></span>';
-    }
-
-    html += '<span class="nb-cal-month-name">' + monthLabel + '</span>';
-
-    if (m === 1) {
-      html += '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',1)"><i class="ti ti-chevron-right"></i></button>';
-    } else {
-      html += '<span></span>';
-    }
-
-    html += '</div>'; // header
-    html += '<div class="nb-cal-grid">';
-    ['M','T','W','T','F','S','S'].forEach(function(d) {
-      html += '<span class="nb-cal-dow">' + d + '</span>';
-    });
-    for (var e = 0; e < offset; e++) html += '<span class="nb-cal-day nb-cal-empty"></span>';
-    for (var d = 1; d <= daysInMonth; d++) {
-      var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
-      var isPast  = dateStr < todayStr;
-      var isToday = dateStr === todayStr;
-      var status  = isPast ? 'past' : (avail[dateStr] || 'available');
-      var cls = 'nb-cal-day nb-cal-' + status;
-      if (isToday) cls += ' nb-cal-today';
-      html += '<span class="' + cls + '">' + (isPast ? '' : d) + '</span>';
-    }
-    html += '</div></div>'; // grid + month
-  }
-
-  html += '<div class="nb-cal-legend">'
-    + '<span><span class="nb-leg-dot nb-leg-available"></span> Available</span>'
-    + '<span><span class="nb-leg-dot nb-leg-booked"></span> Booked</span>'
-    + '</div>';
-  html += '</div>'; // wrapper
-
-  container.innerHTML = html;
-  calState[roomId] = { month: startMonth, year: startYear };
-}
-
-function calNav(roomId, curMonth, curYear, dir) {
-  var newMonth = curMonth + dir;
-  var newYear  = curYear;
-  if (newMonth < 0)  { newMonth = 11; newYear--; }
-  if (newMonth > 11) { newMonth = 0;  newYear++; }
-  var today = new Date();
-  if (newYear < today.getFullYear() ||
-      (newYear === today.getFullYear() && newMonth < today.getMonth())) return;
-  renderCalendar(roomId, newMonth, newYear);
 }
 
 document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
