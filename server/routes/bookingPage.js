@@ -394,8 +394,8 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     referrerpolicy="no-referrer-when-downgrade">
   </iframe>` : '';
 
-  // Collect all room photos in display order for the WP gallery
-  const allRoomPhotos = rooms.flatMap(r => photosByRoom?.[r.id] ?? []);
+  // Collect all room photos in display order for the WP gallery (full-size filenames only)
+  const allRoomPhotos = rooms.flatMap(r => (photosByRoom?.[r.id] ?? []).map(p => p.filename));
   const gallerySection = isWholeProperty ? wpGallerySection(allRoomPhotos, allRoomPhotos.length) : '';
 
   let heroSection;
