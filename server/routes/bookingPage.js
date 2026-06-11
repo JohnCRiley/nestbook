@@ -928,7 +928,7 @@ body {
 .wpc-thumb img {
   width: 100%; height: 100%;
   object-fit: cover; object-position: center;
-  display: block;
+  display: block; min-height: 0;
 }
 .wpc-thumb:hover { opacity: 0.82; }
 .wpc-thumb.active {
