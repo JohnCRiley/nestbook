@@ -123,7 +123,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const showChargesTab = plan === 'multi';
 
   const depositRequired = !!property?.require_deposit;
-  const isWP = property?.rental_type === 'whole_property';
+  const isWP          = property?.rental_type === 'whole_property';
+  const todayStr      = new Date().toISOString().split('T')[0];
+  const canMarkArrived  = todayStr >= b.check_in_date;
+  const canMarkDeparted = todayStr >= b.check_out_date;
 
   // Fetch room rate breakdown for accurate multi-period totals
   useEffect(() => {
@@ -585,34 +588,89 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {(b.status === 'confirmed' || b.status === 'arriving') && (
         isWP ? (
           <div style={{ padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+            {/* Future confirmed WP booking — show status summary */}
+            {b.status === 'confirmed' && !canMarkArrived && (
+              <div style={{
+                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+                padding: '12px 16px', marginBottom: 2, fontSize: '0.85rem', color: '#166534',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <i className="ti ti-calendar-check" />
+                  Booking confirmed
+                </div>
+                <div>Check-in: <strong>{formatDateMedium(b.check_in_date, locale)}</strong></div>
+                <div>Check-out: <strong>{formatDateMedium(b.check_out_date, locale)}</strong></div>
+                <div style={{ marginTop: 6, color: '#059669' }}>
+                  Arrival confirmation available from {formatDateMedium(b.check_in_date, locale)}
+                </div>
+              </div>
+            )}
+
+            {/* Arrival button — unlocked on/after check-in date */}
             {b.status === 'confirmed' && (
-              <button
-                onClick={() => handleWPAction('arriving')}
-                style={{
-                  background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10,
-                  padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10,
-                  width: '100%', justifyContent: 'center',
-                }}
-              >
-                <i className="ti ti-home-check" style={{ fontSize: '1.2rem' }} />
-                Guests have arrived and have the key
-              </button>
+              canMarkArrived ? (
+                <button
+                  onClick={() => handleWPAction('arriving')}
+                  style={{
+                    background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10,
+                    padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', justifyContent: 'center',
+                  }}
+                >
+                  <i className="ti ti-home-check" style={{ fontSize: '1.2rem' }} />
+                  Guests have arrived and have the key
+                </button>
+              ) : (
+                <div style={{
+                  background: 'var(--page-bg)', border: '1.5px solid var(--border)', borderRadius: 10,
+                  padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
+                  color: 'var(--text-muted)', fontSize: '0.88rem',
+                }}>
+                  <i className="ti ti-lock" style={{ fontSize: '1.1rem' }} />
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Arrival confirmation locked</div>
+                    <div style={{ fontSize: '0.78rem', marginTop: 2 }}>
+                      Available from {formatDateMedium(b.check_in_date, locale)}
+                    </div>
+                  </div>
+                </div>
+              )
             )}
+
+            {/* Departure button — unlocked on/after check-out date */}
             {b.status === 'arriving' && (
-              <button
-                onClick={() => handleWPAction('departed')}
-                style={{
-                  background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10,
-                  padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10,
-                  width: '100%', justifyContent: 'center',
-                }}
-              >
-                <i className="ti ti-door-exit" style={{ fontSize: '1.2rem' }} />
-                Guests have departed and returned the key
-              </button>
+              canMarkDeparted ? (
+                <button
+                  onClick={() => handleWPAction('departed')}
+                  style={{
+                    background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10,
+                    padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', justifyContent: 'center',
+                  }}
+                >
+                  <i className="ti ti-door-exit" style={{ fontSize: '1.2rem' }} />
+                  Guests have departed and returned the key
+                </button>
+              ) : (
+                <div style={{
+                  background: 'var(--page-bg)', border: '1.5px solid var(--border)', borderRadius: 10,
+                  padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
+                  color: 'var(--text-muted)', fontSize: '0.88rem',
+                }}>
+                  <i className="ti ti-lock" style={{ fontSize: '1.1rem' }} />
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Departure confirmation locked</div>
+                    <div style={{ fontSize: '0.78rem', marginTop: 2 }}>
+                      Available from {formatDateMedium(b.check_out_date, locale)}
+                    </div>
+                  </div>
+                </div>
+              )
             )}
+
           </div>
         ) : (
           <StatusActions
@@ -836,13 +894,23 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       <div className="panel-actions">
         <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
         {b.status === 'confirmed' && (
-          <button
-            className="btn-panel-danger"
-            style={{ fontSize: '0.82rem', padding: '7px 12px' }}
-            onClick={() => setShowCancelConfirm(true)}
-          >
-            {t('booking.cancelBooking')}
-          </button>
+          isWP ? (
+            <div style={{
+              fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <i className="ti ti-lock" style={{ fontSize: '0.85rem' }} />
+              Active bookings cannot be deleted — use Edit booking to make changes
+            </div>
+          ) : (
+            <button
+              className="btn-panel-danger"
+              style={{ fontSize: '0.82rem', padding: '7px 12px' }}
+              onClick={() => setShowCancelConfirm(true)}
+            >
+              {t('booking.cancelBooking')}
+            </button>
+          )
         )}
       </div>
 
@@ -991,7 +1059,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
 function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
-  const { currencySymbol } = useLocale();
+  const { currencySymbol, locale, property } = useLocale();
+  const isWP = property?.rental_type === 'whole_property';
   const [form, setForm] = useState({
     room_id:        b.room_id        ? String(b.room_id)  : '',
     guest_id:       b.guest_id       ? String(b.guest_id) : '',
@@ -1003,17 +1072,17 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
     notes:          b.notes          ?? '',
     total_price:    b.total_price    ?? '',
   });
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState(null);
+  const [saving,            setSaving]            = useState(false);
+  const [error,             setError]             = useState(null);
+  const [showShortenConfirm, setShowShortenConfirm] = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSave = async () => {
-    if (!form.check_in_date || !form.check_out_date) { setError(t('requiredFields')); return; }
-    if (form.check_out_date <= form.check_in_date)   { setError(t('checkoutAfterCheckin')); return; }
+  const doSave = async () => {
     setSaving(true);
     setError(null);
+    setShowShortenConfirm(false);
     try {
       const res = await apiFetch(`/api/bookings/${b.id}`, {
         method: 'PUT',
@@ -1040,6 +1109,16 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
       setError(err.message);
       setSaving(false);
     }
+  };
+
+  const handleSave = () => {
+    if (!form.check_in_date || !form.check_out_date) { setError(t('requiredFields')); return; }
+    if (form.check_out_date <= form.check_in_date)   { setError(t('checkoutAfterCheckin')); return; }
+    if (isWP && form.check_out_date < b.check_out_date) {
+      setShowShortenConfirm(true);
+      return;
+    }
+    doSave();
   };
 
   const nightsCount = form.check_in_date && form.check_out_date && form.check_out_date > form.check_in_date
@@ -1153,6 +1232,23 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
           {t('cancel')}
         </button>
       </div>
+
+      {showShortenConfirm && (() => {
+        const cutNights = nightsBetween(form.check_out_date, b.check_out_date);
+        return (
+          <ConfirmModal
+            isOpen={true}
+            title="Shorten this stay?"
+            message={`You are changing check-out from ${formatDateMedium(b.check_out_date, locale)} to ${formatDateMedium(form.check_out_date, locale)}. This will shorten the guest's stay by ${cutNights} night${cutNights !== 1 ? 's' : ''}.`}
+            detail="Has the guest requested this change? This action cannot be undone."
+            confirmLabel="Yes — shorten the stay"
+            cancelLabel={t('cancel')}
+            variant="warning"
+            onConfirm={doSave}
+            onCancel={() => setShowShortenConfirm(false)}
+          />
+        );
+      })()}
     </>
   );
 }

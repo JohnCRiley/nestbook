@@ -395,6 +395,12 @@ bookingsRouter.put('/:id', (req, res) => {
 
     // WP arrival — guests have the key
     if (_wp_action === 'wp_checkin') {
+      const todayIso = new Date().toISOString().split('T')[0];
+      if (todayIso < existing.check_in_date) {
+        return res.status(400).json({
+          error: `Cannot confirm arrival before check-in date (${existing.check_in_date})`,
+        });
+      }
       db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('arriving', req.params.id);
       const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
       return res.json(updated);
@@ -402,6 +408,12 @@ bookingsRouter.put('/:id', (req, res) => {
 
     // WP departure — guests have left and returned the key
     if (_wp_action === 'wp_departure') {
+      const todayIso = new Date().toISOString().split('T')[0];
+      if (todayIso < existing.check_out_date) {
+        return res.status(400).json({
+          error: `Cannot confirm departure before check-out date (${existing.check_out_date}). To shorten the stay, use Edit booking.`,
+        });
+      }
       const now = new Date().toISOString();
       db.prepare('UPDATE bookings SET status = ?, checked_out_at = ? WHERE id = ?')
         .run('checked_out', now, req.params.id);
@@ -597,8 +609,17 @@ bookingsRouter.post('/:id/refund', (req, res) => {
 // ── DELETE /api/bookings/:id ──────────────────────────────────────────────
 bookingsRouter.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM bookings WHERE id = ?').run(req.params.id);
-    if (result.changes === 0) return res.status(404).json({ error: 'Booking not found' });
+    const booking = db.prepare('SELECT id, status, property_id FROM bookings WHERE id = ?').get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    const prop = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(booking.property_id);
+    if (prop?.rental_type === 'whole_property' && ['confirmed', 'arriving'].includes(booking.status)) {
+      return res.status(403).json({
+        error: 'Active whole property bookings cannot be deleted. Edit the booking to make changes or cancel with the guest first.',
+      });
+    }
+
+    db.prepare('DELETE FROM bookings WHERE id = ?').run(req.params.id);
     res.status(204).end();
   } catch (err) {
     res.status(500).json({ error: err.message });
