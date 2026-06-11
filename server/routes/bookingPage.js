@@ -1433,7 +1433,7 @@ footer a:hover { text-decoration: underline; }
   position: relative;
   overflow: hidden;
   display: block;
-  background: #1a2e14;
+  background: ${esc(palette.dark)};
 }
 .wp-map-section::after {
   content: '';
@@ -1468,7 +1468,7 @@ footer a:hover { text-decoration: underline; }
   height: 100%;
   position: absolute;
   inset: 0;
-  background: #1e3a1a;
+  background: ${esc(palette.dark)};
 }
 @media (max-width: 768px) {
   .wp-map-section {
