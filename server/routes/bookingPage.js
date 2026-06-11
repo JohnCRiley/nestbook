@@ -382,7 +382,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     ].filter(Boolean).join('');
 
     // If photos exist, use gallery as hero; if not, fall back to the photo/map hero
-    if (allRoomPhotos.length > 0) {
+    if (gallerySection) {
       heroSection = `${gallerySection}
 <div class="wp-stats-bar">
   <div class="wp-stats-inner">
