@@ -26,6 +26,7 @@ export default function Bookings() {
     { key: 'confirmed',   label: t('filters')[3] },
     { key: 'checked_out', label: t('filters')[4] },
     { key: 'cancelled',   label: t('filters')[5] },
+    { key: 'pending',     label: 'Pending' },
   ];
 
   // If we arrived via "New Booking" on the dashboard, remember the intent but
@@ -37,9 +38,9 @@ export default function Bookings() {
   const [rooms,           setRooms]           = useState([]);
   const [guests,          setGuests]          = useState([]);
   const [guestsLoaded,    setGuestsLoaded]    = useState(false);
-  const [counts,          setCounts]          = useState({ all: 0, arriving: 0, in_house: 0, confirmed: 0, checked_out: 0, cancelled: 0 });
+  const [counts,          setCounts]          = useState({ all: 0, arriving: 0, in_house: 0, confirmed: 0, checked_out: 0, cancelled: 0, pending: 0 });
   const [loading,         setLoading]         = useState(true);
-  const [activeFilter,    setActiveFilter]    = useState('all');
+  const [activeFilter,    setActiveFilter]    = useState(location.state?.filter ?? 'all');
   const [search,          setSearch]          = useState('');
   const [page,            setPage]            = useState(1);
   const [total,           setTotal]           = useState(0);
@@ -319,10 +320,18 @@ export default function Bookings() {
 function BookingRow({ booking: b, isSelected, onClick }) {
   const { fmtCurrency, locale } = useLocale();
   const t = useT();
-  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
+  const statusLabel = {
+    arriving:               t('calLegendInHouse'),
+    confirmed:              t('confirmed'),
+    checked_out:            t('checkedOut'),
+    cancelled:              t('cancelled'),
+    pending_owner_approval: '⏳ Awaiting approval',
+    declined:               t('wpDeclinedStatus') ?? 'Declined',
+  }[b.status] ?? b.status;
   return (
     <tr
       className={isSelected ? 'row-selected' : ''}
+      style={b.status === 'pending_owner_approval' ? { background: '#fffbeb' } : undefined}
       onClick={() => onClick(b)}
     >
       <td>
@@ -355,10 +364,18 @@ function BookingRow({ booking: b, isSelected, onClick }) {
 function BookingCard({ booking: b, isSelected, onClick }) {
   const { fmtCurrency, locale } = useLocale();
   const t = useT();
-  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
+  const statusLabel = {
+    arriving:               t('calLegendInHouse'),
+    confirmed:              t('confirmed'),
+    checked_out:            t('checkedOut'),
+    cancelled:              t('cancelled'),
+    pending_owner_approval: '⏳ Awaiting approval',
+    declined:               t('wpDeclinedStatus') ?? 'Declined',
+  }[b.status] ?? b.status;
   return (
     <div
       className={`booking-card${isSelected ? ' booking-card--selected' : ''}`}
+      style={b.status === 'pending_owner_approval' ? { borderColor: '#f59e0b', background: '#fffbeb' } : undefined}
       onClick={() => onClick(b)}
     >
       <div className="bc-header">

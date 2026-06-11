@@ -101,6 +101,24 @@ function hasOverlap(roomId, checkIn, checkOut, excludeId = null) {
   return !!db.prepare(sql).get(...args);
 }
 
+// ── GET /api/bookings/pending-count ──────────────────────────────────────────
+// Returns the count of pending_owner_approval bookings for the owner's properties.
+// Used by Sidebar for the live badge. Must be before /:id.
+bookingsRouter.get('/pending-count', (req, res) => {
+  try {
+    const row = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM bookings b
+      JOIN properties p ON p.id = b.property_id
+      WHERE p.owner_id = ?
+        AND b.status = 'pending_owner_approval'
+    `).get(req.user.userId);
+    res.json({ count: row.count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings/counts ──────────────────────────────────────────────────
 // Returns per-status counts for filter pill badges.
 // Must be defined BEFORE /:id so Express doesn't treat "counts" as an id param.
@@ -119,6 +137,7 @@ bookingsRouter.get('/counts', (req, res) => {
       confirmed:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'confirmed'`).get(property_id).n,
       checked_out: db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'checked_out'`).get(property_id).n,
       cancelled:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled'`).get(property_id).n,
+      pending:     db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'pending_owner_approval'`).get(property_id).n,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -170,6 +189,7 @@ bookingsRouter.get('/', (req, res) => {
         case 'confirmed':   conditions.push("b.status = 'confirmed'");   break;
         case 'checked_out': conditions.push("b.status = 'checked_out'"); break;
         case 'cancelled':   conditions.push("b.status = 'cancelled'");   break;
+        case 'pending':     conditions.push("b.status = 'pending_owner_approval'"); break;
       }
     }
 

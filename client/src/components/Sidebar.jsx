@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../utils/apiFetch.js';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
@@ -48,7 +49,22 @@ export default function Sidebar() {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tabletExpanded, setTabletExpanded] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const sidebarRef = useRef(null);
+
+  // Poll for pending approval count every 60 s (owner role only)
+  useEffect(() => {
+    if (user?.role !== 'owner') return;
+    function fetchPending() {
+      apiFetch('/api/bookings/pending-count')
+        .then((r) => r.ok ? r.json() : null)
+        .then((d) => { if (d) setPendingCount(d.count ?? 0); })
+        .catch(() => {});
+    }
+    fetchPending();
+    const interval = setInterval(fetchPending, 60_000);
+    return () => clearInterval(interval);
+  }, [user?.role]);
 
   // Close mobile menu and tablet expanded on route change
   useEffect(() => { setMobileOpen(false); setTabletExpanded(false); }, [location.pathname]);
@@ -158,6 +174,17 @@ export default function Sidebar() {
               >
                 <Icon />
                 <span className="nav-link-label">{label}</span>
+                {key === 'bookings' && pendingCount > 0 && (
+                  <span style={{
+                    background: '#f59e0b', color: 'white',
+                    borderRadius: 10, padding: '1px 7px',
+                    fontSize: '0.7rem', fontWeight: 700,
+                    marginLeft: 'auto', lineHeight: 1.6,
+                    flexShrink: 0,
+                  }}>
+                    {pendingCount}
+                  </span>
+                )}
               </NavLink>
             );
           })}

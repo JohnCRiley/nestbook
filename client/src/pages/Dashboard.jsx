@@ -262,6 +262,44 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* ── Pending approval banner (whole_property only) ──────────────── */}
+      {bookings.filter((b) => b.status === 'pending_owner_approval').length > 0 && (
+        <div style={{
+          background: '#fef3c7', border: '1.5px solid #f59e0b', borderRadius: 10,
+          padding: '16px 20px', marginBottom: 16,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <i className="ti ti-clock" style={{ fontSize: '1.3rem', color: '#d97706' }} />
+            <div>
+              <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
+                {bookings.filter((b) => b.status === 'pending_owner_approval').length === 1
+                  ? '1 booking request awaiting your approval'
+                  : `${bookings.filter((b) => b.status === 'pending_owner_approval').length} booking requests awaiting your approval`
+                }
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#b45309', marginTop: 2 }}>
+                {bookings
+                  .filter((b) => b.status === 'pending_owner_approval')
+                  .map((b) => `${b.guest_first_name} ${b.guest_last_name} · ${b.check_in_date}`)
+                  .join('  ·  ')}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/bookings', { state: { filter: 'pending' } })}
+            style={{
+              background: '#f59e0b', color: 'white', border: 'none', borderRadius: 7,
+              padding: '8px 16px', fontWeight: 600, fontSize: '0.85rem',
+              cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}
+          >
+            Review requests →
+          </button>
+        </div>
+      )}
+
       {/* ── Action banners ─────────────────────────────────────────────── */}
       {arrivalsToday.filter((b) => b.status === 'confirmed').length > 0 && (
         <div style={{
