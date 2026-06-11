@@ -48,11 +48,6 @@ const AMENITY_LABELS = {
   aircon: 'Air Con', tv: 'TV', safe: 'Safe', bathtub: 'Bathtub',
 };
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
-
 function esc(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
@@ -84,7 +79,7 @@ function getRoomAvailMap(bookings, roomId) {
   const rb = bookings.filter(b => b.room_id === roomId);
   const map = {};
   const base = new Date();
-  for (let i = 0; i < 62; i++) {
+  for (let i = 0; i < 365; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     const s = localDateStr(d);
@@ -93,55 +88,19 @@ function getRoomAvailMap(bookings, roomId) {
   return map;
 }
 
-function roomCalMonth(year, month, availMap, today) {
-  const firstDow  = new Date(year, month, 1).getDay();
-  const offset    = (firstDow + 6) % 7; // Monday-first
-  const daysCount = new Date(year, month + 1, 0).getDate();
-
-  let h = `<div class="room-cal-month">`;
-  h += `<div class="room-cal-header">${MONTH_NAMES[month]} ${year}</div>`;
-  h += `<div class="room-cal-days">`;
-  for (const d of ['M','T','W','T','F','S','S']) h += `<span class="cal-dow">${d}</span>`;
-  for (let i = 0; i < offset; i++) h += `<span class="cal-day cal-empty"></span>`;
-
-  for (let d = 1; d <= daysCount; d++) {
-    const s = `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    let cls = 'cal-day';
-    if (s < today)                     cls += ' cal-empty';
-    else if (s === today)              cls += ' cal-today';
-    else if (availMap[s] === 'booked') cls += ' cal-booked';
-    else                               cls += ' cal-available';
-    h += `<span class="${cls}">${s >= today ? d : ''}</span>`;
-  }
-  h += `</div></div>`;
-  return h;
-}
-
-function roomCalendarSection(availMap) {
-  const today = localDateStr(new Date());
-  const now   = new Date();
-  const m0    = { year: now.getFullYear(), month: now.getMonth() };
-  const next  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const m1    = { year: next.getFullYear(), month: next.getMonth() };
+function roomCalendarSection(roomId) {
   return `
 <div class="room-availability">
   <h4 class="avail-title" data-i18n="page.availability">Availability</h4>
-  <div class="room-cal-grid">
-    ${roomCalMonth(m0.year, m0.month, availMap, today)}
-    ${roomCalMonth(m1.year, m1.month, availMap, today)}
-  </div>
+  <div class="nb-cal-container" data-room-id="${esc(String(roomId))}"></div>
   <p class="avail-hint" data-i18n="page.availabilityHint">Select your dates and click Book Now to check availability and complete your reservation.</p>
-  <div class="cal-legend">
-    <span><span class="legend-dot legend-available"></span> <span data-i18n="page.available">Available</span></span>
-    <span><span class="legend-dot legend-booked"></span> <span data-i18n="page.booked">Booked</span></span>
-  </div>
 </div>`;
 }
 
 function getPropertyAvailMap(bookings) {
   const map = {};
   const base = new Date();
-  for (let i = 0; i < 62; i++) {
+  for (let i = 0; i < 365; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     const s = localDateStr(d);
@@ -150,23 +109,11 @@ function getPropertyAvailMap(bookings) {
   return map;
 }
 
-function propertyCalendarSection(availMap) {
-  const today = localDateStr(new Date());
-  const now   = new Date();
-  const m0    = { year: now.getFullYear(), month: now.getMonth() };
-  const next  = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const m1    = { year: next.getFullYear(), month: next.getMonth() };
+function propertyCalendarSection() {
   return `
 <div class="room-availability">
-  <div class="room-cal-grid">
-    ${roomCalMonth(m0.year, m0.month, availMap, today)}
-    ${roomCalMonth(m1.year, m1.month, availMap, today)}
-  </div>
+  <div class="nb-cal-container" data-room-id="property"></div>
   <p class="avail-hint" data-i18n="page.wholePropertyAvailability">Check when the whole property is available for your dates.</p>
-  <div class="cal-legend">
-    <span><span class="legend-dot legend-available"></span> <span data-i18n="page.available">Available</span></span>
-    <span><span class="legend-dot legend-booked"></span> <span data-i18n="page.booked">Booked</span></span>
-  </div>
 </div>`;
 }
 
@@ -337,7 +284,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
-    ${availMap ? roomCalendarSection(availMap) : ''}
+    ${roomCalendarSection(room.id)}
     <button class="btn-book" onclick="${isPaidPlan ? 'openWidget()' : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
   </div>
 </div>`;
@@ -370,6 +317,17 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 
   const availMapsByRoom = {};
   for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id);
+
+  const propAvailMap = isWholeProperty ? getPropertyAvailMap(bookings) : null;
+
+  // Build availability JSON for client-side navigable calendars
+  const availJson = {};
+  if (isWholeProperty) {
+    availJson['property'] = propAvailMap;
+  } else {
+    for (const r of rooms) availJson[String(r.id)] = availMapsByRoom[r.id];
+  }
+  const availScript = `<script>var NB_AVAILABILITY = ${JSON.stringify(availJson)};<\/script>`;
 
   const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan)).join('\n');
 
@@ -469,13 +427,12 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 
   let roomsSection;
   if (isWholeProperty) {
-    const propAvailMap = getPropertyAvailMap(bookings);
     roomsSection = `
 ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
 <section class="availability">
   <div class="section-inner">
     <h2 data-i18n="page.availability">Availability</h2>
-    ${propertyCalendarSection(propAvailMap)}
+    ${propertyCalendarSection()}
   </div>
 </section>`;
   } else {
@@ -1106,32 +1063,68 @@ section h2 {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.room-cal-grid {
+.avail-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 8px 0 4px;
+  line-height: 1.4;
+}
+/* Navigable calendar */
+.nb-cal-wrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  margin-top: 4px;
 }
-.room-cal-header {
-  text-align: center;
-  font-weight: 600;
-  color: ${esc(palette.dark)};
+.availability .nb-cal-wrapper { gap: 32px; }
+.nb-cal-month { font-size: 0.78rem; }
+.nb-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 6px;
-  font-size: 0.75rem;
 }
-.room-cal-days {
+.nb-cal-month-name {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: ${esc(palette.dark)};
+}
+.nb-cal-nav {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${esc(palette.dark)};
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+  font-family: inherit;
+  line-height: 1;
+}
+.nb-cal-nav:hover { background: ${esc(palette.light)}; }
+.nb-cal-nav-disabled {
+  color: #e2e8f0;
+  padding: 2px 4px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.nb-cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
 }
-.cal-dow {
+.nb-cal-dow {
   text-align: center;
   font-size: 0.6rem;
   color: #94a3b8;
   padding: 2px 0;
   font-weight: 600;
-  text-transform: uppercase;
 }
-.cal-day {
+.nb-cal-day {
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -1140,34 +1133,31 @@ section h2 {
   font-size: 0.68rem;
   font-weight: 500;
 }
-.cal-empty     { background: none; color: transparent; }
-.cal-available { background: ${esc(palette.light)}; color: ${esc(palette.dark)}; }
-.cal-booked    { background: #f1f5f9; color: #cbd5e1; text-decoration: line-through; }
-.cal-today     { background: ${esc(palette.brand)}; color: #fff; font-weight: 700; border-radius: 50%; }
-.avail-hint {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  margin: 8px 0 4px;
-  line-height: 1.4;
-}
-.cal-legend {
+.nb-cal-empty    { background: none; color: transparent; }
+.nb-cal-past     { background: none; color: #e2e8f0; }
+.nb-cal-available { background: ${esc(palette.light)}; color: ${esc(palette.dark)}; }
+.nb-cal-booked   { background: #f1f5f9; color: #cbd5e1; text-decoration: line-through; }
+.nb-cal-today    { background: ${esc(palette.brand)} !important; color: #fff !important; font-weight: 700; border-radius: 50%; text-decoration: none !important; }
+.nb-cal-legend {
   display: flex;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 0.72rem;
   color: #94a3b8;
+  grid-column: span 2;
 }
-.legend-dot {
+.nb-leg-dot {
   display: inline-block;
   width: 10px; height: 10px;
   border-radius: 2px;
   margin-right: 3px;
   vertical-align: middle;
 }
-.legend-available { background: ${esc(palette.light)}; }
-.legend-booked    { background: #f1f5f9; border: 1px solid #e2e8f0; }
+.nb-leg-available { background: ${esc(palette.light)}; border: 1px solid ${esc(palette.brand)}33; }
+.nb-leg-booked    { background: #f1f5f9; border: 1px solid #e2e8f0; }
 @media (max-width: 480px) {
-  .room-cal-grid { grid-template-columns: 1fr; }
+  .nb-cal-wrapper { grid-template-columns: 1fr; }
+  .nb-cal-legend  { grid-column: span 1; }
 }
 
 /* ── Tabler icons ──────────────────────────────────────────────────── */
@@ -1373,6 +1363,7 @@ footer a:hover { text-decoration: underline; }
   gtag('js', new Date());
   gtag('config', 'G-5R87S4LXP6');
 </script>
+${availScript}
 </head>
 <body>
 
@@ -1666,6 +1657,12 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('[NestBook] Language:', lang);
   applyLang(lang);
   console.log('[NestBook] applyLang called with:', lang);
+
+  // Initialise all navigable calendars
+  var now = new Date();
+  document.querySelectorAll('.nb-cal-container').forEach(function(c) {
+    renderCalendar(c.dataset.roomId, now.getMonth(), now.getFullYear());
+  });
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1681,6 +1678,92 @@ function openWidget() {
 function scrollToEnquiry() {
   var el = document.getElementById('booking-enquiry');
   if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Navigable availability calendars ────────────────────────────────────────
+var calState = {};
+
+function renderCalendar(roomId, startMonth, startYear) {
+  var container = document.querySelector('[data-room-id="' + roomId + '"]');
+  if (!container) return;
+
+  var avail = NB_AVAILABILITY[roomId] || {};
+  var today = new Date();
+  var todayStr = today.getFullYear() + '-'
+    + String(today.getMonth() + 1).padStart(2, '0') + '-'
+    + String(today.getDate()).padStart(2, '0');
+  var minYear  = today.getFullYear();
+  var minMonth = today.getMonth();
+  var canPrev  = !(startYear === minYear && startMonth === minMonth);
+
+  var html = '<div class="nb-cal-wrapper">';
+
+  for (var m = 0; m < 2; m++) {
+    var month = startMonth + m;
+    var year  = startYear;
+    if (month > 11) { month -= 12; year++; }
+
+    var firstDow   = new Date(year, month, 1).getDay();
+    var offset     = (firstDow + 6) % 7;
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthLabel = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    html += '<div class="nb-cal-month">';
+    html += '<div class="nb-cal-header">';
+
+    if (m === 0) {
+      html += canPrev
+        ? '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',-1)"><i class="ti ti-chevron-left"></i></button>'
+        : '<span class="nb-cal-nav-disabled"><i class="ti ti-chevron-left"></i></span>';
+    } else {
+      html += '<span></span>';
+    }
+
+    html += '<span class="nb-cal-month-name">' + monthLabel + '</span>';
+
+    if (m === 1) {
+      html += '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',1)"><i class="ti ti-chevron-right"></i></button>';
+    } else {
+      html += '<span></span>';
+    }
+
+    html += '</div>'; // header
+    html += '<div class="nb-cal-grid">';
+    ['M','T','W','T','F','S','S'].forEach(function(d) {
+      html += '<span class="nb-cal-dow">' + d + '</span>';
+    });
+    for (var e = 0; e < offset; e++) html += '<span class="nb-cal-day nb-cal-empty"></span>';
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var isPast  = dateStr < todayStr;
+      var isToday = dateStr === todayStr;
+      var status  = isPast ? 'past' : (avail[dateStr] || 'available');
+      var cls = 'nb-cal-day nb-cal-' + status;
+      if (isToday) cls += ' nb-cal-today';
+      html += '<span class="' + cls + '">' + (isPast ? '' : d) + '</span>';
+    }
+    html += '</div></div>'; // grid + month
+  }
+
+  html += '<div class="nb-cal-legend">'
+    + '<span><span class="nb-leg-dot nb-leg-available"></span> Available</span>'
+    + '<span><span class="nb-leg-dot nb-leg-booked"></span> Booked</span>'
+    + '</div>';
+  html += '</div>'; // wrapper
+
+  container.innerHTML = html;
+  calState[roomId] = { month: startMonth, year: startYear };
+}
+
+function calNav(roomId, curMonth, curYear, dir) {
+  var newMonth = curMonth + dir;
+  var newYear  = curYear;
+  if (newMonth < 0)  { newMonth = 11; newYear--; }
+  if (newMonth > 11) { newMonth = 0;  newYear++; }
+  var today = new Date();
+  if (newYear < today.getFullYear() ||
+      (newYear === today.getFullYear() && newMonth < today.getMonth())) return;
+  renderCalendar(roomId, newMonth, newYear);
 }
 
 document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
