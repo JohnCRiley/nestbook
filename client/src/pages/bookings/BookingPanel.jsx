@@ -123,6 +123,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const showChargesTab = plan === 'multi';
 
   const depositRequired = !!property?.require_deposit;
+  const isWP = property?.rental_type === 'whole_property';
 
   // Fetch room rate breakdown for accurate multi-period totals
   useEffect(() => {
