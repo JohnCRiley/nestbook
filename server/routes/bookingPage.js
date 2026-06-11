@@ -497,6 +497,39 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
   </div>
 </footer>`;
 
+  const hasLocation = city || property.address;
+  let mapAddrHtml = '';
+  if (property.address) {
+    const line2 = [city, country].filter(Boolean).map(esc).join(', ');
+    mapAddrHtml = `<p class="wp-map-address">${esc(property.address)}${line2 ? '<br>' + line2 : ''}</p>`;
+  } else if (city || country) {
+    mapAddrHtml = `<p class="wp-map-address">${[city, country].filter(Boolean).map(esc).join(', ')}</p>`;
+  }
+  const mapSection = hasLocation ? `
+<section class="wp-map-section">
+  <div class="wp-map-inner">
+    <div class="wp-map-info">
+      <div class="wp-map-label"><i class="ti ti-map-pin"></i> Location</div>
+      <h3 class="wp-map-title">${esc(name)}</h3>
+      ${mapAddrHtml}
+      <a href="https://www.google.com/maps/search/?api=1&query=${mapQuery}" target="_blank" rel="noopener noreferrer" class="wp-map-directions">
+        <i class="ti ti-directions"></i> Get directions
+      </a>
+    </div>
+    <div class="wp-map-embed">
+      <iframe
+        src="https://maps.google.com/maps?q=${mapQuery}&output=embed&z=13"
+        width="100%" height="100%"
+        style="border:0;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Location of ${esc(name)}"
+      ></iframe>
+    </div>
+  </div>
+</section>` : '';
+
   return `<!DOCTYPE html>
 <html lang="${esc(defaultLang)}">
 <head>
@@ -1365,6 +1398,91 @@ footer a:hover { text-decoration: underline; }
   font-weight: 500;
   line-height: 1.6;
 }
+
+/* ── Map section ────────────────────────────────────────────────── */
+.wp-map-section {
+  background: #f8fbf6;
+  border-top: 1px solid #e8f5e2;
+  border-bottom: 1px solid #e8f5e2;
+}
+.wp-map-inner {
+  display: flex;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 320px;
+}
+.wp-map-info {
+  flex: 0 0 280px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  border-right: 1px solid #e8f5e2;
+}
+.wp-map-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1a4710;
+}
+.wp-map-label .ti { font-size: 0.9rem; }
+.wp-map-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a2e14;
+  line-height: 1.3;
+  margin: 0;
+}
+.wp-map-address {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+.wp-map-directions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a4710;
+  color: white;
+  padding: 9px 16px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.2s;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.wp-map-directions:hover { background: #2f771b; }
+.wp-map-directions .ti { font-size: 0.95rem; }
+.wp-map-embed {
+  flex: 1;
+  min-height: 320px;
+  overflow: hidden;
+}
+.wp-map-embed iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  min-height: 320px;
+}
+@media (max-width: 768px) {
+  .wp-map-inner { flex-direction: column; }
+  .wp-map-info {
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid #e8f5e2;
+    padding: 24px 20px;
+    gap: 10px;
+  }
+  .wp-map-embed { min-height: 250px; }
+  .wp-map-embed iframe { min-height: 250px; }
+}
 </style>
 
 <!-- Google Analytics -->
@@ -1382,6 +1500,7 @@ ${heroSection}
 ${aboutSection}
 ${roomsSection}
 ${ctaSection}
+${mapSection}
 ${isPaidPlan ? '' : `
 <section id="booking-enquiry" class="enquiry-section">
   <div class="section-inner">
