@@ -435,6 +435,21 @@ bookingsRouter.put('/:id', (req, res) => {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
     }
 
+    // Date guardrails for status transitions — applies to all rental types
+    if (status && status !== existing.status) {
+      const todayIso = new Date().toISOString().split('T')[0];
+      if (status === 'arriving' && todayIso < existing.check_in_date) {
+        return res.status(400).json({
+          error: `Cannot check in before arrival date (${existing.check_in_date})`,
+        });
+      }
+      if (status === 'checked_out' && todayIso < existing.check_out_date) {
+        return res.status(400).json({
+          error: `Cannot check out before departure date (${existing.check_out_date}). Edit the booking to shorten the stay.`,
+        });
+      }
+    }
+
     if (hasOverlap(Number(room_id), check_in_date, check_out_date, Number(req.params.id))) {
       return res.status(409).json({ error: OVERLAP_ERROR });
     }
@@ -609,13 +624,14 @@ bookingsRouter.post('/:id/refund', (req, res) => {
 // ── DELETE /api/bookings/:id ──────────────────────────────────────────────
 bookingsRouter.delete('/:id', (req, res) => {
   try {
-    const booking = db.prepare('SELECT id, status, property_id FROM bookings WHERE id = ?').get(req.params.id);
+    const booking = db.prepare('SELECT id, status, check_in_date, check_out_date FROM bookings WHERE id = ?').get(req.params.id);
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
-    const prop = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(booking.property_id);
-    if (prop?.rental_type === 'whole_property' && ['confirmed', 'arriving'].includes(booking.status)) {
+    const todayIso = new Date().toISOString().split('T')[0];
+    const isActive = todayIso >= booking.check_in_date && todayIso <= booking.check_out_date;
+    if (isActive && ['confirmed', 'arriving'].includes(booking.status)) {
       return res.status(403).json({
-        error: 'Active whole property bookings cannot be deleted. Edit the booking to make changes or cancel with the guest first.',
+        error: 'Cannot delete an active booking. Check the guest out first or edit the booking.',
       });
     }
 

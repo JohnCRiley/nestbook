@@ -680,6 +680,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             onCancelClick={() => setShowCancelConfirm(true)}
             onCheckIn={handleCheckIn}
             onCheckOut={() => setShowCheckout(true)}
+            canCheckIn={canMarkArrived}
+            canCheckOut={canMarkDeparted}
+            checkInDate={b.check_in_date}
+            checkOutDate={b.check_out_date}
           />
         )
       )}
@@ -1114,7 +1118,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
   const handleSave = () => {
     if (!form.check_in_date || !form.check_out_date) { setError(t('requiredFields')); return; }
     if (form.check_out_date <= form.check_in_date)   { setError(t('checkoutAfterCheckin')); return; }
-    if (isWP && form.check_out_date < b.check_out_date) {
+    if (form.check_out_date < b.check_out_date) {
       setShowShortenConfirm(true);
       return;
     }
@@ -1518,21 +1522,39 @@ function ERow({ label, value, valueColor }) {
 
 // ── Status action buttons ─────────────────────────────────────────────────────
 
-function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick, onCheckIn, onCheckOut }) {
+function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent, onCancelClick, onCheckIn, onCheckOut, canCheckIn = true, canCheckOut = true, checkInDate, checkOutDate }) {
+  const { locale } = useLocale();
   const wrapStyle = prominent
     ? { padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', marginBottom: 0 }
     : {};
+  const lockedTile = (label, hint) => (
+    <div style={{
+      background: 'var(--page-bg)', border: '1.5px solid var(--border)', borderRadius: 10,
+      padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
+      color: 'var(--text-muted)', fontSize: '0.88rem',
+    }}>
+      <i className="ti ti-lock" style={{ fontSize: '1.1rem' }} />
+      <div>
+        <div style={{ fontWeight: 600 }}>{label}</div>
+        {hint && <div style={{ fontSize: '0.78rem', marginTop: 2 }}>{hint}</div>}
+      </div>
+    </div>
+  );
 
   if (status === 'arriving') {
     return (
       <div className="panel-actions" style={wrapStyle}>
-        <button
-          className="btn-panel-primary"
-          style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
-          onClick={onCheckOut}
-        >
-          {t('booking.checkOut')}
-        </button>
+        {canCheckOut ? (
+          <button
+            className="btn-panel-primary"
+            style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
+            onClick={onCheckOut}
+          >
+            {t('booking.checkOut')}
+          </button>
+        ) : (
+          lockedTile('Check-out locked', checkOutDate ? `Available from ${formatDateMedium(checkOutDate, locale)}` : null)
+        )}
         {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
       </div>
     );
@@ -1541,13 +1563,17 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
   if (status === 'confirmed') {
     return (
       <div className="panel-actions" style={wrapStyle}>
-        <button
-          className="btn-panel-primary"
-          style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
-          onClick={onCheckIn ?? (() => onStatusUpdate(bookingId, 'arriving'))}
-        >
-          {t('booking.checkIn')}
-        </button>
+        {canCheckIn ? (
+          <button
+            className="btn-panel-primary"
+            style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
+            onClick={onCheckIn ?? (() => onStatusUpdate(bookingId, 'arriving'))}
+          >
+            {t('booking.checkIn')}
+          </button>
+        ) : (
+          lockedTile('Check-in locked', checkInDate ? `Available from ${formatDateMedium(checkInDate, locale)}` : null)
+        )}
         {!prominent && <button className="btn-panel-danger" onClick={onCancelClick}>{t('booking.cancelBooking')}</button>}
         {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
       </div>
