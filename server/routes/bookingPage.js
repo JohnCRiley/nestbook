@@ -1464,9 +1464,7 @@ function renderCalendar(roomId, startMonth, startYear) {
   var todayStr = today.getFullYear() + '-'
     + String(today.getMonth() + 1).padStart(2, '0') + '-'
     + String(today.getDate()).padStart(2, '0');
-  var minYear  = today.getFullYear();
-  var minMonth = today.getMonth();
-  var canPrev  = !(startYear === minYear && startMonth === minMonth);
+  var canPrev = !(startYear === today.getFullYear() && startMonth === today.getMonth());
 
   var html = '<div class="nb-cal-wrapper">';
 
@@ -1480,12 +1478,11 @@ function renderCalendar(roomId, startMonth, startYear) {
     var daysInMonth = new Date(yr, mo + 1, 0).getDate();
     var monthLabel  = new Date(yr, mo, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
 
-    html += '<div class="nb-cal-month">';
-    html += '<div class="nb-cal-header">';
+    html += '<div class="nb-cal-month"><div class="nb-cal-header">';
 
     if (m === 0) {
       html += canPrev
-        ? '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',-1)"><i class="ti ti-chevron-left"></i></button>'
+        ? '<button class="nb-cal-nav nb-prev" data-sm="' + startMonth + '" data-sy="' + startYear + '"><i class="ti ti-chevron-left"></i></button>'
         : '<span class="nb-cal-nav-disabled"><i class="ti ti-chevron-left"></i></span>';
     } else {
       html += '<span></span>';
@@ -1494,7 +1491,7 @@ function renderCalendar(roomId, startMonth, startYear) {
     html += '<span class="nb-cal-month-name">' + monthLabel + '</span>';
 
     if (m === 1) {
-      html += '<button class="nb-cal-nav" onclick="calNav(\'' + roomId + '\',' + startMonth + ',' + startYear + ',1)"><i class="ti ti-chevron-right"></i></button>';
+      html += '<button class="nb-cal-nav nb-next" data-sm="' + startMonth + '" data-sy="' + startYear + '"><i class="ti ti-chevron-right"></i></button>';
     } else {
       html += '<span></span>';
     }
@@ -1523,6 +1520,16 @@ function renderCalendar(roomId, startMonth, startYear) {
 
   container.innerHTML = html;
   calState[roomId] = { month: startMonth, year: startYear };
+
+  // Attach nav listeners (avoids inline onclick + quote-escaping in template literal)
+  var prevBtn = container.querySelector('.nb-prev');
+  if (prevBtn) prevBtn.addEventListener('click', function() {
+    calNav(roomId, +this.dataset.sm, +this.dataset.sy, -1);
+  });
+  var nextBtn = container.querySelector('.nb-next');
+  if (nextBtn) nextBtn.addEventListener('click', function() {
+    calNav(roomId, +this.dataset.sm, +this.dataset.sy, 1);
+  });
 }
 
 function calNav(roomId, curMonth, curYear, dir) {
