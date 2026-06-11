@@ -107,18 +107,19 @@ export default function Dashboard() {
   }, [property?.id]);
 
   // ── WP summary fetch (whole_property only, refreshes every 5 min) ─────────
+  function fetchWpSummary() {
+    apiFetch('/api/bookings/wp-summary')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data) setWpSummary(data); })
+      .catch(() => {});
+  }
+
   useEffect(() => {
     if (!property?.id || property.rental_type !== 'whole_property') return;
-    function fetchWpSummary() {
-      apiFetch('/api/bookings/wp-summary')
-        .then((r) => r.ok ? r.json() : null)
-        .then((data) => { if (data) setWpSummary(data); })
-        .catch(() => {});
-    }
     fetchWpSummary();
     const timer = setInterval(fetchWpSummary, 5 * 60 * 1000);
     return () => clearInterval(timer);
-  }, [property?.id, property?.rental_type]);
+  }, [property?.id, property?.rental_type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
@@ -272,7 +273,7 @@ export default function Dashboard() {
         <StatCard value={occupiedTonight.length}   label={t('occupied')} />
         <StatCard value={arrivalsToday.length}      label={t('arrivals')} />
         <StatCard value={departuresToday.length}    label={t('departures')} />
-        {user?.role === 'owner' && (
+        {user?.role === 'owner' && property?.rental_type !== 'whole_property' && (
           <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
         )}
       </div>
@@ -651,6 +652,7 @@ export default function Dashboard() {
           onStatusUpdate={handleStatusUpdate}
           onSave={(updated) => {
             setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
+            if (property?.rental_type === 'whole_property') fetchWpSummary();
             if (updated.status === 'checked_out') {
               setSelectedBooking(null);
               showPageToast(t('coCheckedOutToast'));

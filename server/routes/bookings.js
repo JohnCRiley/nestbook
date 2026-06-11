@@ -536,6 +536,20 @@ bookingsRouter.put('/:id', (req, res) => {
       return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
+    // Recalculate total_price when dates change
+    let finalTotalPrice = total_price;
+    const newCheckIn  = check_in_date  ?? existing.check_in_date;
+    const newCheckOut = check_out_date ?? existing.check_out_date;
+    if (newCheckIn !== existing.check_in_date || newCheckOut !== existing.check_out_date) {
+      const nights = Math.max(0, Math.round((new Date(newCheckOut) - new Date(newCheckIn)) / 86400000));
+      const prop = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(existing.property_id);
+      if (prop?.rental_type === 'whole_property') {
+        finalTotalPrice = nights * (prop.whole_property_rate || 0);
+      } else {
+        finalTotalPrice = nights * (existing.price_per_night || 0);
+      }
+    }
+
     db.prepare(`
       UPDATE bookings
       SET room_id = ?, guest_id = ?, check_in_date = ?, check_out_date = ?,
@@ -547,7 +561,7 @@ bookingsRouter.put('/:id', (req, res) => {
       WHERE id = ?
     `).run(
       room_id, guest_id, check_in_date, check_out_date,
-      num_guests, status, source, notes, total_price,
+      num_guests, status, source, notes, finalTotalPrice,
       breakfast_added ? 1 : 0,
       breakfast_start_date         ?? null,
       breakfast_guests             ?? 0,
