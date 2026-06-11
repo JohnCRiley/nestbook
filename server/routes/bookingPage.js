@@ -276,10 +276,10 @@ function showcaseRoomCard(room, palette, photos) {
 
   const photoHtml = photos && photos.length > 0 ? `
   <div class="room-photo">
-    <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
+    <img src="/uploads/rooms/${esc(photos[0].filename)}" alt="${esc(room.name)}" loading="lazy" />
   </div>
   ${photos.length > 1 ? `<div class="photo-strip">
-    ${photos.map((f, i) => `<img src="/uploads/rooms/${esc(f)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('\n    ')}
+    ${photos.map((p, i) => `<img src="/uploads/rooms/${esc(p.filename)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('\n    ')}
   </div>` : ''}` : '';
 
   return `
@@ -317,11 +317,11 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
 
   const photoHtml = photos && photos.length > 0 ? `
   <div class="room-photo">
-    <img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(room.name)}" loading="lazy" />
+    <img src="/uploads/rooms/${esc(photos[0].filename)}" alt="${esc(room.name)}" loading="lazy" />
   </div>
   ${photos.length > 1 ? `
   <div class="photo-strip">
-    ${photos.map((f, i) => `<img src="/uploads/rooms/${esc(f)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
+    ${photos.map((p, i) => `<img src="/uploads/rooms/${esc(p.filename)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
   </div>` : ''}` : '';
 
   return `
