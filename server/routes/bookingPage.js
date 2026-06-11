@@ -117,33 +117,46 @@ function propertyCalendarSection() {
 </div>`;
 }
 
-function wpGallerySection(allPhotos, totalCount) {
-  if (!allPhotos || allPhotos.length === 0) return '';
+// heroPhoto   — filename stored in uploads/properties/ (property cover photo, may be null)
+// roomPhotos  — array of {filename, thumb_filename, room_name} from room_photos
+// propertyName — used for alt text
+function wpGallerySection(heroPhoto, roomPhotos, propertyName) {
+  const hasHero   = !!heroPhoto;
+  const mainSrc   = hasHero
+    ? `/uploads/properties/${esc(heroPhoto)}`
+    : (roomPhotos[0] ? `/uploads/rooms/${esc(roomPhotos[0].filename)}` : null);
 
-  if (allPhotos.length === 1) {
+  if (!mainSrc) return '';
+
+  // Strip photos: first 2 room photos; if hero is absent and first room photo is main, skip it
+  const stripPhotos = hasHero ? roomPhotos.slice(0, 2) : roomPhotos.slice(1, 3);
+
+  const totalPhotos = (hasHero ? 1 : 0) + roomPhotos.length;
+
+  const seeAllBtn = totalPhotos > 3
+    ? `<button class="wp-gallery-btn" onclick="document.querySelector('.ws-rooms')?.scrollIntoView({behavior:'smooth'})">
+        <i class="ti ti-photos"></i> See all ${totalPhotos} photos
+      </button>`
+    : '';
+
+  if (stripPhotos.length === 0) {
     return `
 <div class="wp-gallery">
   <div class="wp-gallery-solo">
-    <img src="/uploads/rooms/${esc(allPhotos[0])}" alt="" loading="eager" />
+    <img src="${mainSrc}" alt="${esc(propertyName)}" loading="eager" />
   </div>
+  ${seeAllBtn}
 </div>`;
   }
-
-  const sidePhotos = allPhotos.slice(1, allPhotos.length >= 4 ? 3 : allPhotos.length);
-  const seeAllBtn = totalCount > 4
-    ? `<button class="wp-gallery-btn" onclick="document.querySelector('.ws-rooms')?.scrollIntoView({behavior:'smooth'})">
-        <i class="ti ti-photo"></i> See all ${totalCount} photos
-      </button>`
-    : '';
 
   return `
 <div class="wp-gallery">
   <div class="wp-gallery-grid">
     <div class="wp-gallery-main">
-      <img src="/uploads/rooms/${esc(allPhotos[0])}" alt="" loading="eager" />
+      <img src="${mainSrc}" alt="${esc(propertyName)}" loading="eager" />
     </div>
-    <div class="wp-gallery-side${sidePhotos.length >= 2 ? ' has-four' : ''}">
-      ${sidePhotos.map(f => `<div class="wp-gal-thumb"><img src="/uploads/rooms/${esc(f)}" alt="" loading="lazy" /></div>`).join('\n      ')}
+    <div class="wp-gallery-side${stripPhotos.length >= 2 ? ' has-four' : ''}">
+      ${stripPhotos.map(p => `<div class="wp-gal-thumb"><img src="/uploads/rooms/${esc(p.thumb_filename || p.filename)}" alt="${esc(p.room_name || propertyName)}" loading="lazy" /></div>`).join('\n      ')}
     </div>
   </div>
   ${seeAllBtn}
@@ -351,9 +364,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     referrerpolicy="no-referrer-when-downgrade">
   </iframe>` : '';
 
-  // Collect all room photos in display order for the WP gallery (full-size filenames only)
-  const allRoomPhotos = rooms.flatMap(r => (photosByRoom?.[r.id] ?? []).map(p => p.filename));
-  const gallerySection = isWholeProperty ? wpGallerySection(allRoomPhotos, allRoomPhotos.length) : '';
+  // Collect all room photos in display order for the WP gallery
+  const wpRoomPhotos = rooms.flatMap(r => (photosByRoom?.[r.id] ?? []).map(p => ({ ...p, room_name: r.name })));
+  const gallerySection = isWholeProperty ? wpGallerySection(property.hero_photo || null, wpRoomPhotos, name) : '';
 
   let heroSection;
   if (isWholeProperty) {
