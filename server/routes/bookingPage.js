@@ -184,7 +184,7 @@ function wpGallerySection(allPhotos, totalCount) {
 
   const sidePhotos = allPhotos.slice(1, allPhotos.length >= 4 ? 3 : allPhotos.length);
   const seeAllBtn = totalCount > 4
-    ? `<button class="wp-gallery-btn" onclick="document.querySelector('.wp-showcase-wrap')?.scrollIntoView({behavior:'smooth'})">
+    ? `<button class="wp-gallery-btn" onclick="document.querySelector('.ws-rooms')?.scrollIntoView({behavior:'smooth'})">
         <i class="ti ti-photo"></i> See all ${totalCount} photos
       </button>`
     : '';
@@ -203,64 +203,59 @@ function wpGallerySection(allPhotos, totalCount) {
 </div>`;
 }
 
-function wpRoomCarousel(photos, roomName, index) {
-  if (!photos || photos.length === 0) {
-    return `<i class="ti ti-bed"></i>`;
-  }
-  if (photos.length === 1) {
-    return `<img src="/uploads/rooms/${esc(photos[0])}" alt="${esc(roomName)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" />`;
-  }
-  const id = `wpc-${index}`;
-  const imgs = photos.map((f, i) =>
-    `<img src="/uploads/rooms/${esc(f)}" alt="${esc(roomName)} — photo ${i + 1}" class="wpc-img${i === 0 ? ' active' : ''}" data-index="${i}" loading="${i === 0 ? 'eager' : 'lazy'}" />`
-  ).join('');
-  const thumbs = photos.map((f, i) =>
-    `<button class="wpc-thumb${i === 0 ? ' active' : ''}" onclick="wpcGoTo('${id}',${i})" aria-label="Photo ${i + 1}"><img src="/uploads/rooms/${esc(f)}" alt="" loading="lazy" /></button>`
-  ).join('');
-  return `<div class="wpc" id="${id}" data-total="${photos.length}">
-  <div class="wpc-main">
-    ${imgs}
-    <button class="wpc-btn wpc-prev" onclick="wpcPrev('${id}')" aria-label="Previous photo"><i class="ti ti-chevron-left"></i></button>
-    <button class="wpc-btn wpc-next" onclick="wpcNext('${id}')" aria-label="Next photo"><i class="ti ti-chevron-right"></i></button>
-    <div class="wpc-counter"><span class="wpc-cur">1</span> / ${photos.length}</div>
-  </div>
-  <div class="wpc-thumbs">${thumbs}</div>
-</div>`;
-}
-
 function wpAlternatingShowcase(rooms, photosByRoom, palette) {
   if (!rooms || rooms.length === 0) return '';
 
   const rows = rooms.map((room, index) => {
-    const photos  = photosByRoom?.[room.id] ?? [];
-    const reversed = index % 2 === 1;
+    const photos    = photosByRoom?.[room.id] ?? [];
+    const isEven    = index % 2 === 1;
+    const primary   = photos[0] ?? null;
     const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
-    const typeLabel = room.type ? room.type.charAt(0).toUpperCase() + room.type.slice(1) : '';
-    const descHtml  = room.description ? `<p class="room-desc">${esc(room.description)}</p>` : '';
-    const amenityHtml = amenities.length > 0
-      ? `<div class="amenities">${amenities.map(a => `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`).join('')}</div>`
+    const typeLabel = room.type && room.type !== 'other'
+      ? room.type.charAt(0).toUpperCase() + room.type.slice(1)
+      : '';
+    const isBedroom = ['single','double','twin','suite'].includes(room.type);
+    const cid       = `room-${room.id}`;
+
+    const mainImgHtml = primary
+      ? `<img src="/uploads/rooms/${esc(primary)}" alt="${esc(room.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
+      : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
+
+    const thumbsHtml = photos.length > 1
+      ? `<div class="ws-thumbs">${
+          photos.map((f, i) =>
+            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(f)}',this)"><img src="/uploads/rooms/${esc(f)}" alt="${esc(room.name)} ${i + 1}" loading="lazy" /></div>`
+          ).join('')
+        }</div>`
       : '';
 
-    const photoSection = `<div class="wp-showcase-photos${photos.length === 0 ? ' wp-showcase-no-photo' : ''}" style="${reversed ? 'order:2' : 'order:1'}">${wpRoomCarousel(photos, room.name, index)}</div>`;
+    const sleepsHtml   = isBedroom && room.capacity
+      ? `<span class="ws-amenity"><i class="ti ti-moon"></i> Sleeps ${esc(String(room.capacity))}</span>`
+      : '';
+    const amenityChips = amenities.map(a => `<span class="ws-amenity">${esc(fmtAmenity(a))}</span>`).join('');
+    const descHtml     = room.description ? `<p class="ws-desc">${esc(room.description)}</p>` : '';
 
     return `
-    <div class="wp-showcase-row">
-      ${photoSection}
-      <div class="wp-showcase-content" style="${reversed ? 'order:1' : 'order:2'}">
-        ${typeLabel ? `<span class="room-type-badge">${esc(typeLabel)}</span>` : ''}
-        <h3>${esc(room.name)}</h3>
-        ${descHtml}
-        ${amenityHtml}
-      </div>
-    </div>`;
+<div class="ws-room">
+  <h3 class="ws-room-title">${esc(room.name)}</h3>
+  ${typeLabel ? `<div class="ws-room-type">${esc(typeLabel)}</div>` : ''}
+  <div class="ws-photo-area${isEven ? ' ws-reverse' : ''}">
+    <div class="ws-main-photo" id="${esc(cid)}">
+      ${mainImgHtml}
+    </div>
+    ${photos.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
+  </div>
+  <div class="ws-details">
+    ${sleepsHtml || amenityChips ? `<div class="ws-amenities-row">${sleepsHtml}${amenityChips}</div>` : ''}
+    ${descHtml}
+  </div>
+  <div class="ws-divider"></div>
+</div>`;
   }).join('');
 
   return `
-<div class="wp-showcase-wrap">
-  <div style="max-width:1100px;margin:0 auto;padding:40px 0 0;">
-    <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.5rem,3.5vw,1.9rem);font-weight:700;color:${esc(palette.dark)};padding:0 24px 24px;"
-        data-i18n="page.whatsIncluded">What's included</h2>
-  </div>
+<div class="ws-rooms">
+  <div class="ws-section-title" data-i18n="page.whatsIncluded">What's included</div>
   ${rows}
 </div>`;
 }
@@ -793,160 +788,149 @@ body {
   .wp-stats-btn { width: 100%; }
 }
 
-/* ── WP Alternating Showcase ─────────────────────────────────────── */
-.wp-showcase-wrap { background: #fff; }
-.wp-showcase-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 420px;
-  border-bottom: 1px solid #f1f5f9;
+/* ── WP Room Showcase ─────────────────────────────────────────────── */
+.ws-rooms {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px;
 }
-.wp-showcase-row:last-child { border-bottom: none; }
-.wp-showcase-photos {
+.ws-section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.4rem, 3vw, 1.7rem);
+  font-weight: 700;
+  color: ${esc(palette.dark)};
+  margin-bottom: 48px;
+}
+.ws-room { margin-bottom: 64px; }
+.ws-room-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: ${esc(palette.dark)};
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.ws-room-type {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+.ws-photo-area {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.ws-reverse { flex-direction: row-reverse; }
+.ws-main-photo {
+  flex: 2;
+  min-width: 0;
+  aspect-ratio: 4/3;
   overflow: hidden;
-  position: relative;
+  background: #f1f5f9;
 }
-.wp-showcase-photos img {
+.ws-main-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
-  min-height: 320px;
+  transition: opacity 0.25s ease;
 }
-.wp-showcase-photo-strip {
-  display: flex;
-  gap: 4px;
-  padding: 8px;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.4));
-}
-.wp-showcase-strip-thumb {
-  width: 48px;
-  height: 34px;
-  object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
-  opacity: 0.8;
-  cursor: pointer;
-  transition: opacity 0.12s;
-  border: 1.5px solid transparent;
-}
-.wp-showcase-strip-thumb:hover, .wp-showcase-strip-thumb.active {
-  opacity: 1;
-  border-color: #fff;
-}
-.wp-showcase-content {
-  padding: 48px 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 14px;
-}
-.wp-showcase-content h3 {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.3rem, 2.5vw, 1.6rem);
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-  line-height: 1.25;
-}
-.wp-showcase-no-photo {
-  background: ${esc(palette.light)};
+.ws-no-photo {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${esc(palette.dark)};
-  opacity: 0.5;
+  color: #cbd5e1;
   font-size: 3rem;
 }
-
-/* ── WP Room Carousel ─────────────────────────────────────────────── */
-.wpc { display: flex; flex-direction: column; height: 100%; }
-.wpc-main {
+.ws-thumb-col {
   flex: 1;
-  position: relative;
-  overflow: hidden;
-  background: #0f172a;
-  min-height: 280px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
 }
-.wpc-img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
+.ws-thumbs {
+  display: contents;
+}
+.ws-thumb {
+  flex: 1 1 calc(50% - 4px);
+  min-width: calc(50% - 4px);
+  max-width: calc(50% - 4px);
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+  background: #f1f5f9;
+}
+.ws-thumb img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
+  display: block;
+  min-height: 0;
 }
-.wpc-img.active { opacity: 1; pointer-events: auto; }
-.wpc-btn {
-  position: absolute;
-  top: 50%; transform: translateY(-50%);
-  background: rgba(255,255,255,0.9);
-  border: none; border-radius: 50%;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 1.1rem; color: #1a2e14;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  transition: all 0.15s; z-index: 2;
-}
-.wpc-btn:hover {
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.24);
-  transform: translateY(-50%) scale(1.06);
-}
-.wpc-prev { left: 10px; }
-.wpc-next { right: 10px; }
-.wpc-counter {
-  position: absolute; bottom: 10px; right: 12px;
-  background: rgba(0,0,0,0.52);
-  color: #fff; padding: 3px 10px;
-  border-radius: 20px; font-size: 0.78rem; font-weight: 600;
-  pointer-events: none;
-}
-.wpc-thumbs {
-  display: flex; gap: 5px;
-  padding: 7px 8px;
-  background: #fff;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  flex-shrink: 0;
-}
-.wpc-thumbs::-webkit-scrollbar { height: 3px; }
-.wpc-thumbs::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-.wpc-thumb {
-  flex-shrink: 0;
-  width: 72px; height: 52px;
-  border-radius: 5px; overflow: hidden;
-  cursor: pointer; border: 2px solid transparent;
-  opacity: 0.55; transition: all 0.15s;
-  background: none; padding: 0; display: block;
-}
-.wpc-thumb img {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center;
-  display: block; min-height: 0;
-}
-.wpc-thumb:hover { opacity: 0.82; }
-.wpc-thumb.active {
+.ws-thumb:hover { opacity: 1; }
+.ws-thumb.active {
   opacity: 1;
-  border-color: ${esc(palette.dark)};
   outline: 2px solid ${esc(palette.dark)};
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
+.ws-details { margin-top: 16px; }
+.ws-amenities-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ws-amenity {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #475569;
+  background: #f8fafc;
+  padding: 4px 10px;
+}
+.ws-amenity .ti { font-size: 0.85rem; color: ${esc(palette.dark)}; }
+.ws-desc {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.75;
+  max-width: 680px;
+  margin: 0;
+}
+.ws-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin-top: 48px;
+}
+.ws-room:last-child .ws-divider { display: none; }
 
 @media (max-width: 768px) {
-  .wp-showcase-row {
-    grid-template-columns: 1fr;
+  .ws-photo-area { flex-direction: column !important; }
+  .ws-main-photo { flex: none; width: 100%; }
+  .ws-thumb-col {
+    flex: none;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
-  .wp-showcase-photos img { min-height: 240px; max-height: 320px; }
-  .wp-showcase-content { padding: 28px 24px; }
-  .wpc-main { min-height: 220px; }
-  .wpc-btn { width: 30px; height: 30px; font-size: 0.9rem; }
-  .wpc-thumb { width: 52px; height: 38px; }
+  .ws-thumb {
+    flex: 0 0 80px;
+    min-width: 80px;
+    max-width: 80px;
+  }
 }
 
 /* ── Sections ──────────────────────────────────────────────────────── */
@@ -1709,49 +1693,21 @@ document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
   });
 });
 
-// ── WP room carousels ─────────────────────────────────────────────────────────
-var wpcState = {};
-function wpcGoTo(id, idx) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var total = parseInt(el.dataset.total, 10);
-  var i = Math.max(0, Math.min(idx, total - 1));
-  wpcState[id] = i;
-  el.querySelectorAll('.wpc-img').forEach(function(img, n) { img.classList.toggle('active', n === i); });
-  el.querySelectorAll('.wpc-thumb').forEach(function(t, n) { t.classList.toggle('active', n === i); });
-  var cur = el.querySelector('.wpc-cur');
-  if (cur) cur.textContent = i + 1;
-  var activeThumb = el.querySelectorAll('.wpc-thumb')[i];
-  if (activeThumb) activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+// ── WP room showcase photo swap ───────────────────────────────────────────────
+function wsSwap(carouselId, src, thumbEl) {
+  var wrap = document.getElementById(carouselId);
+  if (!wrap) return;
+  var img = wrap.querySelector('.ws-main-img');
+  if (img) {
+    img.style.opacity = '0';
+    setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 150);
+  }
+  var col = thumbEl.closest('.ws-thumb-col');
+  if (col) {
+    col.querySelectorAll('.ws-thumb').forEach(function(t) { t.classList.remove('active'); });
+  }
+  thumbEl.classList.add('active');
 }
-function wpcNext(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var total = parseInt(el.dataset.total, 10);
-  wpcGoTo(id, ((wpcState[id] || 0) + 1) % total);
-}
-function wpcPrev(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var total = parseInt(el.dataset.total, 10);
-  wpcGoTo(id, ((wpcState[id] || 0) - 1 + total) % total);
-}
-document.addEventListener('keydown', function(e) {
-  var hovered = document.querySelector('.wpc:hover');
-  if (!hovered) return;
-  if (e.key === 'ArrowRight') wpcNext(hovered.id);
-  if (e.key === 'ArrowLeft')  wpcPrev(hovered.id);
-});
-document.querySelectorAll('.wpc-main').forEach(function(main) {
-  var startX = 0;
-  main.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
-  main.addEventListener('touchend', function(e) {
-    var diff = startX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) < 50) return;
-    var id = main.closest('.wpc').id;
-    if (diff > 0) wpcNext(id); else wpcPrev(id);
-  }, { passive: true });
-});
 </script>
 
 ${isPaidPlan ? `<script
