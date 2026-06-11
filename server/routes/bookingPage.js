@@ -499,9 +499,11 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
 
   const hasLocation = city || property.address;
   const mapSection = hasLocation ? `
-<section class="wp-map-section">
-  <div class="wp-map-embed">
+<section class="wp-map-section" id="wp-map-section">
+  <div class="wp-map-fallback" id="wp-map-fallback"></div>
+  <div class="wp-map-embed" id="wp-map-embed" style="opacity:0;">
     <iframe
+      id="wp-map-iframe"
       src="https://maps.google.com/maps?q=${mapQuery}&output=embed&z=13"
       width="100%"
       height="100%"
@@ -512,7 +514,47 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
       title="Location of ${esc(name)}"
     ></iframe>
   </div>
-</section>` : '';
+</section>
+<script>
+(function() {
+  var iframe = document.getElementById('wp-map-iframe');
+  var embed  = document.getElementById('wp-map-embed');
+  var fallback = document.getElementById('wp-map-fallback');
+  var section  = document.getElementById('wp-map-section');
+  if (!iframe || !embed || !fallback) return;
+  var timeout = setTimeout(showFallback, 5000);
+  iframe.addEventListener('load', function() {
+    clearTimeout(timeout);
+    setTimeout(function() {
+      try {
+        var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+        if (doc && doc.body && doc.body.innerHTML.length > 100) {
+          showMap();
+        } else {
+          showFallback();
+        }
+      } catch(e) {
+        showMap(); // cross-origin = loaded correctly
+      }
+    }, 500);
+  });
+  iframe.addEventListener('error', function() {
+    clearTimeout(timeout);
+    showFallback();
+  });
+  function showMap() {
+    embed.style.transition = 'opacity 0.4s ease';
+    embed.style.opacity = '1';
+    fallback.style.display = 'none';
+    section.classList.add('map-loaded');
+  }
+  function showFallback() {
+    embed.style.display = 'none';
+    fallback.style.display = 'block';
+    section.classList.add('map-fallback');
+  }
+})();
+</script>` : '';
 
   return `<!DOCTYPE html>
 <html lang="${esc(defaultLang)}">
@@ -1391,18 +1433,22 @@ footer a:hover { text-decoration: underline; }
   position: relative;
   overflow: hidden;
   display: block;
+  background: #1a2e14;
 }
 .wp-map-section::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.40);
   pointer-events: none;
   transition: background 0.3s ease;
   z-index: 1;
 }
 .wp-map-section:hover::after {
   background: rgba(0, 0, 0, 0.05);
+}
+.wp-map-section.map-fallback::after {
+  display: none;
 }
 .wp-map-embed {
   width: 100%;
@@ -1415,7 +1461,14 @@ footer a:hover { text-decoration: underline; }
   height: 100%;
   display: block;
   border: 0;
-  pointer-events: auto;
+}
+.wp-map-fallback {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  background: #1e3a1a;
 }
 @media (max-width: 768px) {
   .wp-map-section {
