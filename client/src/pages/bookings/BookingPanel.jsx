@@ -329,6 +329,29 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
     checkedOutBookingRef.current = updated;
   };
 
+  const handleWPAction = async (action) => {
+    const wpAction = action === 'arriving' ? 'wp_checkin' : 'wp_departure';
+    const res = await apiFetch(`/api/bookings/${b.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _wp_action: wpAction }),
+    });
+    if (!res.ok) return;
+    const updated = await res.json();
+    onBookingUpdated(updated);
+  };
+
+  const handleCleaningStatus = async (status) => {
+    const res = await apiFetch(`/api/bookings/${b.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _wp_action: 'wp_cleaning', cleaning_status: status }),
+    });
+    if (!res.ok) return;
+    const updated = await res.json();
+    onBookingUpdated(updated);
+  };
+
   return (
     <>
       {/* ── WP approval banner ───────────────────────────────────────────── */}
@@ -560,14 +583,47 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {(!showChargesTab || activeTab === 'details') && <>
 
       {(b.status === 'confirmed' || b.status === 'arriving') && (
-        <StatusActions
-          status={b.status} bookingId={b.id}
-          onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t}
-          prominent
-          onCancelClick={() => setShowCancelConfirm(true)}
-          onCheckIn={handleCheckIn}
-          onCheckOut={() => setShowCheckout(true)}
-        />
+        isWP ? (
+          <div style={{ padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {b.status === 'confirmed' && (
+              <button
+                onClick={() => handleWPAction('arriving')}
+                style={{
+                  background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10,
+                  padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', justifyContent: 'center',
+                }}
+              >
+                <i className="ti ti-home-check" style={{ fontSize: '1.2rem' }} />
+                Guests have arrived and have the key
+              </button>
+            )}
+            {b.status === 'arriving' && (
+              <button
+                onClick={() => handleWPAction('departed')}
+                style={{
+                  background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10,
+                  padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', justifyContent: 'center',
+                }}
+              >
+                <i className="ti ti-door-exit" style={{ fontSize: '1.2rem' }} />
+                Guests have departed and returned the key
+              </button>
+            )}
+          </div>
+        ) : (
+          <StatusActions
+            status={b.status} bookingId={b.id}
+            onStatusUpdate={onStatusUpdate} onEdit={onEdit} t={t}
+            prominent
+            onCancelClick={() => setShowCancelConfirm(true)}
+            onCheckIn={handleCheckIn}
+            onCheckOut={() => setShowCheckout(true)}
+          />
+        )
       )}
 
       {b.status === 'pending_owner_approval' && (
@@ -669,6 +725,111 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           >
             {t('booking.reprintReceipt')}
           </button>
+        </div>
+      )}
+
+      {/* ── WP cleaning status ───────────────────────────────────────────── */}
+      {isWP && b.status === 'checked_out' && (
+        <div style={{ margin: '0 22px 14px', border: '1.5px solid var(--border)', borderRadius: 10, padding: 16 }}>
+          <div style={{
+            fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)',
+            textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            <i className="ti ti-brush" />
+            Cleaning
+          </div>
+
+          {!b.cleaning_status && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                onClick={() => handleCleaningStatus('in_progress')}
+                style={{
+                  background: 'var(--tint-bg)', color: 'var(--accent)',
+                  border: '1.5px solid var(--accent)', borderRadius: 8,
+                  padding: '10px 16px', fontWeight: 600, fontSize: '0.88rem',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', justifyContent: 'center',
+                }}
+              >
+                <i className="ti ti-brush" />
+                Cleaning in progress
+              </button>
+              <button
+                onClick={() => handleCleaningStatus('completed')}
+                style={{
+                  background: '#f0fdf4', color: '#166534',
+                  border: '1.5px solid #bbf7d0', borderRadius: 8,
+                  padding: '10px 16px', fontWeight: 600, fontSize: '0.88rem',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', justifyContent: 'center',
+                }}
+              >
+                <i className="ti ti-circle-check" />
+                Property cleaned and ready
+              </button>
+              <button
+                onClick={() => handleCleaningStatus('not_required')}
+                style={{
+                  background: 'none', border: 'none', color: 'var(--text-muted)',
+                  fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0',
+                }}
+              >
+                Guests cleaned themselves — skip
+              </button>
+            </div>
+          )}
+
+          {b.cleaning_status === 'in_progress' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{
+                background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8,
+                padding: '10px 14px', fontSize: '0.85rem', color: '#92400e',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <i className="ti ti-brush" />
+                Cleaning in progress
+              </div>
+              <button
+                onClick={() => handleCleaningStatus('completed')}
+                style={{
+                  background: '#f0fdf4', color: '#166534',
+                  border: '1.5px solid #bbf7d0', borderRadius: 8,
+                  padding: '10px 16px', fontWeight: 600, fontSize: '0.88rem',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', justifyContent: 'center',
+                }}
+              >
+                <i className="ti ti-circle-check" />
+                Mark as cleaned and ready
+              </button>
+            </div>
+          )}
+
+          {b.cleaning_status === 'completed' && (
+            <div style={{
+              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              padding: '10px 14px', fontSize: '0.85rem', color: '#166534',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <i className="ti ti-circle-check" />
+              Property cleaned and ready for next guests
+            </div>
+          )}
+
+          {b.cleaning_status === 'not_required' && (
+            <div style={{
+              background: 'var(--page-bg)', border: '1px solid var(--border)', borderRadius: 8,
+              padding: '10px 14px', fontSize: '0.85rem', color: 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <i className="ti ti-circle-check" />
+              Guests cleaned — property ready
+            </div>
+          )}
         </div>
       )}
 

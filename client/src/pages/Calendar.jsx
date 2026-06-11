@@ -453,10 +453,16 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
         </div>
       );
     } else if (historical) {
+      const cleanCls =
+        historical.cleaning_status === 'completed' || historical.cleaning_status === 'not_required'
+          ? 'wpc-ready'
+          : historical.cleaning_status === 'in_progress'
+          ? 'wpc-cleaning-in-progress'
+          : 'wpc-needs-cleaning';
       cells.push(
         <div
           key={iso}
-          className={`wpc-cell wpc-historical${isToday ? ' wpc-today' : ''}`}
+          className={`wpc-cell wpc-historical ${cleanCls}${isToday ? ' wpc-today' : ''}`}
           onClick={isPast ? undefined : () => onEmptyClick(iso)}
           title={`${historical.guest_first_name} ${historical.guest_last_name} — checked out`}
         >
@@ -686,6 +692,11 @@ function Legend({ t, showBreakfast = true, isWholeProp = false }) {
     { cls: 'sw-checked-out', label: t('calLegendCheckedOut') },
     { cls: 'sw-available',   label: t('calLegendAvailable') },
     { cls: 'sw-maintenance', label: t('calLegendMaintenance') },
+    ...(isWholeProp ? [
+      { cls: 'sw-wp-needs-cleaning',       label: 'Needs cleaning' },
+      { cls: 'sw-wp-cleaning-in-progress', label: 'Cleaning' },
+      { cls: 'sw-wp-ready',                label: 'Ready' },
+    ] : []),
   ];
   return (
     <div className="cal-legend">

@@ -1808,6 +1808,9 @@ a { text-decoration: none; }
   );
   border: 1px solid #ddd;
 }
+.legend-swatch.sw-wp-needs-cleaning       { background: #fef3c7; border: 1px solid #f59e0b; }
+.legend-swatch.sw-wp-cleaning-in-progress { background: #dbeafe; border: 1px solid #93c5fd; }
+.legend-swatch.sw-wp-ready                { background: #f0fdf4; border: 1px solid #bbf7d0; }
 .legend-swatch.sw-breakfast {
   background: repeating-conic-gradient(var(--accent) 0% 25%, rgba(255,255,255,0.55) 0% 50%) 0 0 / 7px 7px;
   border-radius: 3px;
@@ -1970,6 +1973,24 @@ a { text-decoration: none; }
   background: #e2e8f0;
   color: #94a3b8;
   border: 1px solid #cbd5e1;
+}
+
+.wpc-needs-cleaning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.wpc-cleaning-in-progress {
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+}
+
+.wpc-ready {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
 }
 
 .wpc-today {

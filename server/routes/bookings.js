@@ -73,6 +73,7 @@ const ENRICHED_SELECT = `
     b.refund_reason,
     b.refunded_at,
     b.refunded_by,
+    b.cleaning_status,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -390,6 +391,32 @@ bookingsRouter.put('/:id', (req, res) => {
         sendBookingDeclinedEmail(updated, property).catch(() => {});
       }
       return;
+    }
+
+    // WP arrival — guests have the key
+    if (_wp_action === 'wp_checkin') {
+      db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('arriving', req.params.id);
+      const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+      return res.json(updated);
+    }
+
+    // WP departure — guests have left and returned the key
+    if (_wp_action === 'wp_departure') {
+      const now = new Date().toISOString();
+      db.prepare('UPDATE bookings SET status = ?, checked_out_at = ? WHERE id = ?')
+        .run('checked_out', now, req.params.id);
+      const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+      return res.json(updated);
+    }
+
+    // WP cleaning status update
+    if (_wp_action === 'wp_cleaning') {
+      const { cleaning_status } = req.body;
+      if (!cleaning_status) return res.status(400).json({ error: 'cleaning_status required' });
+      db.prepare('UPDATE bookings SET cleaning_status = ? WHERE id = ?')
+        .run(cleaning_status, req.params.id);
+      const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+      return res.json(updated);
     }
 
     if (check_out_date <= check_in_date) {

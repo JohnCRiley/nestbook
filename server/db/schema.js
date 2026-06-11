@@ -1159,6 +1159,9 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN arrival_instructions TEXT`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN send_access_hours INTEGER DEFAULT 24`); } catch {}
 
+  // Cleaning status for whole-property bookings after check-out
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN cleaning_status TEXT DEFAULT NULL`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

@@ -318,7 +318,8 @@ export default function Bookings() {
 // ── BookingRow ────────────────────────────────────────────────────────────────
 
 function BookingRow({ booking: b, isSelected, onClick }) {
-  const { fmtCurrency, locale } = useLocale();
+  const { fmtCurrency, locale, property } = useLocale();
+  const isWP = property?.rental_type === 'whole_property';
   const t = useT();
   const statusLabel = {
     arriving:               t('calLegendInHouse'),
@@ -354,6 +355,22 @@ function BookingRow({ booking: b, isSelected, onClick }) {
         <span className={BADGE_CLASS[b.status] ?? 'badge'}>
           {statusLabel}
         </span>
+        {b.status === 'checked_out' && isWP && (
+          <span style={{
+            display: 'inline-block', marginLeft: 6,
+            fontSize: '0.72rem', padding: '2px 7px', borderRadius: 4, fontWeight: 600,
+            background: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#f0fdf4'
+                      : b.cleaning_status === 'in_progress' ? '#dbeafe'
+                      : '#fef2f2',
+            color: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#166534'
+                 : b.cleaning_status === 'in_progress' ? '#1e40af'
+                 : '#dc2626',
+          }}>
+            {b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? 'Ready'
+           : b.cleaning_status === 'in_progress' ? 'Cleaning'
+           : 'Needs cleaning'}
+          </span>
+        )}
       </td>
     </tr>
   );
@@ -362,7 +379,8 @@ function BookingRow({ booking: b, isSelected, onClick }) {
 // ── BookingCard (mobile) ──────────────────────────────────────────────────────
 
 function BookingCard({ booking: b, isSelected, onClick }) {
-  const { fmtCurrency, locale } = useLocale();
+  const { fmtCurrency, locale, property } = useLocale();
+  const isWP = property?.rental_type === 'whole_property';
   const t = useT();
   const statusLabel = {
     arriving:               t('calLegendInHouse'),
@@ -388,6 +406,23 @@ function BookingCard({ booking: b, isSelected, onClick }) {
       </div>
       {b.total_price != null && (
         <div className="bc-price">{fmtCurrency(b.total_price)}</div>
+      )}
+      {b.status === 'checked_out' && isWP && (
+        <div style={{
+          marginTop: 6,
+          fontSize: '0.72rem', padding: '2px 7px', borderRadius: 4, fontWeight: 600,
+          display: 'inline-block',
+          background: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#f0fdf4'
+                    : b.cleaning_status === 'in_progress' ? '#dbeafe'
+                    : '#fef2f2',
+          color: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#166534'
+               : b.cleaning_status === 'in_progress' ? '#1e40af'
+               : '#dc2626',
+        }}>
+          {b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? 'Ready'
+         : b.cleaning_status === 'in_progress' ? 'Cleaning'
+         : 'Needs cleaning'}
+        </div>
       )}
     </div>
   );
