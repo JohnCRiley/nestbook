@@ -46,6 +46,7 @@ export default function Dashboard() {
   const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null);
   const [pendingConfirm,       setPendingConfirm]       = useState(null);
   const [depositGate,          setDepositGate]          = useState(null); // { bookingId }
+  const [wpSummary,            setWpSummary]            = useState(null);
 
   const today = localToday();
 
@@ -104,6 +105,20 @@ export default function Dashboard() {
       })
       .catch((err) => { setError(err.message); setLoading(false); });
   }, [property?.id]);
+
+  // ── WP summary fetch (whole_property only, refreshes every 5 min) ─────────
+  useEffect(() => {
+    if (!property?.id || property.rental_type !== 'whole_property') return;
+    function fetchWpSummary() {
+      apiFetch('/api/bookings/wp-summary')
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => { if (data) setWpSummary(data); })
+        .catch(() => {});
+    }
+    fetchWpSummary();
+    const timer = setInterval(fetchWpSummary, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [property?.id, property?.rental_type]);
 
   // ── Derived data ───────────────────────────────────────────────────────────
 
@@ -262,8 +277,80 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── Pending approval banner (whole_property only) ──────────────── */}
-      {bookings.filter((b) => b.status === 'pending_owner_approval').length > 0 && (
+      {/* ── WP booking summary ─────────────────────────────────────────── */}
+      {property.rental_type === 'whole_property' && wpSummary && (
+        <>
+          {wpSummary.pending?.length > 0 && (
+            <div style={{
+              background: '#fef3c7', border: '1.5px solid #f59e0b', borderRadius: 10,
+              padding: '16px 20px', marginBottom: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <i className="ti ti-clock" style={{ fontSize: '1.3rem', color: '#d97706' }} />
+                <div>
+                  <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
+                    {wpSummary.pending.length === 1
+                      ? '1 booking request awaiting your approval'
+                      : `${wpSummary.pending.length} booking requests awaiting your approval`}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#b45309', marginTop: 2 }}>
+                    {wpSummary.pending
+                      .map((b) => `${b.guest_first_name} ${b.guest_last_name} · ${b.check_in_date}`)
+                      .join('  ·  ')}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/bookings', { state: { filter: 'pending' } })}
+                style={{
+                  background: '#f59e0b', color: 'white', border: 'none', borderRadius: 7,
+                  padding: '8px 16px', fontWeight: 600, fontSize: '0.85rem',
+                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                }}
+              >
+                Review requests →
+              </button>
+            </div>
+          )}
+
+          {user?.role === 'owner' && wpSummary.stats && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+              <StatCard value={wpSummary.stats.bookingsThisMonth} label="Bookings this month" />
+              <StatCard value={wpSummary.stats.nightsBookedThisMonth} label="Nights booked" />
+              <StatCard value={fmtCurrency(wpSummary.stats.revenueThisMonth)} label="Revenue this month" />
+            </div>
+          )}
+
+          {wpSummary.active ? (
+            <WPBookingCard
+              booking={wpSummary.active}
+              label="Current stay"
+              onClick={() => navigate('/bookings')}
+            />
+          ) : (
+            <div style={{
+              background: 'var(--page-bg)', border: '1.5px solid var(--border)', borderRadius: 10,
+              padding: '18px 20px', marginBottom: 16, color: 'var(--text-muted)',
+              fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <i className="ti ti-home" style={{ fontSize: '1.2rem' }} />
+              Property is currently unoccupied
+            </div>
+          )}
+
+          {wpSummary.next && (
+            <WPBookingCard
+              booking={wpSummary.next}
+              label="Next booking"
+              onClick={() => navigate('/bookings')}
+            />
+          )}
+        </>
+      )}
+
+      {/* ── Pending approval banner (non-WP only) ──────────────────────── */}
+      {property.rental_type !== 'whole_property' && bookings.filter((b) => b.status === 'pending_owner_approval').length > 0 && (
         <div style={{
           background: '#fef3c7', border: '1.5px solid #f59e0b', borderRadius: 10,
           padding: '16px 20px', marginBottom: 16,
@@ -726,6 +813,49 @@ function BookingRow({ booking: b, property, right, nightWord, onClick, showDue, 
         )}
       </div>
       <div className="booking-right">{right}</div>
+    </div>
+  );
+}
+
+function WPBookingCard({ booking: b, label, onClick }) {
+  const { fmtCurrency, locale } = useLocale();
+  const nights = nightsBetween(b.check_in_date, b.check_out_date);
+  return (
+    <div
+      style={{
+        background: 'var(--card-bg)', border: '1.5px solid var(--border)', borderRadius: 10,
+        padding: '16px 20px', marginBottom: 16, cursor: 'pointer',
+      }}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+    >
+      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text)' }}>
+            {b.guest_first_name} {b.guest_last_name}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 3 }}>
+            {formatDateMedium(b.check_in_date, locale)} → {formatDateMedium(b.check_out_date, locale)}
+            {' · '}{nights} night{nights !== 1 ? 's' : ''}
+            {b.num_guests ? ` · ${b.num_guests} guest${b.num_guests !== 1 ? 's' : ''}` : ''}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {b.total_price ? (
+            <span style={{ fontWeight: 700, color: 'var(--accent-dark)', fontSize: '0.95rem' }}>
+              {fmtCurrency(b.total_price)}
+            </span>
+          ) : null}
+          <span className={BADGE_CLASS[b.status] ?? 'badge'}>
+            {b.status === 'pending_owner_approval' ? 'pending' : b.status.replace('_', ' ')}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

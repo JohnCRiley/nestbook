@@ -264,6 +264,88 @@ bookingsRouter.get('/check', (req, res) => {
   }
 });
 
+// ── GET /api/bookings/wp-summary ─────────────────────────────────────────────
+// Returns active booking, next booking, pending requests, and month stats
+// for the user's whole_property rental. Must be BEFORE /:id.
+bookingsRouter.get('/wp-summary', (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const today = new Date().toISOString().split('T')[0];
+    const propIds = getUserPropertyIds(userId, req.user.role);
+    if (!propIds.length) return res.json({ active: null, next: null, pending: [], stats: null });
+
+    const placeholders = propIds.map(() => '?').join(',');
+    const prop = db.prepare(
+      `SELECT id FROM properties WHERE id IN (${placeholders}) AND rental_type = 'whole_property'`
+    ).get(...propIds);
+    if (!prop) return res.json({ active: null, next: null, pending: [], stats: null });
+
+    const propId = prop.id;
+
+    const active = db.prepare(`
+      SELECT b.id, b.check_in_date, b.check_out_date, b.num_guests, b.status, b.total_price, b.notes,
+             g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+             g.email AS guest_email, g.phone AS guest_phone
+      FROM bookings b
+      LEFT JOIN guests g ON b.guest_id = g.id
+      WHERE b.property_id = ?
+        AND b.check_in_date <= ?
+        AND b.check_out_date > ?
+        AND b.status IN ('arriving', 'confirmed')
+      ORDER BY b.check_in_date ASC
+      LIMIT 1
+    `).get(propId, today, today);
+
+    const next = db.prepare(`
+      SELECT b.id, b.check_in_date, b.check_out_date, b.num_guests, b.status, b.total_price, b.notes,
+             g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+             g.email AS guest_email, g.phone AS guest_phone
+      FROM bookings b
+      LEFT JOIN guests g ON b.guest_id = g.id
+      WHERE b.property_id = ?
+        AND b.check_in_date > ?
+        AND b.status IN ('confirmed', 'pending_owner_approval')
+      ORDER BY b.check_in_date ASC
+      LIMIT 1
+    `).get(propId, today);
+
+    const pending = db.prepare(`
+      SELECT b.id, b.check_in_date, b.check_out_date, b.num_guests, b.total_price,
+             g.first_name AS guest_first_name, g.last_name AS guest_last_name
+      FROM bookings b
+      LEFT JOIN guests g ON b.guest_id = g.id
+      WHERE b.property_id = ? AND b.status = 'pending_owner_approval'
+      ORDER BY b.check_in_date ASC
+    `).all(propId);
+
+    const monthStart = today.slice(0, 7) + '-01';
+    const statsRow = db.prepare(`
+      SELECT
+        COUNT(*) AS bookings_count,
+        SUM(CAST(julianday(check_out_date) - julianday(check_in_date) AS INTEGER)) AS nights_count,
+        SUM(total_price) AS revenue
+      FROM bookings
+      WHERE property_id = ?
+        AND check_in_date >= ?
+        AND check_in_date <= ?
+        AND status NOT IN ('cancelled')
+    `).get(propId, monthStart, today);
+
+    res.json({
+      active: active || null,
+      next: next || null,
+      pending,
+      stats: {
+        bookingsThisMonth: statsRow.bookings_count || 0,
+        nightsBookedThisMonth: statsRow.nights_count || 0,
+        revenueThisMonth: statsRow.revenue || 0,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings/:id ─────────────────────────────────────────────────
 bookingsRouter.get('/:id', (req, res) => {
   try {
