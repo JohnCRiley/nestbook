@@ -1185,6 +1185,60 @@ John`
   // Cleaning status for whole-property bookings after check-out
   try { db.exec(`ALTER TABLE bookings ADD COLUMN cleaning_status TEXT DEFAULT NULL`); } catch {}
 
+  // Expand rooms.type CHECK constraint to include all WP room types.
+  // Detects by probing with a new type value; rebuilds if constraint rejects it.
+  {
+    let needsRebuild = false;
+    try {
+      db.prepare(`UPDATE rooms SET type = type WHERE type = 'bathroom'`).run();
+    } catch (e) {
+      if (e.message.includes('CHECK constraint')) needsRebuild = true;
+      else throw e;
+    }
+
+    if (needsRebuild) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE rooms_new (
+            id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id        INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+            name               TEXT    NOT NULL,
+            type               TEXT    NOT NULL DEFAULT 'double' CHECK(type IN (
+              'single','double','twin','suite','apartment','other',
+              'bathroom','ensuite','shower_room','wc',
+              'living_room','kitchen','kitchen_diner','dining_room',
+              'study','games_room','cinema_room','playroom',
+              'garden','terrace','pool','hot_tub','sauna',
+              'gym','garage','games_area','master','kids',
+              'bunk','narrowboat','farmhouse','chateau'
+            )),
+            price_per_night    REAL    NOT NULL DEFAULT 0,
+            capacity           INTEGER NOT NULL DEFAULT 2,
+            amenities          TEXT,
+            status             TEXT    NOT NULL DEFAULT 'available'
+                                       CHECK(status IN ('available','occupied','maintenance')),
+            created_at         TEXT    NOT NULL DEFAULT (datetime('now')),
+            is_demo            INTEGER NOT NULL DEFAULT 0,
+            breakfast_included INTEGER NOT NULL DEFAULT 0,
+            ical_token         TEXT,
+            description        TEXT
+          )
+        `);
+        db.exec(`INSERT INTO rooms_new SELECT * FROM rooms`);
+        db.exec(`DROP TABLE rooms`);
+        db.exec(`ALTER TABLE rooms_new RENAME TO rooms`);
+        db.exec(`COMMIT`);
+      } catch (e) {
+        db.exec(`ROLLBACK`);
+        throw e;
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+      console.log('✓ Rooms type CHECK constraint expanded to include all WP room types.');
+    }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

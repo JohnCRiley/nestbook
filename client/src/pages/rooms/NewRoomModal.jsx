@@ -3,7 +3,9 @@ import { formatAmenity } from './RoomPanel.jsx';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
-const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
+const ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
+
+const BEDROOM_TYPES = ['single', 'double', 'twin', 'bunk', 'master', 'kids', 'suite'];
 
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
@@ -22,6 +24,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
   const t = useT();
   const isWP = property?.rental_type === 'whole_property';
   const [form,       setForm]       = useState(EMPTY);
+  const isBedroom = BEDROOM_TYPES.includes(form.type);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
 
@@ -46,7 +49,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
           name:               form.name.trim(),
           type:               form.type,
           price_per_night:    isWP ? 0 : Number(form.price_per_night),
-          capacity:           Number(form.capacity),
+          capacity:           (!isWP || isBedroom) ? Number(form.capacity) : 0,
           amenities:          form.amenities.trim() || null,
           status:             isWP ? 'available' : form.status,
           breakfast_included: isWP ? 0 : (form.breakfast_included ? 1 : 0),
@@ -183,13 +186,15 @@ export default function NewRoomModal({ onClose, onSuccess }) {
                 </div>
               )}
 
-              <div className={`form-group${isWP ? ' span-2' : ''}`}>
-                <label className="form-label">
-                  {isWP ? t('rooms.sleeps') : t('capacityGuestsLabel')}
-                </label>
-                <input name="capacity" type="number" className="form-control"
-                  value={form.capacity} onChange={handleChange} min="1" max="20" />
-              </div>
+              {(!isWP || isBedroom) && (
+                <div className={`form-group${isWP ? ' span-2' : ''}`}>
+                  <label className="form-label">
+                    {isWP ? t('rooms.sleeps') : t('capacityGuestsLabel')}
+                  </label>
+                  <input name="capacity" type="number" className="form-control"
+                    value={form.capacity} onChange={handleChange} min="1" max="20" />
+                </div>
+              )}
 
               {!isWP && (
                 <div className="form-group span-2">
