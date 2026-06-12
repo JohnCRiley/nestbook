@@ -1422,24 +1422,24 @@ var vrboOpen = false;
 
 function toggleVrbo() {
   vrboOpen = !vrboOpen;
-  var card = document.getElementById(‘vrbo-card’);
-  var btn  = document.getElementById(‘vrbo-toggle’);
+  var card = document.getElementById('vrbo-card');
+  var btn  = document.getElementById('vrbo-toggle');
   if (vrboOpen) {
-    card.style.display = ‘block’;
-    btn.classList.add(‘open’);
-    btn.innerHTML = ‘<i class="ti ti-minus"></i> Hide VRBO’;
+    card.style.display = 'block';
+    btn.classList.add('open');
+    btn.innerHTML = '<i class="ti ti-minus"></i> Hide VRBO';
     calcUpdate();
   } else {
-    card.style.display = ‘none’;
-    btn.classList.remove(‘open’);
-    btn.innerHTML = ‘<i class="ti ti-plus"></i> Also listed on VRBO?’;
+    card.style.display = 'none';
+    btn.classList.remove('open');
+    btn.innerHTML = '<i class="ti ti-plus"></i> Also listed on VRBO?';
   }
 }
 
 function calcUpdate() {
-  var bookings = Math.max(1, parseInt(document.getElementById(‘calc-bookings’).value) || 1);
-  var rate     = Math.max(10, parseInt(document.getElementById(‘calc-rate’).value) || 10);
-  var nights   = Math.max(1, parseInt(document.getElementById(‘calc-nights’).value) || 1);
+  var bookings = Math.max(1, parseInt(document.getElementById('calc-bookings').value) || 1);
+  var rate     = Math.max(10, parseInt(document.getElementById('calc-rate').value) || 10);
+  var nights   = Math.max(1, parseInt(document.getElementById('calc-nights').value) || 1);
 
   var revenuePerBooking = rate * nights;
   var totalRevenue = revenuePerBooking * bookings;
@@ -1463,38 +1463,38 @@ function calcUpdate() {
   var savingPerMonth = Math.round(savingVsBC / 12);
   var breakEven = Math.ceil(nbFlat / (revenuePerBooking * 0.15));
 
-  animateValue(‘bc-amount’, fmt(bcTotal));
-  document.getElementById(‘bc-per’).textContent = fmt(bcPer);
+  animateValue('bc-amount', fmt(bcTotal));
+  document.getElementById('bc-per').textContent = fmt(bcPer);
 
-  animateValue(‘ab-amount’, fmt(abTotal));
-  document.getElementById(‘ab-per’).textContent = fmt(abPer);
-  animateValue(‘ab-guest-amount’, fmt(abGuestTotal));
-  document.getElementById(‘ab-guest-per’).textContent =
-    ‘That\’s ‘ + fmt(abGuestPer) + ‘ extra per booking — guests may choose somewhere cheaper’;
+  animateValue('ab-amount', fmt(abTotal));
+  document.getElementById('ab-per').textContent = fmt(abPer);
+  animateValue('ab-guest-amount', fmt(abGuestTotal));
+  document.getElementById('ab-guest-per').textContent =
+    'That\'s ' + fmt(abGuestPer) + ' extra per booking — guests may choose somewhere cheaper';
 
   if (vrboOpen) {
-    animateValue(‘vr-amount’, fmt(vrTotal));
-    document.getElementById(‘vr-per’).textContent = fmt(vrPer);
-    animateValue(‘vr-guest-amount’, fmt(vrGuestTotal));
-    document.getElementById(‘vr-guest-per’).textContent =
-      ‘That\’s ‘ + fmt(vrGuestPer) + ‘ extra per booking — guests may choose somewhere cheaper’;
-    var vrSavingEl    = document.getElementById(‘vr-saving-headline’);
-    var vrSavingSubEl = document.getElementById(‘vr-saving-sub’);
+    animateValue('vr-amount', fmt(vrTotal));
+    document.getElementById('vr-per').textContent = fmt(vrPer);
+    animateValue('vr-guest-amount', fmt(vrGuestTotal));
+    document.getElementById('vr-guest-per').textContent =
+      'That\'s ' + fmt(vrGuestPer) + ' extra per booking — guests may choose somewhere cheaper';
+    var vrSavingEl    = document.getElementById('vr-saving-headline');
+    var vrSavingSubEl = document.getElementById('vr-saving-sub');
     vrSavingEl.textContent = savingVsVR > 0
-      ? ‘Switch to NestBook Pro and save ‘ + fmt(savingVsVR) + ‘/year vs VRBO host fees’
-      : ‘NestBook Pro is £228/year — no commission, no platform fees ever’;
-    vrSavingSubEl.textContent = ‘Plus your guests see your real price — not inflated by up to 15% in VRBO service fees’;
+      ? 'Switch to NestBook Pro and save ' + fmt(savingVsVR) + '/year vs VRBO host fees'
+      : 'NestBook Pro is £228/year — no commission, no platform fees ever';
+    vrSavingSubEl.textContent = 'Plus your guests see your real price — not inflated by up to 15% in VRBO service fees';
   }
 
-  var savingEl    = document.getElementById(‘calc-saving-headline’);
-  var savingSubEl = document.getElementById(‘calc-saving-sub’);
+  var savingEl    = document.getElementById('calc-saving-headline');
+  var savingSubEl = document.getElementById('calc-saving-sub');
   if (savingVsBC > 0) {
-    savingEl.textContent = ‘Switch to NestBook Pro and save ‘ + fmt(savingVsBC) + ‘/year vs Booking.com’;
-    savingSubEl.textContent = ‘That\’s ‘ + fmt(savingPerMonth) + ‘/month back — paid in full after just ‘ +
-      breakEven + ‘ direct booking’ + (breakEven !== 1 ? ‘s’ : ‘’);
+    savingEl.textContent = 'Switch to NestBook Pro and save ' + fmt(savingVsBC) + '/year vs Booking.com';
+    savingSubEl.textContent = 'That\'s ' + fmt(savingPerMonth) + '/month back — paid in full after just ' +
+      breakEven + ' direct booking' + (breakEven !== 1 ? 's' : '');
   } else {
-    savingEl.textContent = ‘NestBook Pro is £228/year flat — no commission ever’;
-    savingSubEl.textContent = ‘Every direct booking saves you the platform commission’;
+    savingEl.textContent = 'NestBook Pro is £228/year flat — no commission ever';
+    savingSubEl.textContent = 'Every direct booking saves you the platform commission';
   }
 }
 
