@@ -1236,6 +1236,18 @@ John`
     }
   }
 
+  // is_demo flag on properties — protects demo properties at DB level
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN is_demo INTEGER DEFAULT 0`);
+    console.log('✓ is_demo column added to properties');
+  } catch { /* already exists */ }
+  for (const slug of ['domaine-des-lavandes', 'the-lodge-at-nestbook']) {
+    try {
+      const r = db.prepare(`UPDATE properties SET is_demo = 1 WHERE booking_slug = ?`).run(slug);
+      if (r.changes > 0) console.log(`✓ Demo flag set for: ${slug}`);
+    } catch { /* no-op */ }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

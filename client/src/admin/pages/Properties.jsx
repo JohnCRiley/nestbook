@@ -54,6 +54,14 @@ export default function Properties() {
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
+  const toggleDemo = useCallback(async (id, currentIsDemo) => {
+    await apiFetch(`/api/admin/properties/${id}/demo`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_demo: currentIsDemo ? 0 : 1 }),
+    });
+    fetchProperties();
+  }, [fetchProperties]);
+
   return (
     <>
       <div className="page-header">
@@ -84,6 +92,7 @@ export default function Properties() {
               <th>Rooms</th>
               <th>Bookings</th>
               <th>Created</th>
+              <th>Demo</th>
             </tr>
           </thead>
           <tbody>
@@ -97,6 +106,20 @@ export default function Properties() {
                 <td>{p.rooms_count}</td>
                 <td>{p.bookings_count}</td>
                 <td className="admin-muted">{fmtDate(p.created_at)}</td>
+                <td>
+                  <button
+                    onClick={() => toggleDemo(p.id, p.is_demo)}
+                    style={{
+                      background: p.is_demo ? '#fef3c7' : 'var(--card-bg)',
+                      border: `1px solid ${p.is_demo ? '#f59e0b' : 'var(--border)'}`,
+                      color: p.is_demo ? '#92400e' : 'var(--text-secondary)',
+                      padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                      fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    {p.is_demo ? '⚠ Demo' : 'Set demo'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

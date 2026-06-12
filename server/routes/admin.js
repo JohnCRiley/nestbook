@@ -344,7 +344,7 @@ adminRouter.get('/properties', (req, res) => {
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
     const BASE_SELECT = `
-      SELECT p.id, p.name, p.type, p.country, p.created_at,
+      SELECT p.id, p.name, p.type, p.country, p.created_at, p.is_demo,
              u.email as owner_email, u.plan,
              (SELECT COUNT(*) FROM rooms    r WHERE r.property_id = p.id) as rooms_count,
              (SELECT COUNT(*) FROM bookings b WHERE b.property_id = p.id) as bookings_count
@@ -366,6 +366,17 @@ adminRouter.get('/properties', (req, res) => {
     }
 
     res.json(db.prepare(`${BASE_SELECT} ${where} ORDER BY p.created_at DESC`).all(...params));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PATCH /api/admin/properties/:id/demo ─────────────────────────────────────
+adminRouter.patch('/properties/:id/demo', (req, res) => {
+  try {
+    const { is_demo } = req.body;
+    db.prepare(`UPDATE properties SET is_demo = ? WHERE id = ?`).run(is_demo ? 1 : 0, req.params.id);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

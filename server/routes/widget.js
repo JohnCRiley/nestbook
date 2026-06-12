@@ -137,6 +137,14 @@ widgetRouter.post('/bookings', (req, res) => {
       });
     }
 
+    // Demo properties: return fake confirmation, never write to DB
+    const propCheck = db.prepare('SELECT is_demo FROM properties WHERE id = ?').get(property_id);
+    if (propCheck?.is_demo === 1) {
+      const ref = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
+      console.log('[widget] Demo property booking blocked:', property_id);
+      return res.status(201).json({ id: ref, demo: true, status: 'cancelled' });
+    }
+
     if (check_out_date <= check_in_date) {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
     }

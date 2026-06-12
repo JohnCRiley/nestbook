@@ -39,6 +39,10 @@ enquiriesRouter.post('/', async (req, res) => {
 
   if (!property) return res.status(404).json({ error: 'Property not found' });
 
+  if (property.is_demo === 1) {
+    return res.json({ success: true, demo: true, message: 'Demo property — no real enquiry sent' });
+  }
+
   if (['pro', 'multi'].includes(property.plan)) {
     return res.status(400).json({ error: 'This property uses the full booking widget' });
   }

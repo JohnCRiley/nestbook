@@ -327,6 +327,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
   const isWholeProperty = property.rental_type === 'whole_property';
+  const isDemo = property.is_demo === 1;
 
   const availMapsByRoom = {};
   for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id);
@@ -1476,6 +1477,25 @@ footer a:hover { text-decoration: underline; }
     min-height: 160px;
   }
 }
+.demo-banner {
+  background: #fffbeb;
+  border-bottom: 2px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  line-height: 1.5;
+}
+.demo-banner a {
+  color: #92400e;
+  text-decoration: underline;
+}
 </style>
 
 <!-- Google Analytics -->
@@ -1489,6 +1509,11 @@ footer a:hover { text-decoration: underline; }
 </head>
 <body>
 
+${isDemo ? `<div class="demo-banner">
+  <i class="ti ti-eye"></i>
+  DEMONSTRATION PAGE — This is a NestBook showcase. No real bookings will be processed.
+  <a href="https://nestbook.io/app/register">Create your own free page →</a>
+</div>` : ''}
 ${heroSection}
 ${aboutSection}
 ${roomsSection}
