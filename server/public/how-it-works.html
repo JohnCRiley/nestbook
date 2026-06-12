@@ -935,7 +935,7 @@
 <div class="commission-hook">
   <p data-i18n="hiw.hook">
     Booking.com charges <strong>15–18% commission</strong> on every booking.
-    Airbnb takes <strong>3% from you and up to 14% from your guest.</strong>
+    Airbnb now charges <strong>15.5% host-only fee</strong> (new 2026 structure).
     On 20 bookings at £150/night, that's over <strong>£500 straight to them</strong> — not you.
     NestBook charges a flat monthly fee. Commission: zero.
   </p>
@@ -1093,22 +1093,16 @@
       <!-- Airbnb -->
       <div class="calc-card calc-bad">
         <div class="calc-platform">Airbnb</div>
-        <div class="calc-rate-display">3%+</div>
-        <div class="calc-desc">Host fee + up to 14% guest service fee</div>
+        <div class="calc-rate-display">15.5%</div>
+        <div class="calc-desc">
+          Host-only fee — guests pay no extra charge
+          <span style="display:block;font-size:0.7rem;color:#94a3b8;margin-top:2px;">New structure from December 2025</span>
+        </div>
         <div class="calc-result-box calc-result-bad">
-          <div class="calc-result-amount" id="ab-amount">£270</div>
-          <div class="calc-result-label">per year in host fees (your cost)</div>
+          <div class="calc-result-amount" id="ab-amount">£1,395</div>
+          <div class="calc-result-label">per year in host fees</div>
         </div>
-        <div class="calc-guest-fee">
-          <div class="calc-guest-fee-label">
-            <i class="ti ti-alert-triangle"></i>
-            Your guests also pay:
-          </div>
-          <div class="calc-guest-fee-amount" id="ab-guest-amount">£1,260</div>
-          <div class="calc-guest-fee-sub">in Airbnb guest fees per year</div>
-          <div class="calc-guest-fee-note" id="ab-guest-per">That's £63 extra per booking — guests may choose somewhere cheaper</div>
-        </div>
-        <div class="calc-per-booking">(your fee: <span id="ab-per">£14</span> per booking)</div>
+        <div class="calc-per-booking">(<span id="ab-per">£69</span> per booking)</div>
       </div>
 
       <!-- NestBook -->
@@ -1156,7 +1150,7 @@
             <div class="calc-result-amount" id="vr-guest-amount">£900</div>
             <div class="calc-result-label">per year your guests pay extra</div>
           </div>
-          <div class="calc-guest-fee-note" id="vr-guest-per" style="margin-top:8px;">That's £45 extra per booking — guests may choose somewhere cheaper</div>
+          <div class="calc-guest-fee-note" id="vr-guest-per" style="margin-top:8px;">Unlike Airbnb (which removed guest fees in 2025), VRBO still charges guests up to 15% on top of your nightly rate — making your listing look more expensive than it really is</div>
         </div>
 
       </div>
@@ -1182,10 +1176,11 @@
     <p class="calc-note" data-i18n="hiw.calc.note">NestBook works alongside Booking.com and Airbnb — use iCal sync to prevent double bookings. Keep the platforms for discovery. Take direct bookings commission-free.</p>
 
     <p class="calc-disclaimer">
-      * Commission rates based on publicly available information from each platform's
-      own published pricing pages. Rates shown are typical figures and may vary by
-      region, property type or booking volume. Check each platform directly for
-      current terms. NestBook Pro flat fee of £228/year based on £19/month billing.
+      * Commission rates based on publicly available platform information.
+      Airbnb introduced a host-only fee of 15.5% in December 2025, replacing
+      the previous split-fee model. Booking.com commission typically 15–18%.
+      VRBO guest fees 6–15%. Rates may vary by region — check each platform
+      directly for current terms. NestBook Pro £228/year based on £19/month.
     </p>
 
   </div>
@@ -1464,10 +1459,8 @@ function calcUpdate() {
   var bcTotal = totalRevenue * 0.15;
   var bcPer   = revenuePerBooking * 0.15;
 
-  var abTotal     = totalRevenue * 0.03;
-  var abPer       = revenuePerBooking * 0.03;
-  var abGuestTotal = totalRevenue * 0.14;
-  var abGuestPer  = revenuePerBooking * 0.14;
+  var abTotal = totalRevenue * 0.155;
+  var abPer   = revenuePerBooking * 0.155;
 
   var vrTotal      = totalRevenue * 0.08;
   var vrPer        = revenuePerBooking * 0.08;
@@ -1476,6 +1469,7 @@ function calcUpdate() {
 
   var nbFlat = 228;
   var savingVsBC = bcTotal - nbFlat;
+  var savingVsAB = abTotal - nbFlat;
   var savingVsVR = vrTotal - nbFlat;
   var savingPerMonth = Math.round(savingVsBC / 12);
   var breakEven = Math.ceil(nbFlat / (revenuePerBooking * 0.15));
@@ -1485,9 +1479,6 @@ function calcUpdate() {
 
   animateValue('ab-amount', fmt(abTotal));
   document.getElementById('ab-per').textContent = fmt(abPer);
-  animateValue('ab-guest-amount', fmt(abGuestTotal));
-  document.getElementById('ab-guest-per').textContent =
-    'That\'s ' + fmt(abGuestPer) + ' extra per booking — guests may choose somewhere cheaper';
 
   if (vrboOpen) {
     animateValue('vr-amount', fmt(vrTotal));
@@ -1506,7 +1497,7 @@ function calcUpdate() {
   var savingEl    = document.getElementById('calc-saving-headline');
   var savingSubEl = document.getElementById('calc-saving-sub');
   if (savingVsBC > 0) {
-    savingEl.textContent = 'Switch to NestBook Pro and save ' + fmt(savingVsBC) + '/year vs Booking.com';
+    savingEl.textContent = 'Switch to NestBook Pro and save ' + fmt(savingVsBC) + '/year vs Booking.com — or ' + fmt(savingVsAB) + '/year vs Airbnb';
     savingSubEl.textContent = 'That\'s ' + fmt(savingPerMonth) + '/month back — paid in full after just ' +
       breakEven + ' direct booking' + (breakEven !== 1 ? 's' : '');
   } else {
