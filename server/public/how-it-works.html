@@ -447,6 +447,54 @@
     color: rgba(255,255,255,0.75);
   }
 
+  .calc-guest-fee {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 10px 8px;
+    margin: 8px 0;
+    text-align: center;
+  }
+
+  .calc-guest-fee-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #dc2626;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .calc-guest-fee-label .ti { font-size: 0.8rem; }
+
+  .calc-guest-fee-amount {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #dc2626;
+    transition: all 0.3s ease;
+  }
+
+  .calc-guest-fee-sub {
+    font-size: 0.7rem;
+    color: #ef4444;
+    margin-top: 2px;
+    margin-bottom: 6px;
+  }
+
+  .calc-guest-fee-note {
+    font-size: 0.72rem;
+    color: #dc2626;
+    font-style: italic;
+    line-height: 1.4;
+    padding: 4px 6px;
+    background: rgba(220,38,38,0.08);
+    border-radius: 4px;
+  }
+
   .calc-note {
     text-align: center;
     font-size: 0.78rem;
@@ -991,12 +1039,21 @@
       <div class="calc-card calc-bad">
         <div class="calc-platform">Airbnb</div>
         <div class="calc-rate-display">3%+</div>
-        <div class="calc-desc">Host fee (guests pay extra on top)</div>
+        <div class="calc-desc">Host fee + up to 14% guest service fee</div>
         <div class="calc-result-box calc-result-bad">
           <div class="calc-result-amount" id="ab-amount">£270</div>
-          <div class="calc-result-label">per year in host fees</div>
+          <div class="calc-result-label">per year in host fees (your cost)</div>
         </div>
-        <div class="calc-per-booking">(<span id="ab-per">£14</span> per booking)</div>
+        <div class="calc-guest-fee">
+          <div class="calc-guest-fee-label">
+            <i class="ti ti-alert-triangle"></i>
+            Your guests also pay:
+          </div>
+          <div class="calc-guest-fee-amount" id="ab-guest-amount">£1,260</div>
+          <div class="calc-guest-fee-sub">in Airbnb guest fees per year</div>
+          <div class="calc-guest-fee-note" id="ab-guest-per">That's £63 extra per booking — guests may choose somewhere cheaper</div>
+        </div>
+        <div class="calc-per-booking">(your fee: <span id="ab-per">£14</span> per booking)</div>
       </div>
 
       <!-- NestBook -->
@@ -1287,24 +1344,32 @@ function calcUpdate() {
   var abTotal = totalRevenue * abRate;
   var abPer = revenuePerBooking * abRate;
 
+  var abGuestRate = 0.14;
+  var abGuestTotal = totalRevenue * abGuestRate;
+  var abGuestPer = revenuePerBooking * abGuestRate;
+
   var nbFlat = 228;
   var savingVsBC = bcTotal - nbFlat;
   var savingPerMonth = Math.round(savingVsBC / 12);
   var bookingsToBreakEven = Math.ceil(nbFlat / (revenuePerBooking * bcRate));
 
-  animateValue('bc-amount', fmt(bcTotal));
-  animateValue('ab-amount', fmt(abTotal));
-  document.getElementById('bc-per').textContent = fmt(bcPer);
-  document.getElementById('ab-per').textContent = fmt(abPer);
+  animateValue(‘bc-amount’, fmt(bcTotal));
+  animateValue(‘ab-amount’, fmt(abTotal));
+  document.getElementById(‘bc-per’).textContent = fmt(bcPer);
+  document.getElementById(‘ab-per’).textContent = fmt(abPer);
 
-  var savingEl    = document.getElementById('calc-saving-headline');
-  var savingSubEl = document.getElementById('calc-saving-sub');
+  animateValue(‘ab-guest-amount’, fmt(abGuestTotal));
+  document.getElementById(‘ab-guest-per’).textContent =
+    ‘That\’s ‘ + fmt(abGuestPer) + ‘ extra per booking — guests may choose somewhere cheaper’;
+
+  var savingEl    = document.getElementById(‘calc-saving-headline’);
+  var savingSubEl = document.getElementById(‘calc-saving-sub’);
   if (savingVsBC > 0) {
-    savingEl.textContent = 'Switch to NestBook Pro and save ' + fmt(savingVsBC) + '/year vs Booking.com';
-    savingSubEl.textContent = "That’s " + fmt(savingPerMonth) + "/month back in your pocket — paid in full after just " + bookingsToBreakEven + " direct booking" + (bookingsToBreakEven !== 1 ? 's' : '');
+    savingEl.textContent = ‘Switch to NestBook Pro and save ‘ + fmt(savingVsBC) + ‘/year vs Booking.com’;
+    savingSubEl.textContent = "That’s " + fmt(savingPerMonth) + "/month back in your pocket — paid in full after just " + bookingsToBreakEven + " direct booking" + (bookingsToBreakEven !== 1 ? ‘s’ : ‘’);
   } else {
-    savingEl.textContent = 'NestBook Pro is £228/year flat — no commission ever';
-    savingSubEl.textContent = 'Even at lower volumes, every direct booking saves you Booking.com’s 15%';
+    savingEl.textContent = ‘NestBook Pro is £228/year flat — no commission ever’;
+    savingSubEl.textContent = ‘Even at lower volumes, every direct booking saves you commission’;
   }
 }
 
