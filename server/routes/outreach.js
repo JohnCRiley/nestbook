@@ -227,16 +227,16 @@ outreachRouter.post('/send', async (req, res) => {
       booking_com: 'Booking.com',
       airbnb:      'Airbnb',
       referral:    'a referral',
-      manual:      'my research',
-      csv:         'my research',
-      other:       'my research',
+      manual:      'Google',
+      csv:         'Google',
+      other:       'Google',
     };
     const substitutions = {
       '{{name}}':       p.name || 'there',
       '{{company}}':    p.company || p.name || '',
       '{{first_name}}': (p.name || '').split(' ')[0] || 'there',
       '{{email}}':      p.email || '',
-      '{{source}}':     SOURCE_LABELS[p.source] || p.source || 'my research',
+      '{{source}}':     SOURCE_LABELS[p.source] || p.source || 'Google',
       '{{website}}':    p.website || '',
       '{{country}}':    p.country || '',
     };
