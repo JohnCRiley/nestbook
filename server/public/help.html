@@ -1,75 +1,173 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NestBook Help — Support for B&Bs, Gîtes &amp; Holiday Rentals</title>
-<meta name="description" content="Get help with NestBook booking software. Support for B&Bs, gîtes, holiday cottages, lodges and all independent accommodation.">
+<title>NestBook Help Centre — Support for B&amp;Bs, Gîtes &amp; Holiday Rentals</title>
+<meta name="description" content="Complete help and support for NestBook booking software. Booking pages, iCal sync, seasonal pricing, room charges, reports and more.">
 <link rel="canonical" href="https://nestbook.io/help.html">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nestbook.io/help.html">
-<meta property="og:title" content="NestBook Help — Support for B&Bs, Gîtes &amp; Holiday Rentals">
-<meta property="og:description" content="Get help with NestBook booking software. Support for B&Bs, gîtes, holiday cottages, lodges and all independent accommodation.">
+<meta property="og:title" content="NestBook Help Centre — Support for B&amp;Bs, Gîtes &amp; Holiday Rentals">
+<meta property="og:description" content="Complete help and support for NestBook booking software.">
 <meta property="og:image" content="https://nestbook.io/icon.svg">
 <meta property="og:site_name" content="NestBook">
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="/navbar.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+:root {
+  --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff;
+  --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a;
+  --radius:12px;
+}
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: 'Menlo', 'Consolas', monospace; color: #1a4710; }
 
-.btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; text-decoration: none; }
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; text-decoration: none; }
 .btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
 .btn-primary:hover { background: var(--dark); border-color: var(--dark); }
-.btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
-.btn-ghost:hover { color: var(--dark); }
-
+.btn-white { background: #fff; color: var(--dark); border-color: #fff; }
+.btn-white:hover { background: var(--light); border-color: var(--light); }
 
 /* Hero */
-.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
+.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 56px; border-bottom: 1px solid var(--border); }
 .page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
-.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+.page-hero p { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; margin-bottom: 28px; }
+.hero-links { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-link { font-size: 0.875rem; color: var(--mid); font-weight: 600; text-decoration: underline; }
+.hero-link:hover { color: var(--dark); }
 
-/* Steps section */
-.steps-section { padding: 72px 0 64px; }
-.section-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--mid); margin-bottom: 12px; }
-.section-heading { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: var(--dark); letter-spacing: -0.5px; margin-bottom: 12px; }
-.section-sub { font-size: 1.05rem; color: var(--muted); max-width: 540px; line-height: 1.75; margin-bottom: 52px; }
+/* Quick jump */
+.help-jump { background: var(--soft); border-bottom: 1px solid var(--border); padding: 16px 0; overflow-x: auto; }
+.help-jump-inner { display: flex; gap: 8px; flex-wrap: nowrap; min-width: max-content; padding: 0 28px; max-width: 1100px; margin: 0 auto; align-items: center; }
+.jump-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-right: 4px; white-space: nowrap; }
+.jump-btn { font-size: 0.8rem; font-weight: 600; color: var(--dark); background: white; border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.12s; white-space: nowrap; font-family: inherit; text-decoration: none; }
+.jump-btn:hover { background: var(--light); border-color: var(--mid); color: var(--dark); }
 
-.steps-list { display: flex; flex-direction: column; gap: 0; }
+/* Help body */
+.help-body { padding: 56px 0 80px; }
+.help-layout { display: grid; grid-template-columns: 240px 1fr; gap: 48px; align-items: start; }
 
-.step-card { display: flex; gap: 28px; padding: 32px 0; border-bottom: 1px solid var(--border); }
-.step-card:first-child { padding-top: 0; }
-.step-card:last-child { border-bottom: none; }
+/* Sidebar TOC */
+.help-toc { position: sticky; top: 80px; }
+.help-toc-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; }
+.toc-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.toc-list a { font-size: 0.85rem; color: var(--muted); padding: 5px 10px; border-radius: 6px; display: flex; align-items: center; gap: 8px; transition: all 0.12s; }
+.toc-list a:hover, .toc-list a.active { background: var(--light); color: var(--dark); }
+.toc-list .ti { font-size: 1rem; flex-shrink: 0; }
 
-.step-num-col { flex-shrink: 0; }
-.step-num { width: 44px; height: 44px; background: var(--dark); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; font-family: inherit; flex-shrink: 0; }
+/* Help sections */
+.help-sections { display: flex; flex-direction: column; gap: 0; }
 
-.step-body { flex: 1; }
-.step-title { font-size: 1.15rem; font-weight: 800; color: var(--dark); letter-spacing: -0.3px; margin-bottom: 8px; }
-.step-desc  { font-size: 0.95rem; color: #2a3d22; line-height: 1.8; }
-.step-tip   { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; background: var(--light); color: var(--dark); font-size: 0.8rem; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
+.help-section { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
 
-/* FAQ section */
-.faq-section { background: var(--soft); padding: 72px 0; border-top: 1px solid var(--border); }
-.faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
-.faq-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
-.faq-q { font-size: 1rem; font-weight: 800; color: var(--dark); letter-spacing: -0.2px; margin-bottom: 12px; }
-.faq-a { font-size: 0.9rem; color: #3a5230; line-height: 1.75; }
-.faq-a a { color: var(--mid); text-decoration: underline; }
-.faq-a a:hover { color: var(--dark); }
+.help-section summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  cursor: pointer;
+  background: white;
+  transition: background 0.12s;
+  user-select: none;
+}
+.help-section summary::-webkit-details-marker { display: none; }
+.help-section summary:hover { background: var(--soft); }
+.help-section[open] summary { background: var(--soft); border-bottom: 1px solid var(--border); }
+
+.section-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--light); color: var(--dark);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+
+.section-meta { flex: 1; min-width: 0; }
+.section-meta h2 { font-size: 1rem; font-weight: 800; color: var(--dark); margin: 0; }
+.section-meta p { font-size: 0.82rem; color: var(--muted); margin: 2px 0 0; }
+
+.section-chevron { color: var(--muted); font-size: 1.1rem; transition: transform 0.2s; flex-shrink: 0; }
+.help-section[open] .section-chevron { transform: rotate(90deg); }
+
+.section-badge {
+  font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 2px 8px; border-radius: 10px;
+  background: #dbeafe; color: #1e40af; flex-shrink: 0;
+}
+.section-badge.pro { background: #ede9fe; color: #5b21b6; }
+.section-badge.multi { background: #fce7f3; color: #9d174d; }
+
+/* Section body */
+.section-body { padding: 24px; background: white; }
+
+.help-subsection { margin-bottom: 28px; }
+.help-subsection:last-child { margin-bottom: 0; }
+
+.help-subsection h3 {
+  font-size: 0.9rem; font-weight: 800; color: var(--dark);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.help-subsection h3 .ti { font-size: 1rem; color: var(--mid); }
+
+.help-subsection p { font-size: 0.88rem; color: #2a3d22; line-height: 1.8; margin-bottom: 10px; }
+.help-subsection p:last-child { margin-bottom: 0; }
+
+.help-steps { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; counter-reset: hstep; }
+.help-steps li { display: flex; gap: 12px; font-size: 0.88rem; color: #2a3d22; line-height: 1.7; counter-increment: hstep; }
+.help-steps li::before {
+  content: counter(hstep);
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--dark); color: white;
+  font-size: 0.72rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+
+.help-bullets { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.help-bullets li { display: flex; gap: 10px; font-size: 0.88rem; color: #2a3d22; line-height: 1.7; }
+.help-bullets li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mid); margin-top: 8px; flex-shrink: 0; }
+
+.help-tip {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: #f0fdf4; border-left: 3px solid var(--mid);
+  padding: 10px 14px; border-radius: 0 8px 8px 0;
+  margin-top: 10px;
+}
+.help-tip .ti { color: var(--mid); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.help-tip p { font-size: 0.82rem; color: #1a4710; margin: 0; }
+
+.help-note {
+  background: #fffbeb; border-left: 3px solid #f59e0b;
+  padding: 10px 14px; border-radius: 0 8px 8px 0;
+  margin-top: 10px; font-size: 0.82rem; color: #92400e;
+}
+
+.plan-tag {
+  display: inline-block; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 1px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle;
+}
+.plan-tag.pro { background: #ede9fe; color: #5b21b6; }
+.plan-tag.multi { background: #fce7f3; color: #9d174d; }
+.plan-tag.free { background: var(--light); color: var(--dark); }
+
+.help-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 
 /* CTA band */
 .cta-band { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); padding: 72px 0; text-align: center; }
 .cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 12px; }
-.cta-band p  { color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
-.btn-white { background: #fff; color: var(--dark); border-color: #fff; }
-.btn-white:hover { background: var(--light); border-color: var(--light); }
+.cta-band p { color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
+.cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-outline-white { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.5); padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+.btn-outline-white:hover { border-color: #fff; }
 
 /* Footer */
 .footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
@@ -77,14 +175,24 @@ img { display: block; max-width: 100%; }
 .footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
 .footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
 .footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
-.footer-links  { display: flex; flex-direction: column; gap: 8px; }
-.footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
+.footer-links { display: flex; flex-direction: column; gap: 8px; }
+.footer-link { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
 .footer-link:hover { color: var(--light); }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
 .footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; flex-shrink: 0; }
 
-@media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .faq-grid { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .page-hero { padding: 48px 0 36px; } .step-card { flex-direction: column; gap: 16px; } .steps-section { padding: 48px 0 40px; } }
+/* Responsive */
+@media (max-width: 900px) {
+  .help-layout { grid-template-columns: 1fr; }
+  .help-toc { display: none; }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .footer-inner { grid-template-columns: 1fr; }
+  .page-hero { padding: 48px 0 36px; }
+  .section-body { padding: 16px; }
+  .cta-buttons { flex-direction: column; align-items: center; }
+}
 </style>
 
 <!-- Google Analytics -->
@@ -106,7 +214,7 @@ img { display: block; max-width: 100%; }
     </a>
     <div class="navbar-controls">
       <div class="lang-dropdown">
-        <button class="lang-toggle">🌐 EN ▾</button>
+        <button class="lang-toggle"><i class="ti ti-world"></i> EN ▾</button>
         <div class="lang-panel">
           <button class="lang-btn active" data-lang="en">🇬🇧 English</button>
           <button class="lang-btn" data-lang="fr">🇫🇷 Français</button>
@@ -142,7 +250,7 @@ img { display: block; max-width: 100%; }
       <a href="/compare.html" data-i18n="nav.compare">Compare plans</a>
     </div>
     <div class="mega-col">
-      <div class="mega-label">Language</div>
+      <div class="mega-label" data-i18n="nav.languages">Language</div>
       <button class="lang-btn mega-lang" data-lang="en">🇬🇧 English</button>
       <button class="lang-btn mega-lang" data-lang="fr">🇫🇷 Français</button>
       <button class="lang-btn mega-lang" data-lang="es">🇪🇸 Español</button>
@@ -153,136 +261,648 @@ img { display: block; max-width: 100%; }
 </div>
 <div class="mega-backdrop"></div>
 
+<!-- HERO -->
 <section class="page-hero">
   <div class="container">
-    <h1 data-i18n="help.hero.title">Getting started with NestBook</h1>
-    <p data-i18n="help.hero.sub">Everything you need to set up your property, add rooms and start taking bookings — in five simple steps.</p>
-  </div>
-</section>
-
-<section class="steps-section">
-  <div class="container">
-
-    <p class="section-label" data-i18n="help.steps.label">Setup guide</p>
-    <h2 class="section-heading" data-i18n="help.steps.heading">Five steps to your first booking</h2>
-    <p class="section-sub" data-i18n="help.steps.sub">Follow these steps in order. Most people are up and running in under 15 minutes.</p>
-
-    <div class="steps-list">
-
-      <!-- Step 1 -->
-      <div class="step-card">
-        <div class="step-num-col"><div class="step-num">1</div></div>
-        <div class="step-body">
-          <h3 class="step-title" data-i18n="help.s1.title">Add your property details</h3>
-          <p class="step-desc" data-i18n="help.s1.desc">Go to <strong>Settings</strong> in the left sidebar. Fill in your property name, property type, address, check-in time, check-out time and preferred currency. Click <strong>Save changes</strong> when done.</p>
-          <span class="step-tip">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span data-i18n="help.s1.tip">Your currency and language settings affect guest-facing emails and booking confirmations.</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Step 2 -->
-      <div class="step-card">
-        <div class="step-num-col"><div class="step-num">2</div></div>
-        <div class="step-body">
-          <h3 class="step-title" data-i18n="help.s2.title">Add your rooms</h3>
-          <p class="step-desc" data-i18n="help.s2.desc">Go to <strong>Rooms</strong> and click <strong>+ Add Room</strong>. Fill in the room name, type (double, twin, suite…), price per night and capacity. Click Save. Repeat for each room in your property.</p>
-          <span class="step-tip">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span data-i18n="help.s2.tip">You can also add amenities (WiFi, en-suite, balcony…) to help guests choose the right room.</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="step-card">
-        <div class="step-num-col"><div class="step-num">3</div></div>
-        <div class="step-body">
-          <h3 class="step-title" data-i18n="help.s3.title">Add the booking widget to your website</h3>
-          <p class="step-desc" data-i18n="help.s3.desc">Go to <strong>Settings</strong> and scroll down to the <strong>Embed Widget</strong> section. Copy the script tag shown there and paste it into your website's HTML just before the closing <code style="font-size:0.85em;background:#f1f5f9;padding:1px 5px;border-radius:3px;">&lt;/body&gt;</code> tag. Guests can then book directly from your website — with no commission.</p>
-          <span class="step-tip">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span data-i18n="help.s3.tip">The Embed Widget section is available on the Pro plan. Try the live demo first at nestbook.io/widget-test.html.</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Step 4 -->
-      <div class="step-card">
-        <div class="step-num-col"><div class="step-num">4</div></div>
-        <div class="step-body">
-          <h3 class="step-title" data-i18n="help.s4.title">Start taking bookings</h3>
-          <p class="step-desc" data-i18n="help.s4.desc">Share your website with guests. When a guest completes a booking through your widget, it will appear in your <strong>Bookings</strong> dashboard automatically. You and your guest will both receive an email confirmation.</p>
-          <span class="step-tip">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span data-i18n="help.s4.tip">You can also add bookings manually from the Bookings page — useful for phone or email reservations.</span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Step 5 -->
-      <div class="step-card">
-        <div class="step-num-col"><div class="step-num">5</div></div>
-        <div class="step-body">
-          <h3 class="step-title" data-i18n="help.s5.title">Manage your bookings</h3>
-          <p class="step-desc" data-i18n="help.s5.desc">Use the <strong>Calendar</strong> page for a colour-coded visual overview of all rooms and dates. Use <strong>Bookings</strong> for a full searchable list of all reservations. Use <strong>Guests</strong> to view customer records and contact details.</p>
-          <span class="step-tip">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1a6 6 0 1 1 0 12A6 6 0 0 1 7 1zm0 4v2m0 2.5v.5" stroke="var(--dark)" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span data-i18n="help.s5.tip">The Calendar works offline too — perfect for rural properties with unreliable internet.</span>
-          </span>
-        </div>
-      </div>
-
+    <h1 data-i18n="help.hero.title">NestBook Help Centre</h1>
+    <p data-i18n="help.hero.sub">Everything you need to get set up, take bookings, and manage your property.</p>
+    <div class="hero-links">
+      <a href="/how-it-works" class="hero-link">How it works →</a>
+      <a href="/compare.html" class="hero-link">Compare plans →</a>
+      <a href="mailto:hello@nestbook.io" class="hero-link">Email support →</a>
     </div>
   </div>
 </section>
 
-<section class="faq-section">
+<!-- QUICK JUMP -->
+<nav class="help-jump" aria-label="Jump to section">
+  <div class="help-jump-inner">
+    <span class="jump-label" data-i18n="help.qs.label">Jump to</span>
+    <a href="#getting-started"  class="jump-btn">Getting started</a>
+    <a href="#property-webpage" class="jump-btn">Booking page</a>
+    <a href="#facebook-button"  class="jump-btn">Facebook button</a>
+    <a href="#taking-bookings"  class="jump-btn">Taking bookings</a>
+    <a href="#managing-bookings" class="jump-btn">Managing bookings</a>
+    <a href="#ical-sync"        class="jump-btn">iCal sync</a>
+    <a href="#seasonal-pricing" class="jump-btn">Pricing</a>
+    <a href="#room-charges"     class="jump-btn">Room charges</a>
+    <a href="#reports"          class="jump-btn">Reports</a>
+    <a href="#settings"         class="jump-btn">Settings</a>
+    <a href="#plans-billing"    class="jump-btn">Plans &amp; billing</a>
+  </div>
+</nav>
+
+<!-- BODY -->
+<div class="help-body">
   <div class="container">
-    <p class="section-label" data-i18n="help.faq.label">FAQ</p>
-    <h2 class="section-heading" data-i18n="help.faq.heading">Frequently asked questions</h2>
+    <div class="help-layout">
 
-    <div class="faq-grid">
+      <!-- Sidebar TOC (desktop only) -->
+      <aside class="help-toc">
+        <p class="help-toc-title">Contents</p>
+        <ul class="toc-list">
+          <li><a href="#getting-started"><i class="ti ti-rocket"></i> Getting started</a></li>
+          <li><a href="#property-webpage"><i class="ti ti-world"></i> Booking page</a></li>
+          <li><a href="#facebook-button"><i class="ti ti-brand-facebook"></i> Facebook button</a></li>
+          <li><a href="#taking-bookings"><i class="ti ti-calendar-plus"></i> Taking bookings</a></li>
+          <li><a href="#managing-bookings"><i class="ti ti-calendar"></i> Managing bookings</a></li>
+          <li><a href="#ical-sync"><i class="ti ti-calendar-sync"></i> iCal sync</a></li>
+          <li><a href="#seasonal-pricing"><i class="ti ti-coin"></i> Seasonal pricing</a></li>
+          <li><a href="#room-charges"><i class="ti ti-receipt"></i> Room charges</a></li>
+          <li><a href="#reports"><i class="ti ti-chart-bar"></i> Reports</a></li>
+          <li><a href="#settings"><i class="ti ti-settings"></i> Settings</a></li>
+          <li><a href="#plans-billing"><i class="ti ti-credit-card"></i> Plans &amp; billing</a></li>
+        </ul>
+      </aside>
 
-      <div class="faq-card">
-        <h3 class="faq-q" data-i18n="help.faq.q1">What if I forget my password?</h3>
-        <p class="faq-a" data-i18n-html="help.faq.a1">On the <a href="/app/login">sign-in page</a>, click <strong>Forgot password?</strong> and enter your email address. You'll receive a reset link within a few minutes. If you don't receive it, check your spam folder or email us at <a href="mailto:hello@nestbook.io">hello@nestbook.io</a>.</p>
-      </div>
+      <!-- Sections -->
+      <div class="help-sections">
 
-      <div class="faq-card">
-        <h3 class="faq-q" data-i18n="help.faq.q2">How do I cancel my subscription?</h3>
-        <p class="faq-a" data-i18n="help.faq.a2">Go to Settings in your dashboard, scroll to the Subscription section, and click Cancel subscription. You'll keep full access until the end of your current billing period — no immediate loss of service.</p>
-      </div>
+        <!-- ── 1. GETTING STARTED ─────────────────────────────────────────── -->
+        <details class="help-section" id="getting-started" open>
+          <summary>
+            <div class="section-icon"><i class="ti ti-rocket"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.start">Getting started</h2>
+              <p>Sign up, set up your property, and go live in minutes</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
 
-      <div class="faq-card">
-        <h3 class="faq-q" data-i18n="help.faq.q3">How do I add staff members?</h3>
-        <p class="faq-a" data-i18n="help.faq.a3">Go to Settings and scroll to the Access &amp; Roles section. Click Invite Staff Member and enter their email address. Staff accounts have access to the Calendar and Bookings but cannot change property settings. This feature is available on the Pro plan.</p>
-      </div>
+            <div class="help-subsection">
+              <h3><i class="ti ti-user-plus"></i> Sign up and verify your email</h3>
+              <ol class="help-steps">
+                <li>Go to <a href="/app/register" style="color:var(--mid);text-decoration:underline;">nestbook.io/app/register</a> and fill in your name, email and a password.</li>
+                <li>Check your email inbox for a verification link from NestBook and click it.</li>
+                <li>You'll be taken directly into your dashboard, ready to set up your property.</li>
+              </ol>
+              <div class="help-tip"><i class="ti ti-info-circle"></i><p>If you don't receive the verification email within a few minutes, check your spam folder or email <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a>.</p></div>
+            </div>
 
-      <div class="faq-card">
-        <h3 class="faq-q" data-i18n="help.faq.q4">Is my data secure?</h3>
-        <p class="faq-a" data-i18n-html="help.faq.a4">Yes. NestBook is fully GDPR compliant. All data is stored on servers in the European Union (Hetzner, Germany). Connections are encrypted with HTTPS. We never sell your data or your guests' data to third parties. See our <a href="/privacy.html">Privacy Policy</a> for full details.</p>
-      </div>
+            <hr class="help-divider">
 
-      <div class="faq-card">
-        <h3 class="faq-q" data-i18n="help.faq.q5">How do I manage multiple properties?</h3>
-        <p class="faq-a" data-i18n="help.faq.a5">The Multi plan lets you manage up to 5 properties from a single account. Go to Settings and scroll to the Properties section to add a new property. Once added, use the property switcher in the sidebar to move between properties — each has its own rooms, bookings, and calendar. All your properties can also be viewed together in the cross-property calendar.</p>
-      </div>
+            <div class="help-subsection">
+              <h3><i class="ti ti-building"></i> Add your property details</h3>
+              <p>Go to <strong>Settings</strong> in the left sidebar and fill in your property name, address, check-in and check-out times, and your preferred currency. Click <strong>Save changes</strong> when done.</p>
+            </div>
 
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-tag"></i> Choose your property type</h3>
+              <p>NestBook supports a wide range of accommodation types. Select the one that best describes your property:</p>
+              <ul class="help-bullets">
+                <li><strong>B&amp;B / Bed &amp; Breakfast</strong> — individual rooms with breakfast included</li>
+                <li><strong>Gîte / Holiday cottage</strong> — self-catering whole-property rental</li>
+                <li><strong>Guesthouse</strong> — multiple rooms, shared common areas</li>
+                <li><strong>Lodge / Villa / Farmhouse / Château</strong> — whole-property rentals</li>
+                <li><strong>Glamping / Narrowboat</strong> — unique or alternative accommodation</li>
+              </ul>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-home"></i> Choose your rental type</h3>
+              <p>NestBook supports two rental modes:</p>
+              <ul class="help-bullets">
+                <li><strong>Individual rooms (IP mode)</strong> — guests book one or more rooms. Best for B&amp;Bs, guesthouses and hotels. The calendar shows each room separately.</li>
+                <li><strong>Whole property (WP mode)</strong> — guests book the entire property for their stay. Best for gîtes, holiday cottages, lodges and villas. The calendar shows one property per month view.</li>
+              </ul>
+              <div class="help-note">Rental type is set when you create your property and cannot be changed after rooms are added. Contact support if you need to switch modes.</div>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-language"></i> Set your language and currency</h3>
+              <p>In <strong>Settings → Property details</strong>, choose your display currency (e.g. GBP, EUR) and the default language for guest-facing emails and booking confirmations. Guests on your booking page can switch to any of the 5 supported languages (EN, FR, DE, ES, NL).</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-palette"></i> Choose your colour theme</h3>
+              <p>In <strong>Settings → Booking page</strong>, choose a colour accent for your public booking page — green, blue, amber, or rose. This affects the header, buttons, and highlight colours guests see.</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 2. PROPERTY WEBPAGE ────────────────────────────────────────── -->
+        <details class="help-section" id="property-webpage">
+          <summary>
+            <div class="section-icon"><i class="ti ti-world"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.page">Your free property webpage</h2>
+              <p>Your public booking page at nestbook.io/book/your-name</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-eye"></i> What your booking page looks like</h3>
+              <p>Every NestBook property gets a public booking page at <code>nestbook.io/book/your-slug</code>. Guests can see your property photos, room descriptions, availability and prices — and book directly with you. The page works in 5 languages and on any device.</p>
+              <div class="help-tip"><i class="ti ti-external-link"></i><p>See a live example at <a href="/book/domaine-des-lavandes" style="color:var(--mid);">nestbook.io/book/domaine-des-lavandes</a> (demo property).</p></div>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-link"></i> Editing your booking page URL (slug)</h3>
+              <p>Go to <strong>Settings → Booking page</strong> and change the <strong>URL slug</strong> field. Your slug must be lowercase, use only letters, numbers and hyphens (e.g. <code>le-moulin-des-sources</code>). Click <strong>Save</strong> — the new URL takes effect immediately.</p>
+              <div class="help-note">If you change your slug, any existing links (Facebook bio, email signatures) will need updating.</div>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-photo"></i> Adding a hero / cover photo</h3>
+              <p>Go to <strong>Settings → Booking page</strong> and upload a cover photo. This is the large banner image at the top of your booking page. Recommended size: 1400×600px minimum, landscape orientation.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-camera"></i> Adding room photos</h3>
+              <p>Go to <strong>Rooms</strong>, click a room to open it, then click <strong>Add photo</strong>. Photos appear on your booking page alongside room descriptions. Photo limits per plan:</p>
+              <ul class="help-bullets">
+                <li><strong>Free</strong> — 1 photo per room</li>
+                <li><strong>Pro</strong> — up to 5 photos per room</li>
+                <li><strong>Multi</strong> — up to 10 photos per room</li>
+              </ul>
+              <div class="help-tip"><i class="ti ti-info-circle"></i><p>Good photos are the single biggest factor in booking conversion. Even one clear, well-lit photo per room makes a real difference.</p></div>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-list-details"></i> Room descriptions and amenities</h3>
+              <p>For each room, you can add a short description and tick amenities (WiFi, en-suite, balcony, garden view, etc.). These appear on your booking page to help guests choose. Go to <strong>Rooms → [Room name] → Edit</strong>.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-share"></i> Sharing your booking page</h3>
+              <p>Your booking page URL is at <strong>Settings → Booking page → Share link</strong>. Common places to add it:</p>
+              <ul class="help-bullets">
+                <li>Instagram bio (one link, make it direct bookings)</li>
+                <li>Facebook page Book Now button (see section below)</li>
+                <li>Google Business Profile website link</li>
+                <li>Email signature</li>
+                <li>Booking.com review replies</li>
+              </ul>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 3. FACEBOOK ────────────────────────────────────────────────── -->
+        <details class="help-section" id="facebook-button">
+          <summary>
+            <div class="section-icon"><i class="ti ti-brand-facebook"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.fb">Facebook Booking Button</h2>
+              <p>Add a Book Now button to your Facebook business page</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-brand-facebook"></i> How to add the Book Now button</h3>
+              <ol class="help-steps">
+                <li>First, copy your NestBook booking page URL from <strong>Settings → Booking page → Share link</strong> (e.g. <code>nestbook.io/book/your-property</code>).</li>
+                <li>Go to your Facebook business page and click the blue <strong>+ Add a Button</strong> button below your cover photo (or <strong>Edit button</strong> if one already exists).</li>
+                <li>Select <strong>Book with you</strong> from the list of button types.</li>
+                <li>Click <strong>Book Now</strong> and paste your NestBook booking page URL into the website field.</li>
+                <li>Click <strong>Save</strong>. The button appears on your page immediately.</li>
+              </ol>
+              <div class="help-tip"><i class="ti ti-info-circle"></i><p>Any guest who finds you on Facebook can now book directly with you — no Booking.com commission.</p></div>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 4. TAKING BOOKINGS ─────────────────────────────────────────── -->
+        <details class="help-section" id="taking-bookings">
+          <summary>
+            <div class="section-icon"><i class="ti ti-calendar-plus"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.bookings">Taking bookings</h2>
+              <p>How the booking widget works and what guests see</p>
+            </div>
+            <span class="section-badge pro">Pro</span>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-widget"></i> How the booking widget works</h3>
+              <p>The NestBook booking widget is available on <strong>Pro</strong> and <strong>Multi</strong> plans. Guests select dates, choose rooms, and complete a booking request — all without leaving your website.</p>
+              <p>You can embed the widget on any website by copying the script tag from <strong>Settings → Embed widget</strong> and pasting it into your HTML before the closing <code>&lt;/body&gt;</code> tag. Or, direct guests straight to your NestBook booking page.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-clock"></i> Booking requests vs confirmed bookings</h3>
+              <p><strong>Individual room (IP) mode:</strong> Guests complete a booking and it is confirmed immediately. Both you and the guest receive a confirmation email. The booking appears in your calendar right away.</p>
+              <p><strong>Whole property (WP) mode:</strong> Guests submit a <em>booking request</em>. You receive an email and must <strong>Accept</strong> or <strong>Decline</strong> within 48 hours. The dates are held as pending during this time.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-home"></i> Whole property booking request flow</h3>
+              <ol class="help-steps">
+                <li>Guest fills in dates, party size and contact details on your booking page.</li>
+                <li>Guest submits the request — dates show as <em>pending</em> on your calendar.</li>
+                <li>You receive an email notification with guest details and dates.</li>
+                <li>You click <strong>Accept</strong> or <strong>Decline</strong> in the email (or from your dashboard).</li>
+                <li>Guest receives a confirmation or decline email automatically.</li>
+              </ol>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-mail"></i> Guest confirmation emails</h3>
+              <p>When a booking is confirmed, the guest receives an email containing:</p>
+              <ul class="help-bullets">
+                <li>Booking reference number</li>
+                <li>Property name and address</li>
+                <li>Check-in and check-out dates and times</li>
+                <li>Room(s) booked and total price</li>
+                <li>Any special notes you have added</li>
+              </ul>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-key"></i> Access code and automated arrival emails</h3>
+              <p>In <strong>Settings → Access &amp; arrival</strong> (whole property mode), you can enter a key safe code, door code, or any arrival instructions. NestBook will automatically send this to your guest by email a set number of days before their arrival — so you don't have to remember to send it manually.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-deposit"></i> Deposit settings</h3>
+              <p>In <strong>Settings → Deposits</strong>, you can specify a deposit amount or percentage that guests should pay to confirm their booking. This is shown to guests on the booking page. NestBook does not process payments directly — deposits are collected via your own payment method (bank transfer, PayPal, etc.).</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 5. MANAGING BOOKINGS ───────────────────────────────────────── -->
+        <details class="help-section" id="managing-bookings">
+          <summary>
+            <div class="section-icon"><i class="ti ti-calendar"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.manage">Managing bookings</h2>
+              <p>Calendar, booking details, check-in/out and cleaning status</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-calendar"></i> The visual calendar</h3>
+              <p>The <strong>Calendar</strong> page gives you a colour-coded weekly view of all rooms and bookings. Each booking shows the guest name and colour code by status. Hover or click any booking for details.</p>
+              <p>In <strong>whole property mode</strong>, the calendar shows a monthly view with one property — colour-coded by booking status (pending, confirmed, arrived, cleaning).</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-zoom-in"></i> Clicking a booking to see details</h3>
+              <p>Click any booking in the calendar or bookings list to open the booking detail panel. From here you can see guest contact info, dates, room(s), price, notes, and take actions.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-door-enter"></i> Check in / Check out (IP mode)</h3>
+              <p>In individual room mode, open a booking and use the <strong>Check in</strong> / <strong>Check out</strong> buttons to update the guest's status. The calendar updates immediately to reflect their arrival or departure.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-home-check"></i> Guests arrived / Guests departed (WP mode)</h3>
+              <p>In whole property mode, confirmed bookings show <strong>Guests arrived</strong> and <strong>Guests departed</strong> actions. Marking guests as arrived changes the calendar colour. Marking as departed triggers the cleaning status.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-sparkles"></i> Cleaning status (WP mode)</h3>
+              <p>After guests depart, the property automatically shows a <strong>Needs cleaning</strong> status on the calendar. Once cleaning is complete, click <strong>Mark as clean</strong> — the property status updates to ready for the next guests.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-pencil"></i> Editing a booking</h3>
+              <p>Open any booking and click <strong>Edit</strong>. You can change dates, rooms, guest details, notes, and price. Changes are saved immediately and do not send a new confirmation email to the guest unless you check the option to do so.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-notes"></i> Adding notes</h3>
+              <p>Open any booking and use the <strong>Notes</strong> field to add internal notes about the guest's preferences, special requests, arrival arrangements, and so on. Notes are private — guests never see them.</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 6. ICAL SYNC ───────────────────────────────────────────────── -->
+        <details class="help-section" id="ical-sync">
+          <summary>
+            <div class="section-icon"><i class="ti ti-calendar-sync"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.ical">iCal sync</h2>
+              <p>Sync with Booking.com, Airbnb and other platforms</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-info-circle"></i> What iCal sync does</h3>
+              <p>iCal sync connects your NestBook calendar with external platforms (Booking.com, Airbnb, etc.). When a booking is made on any platform, it blocks those dates everywhere — preventing double bookings.</p>
+              <p>NestBook provides an iCal <strong>export</strong> URL (for platforms to read your availability) and can import external iCal feeds (to block dates from other platforms in NestBook).</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-link"></i> Getting your iCal URL</h3>
+              <p>Go to <strong>Settings → iCal sync</strong>. You'll see an iCal export URL for each room (IP mode) or for the whole property (WP mode). Copy the URL and paste it into the relevant platform.</p>
+              <div class="help-tip"><i class="ti ti-info-circle"></i><p>In whole property mode there is one URL for the property. In individual room mode, each room has its own URL.</p></div>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-brand-booking"></i> Adding to Booking.com</h3>
+              <ol class="help-steps">
+                <li>In your Booking.com extranet, go to <strong>Calendar → iCal connections</strong>.</li>
+                <li>Click <strong>Export calendar</strong> and copy the Booking.com iCal URL.</li>
+                <li>Paste it into NestBook under <strong>Settings → iCal sync → Add external feed</strong>.</li>
+                <li>Copy your NestBook iCal URL and paste it into Booking.com's <strong>Import calendar</strong> field.</li>
+              </ol>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-brand-airbnb"></i> Adding to Airbnb</h3>
+              <ol class="help-steps">
+                <li>In Airbnb, go to your listing and open <strong>Availability → Sync calendars</strong>.</li>
+                <li>Click <strong>Export Calendar</strong> and copy the Airbnb iCal URL.</li>
+                <li>Paste it into NestBook under <strong>Settings → iCal sync → Add external feed</strong>.</li>
+                <li>Copy your NestBook iCal URL and paste it into Airbnb's <strong>Import Calendar</strong> field.</li>
+              </ol>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 7. SEASONAL PRICING ────────────────────────────────────────── -->
+        <details class="help-section" id="seasonal-pricing">
+          <summary>
+            <div class="section-icon"><i class="ti ti-coin"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.pricing">Seasonal pricing</h2>
+              <p>Set different rates for peak season, school holidays and quiet periods</p>
+            </div>
+            <span class="section-badge pro">Pro / Multi</span>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-calendar-stats"></i> Setting up rate periods</h3>
+              <p>Go to <strong>Pricing → Rate periods</strong>. Click <strong>Add period</strong> and set a date range, a name (e.g. "High season", "Christmas") and a multiplier or flat price override. You can create as many periods as you need — they stack correctly, with specific date ranges taking priority over general ones.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-adjustments"></i> Per-room price overrides</h3>
+              <p>Each rate period can have a global multiplier (e.g. 1.5× = 50% more) or a per-room override. To set a per-room price, expand the rate period and enter a fixed nightly rate for each room. Leave blank to use the global multiplier.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-calculator"></i> How prices calculate night by night</h3>
+              <p>When a guest selects dates that span multiple rate periods, NestBook calculates the correct price for each night individually — the total shown is always accurate. The breakdown is shown to guests on the booking page.</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 8. ROOM CHARGES ────────────────────────────────────────────── -->
+        <details class="help-section" id="room-charges">
+          <summary>
+            <div class="section-icon"><i class="ti ti-receipt"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.charges">Room charges</h2>
+              <p>Add extras, services and charges to any booking</p>
+            </div>
+            <span class="section-badge multi">Multi</span>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-category"></i> Adding service categories</h3>
+              <p>Go to <strong>Settings → Charges</strong> to set up your service categories — for example: Breakfast, Dinner, Bar, Spa, Laundry, Transfers. Each category appears as a tab when adding charges to a booking.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-plus"></i> Adding charges to a booking</h3>
+              <p>Open any booking and click <strong>Add charge</strong>. Select the category, enter a description, quantity and price. Charges are added to the booking total and appear on the guest's final bill. You can add multiple charges of different types.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-x"></i> Voiding charges</h3>
+              <p>To remove a charge, open the booking, find the charge in the list, and click <strong>Void</strong>. The charge is struck through and excluded from the total — it remains visible in the record for audit purposes.</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 9. REPORTS ─────────────────────────────────────────────────── -->
+        <details class="help-section" id="reports">
+          <summary>
+            <div class="section-icon"><i class="ti ti-chart-bar"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.reports">Reports</h2>
+              <p>Revenue summaries, CSV export and expenses</p>
+            </div>
+            <span class="section-badge pro">Pro / Multi</span>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-chart-line"></i> Revenue reports</h3>
+              <p>Go to <strong>Reports</strong> in the sidebar. You'll see a monthly revenue summary, occupancy rate, average booking value, and booking source breakdown. Use the date picker to view any period.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-file-download"></i> CSV export</h3>
+              <p>On the Reports page, click <strong>Export CSV</strong> to download a spreadsheet of all bookings in the selected period. The CSV includes guest name, email, dates, rooms, price, status and booking source — useful for accounting or tax returns.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-cash"></i> Expenses tracker</h3>
+              <p>Go to <strong>Reports → Expenses</strong> to log property running costs — cleaning, maintenance, utilities, supplies. Add a category, description, date and amount. Expenses are shown on the Reports overview alongside revenue so you can see your net position at a glance.</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 10. SETTINGS ───────────────────────────────────────────────── -->
+        <details class="help-section" id="settings">
+          <summary>
+            <div class="section-icon"><i class="ti ti-settings"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.settings">Settings</h2>
+              <p>Property details, staff, deposits, arrival instructions and more</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-building"></i> Property details</h3>
+              <p>Edit your property name, type, address, phone number and description. These appear on your booking page and in guest confirmation emails. Changes take effect immediately.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-coffee"></i> Breakfast hours</h3>
+              <p>If you offer breakfast (B&amp;B mode), set your breakfast serving hours in <strong>Settings → Property details</strong>. These appear on the booking page and in confirmation emails so guests know when to come down.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-coin"></i> Deposit settings</h3>
+              <p>Go to <strong>Settings → Deposits</strong> to set a deposit requirement. You can specify a fixed amount or a percentage of the total booking value. The deposit amount is shown to guests when they book, with instructions to pay via your chosen method.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-users"></i> Staff accounts and roles</h3>
+              <p>Go to <strong>Settings → Staff</strong> to invite team members. You can assign roles:</p>
+              <ul class="help-bullets">
+                <li><strong>Owner</strong> — full access to everything including billing and settings</li>
+                <li><strong>Manager</strong> — can manage bookings, rooms, calendar and reports; cannot access billing</li>
+                <li><strong>Staff</strong> — can view bookings and calendar; cannot edit settings or rates</li>
+              </ul>
+              <p>Staff members receive an invitation email and create their own password.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-key"></i> Access &amp; arrival (WP mode)</h3>
+              <p>Go to <strong>Settings → Access &amp; arrival</strong> to set up automated arrival emails. Enter your key safe code, parking instructions, WiFi password or any arrival notes. Choose how many days before arrival to send the email (typically 1–3 days).</p>
+              <div class="help-tip"><i class="ti ti-info-circle"></i><p>NestBook sends the arrival email automatically — no need to remember to do it manually for each guest.</p></div>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-bug"></i> Error reporting</h3>
+              <p>If you encounter a bug or unexpected behaviour, use the <strong>Report an issue</strong> link in the sidebar footer or email <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a>. Please include your property name, a description of the issue, and any screenshots if possible.</p>
+            </div>
+
+          </div>
+        </details>
+
+        <!-- ── 11. PLANS AND BILLING ──────────────────────────────────────── -->
+        <details class="help-section" id="plans-billing">
+          <summary>
+            <div class="section-icon"><i class="ti ti-credit-card"></i></div>
+            <div class="section-meta">
+              <h2 data-i18n="help.s.plans">Plans and billing</h2>
+              <p>Free, Pro and Multi — what's included, how to upgrade</p>
+            </div>
+            <i class="ti ti-chevron-right section-chevron"></i>
+          </summary>
+          <div class="section-body">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-layout-list"></i> What's included in each plan</h3>
+              <ul class="help-bullets">
+                <li><strong>Free</strong><span class="plan-tag free">Free</span> — Public booking page, enquiry form for guests, 1 photo per room, iCal export, multi-language page</li>
+                <li><strong>Pro</strong><span class="plan-tag pro">£19/mo</span> — Everything in Free, plus: full booking widget, online bookings, seasonal pricing, reports, CSV export, 5 photos per room, access &amp; arrival emails, 30-day trial</li>
+                <li><strong>Multi</strong><span class="plan-tag multi">£38/mo</span> — Everything in Pro, plus: room charges, expenses tracker, staff accounts with roles, 10 photos per room, priority support</li>
+              </ul>
+              <p style="margin-top:12px;"><a href="/compare.html" style="color:var(--mid);font-weight:600;text-decoration:underline;">See the full feature comparison →</a></p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-arrow-up-circle"></i> How to upgrade</h3>
+              <p>Go to <strong>Settings → Subscription</strong> in your dashboard and click <strong>Upgrade plan</strong>. Select Pro or Multi and complete the checkout. Your new plan is active immediately. The first 30 days are free — no charge until the trial ends.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-x"></i> How to cancel</h3>
+              <p>Go to <strong>Settings → Subscription</strong> and click <strong>Cancel subscription</strong>. You'll keep full Pro or Multi access until the end of your current billing period. After that, your account reverts to the Free plan — your data and booking page are never deleted.</p>
+            </div>
+
+            <hr class="help-divider">
+
+            <div class="help-subsection">
+              <h3><i class="ti ti-gift"></i> 30-day free trial</h3>
+              <p>When you upgrade to Pro or Multi for the first time, you get 30 days free — no credit card required upfront. After 30 days, billing starts automatically. You can cancel at any time before then with no charge.</p>
+            </div>
+
+          </div>
+        </details>
+
+      </div><!-- /.help-sections -->
+    </div><!-- /.help-layout -->
+  </div><!-- /.container -->
+</div><!-- /.help-body -->
+
+<!-- CTA BAND -->
+<div class="cta-band">
+  <div class="container">
+    <h2 data-i18n="help.cta.title">Ready to get started?</h2>
+    <p data-i18n="help.cta.sub">Free plan available. Your booking page live in 20 minutes.</p>
+    <div class="cta-buttons">
+      <a href="/app/register" class="btn btn-white">Start free — no card needed</a>
+      <a href="/how-it-works" class="btn-outline-white btn">How it works →</a>
     </div>
-
-    <p style="margin-top:32px; font-size:0.9rem; color:var(--muted);" data-i18n-html="help.faq.more">Have a question that isn't answered here? Email us at <a href="mailto:hello@nestbook.io" style="color:var(--mid);">hello@nestbook.io</a> — we usually reply within one working day.</p>
   </div>
-</section>
-
-<section class="cta-band">
-  <div class="container">
-    <h2 data-i18n="help.cta.heading">Ready to get started?</h2>
-    <p data-i18n="help.cta.sub">Create your free account in under a minute. No credit card needed.</p>
-    <a href="/app/register" class="btn btn-white" data-i18n="help.cta.btn">Start for free →</a>
-  </div>
-</section>
+</div>
 
 <footer class="footer">
   <div class="container">
@@ -321,34 +941,37 @@ img { display: block; max-width: 100%; }
     </div>
     <div class="footer-bottom">
       <span data-i18n="footer.copy">© 2026 NestBook. Made with ♥ for small hospitality businesses.</span>
-      <span>EN · FR · ES · DE · NL</span>
     </div>
   </div>
 </footer>
 
 <script>
-const I18N = JSON.parse(decodeURIComponent(escape(atob('eyJlbiI6eyJuYXYuZmVhdHVyZXMiOiJGZWF0dXJlcyIsIm5hdi5wcmljaW5nIjoiUHJpY2luZyIsIm5hdi5ibG9nIjoiQmxvZyIsIm5hdi5oZWxwIjoiSGVscCIsIm5hdi5zaWduaW4iOiJTaWduIGluIiwibmF2LnRyeSI6IlRyeSBmcmVlIiwiaGVscC5oZXJvLnRpdGxlIjoiR2V0dGluZyBzdGFydGVkIHdpdGggTmVzdEJvb2siLCJoZWxwLmhlcm8uc3ViIjoiRXZlcnl0aGluZyB5b3UgbmVlZCB0byBzZXQgdXAgeW91ciBwcm9wZXJ0eSwgYWRkIHJvb21zIGFuZCBzdGFydCB0YWtpbmcgYm9va2luZ3Mg4oCUIGluIGZpdmUgc2ltcGxlIHN0ZXBzLiIsImhlbHAuc3RlcHMubGFiZWwiOiJTZXR1cCBndWlkZSIsImhlbHAuc3RlcHMuaGVhZGluZyI6IkZpdmUgc3RlcHMgdG8geW91ciBmaXJzdCBib29raW5nIiwiaGVscC5zdGVwcy5zdWIiOiJGb2xsb3cgdGhlc2Ugc3RlcHMgaW4gb3JkZXIuIE1vc3QgcGVvcGxlIGFyZSB1cCBhbmQgcnVubmluZyBpbiB1bmRlciAxNSBtaW51dGVzLiIsImhlbHAuczEudGl0bGUiOiJBZGQgeW91ciBwcm9wZXJ0eSBkZXRhaWxzIiwiaGVscC5zMS5kZXNjIjoiR28gdG8gU2V0dGluZ3MgaW4gdGhlIGxlZnQgc2lkZWJhci4gRmlsbCBpbiB5b3VyIHByb3BlcnR5IG5hbWUsIHByb3BlcnR5IHR5cGUsIGFkZHJlc3MsIGNoZWNrLWluIHRpbWUsIGNoZWNrLW91dCB0aW1lIGFuZCBwcmVmZXJyZWQgY3VycmVuY3kuIENsaWNrIFNhdmUgY2hhbmdlcyB3aGVuIGRvbmUuIiwiaGVscC5zMS50aXAiOiJZb3VyIGN1cnJlbmN5IGFuZCBsYW5ndWFnZSBzZXR0aW5ncyBhZmZlY3QgZ3Vlc3QtZmFjaW5nIGVtYWlscyBhbmQgYm9va2luZyBjb25maXJtYXRpb25zLiIsImhlbHAuczIudGl0bGUiOiJBZGQgeW91ciByb29tcyIsImhlbHAuczIuZGVzYyI6IkdvIHRvIFJvb21zIGFuZCBjbGljayArIEFkZCBSb29tLiBGaWxsIGluIHRoZSByb29tIG5hbWUsIHR5cGUgKGRvdWJsZSwgdHdpbiwgc3VpdGXigKYpLCBwcmljZSBwZXIgbmlnaHQgYW5kIGNhcGFjaXR5LiBDbGljayBTYXZlLiBSZXBlYXQgZm9yIGVhY2ggcm9vbSBpbiB5b3VyIHByb3BlcnR5LiIsImhlbHAuczIudGlwIjoiWW91IGNhbiBhbHNvIGFkZCBhbWVuaXRpZXMgKFdpRmksIGVuLXN1aXRlLCBiYWxjb2554oCmKSB0byBoZWxwIGd1ZXN0cyBjaG9vc2UgdGhlIHJpZ2h0IHJvb20uIiwiaGVscC5zMy50aXRsZSI6IkFkZCB0aGUgYm9va2luZyB3aWRnZXQgdG8geW91ciB3ZWJzaXRlIiwiaGVscC5zMy5kZXNjIjoiR28gdG8gU2V0dGluZ3MgYW5kIHNjcm9sbCBkb3duIHRvIHRoZSBFbWJlZCBXaWRnZXQgc2VjdGlvbi4gQ29weSB0aGUgc2NyaXB0IHRhZyBhbmQgcGFzdGUgaXQgaW50byB5b3VyIHdlYnNpdGUncyBIVE1MIGp1c3QgYmVmb3JlIHRoZSBjbG9zaW5nIDwvYm9keT4gdGFnLiBHdWVzdHMgY2FuIHRoZW4gYm9vayBkaXJlY3RseSDigJQgd2l0aCBubyBjb21taXNzaW9uLiIsImhlbHAuczMudGlwIjoiVGhlIEVtYmVkIFdpZGdldCBzZWN0aW9uIGlzIGF2YWlsYWJsZSBvbiB0aGUgUHJvIHBsYW4uIFRyeSB0aGUgbGl2ZSBkZW1vIGZpcnN0IGF0IG5lc3Rib29rLmlvL3dpZGdldC10ZXN0Lmh0bWwuIiwiaGVscC5zNC50aXRsZSI6IlN0YXJ0IHRha2luZyBib29raW5ncyIsImhlbHAuczQuZGVzYyI6IlNoYXJlIHlvdXIgd2Vic2l0ZSB3aXRoIGd1ZXN0cy4gV2hlbiBhIGd1ZXN0IGNvbXBsZXRlcyBhIGJvb2tpbmcgdGhyb3VnaCB5b3VyIHdpZGdldCwgaXQgd2lsbCBhcHBlYXIgaW4geW91ciBCb29raW5ncyBkYXNoYm9hcmQgYXV0b21hdGljYWxseS4gWW91IGFuZCB5b3VyIGd1ZXN0IHdpbGwgYm90aCByZWNlaXZlIGFuIGVtYWlsIGNvbmZpcm1hdGlvbi4iLCJoZWxwLnM0LnRpcCI6IllvdSBjYW4gYWxzbyBhZGQgYm9va2luZ3MgbWFudWFsbHkgZnJvbSB0aGUgQm9va2luZ3MgcGFnZSDigJQgdXNlZnVsIGZvciBwaG9uZSBvciBlbWFpbCByZXNlcnZhdGlvbnMuIiwiaGVscC5zNS50aXRsZSI6Ik1hbmFnZSB5b3VyIGJvb2tpbmdzIiwiaGVscC5zNS5kZXNjIjoiVXNlIHRoZSBDYWxlbmRhciBwYWdlIGZvciBhIGNvbG91ci1jb2RlZCB2aXN1YWwgb3ZlcnZpZXcgb2YgYWxsIHJvb21zIGFuZCBkYXRlcy4gVXNlIEJvb2tpbmdzIGZvciBhIGZ1bGwgc2VhcmNoYWJsZSBsaXN0LiBVc2UgR3Vlc3RzIHRvIHZpZXcgY3VzdG9tZXIgcmVjb3JkcyBhbmQgY29udGFjdCBkZXRhaWxzLiIsImhlbHAuczUudGlwIjoiVGhlIENhbGVuZGFyIHdvcmtzIG9mZmxpbmUgdG9vIOKAlCBwZXJmZWN0IGZvciBydXJhbCBwcm9wZXJ0aWVzIHdpdGggdW5yZWxpYWJsZSBpbnRlcm5ldC4iLCJoZWxwLmZhcS5sYWJlbCI6IkZBUSIsImhlbHAuZmFxLmhlYWRpbmciOiJGcmVxdWVudGx5IGFza2VkIHF1ZXN0aW9ucyIsImhlbHAuZmFxLnExIjoiV2hhdCBpZiBJIGZvcmdldCBteSBwYXNzd29yZD8iLCJoZWxwLmZhcS5hMSI6Ik9uIHRoZSA8YSBocmVmPVwiL2FwcC9sb2dpblwiPnNpZ24taW4gcGFnZTwvYT4sIGNsaWNrIDxzdHJvbmc+Rm9yZ290IHBhc3N3b3JkPzwvc3Ryb25nPiBhbmQgZW50ZXIgeW91ciBlbWFpbC4gWW91J2xsIHJlY2VpdmUgYSByZXNldCBsaW5rIHdpdGhpbiBhIGZldyBtaW51dGVzLiBJZiB5b3UgZG9uJ3QgcmVjZWl2ZSBpdCwgY2hlY2sgeW91ciBzcGFtIGZvbGRlciBvciBlbWFpbCB1cyBhdCA8YSBocmVmPVwibWFpbHRvOmhlbGxvQG5lc3Rib29rLmlvXCI+aGVsbG9AbmVzdGJvb2suaW88L2E+LiIsImhlbHAuZmFxLnEyIjoiSG93IGRvIEkgY2FuY2VsIG15IHN1YnNjcmlwdGlvbj8iLCJoZWxwLmZhcS5hMiI6IkdvIHRvIFNldHRpbmdzIGluIHlvdXIgZGFzaGJvYXJkLCBzY3JvbGwgdG8gdGhlIFN1YnNjcmlwdGlvbiBzZWN0aW9uLCBhbmQgY2xpY2sgQ2FuY2VsIHN1YnNjcmlwdGlvbi4gWW91J2xsIGtlZXAgZnVsbCBhY2Nlc3MgdW50aWwgdGhlIGVuZCBvZiB5b3VyIGN1cnJlbnQgYmlsbGluZyBwZXJpb2QuIiwiaGVscC5mYXEucTMiOiJIb3cgZG8gSSBhZGQgc3RhZmYgbWVtYmVycz8iLCJoZWxwLmZhcS5hMyI6IkdvIHRvIFNldHRpbmdzIGFuZCBzY3JvbGwgdG8gQWNjZXNzICYgUm9sZXMuIENsaWNrIEludml0ZSBTdGFmZiBNZW1iZXIgYW5kIGVudGVyIHRoZWlyIGVtYWlsIGFkZHJlc3MuIFN0YWZmIGFjY291bnRzIGNhbiBhY2Nlc3MgQ2FsZW5kYXIgYW5kIEJvb2tpbmdzIGJ1dCBjYW5ub3QgY2hhbmdlIHNldHRpbmdzLiBBdmFpbGFibGUgb24gdGhlIFBybyBwbGFuLiIsImhlbHAuZmFxLnE0IjoiSXMgbXkgZGF0YSBzZWN1cmU/IiwiaGVscC5mYXEuYTQiOiJZZXMuIE5lc3RCb29rIGlzIGZ1bGx5IEdEUFIgY29tcGxpYW50LiBEYXRhIGlzIHN0b3JlZCBvbiBFVSBzZXJ2ZXJzIChIZXR6bmVyLCBHZXJtYW55KSwgY29ubmVjdGlvbnMgYXJlIEhUVFBTIGVuY3J5cHRlZCwgYW5kIHdlIG5ldmVyIHNlbGwgeW91ciBkYXRhLiBTZWUgb3VyIDxhIGhyZWY9XCIvcHJpdmFjeS5odG1sXCI+UHJpdmFjeSBQb2xpY3k8L2E+IGZvciBkZXRhaWxzLiIsImhlbHAuZmFxLnE1IjoiSG93IGRvIEkgbWFuYWdlIG11bHRpcGxlIHByb3BlcnRpZXM/IiwiaGVscC5mYXEuYTUiOiJUaGUgTXVsdGkgcGxhbiBsZXRzIHlvdSBtYW5hZ2UgdXAgdG8gNSBwcm9wZXJ0aWVzIGZyb20gYSBzaW5nbGUgYWNjb3VudC4gR28gdG8gU2V0dGluZ3MgYW5kIHNjcm9sbCB0byB0aGUgUHJvcGVydGllcyBzZWN0aW9uIHRvIGFkZCBhIG5ldyBwcm9wZXJ0eS4gT25jZSBhZGRlZCwgdXNlIHRoZSBwcm9wZXJ0eSBzd2l0Y2hlciBpbiB0aGUgc2lkZWJhciB0byBtb3ZlIGJldHdlZW4gcHJvcGVydGllcyDigJQgZWFjaCBoYXMgaXRzIG93biByb29tcywgYm9va2luZ3MsIGFuZCBjYWxlbmRhci4iLCJoZWxwLmZhcS5tb3JlIjoiSGF2ZSBhIHF1ZXN0aW9uIG5vdCBhbnN3ZXJlZCBoZXJlPyBFbWFpbCB1cyBhdCA8YSBocmVmPVwibWFpbHRvOmhlbGxvQG5lc3Rib29rLmlvXCIgc3R5bGU9XCJjb2xvcjp2YXIoLS1taWQpO1wiPmhlbGxvQG5lc3Rib29rLmlvPC9hPiDigJQgd2UgdXN1YWxseSByZXBseSB3aXRoaW4gb25lIHdvcmtpbmcgZGF5LiIsImhlbHAuY3RhLmhlYWRpbmciOiJSZWFkeSB0byBnZXQgc3RhcnRlZD8iLCJoZWxwLmN0YS5zdWIiOiJDcmVhdGUgeW91ciBmcmVlIGFjY291bnQgaW4gdW5kZXIgYSBtaW51dGUuIE5vIGNyZWRpdCBjYXJkIG5lZWRlZC4iLCJoZWxwLmN0YS5idG4iOiJTdGFydCBmb3IgZnJlZSDihpIiLCJmb290ZXIudGFnbGluZSI6IlNpbXBsZSwgZWxlZ2FudCBib29raW5nIG1hbmFnZW1lbnQgZm9yIHNtYWxsIGhvc3BpdGFsaXR5IGJ1c2luZXNzZXMgYWNyb3NzIEV1cm9wZS4iLCJmb290ZXIucHJvZHVjdCI6IlByb2R1Y3QiLCJmb290ZXIuZmVhdHVyZXMiOiJGZWF0dXJlcyIsImZvb3Rlci5wcmljaW5nIjoiUHJpY2luZyIsImZvb3Rlci53aWRnZXQiOiJCb29raW5nIHdpZGdldCIsImZvb3Rlci5zaWduaW4iOiJTaWduIGluIHRvIHlvdXIgZGFzaGJvYXJkIiwiZm9vdGVyLmNvbXBhbnkiOiJDb21wYW55IiwiZm9vdGVyLmFib3V0IjoiQWJvdXQiLCJmb290ZXIuYmxvZyI6IkJsb2ciLCJmb290ZXIuY29udGFjdCI6IkNvbnRhY3QiLCJmb290ZXIuaGVscCI6IkhlbHAiLCJmb290ZXIubGVnYWwiOiJMZWdhbCIsImZvb3Rlci5wcml2YWN5IjoiUHJpdmFjeSBQb2xpY3kiLCJmb290ZXIudGVybXMiOiJUZXJtcyBvZiBTZXJ2aWNlIiwiZm9vdGVyLmdkcHIiOiJHRFBSIiwiZm9vdGVyLmNvb2tpZXMiOiJDb29raWVzIiwiZm9vdGVyLmNvcHkiOiLCqSAyMDI2IE5lc3RCb29rLiBNYWRlIHdpdGgg4pmlIGZvciBzbWFsbCBob3NwaXRhbGl0eSBidXNpbmVzc2VzLiJ9LCJmciI6eyJuYXYuZmVhdHVyZXMiOiJGb25jdGlvbm5hbGl0w6lzIiwibmF2LnByaWNpbmciOiJUYXJpZnMiLCJuYXYuYmxvZyI6IkJsb2ciLCJuYXYuaGVscCI6IkFpZGUiLCJuYXYuc2lnbmluIjoiQ29ubmV4aW9uIiwibmF2LnRyeSI6IkVzc2FpIGdyYXR1aXQiLCJoZWxwLmhlcm8udGl0bGUiOiJQcmVtaWVycyBwYXMgYXZlYyBOZXN0Qm9vayIsImhlbHAuaGVyby5zdWIiOiJUb3V0IGNlIGRvbnQgdm91cyBhdmV6IGJlc29pbiBwb3VyIGNvbmZpZ3VyZXIgdm90cmUgaMOpYmVyZ2VtZW50LCBham91dGVyIGRlcyBjaGFtYnJlcyBldCBjb21tZW5jZXIgw6AgcmVjZXZvaXIgZGVzIHLDqXNlcnZhdGlvbnMg4oCUIGVuIGNpbnEgw6l0YXBlcyBzaW1wbGVzLiIsImhlbHAuc3RlcHMubGFiZWwiOiJHdWlkZSBkZSBjb25maWd1cmF0aW9uIiwiaGVscC5zdGVwcy5oZWFkaW5nIjoiQ2lucSDDqXRhcGVzIHZlcnMgdm90cmUgcHJlbWnDqHJlIHLDqXNlcnZhdGlvbiIsImhlbHAuc3RlcHMuc3ViIjoiU3VpdmV6IGNlcyDDqXRhcGVzIGRhbnMgbCdvcmRyZS4gTGEgcGx1cGFydCBkZXMgdXRpbGlzYXRldXJzIHNvbnQgb3DDqXJhdGlvbm5lbHMgZW4gbW9pbnMgZGUgMTUgbWludXRlcy4iLCJoZWxwLnMxLnRpdGxlIjoiQWpvdXRleiBsZXMgaW5mb3JtYXRpb25zIGRlIHZvdHJlIGjDqWJlcmdlbWVudCIsImhlbHAuczEuZGVzYyI6IkFsbGV6IGRhbnMgUGFyYW3DqHRyZXMgZGFucyBsYSBiYXJyZSBsYXTDqXJhbGUgZ2F1Y2hlLiBSZW5zZWlnbmV6IGxlIG5vbSwgbGUgdHlwZSwgbCdhZHJlc3NlLCBsZXMgaG9yYWlyZXMgZCdhcnJpdsOpZSBldCBkZSBkw6lwYXJ0LCBldCBsYSBkZXZpc2UuIENsaXF1ZXogc3VyIEVucmVnaXN0cmVyLiIsImhlbHAuczEudGlwIjoiVm9zIHBhcmFtw6h0cmVzIGRlIGRldmlzZSBldCBkZSBsYW5ndWUgaW5mbHVlbmNlbnQgbGVzIGUtbWFpbHMgZW52b3nDqXMgYXV4IGNsaWVudHMuIiwiaGVscC5zMi50aXRsZSI6IkFqb3V0ZXogdm9zIGNoYW1icmVzIiwiaGVscC5zMi5kZXNjIjoiQWxsZXogZGFucyBDaGFtYnJlcyBldCBjbGlxdWV6IHN1ciArIEFqb3V0ZXIgdW5lIGNoYW1icmUuIFJlbnNlaWduZXogbGUgbm9tLCBsZSB0eXBlLCBsZSBwcml4IHBhciBudWl0IGV0IGxhIGNhcGFjaXTDqS4gUsOpcMOpdGV6IHBvdXIgY2hhcXVlIGNoYW1icmUuIiwiaGVscC5zMi50aXAiOiJWb3VzIHBvdXZleiDDqWdhbGVtZW50IGFqb3V0ZXIgZGVzIMOpcXVpcGVtZW50cyAoV2lGaSwgc2FsbGUgZGUgYmFpbiBwcml2w6llLCBiYWxjb27igKYpIHBvdXIgYWlkZXIgdm9zIGNsaWVudHMuIiwiaGVscC5zMy50aXRsZSI6IkFqb3V0ZXogbGUgd2lkZ2V0IGRlIHLDqXNlcnZhdGlvbiDDoCB2b3RyZSBzaXRlIiwiaGVscC5zMy5kZXNjIjoiRGFucyBQYXJhbcOodHJlcywgZmFpdGVzIGTDqWZpbGVyIGp1c3F1J8OgIGxhIHNlY3Rpb24gV2lkZ2V0IGludMOpZ3LDqS4gQ29waWV6IGxlIGNvZGUgZXQgY29sbGV6LWxlIGRhbnMgdm90cmUgc2l0ZSBqdXN0ZSBhdmFudCBsYSBiYWxpc2UgPC9ib2R5Pi4gVm9zIGNsaWVudHMgcG91cnJvbnQgcsOpc2VydmVyIGRpcmVjdGVtZW50LCBzYW5zIGNvbW1pc3Npb24uIiwiaGVscC5zMy50aXAiOiJMYSBzZWN0aW9uIFdpZGdldCBpbnTDqWdyw6kgZXN0IGRpc3BvbmlibGUgYXZlYyBsZSBwbGFuIFByby4gRXNzYXlleiBkJ2Fib3JkIGxhIGTDqW1vIHN1ciBuZXN0Ym9vay5pby93aWRnZXQtdGVzdC5odG1sLiIsImhlbHAuczQudGl0bGUiOiJDb21tZW5jZXogw6AgcmVjZXZvaXIgZGVzIHLDqXNlcnZhdGlvbnMiLCJoZWxwLnM0LmRlc2MiOiJQYXJ0YWdleiB2b3RyZSBzaXRlIGF2ZWMgdm9zIGNsaWVudHMuIExvcnNxdSd1biBjbGllbnQgZWZmZWN0dWUgdW5lIHLDqXNlcnZhdGlvbiwgZWxsZSBhcHBhcmHDrnQgYXV0b21hdGlxdWVtZW50IGRhbnMgdm90cmUgdGFibGVhdSBkZSBib3JkLiBWb3VzIHJlY2V2ZXogdG91cyBsZXMgZGV1eCB1bmUgY29uZmlybWF0aW9uIHBhciBlLW1haWwuIiwiaGVscC5zNC50aXAiOiJWb3VzIHBvdXZleiBhdXNzaSBham91dGVyIGRlcyByw6lzZXJ2YXRpb25zIG1hbnVlbGxlbWVudCDigJQgdXRpbGUgcG91ciBsZXMgcsOpc2VydmF0aW9ucyBwYXIgdMOpbMOpcGhvbmUgb3UgZS1tYWlsLiIsImhlbHAuczUudGl0bGUiOiJHw6lyZXogdm9zIHLDqXNlcnZhdGlvbnMiLCJoZWxwLnM1LmRlc2MiOiJVdGlsaXNleiBsZSBDYWxlbmRyaWVyIHBvdXIgdW5lIHZ1ZSB2aXN1ZWxsZSBwYXIgY2hhbWJyZSBldCBwYXIgZGF0ZS4gVXRpbGlzZXogUsOpc2VydmF0aW9ucyBwb3VyIHVuZSBsaXN0ZSBjb21wbMOodGUuIFV0aWxpc2V6IENsaWVudHMgcG91ciBjb25zdWx0ZXIgbGVzIGNvb3Jkb25uw6llcyBkZSB2b3MgY2xpZW50cy4iLCJoZWxwLnM1LnRpcCI6IkxlIENhbGVuZHJpZXIgZm9uY3Rpb25uZSBhdXNzaSBob3JzIGxpZ25lIOKAlCBpZMOpYWwgcG91ciBsZXMgaMOpYmVyZ2VtZW50cyBydXJhdXguIiwiaGVscC5mYXEubGFiZWwiOiJGQVEiLCJoZWxwLmZhcS5oZWFkaW5nIjoiUXVlc3Rpb25zIGZyw6lxdWVudGVzIiwiaGVscC5mYXEucTEiOiJKJ2FpIG91Ymxpw6kgbW9uIG1vdCBkZSBwYXNzZSwgcXVlIGZhaXJlID8iLCJoZWxwLmZhcS5hMSI6IlN1ciBsYSA8YSBocmVmPVwiL2FwcC9sb2dpblwiPnBhZ2UgZGUgY29ubmV4aW9uPC9hPiwgY2xpcXVleiBzdXIgPHN0cm9uZz5Nb3QgZGUgcGFzc2Ugb3VibGnDqSA/PC9zdHJvbmc+IGV0IHNhaXNpc3NleiB2b3RyZSBhZHJlc3NlIGUtbWFpbC4gVm91cyByZWNldnJleiB1biBsaWVuIGRlIHLDqWluaXRpYWxpc2F0aW9uLiBTaSB2b3VzIG5lIGxlIHJlY2V2ZXogcGFzLCB2w6lyaWZpZXogdm9zIHNwYW1zIG91IGNvbnRhY3Rlei1ub3VzIMOgIDxhIGhyZWY9XCJtYWlsdG86aGVsbG9AbmVzdGJvb2suaW9cIj5oZWxsb0BuZXN0Ym9vay5pbzwvYT4uIiwiaGVscC5mYXEucTIiOiJDb21tZW50IHLDqXNpbGllciBtb24gYWJvbm5lbWVudCA/IiwiaGVscC5mYXEuYTIiOiJEYW5zIFBhcmFtw6h0cmVzLCBmYWl0ZXMgZMOpZmlsZXIganVzcXUnw6AgbGEgc2VjdGlvbiBBYm9ubmVtZW50IGV0IGNsaXF1ZXogc3VyIEFubnVsZXIgbCdhYm9ubmVtZW50LiBWb3VzIGNvbnNlcnZleiBsJ2FjY8OocyBjb21wbGV0IGp1c3F1J8OgIGxhIGZpbiBkZSBsYSBww6lyaW9kZSBkZSBmYWN0dXJhdGlvbiBlbiBjb3Vycy4iLCJoZWxwLmZhcS5xMyI6IkNvbW1lbnQgYWpvdXRlciBkZXMgbWVtYnJlcyBkdSBwZXJzb25uZWwgPyIsImhlbHAuZmFxLmEzIjoiRGFucyBQYXJhbcOodHJlcywgYWxsZXogZGFucyBBY2PDqHMgZXQgcsO0bGVzLiBDbGlxdWV6IHN1ciBJbnZpdGVyIHVuIG1lbWJyZSBkdSBwZXJzb25uZWwgZXQgc2Fpc2lzc2V6IHNvbiBhZHJlc3NlIGUtbWFpbC4gTGVzIGNvbXB0ZXMgZHUgcGVyc29ubmVsIG9udCBhY2PDqHMgYXUgQ2FsZW5kcmllciBldCBhdXggUsOpc2VydmF0aW9ucywgbWFpcyBuZSBwZXV2ZW50IHBhcyBtb2RpZmllciBsZXMgcGFyYW3DqHRyZXMuIERpc3BvbmlibGUgYXZlYyBsZSBwbGFuIFByby4iLCJoZWxwLmZhcS5xNCI6Ik1lcyBkb25uw6llcyBzb250LWVsbGVzIHPDqWN1cmlzw6llcyA/IiwiaGVscC5mYXEuYTQiOiJPdWkuIE5lc3RCb29rIGVzdCBlbnRpw6hyZW1lbnQgY29uZm9ybWUgYXUgUkdQRC4gTGVzIGRvbm7DqWVzIHNvbnQgc3RvY2vDqWVzIHN1ciBkZXMgc2VydmV1cnMgZXVyb3DDqWVucyAoSGV0em5lciwgQWxsZW1hZ25lKSwgbGVzIGNvbm5leGlvbnMgc29udCBjaGlmZnLDqWVzIEhUVFBTLiBDb25zdWx0ZXogbm90cmUgPGEgaHJlZj1cIi9wcml2YWN5Lmh0bWxcIj5Qb2xpdGlxdWUgZGUgY29uZmlkZW50aWFsaXTDqTwvYT4gcG91ciBwbHVzIGRlIGTDqXRhaWxzLiIsImhlbHAuZmFxLnE1IjoiQ29tbWVudCBnw6lyZXIgcGx1c2lldXJzIHByb3ByacOpdMOpcyA/IiwiaGVscC5mYXEuYTUiOiJMZSBwbGFuIE11bHRpIHZvdXMgcGVybWV0IGRlIGfDqXJlciBqdXNxdSfDoCA1IHByb3ByacOpdMOpcyBkZXB1aXMgdW4gc2V1bCBjb21wdGUuIFJlbmRlei12b3VzIGRhbnMgUGFyYW3DqHRyZXMsIHNlY3Rpb24gUHJvcHJpw6l0w6lzLCBwb3VyIGVuIGFqb3V0ZXIgdW5lLiBVdGlsaXNleiBlbnN1aXRlIGxlIHPDqWxlY3RldXIgZGUgcHJvcHJpw6l0w6kgZGFucyBsYSBiYXJyZSBsYXTDqXJhbGUgcG91ciBwYXNzZXIgZGUgbCd1bmUgw6AgbCdhdXRyZS4iLCJoZWxwLmZhcS5tb3JlIjoiVW5lIHF1ZXN0aW9uIHNhbnMgcsOpcG9uc2UgaWNpID8gw4ljcml2ZXotbm91cyDDoCA8YSBocmVmPVwibWFpbHRvOmhlbGxvQG5lc3Rib29rLmlvXCIgc3R5bGU9XCJjb2xvcjp2YXIoLS1taWQpO1wiPmhlbGxvQG5lc3Rib29rLmlvPC9hPiDigJQgbm91cyByw6lwb25kb25zIGfDqW7DqXJhbGVtZW50IHNvdXMgdW4gam91ciBvdXZyw6kuIiwiaGVscC5jdGEuaGVhZGluZyI6IlByw6p0IMOgIGNvbW1lbmNlciA/IiwiaGVscC5jdGEuc3ViIjoiQ3LDqWV6IHZvdHJlIGNvbXB0ZSBncmF0dWl0IGVuIG1vaW5zIGQndW5lIG1pbnV0ZS4gU2FucyBjYXJ0ZSBiYW5jYWlyZS4iLCJoZWxwLmN0YS5idG4iOiJDb21tZW5jZXIgZ3JhdHVpdGVtZW50IOKGkiIsImZvb3Rlci50YWdsaW5lIjoiR2VzdGlvbiBkZSByw6lzZXJ2YXRpb25zIHNpbXBsZSBldCDDqWzDqWdhbnRlIHBvdXIgbGVzIHBldGl0cyBow6liZXJnZW1lbnRzIGVuIEV1cm9wZS4iLCJmb290ZXIucHJvZHVjdCI6IlByb2R1aXQiLCJmb290ZXIuZmVhdHVyZXMiOiJGb25jdGlvbm5hbGl0w6lzIiwiZm9vdGVyLnByaWNpbmciOiJUYXJpZnMiLCJmb290ZXIud2lkZ2V0IjoiV2lkZ2V0IGRlIHLDqXNlcnZhdGlvbiIsImZvb3Rlci5zaWduaW4iOiJDb25uZXhpb24gYXUgdGFibGVhdSBkZSBib3JkIiwiZm9vdGVyLmNvbXBhbnkiOiJFbnRyZXByaXNlIiwiZm9vdGVyLmFib3V0Ijoiw4AgcHJvcG9zIiwiZm9vdGVyLmJsb2ciOiJCbG9nIiwiZm9vdGVyLmNvbnRhY3QiOiJDb250YWN0IiwiZm9vdGVyLmhlbHAiOiJBaWRlIiwiZm9vdGVyLmxlZ2FsIjoiTWVudGlvbnMgbMOpZ2FsZXMiLCJmb290ZXIucHJpdmFjeSI6IlBvbGl0aXF1ZSBkZSBjb25maWRlbnRpYWxpdMOpIiwiZm9vdGVyLnRlcm1zIjoiQ29uZGl0aW9ucyBkJ3V0aWxpc2F0aW9uIiwiZm9vdGVyLmdkcHIiOiJSR1BEIiwiZm9vdGVyLmNvb2tpZXMiOiJDb29raWVzIiwiZm9vdGVyLmNvcHkiOiLCqSAyMDI2IE5lc3RCb29rLiBGYWl0IGF2ZWMg4pmlIHBvdXIgbGVzIHBldGl0cyBow6liZXJnZXVycy4ifSwiZXMiOnsibmF2LmZlYXR1cmVzIjoiRnVuY2lvbmVzIiwibmF2LnByaWNpbmciOiJQcmVjaW9zIiwibmF2LmJsb2ciOiJCbG9nIiwibmF2LmhlbHAiOiJBeXVkYSIsIm5hdi5zaWduaW4iOiJJbmljaWFyIHNlc2nDs24iLCJuYXYudHJ5IjoiUHJ1ZWJhIGdyYXRpcyIsImhlbHAuaGVyby50aXRsZSI6IlByaW1lcm9zIHBhc29zIGNvbiBOZXN0Qm9vayIsImhlbHAuaGVyby5zdWIiOiJUb2RvIGxvIHF1ZSBuZWNlc2l0YSBwYXJhIGNvbmZpZ3VyYXIgc3UgYWxvamFtaWVudG8sIGHDsWFkaXIgaGFiaXRhY2lvbmVzIHkgZW1wZXphciBhIHJlY2liaXIgcmVzZXJ2YXMg4oCUIGVuIGNpbmNvIHBhc29zIHNlbmNpbGxvcy4iLCJoZWxwLnN0ZXBzLmxhYmVsIjoiR3XDrWEgZGUgY29uZmlndXJhY2nDs24iLCJoZWxwLnN0ZXBzLmhlYWRpbmciOiJDaW5jbyBwYXNvcyBoYXN0YSBzdSBwcmltZXJhIHJlc2VydmEiLCJoZWxwLnN0ZXBzLnN1YiI6IlNpZ2EgZXN0b3MgcGFzb3MgZW4gb3JkZW4uIExhIG1heW9yw61hIGRlIGxvcyB1c3VhcmlvcyBlc3TDoW4gZW4gbWFyY2hhIGVuIG1lbm9zIGRlIDE1IG1pbnV0b3MuIiwiaGVscC5zMS50aXRsZSI6IkHDsWFkYSBsb3MgZGV0YWxsZXMgZGUgc3UgYWxvamFtaWVudG8iLCJoZWxwLnMxLmRlc2MiOiJWYXlhIGEgQ29uZmlndXJhY2nDs24gZW4gbGEgYmFycmEgbGF0ZXJhbCBpenF1aWVyZGEuIENvbXBsZXRlIGVsIG5vbWJyZSwgdGlwbywgZGlyZWNjacOzbiwgaG9yYSBkZSBlbnRyYWRhLCBob3JhIGRlIHNhbGlkYSB5IG1vbmVkYS4gSGFnYSBjbGljIGVuIEd1YXJkYXIgY2FtYmlvcy4iLCJoZWxwLnMxLnRpcCI6IkxvcyBhanVzdGVzIGRlIG1vbmVkYSBlIGlkaW9tYSBhZmVjdGFuIGEgbG9zIGNvcnJlb3MgZW52aWFkb3MgYSBsb3MgaHXDqXNwZWRlcy4iLCJoZWxwLnMyLnRpdGxlIjoiQcOxYWRhIHN1cyBoYWJpdGFjaW9uZXMiLCJoZWxwLnMyLmRlc2MiOiJWYXlhIGEgSGFiaXRhY2lvbmVzIHkgaGFnYSBjbGljIGVuICsgQcOxYWRpciBoYWJpdGFjacOzbi4gQ29tcGxldGUgZWwgbm9tYnJlLCB0aXBvLCBwcmVjaW8gcG9yIG5vY2hlIHkgY2FwYWNpZGFkLiBSZXBpdGEgcGFyYSBjYWRhIGhhYml0YWNpw7NuLiIsImhlbHAuczIudGlwIjoiVGFtYmnDqW4gcHVlZGUgYcOxYWRpciBjb21vZGlkYWRlcyAoV2lGaSwgYmHDsW8gcHJpdmFkbywgYmFsY8OzbuKApikgcGFyYSBheXVkYXIgYSBsb3MgaHXDqXNwZWRlcyBhIGVsZWdpci4iLCJoZWxwLnMzLnRpdGxlIjoiQcOxYWRhIGVsIHdpZGdldCBkZSByZXNlcnZhcyBhIHN1IHdlYiIsImhlbHAuczMuZGVzYyI6IkVuIENvbmZpZ3VyYWNpw7NuLCBkZXNwbMOhY2VzZSBoYXN0YSBsYSBzZWNjacOzbiBXaWRnZXQgaW50ZWdyYWRvLiBDb3BpZSBlbCBjw7NkaWdvIHkgcMOpZ3VlbG8gZW4gc3Ugd2ViIGp1c3RvIGFudGVzIGRlIGxhIGV0aXF1ZXRhIDwvYm9keT4uIExvcyBodcOpc3BlZGVzIHBvZHLDoW4gcmVzZXJ2YXIgZGlyZWN0YW1lbnRlLCBzaW4gY29taXNpb25lcy4iLCJoZWxwLnMzLnRpcCI6IkxhIHNlY2Npw7NuIFdpZGdldCBpbnRlZ3JhZG8gZXN0w6EgZGlzcG9uaWJsZSBjb24gZWwgcGxhbiBQcm8uIFBydWViZSBsYSBkZW1vIGVuIG5lc3Rib29rLmlvL3dpZGdldC10ZXN0Lmh0bWwuIiwiaGVscC5zNC50aXRsZSI6IkVtcGllY2UgYSByZWNpYmlyIHJlc2VydmFzIiwiaGVscC5zNC5kZXNjIjoiQ29tcGFydGEgc3Ugd2ViIGNvbiBsb3MgaHXDqXNwZWRlcy4gQ3VhbmRvIHVuIGh1w6lzcGVkIGNvbXBsZXRlIHVuYSByZXNlcnZhLCBhcGFyZWNlcsOhIGF1dG9tw6F0aWNhbWVudGUgZW4gc3UgcGFuZWwuIEFtYm9zIHJlY2liaXLDoW4gdW5hIGNvbmZpcm1hY2nDs24gcG9yIGNvcnJlbyBlbGVjdHLDs25pY28uIiwiaGVscC5zNC50aXAiOiJUYW1iacOpbiBwdWVkZSBhw7FhZGlyIHJlc2VydmFzIG1hbnVhbG1lbnRlIGRlc2RlIGxhIHDDoWdpbmEgZGUgUmVzZXJ2YXMsIMO6dGlsIHBhcmEgcmVzZXJ2YXMgcG9yIHRlbMOpZm9uby4iLCJoZWxwLnM1LnRpdGxlIjoiR2VzdGlvbmUgc3VzIHJlc2VydmFzIiwiaGVscC5zNS5kZXNjIjoiVXNlIGVsIENhbGVuZGFyaW8gcGFyYSB1bmEgdmlzdGEgdmlzdWFsIHBvciBoYWJpdGFjacOzbiB5IGZlY2hhLiBVc2UgUmVzZXJ2YXMgcGFyYSB1bmEgbGlzdGEgY29tcGxldGEuIFVzZSBIdcOpc3BlZGVzIHBhcmEgdmVyIGxvcyByZWdpc3Ryb3MgZGUgY2xpZW50ZXMuIiwiaGVscC5zNS50aXAiOiJFbCBDYWxlbmRhcmlvIHRhbWJpw6luIGZ1bmNpb25hIHNpbiBjb25leGnDs24g4oCUIGlkZWFsIHBhcmEgYWxvamFtaWVudG9zIHJ1cmFsZXMuIiwiaGVscC5mYXEubGFiZWwiOiJGQVEiLCJoZWxwLmZhcS5oZWFkaW5nIjoiUHJlZ3VudGFzIGZyZWN1ZW50ZXMiLCJoZWxwLmZhcS5xMSI6IsK/UXXDqSBoYWdvIHNpIG9sdmlkbyBtaSBjb250cmFzZcOxYT8iLCJoZWxwLmZhcS5hMSI6IkVuIGxhIDxhIGhyZWY9XCIvYXBwL2xvZ2luXCI+cMOhZ2luYSBkZSBpbmljaW8gZGUgc2VzacOzbjwvYT4sIGhhZ2EgY2xpYyBlbiA8c3Ryb25nPsK/T2x2aWTDsyBzdSBjb250cmFzZcOxYT88L3N0cm9uZz4gZSBpbnRyb2R1emNhIHN1IGNvcnJlbyBlbGVjdHLDs25pY28uIFJlY2liaXLDoSB1biBlbmxhY2UgZGUgcmVzdGFibGVjaW1pZW50by4gU2kgbm8gbG8gcmVjaWJlLCByZXZpc2UgZWwgc3BhbSBvIGVzY3LDrWJhbm9zIGEgPGEgaHJlZj1cIm1haWx0bzpoZWxsb0BuZXN0Ym9vay5pb1wiPmhlbGxvQG5lc3Rib29rLmlvPC9hPi4iLCJoZWxwLmZhcS5xMiI6IsK/Q8OzbW8gY2FuY2VsbyBtaSBzdXNjcmlwY2nDs24/IiwiaGVscC5mYXEuYTIiOiJFbiBDb25maWd1cmFjacOzbiwgZGVzcGzDoWNlc2UgaGFzdGEgbGEgc2VjY2nDs24gU3VzY3JpcGNpw7NuIHkgaGFnYSBjbGljIGVuIENhbmNlbGFyIHN1c2NyaXBjacOzbi4gTWFudGVuZHLDoSBlbCBhY2Nlc28gY29tcGxldG8gaGFzdGEgZWwgZmluYWwgZGVsIHBlcsOtb2RvIGRlIGZhY3R1cmFjacOzbiBhY3R1YWwuIiwiaGVscC5mYXEucTMiOiLCv0PDs21vIGHDsWFkbyBtaWVtYnJvcyBkZWwgcGVyc29uYWw/IiwiaGVscC5mYXEuYTMiOiJFbiBDb25maWd1cmFjacOzbiwgdmF5YSBhIEFjY2VzbyB5IHJvbGVzLiBIYWdhIGNsaWMgZW4gSW52aXRhciBtaWVtYnJvIGRlbCBwZXJzb25hbCBlIGludHJvZHV6Y2Egc3UgY29ycmVvLiBFbCBwZXJzb25hbCBwdWVkZSBhY2NlZGVyIGFsIENhbGVuZGFyaW8geSBsYXMgUmVzZXJ2YXMgcGVybyBubyBwdWVkZSBjYW1iaWFyIGxhIGNvbmZpZ3VyYWNpw7NuLiBEaXNwb25pYmxlIGVuIGVsIHBsYW4gUHJvLiIsImhlbHAuZmFxLnE0Ijoiwr9Tb24gc2VndXJvcyBtaXMgZGF0b3M/IiwiaGVscC5mYXEuYTQiOiJTw60uIE5lc3RCb29rIGN1bXBsZSBwbGVuYW1lbnRlIGNvbiBlbCBSR1BELiBMb3MgZGF0b3Mgc2UgYWxtYWNlbmFuIGVuIHNlcnZpZG9yZXMgZGUgbGEgVUUgKEhldHpuZXIsIEFsZW1hbmlhKSBjb24gY29uZXhpb25lcyBIVFRQUyBjaWZyYWRhcy4gQ29uc3VsdGUgbnVlc3RyYSA8YSBocmVmPVwiL3ByaXZhY3kuaHRtbFwiPlBvbMOtdGljYSBkZSBwcml2YWNpZGFkPC9hPiBwYXJhIG3DoXMgZGV0YWxsZXMuIiwiaGVscC5mYXEucTUiOiLCv0PDs21vIGdlc3Rpb25vIG3Dumx0aXBsZXMgcHJvcGllZGFkZXM/IiwiaGVscC5mYXEuYTUiOiJFbCBwbGFuIE11bHRpIGxlIHBlcm1pdGUgZ2VzdGlvbmFyIGhhc3RhIDUgcHJvcGllZGFkZXMgZGVzZGUgdW5hIHNvbGEgY3VlbnRhLiBWYXlhIGEgQ29uZmlndXJhY2nDs24geSBkZXNwbMOhY2VzZSBoYXN0YSBsYSBzZWNjacOzbiBQcm9waWVkYWRlcyBwYXJhIGHDsWFkaXIgdW5hIG51ZXZhLiBVc2UgZWwgc2VsZWN0b3IgZGUgcHJvcGllZGFkIGVuIGxhIGJhcnJhIGxhdGVyYWwgcGFyYSBjYW1iaWFyIGVudHJlIGVsbGFzLiIsImhlbHAuZmFxLm1vcmUiOiLCv1RpZW5lIGFsZ3VuYSBwcmVndW50YSBxdWUgbm8gZXN0w6EgYXF1w60/IEVzY3LDrWJhbm9zIGEgPGEgaHJlZj1cIm1haWx0bzpoZWxsb0BuZXN0Ym9vay5pb1wiIHN0eWxlPVwiY29sb3I6dmFyKC0tbWlkKTtcIj5oZWxsb0BuZXN0Ym9vay5pbzwvYT4g4oCUIHNvbGVtb3MgcmVzcG9uZGVyIGVuIHVuIGTDrWEgbGFib3JhYmxlLiIsImhlbHAuY3RhLmhlYWRpbmciOiLCv0xpc3RvIHBhcmEgZW1wZXphcj8iLCJoZWxwLmN0YS5zdWIiOiJDcmVlIHN1IGN1ZW50YSBncmF0dWl0YSBlbiBtZW5vcyBkZSB1biBtaW51dG8uIFNpbiB0YXJqZXRhIGRlIGNyw6lkaXRvLiIsImhlbHAuY3RhLmJ0biI6IkVtcGV6YXIgZ3JhdGlzIOKGkiIsImZvb3Rlci50YWdsaW5lIjoiR2VzdGnDs24gZGUgcmVzZXJ2YXMgc2VuY2lsbGEgeSBlbGVnYW50ZSBwYXJhIHBlcXVlw7FvcyBhbG9qYW1pZW50b3MgZW4gRXVyb3BhLiIsImZvb3Rlci5wcm9kdWN0IjoiUHJvZHVjdG8iLCJmb290ZXIuZmVhdHVyZXMiOiJGdW5jaW9uZXMiLCJmb290ZXIucHJpY2luZyI6IlByZWNpb3MiLCJmb290ZXIud2lkZ2V0IjoiV2lkZ2V0IGRlIHJlc2VydmFzIiwiZm9vdGVyLnNpZ25pbiI6IkluaWNpYXIgc2VzacOzbiBlbiBlbCBwYW5lbCIsImZvb3Rlci5jb21wYW55IjoiRW1wcmVzYSIsImZvb3Rlci5hYm91dCI6IlNvYnJlIG5vc290cm9zIiwiZm9vdGVyLmJsb2ciOiJCbG9nIiwiZm9vdGVyLmNvbnRhY3QiOiJDb250YWN0byIsImZvb3Rlci5oZWxwIjoiQXl1ZGEiLCJmb290ZXIubGVnYWwiOiJMZWdhbCIsImZvb3Rlci5wcml2YWN5IjoiUG9sw610aWNhIGRlIHByaXZhY2lkYWQiLCJmb290ZXIudGVybXMiOiJUw6lybWlub3MgZGUgc2VydmljaW8iLCJmb290ZXIuZ2RwciI6IlJHUEQiLCJmb290ZXIuY29va2llcyI6IkNvb2tpZXMiLCJmb290ZXIuY29weSI6IsKpIDIwMjYgTmVzdEJvb2suIEhlY2hvIGNvbiDimaUgcGFyYSBwZXF1ZcOxb3MgYWxvamFtaWVudG9zLiJ9LCJkZSI6eyJuYXYuZmVhdHVyZXMiOiJGdW5rdGlvbmVuIiwibmF2LnByaWNpbmciOiJQcmVpc2UiLCJuYXYuYmxvZyI6IkJsb2ciLCJuYXYuaGVscCI6IkhpbGZlIiwibmF2LnNpZ25pbiI6IkFubWVsZGVuIiwibmF2LnRyeSI6Iktvc3RlbmxvcyB0ZXN0ZW4iLCJoZWxwLmhlcm8udGl0bGUiOiJFcnN0ZSBTY2hyaXR0ZSBtaXQgTmVzdEJvb2siLCJoZWxwLmhlcm8uc3ViIjoiQWxsZXMsIHdhcyBTaWUgYnJhdWNoZW4sIHVtIElocmUgVW50ZXJrdW5mdCBlaW56dXJpY2h0ZW4sIFppbW1lciBoaW56dXp1ZsO8Z2VuIHVuZCBCdWNodW5nZW4gZW50Z2VnZW56dW5laG1lbiDigJQgaW4gZsO8bmYgZWluZmFjaGVuIFNjaHJpdHRlbi4iLCJoZWxwLnN0ZXBzLmxhYmVsIjoiRWlucmljaHR1bmdzYW5sZWl0dW5nIiwiaGVscC5zdGVwcy5oZWFkaW5nIjoiRsO8bmYgU2Nocml0dGUgYmlzIHp1ciBlcnN0ZW4gQnVjaHVuZyIsImhlbHAuc3RlcHMuc3ViIjoiRm9sZ2VuIFNpZSBkaWVzZW4gU2Nocml0dGVuIGRlciBSZWloZSBuYWNoLiBEaWUgbWVpc3RlbiBOdXR6ZXIgc2luZCBpbiB3ZW5pZ2VyIGFscyAxNSBNaW51dGVuIHN0YXJ0YmVyZWl0LiIsImhlbHAuczEudGl0bGUiOiJVbnRlcmt1bmZ0c2RhdGVuIGVpbmdlYmVuIiwiaGVscC5zMS5kZXNjIjoiR2VoZW4gU2llIHp1IEVpbnN0ZWxsdW5nZW4gaW4gZGVyIGxpbmtlbiBTZWl0ZW5sZWlzdGUuIEdlYmVuIFNpZSBOYW1lLCBUeXAsIEFkcmVzc2UsIENoZWNrLWluLSB1bmQgQ2hlY2stb3V0LVplaXRlbiBzb3dpZSBkaWUgV8OkaHJ1bmcgZWluLiBLbGlja2VuIFNpZSBhdWYgw4RuZGVydW5nZW4gc3BlaWNoZXJuLiIsImhlbHAuczEudGlwIjoiSWhyZSBXw6RocnVuZ3MtIHVuZCBTcHJhY2hlaW5zdGVsbHVuZ2VuIHdpcmtlbiBzaWNoIGF1ZiBkaWUgR8Okc3RlLUUtTWFpbHMgYXVzLiIsImhlbHAuczIudGl0bGUiOiJaaW1tZXIgaGluenVmw7xnZW4iLCJoZWxwLnMyLmRlc2MiOiJHZWhlbiBTaWUgenUgWmltbWVyIHVuZCBrbGlja2VuIFNpZSBhdWYgKyBaaW1tZXIgaGluenVmw7xnZW4uIEdlYmVuIFNpZSBOYW1lLCBUeXAsIFByZWlzIHBybyBOYWNodCB1bmQgS2FwYXppdMOkdCBlaW4uIFdpZWRlcmhvbGVuIFNpZSBkaWVzIGbDvHIgamVkZXMgWmltbWVyLiIsImhlbHAuczIudGlwIjoiU2llIGvDtm5uZW4gYXVjaCBBdXNzdGF0dHVuZ3NtZXJrbWFsZSAoV0xBTiwgZWlnZW5lcyBCYWQsIEJhbGtvbuKApikgaGluenVmw7xnZW4sIHVtIGRpZSBaaW1tZXJ3YWhsIHp1IGVybGVpY2h0ZXJuLiIsImhlbHAuczMudGl0bGUiOiJCdWNodW5ncy1XaWRnZXQgaW4gSWhyZSBXZWJzaXRlIGVpbmJpbmRlbiIsImhlbHAuczMuZGVzYyI6IkdlaGVuIFNpZSB6dSBFaW5zdGVsbHVuZ2VuIHVuZCBzY3JvbGxlbiBTaWUgenVtIEFic2Nobml0dCBXaWRnZXQgZWluYmV0dGVuLiBLb3BpZXJlbiBTaWUgZGFzIFNjcmlwdC1UYWcgdW5kIGbDvGdlbiBTaWUgZXMga3VyeiB2b3IgZGVtIHNjaGxpZcOfZW5kZW4gPC9ib2R5Pi1UYWcgZWluLiBHw6RzdGUga8O2bm5lbiBkYW5uIGRpcmVrdCBidWNoZW4g4oCUIG9obmUgUHJvdmlzaW9uLiIsImhlbHAuczMudGlwIjoiRGVyIEJlcmVpY2ggV2lkZ2V0IGVpbmJldHRlbiBpc3QgaW0gUHJvLVBsYW4gdmVyZsO8Z2Jhci4gVGVzdGVuIFNpZSBkaWUgRGVtbyB1bnRlciBuZXN0Ym9vay5pby93aWRnZXQtdGVzdC5odG1sLiIsImhlbHAuczQudGl0bGUiOiJCdWNodW5nZW4gZW50Z2VnZW5uZWhtZW4iLCJoZWxwLnM0LmRlc2MiOiJUZWlsZW4gU2llIElocmUgV2Vic2l0ZSBtaXQgR8Okc3Rlbi4gV2VubiBlaW4gR2FzdCBlaW5lIEJ1Y2h1bmcgYWJzY2hsaWXDn3QsIGVyc2NoZWludCBkaWVzZSBhdXRvbWF0aXNjaCBpbiBJaHJlbSBEYXNoYm9hcmQuIEJlaWRlIGVyaGFsdGVuIGVpbmUgRS1NYWlsLUJlc3TDpHRpZ3VuZy4iLCJoZWxwLnM0LnRpcCI6IlNpZSBrw7ZubmVuIEJ1Y2h1bmdlbiBhdWNoIG1hbnVlbGwgYXVmIGRlciBTZWl0ZSBCdWNodW5nZW4gaGluenVmw7xnZW4g4oCUIHByYWt0aXNjaCBmw7xyIFRlbGVmb24tIG9kZXIgRS1NYWlsLVJlc2VydmllcnVuZ2VuLiIsImhlbHAuczUudGl0bGUiOiJCdWNodW5nZW4gdmVyd2FsdGVuIiwiaGVscC5zNS5kZXNjIjoiTnV0emVuIFNpZSBkZW4gS2FsZW5kZXIgZsO8ciBlaW5lIGZhcmJjb2RpZXJ0ZSDDnGJlcnNpY2h0IGFsbGVyIFppbW1lciB1bmQgRGF0ZW4uIE51dHplbiBTaWUgQnVjaHVuZ2VuIGbDvHIgZWluZSB2b2xsc3TDpG5kaWdlIExpc3RlLiBOdXR6ZW4gU2llIEfDpHN0ZSBmw7xyIEt1bmRlbmRhdGVuIHVuZCBLb250YWt0ZGF0ZW4uIiwiaGVscC5zNS50aXAiOiJEZXIgS2FsZW5kZXIgZnVua3Rpb25pZXJ0IGF1Y2ggb2ZmbGluZSDigJQgaWRlYWwgZsO8ciBVbnRlcmvDvG5mdGUgbWl0IHVuenV2ZXJsw6Rzc2lnZW0gSW50ZXJuZXQuIiwiaGVscC5mYXEubGFiZWwiOiJGQVEiLCJoZWxwLmZhcS5oZWFkaW5nIjoiSMOkdWZpZyBnZXN0ZWxsdGUgRnJhZ2VuIiwiaGVscC5mYXEucTEiOiJXYXMgdHVuLCB3ZW5uIGljaCBtZWluIFBhc3N3b3J0IHZlcmdlc3NlbiBoYWJlPyIsImhlbHAuZmFxLmExIjoiS2xpY2tlbiBTaWUgYXVmIGRlciA8YSBocmVmPVwiL2FwcC9sb2dpblwiPkFubWVsZGVzZWl0ZTwvYT4gYXVmIDxzdHJvbmc+UGFzc3dvcnQgdmVyZ2Vzc2VuPzwvc3Ryb25nPiB1bmQgZ2ViZW4gU2llIElocmUgRS1NYWlsLUFkcmVzc2UgZWluLiBTaWUgZXJoYWx0ZW4gZWluZW4gUmVzZXQtTGluay4gRmFsbHMgbmljaHQsIHByw7xmZW4gU2llIGRlbiBTcGFtLU9yZG5lciBvZGVyIHNjaHJlaWJlbiBTaWUgdW5zIGFuIDxhIGhyZWY9XCJtYWlsdG86aGVsbG9AbmVzdGJvb2suaW9cIj5oZWxsb0BuZXN0Ym9vay5pbzwvYT4uIiwiaGVscC5mYXEucTIiOiJXaWUga8O8bmRpZ2UgaWNoIG1laW4gQWJvbm5lbWVudD8iLCJoZWxwLmZhcS5hMiI6IkdlaGVuIFNpZSB6dSBFaW5zdGVsbHVuZ2VuLCBzY3JvbGxlbiBTaWUgenVtIEJlcmVpY2ggQWJvbm5lbWVudCB1bmQga2xpY2tlbiBTaWUgYXVmIEFib25uZW1lbnQga8O8bmRpZ2VuLiBTaWUgYmVoYWx0ZW4gZGVuIHZvbGxlbiBadWdhbmcgYmlzIHp1bSBFbmRlIGRlcyBha3R1ZWxsZW4gQWJyZWNobnVuZ3N6ZWl0cmF1bXMuIiwiaGVscC5mYXEucTMiOiJXaWUgZsO8Z2UgaWNoIE1pdGFyYmVpdGVyIGhpbnp1PyIsImhlbHAuZmFxLmEzIjoiR2VoZW4gU2llIHp1IEVpbnN0ZWxsdW5nZW4gdW5kIHp1bSBCZXJlaWNoIFp1Z2FuZyAmIFJvbGxlbi4gS2xpY2tlbiBTaWUgYXVmIE1pdGFyYmVpdGVyIGVpbmxhZGVuIHVuZCBnZWJlbiBTaWUgZGllIEUtTWFpbC1BZHJlc3NlIGVpbi4gTWl0YXJiZWl0ZXIgaGFiZW4gWnVnYW5nIHp1IEthbGVuZGVyIHVuZCBCdWNodW5nZW4sIGvDtm5uZW4gYWJlciBrZWluZSBFaW5zdGVsbHVuZ2VuIMOkbmRlcm4uIEltIFByby1QbGFuIHZlcmbDvGdiYXIuIiwiaGVscC5mYXEucTQiOiJTaW5kIG1laW5lIERhdGVuIHNpY2hlcj8iLCJoZWxwLmZhcS5hNCI6IkphLiBOZXN0Qm9vayBpc3Qgdm9sbHN0w6RuZGlnIERTR1ZPLWtvbmZvcm0uIERhdGVuIHdlcmRlbiBhdWYgRVUtU2VydmVybiBnZXNwZWljaGVydCAoSGV0em5lciwgRGV1dHNjaGxhbmQpLCBWZXJiaW5kdW5nZW4gc2luZCBIVFRQUy12ZXJzY2hsw7xzc2VsdC4gRGV0YWlscyBmaW5kZW4gU2llIGluIHVuc2VyZXIgPGEgaHJlZj1cIi9wcml2YWN5Lmh0bWxcIj5EYXRlbnNjaHV0enJpY2h0bGluaWU8L2E+LiIsImhlbHAuZmFxLnE1IjoiV2llIHZlcndhbHRlIGljaCBtZWhyZXJlIE9iamVrdGU/IiwiaGVscC5mYXEuYTUiOiJNaXQgZGVtIE11bHRpLVBsYW4ga8O2bm5lbiBTaWUgYmlzIHp1IDUgT2JqZWt0ZSB2b24gZWluZW0gZWluemlnZW4gS29udG8gYXVzIHZlcndhbHRlbi4gR2VoZW4gU2llIHp1IEVpbnN0ZWxsdW5nZW4gdW5kIHNjcm9sbGVuIFNpZSB6dW0gQWJzY2huaXR0IE9iamVrdGUsIHVtIGVpbiBuZXVlcyBoaW56dXp1ZsO8Z2VuLiBXZWNoc2VsbiBTaWUgaW4gZGVyIFNlaXRlbmxlaXN0ZSB6d2lzY2hlbiBkZW4gT2JqZWt0ZW4uIiwiaGVscC5mYXEubW9yZSI6IkhhYmVuIFNpZSBlaW5lIEZyYWdlLCBkaWUgaGllciBuaWNodCBiZWFudHdvcnRldCB3aXJkPyBTY2hyZWliZW4gU2llIHVucyBhbiA8YSBocmVmPVwibWFpbHRvOmhlbGxvQG5lc3Rib29rLmlvXCIgc3R5bGU9XCJjb2xvcjp2YXIoLS1taWQpO1wiPmhlbGxvQG5lc3Rib29rLmlvPC9hPiDigJQgd2lyIGFudHdvcnRlbiBpbiBkZXIgUmVnZWwgaW5uZXJoYWxiIGVpbmVzIFdlcmt0YWdlcy4iLCJoZWxwLmN0YS5oZWFkaW5nIjoiQmVyZWl0IGxvc3p1bGVnZW4/IiwiaGVscC5jdGEuc3ViIjoiRXJzdGVsbGVuIFNpZSBJaHIga29zdGVubG9zZXMgS29udG8gaW4gdW50ZXIgZWluZXIgTWludXRlLiBLZWluZSBLcmVkaXRrYXJ0ZSBlcmZvcmRlcmxpY2guIiwiaGVscC5jdGEuYnRuIjoiS29zdGVubG9zIHN0YXJ0ZW4g4oaSIiwiZm9vdGVyLnRhZ2xpbmUiOiJFaW5mYWNoZXMsIGVsZWdhbnRlcyBCdWNodW5nc21hbmFnZW1lbnQgZsO8ciBrbGVpbmUgR2FzdGdld2VyYmViZXRyaWViZSBpbiBFdXJvcGEuIiwiZm9vdGVyLnByb2R1Y3QiOiJQcm9kdWt0IiwiZm9vdGVyLmZlYXR1cmVzIjoiRnVua3Rpb25lbiIsImZvb3Rlci5wcmljaW5nIjoiUHJlaXNlIiwiZm9vdGVyLndpZGdldCI6IkJ1Y2h1bmdzLVdpZGdldCIsImZvb3Rlci5zaWduaW4iOiJBbSBEYXNoYm9hcmQgYW5tZWxkZW4iLCJmb290ZXIuY29tcGFueSI6IlVudGVybmVobWVuIiwiZm9vdGVyLmFib3V0Ijoiw5xiZXIgdW5zIiwiZm9vdGVyLmJsb2ciOiJCbG9nIiwiZm9vdGVyLmNvbnRhY3QiOiJLb250YWt0IiwiZm9vdGVyLmhlbHAiOiJIaWxmZSIsImZvb3Rlci5sZWdhbCI6IlJlY2h0bGljaGVzIiwiZm9vdGVyLnByaXZhY3kiOiJEYXRlbnNjaHV0enJpY2h0bGluaWUiLCJmb290ZXIudGVybXMiOiJOdXR6dW5nc2JlZGluZ3VuZ2VuIiwiZm9vdGVyLmdkcHIiOiJEU0dWTyIsImZvb3Rlci5jb29raWVzIjoiQ29va2llcyIsImZvb3Rlci5jb3B5IjoiwqkgMjAyNiBOZXN0Qm9vay4gTWl0IOKZpSBmw7xyIGtsZWluZSBCZWhlcmJlcmd1bmdzYmV0cmllYmUgZ2VtYWNodC4ifSwibmwiOnsibmF2LmZlYXR1cmVzIjoiRnVuY3RpZXMiLCJuYXYucHJpY2luZyI6IlByaWp6ZW4iLCJuYXYuYmxvZyI6IkJsb2ciLCJuYXYuaGVscCI6Ikh1bHAiLCJuYXYuc2lnbmluIjoiSW5sb2dnZW4iLCJuYXYudHJ5IjoiR3JhdGlzIHByb2JlcmVuIiwiaGVscC5oZXJvLnRpdGxlIjoiQWFuIGRlIHNsYWcgbWV0IE5lc3RCb29rIiwiaGVscC5oZXJvLnN1YiI6IkFsbGVzIHdhdCB1IG5vZGlnIGhlZWZ0IG9tIHV3IGFjY29tbW9kYXRpZSBpbiB0ZSBzdGVsbGVuLCBrYW1lcnMgdG9lIHRlIHZvZWdlbiBlbiBib2VraW5nZW4gdGUgb250dmFuZ2VuIOKAlCBpbiB2aWpmIGVlbnZvdWRpZ2Ugc3RhcHBlbi4iLCJoZWxwLnN0ZXBzLmxhYmVsIjoiSW5zdGFsbGF0aWVnaWRzIiwiaGVscC5zdGVwcy5oZWFkaW5nIjoiVmlqZiBzdGFwcGVuIG5hYXIgdXcgZWVyc3RlIGJvZWtpbmciLCJoZWxwLnN0ZXBzLnN1YiI6IlZvbGcgZGV6ZSBzdGFwcGVuIG9wIHZvbGdvcmRlLiBEZSBtZWVzdGUgZ2VicnVpa2VycyB6aWpuIGJpbm5lbiAxNSBtaW51dGVuIG9wZXJhdGlvbmVlbC4iLCJoZWxwLnMxLnRpdGxlIjoiVm9lZyB1dyBhY2NvbW1vZGF0aWVnZWdldmVucyB0b2UiLCJoZWxwLnMxLmRlc2MiOiJHYSBuYWFyIEluc3RlbGxpbmdlbiBpbiBkZSBsaW5rZXIgemlqYmFsay4gVnVsIHV3IG5hYW0sIHR5cGUsIGFkcmVzLCBjaGVjay1pbi0gZW4gY2hlY2stb3V0dGlqZGVuIGVuIHZhbHV0YSBpbi4gS2xpayBvcCBXaWp6aWdpbmdlbiBvcHNsYWFuLiIsImhlbHAuczEudGlwIjoiVXcgdmFsdXRhLSBlbiB0YWFsaW5zdGVsbGluZ2VuIGJlw69udmxvZWRlbiBkZSBlLW1haWxzIGRpZSBuYWFyIGdhc3RlbiB3b3JkZW4gdmVyem9uZGVuLiIsImhlbHAuczIudGl0bGUiOiJWb2VnIHV3IGthbWVycyB0b2UiLCJoZWxwLnMyLmRlc2MiOiJHYSBuYWFyIEthbWVycyBlbiBrbGlrIG9wICsgS2FtZXIgdG9ldm9lZ2VuLiBWdWwgbmFhbSwgdHlwZSwgcHJpanMgcGVyIG5hY2h0IGVuIGNhcGFjaXRlaXQgaW4uIEhlcmhhYWwgZGl0IHZvb3IgZWxrZSBrYW1lci4iLCJoZWxwLnMyLnRpcCI6IlUga3VudCBvb2sgdm9vcnppZW5pbmdlbiB0b2V2b2VnZW4gKFdpRmksIGVpZ2VuIGJhZGthbWVyLCBiYWxrb27igKYpIG9tIGdhc3RlbiB0ZSBoZWxwZW4ga2llemVuLiIsImhlbHAuczMudGl0bGUiOiJWb2VnIGRlIGJvZWtpbmdzd2lkZ2V0IHRvZSBhYW4gdXcgd2Vic2l0ZSIsImhlbHAuczMuZGVzYyI6IkdhIG5hYXIgSW5zdGVsbGluZ2VuIGVuIHNjcm9sbCBuYWFyIGRlIHNlY3RpZSBXaWRnZXQgaW5zbHVpdGVuLiBLb3BpZWVyIGRlIHNjcmlwdHRhZyBlbiBwbGFrIGRlemUgaW4gdXcgd2Vic2l0ZSBuZXQgdsOzw7NyIGRlIGFmc2x1aXRlbmRlIDwvYm9keT4tdGFnLiBHYXN0ZW4ga3VubmVuIGRhbiBkaXJlY3QgYm9la2VuIOKAlCB6b25kZXIgY29tbWlzc2llLiIsImhlbHAuczMudGlwIjoiRGUgc2VjdGllIFdpZGdldCBpbnNsdWl0ZW4gaXMgYmVzY2hpa2JhYXIgaW4gaGV0IFByby1hYm9ubmVtZW50LiBQcm9iZWVyIGVlcnN0IGRlIGRlbW8gb3AgbmVzdGJvb2suaW8vd2lkZ2V0LXRlc3QuaHRtbC4iLCJoZWxwLnM0LnRpdGxlIjoiQmVnaW4gbWV0IGhldCBvbnR2YW5nZW4gdmFuIGJvZWtpbmdlbiIsImhlbHAuczQuZGVzYyI6IkRlZWwgdXcgd2Vic2l0ZSBtZXQgZ2FzdGVuLiBXYW5uZWVyIGVlbiBnYXN0IGVlbiBib2VraW5nIHZvbHRvb2l0LCB2ZXJzY2hpam50IGRlemUgYXV0b21hdGlzY2ggaW4gdXcgZGFzaGJvYXJkLiBVIGVuIHV3IGdhc3Qgb250dmFuZ2VuIGJlaWRlIGVlbiBlLW1haWxiZXZlc3RpZ2luZy4iLCJoZWxwLnM0LnRpcCI6IlUga3VudCBvb2sgaGFuZG1hdGlnIGJvZWtpbmdlbiB0b2V2b2VnZW4gdmlhIGRlIHBhZ2luYSBCb2VraW5nZW4g4oCUIGhhbmRpZyB2b29yIHRlbGVmb25pc2NoZSByZXNlcnZlcmluZ2VuLiIsImhlbHAuczUudGl0bGUiOiJCZWhlZXIgdXcgYm9la2luZ2VuIiwiaGVscC5zNS5kZXNjIjoiR2VicnVpayBkZSBLYWxlbmRlciB2b29yIGVlbiBrbGV1cmdlY29kZWVyZCBvdmVyemljaHQgdmFuIGFsbGUga2FtZXJzIGVuIGRhdHVtcy4gR2VicnVpayBCb2VraW5nZW4gdm9vciBlZW4gdm9sbGVkaWdlIGxpanN0LiBHZWJydWlrIEdhc3RlbiB2b29yIGtsYW50Z2VnZXZlbnMuIiwiaGVscC5zNS50aXAiOiJEZSBLYWxlbmRlciB3ZXJrdCBvb2sgb2ZmbGluZSDigJQgaWRlYWFsIHZvb3IgYWNjb21tb2RhdGllcyBtZXQgb25iZXRyb3V3YmFhciBpbnRlcm5ldC4iLCJoZWxwLmZhcS5sYWJlbCI6IkZBUSIsImhlbHAuZmFxLmhlYWRpbmciOiJWZWVsZ2VzdGVsZGUgdnJhZ2VuIiwiaGVscC5mYXEucTEiOiJXYXQgYWxzIGlrIG1pam4gd2FjaHR3b29yZCB2ZXJnZXRlbiBiZW4/IiwiaGVscC5mYXEuYTEiOiJLbGlrIG9wIGRlIDxhIGhyZWY9XCIvYXBwL2xvZ2luXCI+aW5sb2dwYWdpbmE8L2E+IG9wIDxzdHJvbmc+V2FjaHR3b29yZCB2ZXJnZXRlbj88L3N0cm9uZz4gZW4gdm9lciB1dyBlLW1haWxhZHJlcyBpbi4gVSBvbnR2YW5ndCBlZW4gcmVzZXRsaW5rLiBDb250cm9sZWVyIHV3IHNwYW0gYWxzIHUgZGV6ZSBuaWV0IG9udHZhbmd0LCBvZiBtYWlsIG9ucyBvcCA8YSBocmVmPVwibWFpbHRvOmhlbGxvQG5lc3Rib29rLmlvXCI+aGVsbG9AbmVzdGJvb2suaW88L2E+LiIsImhlbHAuZmFxLnEyIjoiSG9lIHplZyBpayBtaWpuIGFib25uZW1lbnQgb3A/IiwiaGVscC5mYXEuYTIiOiJHYSBuYWFyIEluc3RlbGxpbmdlbiwgc2Nyb2xsIG5hYXIgZGUgc2VjdGllIEFib25uZW1lbnQgZW4ga2xpayBvcCBBYm9ubmVtZW50IG9wemVnZ2VuLiBVIGJlaG91ZHQgdm9sbGVkaWdlIHRvZWdhbmcgdG90IGhldCBlaW5kZSB2YW4gdXcgaHVpZGlnZSBmYWN0dXJlcmluZ3NwZXJpb2RlLiIsImhlbHAuZmFxLnEzIjoiSG9lIHZvZWcgaWsgcGVyc29uZWVsc2xlZGVuIHRvZT8iLCJoZWxwLmZhcS5hMyI6IkdhIG5hYXIgSW5zdGVsbGluZ2VuIGVuIHNjcm9sbCBuYWFyIFRvZWdhbmcgJiByb2xsZW4uIEtsaWsgb3AgUGVyc29uZWVsc2xpZCB1aXRub2RpZ2VuIGVuIHZvZXIgaGV0IGUtbWFpbGFkcmVzIGluLiBQZXJzb25lZWxzbGVkZW4gaGViYmVuIHRvZWdhbmcgdG90IEthbGVuZGVyIGVuIEJvZWtpbmdlbiBtYWFyIGt1bm5lbiBnZWVuIGluc3RlbGxpbmdlbiB3aWp6aWdlbi4gQmVzY2hpa2JhYXIgaW4gaGV0IFByby1hYm9ubmVtZW50LiIsImhlbHAuZmFxLnE0IjoiWmlqbiBtaWpuIGdlZ2V2ZW5zIHZlaWxpZz8iLCJoZWxwLmZhcS5hNCI6IkphLiBOZXN0Qm9vayB2b2xkb2V0IHZvbGxlZGlnIGFhbiBkZSBBVkcuIEdlZ2V2ZW5zIHdvcmRlbiBvcGdlc2xhZ2VuIG9wIEVVLXNlcnZlcnMgKEhldHpuZXIsIER1aXRzbGFuZCkgbWV0IEhUVFBTLXZlcnNsZXV0ZWxpbmcuIFppZSBvbnMgPGEgaHJlZj1cIi9wcml2YWN5Lmh0bWxcIj5Qcml2YWN5YmVsZWlkPC9hPiB2b29yIGRldGFpbHMuIiwiaGVscC5mYXEucTUiOiJIb2UgYmVoZWVyIGlrIG1lZXJkZXJlIGFjY29tbW9kYXRpZXM/IiwiaGVscC5mYXEuYTUiOiJNZXQgaGV0IE11bHRpLXBsYW4gYmVoZWVydCB1IHRvdCA1IGFjY29tbW9kYXRpZXMgdmFudWl0IMOpw6luIGFjY291bnQuIEdhIG5hYXIgSW5zdGVsbGluZ2VuIGVuIHNjcm9sbCBuYWFyIGhldCBvbmRlcmRlZWwgQWNjb21tb2RhdGllcyBvbSBlZW4gbmlldXdlIHRvZSB0ZSB2b2VnZW4uIEdlYnJ1aWsgZGUgYWNjb21tb2RhdGlld2lzc2VsYWFyIGluIGRlIHppamJhbGsgb20gdGUgd2lzc2VsZW4uIiwiaGVscC5mYXEubW9yZSI6IkhlZWZ0IHUgZWVuIHZyYWFnIGRpZSBoaWVyIG5pZXQgYmVhbnR3b29yZCB3b3JkdD8gU3R1dXIgb25zIGVlbiBlLW1haWwgb3AgPGEgaHJlZj1cIm1haWx0bzpoZWxsb0BuZXN0Ym9vay5pb1wiIHN0eWxlPVwiY29sb3I6dmFyKC0tbWlkKTtcIj5oZWxsb0BuZXN0Ym9vay5pbzwvYT4g4oCUIHdlIHJlYWdlcmVuIGRvb3JnYWFucyBiaW5uZW4gw6nDqW4gd2Vya2RhZy4iLCJoZWxwLmN0YS5oZWFkaW5nIjoiS2xhYXIgb20gdGUgYmVnaW5uZW4/IiwiaGVscC5jdGEuc3ViIjoiTWFhayB1dyBncmF0aXMgYWNjb3VudCBhYW4gaW4gbWluZGVyIGRhbiBlZW4gbWludXV0LiBHZWVuIGNyZWRpdGNhcmQgbm9kaWcuIiwiaGVscC5jdGEuYnRuIjoiR3JhdGlzIHN0YXJ0ZW4g4oaSIiwiZm9vdGVyLnRhZ2xpbmUiOiJFZW52b3VkaWcsIGVsZWdhbnQgcmVzZXJ2ZXJpbmdzYmVoZWVyIHZvb3Iga2xlaW5lIGhvcmVjYWJlZHJpanZlbiBpbiBFdXJvcGEuIiwiZm9vdGVyLnByb2R1Y3QiOiJQcm9kdWN0IiwiZm9vdGVyLmZlYXR1cmVzIjoiRnVuY3RpZXMiLCJmb290ZXIucHJpY2luZyI6IlByaWp6ZW4iLCJmb290ZXIud2lkZ2V0IjoiQm9la2luZ3N3aWRnZXQiLCJmb290ZXIuc2lnbmluIjoiSW5sb2dnZW4gb3AgZGFzaGJvYXJkIiwiZm9vdGVyLmNvbXBhbnkiOiJCZWRyaWpmIiwiZm9vdGVyLmFib3V0IjoiT3ZlciBvbnMiLCJmb290ZXIuYmxvZyI6IkJsb2ciLCJmb290ZXIuY29udGFjdCI6IkNvbnRhY3QiLCJmb290ZXIuaGVscCI6Ikh1bHAiLCJmb290ZXIubGVnYWwiOiJKdXJpZGlzY2giLCJmb290ZXIucHJpdmFjeSI6IlByaXZhY3liZWxlaWQiLCJmb290ZXIudGVybXMiOiJHZWJydWlrc3Zvb3J3YWFyZGVuIiwiZm9vdGVyLmdkcHIiOiJBVkciLCJmb290ZXIuY29va2llcyI6IkNvb2tpZXMiLCJmb290ZXIuY29weSI6IsKpIDIwMjYgTmVzdEJvb2suIEdlbWFha3QgbWV0IOKZpSB2b29yIGtsZWluZSBob3JlY2FiZWRyaWp2ZW4uIn19'))));
+const I18N = JSON.parse(decodeURIComponent(escape(atob('eyJlbiI6eyJuYXYuZmVhdHVyZXMiOiJGZWF0dXJlcyIsIm5hdi5wcmljaW5nIjoiUHJpY2luZyIsIm5hdi5jb21wYXJlIjoiQ29tcGFyZSBwbGFucyIsIm5hdi5sYW5ndWFnZXMiOiJMYW5ndWFnZXMiLCJuYXYuYmxvZyI6IkJsb2ciLCJuYXYuZGVtbyI6IkxpdmUgZGVtbyIsIm5hdi5zaWduaW4iOiJTaWduIGluIiwiZm9vdGVyLnRhZ2xpbmUiOiJTaW1wbGUsIGVsZWdhbnQgYm9va2luZyBtYW5hZ2VtZW50IGZvciBzbWFsbCBob3NwaXRhbGl0eSBidXNpbmVzc2VzIGFjcm9zcyBFdXJvcGUuIiwiZm9vdGVyLnByb2R1Y3QiOiJQcm9kdWN0IiwiZm9vdGVyLmZlYXR1cmVzIjoiRmVhdHVyZXMiLCJmb290ZXIucHJpY2luZyI6IlByaWNpbmciLCJmb290ZXIubGFuZ3VhZ2VzIjoiTGFuZ3VhZ2VzIiwiZm9vdGVyLndpZGdldCI6IkJvb2tpbmcgd2lkZ2V0IiwiZm9vdGVyLnNpZ25pbiI6IlNpZ24gaW4gdG8geW91ciBkYXNoYm9hcmQiLCJmb290ZXIuY29tcGFueSI6IkNvbXBhbnkiLCJmb290ZXIuYWJvdXQiOiJBYm91dCIsImZvb3Rlci5ibG9nIjoiQmxvZyIsImZvb3Rlci5jb250YWN0IjoiQ29udGFjdCIsImZvb3Rlci5oZWxwIjoiSGVscCIsImZvb3Rlci5sZWdhbCI6IkxlZ2FsIiwiZm9vdGVyLnByaXZhY3kiOiJQcml2YWN5IFBvbGljeSIsImZvb3Rlci50ZXJtcyI6IlRlcm1zIG9mIFNlcnZpY2UiLCJmb290ZXIuZ2RwciI6IkdEUFIiLCJmb290ZXIuY29va2llcyI6IkNvb2tpZXMiLCJmb290ZXIuY29weSI6IsKpIDIwMjYgTmVzdEJvb2suIE1hZGUgd2l0aCDimaUgZm9yIHNtYWxsIGhvc3BpdGFsaXR5IGJ1c2luZXNzZXMuIiwiaGVscC5oZXJvLnRpdGxlIjoiTmVzdEJvb2sgSGVscCBDZW50cmUiLCJoZWxwLmhlcm8uc3ViIjoiRXZlcnl0aGluZyB5b3UgbmVlZCB0byBnZXQgc2V0IHVwLCB0YWtlIGJvb2tpbmdzLCBhbmQgbWFuYWdlIHlvdXIgcHJvcGVydHkuIiwiaGVscC5xcy5sYWJlbCI6Ikp1bXAgdG8iLCJoZWxwLnMuc3RhcnQiOiJHZXR0aW5nIHN0YXJ0ZWQiLCJoZWxwLnMucGFnZSI6IllvdXIgZnJlZSBwcm9wZXJ0eSB3ZWJwYWdlIiwiaGVscC5zLmZiIjoiRmFjZWJvb2sgQm9va2luZyBCdXR0b24iLCJoZWxwLnMuYm9va2luZ3MiOiJUYWtpbmcgYm9va2luZ3MiLCJoZWxwLnMubWFuYWdlIjoiTWFuYWdpbmcgYm9va2luZ3MiLCJoZWxwLnMuaWNhbCI6ImlDYWwgc3luYyIsImhlbHAucy5wcmljaW5nIjoiU2Vhc29uYWwgcHJpY2luZyIsImhlbHAucy5jaGFyZ2VzIjoiUm9vbSBjaGFyZ2VzIiwiaGVscC5zLnJlcG9ydHMiOiJSZXBvcnRzIiwiaGVscC5zLnNldHRpbmdzIjoiU2V0dGluZ3MiLCJoZWxwLnMucGxhbnMiOiJQbGFucyBhbmQgYmlsbGluZyIsImhlbHAuY3RhLnRpdGxlIjoiUmVhZHkgdG8gZ2V0IHN0YXJ0ZWQ/IiwiaGVscC5jdGEuc3ViIjoiRnJlZSBwbGFuIGF2YWlsYWJsZS4gWW91ciBib29raW5nIHBhZ2UgbGl2ZSBpbiAyMCBtaW51dGVzLiJ9LCJmciI6eyJuYXYuZmVhdHVyZXMiOiJGb25jdGlvbm5hbGl0w6lzIiwibmF2LnByaWNpbmciOiJUYXJpZnMiLCJuYXYuY29tcGFyZSI6IkNvbXBhcmVyIGxlcyBvZmZyZXMiLCJuYXYubGFuZ3VhZ2VzIjoiTGFuZ3VlcyIsIm5hdi5ibG9nIjoiQmxvZyIsIm5hdi5kZW1vIjoiRMOpbW8gZW4gZGlyZWN0IiwibmF2LnNpZ25pbiI6IkNvbm5leGlvbiIsImZvb3Rlci50YWdsaW5lIjoiR2VzdGlvbiBkZSByw6lzZXJ2YXRpb25zIHNpbXBsZSBldCDDqWzDqWdhbnRlIHBvdXIgbGVzIHBldGl0cyBow6liZXJnZW1lbnRzIGVuIEV1cm9wZS4iLCJmb290ZXIucHJvZHVjdCI6IlByb2R1aXQiLCJmb290ZXIuZmVhdHVyZXMiOiJGb25jdGlvbm5hbGl0w6lzIiwiZm9vdGVyLnByaWNpbmciOiJUYXJpZnMiLCJmb290ZXIubGFuZ3VhZ2VzIjoiTGFuZ3VlcyIsImZvb3Rlci53aWRnZXQiOiJXaWRnZXQgZGUgcsOpc2VydmF0aW9uIiwiZm9vdGVyLnNpZ25pbiI6IkNvbm5leGlvbiBhdSB0YWJsZWF1IGRlIGJvcmQiLCJmb290ZXIuY29tcGFueSI6IkVudHJlcHJpc2UiLCJmb290ZXIuYWJvdXQiOiLDgCBwcm9wb3MiLCJmb290ZXIuYmxvZyI6IkJsb2ciLCJmb290ZXIuY29udGFjdCI6IkNvbnRhY3QiLCJmb290ZXIuaGVscCI6IkFpZGUiLCJmb290ZXIubGVnYWwiOiJNZW50aW9ucyBsw6lnYWxlcyIsImZvb3Rlci5wcml2YWN5IjoiUG9saXRpcXVlIGRlIGNvbmZpZGVudGlhbGl0w6kiLCJmb290ZXIudGVybXMiOiJDb25kaXRpb25zIGQndXRpbGlzYXRpb24iLCJmb290ZXIuZ2RwciI6IlJHUEQiLCJmb290ZXIuY29va2llcyI6IkNvb2tpZXMiLCJmb290ZXIuY29weSI6IsKpIDIwMjYgTmVzdEJvb2suIEZhaXQgYXZlYyDimaUgcG91ciBsZXMgcGV0aXRzIGjDqWJlcmdldXJzLiIsImhlbHAuaGVyby50aXRsZSI6IkNlbnRyZSBkJ2FpZGUgTmVzdEJvb2siLCJoZWxwLmhlcm8uc3ViIjoiVG91dCBjZSBxdSdpbCB2b3VzIGZhdXQgcG91ciB2b3VzIGxhbmNlciwgcHJlbmRyZSBkZXMgcsOpc2VydmF0aW9ucyBldCBnw6lyZXIgdm90cmUgcHJvcHJpw6l0w6kuIiwiaGVscC5xcy5sYWJlbCI6IkFsbGVyIMOgIiwiaGVscC5zLnN0YXJ0IjoiRMOpbWFycmVyIiwiaGVscC5zLnBhZ2UiOiJWb3RyZSBwYWdlIGRlIHLDqXNlcnZhdGlvbiBncmF0dWl0ZSIsImhlbHAucy5mYiI6IkJvdXRvbiBkZSByw6lzZXJ2YXRpb24gRmFjZWJvb2siLCJoZWxwLnMuYm9va2luZ3MiOiJQcmVuZHJlIGRlcyByw6lzZXJ2YXRpb25zIiwiaGVscC5zLm1hbmFnZSI6IkfDqXJlciBsZXMgcsOpc2VydmF0aW9ucyIsImhlbHAucy5pY2FsIjoiU3luY2hyb25pc2F0aW9uIGlDYWwiLCJoZWxwLnMucHJpY2luZyI6IlRhcmlmaWNhdGlvbiBzYWlzb25uacOocmUiLCJoZWxwLnMuY2hhcmdlcyI6IkZyYWlzIGRlIGNoYW1icmUiLCJoZWxwLnMucmVwb3J0cyI6IlJhcHBvcnRzIiwiaGVscC5zLnNldHRpbmdzIjoiUGFyYW3DqHRyZXMiLCJoZWxwLnMucGxhbnMiOiJBYm9ubmVtZW50cyBldCBmYWN0dXJhdGlvbiIsImhlbHAuY3RhLnRpdGxlIjoiUHLDqnQgw6AgY29tbWVuY2VyID8iLCJoZWxwLmN0YS5zdWIiOiJGb3JmYWl0IGdyYXR1aXQgZGlzcG9uaWJsZS4gVm90cmUgcGFnZSBkZSByw6lzZXJ2YXRpb24gZW4gbGlnbmUgZW4gMjAgbWludXRlcy4ifSwiZGUiOnsibmF2LmZlYXR1cmVzIjoiRnVua3Rpb25lbiIsIm5hdi5wcmljaW5nIjoiUHJlaXNlIiwibmF2LmNvbXBhcmUiOiJQbMOkbmUgdmVyZ2xlaWNoZW4iLCJuYXYubGFuZ3VhZ2VzIjoiU3ByYWNoZW4iLCJuYXYuYmxvZyI6IkJsb2ciLCJuYXYuZGVtbyI6IkxpdmUtRGVtbyIsIm5hdi5zaWduaW4iOiJBbm1lbGRlbiIsImZvb3Rlci50YWdsaW5lIjoiRWluZmFjaGVzLCBlbGVnYW50ZXMgQnVjaHVuZ3NtYW5hZ2VtZW50IGbDvHIga2xlaW5lIEJlaGVyYmVyZ3VuZ3NiZXRyaWViZSBpbiBFdXJvcGEuIiwiZm9vdGVyLnByb2R1Y3QiOiJQcm9kdWt0IiwiZm9vdGVyLmZlYXR1cmVzIjoiRnVua3Rpb25lbiIsImZvb3Rlci5wcmljaW5nIjoiUHJlaXNlIiwiZm9vdGVyLmxhbmd1YWdlcyI6IlNwcmFjaGVuIiwiZm9vdGVyLndpZGdldCI6IkJ1Y2h1bmdzLVdpZGdldCIsImZvb3Rlci5zaWduaW4iOiJadW0gRGFzaGJvYXJkIGFubWVsZGVuIiwiZm9vdGVyLmNvbXBhbnkiOiJVbnRlcm5laG1lbiIsImZvb3Rlci5hYm91dCI6IsOcYmVyIHVucyIsImZvb3Rlci5ibG9nIjoiQmxvZyIsImZvb3Rlci5jb250YWN0IjoiS29udGFrdCIsImZvb3Rlci5oZWxwIjoiSGlsZmUiLCJmb290ZXIubGVnYWwiOiJSZWNodGxpY2hlcyIsImZvb3Rlci5wcml2YWN5IjoiRGF0ZW5zY2h1dHpyaWNodGxpbmllIiwiZm9vdGVyLnRlcm1zIjoiTnV0enVuZ3NiZWRpbmd1bmdlbiIsImZvb3Rlci5nZHByIjoiRFNHVk8iLCJmb290ZXIuY29va2llcyI6IkNvb2tpZXMiLCJmb290ZXIuY29weSI6IsKpIDIwMjYgTmVzdEJvb2suIE1pdCDimaUgZsO8ciBrbGVpbmUgQmVoZXJiZXJndW5nc2JldHJpZWJlIGdlbWFjaHQuIiwiaGVscC5oZXJvLnRpdGxlIjoiTmVzdEJvb2sgSGlsZmUtQ2VudGVyIiwiaGVscC5oZXJvLnN1YiI6IkFsbGVzIHdhcyBTaWUgYnJhdWNoZW4sIHVtIGxvc3p1bGVnZW4sIEJ1Y2h1bmdlbiBhbnp1bmVobWVuIHVuZCBJaHJlIFVudGVya3VuZnQgenUgdmVyd2FsdGVuLiIsImhlbHAucXMubGFiZWwiOiJadSBBYnNjaG5pdHQiLCJoZWxwLnMuc3RhcnQiOiJFcnN0ZSBTY2hyaXR0ZSIsImhlbHAucy5wYWdlIjoiSWhyZSBrb3N0ZW5sb3NlIEJ1Y2h1bmdzc2VpdGUiLCJoZWxwLnMuZmIiOiJGYWNlYm9vay1CdWNodW5nc2J1dHRvbiIsImhlbHAucy5ib29raW5ncyI6IkJ1Y2h1bmdlbiBhbm5laG1lbiIsImhlbHAucy5tYW5hZ2UiOiJCdWNodW5nZW4gdmVyd2FsdGVuIiwiaGVscC5zLmljYWwiOiJpQ2FsLVN5bmNocm9uaXNpZXJ1bmciLCJoZWxwLnMucHJpY2luZyI6IlNhaXNvbmFsZSBQcmVpc2dlc3RhbHR1bmciLCJoZWxwLnMuY2hhcmdlcyI6IlppbW1lcmdlYsO8aHJlbiIsImhlbHAucy5yZXBvcnRzIjoiQmVyaWNodGUiLCJoZWxwLnMuc2V0dGluZ3MiOiJFaW5zdGVsbHVuZ2VuIiwiaGVscC5zLnBsYW5zIjoiVGFyaWZlIHVuZCBBYnJlY2hudW5nIiwiaGVscC5jdGEudGl0bGUiOiJCZXJlaXQgbG9zenVsZWdlbj8iLCJoZWxwLmN0YS5zdWIiOiJLb3N0ZW5sb3NlciBUYXJpZiB2ZXJmw7xnYmFyLiBJaHJlIEJ1Y2h1bmdzc2VpdGUgaW4gMjAgTWludXRlbiBvbmxpbmUuIn0sImVzIjp7Im5hdi5mZWF0dXJlcyI6IkZ1bmNpb25lcyIsIm5hdi5wcmljaW5nIjoiUHJlY2lvcyIsIm5hdi5jb21wYXJlIjoiQ29tcGFyYXIgcGxhbmVzIiwibmF2Lmxhbmd1YWdlcyI6IklkaW9tYXMiLCJuYXYuYmxvZyI6IkJsb2ciLCJuYXYuZGVtbyI6IkRlbW8gZW4gdml2byIsIm5hdi5zaWduaW4iOiJJbmljaWFyIHNlc2nDs24iLCJmb290ZXIudGFnbGluZSI6Ikdlc3Rpw7NuIGRlIHJlc2VydmFzIHNlbmNpbGxhIHkgZWxlZ2FudGUgcGFyYSBwZXF1ZcOxb3MgYWxvamFtaWVudG9zIGVuIEV1cm9wYS4iLCJmb290ZXIucHJvZHVjdCI6IlByb2R1Y3RvIiwiZm9vdGVyLmZlYXR1cmVzIjoiRnVuY2lvbmVzIiwiZm9vdGVyLnByaWNpbmciOiJQcmVjaW9zIiwiZm9vdGVyLmxhbmd1YWdlcyI6IklkaW9tYXMiLCJmb290ZXIud2lkZ2V0IjoiV2lkZ2V0IGRlIHJlc2VydmFzIiwiZm9vdGVyLnNpZ25pbiI6IkluaWNpYXIgc2VzacOzbiBlbiBlbCBwYW5lbCIsImZvb3Rlci5jb21wYW55IjoiRW1wcmVzYSIsImZvb3Rlci5hYm91dCI6IlNvYnJlIG5vc290cm9zIiwiZm9vdGVyLmJsb2ciOiJCbG9nIiwiZm9vdGVyLmNvbnRhY3QiOiJDb250YWN0byIsImZvb3Rlci5oZWxwIjoiQXl1ZGEiLCJmb290ZXIubGVnYWwiOiJMZWdhbCIsImZvb3Rlci5wcml2YWN5IjoiUG9sw610aWNhIGRlIHByaXZhY2lkYWQiLCJmb290ZXIudGVybXMiOiJUw6lybWlub3MgZGUgc2VydmljaW8iLCJmb290ZXIuZ2RwciI6IlJHUEQiLCJmb290ZXIuY29va2llcyI6IkNvb2tpZXMiLCJmb290ZXIuY29weSI6IsKpIDIwMjYgTmVzdEJvb2suIEhlY2hvIGNvbiDimaUgcGFyYSBwZXF1ZcOxb3MgYWxvamFtaWVudG9zLiIsImhlbHAuaGVyby50aXRsZSI6IkNlbnRybyBkZSBheXVkYSBkZSBOZXN0Qm9vayIsImhlbHAuaGVyby5zdWIiOiJUb2RvIGxvIHF1ZSBuZWNlc2l0YXMgcGFyYSBjb25maWd1cmFydGUsIHRvbWFyIHJlc2VydmFzIHkgZ2VzdGlvbmFyIHR1IHByb3BpZWRhZC4iLCJoZWxwLnFzLmxhYmVsIjoiSXIgYSIsImhlbHAucy5zdGFydCI6IlByaW1lcm9zIHBhc29zIiwiaGVscC5zLnBhZ2UiOiJUdSBww6FnaW5hIGRlIHJlc2VydmEgZ3JhdHVpdGEiLCJoZWxwLnMuZmIiOiJCb3TDs24gZGUgcmVzZXJ2YSBkZSBGYWNlYm9vayIsImhlbHAucy5ib29raW5ncyI6IkFjZXB0YXIgcmVzZXJ2YXMiLCJoZWxwLnMubWFuYWdlIjoiR2VzdGlvbmFyIHJlc2VydmFzIiwiaGVscC5zLmljYWwiOiJTaW5jcm9uaXphY2nDs24gaUNhbCIsImhlbHAucy5wcmljaW5nIjoiUHJlY2lvcyBkZSB0ZW1wb3JhZGEiLCJoZWxwLnMuY2hhcmdlcyI6IkNhcmdvcyBkZSBoYWJpdGFjacOzbiIsImhlbHAucy5yZXBvcnRzIjoiSW5mb3JtZXMiLCJoZWxwLnMuc2V0dGluZ3MiOiJDb25maWd1cmFjacOzbiIsImhlbHAucy5wbGFucyI6IlBsYW5lcyB5IGZhY3R1cmFjacOzbiIsImhlbHAuY3RhLnRpdGxlIjoiwr9MaXN0byBwYXJhIGVtcGV6YXI/IiwiaGVscC5jdGEuc3ViIjoiUGxhbiBncmF0dWl0byBkaXNwb25pYmxlLiBUdSBww6FnaW5hIGRlIHJlc2VydmEgZW4gbMOtbmVhIGVuIDIwIG1pbnV0b3MuIn0sIm5sIjp7Im5hdi5mZWF0dXJlcyI6IkZ1bmN0aWVzIiwibmF2LnByaWNpbmciOiJQcmlqemVuIiwibmF2LmNvbXBhcmUiOiJQbGFubmVuIHZlcmdlbGlqa2VuIiwibmF2Lmxhbmd1YWdlcyI6IlRhbGVuIiwibmF2LmJsb2ciOiJCbG9nIiwibmF2LmRlbW8iOiJMaXZlIGRlbW8iLCJuYXYuc2lnbmluIjoiSW5sb2dnZW4iLCJmb290ZXIudGFnbGluZSI6IkVlbnZvdWRpZywgZWxlZ2FudCByZXNlcnZlcmluZ3NiZWhlZXIgdm9vciBrbGVpbmUgaG9yZWNhYmVkcmlqdmVuIGluIEV1cm9wYS4iLCJmb290ZXIucHJvZHVjdCI6IlByb2R1Y3QiLCJmb290ZXIuZmVhdHVyZXMiOiJGdW5jdGllcyIsImZvb3Rlci5wcmljaW5nIjoiUHJpanplbiIsImZvb3Rlci5sYW5ndWFnZXMiOiJUYWxlbiIsImZvb3Rlci53aWRnZXQiOiJCb2VraW5nc3dpZGdldCIsImZvb3Rlci5zaWduaW4iOiJJbmxvZ2dlbiBvcCBkYXNoYm9hcmQiLCJmb290ZXIuY29tcGFueSI6IkJlZHJpamYiLCJmb290ZXIuYWJvdXQiOiJPdmVyIG9ucyIsImZvb3Rlci5ibG9nIjoiQmxvZyIsImZvb3Rlci5jb250YWN0IjoiQ29udGFjdCIsImZvb3Rlci5oZWxwIjoiSHVscCIsImZvb3Rlci5sZWdhbCI6Ikp1cmlkaXNjaCIsImZvb3Rlci5wcml2YWN5IjoiUHJpdmFjeWJlbGVpZCIsImZvb3Rlci50ZXJtcyI6IkdlYnJ1aWtzdm9vcndhYXJkZW4iLCJmb290ZXIuZ2RwciI6IkFWRyIsImZvb3Rlci5jb29raWVzIjoiQ29va2llcyIsImZvb3Rlci5jb3B5IjoiwqkgMjAyNiBOZXN0Qm9vay4gR2VtYWFrdCBtZXQg4pmlIHZvb3Iga2xlaW5lIGhvcmVjYWJlZHJpanZlbi4iLCJoZWxwLmhlcm8udGl0bGUiOiJOZXN0Qm9vayBIZWxwY2VudHJ1bSIsImhlbHAuaGVyby5zdWIiOiJBbGxlcyB3YXQgdSBub2RpZyBoZWVmdCBvbSBhYW4gZGUgc2xhZyB0ZSBnYWFuLCBib2VraW5nZW4gYWFuIHRlIG5lbWVuIGVuIHV3IGFjY29tbW9kYXRpZSB0ZSBiZWhlcmVuLiIsImhlbHAucXMubGFiZWwiOiJHYSBuYWFyIiwiaGVscC5zLnN0YXJ0IjoiQWFuIGRlIHNsYWciLCJoZWxwLnMucGFnZSI6IlV3IGdyYXRpcyBib2VraW5nc3BhZ2luYSIsImhlbHAucy5mYiI6IkZhY2Vib29rIGJvZWtrbm9wIiwiaGVscC5zLmJvb2tpbmdzIjoiQm9la2luZ2VuIGFhbm5lbWVuIiwiaGVscC5zLm1hbmFnZSI6IkJvZWtpbmdlbiBiZWhlcmVuIiwiaGVscC5zLmljYWwiOiJpQ2FsLXN5bmNocm9uaXNhdGllIiwiaGVscC5zLnByaWNpbmciOiJTZWl6b2Vuc3RhcmlldmVuIiwiaGVscC5zLmNoYXJnZXMiOiJLYW1lcmtvc3RlbiIsImhlbHAucy5yZXBvcnRzIjoiUmFwcG9ydGVuIiwiaGVscC5zLnNldHRpbmdzIjoiSW5zdGVsbGluZ2VuIiwiaGVscC5zLnBsYW5zIjoiQWJvbm5lbWVudGVuIGVuIGZhY3R1cmVyaW5nIiwiaGVscC5jdGEudGl0bGUiOiJLbGFhciBvbSB0ZSBiZWdpbm5lbj8iLCJoZWxwLmN0YS5zdWIiOiJHcmF0aXMgYWJvbm5lbWVudCBiZXNjaGlrYmFhci4gVXcgYm9la2luZ3NwYWdpbmEgaW4gMjAgbWludXRlbiBvbmxpbmUuIn19'))));
 
 function applyLang(lang) {
-  const t = I18N[lang] || I18N.en;
-  document.documentElement.lang = lang;
-  document.querySelectorAll('[data-i18n]').forEach((el) => {
+  const T = I18N[lang] || I18N['en'];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (t[key] !== undefined) el.textContent = t[key];
+    if (T[key] !== undefined) el.textContent = T[key];
   });
-  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
-    const key = el.getAttribute('data-i18n-html');
-    if (t[key] !== undefined) el.innerHTML = t[key];
-  });
-  document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
-  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
 }
-document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
-(function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
-const nb = document.querySelector('.navbar');
-window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
-</script>
 
+document.addEventListener('DOMContentLoaded', function () {
+  let lang = 'en';
+  try { lang = localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
+  applyLang(lang);
+});
+
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const lang = this.dataset.lang;
+    try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+    applyLang(lang);
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[data-lang="' + lang + '"]').forEach(b => b.classList.add('active'));
+  });
+});
+</script>
 <script src="/cookie-banner.js"></script>
 <script src="/navbar.js"></script>
 </body>
