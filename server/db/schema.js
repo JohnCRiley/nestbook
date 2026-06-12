@@ -1186,15 +1186,12 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN cleaning_status TEXT DEFAULT NULL`); } catch {}
 
   // Expand rooms.type CHECK constraint to include all WP room types.
-  // Detects by probing with a new type value; rebuilds if constraint rejects it.
+  // Detects by reading the table definition — the probe-UPDATE approach doesn't
+  // work because SQLite only evaluates CHECK on rows actually modified, so an
+  // UPDATE WHERE type='bathroom' is a no-op when no such rows exist.
   {
-    let needsRebuild = false;
-    try {
-      db.prepare(`UPDATE rooms SET type = type WHERE type = 'bathroom'`).run();
-    } catch (e) {
-      if (e.message.includes('CHECK constraint')) needsRebuild = true;
-      else throw e;
-    }
+    const roomSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='rooms'`).get()?.sql ?? '';
+    const needsRebuild = !roomSql.includes("'bathroom'");
 
     if (needsRebuild) {
       db.exec(`PRAGMA foreign_keys = OFF`);
