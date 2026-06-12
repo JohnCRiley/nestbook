@@ -228,3 +228,28 @@
   .mega-col     { border-bottom: 1px solid #f0fdf4; padding-bottom: 16px; }
   .mega-col:last-child { border-bottom: none; }
 }
+
+/* ── Blog language notice ────────────────────────────────────────────────── */
+.blog-lang-notice {
+  background: #f8fbf6;
+  border-left: 3px solid #d9f0cc;
+  padding: 10px 16px;
+  margin: 0 auto 32px;
+  font-size: 0.82rem;
+  color: #475569;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.6;
+  max-width: 860px;
+}
+.blog-lang-notice .ti {
+  color: #1a4710;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.blog-lang-hint {
+  color: #94a3b8;
+  font-style: italic;
+}
