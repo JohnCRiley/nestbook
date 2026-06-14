@@ -1,4 +1,9 @@
 import { Router } from 'express';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import multer from 'multer';
+import sharp from 'sharp';
 import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
 import db from '../db/database.js';
@@ -10,6 +15,28 @@ export const adminRouter = Router();
 adminRouter.use('/outreach', outreachRouter);
 
 const PLAN_MRR  = { pro: 19, multi: 39 };
+
+// ── Blog image upload setup ───────────────────────────────────────────────────
+const __dirname   = dirname(fileURLToPath(import.meta.url));
+const BLOG_DIR     = join(__dirname, '../public/blog');
+const BLOG_IMG_DIR = join(__dirname, '../public/images/blog');
+
+fs.mkdirSync(BLOG_IMG_DIR, { recursive: true });
+
+const blogImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, '/tmp'),
+    filename:    (req, file, cb) => cb(null, `blog-${Date.now()}.tmp`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('JPEG, PNG or WebP only'));
+    }
+  },
+});
 const stripe    = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // ── GET /api/admin/stats ──────────────────────────────────────────────────────
@@ -1176,6 +1203,78 @@ adminRouter.post('/maintenance/cleanup', (req, res) => {
       deleted,
       message: `Removed ${deleted} old log entries and optimised database`,
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /api/admin/blog-images — list all blog posts with image status ────────
+adminRouter.get('/blog-images', (req, res) => {
+  try {
+    const files = fs.readdirSync(BLOG_DIR)
+      .filter(f => f.endsWith('.html') && f !== 'index.html')
+      .sort();
+
+    const posts = files.map(filename => {
+      const slug = filename.replace('.html', '');
+      const html = fs.readFileSync(join(BLOG_DIR, filename), 'utf8');
+
+      const titleMatch = html.match(/<title>([^<]+)/);
+      const rawTitle = titleMatch ? titleMatch[1].trim() : slug;
+      const title = rawTitle.replace(/ [—–|] NestBook.*$/, '').trim();
+
+      const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+      const description = descMatch ? descMatch[1] : '';
+
+      const imgPath = join(BLOG_IMG_DIR, `${slug}.jpg`);
+      const hasImage = fs.existsSync(imgPath);
+      const imgSize = hasImage
+        ? Math.round(fs.statSync(imgPath).size / 1024) + 'KB'
+        : null;
+
+      return { slug, title, description, hasImage, imgSize, filename };
+    });
+
+    res.json({ posts });
+  } catch (e) {
+    console.error('[blog-images]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── POST /api/admin/blog-images/:slug — upload and process image ──────────────
+adminRouter.post('/blog-images/:slug', blogImageUpload.single('image'), async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+
+    const outputPath = join(BLOG_IMG_DIR, `${slug}.jpg`);
+
+    await sharp(req.file.path)
+      .resize(1200, 630, { fit: 'cover', position: 'centre', withoutEnlargement: false })
+      .jpeg({ quality: 85 })
+      .toFile(outputPath);
+
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+
+    const imgSize = Math.round(fs.statSync(outputPath).size / 1024) + 'KB';
+    console.log(`[blog-images] Uploaded image for: ${slug} (${imgSize})`);
+    res.json({ success: true, slug, imgSize });
+  } catch (e) {
+    console.error('[blog-images]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── DELETE /api/admin/blog-images/:slug — remove image ───────────────────────
+adminRouter.delete('/blog-images/:slug', (req, res) => {
+  try {
+    const imgPath = join(BLOG_IMG_DIR, `${req.params.slug}.jpg`);
+    if (fs.existsSync(imgPath)) {
+      fs.unlinkSync(imgPath);
+      console.log(`[blog-images] Deleted image for: ${req.params.slug}`);
+    }
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
