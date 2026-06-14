@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import Stripe from 'stripe';
 import db from '../db/database.js';
-import { sendWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from '../email/emailService.js';
+import { sendWelcomeEmail, sendFreeWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from '../email/emailService.js';
 import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
@@ -236,12 +236,12 @@ authRouter.get('/me', requireAuth, (req, res) => {
   res.json(user);
 });
 
-authRouter.get('/verify-email', (req, res) => {
+authRouter.get('/verify-email', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ error: 'Token is required.' });
 
   const user = db.prepare(
-    'SELECT id FROM users WHERE email_verification_token = ?'
+    'SELECT id, name, email, plan FROM users WHERE email_verification_token = ?'
   ).get(token);
 
   if (!user) {
@@ -251,6 +251,16 @@ authRouter.get('/verify-email', (req, res) => {
   db.prepare(
     'UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?'
   ).run(user.id);
+
+  // Send rich onboarding email to new Free plan users — never block verification if it fails
+  if (user.plan === 'free') {
+    try {
+      await sendFreeWelcomeEmail(user);
+      console.log(`[welcome-email] Sent to ${user.email}`);
+    } catch (e) {
+      console.error('[welcome-email] Failed:', e.message);
+    }
+  }
 
   res.json({ success: true });
 });

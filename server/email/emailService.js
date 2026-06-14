@@ -1294,6 +1294,217 @@ export async function sendAccessEmail(booking, property) {
   }
 }
 
+// ── Free-plan welcome email (sent on email verification) ─────────────────────
+
+function welcomeEmailHTML(user) {
+  const firstName = user.name?.split(' ')[0] || 'there';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to NestBook</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f8fbf6; color: #1a2e14; line-height: 1.6; }
+    .wrapper { max-width: 620px; margin: 0 auto; background: white; }
+    .header { background: #1a4710; padding: 28px 32px; text-align: left; }
+    .header-logo { font-size: 22px; font-weight: 700; color: white; letter-spacing: -0.02em; }
+    .header-logo span { color: #d9f0cc; font-weight: 400; }
+    .hero { background: #f0fdf4; border-bottom: 3px solid #d9f0cc; padding: 36px 32px 28px; }
+    .hero-tag { display: inline-block; background: #d9f0cc; color: #1a4710; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; }
+    .hero h1 { font-size: 26px; font-weight: 700; color: #1a2e14; margin-bottom: 10px; line-height: 1.25; }
+    .hero p { font-size: 15px; color: #475569; max-width: 480px; line-height: 1.7; }
+    .body { padding: 32px 32px 0; }
+    .plan-box { background: #f0fdf4; border: 1.5px solid #d9f0cc; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
+    .plan-box-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1a4710; margin-bottom: 14px; }
+    .plan-feature { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 14px; color: #475569; }
+    .plan-feature-tick { color: #1a4710; font-weight: 700; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .plan-feature strong { color: #1a2e14; }
+    .steps-title { font-size: 18px; font-weight: 700; color: #1a2e14; margin-bottom: 6px; }
+    .steps-sub { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+    .step { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
+    .step-num { width: 30px; height: 30px; background: #1a4710; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .step-title { font-size: 15px; font-weight: 700; color: #1a2e14; margin-bottom: 4px; }
+    .step-desc { font-size: 14px; color: #475569; line-height: 1.65; }
+    .step-hint { display: inline-block; background: #fef3c7; border-left: 3px solid #f59e0b; padding: 6px 10px; margin-top: 8px; font-size: 13px; color: #78350f; border-radius: 0 4px 4px 0; line-height: 1.5; }
+    .step-tip { display: inline-block; background: #f0fdf4; border-left: 3px solid #1a4710; padding: 6px 10px; margin-top: 8px; font-size: 13px; color: #1a4710; border-radius: 0 4px 4px 0; line-height: 1.5; }
+    .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+    .cta-wrap { text-align: center; padding: 28px 32px; }
+    .cta-btn { display: inline-block; background: #1a4710; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .cta-sub { font-size: 12px; color: #94a3b8; margin-top: 10px; }
+    .print-wrap { text-align: center; padding: 0 32px 20px; }
+    .print-btn { display: inline-block; background: white; color: #1a4710 !important; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1.5px solid #d9f0cc; cursor: pointer; }
+    .print-hint { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+    .upgrade-box { background: #1a4710; margin: 0 32px 32px; border-radius: 10px; padding: 20px 24px; }
+    .upgrade-box-title { font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
+    .upgrade-box-body { font-size: 13px; color: #d9f0cc; margin-bottom: 14px; line-height: 1.6; }
+    .upgrade-link { display: inline-block; background: white; color: #1a4710 !important; text-decoration: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; }
+    .footer { background: #f8fbf6; border-top: 1px solid #e2e8f0; padding: 24px 32px; text-align: center; }
+    .footer p { font-size: 12px; color: #94a3b8; line-height: 1.7; }
+    .footer a { color: #1a4710; text-decoration: none; }
+    @media print {
+      body { background: white; }
+      .header { background: #1a4710 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .print-wrap, .cta-wrap, .footer { display: none; }
+      .upgrade-box { background: #1a4710 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    @media (max-width: 480px) {
+      .body { padding: 24px 20px 0; }
+      .hero { padding: 24px 20px; }
+      .hero h1 { font-size: 22px; }
+      .upgrade-box { margin: 0 20px 24px; }
+      .print-wrap { padding: 0 20px 16px; }
+      .footer { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <div class="header-logo">NestBook <span>— direct bookings for independent properties</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-tag">Welcome aboard 🌿</div>
+    <h1>It's great to have you, ${firstName}!</h1>
+    <p>Your NestBook account is ready. You've taken the first step toward taking more direct bookings — and keeping more of what you earn. Let's get your property set up.</p>
+  </div>
+
+  <div class="body">
+
+    <div class="plan-box">
+      <div class="plan-box-title">✦ What's included in your Free plan</div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Up to 3 rooms</strong> — add your rooms or spaces and manage availability</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Your own property webpage</strong> — a beautiful booking page at nestbook.io/book/your-property</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>1 photo per room</strong> — shown on your booking page for guests to see</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Guest enquiry form</strong> — guests on your page can send you a direct enquiry</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Facebook Booking Button</strong> — link your Facebook page directly to your NestBook page</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>iCal sync</strong> — keep your calendar synced with Booking.com and Airbnb</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>5 languages</strong> — your dashboard works in English, French, German, Spanish and Dutch</span></div>
+      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>7 colour themes</strong> — make NestBook feel like yours</span></div>
+    </div>
+
+    <p class="steps-title">So, what do you do now?</p>
+    <p class="steps-sub">Follow these steps and your property page will be live in about 20 minutes.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">Complete your property details</div>
+        <div class="step-desc">Click <strong>Settings</strong> in the left sidebar and fill in your property name, location, property type and a short description. This information appears on your public booking page — so take a moment to make it shine.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Create your booking page link</div>
+        <div class="step-desc">Still in Settings, scroll down to find your <strong>property slug</strong> — this is the web address for your booking page. Choose something memorable that reflects your property name.</div>
+        <div class="step-hint">💡 For example: <strong>my-cotswold-cottage</strong> becomes <strong>nestbook.io/book/my-cotswold-cottage</strong>. Copy that link and paste it into your browser to see exactly what your guests will see!</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Add a cover photo</div>
+        <div class="step-desc">Upload a cover photo for your property — this is the first image guests see when they visit your booking page. Use your best exterior shot, garden photo or the image that shows your property at its most beautiful.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div>
+        <div class="step-title">Add your rooms</div>
+        <div class="step-desc">Click <strong>Rooms</strong> in the left sidebar (or <strong>Property</strong> if you're in whole property mode) and add each of your rooms or spaces. Give each one a name, a description and set the nightly rate.</div>
+        <div class="step-hint">📸 On the Free plan you get <strong>1 photo per room</strong>. Make it count — choose the photo that best shows the room at its most welcoming. Click on a room to upload its photo.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div>
+        <div class="step-title">Add a Book Now button to your Facebook page</div>
+        <div class="step-desc">This is the step most owners love. In Settings, scroll to <strong>Facebook Booking Button</strong> — you'll find a 5-step guide showing exactly how to add a Book Now button to your Facebook business page that links directly to your NestBook booking page.</div>
+        <div class="step-tip">✓ Every person who visits your Facebook page can now book directly with you — without going through Booking.com or Airbnb. Zero commission.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div>
+        <div class="step-title">Sync your calendar with Booking.com and Airbnb</div>
+        <div class="step-desc">In Settings, find <strong>Calendar Sync</strong> — copy your iCal URL and add it to your Booking.com and Airbnb accounts. This keeps all your calendars in sync automatically so you never get a double booking.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div>
+        <div class="step-title">Share your booking page link everywhere</div>
+        <div class="step-desc">Copy your nestbook.io/book/your-property link and add it to your Instagram bio, your email signature, your WhatsApp status, your TripAdvisor replies — anywhere your guests might find you. Every link is a direct booking opportunity.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+  </div>
+
+  <div class="cta-wrap">
+    <a href="https://nestbook.io/app" class="cta-btn">Go to my NestBook dashboard →</a>
+    <p class="cta-sub">nestbook.io/app</p>
+  </div>
+
+  <div class="print-wrap">
+    <a href="#" class="print-btn" onclick="window.print(); return false;">🖨 Print this guide</a>
+    <p class="print-hint">Print this email to keep as a setup guide by your desk</p>
+  </div>
+
+  <div class="upgrade-box">
+    <div class="upgrade-box-title">Thinking about more?</div>
+    <div class="upgrade-box-body">When you're ready — NestBook Pro is £19/month and unlocks unlimited rooms, 5 photos per room, a direct booking widget for your own website, seasonal pricing, revenue reports and a 30-day free trial. No pressure — your Free plan is yours to keep for as long as you like.</div>
+    <a href="https://nestbook.io/app/settings/billing" class="upgrade-link">See what Pro includes →</a>
+  </div>
+
+  <div class="footer">
+    <p>
+      You're receiving this because you signed up to NestBook.<br>
+      <a href="https://nestbook.io">nestbook.io</a> &nbsp;·&nbsp;
+      <a href="mailto:hello@nestbook.io">hello@nestbook.io</a> &nbsp;·&nbsp;
+      NestBook.IO Ltd, 1 Hoburne Lane, Christchurch, Dorset BH23 4HP<br><br>
+      <a href="https://nestbook.io/app/settings">Manage your account</a> &nbsp;·&nbsp;
+      <a href="https://nestbook.io/help">Help centre</a>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+/**
+ * Send a rich onboarding welcome email to a newly-verified Free plan user.
+ * @param {object} user — { name, email }
+ */
+export async function sendFreeWelcomeEmail(user) {
+  if (!resend) return;
+  if (!user?.email) return;
+  try {
+    await resend.emails.send({
+      from:    'John at NestBook <hello@nestbook.io>',
+      to:      user.email,
+      subject: "Welcome to NestBook! Here's how to get started 🌿",
+      html:    welcomeEmailHTML(user),
+    });
+    console.log(`[email] Free welcome email sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send free welcome email:', err.message);
+  }
+}
+
 // ── Outreach / prospect email ─────────────────────────────────────────────────
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
