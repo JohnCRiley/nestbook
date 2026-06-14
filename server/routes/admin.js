@@ -1243,7 +1243,15 @@ adminRouter.get('/blog-images', (req, res) => {
 });
 
 // ── POST /api/admin/blog-images/:slug — upload and process image ──────────────
-adminRouter.post('/blog-images/:slug', blogImageUpload.single('image'), async (req, res) => {
+adminRouter.post('/blog-images/:slug', async (req, res) => {
+  // Run multer manually so any error returns JSON (not HTML via Express default handler)
+  const multerErr = await new Promise(resolve =>
+    blogImageUpload.single('image')(req, res, resolve)
+  );
+  if (multerErr) {
+    return res.status(400).json({ error: multerErr.message || 'Upload failed' });
+  }
+
   try {
     const { slug } = req.params;
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
