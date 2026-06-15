@@ -94,7 +94,7 @@ outreachRouter.get('/prospects/:id', (req, res) => {
 
 // ── Prospects — create ────────────────────────────────────────────────────────
 outreachRouter.post('/prospects', (req, res) => {
-  const { name, company, email, source = 'manual', notes, follow_up_date, country, language, website } = req.body;
+  const { name, company, email, phone, property_type, source = 'manual', notes, follow_up_date, country, region, town, language, website } = req.body;
   if (!name || !email) return res.status(400).json({ error: 'name and email are required' });
 
   const existing = db.prepare(`SELECT id FROM prospects WHERE email = ?`).get(email.toLowerCase().trim());
@@ -102,8 +102,15 @@ outreachRouter.post('/prospects', (req, res) => {
 
   const token = makeUnsubToken();
   const result = db.prepare(
-    `INSERT INTO prospects (name, company, email, source, notes, follow_up_date, country, language, website, unsubscribe_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(name.trim(), company?.trim() || null, email.toLowerCase().trim(), source, notes || null, follow_up_date || null, country || null, language || null, website?.trim() || null, token);
+    `INSERT INTO prospects (name, company, email, phone, property_type, source, notes, follow_up_date, country, region, town, language, website, unsubscribe_token)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    name.trim(), company?.trim() || null, email.toLowerCase().trim(),
+    phone?.trim() || null, property_type || null,
+    source, notes || null, follow_up_date || null,
+    country || null, region || null, town?.trim() || null,
+    language || null, website?.trim() || null, token
+  );
 
   res.status(201).json({ id: result.lastInsertRowid });
 });

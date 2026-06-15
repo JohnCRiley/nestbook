@@ -132,7 +132,10 @@ function AddProspectModal({ onClose, onSaved }) {
   const [name, setName]         = useState('');
   const [company, setCompany]   = useState('');
   const [email, setEmail]       = useState('');
+  const [phone, setPhone]       = useState('');
   const [country, setCountry]   = useState('');
+  const [region, setRegion]     = useState('');
+  const [town, setTown]         = useState('');
   const [language, setLanguage] = useState('');
   const [website, setWebsite]   = useState('');
   const [notes, setNotes]       = useState('');
@@ -145,7 +148,7 @@ function AddProspectModal({ onClose, onSaved }) {
     const res = await saApiFetch('/api/admin/outreach/prospects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, country, language, website, notes }),
+      body: JSON.stringify({ name, company, email, phone: phone || null, country, region, town: town || null, language, website, notes }),
     });
     setSaving(false);
     if (res.ok) { onSaved(); onClose(); }
@@ -154,17 +157,22 @@ function AddProspectModal({ onClose, onSaved }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 440 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 460, maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 18px', fontSize: '1rem' }}>Add Prospect</h3>
         {err && <div style={{ background: '#fef2f2', color: '#dc2626', padding: '8px 12px', borderRadius: 6, marginBottom: 12, fontSize: '0.85rem' }}>{err}</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Input value={name}    onChange={setName}    placeholder="Full name *" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property name" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email address *" type="email" style={{ width: '100%' }} />
+          <Input value={phone}   onChange={setPhone}   placeholder="Phone (e.g. 01539 432156)" type="tel" style={{ width: '100%' }} />
           <Input value={website} onChange={setWebsite} placeholder="Website / Facebook URL" style={{ width: '100%' }} />
           <div style={{ display: 'flex', gap: 8 }}>
-            <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
-            <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />
+            <Input value={country}  onChange={setCountry}  placeholder="Country (e.g. uk)" style={{ flex: 1 }} />
+            <Input value={language} onChange={setLanguage} placeholder="Language (e.g. en)" style={{ flex: 1 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Input value={region} onChange={setRegion} placeholder="Region (e.g. Lake District)" style={{ flex: 1 }} />
+            <Input value={town}   onChange={setTown}   placeholder="Town / village" style={{ flex: 1 }} />
           </div>
           <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes (optional)" />
         </div>
@@ -748,7 +756,7 @@ function CsvImportModal({ onClose, onImported }) {
       <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 500 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '1rem' }}>Bulk Import from CSV</h3>
         <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px' }}>
-          Required columns: <code>name</code>, <code>email</code>. Optional: <code>property_name</code>, <code>website</code>, <code>country</code>, <code>language</code>, <code>notes</code>. Use ↓ CSV template for the full format.
+          Required columns: <code>name</code>, <code>email</code>. Optional: <code>company</code>, <code>phone</code>, <code>property_type</code>, <code>region</code>, <code>town</code>, <code>country</code>, <code>language</code>, <code>website</code>, <code>source</code>, <code>notes</code>. Use ↓ CSV template for the full format.
         </p>
 
         {result ? (
@@ -960,11 +968,13 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 function downloadCsvTemplate() {
-  const csv = [
-    'name,property_name,email,property_type,country,region,language,website,source,notes',
-    'Margaret Hughes,The Old Rectory B&B,margaret@oldrectory.co.uk,bnb,UK,Dorset,en,www.oldrectory.co.uk,google,Found via Google search',
-    'Pierre Dupont,Gite Les Lavandes,pierre@giteslavandes.fr,gite,France,Provence,fr,www.giteslavandes.fr,booking_com,Listed on Booking.com',
-  ].join('\n');
+  const headers = 'name,company,email,phone,property_type,country,region,town,language,website,source,notes';
+  const rows = [
+    '"Jane Smith","The Old Rectory B&B","jane@theoldrectory.co.uk","01539 432156","bb","uk","Lake District","Ambleside","en","https://theoldrectory.co.uk","Google","Beautiful property, 6 rooms, active on Facebook"',
+    '"Pierre Dubois","Gîte Les Lavandes","pierre@gitelesslavandes.fr","+33 4 90 12 34 56","gite","fr","Provence","Roussillon","fr","https://gitelesslavandes.fr","Facebook","Whole property rental, stunning photos"',
+    '"","Lakeside Guest House","","01539 443210","guesthouse","uk","Lake District","Windermere","en","","Google","No email found — phone only"',
+  ];
+  const csv = [headers, ...rows].join('\n');
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -1401,12 +1411,24 @@ export default function Outreach() {
                       <td style={{ padding: '8px 12px' }}>
                         <strong>{p.name}</strong>
                         <br />
-                        <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email}</span>
+                        <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email || '—'}</span>
+                        {p.phone && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: 2 }}>
+                            <i className="ti ti-phone" style={{ fontSize: '0.75rem', marginRight: 2 }} />
+                            {p.phone}
+                          </div>
+                        )}
                         {p.notes && <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginTop: 2 }}>{p.notes.slice(0, 50)}{p.notes.length > 50 ? '…' : ''}</div>}
                       </td>
                       <td style={{ padding: '8px 12px', color: '#475569' }}>
-                        {p.company || '—'}
-                        {(p.country || p.language) && (
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{p.company || '—'}</div>
+                        {p.town && (
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 1 }}>
+                            <i className="ti ti-map-pin" style={{ fontSize: '0.72rem', marginRight: 2 }} />
+                            {p.town}{p.region ? ` · ${p.region}` : ''}
+                          </div>
+                        )}
+                        {!p.town && (p.country || p.language) && (
                           <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>
                             {[p.country, p.language].filter(Boolean).join(' · ')}
                           </div>
