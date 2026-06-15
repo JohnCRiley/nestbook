@@ -296,7 +296,7 @@ bookingsRouter.get('/wp-summary', (req, res) => {
       LIMIT 1
     `).get(propId, today, today);
 
-    const next = db.prepare(`
+    const next14Days = db.prepare(`
       SELECT b.id, b.check_in_date, b.check_out_date, b.num_guests, b.status, b.total_price, b.notes,
              g.first_name AS guest_first_name, g.last_name AS guest_last_name,
              g.email AS guest_email, g.phone AS guest_phone
@@ -304,10 +304,10 @@ bookingsRouter.get('/wp-summary', (req, res) => {
       LEFT JOIN guests g ON b.guest_id = g.id
       WHERE b.property_id = ?
         AND b.check_in_date > ?
+        AND b.check_in_date <= date(?, '+14 days')
         AND b.status IN ('confirmed', 'pending_owner_approval')
       ORDER BY b.check_in_date ASC
-      LIMIT 1
-    `).get(propId, today);
+    `).all(propId, today, today);
 
     const pending = db.prepare(`
       SELECT b.id, b.check_in_date, b.check_out_date, b.num_guests, b.total_price,
@@ -333,7 +333,8 @@ bookingsRouter.get('/wp-summary', (req, res) => {
 
     res.json({
       active: active || null,
-      next: next || null,
+      next: next14Days[0] || null,
+      upcoming: next14Days,
       pending,
       stats: {
         bookingsThisMonth: statsRow.bookings_count || 0,

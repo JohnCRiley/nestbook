@@ -321,8 +321,9 @@ function BookingRow({ booking: b, isSelected, onClick }) {
   const { fmtCurrency, locale, property } = useLocale();
   const isWP = property?.rental_type === 'whole_property';
   const t = useT();
+  const rowToday = localToday();
   const statusLabel = {
-    arriving:               t('calLegendInHouse'),
+    arriving:               b.check_in_date === rowToday ? 'Arriving today' : t('calLegendInHouse'),
     confirmed:              t('confirmed'),
     checked_out:            t('checkedOut'),
     cancelled:              t('cancelled'),
@@ -382,8 +383,9 @@ function BookingCard({ booking: b, isSelected, onClick }) {
   const { fmtCurrency, locale, property } = useLocale();
   const isWP = property?.rental_type === 'whole_property';
   const t = useT();
+  const cardToday = localToday();
   const statusLabel = {
-    arriving:               t('calLegendInHouse'),
+    arriving:               b.check_in_date === cardToday ? 'Arriving today' : t('calLegendInHouse'),
     confirmed:              t('confirmed'),
     checked_out:            t('checkedOut'),
     cancelled:              t('cancelled'),

@@ -268,15 +268,17 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stat cards ─────────────────────────────────────────────────── */}
-      <div className="stats-grid">
-        <StatCard value={occupiedTonight.length}   label={t('occupied')} />
-        <StatCard value={arrivalsToday.length}      label={t('arrivals')} />
-        <StatCard value={departuresToday.length}    label={t('departures')} />
-        {user?.role === 'owner' && property?.rental_type !== 'whole_property' && (
-          <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
-        )}
-      </div>
+      {/* ── Stat cards — hidden in WP mode (info shown in booking cards below) */}
+      {property?.rental_type !== 'whole_property' && (
+        <div className="stats-grid">
+          <StatCard value={occupiedTonight.length}   label={t('occupied')} />
+          <StatCard value={arrivalsToday.length}      label={t('arrivals')} />
+          <StatCard value={departuresToday.length}    label={t('departures')} />
+          {user?.role === 'owner' && (
+            <StatCard value={fmtCurrency(monthRevenue)} label={t('revenue')} />
+          )}
+        </div>
+      )}
 
       {/* ── WP booking summary ─────────────────────────────────────────── */}
       {property.rental_type === 'whole_property' && wpSummary && (
@@ -340,12 +342,24 @@ export default function Dashboard() {
             </div>
           )}
 
-          {wpSummary.next && (
-            <WPBookingCard
-              booking={wpSummary.next}
-              label="Next booking"
-              onClick={() => navigate('/bookings')}
-            />
+          {wpSummary.upcoming?.length > 0 && (
+            <div>
+              <div style={{
+                fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.07em', color: 'var(--text-muted)',
+                marginBottom: 8, marginTop: 12,
+              }}>
+                Upcoming — next 14 days
+              </div>
+              {wpSummary.upcoming.map((booking) => (
+                <WPBookingCard
+                  key={booking.id}
+                  booking={booking}
+                  label={booking.status === 'pending_owner_approval' ? 'Pending approval' : 'Upcoming'}
+                  onClick={() => navigate('/bookings')}
+                />
+              ))}
+            </div>
           )}
         </>
       )}
