@@ -111,6 +111,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [categories,         setCategories]         = useState([]);
   const [addChargeFor,       setAddChargeFor]       = useState(null);
   const [showCancelConfirm,  setShowCancelConfirm]  = useState(false);
+  const [showWPDeparture,    setShowWPDeparture]    = useState(false);
   const [depositGateOpen,    setDepositGateOpen]    = useState(false);
   const [depositAction,      setDepositAction]      = useState(null);
   const [depositWorking,     setDepositWorking]     = useState(false);
@@ -463,7 +464,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           display: 'flex', borderBottom: '2px solid #f1f5f9',
           margin: '0 22px', gap: 0,
         }}>
-          {[['details', t('sectionBooking')], ['charges', t('chargesTabLabel')]].map(([tab, label]) => (
+          {[['details', t('sectionBooking')], ['charges', isWP ? t('charges.propertyCharges') : t('chargesTabLabel')]].map(([tab, label]) => (
             <button
               key={tab}
               onClick={() => {
@@ -500,6 +501,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {/* Charges tab content */}
       {showChargesTab && activeTab === 'charges' && (
         <div style={{ padding: '14px 22px' }}>
+          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: 12 }}>
+            <i className="ti ti-receipt" style={{ marginRight: 6 }} />
+            {isWP ? t('charges.propertyCharges') : t('chargesTabLabel')}
+          </div>
           {charges === null ? (
             <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('chargesLoading')}</div>
           ) : (
@@ -649,7 +654,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             {b.status === 'arriving' && (
               canMarkDeparted ? (
                 <button
-                  onClick={() => handleWPAction('departed')}
+                  onClick={() => setShowWPDeparture(true)}
                   style={{
                     background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10,
                     padding: '14px 20px', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
@@ -1000,6 +1005,41 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         onConfirm={() => { setShowCancelConfirm(false); onStatusUpdate(b.id, 'cancelled'); }}
         onCancel={() => setShowCancelConfirm(false)}
       />
+
+      {/* ── WP departure confirmation with charges summary ────────────────── */}
+      {showWPDeparture && (() => {
+        const outstanding  = (charges ?? []).filter((c) => !c.voided_at);
+        const chargesTotal = outstanding.reduce((s, c) => s + parseFloat(c.amount), 0);
+        const bookingTotal = parseFloat(b.total_price) || 0;
+        const msg = outstanding.length > 0 ? (
+          <span>
+            {b.guest_first_name} {b.guest_last_name} has departed and returned the key.
+            <br /><br />
+            <strong>Outstanding charges:</strong> {fmtCurrency(chargesTotal)}<br />
+            <strong>Booking total:</strong> {fmtCurrency(bookingTotal)}<br />
+            <strong>Grand total:</strong> {fmtCurrency(bookingTotal + chargesTotal)}<br /><br />
+            Remember to collect payment from the guest if not already done.
+          </span>
+        ) : (
+          <span>
+            {b.guest_first_name} {b.guest_last_name} has departed and returned the key.
+            <br /><br />
+            <strong>Booking total:</strong> {fmtCurrency(bookingTotal)}
+          </span>
+        );
+        return (
+          <ConfirmModal
+            isOpen={true}
+            title="Confirm guest departure"
+            message={msg}
+            confirmLabel="Confirm departure"
+            cancelLabel={t('cancel')}
+            variant="warning"
+            onConfirm={() => { setShowWPDeparture(false); handleWPAction('departed'); }}
+            onCancel={() => setShowWPDeparture(false)}
+          />
+        );
+      })()}
 
       {/* ── Checkout summary modal ────────────────────────────────────────── */}
       {showCheckout && (
