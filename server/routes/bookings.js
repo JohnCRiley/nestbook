@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/database.js';
-import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail } from '../email/emailService.js';
+import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const bookingsRouter = Router();
@@ -74,6 +74,9 @@ const ENRICHED_SELECT = `
     b.refunded_at,
     b.refunded_by,
     b.cleaning_status,
+    b.payment_status,
+    b.paid_at,
+    b.charges_email_sent,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -501,7 +504,23 @@ bookingsRouter.put('/:id', (req, res) => {
       db.prepare('UPDATE bookings SET status = ?, checked_out_at = ? WHERE id = ?')
         .run('checked_out', now, req.params.id);
       const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
-      return res.json(updated);
+      res.json(updated);
+
+      // Fire-and-forget charges summary email if outstanding charges exist
+      const property  = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
+      const ownerRow  = db.prepare('SELECT email FROM users WHERE id = ?').get(property?.owner_id);
+      const wpCharges = db.prepare(`
+        SELECT rc.*, sc.name AS category_name
+        FROM room_charges rc
+        LEFT JOIN service_categories sc ON sc.id = rc.category_id
+        WHERE rc.booking_id = ?
+      `).all(updated.id);
+      const outstanding = wpCharges.filter((c) => !c.voided_at);
+      if (outstanding.length > 0 && !existing.charges_email_sent) {
+        sendChargesSummaryEmail(updated, property, wpCharges, ownerRow?.email ?? '').catch(() => {});
+        db.prepare(`UPDATE bookings SET charges_email_sent = datetime('now') WHERE id = ?`).run(updated.id);
+      }
+      return;
     }
 
     // WP cleaning status update
@@ -711,6 +730,56 @@ bookingsRouter.post('/:id/refund', (req, res) => {
       targetId: booking.id,
       targetName: `${booking.guest_first_name} ${booking.guest_last_name} — ${booking.room_name ?? ''}`,
       detail: `Amount: ${amt.toFixed(2)}${reason ? ` — ${reason}` : ''}`,
+      ipAddress: getIp(req),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/mark-paid ─────────────────────────────────────────
+// Owner/reception only. Marks WP booking as paid and fires receipt email.
+bookingsRouter.post('/:id/mark-paid', (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (req.user.role === 'charges_staff') {
+      return res.status(403).json({ error: 'Only owners and reception can mark bookings as paid.' });
+    }
+    if (booking.payment_status === 'paid') {
+      return res.status(400).json({ error: 'Booking is already marked as paid.' });
+    }
+
+    const now = new Date().toISOString();
+    db.prepare(`UPDATE bookings SET payment_status = 'paid', paid_at = ? WHERE id = ?`)
+      .run(now, req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    // Fire-and-forget receipt email
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
+    const ownerRow = db.prepare('SELECT email FROM users WHERE id = ?').get(property?.owner_id);
+    const charges  = db.prepare(`
+      SELECT rc.*, sc.name AS category_name
+      FROM room_charges rc
+      LEFT JOIN service_categories sc ON sc.id = rc.category_id
+      WHERE rc.booking_id = ?
+    `).all(booking.id);
+    sendReceiptEmail(updated, property, charges, ownerRow?.email ?? '').catch(() => {});
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: booking.property_id,
+      action: 'BOOKING_PAID',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name}`,
+      detail: `Payment confirmed — receipt sent to ${booking.guest_email}`,
       ipAddress: getIp(req),
     });
   } catch (err) {

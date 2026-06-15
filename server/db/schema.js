@@ -1263,6 +1263,11 @@ John`
     console.log('✓ cancellation_days column added to properties');
   } catch(e) { /* already exists */ }
 
+  // WP payment tracking columns
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN payment_status TEXT DEFAULT 'unpaid'`); console.log('✓ payment_status column added'); } catch(e) {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN paid_at TEXT DEFAULT NULL`); console.log('✓ paid_at column added'); } catch(e) {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN charges_email_sent TEXT DEFAULT NULL`); console.log('✓ charges_email_sent column added'); } catch(e) {}
+
   // Migration: update existing WP properties to use WP-appropriate service categories.
   // Removes IP-mode defaults (Bar & drinks, Restaurant, etc.) and inserts WP defaults
   // (Equipment rental, Activities, etc.) if not already present.

@@ -111,7 +111,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [categories,         setCategories]         = useState([]);
   const [addChargeFor,       setAddChargeFor]       = useState(null);
   const [showCancelConfirm,  setShowCancelConfirm]  = useState(false);
-  const [showWPDeparture,    setShowWPDeparture]    = useState(false);
+  const [showWPDeparture,       setShowWPDeparture]       = useState(false);
+  const [showMarkAsPaidConfirm, setShowMarkAsPaidConfirm] = useState(false);
+  const [markAsPaidWorking,     setMarkAsPaidWorking]     = useState(false);
   const [depositGateOpen,    setDepositGateOpen]    = useState(false);
   const [depositAction,      setDepositAction]      = useState(null);
   const [depositWorking,     setDepositWorking]     = useState(false);
@@ -360,6 +362,26 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
     if (!res.ok) return;
     const updated = await res.json();
     onBookingUpdated(updated);
+  };
+
+  const handleMarkAsPaid = async () => {
+    setMarkAsPaidWorking(true);
+    try {
+      const res = await apiFetch(`/api/bookings/${b.id}/mark-paid`, { method: 'POST' });
+      if (res.ok) {
+        const updated = await res.json();
+        onBookingUpdated(updated);
+        setShowMarkAsPaidConfirm(false);
+        showToast('Payment confirmed — receipt sent to guest');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        showToast(body.error ?? 'Failed to mark as paid');
+      }
+    } catch {
+      showToast('Failed to mark as paid — please try again.');
+    } finally {
+      setMarkAsPaidWorking(false);
+    }
   };
 
   return (
@@ -993,6 +1015,66 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         </div>
       )}
 
+      {/* ── WP payment tracking — checked_out ─────────────────────────── */}
+      {isWP && b.status === 'checked_out' && (
+        <div style={{ padding: '0 22px 14px' }}>
+          {b.payment_status !== 'paid' ? (
+            <>
+              <div style={{
+                background: '#fef3c7', border: '1.5px solid #f59e0b',
+                borderRadius: 8, padding: '12px 16px', marginBottom: 10,
+              }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  fontWeight: 700, fontSize: '0.85rem', color: '#92400e', marginBottom: 4,
+                }}>
+                  <i className="ti ti-clock" />
+                  Payment outstanding
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#78350f' }}>
+                  Grand total:{' '}
+                  <strong>
+                    {fmtCurrency(
+                      (parseFloat(b.total_price) || 0) +
+                      (charges ?? []).filter((c) => !c.voided_at).reduce((s, c) => s + parseFloat(c.amount), 0)
+                    )}
+                  </strong>
+                  {b.charges_email_sent && ' — A charges summary has been sent to the guest.'}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowMarkAsPaidConfirm(true)}
+                style={{
+                  background: 'var(--accent)', color: 'white', border: 'none',
+                  borderRadius: 8, padding: '12px 20px', fontWeight: 700,
+                  fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit',
+                  width: '100%', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: 8,
+                }}
+              >
+                <i className="ti ti-circle-check" />
+                Mark as paid — send receipt
+              </button>
+            </>
+          ) : (
+            <div style={{
+              background: '#f0fdf4', border: '1.5px solid #d1fae5',
+              borderRadius: 8, padding: '12px 16px',
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: '0.85rem', fontWeight: 600, color: '#166534',
+            }}>
+              <i className="ti ti-circle-check" />
+              Payment received · Receipt sent to guest
+              {b.paid_at && (
+                <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 'auto', fontSize: '0.75rem' }}>
+                  {b.paid_at.slice(0, 10)}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       </> /* end details tab */}
 
       <ConfirmModal
@@ -1154,6 +1236,35 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           </div>
         </div>
       )}
+
+      {/* ── Mark as paid confirmation ────────────────────────────────────── */}
+      {showMarkAsPaidConfirm && (() => {
+        const outstanding  = (charges ?? []).filter((c) => !c.voided_at);
+        const chargesTotal = outstanding.reduce((s, c) => s + parseFloat(c.amount), 0);
+        const grandTotal   = (parseFloat(b.total_price) || 0) + chargesTotal;
+        const msg = (
+          <span>
+            Mark this booking as paid and send a receipt to{' '}
+            <strong>{b.guest_email}</strong>?
+            <br /><br />
+            <strong>Grand total: {fmtCurrency(grandTotal)}</strong>
+            <br />A full itemised receipt will be emailed to the guest immediately.
+          </span>
+        );
+        return (
+          <ConfirmModal
+            isOpen={true}
+            title="Confirm payment received"
+            message={msg}
+            confirmLabel="Yes — mark paid and send receipt"
+            cancelLabel={t('cancel')}
+            variant="success"
+            busy={markAsPaidWorking}
+            onConfirm={handleMarkAsPaid}
+            onCancel={() => setShowMarkAsPaidConfirm(false)}
+          />
+        );
+      })()}
 
       {addChargeFor && categories.length > 0 && (
         <AddChargeModal

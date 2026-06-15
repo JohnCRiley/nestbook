@@ -1300,6 +1300,296 @@ export async function sendAccessEmail(booking, property) {
   }
 }
 
+// ── WP charges summary email — sent automatically on guest departure ──────────
+// Sent when guests depart if outstanding charges exist. Prompts the guest
+// to settle the balance before a receipt is issued.
+export async function sendChargesSummaryEmail(booking, property, charges, ownerEmail) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const outstanding = charges.filter((c) => !c.voided_at);
+  if (outstanding.length === 0) return;
+
+  const currency     = property?.currency ?? 'GBP';
+  const chargesTotal = outstanding.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const bookingTotal = parseFloat(booking.total_price) || 0;
+  const grandTotal   = bookingTotal + chargesTotal;
+  const guestName    = `${booking.guest_first_name} ${booking.guest_last_name}`;
+
+  const chargeRows = outstanding.map((c) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;">
+        ${c.category_name ?? '—'}
+      </td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#374151;">
+        ${c.description ?? '—'}
+      </td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.875rem;
+                 color:#111827;font-weight:600;text-align:right;">
+        ${fmtDepositAmount(c.amount, currency)}
+      </td>
+    </tr>`).join('');
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      Thank you for staying at ${property.name}
+    </h1>
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+      Dear ${guestName}, we hope you had a wonderful stay.
+      Here is a summary of your booking and any additional charges incurred during your visit.
+    </p>
+
+    <!-- Booking summary -->
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:140px;">Property</td>
+        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#111827;">${property.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-in</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">${fmtDate(booking.check_in_date, 'en')}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-out</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">${fmtDate(booking.check_out_date, 'en')}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Booking total</td>
+        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#111827;">
+          ${fmtDepositAmount(bookingTotal, currency)}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Additional charges -->
+    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#1a2e14;">Additional charges</h3>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px;">
+      <thead>
+        <tr style="background:#f0faf0;">
+          <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Category</th>
+          <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Description</th>
+          <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.05em;color:#1a4710;text-align:right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>${chargeRows}</tbody>
+      <tfoot>
+        <tr style="background:#f0faf0;">
+          <td colspan="2" style="padding:10px 12px;font-weight:700;font-size:0.875rem;color:#1a2e14;">
+            Charges total
+          </td>
+          <td style="padding:10px 12px;font-weight:700;font-size:0.875rem;
+                     color:#1a4710;text-align:right;">
+            ${fmtDepositAmount(chargesTotal, currency)}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Grand total -->
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#1a4710;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+      <tr>
+        <td style="color:white;font-weight:700;font-size:1rem;">Grand total</td>
+        <td style="color:white;font-weight:800;font-size:1.25rem;text-align:right;">
+          ${fmtDepositAmount(grandTotal, currency)}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Payment request -->
+    <div style="background:#fffbf0;border-left:4px solid #f59e0b;padding:14px 18px;
+                border-radius:0 8px 8px 0;margin-bottom:24px;">
+      <p style="margin:0;font-size:0.875rem;color:#78350f;line-height:1.6;">
+        <strong>Payment request:</strong> Please arrange payment of
+        <strong>${fmtDepositAmount(grandTotal, currency)}</strong>
+        directly with ${property.name}. If you have any questions about these charges,
+        please reply to this email.
+      </p>
+    </div>
+
+    <p style="margin:0 0 24px;font-size:0.82rem;color:#9ca3af;line-height:1.6;">
+      Once payment is confirmed you will receive a full receipt by email.
+      Thank you for choosing ${property.name} — we hope to welcome you back soon.
+    </p>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      booking.guest_email,
+      replyTo: ownerEmail || undefined,
+      subject: `Your stay at ${property.name} — charges summary`,
+      html:    shell(body),
+    });
+    console.log(`[charges-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
+  } catch (err) {
+    console.error('[charges-email] Failed:', err.message);
+  }
+}
+
+// ── WP receipt email — sent when owner marks booking as paid ─────────────────
+export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const currency     = property?.currency ?? 'GBP';
+  const outstanding  = charges.filter((c) => !c.voided_at);
+  const chargesTotal = outstanding.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const bookingTotal = parseFloat(booking.total_price) || 0;
+  const grandTotal   = bookingTotal + chargesTotal;
+  const receiptRef   = `NB-${booking.id}-${new Date().getFullYear()}`;
+  const nights       = Math.round(
+    (new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000
+  );
+
+  const chargeRows = outstanding.length > 0
+    ? outstanding.map((c) => `
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
+                     font-size:0.82rem;color:#6b7280;">${c.category_name ?? '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
+                     font-size:0.82rem;color:#374151;">${c.description ?? '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
+                     font-size:0.875rem;color:#111827;font-weight:600;text-align:right;">
+            ${fmtDepositAmount(c.amount, currency)}
+          </td>
+        </tr>`).join('')
+    : `<tr><td colspan="3" style="padding:12px;font-size:0.82rem;color:#9ca3af;
+               text-align:center;">No additional charges</td></tr>`;
+
+  const body = `
+    <!-- Receipt header -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td>
+          <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+            Payment receipt
+          </h1>
+          <p style="margin:0;font-size:0.78rem;color:#9ca3af;">Ref: ${receiptRef}</p>
+        </td>
+        <td style="text-align:right;vertical-align:top;">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                      letter-spacing:0.05em;color:#9ca3af;margin-bottom:3px;">Date paid</div>
+          <div style="font-size:0.875rem;font-weight:600;color:#111827;">
+            ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Paid badge -->
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0faf0;border:1.5px solid #d1fae5;border-radius:8px;
+                  padding:12px 16px;margin-bottom:24px;">
+      <tr>
+        <td style="color:#1a4710;font-size:1.1rem;width:28px;">✓</td>
+        <td>
+          <div style="font-weight:700;color:#166534;font-size:0.875rem;">Payment confirmed</div>
+          <div style="font-size:0.78rem;color:#166534;margin-top:2px;">
+            Thank you — your payment has been received
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Stay details -->
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:140px;">Property</td>
+        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#111827;">${property.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Guest</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">
+          ${booking.guest_first_name} ${booking.guest_last_name}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-in</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">
+          ${fmtDate(booking.check_in_date, 'en')}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-out</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">
+          ${fmtDate(booking.check_out_date, 'en')}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Itemised breakdown -->
+    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#1a2e14;">
+      Itemised breakdown
+    </h3>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;">
+      <thead>
+        <tr style="background:#f0faf0;">
+          <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Category</th>
+          <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Description</th>
+          <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
+                     letter-spacing:0.05em;color:#1a4710;text-align:right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Accommodation row -->
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
+                     font-size:0.82rem;color:#6b7280;">Accommodation</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
+                     font-size:0.82rem;color:#374151;">${nights} night${nights !== 1 ? 's' : ''}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
+                     font-size:0.875rem;color:#111827;font-weight:600;text-align:right;">
+            ${fmtDepositAmount(bookingTotal, currency)}
+          </td>
+        </tr>
+        ${chargeRows}
+      </tbody>
+      <tfoot>
+        <tr style="background:#1a4710;">
+          <td colspan="2" style="padding:14px 12px;font-weight:700;
+                                  font-size:0.95rem;color:white;">Total paid</td>
+          <td style="padding:14px 12px;font-weight:800;font-size:1.1rem;
+                     color:white;text-align:right;">
+            ${fmtDepositAmount(grandTotal, currency)}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <p style="margin:0 0 24px;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.6;">
+      This receipt was issued by ${property.name} via NestBook.<br>
+      Ref: ${receiptRef} · Issued: ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
+    </p>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      booking.guest_email,
+      replyTo: ownerEmail || undefined,
+      subject: `Receipt — ${property.name} · ${fmtDate(booking.check_in_date, 'en')}`,
+      html:    shell(body),
+    });
+    console.log(`[receipt-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
+  } catch (err) {
+    console.error('[receipt-email] Failed:', err.message);
+  }
+}
+
 // ── Free-plan welcome email (sent on email verification) ─────────────────────
 
 function welcomeEmailHTML(user) {
