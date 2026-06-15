@@ -12,56 +12,148 @@ const PIPELINE = [
   { value: 'do_not_call',    label: 'Do not call',         color: '#dc2626', bg: '#fef2f2',   icon: 'ti-ban' },
 ];
 
-const PROMPTS = [
+const PROMPT_GROUPS = [
   {
-    trigger: 'They answer and sound suspicious',
-    response: `"Oh, I'm terribly sorry to bother you — I'll keep this very brief! My name's John, I run a small booking software company called NestBook. I noticed your lovely property online and just wanted to introduce ourselves. Absolutely no pressure whatsoever — I can call back at a better time if you'd prefer?"`,
-    tip: 'Match their energy. If they sound rushed — offer to call back immediately. Never push.',
+    id: 'positive',
+    label: 'Positive responses',
+    subtitle: 'They sound friendly, open or interested',
+    color: '#1a4710',
+    bg: '#f0fdf4',
+    border: '#d9f0cc',
+    icon: 'ti-thumb-up',
+    prompts: [
+      {
+        trigger: '"Tell me more / That sounds interesting"',
+        response: "Brilliant! So in a nutshell — you get your own booking page at nestbook.io/book/your-property-name. Share that link anywhere — Facebook, Instagram, your email signature — and guests book directly with you. No commission to anyone. Would it help if I sent you a link so you can see what it actually looks like?",
+        tip: "Don't overwhelm. One idea. Get them to the demo page.",
+        next: 'Send nestbook.io/how-it-works by text or email while still on the call.',
+      },
+      {
+        trigger: '"How much does it cost?"',
+        response: "The free plan is completely free — no credit card, no time limit, up to three rooms. If you want the full booking widget for your website it's £19 a month. And there's absolutely no commission on any booking, ever — just that flat fee.",
+        tip: 'Pause after "£19 a month." Let it land. Do not fill the silence.',
+        next: 'If they hesitate — "Most owners find it pays for itself after just one or two direct bookings."',
+      },
+      {
+        trigger: '"We do get quite a lot through Booking.com"',
+        response: "That's great — most of our owners do and they keep using it. The idea is that when a guest comes back for a second stay, they book directly with you instead of going through Booking.com again. You'd keep that 15% commission on repeat guests. It works alongside what you already have.",
+        tip: 'Never criticise Booking.com. Position NestBook as complementary, not competitive.',
+        next: 'Ask — "Roughly what percentage of your bookings come back to you directly at the moment?"',
+      },
+      {
+        trigger: '"We\'ve been thinking about direct bookings actually"',
+        response: "Oh perfect timing then! Lots of owners are thinking the same thing — the commission fees really do add up. Can I ask — do you have a Facebook business page for the property? Because one of the most popular features is a Book Now button that links directly to your own booking page.",
+        tip: 'Golden lead. Match their energy — enthusiastic but not pushy.',
+        next: 'Get them to the demo. "Would you like me to send you a link to see what it looks like?"',
+      },
+      {
+        trigger: '"What\'s the difference from what we currently use?"',
+        response: "Good question — what are you using at the moment? [Listen] Right — the main difference with NestBook is that it gives you your own property page that you actually own. So when someone finds you on Facebook or Instagram they can book directly with you, not through a platform. And there's no commission on those bookings.",
+        tip: 'Always ask what they use first. Never assume. Tailor the answer to what they tell you.',
+        next: 'If they name a competitor — acknowledge it, then focus on the direct booking angle.',
+      },
+      {
+        trigger: '"Can I see an example / what does it look like?"',
+        response: "Absolutely — I can send you a link right now if you have a minute. It's a real live property page — rooms, photos, availability calendar, direct booking button. Takes about 20 minutes to set up. What's the best number or email to send it to?",
+        tip: 'This is the best possible response. Get their contact details while you have them.',
+        next: 'Send nestbook.io/book/the-lodge-at-nestbook by text while still on the call.',
+      },
+      {
+        trigger: '"Does it work with Airbnb and Booking.com?"',
+        response: "Yes — it syncs with both via iCal, which is the standard calendar format they all use. So any booking that comes in anywhere automatically blocks those dates everywhere else. No double bookings.",
+        tip: 'iCal sync is a genuine concern for busy properties. Reassure them on this first, then continue.',
+        next: '"So you\'d have everything in one place — your own bookings and the platform bookings all on one calendar."',
+      },
+      {
+        trigger: '"How long does it take to set up?"',
+        response: "Most owners are up and running in about 20 minutes — add your property details, upload a photo or two, and your booking page is live. The Facebook button takes about two minutes once the page is set up.",
+        tip: '"20 minutes" is credible and not intimidating. Never say "instant" — it sounds like a sales pitch.',
+        next: '"The free plan means you can have a look with no commitment — nothing to lose."',
+      },
+      {
+        trigger: '"Is there a free trial?"',
+        response: "There's a free plan that's free forever — up to three rooms, your own booking page, Facebook button, calendar sync. If you want the full booking widget for your own website, Pro is £19 a month with a 30-day free trial. No credit card needed to start.",
+        tip: 'Lead with the free plan. "Trial" sounds temporary — "free plan" sounds permanent.',
+        next: '"Would you like me to send you the link to sign up? Takes about a minute."',
+      },
+      {
+        trigger: '"A friend recommended you / we\'ve heard of NestBook"',
+        response: "Oh that's wonderful to hear — thank you! Can I ask who mentioned us? It's always nice to know. Yes — they're absolutely right, it's really straightforward. Have you had a chance to look at the website at all?",
+        tip: 'This is warm gold. Ask who referred them — a name makes the conversation personal.',
+        next: "They're already warm. Move straight to the demo or sign-up link.",
+      },
+    ],
   },
   {
-    trigger: '"We already use Booking.com / Airbnb"',
-    response: `"Oh absolutely, most of our owners do — we work alongside them rather than replacing them. The idea is that when a guest comes back for a second stay, they book directly with you instead of going through Booking.com again. You'd keep that 15% commission on repeat guests. Does that make sense?"`,
-    tip: 'Never criticise Booking.com. Position NestBook as complementary, not competitive.',
-  },
-  {
-    trigger: '"We\'re not very technical"',
-    response: `"Neither are most of our owners, honestly! It takes about 20 minutes to set up and there\'s no technical knowledge needed at all. I can walk you through it over the phone if you\'d like, or there\'s a free plan so you could have a look with absolutely no commitment."`,
-    tip: 'Offer to help personally. The human touch is your biggest advantage over big platforms.',
-  },
-  {
-    trigger: '"How much does it cost?"',
-    response: `"The free plan is completely free — no credit card, no time limit. If you want more features like a booking widget for your website, Pro is £19 a month. And there\'s no commission on any booking, ever — just that flat fee."`,
-    tip: 'Lead with Free. Let the price surprise them. Pause after "£19 a month" — silence is fine.',
-  },
-  {
-    trigger: '"Can you call back later / send an email?"',
-    response: `"Of course, absolutely — I\'m sorry to have caught you at a bad time! Would it be better if I dropped you a quick email with a link so you can have a look in your own time? And if you\'d like me to call back, when would suit you best?"`,
-    tip: 'Always give them the easy out. Getting an email address from a call is a win.',
-  },
-  {
-    trigger: '"We\'ll think about it"',
-    response: `"Of course, please do — there\'s absolutely no rush. The free plan is there whenever you\'re ready and it costs nothing to try. I\'ll leave you my details and if you have any questions at all, just give me a ring or drop me an email."`,
-    tip: 'Leave the door wide open. Never follow up more than once after this response.',
-  },
-  {
-    trigger: '"Yes, tell me more!" 🎉',
-    response: `"Wonderful! So the idea is really simple — you get your own booking page at nestbook.io/book/your-property-name. You can share that link anywhere — Facebook, Instagram, WhatsApp, email signature — and guests can book directly with you. No commission. Would you like me to send you a link so you can see what it looks like?"`,
-    tip: 'Stay calm! Don\'t overwhelm them. One idea at a time. Get them to the demo page.',
-  },
-  {
-    trigger: 'They\'re friendly but non-committal',
-    response: `"That\'s absolutely fine — I completely understand. Would it be helpful if I sent you the link to our how-it-works page? It explains everything without any sales pressure and there\'s a live example of a property page you can have a look at. No obligation at all."`,
-    tip: 'nestbook.io/how-it-works is your soft landing. Send it every time.',
-  },
-  {
-    trigger: 'They hang up / get cut off',
-    response: `Mark as "No answer" and note the time. Try again tomorrow at a different time of day. Morning calls (9-11am) often work better for B&B owners than afternoons when they're busy with guests.`,
-    tip: 'Don\'t take it personally. Try different times. Three attempts before moving on.',
-  },
-  {
-    trigger: 'They ask "How did you get my number?"',
-    response: `"Your number is listed on your website / Google listing — I hope you don't mind me calling! I'll keep it very brief."`,
-    tip: 'Always be honest. If it\'s not on their website — apologise and offer to be removed.',
+    id: 'negative',
+    label: 'Negative or difficult responses',
+    subtitle: 'They sound guarded, resistant or distracted',
+    color: '#92400e',
+    bg: '#fef3c7',
+    border: '#f59e0b',
+    icon: 'ti-shield',
+    prompts: [
+      {
+        trigger: '"We\'re not interested"',
+        response: "Absolutely fine — I'm sorry to have bothered you! Would it be alright if I sent you a very brief email with a link, just in case it's ever useful in future? No obligation at all.",
+        tip: 'Never push. The graceful exit leaves a far better impression than any pitch.',
+        next: 'If they agree to the email — that is a win. Add to email sequence immediately.',
+      },
+      {
+        trigger: '"We already have a booking system"',
+        response: "Oh great — what are you using at the moment? [Listen] Right — NestBook would work alongside that rather than replacing it. The main thing we add is the direct booking page and Facebook button so guests who find you on social media can book without going through a platform. But if you're happy with what you have, that's absolutely fine.",
+        tip: 'Ask what they use. If it is a big competitor — acknowledge it. If it is a simple system — there may be a gap.',
+        next: '"Is it connected to your Facebook page at the moment?" — opens a new angle.',
+      },
+      {
+        trigger: '"We\'re happy with Booking.com"',
+        response: "That's completely understandable — Booking.com is brilliant for getting new guests through the door. The only question is whether your repeat guests book directly with you the second time, or go back through Booking.com again and cost you 15% again. That's really all we help with.",
+        tip: "Don't argue. Plant the seed. The 15% on repeat guests is the thought to leave them with.",
+        next: '"Worth a think anyway — the free plan costs nothing if you ever want to try it."',
+      },
+      {
+        trigger: '"We don\'t take online bookings"',
+        response: "Ah right — do you prefer phone bookings? That makes sense for some properties. NestBook can actually work that way too — the booking page just shows your availability and has a contact form for guests to enquire. No obligation to take card payments online.",
+        tip: 'Some owners are genuinely phone-only and proud of it. Respect that completely.',
+        next: '"It basically gives you a professional page to point people to — even if they still call to confirm."',
+      },
+      {
+        trigger: '"We\'re retiring / selling up"',
+        response: "Oh congratulations — or commiserations, depending how you feel about it! That's completely understandable. I hope it all goes smoothly. If you ever know anyone in the trade who might find it useful, we'd be very grateful for a mention.",
+        tip: 'Genuine warmth. Ask for a referral — the most natural thing in the world at this point.',
+        next: 'Ask if they know other B&B owners locally who might be interested.',
+      },
+      {
+        trigger: '"Can you send an email / call back later"',
+        response: "Of course — I'm sorry to have caught you at a bad time! What's the best email address to send it to? [If they give it] Perfect — I'll drop you a very brief email with a link, no pressure at all. And if you'd prefer I call back, when would suit you best?",
+        tip: 'Getting an email address from a phone call is a win. Add to email sequence immediately.',
+        next: 'Send the how-it-works link within the hour while you are still fresh in their mind.',
+      },
+      {
+        trigger: '"We can\'t afford anything extra at the moment"',
+        response: "That's completely understandable — things are tough for a lot of independent properties right now. The free plan costs absolutely nothing — it's genuinely free, no credit card, no trial period. It might be worth a look just to have the booking page there for when things pick up.",
+        tip: 'Never argue about money. The free plan is the answer to every budget objection.',
+        next: '"Nothing to lose with the free version — it just gives you a professional page."',
+      },
+      {
+        trigger: '"How did you get this number?"',
+        response: "Your number is listed on your website and Google listing — I'm terribly sorry if it's not convenient! I'll keep this very brief, or I can let you go — whatever you prefer.",
+        tip: 'Be honest and immediately apologetic. If it is NOT on their website — apologise unreservedly and offer to remove them.',
+        next: 'If they soften — continue briefly. If not — apologise again and end the call gracefully.',
+      },
+      {
+        trigger: '"We\'re too small / only have 2 rooms"',
+        response: "The free plan works perfectly for smaller properties — it's actually designed with smaller B&Bs in mind. Two rooms is absolutely fine. You'd get your own booking page and Facebook button, same as everyone else, completely free.",
+        tip: 'Small properties often feel overlooked by tech companies. This is your moment to be different.',
+        next: '"Some of our most enthusiastic owners have just two or three rooms — it is ideal for them."',
+      },
+      {
+        trigger: '"We tried something like this before and it didn\'t work"',
+        response: "Oh that's really useful to know — can I ask what happened? Was it the setup that was complicated, or did guests just not use it? [Listen carefully] Right — that's a really common experience actually. The difference with NestBook is [address their specific issue directly]. But I completely understand the hesitation.",
+        tip: 'This is the most valuable objection. Listen carefully — their experience tells you exactly what to address.',
+        next: 'Address their specific pain point. Never give a generic response to this one.',
+      },
+    ],
   },
 ];
 
@@ -221,67 +313,115 @@ export default function PhoneOutreach() {
         </div>
       )}
 
-      {/* Call prompts accordion */}
+      {/* Call prompts — two-group decision tree */}
       <div style={{
         background: 'var(--card-bg)', border: '1.5px solid var(--accent)',
         borderRadius: 10, marginBottom: 16, overflow: 'hidden',
       }}>
+        {/* Main header */}
         <button
           onClick={() => setOpenPrompt(openPrompt === 'main' ? null : 'main')}
           style={{
-            width: '100%', background: '#1a4710', border: 'none', padding: '12px 16px',
+            width: '100%', background: '#1a4710', border: 'none', padding: '13px 16px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
           <span style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="ti ti-message-circle" />
-            Call prompts — what to say when...
+            <i className="ti ti-message-circle" aria-hidden="true" />
+            Call prompts — tap what they said
           </span>
           <i className={`ti ${openPrompt === 'main' ? 'ti-chevron-up' : 'ti-chevron-down'}`}
-            style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem' }} />
+            style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem' }} aria-hidden="true" />
         </button>
 
-        {openPrompt === 'main' && (
-          <div style={{ padding: '8px 0' }}>
-            {PROMPTS.map((prompt, i) => (
-              <div key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* Groups */}
+        {(openPrompt === 'main' || PROMPT_GROUPS.some(g => openPrompt === g.id || (openPrompt || '').startsWith(g.id + '-'))) &&
+          PROMPT_GROUPS.map(group => {
+            const groupOpen = openPrompt === group.id || (openPrompt || '').startsWith(group.id + '-');
+            return (
+              <div key={group.id} style={{ borderBottom: '1px solid var(--border)' }}>
+
+                {/* Group header */}
                 <button
-                  onClick={() => setOpenPrompt(openPrompt === i ? 'main' : i)}
+                  onClick={() => setOpenPrompt(groupOpen && openPrompt === group.id ? 'main' : group.id)}
                   style={{
-                    width: '100%', background: 'none', border: 'none', padding: '10px 16px',
+                    width: '100%', background: group.bg, border: 'none',
+                    borderBottom: `1px solid ${group.border}`, padding: '11px 16px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {prompt.trigger}
-                  </span>
-                  <i className={`ti ${openPrompt === i ? 'ti-chevron-up' : 'ti-chevron-down'}`}
-                    style={{ color: 'var(--text-muted)', fontSize: '0.9rem', flexShrink: 0, marginLeft: 8 }} />
-                </button>
-                {openPrompt === i && (
-                  <div style={{ padding: '0 16px 14px' }}>
-                    <div style={{
-                      background: '#f0fdf4', border: '1px solid #d9f0cc', borderRadius: 8,
-                      padding: '12px 14px', fontSize: '0.85rem', color: '#1a2e14',
-                      lineHeight: 1.65, fontStyle: 'italic', marginBottom: 8,
-                    }}>
-                      {prompt.response}
-                    </div>
-                    <div style={{
-                      background: '#fef3c7', borderLeft: '3px solid #f59e0b',
-                      padding: '8px 12px', fontSize: '0.78rem', color: '#78350f',
-                      lineHeight: 1.5, borderRadius: '0 6px 6px 0',
-                    }}>
-                      <strong>Tip:</strong> {prompt.tip}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <i className={`ti ${group.icon}`} style={{ fontSize: '1rem', color: group.color }} aria-hidden="true" />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.color }}>{group.label}</div>
+                      <div style={{ fontSize: '0.72rem', color: group.color, opacity: 0.7, marginTop: 1 }}>{group.subtitle}</div>
                     </div>
                   </div>
-                )}
+                  <i className={`ti ${groupOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`}
+                    style={{ color: group.color, fontSize: '0.9rem', opacity: 0.7, flexShrink: 0 }} aria-hidden="true" />
+                </button>
+
+                {/* Individual prompts */}
+                {groupOpen && group.prompts.map((prompt, i) => {
+                  const promptKey = `${group.id}-${i}`;
+                  const isOpen = openPrompt === promptKey;
+                  return (
+                    <div key={i} style={{ borderBottom: i < group.prompts.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      <button
+                        onClick={() => setOpenPrompt(isOpen ? group.id : promptKey)}
+                        style={{
+                          width: '100%', background: isOpen ? 'var(--tint-bg)' : 'var(--card-bg)',
+                          border: 'none', padding: '10px 16px 10px 28px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', gap: 8,
+                        }}
+                      >
+                        <span style={{ fontSize: '0.83rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                          {prompt.trigger}
+                        </span>
+                        <i className={`ti ${isOpen ? 'ti-chevron-up' : 'ti-chevron-right'}`}
+                          style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flexShrink: 0 }} aria-hidden="true" />
+                      </button>
+
+                      {isOpen && (
+                        <div style={{ padding: '0 16px 16px 28px' }}>
+                          <div style={{
+                            background: '#f0fdf4', border: '1px solid #d9f0cc',
+                            borderLeft: '4px solid #1a4710', borderRadius: '0 8px 8px 0',
+                            padding: '12px 14px', fontSize: '0.85rem', color: '#1a2e14',
+                            lineHeight: 1.7, fontStyle: 'italic', marginBottom: 8,
+                          }}>
+                            <div style={{
+                              fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
+                              letterSpacing: '0.07em', color: '#1a4710', marginBottom: 6, fontStyle: 'normal',
+                            }}>What to say</div>
+                            "{prompt.response}"
+                          </div>
+                          <div style={{
+                            background: '#fef3c7', borderLeft: '3px solid #f59e0b',
+                            padding: '8px 12px', fontSize: '0.78rem', color: '#78350f',
+                            lineHeight: 1.55, borderRadius: '0 6px 6px 0', marginBottom: 6,
+                          }}>
+                            <strong>Tip:</strong> {prompt.tip}
+                          </div>
+                          <div style={{
+                            background: '#dbeafe', borderLeft: '3px solid #3b82f6',
+                            padding: '8px 12px', fontSize: '0.78rem', color: '#1e3a5f',
+                            lineHeight: 1.55, borderRadius: '0 6px 6px 0',
+                          }}>
+                            <strong>Next:</strong> {prompt.next}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })
+        }
       </div>
 
       {/* Prospects list */}
