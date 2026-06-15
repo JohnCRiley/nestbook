@@ -1090,7 +1090,7 @@ export default function Settings() {
             <div className="settings-card" style={{ marginTop: 16 }}>
               <div className="settings-card-header">
                 <h2>{t('chargesCatTitle')}</h2>
-                <p>{t('chargesSubtitle')}</p>
+                <p>{activeProperty?.rental_type === 'whole_property' ? t('charges.wpCategoriesHint') : t('chargesSubtitle')}</p>
               </div>
               <div className="settings-card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 14 }}>

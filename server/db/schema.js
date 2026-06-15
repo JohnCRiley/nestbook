@@ -545,25 +545,35 @@ export function initSchema() {
 
   // Seed default service categories for properties that have none yet
   const propertiesWithoutCategories = db.prepare(`
-    SELECT p.id FROM properties p
+    SELECT p.id, p.rental_type FROM properties p
     WHERE NOT EXISTS (SELECT 1 FROM service_categories sc WHERE sc.property_id = p.id)
   `).all();
   if (propertiesWithoutCategories.length > 0) {
     const seedCat = db.prepare(
-      `INSERT INTO service_categories (property_id, name, color, icon, sort_order) VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO service_categories (property_id, name, color, icon, sort_order, tax_rate) VALUES (?, ?, ?, ?, ?, ?)`
     );
-    const defaults = [
-      ['Food & Drink', '#f97316', '', 0],
-      ['Bar',          '#8b5cf6', '', 1],
-      ['Laundry',      '#0ea5e9', '', 2],
-      ['Spa & Wellness','#10b981','', 3],
-      ['Activities',   '#f59e0b', '', 4],
-      ['Transport',    '#6366f1', '', 5],
-      ['Other',        '#64748b', '', 6],
+    const defaultsWP = [
+      ['Equipment rental', '#f97316', '', 0, 20],
+      ['Activities',       '#f59e0b', '', 1, 20],
+      ['Firewood & logs',  '#92400e', '', 2, 20],
+      ['Linen & towels',   '#0ea5e9', '', 3, 20],
+      ['Welcome hamper',   '#10b981', '', 4, 20],
+      ['Bike hire',        '#6366f1', '', 5, 20],
+      ['Other',            '#64748b', '', 6, 20],
     ];
-    for (const { id } of propertiesWithoutCategories) {
-      for (const [name, color, icon, sort_order] of defaults) {
-        seedCat.run(id, name, color, icon, sort_order);
+    const defaultsRooms = [
+      ['Bar & drinks',    '#8b5cf6', '', 0, 20],
+      ['Restaurant',      '#f97316', '', 1, 20],
+      ['Room service',    '#f59e0b', '', 2, 20],
+      ['Spa & treatments','#10b981', '', 3, 20],
+      ['Laundry',         '#0ea5e9', '', 4, 20],
+      ['Parking',         '#6366f1', '', 5, 20],
+      ['Other',           '#64748b', '', 6, 20],
+    ];
+    for (const { id, rental_type } of propertiesWithoutCategories) {
+      const cats = rental_type === 'whole_property' ? defaultsWP : defaultsRooms;
+      for (const [name, color, icon, sort_order, tax_rate] of cats) {
+        seedCat.run(id, name, color, icon, sort_order, tax_rate);
       }
     }
     console.log(`✓ Seeded default service categories for ${propertiesWithoutCategories.length} propert${propertiesWithoutCategories.length === 1 ? 'y' : 'ies'}.`);

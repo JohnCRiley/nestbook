@@ -153,9 +153,9 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
             </Section>
           )}
 
-          {/* Room charges (Multi plan) */}
+          {/* Room / property charges (Multi plan) */}
           {chargesProp !== null && chargesProp !== undefined && (
-            <Section title={t('chargesCheckoutTitle')}>
+            <Section title={isWP ? t('charges.propertyCharges') : t('chargesCheckoutTitle')}>
               {roomCharges.length === 0 ? (
                 <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>{t('chargesCheckoutNone')}</div>
               ) : (

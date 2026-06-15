@@ -153,7 +153,9 @@ export default function Charges() {
     <div className="page-container">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 className="page-title">{t('charges')}</h1>
+          <h1 className="page-title">
+            {property?.rental_type === 'whole_property' ? t('charges.propertyCharges') : t('charges')}
+          </h1>
           <div style={{ color: '#64748b', fontSize: '0.88rem', marginTop: 4 }}>{t('chargesSubtitle')}</div>
         </div>
       </div>
