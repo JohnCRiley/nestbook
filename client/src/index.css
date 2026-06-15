@@ -1860,13 +1860,13 @@ a { text-decoration: none; }
 
 .wpc-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
 }
 
 .wpc-dow {
   text-align: center;
-  font-size: 0.7rem;
+  font-size: clamp(7px, 1.2vw, 11px);
   font-weight: 600;
   color: var(--text-secondary);
   padding: 3px 0 5px;
@@ -1874,16 +1874,16 @@ a { text-decoration: none; }
 
 .wpc-cell {
   aspect-ratio: 1 / 1;
-  border-radius: 5px;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 0.78rem;
+  font-size: clamp(7px, 1.2vw, 12px);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 60px;
+  min-width: 0;
 }
 
 .wpc-pad {
@@ -1893,13 +1893,14 @@ a { text-decoration: none; }
 
 .wpc-day-num {
   font-weight: 600;
+  font-size: clamp(7px, 1.2vw, 12px);
   line-height: 1;
 }
 
 .wpc-guest {
   display: block;
   width: 100%;
-  font-size: 0.6rem;
+  font-size: clamp(6px, 0.9vw, 10px);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;

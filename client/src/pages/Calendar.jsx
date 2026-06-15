@@ -486,7 +486,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
     <div className="wpc-month">
       <div className="wpc-month-title">{monthNames[month]} {year}</div>
       <div className="wpc-grid">
-        {dayNames.map((n) => <div key={n} className="wpc-dow">{n}</div>)}
+        {dayNames.map((n) => <div key={n} className="wpc-dow">{n.charAt(0)}</div>)}
         {cells}
       </div>
     </div>
