@@ -428,6 +428,7 @@ function shell(bodyHtml) {
 function bookingConfirmationHtml(booking, property) {
   const locale = property.locale ?? 'en';
   const lang   = LOCALE_MAP[locale] ?? 'en-GB';
+  const isWP   = property?.rental_type === 'whole_property';
 
   const checkInDate  = fmtDate(booking.check_in_date,  locale);
   const checkOutDate = fmtDate(booking.check_out_date, locale);
@@ -458,7 +459,7 @@ function bookingConfirmationHtml(booking, property) {
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
       <tr>
-        ${row(t(locale, 'room'),      booking.room_name ?? '—')}
+        ${!isWP ? row(t(locale, 'room'), booking.room_name ?? '—') : ''}
         ${row(t(locale, 'checkIn'),   `${checkInDate}${property.check_in_time  ? ' &mdash; ' + t(locale, 'from') + ' ' + property.check_in_time  : ''}`)}
         ${row(t(locale, 'checkOut'),  `${checkOutDate}${property.check_out_time ? ' &mdash; ' + t(locale, 'by')   + ' ' + property.check_out_time : ''}`)}
         ${row(t(locale, 'guests'),    String(booking.num_guests ?? 1))}
@@ -679,7 +680,10 @@ export async function sendBookingConfirmation(booking, property) {
   }
 
   const locale  = property?.locale ?? 'en';
-  const subject = `${t(locale, 'bookingConfirmed')} — ${booking.room_name ?? ''} · ${property?.name ?? 'NestBook'}`;
+  const isWP    = property?.rental_type === 'whole_property';
+  const subject = isWP
+    ? `${t(locale, 'bookingConfirmed')} — ${property?.name ?? 'NestBook'}`
+    : `${t(locale, 'bookingConfirmed')} — ${booking.room_name ?? ''} · ${property?.name ?? 'NestBook'}`;
 
   try {
     await resend.emails.send({
@@ -702,6 +706,7 @@ export async function sendDepositRequest(booking, property) {
   if (!booking?.guest_email) return;
 
   const locale  = property?.locale ?? 'en';
+  const isWP    = property?.rental_type === 'whole_property';
   const subject = `${t(locale, 'depositRequestSubject')} — ${property?.name ?? 'NestBook'}`;
 
   const addressParts = [property?.address, property?.city, property?.country].filter(Boolean).join(', ');
@@ -723,7 +728,7 @@ export async function sendDepositRequest(booking, property) {
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#fffbeb;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #fde68a;">
       <tr>
-        ${row(t(locale, 'room'),       booking.room_name ?? '—')}
+        ${!isWP ? row(t(locale, 'room'), booking.room_name ?? '—') : ''}
         ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
         ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
@@ -755,6 +760,7 @@ export async function sendDepositConfirmation(booking, property) {
   if (!booking?.guest_email) return;
 
   const locale  = property?.locale ?? 'en';
+  const isWP    = property?.rental_type === 'whole_property';
   const subject = `${t(locale, 'depositConfirmSubject')} — ${property?.name ?? 'NestBook'}`;
 
   const row = (label, value) => `
@@ -775,7 +781,7 @@ export async function sendDepositConfirmation(booking, property) {
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
       <tr>
-        ${row(t(locale, 'room'),       booking.room_name ?? '—')}
+        ${!isWP ? row(t(locale, 'room'), booking.room_name ?? '—') : ''}
         ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
         ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
