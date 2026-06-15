@@ -48,8 +48,9 @@ img { display: block; max-width: 100%; }
 /* Post card */
 .post-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.15s, transform 0.15s; }
 .post-card:hover { box-shadow: 0 8px 32px rgba(26,71,16,0.10); transform: translateY(-2px); }
-.post-card-img { height: 180px; background: linear-gradient(135deg, var(--light) 0%, #c8e8bc 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-.post-card-img-icon { font-size: 4rem; opacity: 0.6; }
+.post-card-img { height: 180px; background: var(--soft); overflow: hidden; flex-shrink: 0; }
+.post-card-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.3s ease; }
+.post-card:hover .post-card-img img { transform: scale(1.03); }
 .post-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
 .post-card-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .post-card-category { background: var(--light); color: var(--dark); font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -184,7 +185,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 14 — newest -->
       <a class="post-card" href="/blog/your-facebook-photos-are-doing-the-hard-work.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">📱</span>
+          <img src="/images/blog/your-facebook-photos-are-doing-the-hard-work.jpg" alt="Your Facebook photos are already doing the hard work" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -204,7 +205,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 13 — -->
       <a class="post-card" href="/blog/airbnb-new-fee-structure-2026-what-hosts-need-to-know.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">📋</span>
+          <img src="/images/blog/airbnb-new-fee-structure-2026-what-hosts-need-to-know.jpg" alt="Airbnb's new fee structure 2026: what hosts need to know" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -224,7 +225,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 12 —  -->
       <a class="post-card" href="/blog/whole-property-rental-booking-software.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">🏡</span>
+          <img src="/images/blog/whole-property-rental-booking-software.jpg" alt="Why gîte and holiday cottage owners need a direct booking system" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -244,7 +245,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 11 -->
       <a class="post-card" href="/blog/how-to-switch-booking-systems.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">🔧</span>
+          <img src="/images/blog/how-to-switch-booking-systems.jpg" alt="How to switch booking systems without losing your data or your mind" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -264,7 +265,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 10 -->
       <a class="post-card" href="/blog/what-does-a-bnb-need-from-a-pms.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">📋</span>
+          <img src="/images/blog/what-does-a-bnb-need-from-a-pms.jpg" alt="What does a small B&amp;B actually need from a property management system?" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -284,7 +285,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 9 -->
       <a class="post-card" href="/blog/why-we-built-nestbook.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">🌱</span>
+          <img src="/images/blog/why-we-built-nestbook.jpg" alt="Why we built NestBook" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -304,7 +305,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 8 -->
       <a class="post-card" href="/blog/5-questions-before-choosing-booking-software.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">✅</span>
+          <img src="/images/blog/5-questions-before-choosing-booking-software.jpg" alt="5 questions to ask before choosing booking software for your B&amp;B or gîte" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -324,7 +325,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 7 -->
       <a class="post-card" href="/blog/ical-vs-channel-management.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">📅</span>
+          <img src="/images/blog/ical-vs-channel-management.jpg" alt="iCal vs channel management: which does a small B&amp;B actually need?" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -344,7 +345,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 6 -->
       <a class="post-card" href="/blog/are-you-paying-too-much-for-your-booking-system.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">💸</span>
+          <img src="/images/blog/are-you-paying-too-much-for-your-booking-system.jpg" alt="Are you paying too much for your booking system?" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -364,7 +365,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 5 -->
       <a class="post-card" href="/blog/why-multilingual-booking-matters.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">🌍</span>
+          <img src="/images/blog/why-multilingual-booking-matters.jpg" alt="Why multilingual booking matters for European holiday rentals" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -384,7 +385,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 4 -->
       <a class="post-card" href="/blog/the-hidden-cost-of-airbnb-and-booking-com.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">💰</span>
+          <img src="/images/blog/the-hidden-cost-of-airbnb-and-booking-com.jpg" alt="The hidden cost of Airbnb and Booking.com — what the commission really means over a season" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -404,7 +405,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 3 -->
       <a class="post-card" href="/blog/how-to-get-your-first-direct-booking.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">🎯</span>
+          <img src="/images/blog/how-to-get-your-first-direct-booking.jpg" alt="How to get your first direct booking within 30 days" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -424,7 +425,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 2 -->
       <a class="post-card" href="/blog/five-things-gite-owners-wish-they-knew.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">🏡</span>
+          <img src="/images/blog/five-things-gite-owners-wish-they-knew.jpg" alt="5 things French gîte owners wish they'd known before their first season" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
@@ -444,7 +445,7 @@ img { display: block; max-width: 100%; }
       <!-- Post 1 -->
       <a class="post-card" href="/blog/why-small-bbs-are-switching-to-booking-software.html">
         <div class="post-card-img">
-          <span class="post-card-img-icon">📖</span>
+          <img src="/images/blog/why-small-bbs-are-switching-to-booking-software.jpg" alt="Why small B&amp;Bs and gîtes are switching from paper diaries to simple booking software" loading="lazy" onerror="this.parentElement.style.display='none'" />
         </div>
         <div class="post-card-body">
           <div class="post-card-meta">
