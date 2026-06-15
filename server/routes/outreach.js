@@ -141,16 +141,18 @@ outreachRouter.delete('/prospects/:id', (req, res) => {
 });
 
 // ── Prospects — bulk CSV import ───────────────────────────────────────────────
-// Expects { rows: [{ name, company, email, notes }] }
+// Expects { rows: [{ name, company, email, phone, property_type, country, region, town, language, website, source, notes }] }
 outreachRouter.post('/prospects/bulk-import', (req, res) => {
   const { rows } = req.body;
   console.log('[outreach/import] received:', rows?.length ?? 0, 'rows', rows?.[0] ?? '');
   if (!Array.isArray(rows) || rows.length === 0) return res.status(400).json({ error: 'rows array required' });
 
-  const insert      = db.prepare(
-    `INSERT INTO prospects (name, company, email, source, country, language, website, notes, unsubscribe_token) VALUES (?, ?, ?, 'csv', ?, ?, ?, ?, ?)`
+  const insert = db.prepare(
+    `INSERT INTO prospects
+       (name, company, email, phone, property_type, source, country, region, town, language, website, notes, unsubscribe_token)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
-  const checkEmail  = db.prepare(`SELECT id FROM prospects WHERE email = ?`);
+  const checkEmail = db.prepare(`SELECT id FROM prospects WHERE email = ?`);
 
   let imported = 0;
   let skipped  = 0;
@@ -164,8 +166,24 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
       const normalEmail = r.email.toLowerCase().trim();
       if (checkEmail.get(normalEmail)) { skipped++; continue; } // duplicate
       try {
-        const token = makeUnsubToken();
-        insert.run(r.name.trim(), r.company?.trim() || null, normalEmail, r.country?.trim() || null, r.language?.trim() || null, r.website?.trim() || null, r.notes?.trim() || null, token);
+        const token   = makeUnsubToken();
+        const phone   = r.phone || r.Phone || r.telephone || r.Telephone || null;
+        const source  = r.source || r.Source || 'csv';
+        insert.run(
+          r.name.trim(),
+          r.company?.trim() || null,
+          normalEmail,
+          phone?.trim() || null,
+          r.property_type || r.type || null,
+          source,
+          r.country?.trim() || null,
+          r.region || r.Region || null,
+          r.town || r.Town || r.city || r.City || null,
+          r.language?.trim() || null,
+          r.website?.trim() || null,
+          r.notes?.trim() || null,
+          token,
+        );
         imported++;
       } catch (err) {
         errors.push(`Row "${r.name}" (${r.email}): ${err.message}`);

@@ -820,6 +820,16 @@ export function initSchema() {
     }
   }
 
+  // Phone outreach columns
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN phone TEXT DEFAULT NULL`); console.log('✓ phone column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN phone_status TEXT DEFAULT 'not_called'`); console.log('✓ phone_status column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN phone_notes TEXT DEFAULT NULL`); console.log('✓ phone_notes column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN last_called_at TEXT DEFAULT NULL`); console.log('✓ last_called_at column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN call_back_at TEXT DEFAULT NULL`); console.log('✓ call_back_at column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN town TEXT DEFAULT NULL`); console.log('✓ town column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN region TEXT DEFAULT NULL`); console.log('✓ region column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN property_type TEXT DEFAULT NULL`); console.log('✓ property_type column added to prospects'); } catch(e) {}
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,

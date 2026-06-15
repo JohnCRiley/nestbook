@@ -1287,3 +1287,85 @@ adminRouter.delete('/blog-images/:slug', (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ── GET /api/admin/phone-prospects ────────────────────────────────────────────
+adminRouter.get('/phone-prospects', (req, res) => {
+  const { region, town, status, search } = req.query;
+
+  let query = `
+    SELECT * FROM prospects
+    WHERE (phone IS NOT NULL AND phone != '')
+       OR (phone_status IS NOT NULL AND phone_status != 'not_called')
+  `;
+  const params = [];
+
+  if (region && region !== 'all') { query += ` AND region = ?`;  params.push(region); }
+  if (town   && town   !== 'all') { query += ` AND town = ?`;    params.push(town); }
+  if (status && status !== 'all') { query += ` AND phone_status = ?`; params.push(status); }
+  if (search) {
+    query += ` AND (company LIKE ? OR name LIKE ? OR town LIKE ?)`;
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  query += `
+    ORDER BY
+      CASE phone_status
+        WHEN 'not_called'     THEN 1
+        WHEN 'call_back'      THEN 2
+        WHEN 'no_answer'      THEN 3
+        WHEN 'voicemail'      THEN 4
+        WHEN 'interested'     THEN 5
+        WHEN 'not_interested' THEN 6
+        WHEN 'signed_up'      THEN 7
+        WHEN 'do_not_call'    THEN 8
+        ELSE 9
+      END,
+      region ASC, town ASC, company ASC
+  `;
+
+  const prospects = db.prepare(query).all(...params);
+
+  const regions = db.prepare(`
+    SELECT DISTINCT region FROM prospects
+    WHERE region IS NOT NULL AND region != ''
+    ORDER BY region ASC
+  `).all().map(r => r.region);
+
+  const towns = db.prepare(`
+    SELECT DISTINCT town, region FROM prospects
+    WHERE town IS NOT NULL AND town != ''
+    ORDER BY region ASC, town ASC
+  `).all();
+
+  const stats = db.prepare(`
+    SELECT phone_status, COUNT(*) as count
+    FROM prospects
+    WHERE phone IS NOT NULL AND phone != ''
+    GROUP BY phone_status
+  `).all();
+
+  res.json({ prospects, regions, towns, stats });
+});
+
+// ── PATCH /api/admin/phone-prospects/:id ─────────────────────────────────────
+adminRouter.patch('/phone-prospects/:id', (req, res) => {
+  const { phone, phone_status, phone_notes, call_back_at } = req.body;
+  const updates = [];
+  const params  = [];
+
+  if (phone        !== undefined) { updates.push('phone = ?');        params.push(phone); }
+  if (phone_status !== undefined) { updates.push('phone_status = ?'); params.push(phone_status); }
+  if (phone_notes  !== undefined) { updates.push('phone_notes = ?');  params.push(phone_notes); }
+  if (call_back_at !== undefined) { updates.push('call_back_at = ?'); params.push(call_back_at); }
+
+  const activeStatuses = ['no_answer', 'voicemail', 'interested', 'not_interested'];
+  if (phone_status && activeStatuses.includes(phone_status)) {
+    updates.push(`last_called_at = datetime('now')`);
+  }
+
+  if (updates.length === 0) return res.json({ success: true });
+
+  params.push(req.params.id);
+  db.prepare(`UPDATE prospects SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  res.json({ success: true });
+});
