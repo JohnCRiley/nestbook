@@ -464,6 +464,11 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     ? `<button class="btn-primary-large" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability &amp; book →</button>`
     : `<button class="btn-primary-large" onclick="scrollToEnquiry()" data-i18n="page.sendEnquiry">Send a booking enquiry</button>`;
 
+  const cancellationDays = property.cancellation_days ?? 7;
+  const cancellationText = cancellationDays > 0
+    ? `Free cancellation up to ${cancellationDays} days before arrival`
+    : 'Flexible cancellation — contact owner';
+
   let ctaSection;
   if (isWholeProperty) {
     ctaSection = `
@@ -472,6 +477,12 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     <h2 data-i18n="page.bookNow">Ready to book?</h2>
     <p data-i18n="page.ctaHint">Book directly with us for the best rates — no booking fees, payment goes straight to us.</p>
     ${bookOrEnquiryBtn}
+    <div class="nb-step-item" style="margin-top:16px;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#475569;">
+      <span class="nb-step-num" style="display:flex;align-items:center;">
+        <i class="ti ti-shield-check" style="font-size:1.1rem;color:#16a34a;"></i>
+      </span>
+      <span>${esc(cancellationText)}</span>
+    </div>
   </div>
 </section>`;
   } else {

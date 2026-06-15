@@ -1248,6 +1248,11 @@ John`
     } catch { /* no-op */ }
   }
 
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN cancellation_days INTEGER DEFAULT 7`);
+    console.log('✓ cancellation_days column added to properties');
+  } catch(e) { /* already exists */ }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

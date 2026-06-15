@@ -128,6 +128,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const canMarkArrived  = todayStr >= b.check_in_date;
   const canMarkDeparted = todayStr >= b.check_out_date;
 
+  const cancellationDays   = property?.cancellation_days ?? 7;
+  const daysUntilCheckIn   = Math.ceil((new Date(b.check_in_date) - new Date(todayStr)) / (1000 * 60 * 60 * 24));
+  const canFullyCancel     = daysUntilCheckIn > cancellationDays;
+  const withinCancellationWindow = daysUntilCheckIn <= cancellationDays && daysUntilCheckIn > 0;
+  const hasArrived         = daysUntilCheckIn <= 0;
+
   // Fetch room rate breakdown for accurate multi-period totals
   useEffect(() => {
     setRoomBreakdown(null);
@@ -897,26 +903,90 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
       <div className="panel-actions">
         <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
-        {b.status === 'confirmed' && (
-          isWP ? (
-            <div style={{
-              fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
-              <i className="ti ti-lock" style={{ fontSize: '0.85rem' }} />
-              Active bookings cannot be deleted — use Edit booking to make changes
-            </div>
-          ) : (
-            <button
-              className="btn-panel-danger"
-              style={{ fontSize: '0.82rem', padding: '7px 12px' }}
-              onClick={() => setShowCancelConfirm(true)}
-            >
-              {t('booking.cancelBooking')}
-            </button>
-          )
+        {!isWP && b.status === 'confirmed' && (
+          <button
+            className="btn-panel-danger"
+            style={{ fontSize: '0.82rem', padding: '7px 12px' }}
+            onClick={() => setShowCancelConfirm(true)}
+          >
+            {t('booking.cancelBooking')}
+          </button>
         )}
       </div>
+
+      {isWP && ['confirmed', 'pending_owner_approval'].includes(b.status) && (
+        <div style={{ marginTop: 16 }}>
+          {canFullyCancel && (
+            <div>
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                style={{
+                  background: 'none',
+                  border: '1.5px solid #fca5a5',
+                  color: '#dc2626',
+                  borderRadius: 8,
+                  padding: '10px 16px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <i className="ti ti-x" />
+                Cancel booking
+              </button>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 6 }}>
+                {daysUntilCheckIn} days until arrival — full cancellation available until {cancellationDays} days before
+              </p>
+            </div>
+          )}
+          {withinCancellationWindow && (
+            <div style={{
+              background: '#fef3c7',
+              border: '1.5px solid #f59e0b',
+              borderRadius: 10,
+              padding: '14px 16px',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                fontWeight: 700, fontSize: '0.85rem', color: '#92400e', marginBottom: 8,
+              }}>
+                <i className="ti ti-alert-triangle" />
+                Within cancellation window
+              </div>
+              <p style={{ fontSize: '0.78rem', color: '#78350f', lineHeight: 1.5, marginBottom: 10 }}>
+                Arrival is in {daysUntilCheckIn} day{daysUntilCheckIn !== 1 ? 's' : ''}.
+                Full cancellation closed {cancellationDays} days before arrival.
+                You can shorten the stay via Edit booking — the guest pays at least one night as a forfeit.
+              </p>
+              <button
+                onClick={onEdit}
+                style={{
+                  background: '#f59e0b', color: 'white', border: 'none',
+                  borderRadius: 7, padding: '8px 16px',
+                  fontSize: '0.82rem', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <i className="ti ti-calendar-minus" />
+                Edit booking to shorten stay
+              </button>
+            </div>
+          )}
+          {hasArrived && (
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <i className="ti ti-lock" style={{ fontSize: '0.85rem' }} />
+              Guests have arrived — use Edit booking to make changes
+            </div>
+          )}
+        </div>
+      )}
 
       </> /* end details tab */}
 

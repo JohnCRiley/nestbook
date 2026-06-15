@@ -191,6 +191,7 @@ propertiesRouter.put('/:id', (req, res) => {
       description, hero_image_url,
       rental_type, total_capacity, bedroom_count, bathroom_count, whole_property_rate,
       access_method, access_code, arrival_instructions, send_access_hours,
+      cancellation_days,
     } = req.body;
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
@@ -204,7 +205,8 @@ propertiesRouter.put('/:id', (req, res) => {
           description = ?, hero_image_url = ?,
           rental_type = ?, total_capacity = ?, bedroom_count = ?, bathroom_count = ?,
           whole_property_rate = ?,
-          access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?
+          access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
+          cancellation_days = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -227,6 +229,7 @@ propertiesRouter.put('/:id', (req, res) => {
       access_code || null,
       arrival_instructions || null,
       send_access_hours ? parseInt(send_access_hours, 10) : 24,
+      cancellation_days != null ? parseInt(cancellation_days, 10) : 7,
       req.params.id,
     );
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);

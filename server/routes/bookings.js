@@ -720,14 +720,38 @@ bookingsRouter.post('/:id/refund', (req, res) => {
 // ── DELETE /api/bookings/:id ──────────────────────────────────────────────
 bookingsRouter.delete('/:id', (req, res) => {
   try {
-    const booking = db.prepare('SELECT id, status, check_in_date, check_out_date FROM bookings WHERE id = ?').get(req.params.id);
+    const booking = db.prepare(`
+      SELECT b.*, p.rental_type, p.cancellation_days, p.owner_id
+      FROM bookings b
+      JOIN rooms r ON r.id = b.room_id
+      JOIN properties p ON p.id = r.property_id
+      WHERE b.id = ?
+    `).get(req.params.id);
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
     const todayIso = new Date().toISOString().split('T')[0];
+    const daysUntil = Math.ceil(
+      (new Date(booking.check_in_date) - new Date(todayIso)) / (1000 * 60 * 60 * 24)
+    );
+    const cancellationDays = booking.cancellation_days ?? 7;
+
+    if (booking.rental_type === 'whole_property') {
+      if (daysUntil <= 0) {
+        return res.status(403).json({
+          error: 'Cannot cancel — guests have already arrived or stay is in progress.',
+        });
+      }
+      if (daysUntil <= cancellationDays) {
+        return res.status(403).json({
+          error: `Cancellation window has passed (${cancellationDays} days before arrival). Use Edit booking to shorten the stay instead.`,
+        });
+      }
+    }
+
     const isActive = todayIso >= booking.check_in_date && todayIso <= booking.check_out_date;
-    if (isActive && ['confirmed', 'arriving'].includes(booking.status)) {
+    if (isActive && ['confirmed', 'arriving', 'in_house'].includes(booking.status)) {
       return res.status(403).json({
-        error: 'Cannot delete an active booking. Check the guest out first or edit the booking.',
+        error: 'Cannot delete an active booking.',
       });
     }
 

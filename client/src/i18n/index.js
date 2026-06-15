@@ -936,6 +936,8 @@ export const LANGS = {
     'settings.accessInstructionsLabel': 'Arrival instructions',
     'settings.accessInstructionsHint': 'How to find and enter the property, parking info, etc.',
     'settings.accessSendHoursLabel':   'Send access details (hours before check-in)',
+    'settings.cancellationPolicy':     'Cancellation window',
+    'settings.cancellationPolicyHint': 'Bookings can be fully cancelled up to this many days before arrival. After this point, stays can only be shortened — the guest pays at least one night as a forfeit.',
   },
 
   fr: {
@@ -1835,6 +1837,8 @@ planGateProFeature:    'Fonctionnalité Pro',
     'settings.accessInstructionsLabel': 'Instructions d\'arrivée',
     'settings.accessInstructionsHint': 'Comment trouver et entrer dans la propriété, infos parking, etc.',
     'settings.accessSendHoursLabel':   'Envoyer les infos d\'accès (heures avant l\'arrivée)',
+    'settings.cancellationPolicy':     'Delai d\'annulation',
+    'settings.cancellationPolicyHint': 'Les reservations peuvent etre entierement annulees jusqu\'a ce nombre de jours avant l\'arrivee. Apres ce delai, le sejour peut seulement etre raccourci.',
   },
 
   es: {
@@ -2734,6 +2738,8 @@ planGateProFeature:    'Función Pro',
     'settings.accessInstructionsLabel': 'Instrucciones de llegada',
     'settings.accessInstructionsHint': 'Cómo encontrar y acceder a la propiedad, info de aparcamiento, etc.',
     'settings.accessSendHoursLabel':   'Enviar detalles de acceso (horas antes del check-in)',
+    'settings.cancellationPolicy':     'Plazo de cancelacion',
+    'settings.cancellationPolicyHint': 'Las reservas pueden cancelarse completamente hasta este numero de dias antes de la llegada. Despues, la estancia solo puede acortarse.',
   },
 
   de: {
@@ -3633,6 +3639,8 @@ planGateProFeature:    'Pro-Funktion',
     'settings.accessInstructionsLabel': 'Ankunftshinweise',
     'settings.accessInstructionsHint': 'Wie man die Unterkunft findet und betritt, Parkinfos usw.',
     'settings.accessSendHoursLabel':   'Zugangsinfos senden (Stunden vor Check-in)',
+    'settings.cancellationPolicy':     'Stornierungsfrist',
+    'settings.cancellationPolicyHint': 'Buchungen konnen bis zu dieser Anzahl von Tagen vor der Ankunft vollstandig storniert werden. Danach kann der Aufenthalt nur noch verkurzt werden.',
   },
 
   nl: {
@@ -4562,5 +4570,7 @@ planGateProFeature:    'Pro-functie',
     'settings.accessInstructionsLabel': 'Aankomstinstructies',
     'settings.accessInstructionsHint': 'Hoe de accommodatie te vinden en te betreden, parkerinformatie, enz.',
     'settings.accessSendHoursLabel':   'Toegangsgegevens sturen (uren voor check-in)',
+    'settings.cancellationPolicy':     'Annuleringsperiode',
+    'settings.cancellationPolicyHint': 'Boekingen kunnen volledig worden geannuleerd tot dit aantal dagen voor aankomst. Daarna kan het verblijf alleen worden ingekort.',
   },
 };

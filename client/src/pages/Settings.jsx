@@ -194,6 +194,7 @@ export default function Settings() {
         access_code:          p.access_code          ?? '',
         arrival_instructions: p.arrival_instructions ?? '',
         send_access_hours:    p.send_access_hours    ?? 24,
+        cancellation_days:    p.cancellation_days    ?? 7,
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -1550,6 +1551,24 @@ function AccessCodeSection({ form, onChange, t }) {
             </select>
           </FormField>
 
+          <FormField label={t('settings.cancellationPolicy')} hint={t('settings.cancellationPolicyHint')}>
+            <select
+              name="cancellation_days"
+              className="form-control"
+              value={String(form.cancellation_days ?? '7')}
+              onChange={onChange}
+            >
+              <option value="0">Same day — guests can cancel anytime</option>
+              <option value="1">1 day before arrival</option>
+              <option value="2">2 days before arrival</option>
+              <option value="3">3 days before arrival</option>
+              <option value="7">7 days before arrival (recommended)</option>
+              <option value="14">14 days before arrival</option>
+              <option value="21">21 days before arrival</option>
+              <option value="30">30 days before arrival</option>
+            </select>
+          </FormField>
+
         </div>
       </div>
     </div>
@@ -2013,11 +2032,12 @@ function fmtDate(iso, locale = 'en') {
   return d.toLocaleDateString(browserLocale, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function FormField({ label, children }) {
+function FormField({ label, hint, children }) {
   return (
     <div className="form-group">
       <label className="form-label">{label}</label>
       {children}
+      {hint && <p className="form-hint">{hint}</p>}
     </div>
   );
 }
