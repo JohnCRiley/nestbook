@@ -1263,6 +1263,65 @@ John`
     console.log('✓ cancellation_days column added to properties');
   } catch(e) { /* already exists */ }
 
+  // Migration: update existing WP properties to use WP-appropriate service categories.
+  // Removes IP-mode defaults (Bar & drinks, Restaurant, etc.) and inserts WP defaults
+  // (Equipment rental, Activities, etc.) if not already present.
+  try {
+    const wpProperties = db.prepare(
+      `SELECT id FROM properties WHERE rental_type = 'whole_property'`
+    ).all();
+
+    const wpDefaultCategories = [
+      { name: 'Equipment rental', tax_rate: 20 },
+      { name: 'Activities',       tax_rate: 20 },
+      { name: 'Firewood & logs',  tax_rate: 20 },
+      { name: 'Linen & towels',   tax_rate: 20 },
+      { name: 'Welcome hamper',   tax_rate: 20 },
+      { name: 'Bike hire',        tax_rate: 20 },
+      { name: 'Other',            tax_rate: 20 },
+    ];
+
+    const ipCategoriesToRemove = [
+      'Bar & drinks', 'Restaurant', 'Room service',
+      'Spa & treatments', 'Laundry', 'Parking', 'Minibar',
+    ];
+
+    const deleteStmt = db.prepare(
+      `DELETE FROM service_categories WHERE property_id = ? AND name = ?`
+    );
+    const existsStmt = db.prepare(
+      `SELECT 1 FROM service_categories WHERE property_id = ? AND name = ?`
+    );
+    const insertStmt = db.prepare(
+      `INSERT INTO service_categories (property_id, name, tax_rate) VALUES (?, ?, ?)`
+    );
+
+    for (const { id } of wpProperties) {
+      for (const name of ipCategoriesToRemove) {
+        deleteStmt.run(id, name);
+      }
+      for (const cat of wpDefaultCategories) {
+        if (!existsStmt.get(id, cat.name)) {
+          insertStmt.run(id, cat.name, cat.tax_rate);
+        }
+      }
+    }
+
+    if (wpProperties.length > 0) {
+      console.log(`✓ WP service categories updated for ${wpProperties.length} propert${wpProperties.length === 1 ? 'y' : 'ies'}.`);
+    }
+  } catch (e) {
+    console.error('[migration] WP categories error:', e.message);
+  }
+
+  // Prevent duplicate category names per property
+  try {
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_service_categories_property_name
+      ON service_categories(property_id, name)
+    `);
+  } catch { /* already exists or duplicates present */ }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

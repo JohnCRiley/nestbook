@@ -6,6 +6,24 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import AddChargeModal from './charges/AddChargeModal.jsx';
 import ChargesDetailModal from './charges/ChargesDetailModal.jsx';
 
+const thStyle = {
+  padding: '10px 16px',
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: 'var(--text-secondary)',
+  textAlign: 'left',
+  borderBottom: '1px solid var(--border)',
+};
+
+const tdStyle = {
+  padding: '12px 16px',
+  fontSize: '0.88rem',
+  color: 'var(--text-primary)',
+  verticalAlign: 'middle',
+};
+
 // ── Upgrade gate ──────────────────────────────────────────────────────────────
 function UpgradeGate() {
   const t = useT();
@@ -29,7 +47,7 @@ function UpgradeGate() {
   );
 }
 
-// ── Room tile ─────────────────────────────────────────────────────────────────
+// ── Room tile (IP mode only) ──────────────────────────────────────────────────
 function RoomTile({ room, onAddCharge, onViewCharges, canAdd, fmtCurrency }) {
   const t = useT();
   const chargeCount = room.charges_count ?? 0;
@@ -109,6 +127,11 @@ export default function Charges() {
   const [viewChargeFor, setViewChargeFor] = useState(null);
   const [detailRefreshKey, setDetailRefreshKey] = useState(0);
 
+  // WP mode — inline charge list
+  const [wpCharges, setWpCharges] = useState([]);
+  const [wpChargesKey, setWpChargesKey] = useState(0);
+
+  const isWP = property?.rental_type === 'whole_property';
   const isChargesStaff = user?.role === 'charges_staff';
   const canAdd = user?.role === 'charges_staff' || user?.role === 'reception' || user?.role === 'owner';
   const canAddFromDetail = user?.role === 'owner' || user?.role === 'reception';
@@ -127,6 +150,16 @@ export default function Charges() {
     }).catch(() => setLoading(false));
   }, [property?.id, plan, isChargesStaff]);
 
+  const activeBooking = isWP ? (rooms[0] ?? null) : null;
+
+  useEffect(() => {
+    if (!isWP || !activeBooking?.booking_id) { setWpCharges([]); return; }
+    apiFetch(`/api/charges/booking/${activeBooking.booking_id}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setWpCharges(Array.isArray(data) ? data : []))
+      .catch(() => setWpCharges([]));
+  }, [isWP, activeBooking?.booking_id, wpChargesKey]);
+
   if (plan !== 'multi' && !isChargesStaff) return <UpgradeGate />;
 
   if (loading) {
@@ -139,57 +172,231 @@ export default function Charges() {
 
   const handleChargeSaved = (charge) => {
     setAddChargeFor(null);
-    setDetailRefreshKey((k) => k + 1);
-    setRooms((prev) =>
-      prev.map((r) =>
-        r.booking_id === charge.booking_id
-          ? { ...r, charges_total: (r.charges_total ?? 0) + parseFloat(charge.amount), charges_count: (r.charges_count ?? 0) + 1 }
-          : r
-      )
-    );
+    if (isWP) {
+      setWpChargesKey((k) => k + 1);
+    } else {
+      setDetailRefreshKey((k) => k + 1);
+      setRooms((prev) =>
+        prev.map((r) =>
+          r.booking_id === charge.booking_id
+            ? { ...r, charges_total: (r.charges_total ?? 0) + parseFloat(charge.amount), charges_count: (r.charges_count ?? 0) + 1 }
+            : r
+        )
+      );
+    }
   };
+
+  const handleVoid = (chargeId) => {
+    apiFetch(`/api/charges/${chargeId}`, { method: 'DELETE' })
+      .then((r) => { if (r.ok) setWpChargesKey((k) => k + 1); });
+  };
+
+  const formatDate = (d) => {
+    if (!d) return '';
+    const [, m, day] = d.split('-');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(day, 10)} ${months[parseInt(m, 10) - 1]}`;
+  };
+
+  const activeTotal = wpCharges.filter((c) => !c.voided_at).reduce((s, c) => s + c.amount, 0);
 
   return (
     <div className="page-container">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 className="page-title">
-            {property?.rental_type === 'whole_property' ? t('charges.propertyCharges') : t('charges')}
+            {isWP ? t('charges.propertyCharges') : t('charges')}
           </h1>
           <div style={{ color: '#64748b', fontSize: '0.88rem', marginTop: 4 }}>{t('chargesSubtitle')}</div>
         </div>
       </div>
 
-      {rooms.length === 0 ? (
-        <div style={{
-          background: '#f8fafc', borderRadius: 10, padding: '32px 24px',
-          textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem',
-          border: '1.5px dashed #e2e8f0',
-        }}>
-          {t('chargesNoRooms')}
-        </div>
-      ) : (
-        <>
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>
-            {t('chargesRoomsToday')} — {rooms.length}
-          </div>
+      {isWP ? (
+        // ── WP MODE: Full-width panel ─────────────────────────────────────────
+        !activeBooking ? (
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: 12,
+            background: '#f8fafc', borderRadius: 10, padding: '32px 24px',
+            textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem',
+            border: '1.5px dashed #e2e8f0',
           }}>
-            {rooms.map((room) => (
-              <RoomTile
-                key={room.booking_id}
-                room={room}
-                onAddCharge={setAddChargeFor}
-                onViewCharges={setViewChargeFor}
-                canAdd={canAdd}
-                fmtCurrency={fmtCurrency}
-              />
-            ))}
+            {t('chargesNoRooms')}
           </div>
-        </>
+        ) : (
+          <div style={{
+            background: 'var(--card-bg)',
+            border: '1.5px solid var(--border)',
+            borderRadius: 12,
+            overflow: 'hidden',
+            marginBottom: 16,
+          }}>
+            {/* Panel header */}
+            <div style={{
+              background: 'var(--accent)',
+              padding: '14px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}>
+              <div>
+                <div style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.07em',
+                  color: 'rgba(255,255,255,0.7)',
+                  marginBottom: 4,
+                }}>
+                  {t('charges.propertyCharges')}
+                </div>
+                <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem' }}>
+                  {property?.name}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.82rem', marginTop: 2 }}>
+                  {activeBooking.guest_first_name} {activeBooking.guest_last_name}
+                  &nbsp;·&nbsp;
+                  {formatDate(activeBooking.check_in_date)} → {formatDate(activeBooking.check_out_date)}
+                </div>
+              </div>
+              {canAdd && (
+                <button
+                  onClick={() => setAddChargeFor(activeBooking)}
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    color: 'white',
+                    borderRadius: 8,
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    flexShrink: 0,
+                  }}
+                >
+                  <i className="ti ti-plus" />
+                  {t('chargesAddCharge')}
+                </button>
+              )}
+            </div>
+
+            {/* Charges table */}
+            {wpCharges.length === 0 ? (
+              <div style={{
+                padding: '32px 20px',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                fontSize: '0.88rem',
+              }}>
+                <i className="ti ti-receipt-off" style={{ fontSize: '2rem', display: 'block', marginBottom: 8 }} />
+                {t('chargesCheckoutNone')}
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--tint-bg)' }}>
+                    <th style={thStyle}>Category</th>
+                    <th style={thStyle}>Description</th>
+                    <th style={{ ...thStyle, textAlign: 'right' }}>Amount</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Status</th>
+                    <th style={{ ...thStyle, width: 40 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {wpCharges.map((charge, i) => (
+                    <tr key={charge.id} style={{
+                      background: i % 2 === 0 ? 'var(--card-bg)' : 'var(--tint-bg)',
+                      borderBottom: '1px solid var(--border)',
+                    }}>
+                      <td style={tdStyle}>{charge.category_name ?? '—'}</td>
+                      <td style={tdStyle}>{charge.description ?? '—'}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600 }}>
+                        {fmtCurrency(charge.amount)}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'center' }}>
+                        {charge.voided_at ? (
+                          <span style={{
+                            background: '#fef2f2', color: '#dc2626',
+                            padding: '2px 8px', borderRadius: 4,
+                            fontSize: '0.72rem', fontWeight: 600,
+                          }}>Voided</span>
+                        ) : (
+                          <span style={{
+                            background: 'var(--tint-bg)', color: 'var(--accent)',
+                            padding: '2px 8px', borderRadius: 4,
+                            fontSize: '0.72rem', fontWeight: 600,
+                          }}>Active</span>
+                        )}
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'center' }}>
+                        {!charge.voided_at && canAdd && (
+                          <button
+                            onClick={() => handleVoid(charge.id)}
+                            style={{
+                              background: 'none', border: 'none',
+                              color: 'var(--text-muted)', cursor: 'pointer',
+                              padding: 4, fontSize: '0.9rem',
+                            }}
+                            title="Void charge"
+                          >
+                            <i className="ti ti-x" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: 'var(--tint-bg)', borderTop: '2px solid var(--border)' }}>
+                    <td colSpan={2} style={{ ...tdStyle, fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Total outstanding
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)' }}>
+                      {fmtCurrency(activeTotal)}
+                    </td>
+                    <td colSpan={2} />
+                  </tr>
+                </tfoot>
+              </table>
+            )}
+          </div>
+        )
+      ) : (
+        // ── IP MODE: Room tiles grid ──────────────────────────────────────────
+        rooms.length === 0 ? (
+          <div style={{
+            background: '#f8fafc', borderRadius: 10, padding: '32px 24px',
+            textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem',
+            border: '1.5px dashed #e2e8f0',
+          }}>
+            {t('chargesNoRooms')}
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>
+              {t('chargesRoomsToday')} — {rooms.length}
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 12,
+            }}>
+              {rooms.map((room) => (
+                <RoomTile
+                  key={room.booking_id}
+                  room={room}
+                  onAddCharge={setAddChargeFor}
+                  onViewCharges={setViewChargeFor}
+                  canAdd={canAdd}
+                  fmtCurrency={fmtCurrency}
+                />
+              ))}
+            </div>
+          </>
+        )
       )}
 
       {addChargeFor && categories.length > 0 && (
