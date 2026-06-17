@@ -707,13 +707,17 @@ function CsvImportModal({ onClose, onImported }) {
       const obj = {};
       headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
       return {
-        name:     obj.name          || obj['full name']   || '',
-        company:  obj.property_name || obj.company        || obj.property || '',
-        email:    obj.email                               || '',
-        country:  obj.country                             || '',
-        language: obj.language                            || '',
-        website:  obj.website                             || '',
-        notes:    obj.notes                               || '',
+        name:          obj.name          || obj['full name']   || '',
+        company:       obj.property_name || obj.company        || obj.property || '',
+        email:         obj.email                               || '',
+        phone:         obj.phone         || obj.telephone      || obj['phone number'] || '',
+        property_type: obj.property_type || obj.type           || '',
+        country:       obj.country                             || '',
+        region:        obj.region                              || '',
+        town:          obj.town          || obj.city           || '',
+        language:      obj.language                            || '',
+        website:       obj.website                             || '',
+        notes:         obj.notes                               || '',
       };
     }).filter(r => r.email && r.name);
   }
