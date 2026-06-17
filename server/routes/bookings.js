@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
+import { calcSeasonalTotal } from '../utils/ratePeriods.js';
 
 export const bookingsRouter = Router();
 
@@ -403,10 +404,12 @@ bookingsRouter.post('/', (req, res) => {
     }
 
     let finalTotalPrice = total_price ?? null;
-    if (!finalTotalPrice && prop?.rental_type === 'whole_property' && prop?.whole_property_rate) {
-      const msPerDay = 86400000;
-      const nights = Math.max(0, Math.round((new Date(check_out_date) - new Date(check_in_date)) / msPerDay));
-      finalTotalPrice = nights * prop.whole_property_rate;
+    if (!finalTotalPrice && prop?.rental_type === 'whole_property' && room_id) {
+      finalTotalPrice = calcSeasonalTotal(
+        Number(property_id), Number(room_id),
+        check_in_date, check_out_date,
+        prop.whole_property_rate ?? 0
+      );
     }
 
     const result = db.prepare(`
@@ -563,11 +566,15 @@ bookingsRouter.put('/:id', (req, res) => {
     const newCheckIn  = check_in_date  ?? existing.check_in_date;
     const newCheckOut = check_out_date ?? existing.check_out_date;
     if (newCheckIn !== existing.check_in_date || newCheckOut !== existing.check_out_date) {
-      const nights = Math.max(0, Math.round((new Date(newCheckOut) - new Date(newCheckIn)) / 86400000));
       const prop = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(existing.property_id);
       if (prop?.rental_type === 'whole_property') {
-        finalTotalPrice = nights * (prop.whole_property_rate || 0);
+        finalTotalPrice = calcSeasonalTotal(
+          existing.property_id, existing.room_id,
+          newCheckIn, newCheckOut,
+          prop.whole_property_rate ?? 0
+        );
       } else {
+        const nights = Math.max(0, Math.round((new Date(newCheckOut) - new Date(newCheckIn)) / 86400000));
         finalTotalPrice = nights * (existing.price_per_night || 0);
       }
     }

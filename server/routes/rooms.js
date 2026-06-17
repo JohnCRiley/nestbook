@@ -136,6 +136,10 @@ roomsRouter.get('/:id/rate-range', (req, res) => {
     const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
+    // WP properties store the base rate on the property, not the room
+    const propRow = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(room.property_id);
+    const baseRateOverride = propRow?.rental_type === 'whole_property' ? (propRow.whole_property_rate ?? null) : null;
+
     function addDaysIso(iso, n) {
       const d = new Date(iso + 'T00:00:00Z');
       d.setUTCDate(d.getUTCDate() + n);
@@ -145,8 +149,8 @@ roomsRouter.get('/:id/rate-range', (req, res) => {
     const breakdown = [];
     let current = checkIn;
     while (current < checkOut) {
-      const result     = getRateForDate(room.property_id, rid, current);
-      const rate       = result?.rate ?? room.price_per_night;
+      const result     = getRateForDate(room.property_id, rid, current, baseRateOverride);
+      const rate       = result?.rate ?? (baseRateOverride ?? room.price_per_night);
       const periodName = result?.periodName ?? null;
       const last       = breakdown[breakdown.length - 1];
       if (last && last.ratePerNight === rate && last.periodName === periodName) {

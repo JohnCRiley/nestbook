@@ -395,6 +395,17 @@
               price_per_night: S.wholePropertyRate,
               capacity:        S.totalCapacity,
             };
+            // Fetch seasonal rate for the selected dates
+            try {
+              const rateData = await apiFetch(
+                `/api/widget/rate-range?propertyId=${PROPERTY_ID}&checkIn=${S.checkIn}&checkOut=${S.checkOut}`
+              );
+              S.wpTotal     = rateData.total;
+              S.wpBreakdown = rateData.breakdown;
+            } catch {
+              S.wpTotal     = null;
+              S.wpBreakdown = null;
+            }
             S.step = 2;
           }
         } else {
@@ -437,7 +448,9 @@
         });
         // 2. Create the booking
         const nights     = nightsBetween(S.checkIn, S.checkOut);
-        const totalPrice = S.selectedRoom.price_per_night * nights;
+        const totalPrice = S.wholeProperty
+          ? (S.wpTotal ?? (S.wholePropertyRate * nights))
+          : S.selectedRoom.price_per_night * nights;
         const bookingStatus = S.wholeProperty ? 'pending_owner_approval' : 'confirmed';
         const booking = await apiFetch('/api/widget/bookings', {
           method: 'POST',
@@ -1097,8 +1110,8 @@
   // ── Step 2 (WP): Availability confirmed + summary ─────────────────────────
   function renderStep2WP() {
     const nights    = nightsBetween(S.checkIn, S.checkOut);
-    const total     = S.wholePropertyRate * nights;
-    const rate      = S.wholePropertyRate;
+    const total     = S.wpTotal ?? (S.wholePropertyRate * nights);
+    const segments  = S.wpBreakdown && S.wpBreakdown.length > 1 ? S.wpBreakdown : null;
 
     // Available badge
     const badge = el('div', 'nb-avail-badge');
@@ -1124,15 +1137,47 @@
     datesRow.appendChild(dateCol(T.checkOut, fmtDate(S.checkOut)));
     card.appendChild(datesRow);
 
-    if (rate > 0) {
-      const priceRow = el('div', 'nb-wp-price-row');
-      const priceLeft = el('span', '');
-      priceLeft.appendChild(txt(T.nights(nights) + ' × ' + CUR_SYMBOL + rate));
-      const priceRight = el('strong', '');
-      priceRight.appendChild(txt(CUR_SYMBOL + total.toLocaleString()));
-      priceRow.appendChild(priceLeft);
-      priceRow.appendChild(priceRight);
-      card.appendChild(priceRow);
+    if (total > 0) {
+      if (segments) {
+        // Multiple rate segments — show each line
+        segments.forEach((seg) => {
+          const segRow = el('div', 'nb-wp-price-row');
+          const segLeft = el('span', '');
+          segLeft.appendChild(txt(T.nights(seg.nights) + ' × ' + CUR_SYMBOL + seg.rate.toFixed(2)));
+          if (seg.periodName) {
+            const tag = el('span', 'nb-rate-tag');
+            tag.appendChild(txt(seg.periodName));
+            segLeft.appendChild(tag);
+          }
+          const segRight = el('strong', '');
+          segRight.appendChild(txt(CUR_SYMBOL + (seg.rate * seg.nights).toLocaleString()));
+          segRow.appendChild(segLeft);
+          segRow.appendChild(segRight);
+          card.appendChild(segRow);
+        });
+        const totalRow = el('div', 'nb-wp-price-row nb-wp-price-total');
+        const totalLeft = el('span', ''); totalLeft.appendChild(txt('Total'));
+        const totalRight = el('strong', ''); totalRight.appendChild(txt(CUR_SYMBOL + total.toLocaleString()));
+        totalRow.appendChild(totalLeft);
+        totalRow.appendChild(totalRight);
+        card.appendChild(totalRow);
+      } else {
+        // Single rate
+        const priceRow = el('div', 'nb-wp-price-row');
+        const priceLeft = el('span', '');
+        const displayRate = S.wpBreakdown?.[0]?.rate ?? S.wholePropertyRate;
+        priceLeft.appendChild(txt(T.nights(nights) + ' × ' + CUR_SYMBOL + displayRate));
+        if (S.wpBreakdown?.[0]?.periodName) {
+          const tag = el('span', 'nb-rate-tag');
+          tag.appendChild(txt(S.wpBreakdown[0].periodName));
+          priceLeft.appendChild(tag);
+        }
+        const priceRight = el('strong', '');
+        priceRight.appendChild(txt(CUR_SYMBOL + total.toLocaleString()));
+        priceRow.appendChild(priceLeft);
+        priceRow.appendChild(priceRight);
+        card.appendChild(priceRow);
+      }
     }
 
     if (S.totalCapacity > 0) {
@@ -1317,7 +1362,9 @@
     }
 
     const nights    = nightsBetween(S.checkIn, S.checkOut);
-    const totalPrice = S.selectedRoom.price_per_night * nights;
+    const totalPrice = S.wholeProperty
+      ? (S.wpTotal ?? (S.wholePropertyRate * nights))
+      : S.selectedRoom.price_per_night * nights;
 
     // Summary card
     const summary = el('div', 'nb-summary');
@@ -1345,7 +1392,9 @@
     const pcBig = el('div', 'nb-price-big');
     pcBig.appendChild(txt(CUR_SYMBOL + totalPrice.toLocaleString()));
     const pcDesc = el('div', 'nb-price-desc');
-    const ratePerNight = S.selectedRoom.price_per_night;
+    const ratePerNight = S.wholeProperty
+      ? (S.wpBreakdown?.length === 1 ? S.wpBreakdown[0].ratePerNight : 0)
+      : S.selectedRoom.price_per_night;
     const priceDescTxt = ratePerNight > 0
       ? CUR_SYMBOL + ratePerNight + T.perNight + ' × ' + T.nights(nights)
       : T.nights(nights);

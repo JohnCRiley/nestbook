@@ -5,6 +5,7 @@
 import crypto from 'crypto';
 import { Router } from 'express';
 import db from '../db/database.js';
+import { getRateForDate } from '../utils/ratePeriods.js';
 import {
   sendBookingConfirmation,
   sendApprovalRequestEmail,
@@ -73,6 +74,54 @@ widgetRouter.get('/rate-periods', (req, res) => {
       'SELECT id, name, date_from, date_to, rate_type, rate_value, priority FROM rate_periods WHERE property_id = ? ORDER BY priority ASC, id ASC'
     ).all(property_id);
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/widget/rate-range?propertyId=X&checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD ──
+// Returns seasonal rate total + per-segment breakdown for a date range.
+// Used by WP widget to show correct price including seasonal adjustments.
+widgetRouter.get('/rate-range', (req, res) => {
+  try {
+    const { propertyId, checkIn, checkOut } = req.query;
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    if (!propertyId || !checkIn || !dateRe.test(checkIn) || !checkOut || !dateRe.test(checkOut) || checkOut <= checkIn) {
+      return res.status(400).json({ error: 'propertyId, checkIn and checkOut (YYYY-MM-DD) required' });
+    }
+
+    const prop = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    if (!prop) return res.status(404).json({ error: 'Property not found' });
+
+    const room = db.prepare('SELECT id FROM rooms WHERE property_id = ? ORDER BY id LIMIT 1').get(propertyId);
+    if (!room) return res.status(404).json({ error: 'No rooms found for this property' });
+
+    const isWP = prop.rental_type === 'whole_property';
+    const baseRate = isWP ? (prop.whole_property_rate ?? 0) : 0;
+
+    const breakdown = [];
+    function addDay(iso) {
+      const d = new Date(iso + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+    let current = checkIn;
+    while (current < checkOut) {
+      const result = getRateForDate(prop.id, room.id, current, isWP ? baseRate : null);
+      const rate = result?.rate ?? baseRate;
+      const periodName = result?.periodName ?? null;
+      const last = breakdown[breakdown.length - 1];
+      if (last && last.rate === rate && last.periodName === periodName) {
+        last.nights++;
+      } else {
+        breakdown.push({ periodName, nights: 1, rate });
+      }
+      current = addDay(current);
+    }
+
+    const total = Math.round(breakdown.reduce((s, seg) => s + seg.rate * seg.nights, 0) * 100) / 100;
+    const nights = breakdown.reduce((s, seg) => s + seg.nights, 0);
+    res.json({ total, nights, baseRate, breakdown });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -136,12 +136,13 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   // ── Rate breakdown — fetched when room + both dates are set ──────────────
   useEffect(() => {
     setRateBreakdown(null);
-    if (!form.roomId || !form.checkIn || !form.checkOut || form.checkOut <= form.checkIn) return;
-    apiFetch(`/api/rooms/${form.roomId}/rate-range?check_in=${form.checkIn}&check_out=${form.checkOut}`)
+    const effectiveRoomId = isWP ? rooms[0]?.id : (form.roomId ? Number(form.roomId) : null);
+    if (!effectiveRoomId || !form.checkIn || !form.checkOut || form.checkOut <= form.checkIn) return;
+    apiFetch(`/api/rooms/${effectiveRoomId}/rate-range?check_in=${form.checkIn}&check_out=${form.checkOut}`)
       .then(r => r.ok ? r.json() : null)
       .then(setRateBreakdown)
       .catch(() => {});
-  }, [form.roomId, form.checkIn, form.checkOut]);
+  }, [isWP, rooms, form.roomId, form.checkIn, form.checkOut]);
 
   // ── Keep bfMorning inside valid range when dates or type change ────────────
   useEffect(() => {
@@ -191,7 +192,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const wpRate            = parseFloat(property?.whole_property_rate) || 0;
   const wpPropertyBooked  = isWP && datesValid && bookedRoomIds.has(Number(rooms[0]?.id));
   const roomSubtotal      = isWP
-    ? (nightsCount ? nightsCount * wpRate : 0)
+    ? (rateBreakdown?.total ?? (nightsCount ? nightsCount * wpRate : 0))
     : (rateBreakdown?.total ?? (nightsCount && selectedRoom ? nightsCount * selectedRoom.price_per_night : 0));
   const bfMinMorning      = form.checkIn  ? addDays(form.checkIn, 1) : '';
   const bfMaxMorning      = form.checkOut || '';
@@ -688,15 +689,38 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     }}>
                       {/* Room row(s) */}
                       {isWP ? (
-                        <div style={{
-                          display: 'flex', justifyContent: 'space-between',
-                          padding: '7px 12px', borderBottom: '1px solid var(--border)',
-                        }}>
-                          <span style={{ color: '#64748b' }}>
-                            {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${wpRate.toFixed(2)}`)}
-                          </span>
-                          <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
-                        </div>
+                        (rateBreakdown?.breakdown ?? []).length > 0 ? (
+                          rateBreakdown.breakdown.map((seg, i) => (
+                            <div key={i} style={{
+                              display: 'flex', justifyContent: 'space-between',
+                              padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                            }}>
+                              <span style={{ color: '#64748b' }}>
+                                {t('nbPriceBreakdownRoom')(t('nightWord')(seg.nights), `${currencySymbol}${seg.ratePerNight.toFixed(2)}`)}
+                                {seg.periodName && (
+                                  <span style={{
+                                    marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
+                                    background: '#fef9c3', color: '#854d0e',
+                                    padding: '1px 6px', borderRadius: 4,
+                                  }}>
+                                    {t('nbSeasonalRate')(seg.periodName)}
+                                  </span>
+                                )}
+                              </span>
+                              <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(seg.subtotal)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{
+                            display: 'flex', justifyContent: 'space-between',
+                            padding: '7px 12px', borderBottom: '1px solid var(--border)',
+                          }}>
+                            <span style={{ color: '#64748b' }}>
+                              {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${wpRate.toFixed(2)}`)}
+                            </span>
+                            <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
+                          </div>
+                        )
                       ) : (rateBreakdown?.breakdown ?? []).length > 0 ? (
                         rateBreakdown.breakdown.map((seg, i) => (
                           <div key={i} style={{

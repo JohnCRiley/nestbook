@@ -311,6 +311,7 @@ export default function Calendar() {
           locale={locale}
           onBookedClick={handleBookedClick}
           onEmptyClick={handleWpEmptyClick}
+          ratePeriods={ratePeriods}
         />
       ) : (
         /* ── B&B week grid ────────────────────────────────────────────── */
@@ -408,7 +409,7 @@ function firstDowOfMonth(year, month) {
   return d === 0 ? 6 : d - 1; // 0=Mon … 6=Sun
 }
 
-function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, monthNames, dayNames, t }) {
+function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, monthNames, dayNames, t, ratePeriods }) {
   const numDays  = daysInMonth(year, month);
   const startDow = firstDowOfMonth(year, month);
 
@@ -470,6 +471,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
         </div>
       );
     } else {
+      const activePeriod = !isPast && ratePeriods ? getActivePeriod(ratePeriods, iso) : null;
       cells.push(
         <div
           key={iso}
@@ -477,6 +479,12 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
           onClick={isPast ? undefined : () => onEmptyClick(iso)}
         >
           <span className="wpc-day-num">{d}</span>
+          {activePeriod && (
+            <span
+              style={{ display: 'block', width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', margin: '1px auto 0' }}
+              title={activePeriod.name}
+            />
+          )}
         </div>
       );
     }
@@ -493,7 +501,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
   );
 }
 
-function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEmptyClick }) {
+function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEmptyClick, ratePeriods }) {
   const todayDate = parseDate(today);
   const [offset, setOffset] = useState(0);
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
@@ -529,13 +537,13 @@ function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEm
         <MonthGrid
           year={year1} month={month1} bookings={bookings} today={today}
           onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
-          monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t}
+          monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t} ratePeriods={ratePeriods}
         />
         {isWide && (
           <MonthGrid
             year={year2} month={month2} bookings={bookings} today={today}
             onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
-            monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t}
+            monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t} ratePeriods={ratePeriods}
           />
         )}
       </div>
