@@ -1294,8 +1294,7 @@ adminRouter.get('/phone-prospects', (req, res) => {
 
   let query = `
     SELECT * FROM prospects
-    WHERE (phone IS NOT NULL AND phone != '')
-       OR (phone_status IS NOT NULL AND phone_status != 'not_called')
+    WHERE phone IS NOT NULL AND phone != ''
   `;
   const params = [];
 
