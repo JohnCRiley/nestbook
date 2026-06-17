@@ -8,6 +8,7 @@ import { sendWelcomeEmail, sendFreeWelcomeEmail, sendVerificationEmail, sendPass
 import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
+import { seedCategories } from '../utils/categories.js';
 
 export const authRouter = Router();
 
@@ -118,22 +119,8 @@ authRouter.post('/register', (req, res) => {
 
     db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?').run(userId, propId);
 
-    // Seed default service categories for new property
-    const seedCat = db.prepare(
-      `INSERT INTO service_categories (property_id, name, color, icon, sort_order) VALUES (?, ?, ?, ?, ?)`
-    );
-    const defaultCategories = [
-      ['Food & Drink', '#f97316', '🍽️', 0],
-      ['Bar',          '#8b5cf6', '🍺', 1],
-      ['Laundry',      '#0ea5e9', '🧺', 2],
-      ['Spa & Wellness','#10b981','💆', 3],
-      ['Activities',   '#f59e0b', '⛷️', 4],
-      ['Transport',    '#6366f1', '🚗', 5],
-      ['Other',        '#64748b', '📌', 6],
-    ];
-    for (const [name, color, icon, sort_order] of defaultCategories) {
-      seedCat.run(propId, name, color, icon, sort_order);
-    }
+    // Seed default service categories — always IP at registration (rental_type defaults to 'rooms')
+    seedCategories(db, propId, 'rooms');
 
     db.exec('COMMIT');
   } catch (err) {

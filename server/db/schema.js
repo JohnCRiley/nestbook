@@ -1,5 +1,6 @@
 import db from './database.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
+import { seedCategories } from '../utils/categories.js';
 
 /**
  * Creates all NestBook tables if they don't already exist.
@@ -543,40 +544,18 @@ export function initSchema() {
   // Add tax_rate to service_categories (idempotent)
   try { db.exec(`ALTER TABLE service_categories ADD COLUMN tax_rate REAL NOT NULL DEFAULT 0`); } catch {}
 
-  // Seed default service categories for properties that have none yet
-  const propertiesWithoutCategories = db.prepare(`
-    SELECT p.id, p.rental_type FROM properties p
-    WHERE NOT EXISTS (SELECT 1 FROM service_categories sc WHERE sc.property_id = p.id)
-  `).all();
-  if (propertiesWithoutCategories.length > 0) {
-    const seedCat = db.prepare(
-      `INSERT INTO service_categories (property_id, name, color, icon, sort_order, tax_rate) VALUES (?, ?, ?, ?, ?, ?)`
-    );
-    const defaultsWP = [
-      ['Equipment rental', '#f97316', '', 0, 20],
-      ['Activities',       '#f59e0b', '', 1, 20],
-      ['Firewood & logs',  '#92400e', '', 2, 20],
-      ['Linen & towels',   '#0ea5e9', '', 3, 20],
-      ['Welcome hamper',   '#10b981', '', 4, 20],
-      ['Bike hire',        '#6366f1', '', 5, 20],
-      ['Other',            '#64748b', '', 6, 20],
-    ];
-    const defaultsRooms = [
-      ['Bar & drinks',    '#8b5cf6', '', 0, 20],
-      ['Restaurant',      '#f97316', '', 1, 20],
-      ['Room service',    '#f59e0b', '', 2, 20],
-      ['Spa & treatments','#10b981', '', 3, 20],
-      ['Laundry',         '#0ea5e9', '', 4, 20],
-      ['Parking',         '#6366f1', '', 5, 20],
-      ['Other',           '#64748b', '', 6, 20],
-    ];
+  // Seed correct service categories for properties that have none yet
+  {
+    const propertiesWithoutCategories = db.prepare(`
+      SELECT p.id, p.rental_type FROM properties p
+      WHERE NOT EXISTS (SELECT 1 FROM service_categories sc WHERE sc.property_id = p.id)
+    `).all();
     for (const { id, rental_type } of propertiesWithoutCategories) {
-      const cats = rental_type === 'whole_property' ? defaultsWP : defaultsRooms;
-      for (const [name, color, icon, sort_order, tax_rate] of cats) {
-        seedCat.run(id, name, color, icon, sort_order, tax_rate);
-      }
+      seedCategories(db, id, rental_type);
     }
-    console.log(`✓ Seeded default service categories for ${propertiesWithoutCategories.length} propert${propertiesWithoutCategories.length === 1 ? 'y' : 'ies'}.`);
+    if (propertiesWithoutCategories.length > 0) {
+      console.log(`✓ Seeded categories for ${propertiesWithoutCategories.length} propert${propertiesWithoutCategories.length === 1 ? 'y' : 'ies'}.`);
+    }
   }
 
   // Business expenses — per-period expense tracking for property owners (Pro/Multi)
@@ -1278,52 +1257,46 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN paid_at TEXT DEFAULT NULL`); console.log('✓ paid_at column added'); } catch(e) {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN charges_email_sent TEXT DEFAULT NULL`); console.log('✓ charges_email_sent column added'); } catch(e) {}
 
-  // Migration: update existing WP properties to use WP-appropriate service categories.
-  // Removes IP-mode defaults (Bar & drinks, Restaurant, etc.) and inserts WP defaults
-  // (Equipment rental, Activities, etc.) if not already present.
+  // Migration: replace all categories for WP properties that still have any IP-named categories.
+  // Also seeds any WP properties with no categories at all.
+  // Uses seedCategories (DELETE + re-INSERT) so the result is always the correct canonical set.
   try {
-    const wpProperties = db.prepare(
-      `SELECT id FROM properties WHERE rental_type = 'whole_property'`
-    ).all();
-
-    const wpDefaultCategories = [
-      { name: 'Equipment rental', tax_rate: 20 },
-      { name: 'Activities',       tax_rate: 20 },
-      { name: 'Firewood & logs',  tax_rate: 20 },
-      { name: 'Linen & towels',   tax_rate: 20 },
-      { name: 'Welcome hamper',   tax_rate: 20 },
-      { name: 'Bike hire',        tax_rate: 20 },
-      { name: 'Other',            tax_rate: 20 },
+    const IP_NAMES = [
+      'Bar & drinks', 'Restaurant', 'Room service', 'Spa & treatments',
+      'Laundry', 'Parking', 'Minibar',
+      // legacy names from pre-fix auth.js seeding:
+      'Food & Drink', 'Bar', 'Spa & Wellness', 'Activities', 'Transport',
     ];
+    const ph = IP_NAMES.map(() => '?').join(',');
+    const wpWithIpCats = db.prepare(`
+      SELECT DISTINCT p.id, p.name
+      FROM properties p
+      JOIN service_categories sc ON sc.property_id = p.id
+      WHERE p.rental_type = 'whole_property'
+      AND sc.name IN (${ph})
+    `).all(...IP_NAMES);
 
-    const ipCategoriesToRemove = [
-      'Bar & drinks', 'Restaurant', 'Room service',
-      'Spa & treatments', 'Laundry', 'Parking', 'Minibar',
-    ];
-
-    const deleteStmt = db.prepare(
-      `DELETE FROM service_categories WHERE property_id = ? AND name = ?`
-    );
-    const existsStmt = db.prepare(
-      `SELECT 1 FROM service_categories WHERE property_id = ? AND name = ?`
-    );
-    const insertStmt = db.prepare(
-      `INSERT INTO service_categories (property_id, name, tax_rate) VALUES (?, ?, ?)`
-    );
-
-    for (const { id } of wpProperties) {
-      for (const name of ipCategoriesToRemove) {
-        deleteStmt.run(id, name);
-      }
-      for (const cat of wpDefaultCategories) {
-        if (!existsStmt.get(id, cat.name)) {
-          insertStmt.run(id, cat.name, cat.tax_rate);
-        }
-      }
+    for (const prop of wpWithIpCats) {
+      seedCategories(db, prop.id, 'whole_property');
+      console.log(`[migration] Fixed WP categories for: ${prop.name} (${prop.id})`);
     }
 
-    if (wpProperties.length > 0) {
-      console.log(`✓ WP service categories updated for ${wpProperties.length} propert${wpProperties.length === 1 ? 'y' : 'ies'}.`);
+    const wpWithNoCats = db.prepare(`
+      SELECT p.id, p.name FROM properties p
+      WHERE p.rental_type = 'whole_property'
+      AND NOT EXISTS (SELECT 1 FROM service_categories sc WHERE sc.property_id = p.id)
+    `).all();
+
+    for (const prop of wpWithNoCats) {
+      seedCategories(db, prop.id, 'whole_property');
+      console.log(`[migration] Seeded missing WP categories for: ${prop.name} (${prop.id})`);
+    }
+
+    const fixed = wpWithIpCats.length + wpWithNoCats.length;
+    if (fixed > 0) {
+      console.log(`[migration] WP category fix complete — ${fixed} propert${fixed === 1 ? 'y' : 'ies'} updated.`);
+    } else {
+      console.log('[migration] WP categories already correct — no fix needed.');
     }
   } catch (e) {
     console.error('[migration] WP categories error:', e.message);

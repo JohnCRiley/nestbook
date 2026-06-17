@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
+import { seedCategories } from '../utils/categories.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROP_UPLOAD_DIR   = join(__dirname, '../uploads/properties');
@@ -163,6 +164,8 @@ propertiesRouter.post('/', (req, res) => {
     const icalToken = randomBytes(16).toString('hex');
     db.prepare('UPDATE properties SET booking_slug = ?, ical_token = ? WHERE id = ?').run(newSlug, icalToken, newId);
 
+    seedCategories(db, Number(newId), 'rooms');
+
     const created = db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(created);
 
@@ -197,6 +200,7 @@ propertiesRouter.put('/:id', (req, res) => {
       access_method, access_code, arrival_instructions, send_access_hours,
       cancellation_days,
     } = req.body;
+    const existing = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
@@ -236,6 +240,11 @@ propertiesRouter.put('/:id', (req, res) => {
       cancellation_days != null ? parseInt(cancellation_days, 10) : 7,
       req.params.id,
     );
+    const newRentalType = VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : 'rooms';
+    if (existing && newRentalType !== existing.rental_type) {
+      seedCategories(db, Number(req.params.id), newRentalType);
+    }
+
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
     res.json(updated);
 
