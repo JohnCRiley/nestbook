@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
@@ -907,7 +907,7 @@ export default function Settings() {
           {/* Guest Access — WP mode only */}
           {form && activeProperty?.rental_type === 'whole_property' && (
             <div style={{ marginTop: 16 }}>
-              <AccessCodeSection form={form} onChange={handleFormChange} t={t} />
+              <AccessCodeSection form={form} onChange={handleFormChange} t={t} property={activeProperty} />
             </div>
           )}
 
@@ -1492,7 +1492,35 @@ const SEND_ACCESS_OPTIONS = [
   { value: '12',  label: '12 hours before arrival' },
 ];
 
-function AccessCodeSection({ form, onChange, t }) {
+function AccessCodeSection({ form, onChange, t, property }) {
+  const [accessPhoto, setAccessPhoto] = useState(property?.access_photo ?? null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const accessPhotoInputRef = useRef(null);
+
+  const handleAccessPhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !property?.id) return;
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append('photo', file);
+      const res = await apiFetch(`/api/properties/${property.id}/access-photo`, { method: 'POST', body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        setAccessPhoto(data.filename);
+      }
+    } finally {
+      setUploadingPhoto(false);
+      if (accessPhotoInputRef.current) accessPhotoInputRef.current.value = '';
+    }
+  };
+
+  const handleAccessPhotoDelete = async () => {
+    if (!property?.id) return;
+    await apiFetch(`/api/properties/${property.id}/access-photo`, { method: 'DELETE' });
+    setAccessPhoto(null);
+  };
+
   return (
     <div className="settings-card">
       <div className="settings-card-header">
@@ -1549,6 +1577,56 @@ function AccessCodeSection({ form, onChange, t }) {
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
+          </FormField>
+
+          <FormField label={t('settings.accessPhoto')} hint={t('settings.accessPhotoHint')}>
+            <input
+              ref={accessPhotoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={handleAccessPhotoUpload}
+            />
+            {accessPhoto ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <img
+                  src={`/uploads/access/${accessPhoto}`}
+                  alt="Access location"
+                  style={{ maxWidth: 280, maxHeight: 200, borderRadius: 8, objectFit: 'cover', border: '1px solid #e5e7eb' }}
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => accessPhotoInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                  >
+                    {uploadingPhoto ? 'Uploading…' : 'Replace photo'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-danger-outline"
+                    onClick={handleAccessPhotoDelete}
+                    disabled={uploadingPhoto}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0 }}>{t('settings.accessPhotoSize')}</p>
+              </div>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => accessPhotoInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                >
+                  {uploadingPhoto ? 'Uploading…' : 'Upload photo'}
+                </button>
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '6px 0 0' }}>{t('settings.accessPhotoSize')}</p>
+              </div>
+            )}
           </FormField>
 
           <FormField label={t('settings.cancellationPolicy')} hint={t('settings.cancellationPolicyHint')}>

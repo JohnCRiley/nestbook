@@ -42,6 +42,7 @@ vite.config.js.timestamp-*
 
 # Uploaded images (persisted on server, never commit)
 server/uploads/
+!server/uploads/access/.gitkeep
 server/public/images/blog/*.jpg
 server/public/images/blog/*.png
 server/public/images/blog/*.webp

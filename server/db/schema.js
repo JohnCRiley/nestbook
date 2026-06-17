@@ -1403,6 +1403,7 @@ John`
   }
 
   try { db.exec(`ALTER TABLE bookings ADD COLUMN rate_breakdown TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN access_photo TEXT DEFAULT NULL`); } catch {}
 
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously

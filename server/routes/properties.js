@@ -10,8 +10,10 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PROP_UPLOAD_DIR = join(__dirname, '../uploads/properties');
-fs.mkdirSync(PROP_UPLOAD_DIR, { recursive: true });
+const PROP_UPLOAD_DIR   = join(__dirname, '../uploads/properties');
+const ACCESS_PHOTO_DIR  = join(__dirname, '../uploads/access');
+fs.mkdirSync(PROP_UPLOAD_DIR,  { recursive: true });
+fs.mkdirSync(ACCESS_PHOTO_DIR, { recursive: true });
 
 const propPhotoStorage = multer.diskStorage({
   destination: PROP_UPLOAD_DIR,
@@ -412,6 +414,71 @@ propertiesRouter.delete('/:id/hero-photo', (req, res) => {
     db.prepare('UPDATE properties SET hero_photo = NULL WHERE id = ?').run(propId);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/properties/:id/access-photo ─────────────────────────────────────
+const accessPhotoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, ACCESS_PHOTO_DIR),
+    filename: (req, file, cb) => cb(null, `access-${req.params.id}-${Date.now()}.tmp`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) cb(null, true);
+    else cb(new Error('JPEG, PNG or WebP only'));
+  },
+});
+
+propertiesRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), async (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No photo uploaded' });
+
+    const existing = db.prepare('SELECT access_photo FROM properties WHERE id = ?').get(propId);
+    const filename = `access-${propId}-${Date.now()}.jpg`;
+    const outputPath = join(ACCESS_PHOTO_DIR, filename);
+
+    await sharp(req.file.path)
+      .resize(1200, null, { withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toFile(outputPath);
+
+    try { fs.unlinkSync(req.file.path); } catch {}
+
+    if (existing?.access_photo) {
+      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, existing.access_photo)); } catch {}
+    }
+
+    db.prepare('UPDATE properties SET access_photo = ? WHERE id = ?').run(filename, propId);
+    console.log(`[access-photo] Uploaded for property ${propId}: ${filename}`);
+    res.json({ success: true, filename });
+  } catch (err) {
+    if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+    console.error('[access-photo]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/properties/:id/access-photo ───────────────────────────────────
+propertiesRouter.delete('/:id/access-photo', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const existing = db.prepare('SELECT access_photo FROM properties WHERE id = ?').get(propId);
+    if (existing?.access_photo) {
+      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, existing.access_photo)); } catch {}
+      db.prepare('UPDATE properties SET access_photo = NULL WHERE id = ?').run(propId);
+    }
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

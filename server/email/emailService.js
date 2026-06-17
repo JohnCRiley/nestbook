@@ -6,6 +6,11 @@
  */
 
 import { Resend } from 'resend';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Initialise ────────────────────────────────────────────────────────────────
 
@@ -1263,6 +1268,19 @@ export async function sendAccessEmail(booking, property) {
       <div style="font-size:0.9rem;color:#374151;line-height:1.7;white-space:pre-line;">${property.arrival_instructions}</div>
     </div>` : '';
 
+  const appBase = (process.env.APP_URL ?? 'https://nestbook.io').replace(/\/$/, '');
+  const photoPath = property.access_photo
+    ? path.join(__dirname, '../uploads/access', property.access_photo)
+    : null;
+  const photoBlock = photoPath && fs.existsSync(photoPath) ? `
+    <div style="margin-bottom:24px;">
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#374151;margin-bottom:10px;">📍 Key location photo</div>
+      <img src="${appBase}/uploads/access/${property.access_photo}"
+           alt="Key location"
+           style="width:100%;max-width:500px;border-radius:8px;border:1px solid #e2e8f0;display:block;" />
+      <p style="font-size:0.75rem;color:#9ca3af;margin:6px 0 0;">Photo of the key location provided by ${property.name}</p>
+    </div>` : '';
+
   const body = `
     <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">Your access details are ready</h1>
     <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
@@ -1271,6 +1289,7 @@ export async function sendAccessEmail(booking, property) {
     </p>
     ${accessBlock}
     ${instructionsBlock}
+    ${photoBlock}
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
