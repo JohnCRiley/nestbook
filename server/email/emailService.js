@@ -737,7 +737,8 @@ export async function sendDepositRequest(booking, property) {
         ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
         ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
-        ${property?.deposit_amount ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#92400e;font-weight:700;">${fmtDepositAmount(property.deposit_amount, property.currency)}</span>`) : ''}
+        ${(booking.deposit_amount ?? property?.deposit_amount) ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#92400e;font-weight:700;">${fmtDepositAmount(booking.deposit_amount ?? property.deposit_amount, property.currency)}</span>`) : ''}
+        ${booking.balance_amount > 0 ? row('Balance due', `<span style="color:#374151;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
         ${addressParts ? row(t(locale, 'address'), addressParts) : ''}
       </tr>
     </table>
@@ -790,7 +791,8 @@ export async function sendDepositConfirmation(booking, property) {
         ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
         ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
-        ${property?.deposit_amount ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#166534;font-weight:700;">${fmtDepositAmount(property.deposit_amount, property.currency)}</span>`) : ''}
+        ${(booking.deposit_amount ?? property?.deposit_amount) ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#166534;font-weight:700;">${fmtDepositAmount(booking.deposit_amount ?? property.deposit_amount, property.currency)}</span>`) : ''}
+        ${booking.balance_amount > 0 ? row('Balance remaining', `<span style="color:#374151;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
       </tr>
     </table>
 
@@ -802,6 +804,56 @@ export async function sendDepositConfirmation(booking, property) {
     console.log(`[email] Deposit confirmation sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send deposit confirmation:', err.message);
+  }
+}
+
+/**
+ * Send a balance due reminder to the guest.
+ */
+export async function sendBalanceDueEmail(booking, property) {
+  if (!resend) return;
+  if (!booking?.guest_email) return;
+
+  const locale  = property?.locale ?? 'en';
+  const subject = `Balance due reminder — ${property?.name ?? 'NestBook'}`;
+
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+    </tr>`;
+
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      Balance due reminder
+    </h1>
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+      ${t(locale, 'dear')} ${booking.guest_first_name},<br>
+      This is a friendly reminder that the balance payment for your stay at <strong>${property?.name}</strong> is now due.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#fffbeb;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #fde68a;">
+      <tr>
+        ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
+        ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
+        ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
+        ${booking.balance_amount > 0 ? row('Balance due', `<span style="color:#92400e;font-weight:700;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
+      </tr>
+    </table>
+
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
+      Please arrange payment at your earliest convenience. Contact us if you have any questions.
+    </p>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">${t(locale, 'poweredBy')}</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    console.log(`[email] Balance due reminder sent → ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[email] Failed to send balance due email:', err.message);
   }
 }
 

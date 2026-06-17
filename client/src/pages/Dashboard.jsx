@@ -931,6 +931,27 @@ function WPBookingCard({ booking: b, label, onClick }) {
             {' · '}{nights} night{nights !== 1 ? 's' : ''}
             {b.num_guests ? ` · ${b.num_guests} guest${b.num_guests !== 1 ? 's' : ''}` : ''}
           </div>
+          {b.deposit_amount > 0 && (() => {
+            const allPaid = b.deposit_paid && (!b.balance_amount || b.balance_paid);
+            const balDue  = b.deposit_paid && b.balance_amount > 0 && !b.balance_paid;
+            const depDue  = !b.deposit_paid;
+            if (allPaid) return (
+              <span style={{ display:'inline-flex',alignItems:'center',gap:4,marginTop:5,fontSize:'0.72rem',fontWeight:600,padding:'2px 8px',borderRadius:20,background:'#d1fae5',color:'#065f46' }}>
+                ✓ Paid in full
+              </span>
+            );
+            if (balDue) return (
+              <span style={{ display:'inline-flex',alignItems:'center',gap:4,marginTop:5,fontSize:'0.72rem',fontWeight:600,padding:'2px 8px',borderRadius:20,background:'#fef3c7',color:'#92400e' }}>
+                ○ Balance due {fmtCurrency(b.balance_amount)}
+              </span>
+            );
+            if (depDue) return (
+              <span style={{ display:'inline-flex',alignItems:'center',gap:4,marginTop:5,fontSize:'0.72rem',fontWeight:600,padding:'2px 8px',borderRadius:20,background:'#fef3c7',color:'#92400e' }}>
+                ○ Deposit awaited {fmtCurrency(b.deposit_amount)}
+              </span>
+            );
+            return null;
+          })()}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {b.total_price ? (

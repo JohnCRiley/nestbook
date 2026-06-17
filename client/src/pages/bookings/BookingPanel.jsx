@@ -118,6 +118,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [depositGateOpen,    setDepositGateOpen]    = useState(false);
   const [depositAction,      setDepositAction]      = useState(null);
   const [depositWorking,     setDepositWorking]     = useState(false);
+  const [balanceWorking,     setBalanceWorking]     = useState(false);
   const [toast,              setToast]              = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [showReprint,        setShowReprint]        = useState(false);
@@ -190,6 +191,36 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       // silent
     } finally {
       setDepositWorking(false);
+    }
+  };
+
+  const handleResendDeposit = async () => {
+    setDepositWorking(true);
+    try {
+      const res = await apiFetch(`/api/bookings/${b.id}/resend-deposit`, { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+      showToast('Deposit request resent');
+    } catch {
+      // silent
+    } finally {
+      setDepositWorking(false);
+    }
+  };
+
+  const handleMarkBalancePaid = async () => {
+    setBalanceWorking(true);
+    try {
+      const res = await apiFetch(`/api/bookings/${b.id}/mark-balance-paid`, { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+      showToast('Balance marked as received');
+    } catch {
+      // silent
+    } finally {
+      setBalanceWorking(false);
     }
   };
 
@@ -446,6 +477,105 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           )}
         </div>
       )}
+
+      {/* ── WP Deposit & Balance tracking ────────────────────────────────── */}
+      {isWP && property?.deposit_enabled && b.deposit_amount > 0 &&
+        ['confirmed', 'arriving', 'in_house', 'checked_out'].includes(b.status) && (() => {
+        const depPaid  = !!b.deposit_paid;
+        const balPaid  = !!b.balance_paid;
+        const balOwed  = (b.balance_amount ?? 0) > 0;
+        const allPaid  = depPaid && (!balOwed || balPaid);
+        const fc       = fmtCurrency;
+
+        return (
+          <div style={{
+            padding: '12px 22px', borderBottom: '1px solid var(--border)',
+            background: allPaid ? 'var(--light-green)' : 'var(--page-bg)',
+          }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Deposit & Balance
+            </div>
+
+            {/* Deposit row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: balOwed ? 8 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '2px 8px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600,
+                  background: depPaid ? '#d1fae5' : '#fef3c7',
+                  color: depPaid ? '#065f46' : '#92400e',
+                }}>
+                  {depPaid ? '✓' : '○'} Deposit {fc(b.deposit_amount)}
+                </span>
+                {depPaid && b.deposit_paid_at && (
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    {formatDateMedium(b.deposit_paid_at.slice(0, 10), locale)}
+                  </span>
+                )}
+              </div>
+              {!depPaid && !isHistorical && (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {b.deposit_requested_at && (
+                    <button
+                      className="btn-panel-secondary"
+                      style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                      onClick={handleResendDeposit}
+                      disabled={depositWorking}
+                    >
+                      Resend
+                    </button>
+                  )}
+                  <button
+                    className="btn-panel-primary"
+                    style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                    onClick={handleMarkDepositPaid}
+                    disabled={depositWorking}
+                  >
+                    Mark received
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Balance row */}
+            {balOwed && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.875rem' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    padding: '2px 8px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600,
+                    background: balPaid ? '#d1fae5' : (depPaid ? '#fef3c7' : '#f1f5f9'),
+                    color: balPaid ? '#065f46' : (depPaid ? '#92400e' : '#6b7280'),
+                  }}>
+                    {balPaid ? '✓' : '○'} Balance {fc(b.balance_amount)}
+                  </span>
+                  {balPaid && b.balance_paid_at && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {formatDateMedium(b.balance_paid_at.slice(0, 10), locale)}
+                    </span>
+                  )}
+                </div>
+                {!balPaid && depPaid && !isHistorical && (
+                  <button
+                    className="btn-panel-primary"
+                    style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                    onClick={handleMarkBalancePaid}
+                    disabled={balanceWorking}
+                  >
+                    Mark received
+                  </button>
+                )}
+              </div>
+            )}
+
+            {allPaid && (
+              <div style={{ fontSize: '0.78rem', color: '#065f46', fontWeight: 600, marginTop: 6 }}>
+                ✓ Paid in full
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Breakfast strip ───────────────────────────────────────────────── */}
       {property?.rental_type !== 'whole_property' && (!!property?.breakfast_included || !!b.room_breakfast_included || !!b.breakfast_added) && (() => {

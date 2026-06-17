@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import db from '../db/database.js';
-import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail } from '../email/emailService.js';
+import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { calcSeasonalTotal, calcSeasonalBreakdown } from '../utils/ratePeriods.js';
+import { calculateDeposit } from '../utils/deposits.js';
 
 export const bookingsRouter = Router();
 
@@ -79,6 +80,13 @@ const ENRICHED_SELECT = `
     b.paid_at,
     b.charges_email_sent,
     b.rate_breakdown,
+    b.deposit_amount,
+    b.balance_amount,
+    b.balance_paid,
+    b.balance_paid_at,
+    b.deposit_email_sent,
+    b.balance_email_sent,
+    b.deposit_forfeited,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -477,13 +485,33 @@ bookingsRouter.put('/:id', (req, res) => {
     // WP approve/decline from dashboard — status-only update + email
     if (_wp_action === 'approve' || _wp_action === 'decline') {
       const newStatus = _wp_action === 'approve' ? 'confirmed' : 'declined';
-      db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(newStatus, req.params.id);
-      const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
-      res.json(updated);
-      const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
+
       if (_wp_action === 'approve') {
-        sendBookingApprovedEmail(updated, property).catch(() => {});
+        const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(existing.property_id);
+        if (property?.deposit_enabled) {
+          const { depositAmount, balanceAmount } = calculateDeposit(property, existing.total_price);
+          const now = new Date().toISOString();
+          db.prepare(`
+            UPDATE bookings SET status = ?, deposit_amount = ?, balance_amount = ?, deposit_requested_at = ?
+            WHERE id = ?
+          `).run(newStatus, depositAmount, balanceAmount, now, req.params.id);
+          const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+          res.json(updated);
+          if (property.deposit_auto_email) {
+            sendDepositRequest(updated, property).catch(() => {});
+            db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+          }
+        } else {
+          db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(newStatus, req.params.id);
+          const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+          res.json(updated);
+          sendBookingApprovedEmail(updated, property).catch(() => {});
+        }
       } else {
+        db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(newStatus, req.params.id);
+        const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+        res.json(updated);
+        const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
         sendBookingDeclinedEmail(updated, property).catch(() => {});
       }
       return;
@@ -696,6 +724,75 @@ bookingsRouter.post('/:id/mark-deposit-paid', (req, res) => {
 
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
     sendDepositConfirmation(updated, property).catch(() => {});
+
+    // If balance is owed and auto-email enabled, schedule balance due reminder email
+    if (property?.deposit_balance_auto_email && updated.balance_amount > 0) {
+      // Balance email is sent by the scheduler; just mark it as pending here
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/resend-deposit ─────────────────────────────────
+bookingsRouter.post('/:id/resend-deposit', (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
+    sendDepositRequest(booking, property).catch(() => {});
+    db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: booking.property_id,
+      action: 'DEPOSIT_RESENT',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name}`,
+      ipAddress: getIp(req),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/mark-balance-paid ──────────────────────────────
+bookingsRouter.post('/:id/mark-balance-paid', (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (booking.balance_paid) {
+      return res.status(400).json({ error: 'Balance is already marked as paid.' });
+    }
+
+    const now = new Date().toISOString();
+    db.prepare(`UPDATE bookings SET balance_paid = 1, balance_paid_at = ? WHERE id = ?`).run(now, req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: booking.property_id,
+      action: 'BALANCE_PAID',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name}`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

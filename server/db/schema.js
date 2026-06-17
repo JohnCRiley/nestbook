@@ -1378,6 +1378,26 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN rate_breakdown TEXT`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN access_photo TEXT DEFAULT NULL`); } catch {}
 
+  // WP deposit management — property-level settings
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_enabled INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_type TEXT DEFAULT 'fixed'`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_percentage REAL NOT NULL DEFAULT 30`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_fixed_amount REAL NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_balance_due TEXT DEFAULT 'checkin'`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_balance_days INTEGER NOT NULL DEFAULT 7`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_refundable INTEGER NOT NULL DEFAULT 1`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_auto_email INTEGER NOT NULL DEFAULT 1`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_balance_auto_email INTEGER NOT NULL DEFAULT 1`); } catch {}
+
+  // WP deposit management — booking-level tracking
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN deposit_amount REAL DEFAULT NULL`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN balance_amount REAL DEFAULT NULL`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN balance_paid INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN balance_paid_at TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN deposit_email_sent TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN balance_email_sent TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN deposit_forfeited INTEGER NOT NULL DEFAULT 0`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

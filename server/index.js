@@ -29,7 +29,8 @@ import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { errorReportsRouter }        from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
-import { sendDowngradeEmail, sendAccessEmail } from './email/emailService.js';
+import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail } from './email/emailService.js';
+import { getBalanceDueDate } from './utils/deposits.js';
 import db from './db/database.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -161,6 +162,46 @@ async function sendPendingAccessEmails() {
   }
 }
 
+// ── WP balance due reminders ──────────────────────────────────────────────────
+async function sendPendingBalanceReminders() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const properties = db.prepare(`
+      SELECT p.*, u.email AS owner_email
+      FROM properties p
+      JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
+      WHERE p.rental_type = 'whole_property'
+        AND p.deposit_enabled = 1
+        AND p.deposit_balance_auto_email = 1
+    `).all();
+
+    for (const property of properties) {
+      const bookings = db.prepare(`
+        SELECT b.*, g.email AS guest_email, g.first_name AS guest_first_name, g.last_name AS guest_last_name
+        FROM bookings b
+        JOIN guests g ON g.id = b.guest_id
+        WHERE b.property_id = ?
+          AND b.status IN ('confirmed', 'arriving')
+          AND b.deposit_paid = 1
+          AND b.balance_amount > 0
+          AND b.balance_paid = 0
+          AND b.balance_email_sent IS NULL
+      `).all(property.id);
+
+      for (const booking of bookings) {
+        const dueDate = getBalanceDueDate(property, booking.check_in_date);
+        if (!dueDate || dueDate > today) continue;
+
+        await sendBalanceDueEmail(booking, property);
+        db.prepare(`UPDATE bookings SET balance_email_sent = datetime('now') WHERE id = ?`).run(booking.id);
+      }
+    }
+  } catch (err) {
+    console.error('[balance-reminder] Scheduler error:', err.message);
+  }
+}
+
 // ── Auto-advance: confirmed → arriving on check-in date ──────────────────────
 function autoAdvanceBookings() {
   try {
@@ -185,6 +226,10 @@ app.listen(PORT, () => {
   // Run access email check on startup and every 6 hours
   sendPendingAccessEmails();
   setInterval(sendPendingAccessEmails, 6 * 60 * 60 * 1000);
+
+  // Balance due reminders — check on startup and every 6 hours
+  sendPendingBalanceReminders();
+  setInterval(sendPendingBalanceReminders, 6 * 60 * 60 * 1000);
 
   // Auto-advance confirmed → arriving on check-in date
   autoAdvanceBookings();
