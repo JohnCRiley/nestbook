@@ -529,7 +529,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         <div style={{ padding: '14px 22px' }}>
           <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: 12 }}>
             <i className="ti ti-receipt" style={{ marginRight: 6 }} />
-            {isWP ? t('charges.propertyCharges') : t('chargesTabLabel')}
+            {isWP ? t('charges.propertyCharges') : t('charges.roomCharges')}
           </div>
           {charges === null ? (
             <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>{t('chargesLoading')}</div>
