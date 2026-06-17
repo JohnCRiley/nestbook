@@ -128,6 +128,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
   const depositRequired = !!property?.require_deposit;
   const isWP          = property?.rental_type === 'whole_property';
+  const isHistorical  = ['checked_out', 'cancelled', 'declined', 'no_show'].includes(b.status);
   const todayStr      = new Date().toISOString().split('T')[0];
   const canMarkArrived  = todayStr >= b.check_in_date;
   const canMarkDeparted = todayStr >= b.check_out_date;
@@ -730,6 +731,31 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         </div>
       )}
 
+      {/* ── Historical booking notice ───────────────────────────────────────── */}
+      {isHistorical && (
+        <div style={{
+          background: 'var(--page-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          fontSize: '0.78rem',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          margin: '12px 22px 0',
+        }}>
+          <i className="ti ti-archive" style={{ fontSize: '1rem' }} />
+          {b.status === 'checked_out'
+            ? 'This stay is complete — record only'
+            : b.status === 'cancelled'
+            ? 'This booking was cancelled'
+            : b.status === 'declined'
+            ? 'This booking was declined'
+            : 'Historical record'}
+        </div>
+      )}
+
       {/* ── Mid-stay breakfast management ──────────────────────────────────── */}
       {b.status === 'arriving' && property?.rental_type !== 'whole_property' && !property?.breakfast_included && !b.room_breakfast_included && (
         <AddBreakfastSection
@@ -810,8 +836,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         </div>
       )}
 
-      {/* Reprint receipt for checked-out bookings */}
-      {b.status === 'checked_out' && b.payment_method && (
+      {/* Reprint receipt for checked-out bookings — IP mode only */}
+      {!isWP && b.status === 'checked_out' && b.payment_method && (
         <div style={{ padding: '0 22px 10px' }}>
           <button
             onClick={() => setShowReprint(true)}
@@ -931,18 +957,20 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         </div>
       )}
 
-      <div className="panel-actions">
-        <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
-        {!isWP && b.status === 'confirmed' && (
-          <button
-            className="btn-panel-danger"
-            style={{ fontSize: '0.82rem', padding: '7px 12px' }}
-            onClick={() => setShowCancelConfirm(true)}
-          >
-            {t('booking.cancelBooking')}
-          </button>
-        )}
-      </div>
+      {!isHistorical && (
+        <div className="panel-actions">
+          <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>
+          {!isWP && b.status === 'confirmed' && (
+            <button
+              className="btn-panel-danger"
+              style={{ fontSize: '0.82rem', padding: '7px 12px' }}
+              onClick={() => setShowCancelConfirm(true)}
+            >
+              {t('booking.cancelBooking')}
+            </button>
+          )}
+        </div>
+      )}
 
       {isWP && ['confirmed', 'pending_owner_approval'].includes(b.status) && (
         <div style={{ marginTop: 16 }}>
