@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [pendingConfirm,       setPendingConfirm]       = useState(null);
   const [depositGate,          setDepositGate]          = useState(null); // { bookingId }
   const [wpSummary,            setWpSummary]            = useState(null);
+  const [wpSelectedBooking,    setWpSelectedBooking]    = useState(null);
 
   const today = localToday();
 
@@ -238,6 +239,31 @@ export default function Dashboard() {
     } catch { /* silent */ }
   }
 
+  function handleWpStatusUpdate(bookingId, newStatus) {
+    const existing = bookings.find((b) => b.id === bookingId);
+    if (!existing) return;
+    apiFetch(`/api/bookings/${bookingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...existing, status: newStatus }),
+    })
+      .then((r) => r.json())
+      .then((saved) => {
+        setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
+        fetchWpSummary();
+        if (newStatus === 'arriving') {
+          showPageToast(t('checkedInToast'));
+          setWpSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+        } else if (newStatus === 'cancelled') {
+          setWpSelectedBooking(null);
+          showPageToast(t('bookingCancelledToast'));
+        } else {
+          setWpSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+        }
+      })
+      .catch(() => {});
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return <div className="loading-screen">{t('loadingDashboard')}</div>;
@@ -327,14 +353,17 @@ export default function Dashboard() {
                 </div>
               </div>
               <button
-                onClick={() => navigate('/bookings', { state: { filter: 'pending' } })}
+                onClick={() => {
+                  const first = wpSummary.pending[0];
+                  setWpSelectedBooking(bookings.find((b) => b.id === first.id) || first);
+                }}
                 style={{
                   background: '#f59e0b', color: 'white', border: 'none', borderRadius: 7,
                   padding: '8px 16px', fontWeight: 600, fontSize: '0.85rem',
                   cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
                 }}
               >
-                Review requests →
+                Review →
               </button>
             </div>
           )}
@@ -351,7 +380,7 @@ export default function Dashboard() {
             <WPBookingCard
               booking={wpSummary.active}
               label={wpSummary.active.status === 'arriving' ? 'Arriving today' : 'Current stay'}
-              onClick={() => navigate('/bookings')}
+              onClick={() => setWpSelectedBooking(bookings.find((b) => b.id === wpSummary.active.id) || wpSummary.active)}
             />
           ) : (
             <div style={{
@@ -378,7 +407,7 @@ export default function Dashboard() {
                   key={booking.id}
                   booking={booking}
                   label={booking.status === 'pending_owner_approval' ? 'Pending approval' : 'Upcoming'}
-                  onClick={() => navigate('/bookings')}
+                  onClick={() => setWpSelectedBooking(bookings.find((b) => b.id === booking.id) || booking)}
                 />
               ))}
             </div>
@@ -648,37 +677,39 @@ export default function Dashboard() {
         <BreakfastServiceList bookings={bookings} property={property} t={t} />
       )}
 
-      {/* ── Upcoming ───────────────────────────────────────────────────── */}
-      <div className="section-card" style={{ marginTop: 20 }}>
-        <div className="section-head">
-          <h2>{t('upcomingTitle')}</h2>
-          <span className="count-pill">{upcoming.length}</span>
+      {/* ── Upcoming (B&B only — WP shows 14-day cards above) ─────────── */}
+      {property.rental_type !== 'whole_property' && (
+        <div className="section-card" style={{ marginTop: 20 }}>
+          <div className="section-head">
+            <h2>{t('upcomingTitle')}</h2>
+            <span className="count-pill">{upcoming.length}</span>
+          </div>
+          {upcoming.length === 0 ? (
+            <div className="empty-state">{t('noUpcoming7Days')}</div>
+          ) : (
+            upcoming.map((b) => (
+              <BookingRow
+                key={b.id}
+                booking={b}
+                property={property}
+                right={
+                  <>
+                    <span className="booking-date">{formatDateShort(b.check_in_date, locale)}</span>
+                    <DepositPill booking={b} property={property} />
+                    <span className={BADGE_CLASS[b.status] ?? 'badge'}>
+                      {BADGE_LABEL[b.status] ?? b.status}
+                    </span>
+                  </>
+                }
+                nightWord={t('nightWord')}
+                onClick={() => setSelectedBooking(b)}
+              />
+            ))
+          )}
         </div>
-        {upcoming.length === 0 ? (
-          <div className="empty-state">{t('noUpcoming7Days')}</div>
-        ) : (
-          upcoming.map((b) => (
-            <BookingRow
-              key={b.id}
-              booking={b}
-              property={property}
-              right={
-                <>
-                  <span className="booking-date">{formatDateShort(b.check_in_date, locale)}</span>
-                  <DepositPill booking={b} property={property} />
-                  <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-                    {BADGE_LABEL[b.status] ?? b.status}
-                  </span>
-                </>
-              }
-              nightWord={t('nightWord')}
-              onClick={() => setSelectedBooking(b)}
-            />
-          ))
-        )}
-      </div>
+      )}
 
-      {/* ── Booking detail panel ────────────────────────────────────────── */}
+      {/* ── B&B booking detail panel ────────────────────────────────────── */}
       {selectedBooking && (
         <BookingPanel
           booking={selectedBooking}
@@ -688,12 +719,32 @@ export default function Dashboard() {
           onStatusUpdate={handleStatusUpdate}
           onSave={(updated) => {
             setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
-            if (property?.rental_type === 'whole_property') fetchWpSummary();
             if (updated.status === 'checked_out') {
               setSelectedBooking(null);
               showPageToast(t('coCheckedOutToast'));
             } else {
               setSelectedBooking(updated);
+            }
+          }}
+        />
+      )}
+
+      {/* ── WP booking detail panel ─────────────────────────────────────── */}
+      {wpSelectedBooking && (
+        <BookingPanel
+          booking={wpSelectedBooking}
+          rooms={rooms}
+          guests={guests}
+          onClose={() => { setWpSelectedBooking(null); fetchWpSummary(); }}
+          onStatusUpdate={handleWpStatusUpdate}
+          onSave={(updated) => {
+            setBookings((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
+            fetchWpSummary();
+            if (updated.status === 'checked_out') {
+              setWpSelectedBooking(null);
+              showPageToast(t('coCheckedOutToast'));
+            } else {
+              setWpSelectedBooking(updated);
             }
           }}
         />
@@ -899,6 +950,9 @@ function WPBookingCard({ booking: b, label, onClick }) {
             );
           })()}
         </div>
+      </div>
+      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'right', marginTop: 8 }}>
+        Click to manage →
       </div>
     </div>
   );
