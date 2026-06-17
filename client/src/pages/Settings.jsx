@@ -291,7 +291,7 @@ export default function Settings() {
       const res = await apiFetch(`/api/properties/${activeProperty?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, theme }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const updated = await res.json();
