@@ -106,8 +106,8 @@ authRouter.post('/register', (req, res) => {
   try {
     db.exec('BEGIN');
     const prop = db.prepare(
-      `INSERT INTO properties (name, type) VALUES (?, ?)`
-    ).run(propertyName, propertyType);
+      `INSERT INTO properties (name, type, ical_token) VALUES (?, ?, ?)`
+    ).run(propertyName, propertyType, crypto.randomBytes(16).toString('hex'));
     propId = Number(prop.lastInsertRowid);
 
     const user = db.prepare(

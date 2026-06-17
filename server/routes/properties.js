@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { randomBytes } from 'crypto';
 import multer from 'multer';
 import sharp from 'sharp';
 import db from '../db/database.js';
@@ -154,10 +155,11 @@ propertiesRouter.post('/', (req, res) => {
       req.user.userId
     );
 
-    // Auto-generate booking slug for the new property
-    const newId   = result.lastInsertRowid;
-    const newSlug = uniqueSlug(db, generateSlug(name));
-    db.prepare('UPDATE properties SET booking_slug = ? WHERE id = ?').run(newSlug, newId);
+    // Auto-generate booking slug and iCal token for the new property
+    const newId     = result.lastInsertRowid;
+    const newSlug   = uniqueSlug(db, generateSlug(name));
+    const icalToken = randomBytes(16).toString('hex');
+    db.prepare('UPDATE properties SET booking_slug = ?, ical_token = ? WHERE id = ?').run(newSlug, icalToken, newId);
 
     const created = db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(created);
