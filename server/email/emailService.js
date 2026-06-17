@@ -1630,9 +1630,7 @@ function welcomeEmailHTML(user) {
     .cta-wrap { text-align: center; padding: 28px 32px; }
     .cta-btn { display: inline-block; background: #1a4710; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
     .cta-sub { font-size: 12px; color: #94a3b8; margin-top: 10px; }
-    .print-wrap { text-align: center; padding: 0 32px 20px; }
-    .print-btn { display: inline-block; background: white; color: #1a4710 !important; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1.5px solid #d9f0cc; cursor: pointer; }
-    .print-hint { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+
     .upgrade-box { background: #1a4710; margin: 0 32px 32px; border-radius: 10px; padding: 20px 24px; }
     .upgrade-box-title { font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
     .upgrade-box-body { font-size: 13px; color: #d9f0cc; margin-bottom: 14px; line-height: 1.6; }
@@ -1754,10 +1752,11 @@ function welcomeEmailHTML(user) {
     <p class="cta-sub">nestbook.io/app</p>
   </div>
 
-  <div class="print-wrap">
-    <a href="#" class="print-btn" onclick="window.print(); return false;">🖨 Print this guide</a>
-    <p class="print-hint">Print this email to keep as a setup guide by your desk</p>
-  </div>
+  <p style="text-align:center;font-size:12px;color:#94a3b8;margin:0 0 20px;line-height:1.6;">
+    💡 Want to keep this as a reference? Most email apps let you print via
+    <strong>File → Print</strong> or your browser's print option —
+    though some email clients may not support this directly.
+  </p>
 
   <div class="upgrade-box">
     <div class="upgrade-box-title">Thinking about more?</div>
