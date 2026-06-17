@@ -247,8 +247,10 @@ export default function PrintReceipt({
 
   const isWP         = property?.rental_type === 'whole_property';
   const totalRoomSub = roomSubtotal || 0;
-  const roomSegments = !isWP && Array.isArray(roomBreakdown?.breakdown) && roomBreakdown.breakdown.length > 0
-    ? roomBreakdown.breakdown.map((seg) => ({
+  const storedBd     = b.rate_breakdown ? JSON.parse(b.rate_breakdown) : null;
+  const bdSource     = storedBd ?? roomBreakdown?.breakdown ?? null;
+  const roomSegments = Array.isArray(bdSource) && bdSource.length > 0
+    ? bdSource.map((seg) => ({
         label:       `${seg.nights} × ${fc(seg.ratePerNight, symbol)}${seg.periodName ? ` (${seg.periodName})` : ''}`,
         subtotalFmt: fc(seg.subtotal, symbol),
       }))

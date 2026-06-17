@@ -1402,6 +1402,8 @@ John`
     }
   }
 
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN rate_breakdown TEXT`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

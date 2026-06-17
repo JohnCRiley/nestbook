@@ -788,9 +788,7 @@ function StatCard({ value, label }) {
 }
 
 function calcDue(b, property) {
-  const nights     = nightsBetween(b.check_in_date, b.check_out_date);
-  const rate       = b.price_per_night ?? 0;
-  const room       = nights * rate;
+  const room       = parseFloat(b.total_price) || 0;
   const bfFree     = !!(property?.breakfast_included || b.room_breakfast_included);
   const bfCharged  = !!b.breakfast_added && !bfFree;
   const bfPrice    = parseFloat(property?.breakfast_price) || 0;

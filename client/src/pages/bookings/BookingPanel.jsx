@@ -256,8 +256,10 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         ? (rpNights > 0 ? rpWPTotal / rpNights : 0)
         : (b.price_per_night || (rpNights > 0 ? rpWPTotal / rpNights : 0));
       const rpRoom      = rpIsWP ? rpWPTotal : (roomBreakdown?.total ?? rpNights * rpRate);
-      const rpSegments  = !rpIsWP && roomBreakdown?.breakdown?.length > 0
-        ? roomBreakdown.breakdown.map((seg) => ({
+      const rpStoredBd  = b.rate_breakdown ? JSON.parse(b.rate_breakdown) : null;
+      const rpBdSource  = rpStoredBd ?? roomBreakdown?.breakdown ?? null;
+      const rpSegments  = rpBdSource?.length > 0
+        ? rpBdSource.map((seg) => ({
             label:       `${seg.nights} × ${fc(seg.ratePerNight)}${seg.periodName ? ` (${seg.periodName})` : ''}`,
             subtotalFmt: fc(seg.subtotal),
           }))
@@ -1677,6 +1679,8 @@ function AddBreakfastForm({ b, bfMorning, bfGuests, bfPrice, bfGuestsNum, bfPric
 function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, charges, roomBreakdown }) {
   const isWP             = property?.rental_type === 'whole_property';
   const wpTotal          = parseFloat(b.total_price) || 0;
+  const storedBreakdown  = b.rate_breakdown ? JSON.parse(b.rate_breakdown) : null;
+  const displayBreakdown = storedBreakdown ?? roomBreakdown?.breakdown ?? null;
   const fallbackPerNight = isWP ? (nights > 0 ? wpTotal / nights : 0) : (b.price_per_night ?? 0);
   const roomSubtotal     = isWP ? wpTotal : (roomBreakdown?.total ?? (nights * fallbackPerNight));
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
@@ -1701,8 +1705,8 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
       <div className="panel-section-title">{t('coEstimatedTotal')}</div>
       <div style={{ fontSize: '0.85rem' }}>
         {/* Room rows — one per rate-period segment */}
-        {!isWP && roomBreakdown?.breakdown?.length > 0 ? (
-          roomBreakdown.breakdown.map((seg, i) => (
+        {displayBreakdown?.length > 0 ? (
+          displayBreakdown.map((seg, i) => (
             <ERow
               key={i}
               label={`${currencySymbol}${seg.ratePerNight.toFixed(2)} × ${t('nightWord')(seg.nights)}${seg.periodName ? ` (${seg.periodName})` : ''}`}

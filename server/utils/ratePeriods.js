@@ -68,20 +68,35 @@ export function getRateForDate(propertyId, roomId, checkInDate, baseRateOverride
 }
 
 /**
- * Sum seasonal rates night by night for a date range.
+ * Sum seasonal rates night by night and return both the total and the
+ * segment breakdown (one entry per contiguous rate/period block).
  * Pass baseRateOverride = property.whole_property_rate for WP mode.
  */
-export function calcSeasonalTotal(propertyId, roomId, checkIn, checkOut, baseRateOverride = null) {
-  let total = 0;
+export function calcSeasonalBreakdown(propertyId, roomId, checkIn, checkOut, baseRateOverride = null) {
+  const breakdown = [];
   let current = checkIn;
   while (current < checkOut) {
-    const result = getRateForDate(propertyId, roomId, current, baseRateOverride);
-    total += result?.rate ?? (baseRateOverride || 0);
+    const result     = getRateForDate(propertyId, roomId, current, baseRateOverride);
+    const rate       = result?.rate ?? (baseRateOverride ?? 0);
+    const periodName = result?.periodName ?? null;
+    const last       = breakdown[breakdown.length - 1];
+    if (last && last.ratePerNight === rate && last.periodName === periodName) {
+      last.nights  += 1;
+      last.subtotal = Math.round(last.nights * last.ratePerNight * 100) / 100;
+    } else {
+      breakdown.push({ periodName, nights: 1, ratePerNight: rate, subtotal: rate });
+    }
     const d = new Date(current + 'T00:00:00Z');
     d.setUTCDate(d.getUTCDate() + 1);
     current = d.toISOString().slice(0, 10);
   }
-  return Math.round(total * 100) / 100;
+  const total = Math.round(breakdown.reduce((s, seg) => s + seg.subtotal, 0) * 100) / 100;
+  return { total, breakdown };
+}
+
+/** Convenience wrapper — returns just the total. */
+export function calcSeasonalTotal(propertyId, roomId, checkIn, checkOut, baseRateOverride = null) {
+  return calcSeasonalBreakdown(propertyId, roomId, checkIn, checkOut, baseRateOverride).total;
 }
 
 /**

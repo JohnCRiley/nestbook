@@ -2,7 +2,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
-import { calcSeasonalTotal } from '../utils/ratePeriods.js';
+import { calcSeasonalTotal, calcSeasonalBreakdown } from '../utils/ratePeriods.js';
 
 export const bookingsRouter = Router();
 
@@ -78,6 +78,7 @@ const ENRICHED_SELECT = `
     b.payment_status,
     b.paid_at,
     b.charges_email_sent,
+    b.rate_breakdown,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -404,20 +405,23 @@ bookingsRouter.post('/', (req, res) => {
     }
 
     let finalTotalPrice = total_price ?? null;
-    if (!finalTotalPrice && prop?.rental_type === 'whole_property' && room_id) {
-      finalTotalPrice = calcSeasonalTotal(
-        Number(property_id), Number(room_id),
-        check_in_date, check_out_date,
-        prop.whole_property_rate ?? 0
+    let rateBreakdownStr = null;
+    if (room_id) {
+      const isWPProp = prop?.rental_type === 'whole_property';
+      const baseRate = isWPProp ? (prop.whole_property_rate ?? 0) : null;
+      const { total: computedTotal, breakdown } = calcSeasonalBreakdown(
+        Number(property_id), Number(room_id), check_in_date, check_out_date, baseRate
       );
+      if (!finalTotalPrice) finalTotalPrice = computedTotal;
+      rateBreakdownStr = JSON.stringify(breakdown);
     }
 
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price, breakfast_added,
-         breakfast_start_date, breakfast_guests, breakfast_price_per_person)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         num_guests, status, source, notes, total_price, rate_breakdown,
+         breakfast_added, breakfast_start_date, breakfast_guests, breakfast_price_per_person)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
@@ -426,6 +430,7 @@ bookingsRouter.post('/', (req, res) => {
       source          ?? 'direct',
       notes           ?? null,
       finalTotalPrice,
+      rateBreakdownStr,
       breakfast_added ? 1 : 0,
       breakfast_start_date         ?? null,
       breakfast_guests             ?? 0,
@@ -561,28 +566,27 @@ bookingsRouter.put('/:id', (req, res) => {
       return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
-    // Recalculate total_price when dates change
+    // Recalculate total_price and rate_breakdown when dates change
     let finalTotalPrice = total_price;
+    let rateBreakdownStr = null;
     const newCheckIn  = check_in_date  ?? existing.check_in_date;
     const newCheckOut = check_out_date ?? existing.check_out_date;
     if (newCheckIn !== existing.check_in_date || newCheckOut !== existing.check_out_date) {
       const prop = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(existing.property_id);
-      if (prop?.rental_type === 'whole_property') {
-        finalTotalPrice = calcSeasonalTotal(
-          existing.property_id, existing.room_id,
-          newCheckIn, newCheckOut,
-          prop.whole_property_rate ?? 0
-        );
-      } else {
-        const nights = Math.max(0, Math.round((new Date(newCheckOut) - new Date(newCheckIn)) / 86400000));
-        finalTotalPrice = nights * (existing.price_per_night || 0);
-      }
+      const isWPProp = prop?.rental_type === 'whole_property';
+      const baseRate = isWPProp ? (prop.whole_property_rate ?? 0) : null;
+      const { total: computedTotal, breakdown } = calcSeasonalBreakdown(
+        existing.property_id, existing.room_id, newCheckIn, newCheckOut, baseRate
+      );
+      finalTotalPrice = computedTotal;
+      rateBreakdownStr = JSON.stringify(breakdown);
     }
 
     db.prepare(`
       UPDATE bookings
       SET room_id = ?, guest_id = ?, check_in_date = ?, check_out_date = ?,
           num_guests = ?, status = ?, source = ?, notes = ?, total_price = ?,
+          rate_breakdown = COALESCE(?, rate_breakdown),
           breakfast_added = ?, breakfast_start_date = ?, breakfast_guests = ?,
           breakfast_price_per_person = ?,
           payment_method = ?,
@@ -591,6 +595,7 @@ bookingsRouter.put('/:id', (req, res) => {
     `).run(
       room_id, guest_id, check_in_date, check_out_date,
       num_guests, status, source, notes, finalTotalPrice,
+      rateBreakdownStr,
       breakfast_added ? 1 : 0,
       breakfast_start_date         ?? null,
       breakfast_guests             ?? 0,
