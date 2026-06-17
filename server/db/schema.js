@@ -1337,6 +1337,71 @@ John`
     `);
   } catch { /* already exists or duplicates present */ }
 
+  // ── Add in_house to bookings.status CHECK constraint ─────────────────────────
+  // Detects by reading the table definition — same pattern as pending_owner_approval.
+  {
+    const bookingSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
+    if (!bookingSql.includes("'in_house'")) {
+      const existingCols = db.prepare(`PRAGMA table_info(bookings)`).all().map(c => c.name);
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE bookings_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL REFERENCES properties(id),
+            room_id INTEGER REFERENCES rooms(id),
+            guest_id INTEGER NOT NULL REFERENCES guests(id),
+            check_in_date TEXT NOT NULL,
+            check_out_date TEXT NOT NULL,
+            num_guests INTEGER NOT NULL DEFAULT 1,
+            status TEXT NOT NULL DEFAULT 'confirmed'
+              CHECK(status IN ('confirmed','arriving','in_house','checked_out','cancelled','pending_owner_approval','declined')),
+            source TEXT NOT NULL DEFAULT 'direct'
+              CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
+            notes TEXT,
+            total_price REAL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            flagged INTEGER NOT NULL DEFAULT 0,
+            breakfast_added INTEGER NOT NULL DEFAULT 0,
+            deposit_paid INTEGER NOT NULL DEFAULT 0,
+            deposit_requested_at TEXT,
+            deposit_paid_at TEXT,
+            payment_method TEXT,
+            checked_out_at TEXT,
+            breakfast_start_date TEXT,
+            breakfast_guests INTEGER DEFAULT 0,
+            breakfast_price_per_person REAL DEFAULT 0,
+            refund_amount REAL DEFAULT 0,
+            refund_reason TEXT,
+            refunded_at TEXT,
+            refunded_by TEXT,
+            approval_token TEXT,
+            access_email_sent INTEGER DEFAULT 0,
+            cleaning_status TEXT DEFAULT NULL,
+            payment_status TEXT DEFAULT 'unpaid',
+            paid_at TEXT DEFAULT NULL,
+            charges_email_sent TEXT DEFAULT NULL
+          )
+        `);
+        const colList = existingCols.join(', ');
+        db.exec(`INSERT INTO bookings_new (${colList}) SELECT ${colList} FROM bookings`);
+        db.exec(`DROP TABLE bookings`);
+        db.exec(`ALTER TABLE bookings_new RENAME TO bookings`);
+        db.exec(`COMMIT`);
+        console.log('✓ bookings status CHECK expanded to include in_house.');
+      } catch (e) {
+        db.exec(`ROLLBACK`);
+        throw e;
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property ON bookings(property_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin  ON bookings(check_in_date)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_status   ON bookings(status)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_room     ON bookings(room_id)`);
+    }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

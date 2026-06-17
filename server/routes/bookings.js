@@ -137,7 +137,7 @@ bookingsRouter.get('/counts', (req, res) => {
     res.json({
       all:         db.prepare(`SELECT COUNT(*) as n ${base}`).get(property_id).n,
       arriving:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'arriving' AND b.check_in_date = date('now')`).get(property_id).n,
-      in_house:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'arriving' AND b.check_in_date < date('now')`).get(property_id).n,
+      in_house:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'in_house'`).get(property_id).n,
       confirmed:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'confirmed'`).get(property_id).n,
       checked_out: db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'checked_out'`).get(property_id).n,
       cancelled:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled'`).get(property_id).n,
@@ -188,8 +188,8 @@ bookingsRouter.get('/', (req, res) => {
     // Named filter tab — maps to status + optional date conditions (no user input in SQL)
     if (filter && filter !== 'all') {
       switch (filter) {
-        case 'arriving':    conditions.push("b.status = 'arriving' AND b.check_in_date = date('now')"); break;
-        case 'in_house':    conditions.push("b.status = 'arriving' AND b.check_in_date < date('now')"); break;
+        case 'arriving':    conditions.push("b.status = 'arriving'"); break;
+        case 'in_house':    conditions.push("b.status = 'in_house'"); break;
         case 'confirmed':   conditions.push("b.status = 'confirmed'");   break;
         case 'checked_out': conditions.push("b.status = 'checked_out'"); break;
         case 'cancelled':   conditions.push("b.status = 'cancelled'");   break;
@@ -294,8 +294,10 @@ bookingsRouter.get('/wp-summary', (req, res) => {
       WHERE b.property_id = ?
         AND b.check_in_date <= ?
         AND b.check_out_date > ?
-        AND b.status IN ('arriving', 'confirmed')
-      ORDER BY b.check_in_date ASC
+        AND b.status IN ('arriving', 'in_house', 'confirmed')
+      ORDER BY
+        CASE b.status WHEN 'in_house' THEN 1 WHEN 'arriving' THEN 2 ELSE 3 END ASC,
+        b.check_in_date ASC
       LIMIT 1
     `).get(propId, today, today);
 
@@ -487,7 +489,7 @@ bookingsRouter.put('/:id', (req, res) => {
           error: `Cannot confirm arrival before check-in date (${existing.check_in_date})`,
         });
       }
-      db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('arriving', req.params.id);
+      db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run('in_house', req.params.id);
       const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
       return res.json(updated);
     }
@@ -540,7 +542,7 @@ bookingsRouter.put('/:id', (req, res) => {
     // Date guardrails for status transitions — applies to all rental types
     if (status && status !== existing.status) {
       const todayIso = new Date().toISOString().split('T')[0];
-      if (status === 'arriving' && todayIso < existing.check_in_date) {
+      if ((status === 'arriving' || status === 'in_house') && todayIso < existing.check_in_date) {
         return res.status(400).json({
           error: `Cannot check in before arrival date (${existing.check_in_date})`,
         });
@@ -700,7 +702,7 @@ bookingsRouter.post('/:id/refund', (req, res) => {
     if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    if (!['arriving', 'checked_out'].includes(booking.status)) {
+    if (!['arriving', 'in_house', 'checked_out'].includes(booking.status)) {
       return res.status(400).json({ error: 'Refunds can only be recorded for checked-in or checked-out bookings.' });
     }
 

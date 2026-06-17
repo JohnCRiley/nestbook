@@ -23,7 +23,7 @@ const SOURCE_OPTIONS = [
   { value: 'other',       label: 'Other' },
 ];
 
-const STATUS_OPTIONS = ['confirmed', 'arriving', 'checked_out', 'cancelled', 'pending_owner_approval', 'declined'];
+const STATUS_OPTIONS = ['confirmed', 'arriving', 'in_house', 'checked_out', 'cancelled', 'pending_owner_approval', 'declined'];
 
 export default function BookingPanel({ booking: initialBooking, rooms = [], guests = [], onClose, onStatusUpdate, onSave }) {
   const { fmtCurrency, locale, property, currencySymbol } = useLocale();
@@ -48,7 +48,8 @@ export default function BookingPanel({ booking: initialBooking, rooms = [], gues
     ? (nights > 0 && b.total_price ? b.total_price / nights : null)
     : (b.price_per_night ?? (b.total_price && nights ? b.total_price / nights : null));
   const statusLabel = {
-    arriving:               t('calLegendInHouse'),
+    arriving:               isWP ? 'Arriving today' : t('calLegendInHouse'),
+    in_house:               'In stay',
     confirmed:              t('confirmed'),
     checked_out:            t('checkedOut'),
     cancelled:              t('cancelled'),
@@ -405,7 +406,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* ── Deposit strip ─────────────────────────────────────────────────── */}
-      {depositRequired && (b.status === 'confirmed' || b.status === 'arriving') && (
+      {depositRequired && (b.status === 'confirmed' || b.status === 'arriving' || b.status === 'in_house') && (
         <div style={{
           padding: '10px 22px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap',
@@ -618,7 +619,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {/* Details tab content — hide when charges tab is active */}
       {(!showChargesTab || activeTab === 'details') && <>
 
-      {(b.status === 'confirmed' || b.status === 'arriving') && (
+      {(b.status === 'confirmed' || b.status === 'arriving' || b.status === 'in_house') && (
         isWP ? (
           <div style={{ padding: '14px 22px 10px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
@@ -673,7 +674,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             )}
 
             {/* Departure button — unlocked on/after check-out date */}
-            {b.status === 'arriving' && (
+            {(b.status === 'arriving' || b.status === 'in_house') && (
               canMarkDeparted ? (
                 <button
                   onClick={() => setShowWPDeparture(true)}
@@ -792,7 +793,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       )}
 
       {/* Record Refund button — owner only, checked-in or checked-out */}
-      {user?.role === 'owner' && (b.status === 'arriving' || b.status === 'checked_out') && (
+      {user?.role === 'owner' && (b.status === 'arriving' || b.status === 'in_house' || b.status === 'checked_out') && (
         <div style={{ padding: '0 22px 10px' }}>
           <button
             onClick={() => setShowRefund(true)}

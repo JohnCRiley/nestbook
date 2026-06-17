@@ -140,7 +140,7 @@ chargesRouter.get('/rooms-today', requireMulti, (req, res) => {
     JOIN rooms r ON r.id = b.room_id
     JOIN guests g ON g.id = b.guest_id
     WHERE b.property_id = ?
-      AND b.status IN ('arriving', 'confirmed', 'checked_in')
+      AND b.status IN ('arriving', 'in_house', 'confirmed', 'checked_in')
       AND b.check_in_date <= date('now')
       AND b.check_out_date >= date('now')
     ORDER BY r.name

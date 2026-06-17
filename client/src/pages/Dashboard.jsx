@@ -20,9 +20,30 @@ import DepositPill from '../components/DepositPill.jsx';
 // ── Badge config (duplicated from Bookings so Dashboard has no cross-dep) ─────
 const BADGE_CLASS = {
   arriving:    'badge badge-arriving',
+  in_house:    'badge badge-arriving',
   confirmed:   'badge badge-confirmed',
   checked_out: 'badge badge-checked_out',
   cancelled:   'badge badge-cancelled',
+};
+
+const WP_STATUS_LABELS = {
+  pending_owner_approval: 'Awaiting approval',
+  confirmed:              'Confirmed',
+  arriving:               'Arriving today',
+  in_house:               'In stay',
+  checked_out:            'Checked out',
+  cancelled:              'Cancelled',
+  declined:               'Declined',
+};
+
+const WP_STATUS_COLOURS = {
+  pending_owner_approval: { color: '#92400e', bg: '#fef3c7', border: '#f59e0b' },
+  confirmed:              { color: '#1a4710', bg: '#f0fdf4', border: '#d9f0cc' },
+  arriving:               { color: '#92400e', bg: '#fef3c7', border: '#f59e0b' },
+  in_house:               { color: '#166534', bg: '#dcfce7', border: '#bbf7d0' },
+  checked_out:            { color: '#475569', bg: '#f8fafc', border: '#e2e8f0' },
+  cancelled:              { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
+  declined:               { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -125,7 +146,7 @@ export default function Dashboard() {
 
   const norm = (s) => (s ?? '').split('T')[0];
 
-  const occupiedTonight = bookings.filter((b) => b.status === 'arriving');
+  const occupiedTonight = bookings.filter((b) => b.status === 'arriving' || b.status === 'in_house');
 
   const arrivalsToday = bookings.filter((b) => norm(b.check_in_date) === today);
 
@@ -168,6 +189,7 @@ export default function Dashboard() {
 
   const BADGE_LABEL = {
     arriving:    t('calLegendInHouse'),
+    in_house:    t('calLegendInHouse'),
     confirmed:   t('confirmed'),
     checked_out: t('checkedOut'),
     cancelled:   t('cancelled'),
@@ -328,7 +350,7 @@ export default function Dashboard() {
           {wpSummary.active ? (
             <WPBookingCard
               booking={wpSummary.active}
-              label="Current stay"
+              label={wpSummary.active.status === 'arriving' ? 'Arriving today' : 'Current stay'}
               onClick={() => navigate('/bookings')}
             />
           ) : (
@@ -417,14 +439,14 @@ export default function Dashboard() {
           </span>
         </div>
       )}
-      {departuresToday.filter((b) => b.status === 'arriving').length > 0 && (
+      {departuresToday.filter((b) => b.status === 'arriving' || b.status === 'in_house').length > 0 && (
         <div style={{
           background: '#fef9c3', border: '1.5px solid #fbbf24', borderRadius: 10,
           padding: '12px 18px', marginBottom: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
           <span style={{ fontWeight: 600, color: '#92400e', fontSize: '0.95rem' }}>
-            {t('departuresBanner')(departuresToday.filter((b) => b.status === 'arriving').length)}
+            {t('departuresBanner')(departuresToday.filter((b) => b.status === 'arriving' || b.status === 'in_house').length)}
           </span>
           <span style={{ color: '#92400e', fontWeight: 700, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
             {t('checkThemOut')}
@@ -867,9 +889,17 @@ function WPBookingCard({ booking: b, label, onClick }) {
               {fmtCurrency(b.total_price)}
             </span>
           ) : null}
-          <span className={BADGE_CLASS[b.status] ?? 'badge'}>
-            {b.status === 'pending_owner_approval' ? 'pending' : b.status.replace('_', ' ')}
-          </span>
+          {(() => {
+            const sc = WP_STATUS_COLOURS[b.status] ?? WP_STATUS_COLOURS.confirmed;
+            return (
+              <span style={{
+                fontSize: '0.72rem', fontWeight: 600, padding: '3px 9px', borderRadius: 4,
+                background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+              }}>
+                {WP_STATUS_LABELS[b.status] ?? b.status.replace('_', ' ')}
+              </span>
+            );
+          })()}
         </div>
       </div>
     </div>

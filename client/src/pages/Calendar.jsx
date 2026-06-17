@@ -436,7 +436,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
       const isCheckin    = checkInNorm === iso;
       const nextIso      = toIso(new Date(year, month, d + 1));
       const isLastNight  = nextIso === checkOutNorm;
-      const statusCls   = booking.status === 'arriving' ? 'wpc-arriving' : 'wpc-booked';
+      const statusCls   = (booking.status === 'arriving' || booking.status === 'in_house') ? 'wpc-arriving' : 'wpc-booked';
       const fullName    = `${booking.guest_first_name ?? ''} ${booking.guest_last_name ?? ''}`.trim();
       const displayName = isCheckin ? fullName : (booking.guest_first_name ?? fullName);
       cells.push(
@@ -447,7 +447,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
           title={fullName}
         >
           {isCheckin   && iso === today && booking.status === 'confirmed' && <span className="wpc-badge">{t ? t('calCiBadge') : 'CI'}</span>}
-          {isLastNight && iso === today && booking.status === 'arriving'  && <span className="wpc-badge">{t ? t('calCoBadge') : 'CO'}</span>}
+          {isLastNight && iso === today && (booking.status === 'arriving' || booking.status === 'in_house') && <span className="wpc-badge">{t ? t('calCoBadge') : 'CO'}</span>}
           <span className="wpc-day-num">{d}</span>
           <span className="wpc-guest">{displayName}</span>
         </div>
@@ -610,7 +610,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
   const statusClass =
     b.status === 'checked_out' ? 'is-checked-out' : 'is-booked';
 
-  const isArriving = b.status === 'arriving';
+  const isArriving = b.status === 'arriving' || b.status === 'in_house';
   const cellClass  = isArriving ? 'is-arriving' : statusClass;
 
   const style = isSelected
@@ -618,7 +618,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
     : {};
 
   const showCiBadge = todayIso && b.check_in_date === todayIso && b.status === 'confirmed';
-  const showCoBadge = todayIso && b.check_out_date === todayIso && b.status === 'arriving';
+  const showCoBadge = todayIso && b.check_out_date === todayIso && (b.status === 'arriving' || b.status === 'in_house');
 
   const showBfBadge = property?.rental_type !== 'whole_property' && !!cellDate && isEligibleForBreakfast(b, null, property, addDaysStr(cellDate, 1));
 

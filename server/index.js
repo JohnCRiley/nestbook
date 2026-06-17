@@ -161,6 +161,21 @@ async function sendPendingAccessEmails() {
   }
 }
 
+// ── Auto-advance: confirmed → arriving on check-in date ──────────────────────
+function autoAdvanceBookings() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const result = db.prepare(
+      `UPDATE bookings SET status = 'arriving' WHERE status = 'confirmed' AND check_in_date = ?`
+    ).run(today);
+    if (result.changes > 0) {
+      console.log(`[auto-advance] ${result.changes} booking(s) set to arriving`);
+    }
+  } catch (err) {
+    console.error('[auto-advance] Error:', err.message);
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`NestBook server running on http://localhost:${PORT}`);
@@ -170,4 +185,8 @@ app.listen(PORT, () => {
   // Run access email check on startup and every 6 hours
   sendPendingAccessEmails();
   setInterval(sendPendingAccessEmails, 6 * 60 * 60 * 1000);
+
+  // Auto-advance confirmed → arriving on check-in date
+  autoAdvanceBookings();
+  setInterval(autoAdvanceBookings, 60 * 60 * 1000);
 });

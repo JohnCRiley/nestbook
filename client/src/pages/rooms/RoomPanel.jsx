@@ -600,7 +600,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
 function ScheduleRow({ booking: b, t, locale }) {
   const { fmtCurrency } = useLocale();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
-  const statusLabel = { arriving: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
+  const statusLabel = { arriving: t('calLegendInHouse'), in_house: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
   return (
     <div className="schedule-row">
       <div className="schedule-guest">
