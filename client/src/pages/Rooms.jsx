@@ -267,7 +267,24 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
       className={`room-card${isSelected ? ' active' : ''}`}
       onClick={() => onClick(room)}
     >
-      {/* Coloured top stripe */}
+      {/* Photo thumbnail */}
+      <div className="room-card-thumb">
+        {room.primary_thumb || room.primary_photo ? (
+          <img
+            src={`/uploads/rooms/${room.primary_thumb || room.primary_photo}`}
+            alt={room.name}
+            className="room-card-thumb-img"
+            onError={(e) => { e.target.parentElement.classList.add('room-card-thumb--empty'); e.target.style.display = 'none'; }}
+          />
+        ) : (
+          <div className="room-card-thumb-placeholder">
+            <i className="ti ti-photo-off" style={{ fontSize: '1.4rem' }} />
+            <span style={{ fontSize: '0.72rem' }}>No photo</span>
+          </div>
+        )}
+      </div>
+
+      {/* Coloured stripe — status accent between photo and body */}
       <div className={`room-card-stripe ${stripeClass}`}
         style={isOccupied ? { background: '#f59e0b' } : {}} />
 
