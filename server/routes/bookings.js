@@ -2,7 +2,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail, sendStayExtendedEmail, sendStayShortenedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
-import { calcSeasonalTotal, calcSeasonalBreakdown } from '../utils/ratePeriods.js';
+import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../utils/ratePeriods.js';
 import { calculateDeposit } from '../utils/deposits.js';
 
 export const bookingsRouter = Router();
@@ -234,17 +234,8 @@ bookingsRouter.get('/:id/check-extension', (req, res) => {
 
     while (cur < end) {
       const dateStr = cur.toISOString().split('T')[0];
-      const period = db.prepare(`
-        SELECT rp.default_rate, rpr.price_per_night AS override
-        FROM rate_periods rp
-        LEFT JOIN rate_period_rooms rpr ON rpr.rate_period_id = rp.id AND rpr.room_id = ?
-        WHERE rp.property_id = ?
-          AND ? BETWEEN rp.start_date AND rp.end_date
-          AND rp.active = 1
-        ORDER BY rp.priority DESC LIMIT 1
-      `).get(booking.room_id, booking.property_id, dateStr);
-
-      const nightRate = period ? (period.override ?? period.default_rate ?? baseRate) : baseRate;
+      const rateResult = getRateForDate(booking.property_id, booking.room_id, dateStr, isWP ? baseRate : null);
+      const nightRate = rateResult?.rate ?? baseRate;
       extraTotal += nightRate;
 
       const last = segments[segments.length - 1];
