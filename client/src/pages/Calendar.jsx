@@ -476,12 +476,18 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
         <div
           key={iso}
           className={`wpc-cell wpc-available${isPast ? ' wpc-past' : ''}${isToday ? ' wpc-today' : ''}`}
+          style={{ position: 'relative' }}
           onClick={isPast ? undefined : () => onEmptyClick(iso)}
         >
           <span className="wpc-day-num">{d}</span>
           {activePeriod && (
             <span
-              style={{ display: 'block', width: 5, height: 5, borderRadius: '50%', background: '#f59e0b', margin: '1px auto 0' }}
+              style={{
+                position: 'absolute', top: 3, right: 3,
+                width: 7, height: 7, borderRadius: '50%',
+                background: '#f59e0b', border: '1.5px solid white',
+                zIndex: 10, display: 'block', pointerEvents: 'none',
+              }}
               title={activePeriod.name}
             />
           )}
