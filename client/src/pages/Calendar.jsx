@@ -728,6 +728,16 @@ function Legend({ t, showBreakfast = true, isWholeProp = false }) {
           {t('calLegendBreakfast')}
         </div>
       )}
+      <div className="legend-item">
+        <span style={{ position: 'relative', display: 'inline-flex' }}>
+          <span className="legend-swatch sw-available" />
+          <span style={{
+            position: 'absolute', top: -2, right: -2,
+            width: 6, height: 6, borderRadius: '50%', background: '#f59e0b',
+          }} />
+        </span>
+        Seasonal rate active
+      </div>
     </div>
   );
 }
