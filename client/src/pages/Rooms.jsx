@@ -267,31 +267,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
       className={`room-card${isSelected ? ' active' : ''}`}
       onClick={() => onClick(room)}
     >
-      {/* Photo thumbnail */}
-      <div style={{
-        height: 130, width: '100%',
-        borderRadius: '10px 10px 0 0', overflow: 'hidden',
-        background: 'var(--page-bg)', flexShrink: 0, position: 'relative',
-      }}>
-        {room.primary_thumb || room.primary_photo ? (
-          <img
-            src={`/uploads/rooms/${room.primary_thumb || room.primary_photo}`}
-            alt={room.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        ) : (
-          <div style={{
-            width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', gap: 6, color: 'var(--text-muted)',
-          }}>
-            <i className="ti ti-photo-off" style={{ fontSize: '1.4rem' }} />
-            <span style={{ fontSize: '0.72rem' }}>No photo</span>
-          </div>
-        )}
-      </div>
-
-      {/* Coloured stripe — status accent between photo and body */}
+      {/* Coloured stripe — status accent at top of card */}
       <div className={`room-card-stripe ${stripeClass}`}
         style={isOccupied ? { background: '#f59e0b' } : {}} />
 
@@ -342,6 +318,27 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
             )}
           </div>
         )}
+
+        {/* Photo thumbnail + count */}
+        <div style={{ display: 'flex', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+          {room.photo_count > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--text-secondary, #64748b)' }}>
+              {(room.primary_thumb || room.primary_photo) && (
+                <img
+                  src={`/uploads/rooms/${room.primary_thumb || room.primary_photo}`}
+                  alt=""
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                  style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0 }}
+                />
+              )}
+              <span><i className="ti ti-camera" /> {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.78rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <i className="ti ti-camera" /> No photos yet
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Occupied strip */}
