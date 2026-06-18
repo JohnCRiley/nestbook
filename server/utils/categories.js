@@ -20,6 +20,9 @@ const WP_CATEGORIES = [
 
 export function seedCategories(db, propertyId, rentalType) {
   const categories = rentalType === 'whole_property' ? WP_CATEGORIES : IP_CATEGORIES;
+  // NULL-out FK references first so the DELETE doesn't fail when charges already exist
+  // (room_charges.category_id → service_categories.id, no ON DELETE CASCADE/SET NULL)
+  db.prepare('UPDATE room_charges SET category_id = NULL WHERE property_id = ?').run(propertyId);
   db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(propertyId);
   const insert = db.prepare(
     `INSERT INTO service_categories (property_id, name, tax_rate) VALUES (?, ?, ?)`

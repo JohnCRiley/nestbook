@@ -204,6 +204,11 @@ propertiesRouter.put('/:id', (req, res) => {
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
+    // Preserve the existing rental_type if the field is absent from the body — never silently
+    // downgrade a WP property to 'rooms' just because a partial settings save omitted the field.
+    const newRentalType = VALID_RENTAL_TYPES.includes(rental_type)
+      ? rental_type
+      : (existing?.rental_type ?? 'rooms');
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
@@ -228,7 +233,7 @@ propertiesRouter.put('/:id', (req, res) => {
       breakfast_end_time   ?? '11:00',
       description || null,
       hero_image_url || null,
-      VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : 'rooms',
+      newRentalType,
       total_capacity  ? parseInt(total_capacity,  10) : null,
       bedroom_count   ? parseInt(bedroom_count,   10) : null,
       bathroom_count  ? parseInt(bathroom_count,  10) : null,
@@ -240,7 +245,6 @@ propertiesRouter.put('/:id', (req, res) => {
       cancellation_days != null ? parseInt(cancellation_days, 10) : 7,
       req.params.id,
     );
-    const newRentalType = VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : 'rooms';
     if (existing && newRentalType !== existing.rental_type) {
       seedCategories(db, Number(req.params.id), newRentalType);
     }

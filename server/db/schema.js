@@ -1265,7 +1265,7 @@ John`
       'Bar & drinks', 'Restaurant', 'Room service', 'Spa & treatments',
       'Laundry', 'Parking', 'Minibar',
       // legacy names from pre-fix auth.js seeding:
-      'Food & Drink', 'Bar', 'Spa & Wellness', 'Activities', 'Transport',
+      'Food & Drink', 'Bar', 'Spa & Wellness', 'Transport',
     ];
     const ph = IP_NAMES.map(() => '?').join(',');
     const wpWithIpCats = db.prepare(`

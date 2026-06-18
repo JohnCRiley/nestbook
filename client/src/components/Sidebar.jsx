@@ -164,6 +164,8 @@ export default function Sidebar() {
           {navItems.map(({ to, key, Icon }) => {
             const label = key === 'rooms' && property?.rental_type === 'whole_property'
               ? t('nav.property')
+              : key === 'charges' && property?.rental_type === 'whole_property'
+              ? t('nav.propertyCharges')
               : t(key);
             return (
               <NavLink
