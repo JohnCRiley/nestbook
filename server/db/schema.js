@@ -1401,6 +1401,7 @@ John`
   // Missed action reminder tracking — prevents duplicate owner emails
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_email_sent TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_actioned INTEGER DEFAULT 0`); } catch {}
 
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously

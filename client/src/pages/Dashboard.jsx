@@ -812,68 +812,60 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {missedAction.type === 'arrival' ? (
-              <>
-                <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 8, color: '#111827' }}>
-                  Did {missedAction.booking.guest_first_name} {missedAction.booking.guest_last_name} arrive?
-                </div>
-                <div style={{ fontSize: '0.88rem', color: '#6b7280', marginBottom: 22, lineHeight: 1.5 }}>
-                  This booking was due to check in yesterday but hasn't been marked as arrived yet.
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <button
-                    className="btn-primary"
-                    onClick={() => {
-                      const b = missedAction.booking;
-                      setMissedAction(null);
-                      apiFetch(`/api/bookings/${b.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...b, _wp_action: 'wp_checkin' }),
-                      })
-                        .then((r) => r.ok ? r.json() : null)
-                        .then((saved) => {
-                          if (!saved) return;
-                          setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
-                          fetchWpSummary();
-                        })
-                        .catch(() => {});
-                    }}
-                  >
-                    Yes — guests arrived
-                  </button>
-                  <button
-                    className="btn-secondary"
-                    style={{ color: '#dc2626', borderColor: '#fca5a5' }}
-                    onClick={() => {
-                      const b = missedAction.booking;
-                      setMissedAction(null);
-                      apiFetch(`/api/bookings/${b.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...b, status: 'cancelled' }),
-                      })
-                        .then((r) => r.ok ? r.json() : null)
-                        .then((saved) => {
-                          if (!saved) return;
-                          setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
-                          fetchWpSummary();
-                        })
-                        .catch(() => {});
-                    }}
-                  >
-                    No — mark as no-show / cancel
-                  </button>
-                  <button
-                    className="btn-secondary"
-                    style={{ border: '1.5px solid var(--border)', marginTop: 2 }}
-                    onClick={() => setMissedAction(null)}
-                  >
-                    Remind me later
-                  </button>
-                </div>
-              </>
-            ) : (
+            {missedAction.type === 'arrival' ? (() => {
+              const b = missedAction.booking;
+              async function dismissMissedArrival(action) {
+                setMissedAction(null);
+                await apiFetch(`/api/bookings/${b.id}/action-missed-arrival`, { method: 'POST' });
+                if (action === 'arrived') {
+                  const r = await apiFetch(`/api/bookings/${b.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...b, status: 'in_house' }),
+                  });
+                  const saved = r.ok ? await r.json() : null;
+                  if (saved) setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                } else if (action === 'cancel') {
+                  const r = await apiFetch(`/api/bookings/${b.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...b, status: 'cancelled' }),
+                  });
+                  const saved = r.ok ? await r.json() : null;
+                  if (saved) setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                }
+                fetchWpSummary();
+              }
+              return (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 8, color: '#111827' }}>
+                    Did {b.guest_first_name} {b.guest_last_name} arrive?
+                  </div>
+                  <div style={{ fontSize: '0.88rem', color: '#6b7280', marginBottom: 22, lineHeight: 1.5 }}>
+                    This booking was due to check in yesterday but hasn't been marked as arrived yet.
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <button className="btn-primary" onClick={() => dismissMissedArrival('arrived')}>
+                      Yes — guests arrived
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                      onClick={() => dismissMissedArrival('cancel')}
+                    >
+                      No — mark as no-show / cancel
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      style={{ border: '1.5px solid var(--border)', marginTop: 2 }}
+                      onClick={() => dismissMissedArrival('remind_later')}
+                    >
+                      Remind me later
+                    </button>
+                  </div>
+                </>
+              );
+            })() : (
               <>
                 <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 8, color: '#111827' }}>
                   Have your guests departed?

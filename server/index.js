@@ -276,6 +276,16 @@ function autoAdvanceBookings() {
     if (toInHouse.changes > 0) {
       console.log(`[auto-advance] ${toInHouse.changes} booking(s) arriving → in_house (auto)`);
     }
+
+    // Reset missed_arrival_actioned daily for recent bookings so "Remind me later" re-prompts next day
+    db.prepare(`
+      UPDATE bookings
+      SET missed_arrival_actioned = 0
+      WHERE missed_arrival_actioned = 1
+        AND status = 'in_house'
+        AND check_in_date < date('now', '-1 day')
+        AND check_in_date > date('now', '-3 days')
+    `).run();
   } catch (err) {
     console.error('[auto-advance] Error:', err.message);
   }

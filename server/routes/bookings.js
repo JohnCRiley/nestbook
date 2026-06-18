@@ -145,7 +145,7 @@ bookingsRouter.get('/missed-actions', (req, res) => {
 
     const ph = propIds.map(() => '?').join(',');
 
-    // Missed arrival: check_in was yesterday, auto-advanced to in_house
+    // Missed arrival: check_in was yesterday, auto-advanced to in_house, not yet actioned
     const missedArrival = db.prepare(`
       SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name
       FROM bookings b
@@ -153,6 +153,7 @@ bookingsRouter.get('/missed-actions', (req, res) => {
       WHERE b.property_id IN (${ph})
         AND b.status = 'in_house'
         AND b.check_in_date = ?
+        AND (b.missed_arrival_actioned IS NULL OR b.missed_arrival_actioned = 0)
       LIMIT 1
     `).get(...propIds, yesterday);
 
@@ -171,6 +172,13 @@ bookingsRouter.get('/missed-actions', (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── POST /api/bookings/:id/action-missed-arrival ──────────────────────────────
+// Marks a missed-arrival as actioned so the dashboard modal won't reappear.
+bookingsRouter.post('/:id/action-missed-arrival', (req, res) => {
+  db.prepare(`UPDATE bookings SET missed_arrival_actioned = 1 WHERE id = ?`).run(req.params.id);
+  res.json({ success: true });
 });
 
 // ── GET /api/bookings/counts ──────────────────────────────────────────────────
