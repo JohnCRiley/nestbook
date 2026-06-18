@@ -206,8 +206,9 @@ bookingsRouter.get('/:id/check-extension', (req, res) => {
     const clash = db.prepare(`
       SELECT b.id, g.first_name, g.last_name, b.check_in_date, b.check_out_date
       FROM bookings b
+      JOIN rooms r ON r.id = b.room_id
       LEFT JOIN guests g ON g.id = b.guest_id
-      WHERE b.property_id = ?
+      WHERE r.property_id = ?
         AND b.id != ?
         AND b.status NOT IN ('cancelled','declined')
         AND b.check_in_date < ?
