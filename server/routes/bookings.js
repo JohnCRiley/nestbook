@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../db/database.js';
-import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail } from '../email/emailService.js';
+import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail, sendStayExtendedEmail, sendStayShortenedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { calcSeasonalTotal, calcSeasonalBreakdown } from '../utils/ratePeriods.js';
 import { calculateDeposit } from '../utils/deposits.js';
@@ -179,6 +179,95 @@ bookingsRouter.get('/missed-actions', (req, res) => {
 bookingsRouter.post('/:id/action-missed-arrival', (req, res) => {
   db.prepare(`UPDATE bookings SET missed_arrival_actioned = 1 WHERE id = ?`).run(req.params.id);
   res.json({ success: true });
+});
+
+// ── GET /api/bookings/:id/check-extension ────────────────────────────────────
+// Returns availability + cost breakdown for extending a booking's check-out date.
+bookingsRouter.get('/:id/check-extension', (req, res) => {
+  try {
+    const { newCheckOut } = req.query;
+    if (!newCheckOut) return res.status(400).json({ error: 'newCheckOut required' });
+
+    const booking = db.prepare(`
+      SELECT b.*, r.property_id,
+        p.rental_type, p.whole_property_rate, p.currency, p.name AS property_name
+      FROM bookings b
+      JOIN rooms  r ON r.id  = b.room_id
+      JOIN properties p ON p.id = r.property_id
+      WHERE b.id = ?
+    `).get(req.params.id);
+
+    if (!booking) return res.status(404).json({ error: 'Not found' });
+    if (newCheckOut <= booking.check_out_date) {
+      return res.status(400).json({ error: 'New check-out must be later than current' });
+    }
+
+    // Clash check — any booking in the extension window (same property for WP, same room for IP)
+    const clash = db.prepare(`
+      SELECT b.id, g.first_name, g.last_name, b.check_in_date, b.check_out_date
+      FROM bookings b
+      LEFT JOIN guests g ON g.id = b.guest_id
+      WHERE b.property_id = ?
+        AND b.id != ?
+        AND b.status NOT IN ('cancelled','declined')
+        AND b.check_in_date < ?
+        AND b.check_out_date > ?
+    `).get(booking.property_id, booking.id, newCheckOut, booking.check_out_date);
+
+    if (clash) {
+      return res.json({
+        available: false,
+        clash: { guest: `${clash.first_name} ${clash.last_name}`, checkIn: clash.check_in_date, checkOut: clash.check_out_date },
+      });
+    }
+
+    // Calculate extra cost night by night using seasonal rate periods
+    const isWP = booking.rental_type === 'whole_property';
+    const bookingRoom = db.prepare('SELECT * FROM rooms WHERE id = ?').get(booking.room_id);
+    const baseRate = isWP ? (booking.whole_property_rate ?? 0) : (bookingRoom?.price_per_night ?? 0);
+
+    let extraTotal = 0;
+    const segments = [];
+    let cur = new Date(booking.check_out_date);
+    const end = new Date(newCheckOut);
+
+    while (cur < end) {
+      const dateStr = cur.toISOString().split('T')[0];
+      const period = db.prepare(`
+        SELECT rp.default_rate, rpr.price_per_night AS override
+        FROM rate_periods rp
+        LEFT JOIN rate_period_rooms rpr ON rpr.rate_period_id = rp.id AND rpr.room_id = ?
+        WHERE rp.property_id = ?
+          AND ? BETWEEN rp.start_date AND rp.end_date
+          AND rp.active = 1
+        ORDER BY rp.priority DESC LIMIT 1
+      `).get(booking.room_id, booking.property_id, dateStr);
+
+      const nightRate = period ? (period.override ?? period.default_rate ?? baseRate) : baseRate;
+      extraTotal += nightRate;
+
+      const last = segments[segments.length - 1];
+      if (last && last.rate === nightRate) { last.nights++; }
+      else { segments.push({ rate: nightRate, nights: 1 }); }
+
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    const extraNights = Math.ceil((new Date(newCheckOut) - new Date(booking.check_out_date)) / 86400000);
+    const currentTotal = booking.total_price ?? 0;
+
+    res.json({
+      available: true,
+      extraNights,
+      extraTotal:   Math.round(extraTotal   * 100) / 100,
+      currentTotal,
+      newTotal:     Math.round((currentTotal + extraTotal) * 100) / 100,
+      segments,
+      currency:     booking.currency ?? 'GBP',
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── GET /api/bookings/counts ──────────────────────────────────────────────────
@@ -642,6 +731,9 @@ bookingsRouter.put('/:id', (req, res) => {
       return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
+    const isExtension  = check_out_date != null && check_out_date > existing.check_out_date;
+    const isShortening = check_out_date != null && check_out_date < existing.check_out_date;
+
     // Recalculate total_price and rate_breakdown when dates change
     let finalTotalPrice = total_price;
     let rateBreakdownStr = null;
@@ -706,6 +798,19 @@ bookingsRouter.put('/:id', (req, res) => {
       afterValue:  { status: updated.status },
       ipAddress: getIp(req),
     });
+
+    // Fire-and-forget guest email when check-out date changed
+    if ((isExtension || isShortening) && updated.guest_email) {
+      const propFull   = db.prepare('SELECT * FROM properties WHERE id = ?').get(existing.property_id);
+      const ownerEmail = db.prepare('SELECT email FROM users WHERE id = ?').get(propFull?.owner_id)?.email ?? '';
+      // Pass old check_out_date so email shows "previous check-out" correctly
+      const emailBooking = { ...updated, check_out_date: existing.check_out_date };
+      if (isExtension) {
+        sendStayExtendedEmail(emailBooking, propFull, newCheckOut, finalTotalPrice, ownerEmail).catch(() => {});
+      } else {
+        sendStayShortenedEmail(emailBooking, propFull, newCheckOut, finalTotalPrice, ownerEmail).catch(() => {});
+      }
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

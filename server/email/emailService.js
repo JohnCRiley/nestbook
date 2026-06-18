@@ -1954,6 +1954,132 @@ export async function sendMissedDepartureReminder(booking) {
   }
 }
 
+// ── Stay extended email ───────────────────────────────────────────────────────
+export async function sendStayExtendedEmail(booking, property, newCheckOut, newTotal, ownerEmail) {
+  if (!resend) {
+    console.log('[email] SKIPPED stay-extended email to', booking.guest_email);
+    return;
+  }
+  const extraNights = Math.ceil(
+    (new Date(newCheckOut) - new Date(booking.check_out_date)) / (1000 * 60 * 60 * 24)
+  );
+  const currency = property.currency || 'GBP';
+
+  const body = `
+    <h2 style="color:#1a4710;font-size:20px;margin:0 0 8px;">Great news — your stay has been extended!</h2>
+    <p style="color:#475569;font-size:14px;margin:0 0 24px;line-height:1.6;">
+      Your booking at <strong>${property.name}</strong> has been updated with new dates.
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+      <tr>
+        <td style="padding:8px 0;color:#64748b;font-size:14px;width:160px;">Property</td>
+        <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;color:#64748b;font-size:14px;">Check-in</td>
+        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#94a3b8;">(unchanged)</span></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;color:#64748b;font-size:14px;">Previous check-out</td>
+        <td style="padding:8px 0;font-size:14px;color:#94a3b8;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
+      </tr>
+      <tr style="background:#f0fdf4;">
+        <td style="padding:10px 12px;color:#1a4710;font-size:14px;font-weight:700;">New check-out</td>
+        <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#1a4710;">
+          ${fmtDate(newCheckOut, 'en')}
+          <span style="background:#d9f0cc;color:#1a4710;font-size:11px;padding:2px 7px;border-radius:4px;margin-left:6px;">
+            +${extraNights} night${extraNights !== 1 ? 's' : ''}
+          </span>
+        </td>
+      </tr>
+      <tr style="border-top:2px solid #e2e8f0;">
+        <td style="padding:12px 0;color:#64748b;font-size:14px;font-weight:700;">New total</td>
+        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#1a4710;">${fmtDepositAmount(newTotal, currency)}</td>
+      </tr>
+    </table>
+    <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:0 8px 8px 0;">
+      <p style="color:#78350f;font-size:14px;margin:0;line-height:1.6;">
+        <strong>Payment note:</strong> Please arrange the additional payment for the extended nights
+        directly with ${property.name}. Reply to this email if you have any questions.
+      </p>
+    </div>`;
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: booking.guest_email,
+      replyTo: ownerEmail || undefined,
+      subject: `Stay extended — ${property.name} · now until ${fmtDate(newCheckOut, 'en')}`,
+      html: shell(body),
+    });
+    console.log(`[stay-extended] Email sent to ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[stay-extended] Email failed:', err.message);
+  }
+}
+
+// ── Stay shortened email ──────────────────────────────────────────────────────
+export async function sendStayShortenedEmail(booking, property, newCheckOut, newTotal, ownerEmail) {
+  if (!resend) {
+    console.log('[email] SKIPPED stay-shortened email to', booking.guest_email);
+    return;
+  }
+  const nightsRemoved = Math.ceil(
+    (new Date(booking.check_out_date) - new Date(newCheckOut)) / (1000 * 60 * 60 * 24)
+  );
+  const currency = property.currency || 'GBP';
+
+  const body = `
+    <h2 style="color:#1a2e14;font-size:20px;margin:0 0 8px;">Your booking has been updated</h2>
+    <p style="color:#475569;font-size:14px;margin:0 0 24px;line-height:1.6;">
+      Your stay at <strong>${property.name}</strong> has been shortened.
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+      <tr>
+        <td style="padding:8px 0;color:#64748b;font-size:14px;width:160px;">Property</td>
+        <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;color:#64748b;font-size:14px;">Check-in</td>
+        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#94a3b8;">(unchanged)</span></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;color:#64748b;font-size:14px;">Previous check-out</td>
+        <td style="padding:8px 0;font-size:14px;color:#94a3b8;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
+      </tr>
+      <tr style="background:#fef2f2;">
+        <td style="padding:10px 12px;color:#dc2626;font-size:14px;font-weight:700;">New check-out</td>
+        <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#dc2626;">
+          ${fmtDate(newCheckOut, 'en')}
+          <span style="background:#fca5a5;color:#dc2626;font-size:11px;padding:2px 7px;border-radius:4px;margin-left:6px;">
+            −${nightsRemoved} night${nightsRemoved !== 1 ? 's' : ''}
+          </span>
+        </td>
+      </tr>
+      <tr style="border-top:2px solid #e2e8f0;">
+        <td style="padding:12px 0;color:#64748b;font-size:14px;font-weight:700;">Updated total</td>
+        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#1a2e14;">${fmtDepositAmount(newTotal, currency)}</td>
+      </tr>
+    </table>
+    <p style="color:#475569;font-size:14px;line-height:1.6;">
+      If you have any questions about your updated booking, please reply to this email to contact
+      the property directly.
+    </p>`;
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: booking.guest_email,
+      replyTo: ownerEmail || undefined,
+      subject: `Booking updated — ${property.name} · check-out now ${fmtDate(newCheckOut, 'en')}`,
+      html: shell(body),
+    });
+    console.log(`[stay-shortened] Email sent to ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[stay-shortened] Email failed:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');

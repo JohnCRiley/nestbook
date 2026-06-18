@@ -1445,7 +1445,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
 function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
-  const { currencySymbol, locale, property } = useLocale();
+  const { currencySymbol, fmtCurrency, locale, property } = useLocale();
   const isWP = property?.rental_type === 'whole_property';
   const [form, setForm] = useState({
     room_id:        b.room_id        ? String(b.room_id)  : '',
@@ -1458,9 +1458,12 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
     notes:          b.notes          ?? '',
     total_price:    b.total_price    ?? '',
   });
-  const [saving,            setSaving]            = useState(false);
-  const [error,             setError]             = useState(null);
+  const [saving,             setSaving]             = useState(false);
+  const [error,              setError]              = useState(null);
   const [showShortenConfirm, setShowShortenConfirm] = useState(false);
+  const [checkingExtension,  setCheckingExtension]  = useState(false);
+  const [extensionData,      setExtensionData]      = useState(null);
+  const [showExtendConfirm,  setShowExtendConfirm]  = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -1469,6 +1472,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
     setSaving(true);
     setError(null);
     setShowShortenConfirm(false);
+    setShowExtendConfirm(false);
     try {
       const res = await apiFetch(`/api/bookings/${b.id}`, {
         method: 'PUT',
@@ -1497,11 +1501,30 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.check_in_date || !form.check_out_date) { setError(t('requiredFields')); return; }
     if (form.check_out_date <= form.check_in_date)   { setError(t('checkoutAfterCheckin')); return; }
     if (form.check_out_date < b.check_out_date) {
       setShowShortenConfirm(true);
+      return;
+    }
+    if (form.check_out_date > b.check_out_date) {
+      setCheckingExtension(true);
+      setError(null);
+      try {
+        const r = await apiFetch(`/api/bookings/${b.id}/check-extension?newCheckOut=${form.check_out_date}`);
+        const data = await r.json();
+        setCheckingExtension(false);
+        if (!data.available) {
+          setError(`Cannot extend — ${data.clash.guest} is already booked from ${data.clash.checkIn}.`);
+          return;
+        }
+        setExtensionData(data);
+        setShowExtendConfirm(true);
+      } catch {
+        setCheckingExtension(false);
+        setError('Could not check availability. Please try again.');
+      }
       return;
     }
     doSave();
@@ -1610,10 +1633,10 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
       </div>
 
       <div className="panel-actions">
-        <button className="btn-panel-primary" onClick={handleSave} disabled={saving}>
-          {saving ? t('saving') : t('saveChanges')}
+        <button className="btn-panel-primary" onClick={handleSave} disabled={saving || checkingExtension}>
+          {saving ? t('saving') : checkingExtension ? 'Checking availability…' : t('saveChanges')}
         </button>
-        <button className="btn-secondary" onClick={onCancel} disabled={saving}
+        <button className="btn-secondary" onClick={onCancel} disabled={saving || checkingExtension}
           style={{ border: '1.5px solid var(--border)' }}>
           {t('cancel')}
         </button>
@@ -1625,13 +1648,35 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
           <ConfirmModal
             isOpen={true}
             title="Shorten this stay?"
-            message={`You are changing check-out from ${formatDateMedium(b.check_out_date, locale)} to ${formatDateMedium(form.check_out_date, locale)}. This will shorten the guest's stay by ${cutNights} night${cutNights !== 1 ? 's' : ''}.`}
-            detail="Has the guest requested this change? This action cannot be undone."
+            message={`Changing check-out from ${formatDateMedium(b.check_out_date, locale)} to ${formatDateMedium(form.check_out_date, locale)} — shortening by ${cutNights} night${cutNights !== 1 ? 's' : ''}.`}
+            detail="The total will be recalculated and a notification email will be sent to the guest. Has the guest requested this change?"
             confirmLabel="Yes — shorten the stay"
             cancelLabel={t('cancel')}
             variant="warning"
             onConfirm={doSave}
             onCancel={() => setShowShortenConfirm(false)}
+          />
+        );
+      })()}
+
+      {showExtendConfirm && extensionData && (() => {
+        const extra = extensionData.extraNights;
+        const rateDetail = extensionData.segments.length > 1
+          ? extensionData.segments.map(s =>
+              `${s.nights} night${s.nights !== 1 ? 's' : ''} × ${fmtCurrency(s.rate)}`
+            ).join(' + ')
+          : `${extra} night${extra !== 1 ? 's' : ''} × ${fmtCurrency(extensionData.extraTotal / extra)}`;
+        return (
+          <ConfirmModal
+            isOpen={true}
+            title={`Extend stay by ${extra} night${extra !== 1 ? 's' : ''}?`}
+            message={`${rateDetail} = ${fmtCurrency(extensionData.extraTotal)} extra. New total: ${fmtCurrency(extensionData.newTotal)}.`}
+            detail="Has the guest agreed to the extra cost? A confirmation email will be sent to them."
+            confirmLabel={`Yes — extend to ${formatDateMedium(form.check_out_date, locale)}`}
+            cancelLabel={t('cancel')}
+            variant="success"
+            onConfirm={() => { setShowExtendConfirm(false); setExtensionData(null); doSave(); }}
+            onCancel={() => { setShowExtendConfirm(false); setExtensionData(null); }}
           />
         );
       })()}
