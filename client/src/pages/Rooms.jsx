@@ -268,16 +268,23 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
       onClick={() => onClick(room)}
     >
       {/* Photo thumbnail */}
-      <div className="room-card-thumb">
+      <div style={{
+        height: 130, width: '100%',
+        borderRadius: '10px 10px 0 0', overflow: 'hidden',
+        background: 'var(--page-bg)', flexShrink: 0, position: 'relative',
+      }}>
         {room.primary_thumb || room.primary_photo ? (
           <img
             src={`/uploads/rooms/${room.primary_thumb || room.primary_photo}`}
             alt={room.name}
-            className="room-card-thumb-img"
-            onError={(e) => { e.target.parentElement.classList.add('room-card-thumb--empty'); e.target.style.display = 'none'; }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
         ) : (
-          <div className="room-card-thumb-placeholder">
+          <div style={{
+            width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 6, color: 'var(--text-muted)',
+          }}>
             <i className="ti ti-photo-off" style={{ fontSize: '1.4rem' }} />
             <span style={{ fontSize: '0.72rem' }}>No photo</span>
           </div>
