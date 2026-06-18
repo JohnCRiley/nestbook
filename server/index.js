@@ -29,7 +29,7 @@ import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { errorReportsRouter }        from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
-import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail } from './email/emailService.js';
+import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder } from './email/emailService.js';
 import { getBalanceDueDate } from './utils/deposits.js';
 import db from './db/database.js';
 
@@ -202,15 +202,79 @@ async function sendPendingBalanceReminders() {
   }
 }
 
-// ── Auto-advance: confirmed → arriving on check-in date ──────────────────────
+// ── Missed-action owner reminders (WP mode) ───────────────────────────────────
+async function sendMissedActionReminders() {
+  try {
+    const today     = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    // Missed arrival — check-in was yesterday, auto-advanced to in_house
+    const missedArrivals = db.prepare(`
+      SELECT b.*,
+        g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+        p.name AS property_name,
+        u.email AS owner_email
+      FROM bookings b
+      JOIN properties p ON p.id = b.property_id
+      JOIN users u ON u.id = p.owner_id
+      LEFT JOIN guests g ON g.id = b.guest_id
+      WHERE b.status = 'in_house'
+        AND b.check_in_date = ?
+        AND p.rental_type = 'whole_property'
+        AND b.missed_arrival_email_sent IS NULL
+    `).all(yesterday);
+
+    for (const booking of missedArrivals) {
+      await sendMissedArrivalReminder(booking);
+      db.prepare(`UPDATE bookings SET missed_arrival_email_sent = datetime('now') WHERE id = ?`).run(booking.id);
+      console.log(`[missed-action] Arrival reminder sent for booking #${booking.id}`);
+    }
+
+    // Missed departure — check-out is today, still in_house
+    const missedDepartures = db.prepare(`
+      SELECT b.*,
+        g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+        p.name AS property_name,
+        u.email AS owner_email
+      FROM bookings b
+      JOIN properties p ON p.id = b.property_id
+      JOIN users u ON u.id = p.owner_id
+      LEFT JOIN guests g ON g.id = b.guest_id
+      WHERE b.status = 'in_house'
+        AND b.check_out_date = ?
+        AND p.rental_type = 'whole_property'
+        AND b.missed_departure_email_sent IS NULL
+    `).all(today);
+
+    for (const booking of missedDepartures) {
+      await sendMissedDepartureReminder(booking);
+      db.prepare(`UPDATE bookings SET missed_departure_email_sent = datetime('now') WHERE id = ?`).run(booking.id);
+      console.log(`[missed-action] Departure reminder sent for booking #${booking.id}`);
+    }
+  } catch (err) {
+    console.error('[missed-action] Scheduler error:', err.message);
+  }
+}
+
+// ── Auto-advance booking statuses ────────────────────────────────────────────
 function autoAdvanceBookings() {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const result = db.prepare(
+
+    // confirmed → arriving on check-in day
+    const toArriving = db.prepare(
       `UPDATE bookings SET status = 'arriving' WHERE status = 'confirmed' AND check_in_date = ?`
     ).run(today);
-    if (result.changes > 0) {
-      console.log(`[auto-advance] ${result.changes} booking(s) set to arriving`);
+    if (toArriving.changes > 0) {
+      console.log(`[auto-advance] ${toArriving.changes} booking(s) → arriving`);
+    }
+
+    // arriving → in_house the day AFTER check-in (owner forgot to tap "Guests arrived")
+    const toInHouse = db.prepare(
+      `UPDATE bookings SET status = 'in_house' WHERE status = 'arriving' AND check_in_date < ?`
+    ).run(today);
+    if (toInHouse.changes > 0) {
+      console.log(`[auto-advance] ${toInHouse.changes} booking(s) arriving → in_house (auto)`);
     }
   } catch (err) {
     console.error('[auto-advance] Error:', err.message);
@@ -234,4 +298,13 @@ app.listen(PORT, () => {
   // Auto-advance confirmed → arriving on check-in date
   autoAdvanceBookings();
   setInterval(autoAdvanceBookings, 60 * 60 * 1000);
+
+  // Missed-action reminders — fire at 10am daily
+  const now10 = new Date();
+  const next10am = new Date(now10.getFullYear(), now10.getMonth(), now10.getDate(), 10, 0, 0);
+  if (next10am <= now10) next10am.setDate(next10am.getDate() + 1);
+  setTimeout(() => {
+    sendMissedActionReminders();
+    setInterval(sendMissedActionReminders, 24 * 60 * 60 * 1000);
+  }, next10am - now10);
 });

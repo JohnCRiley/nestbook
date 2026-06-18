@@ -133,6 +133,46 @@ bookingsRouter.get('/pending-count', (req, res) => {
   }
 });
 
+// ── GET /api/bookings/missed-actions ─────────────────────────────────────────
+// Returns the first booking needing owner attention (missed arrival or departure).
+bookingsRouter.get('/missed-actions', (req, res) => {
+  try {
+    const today     = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+    if (!propIds.length) return res.json({ missedArrival: null, missedDeparture: null });
+
+    const ph = propIds.map(() => '?').join(',');
+
+    // Missed arrival: check_in was yesterday, auto-advanced to in_house
+    const missedArrival = db.prepare(`
+      SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name
+      FROM bookings b
+      LEFT JOIN guests g ON g.id = b.guest_id
+      WHERE b.property_id IN (${ph})
+        AND b.status = 'in_house'
+        AND b.check_in_date = ?
+      LIMIT 1
+    `).get(...propIds, yesterday);
+
+    // Missed departure: check_out is today, still in_house
+    const missedDeparture = db.prepare(`
+      SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name
+      FROM bookings b
+      LEFT JOIN guests g ON g.id = b.guest_id
+      WHERE b.property_id IN (${ph})
+        AND b.status = 'in_house'
+        AND b.check_out_date = ?
+      LIMIT 1
+    `).get(...propIds, today);
+
+    res.json({ missedArrival: missedArrival ?? null, missedDeparture: missedDeparture ?? null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings/counts ──────────────────────────────────────────────────
 // Returns per-status counts for filter pill badges.
 // Must be defined BEFORE /:id so Express doesn't treat "counts" as an id param.

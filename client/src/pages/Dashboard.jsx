@@ -69,6 +69,7 @@ export default function Dashboard() {
   const [depositGate,          setDepositGate]          = useState(null); // { bookingId }
   const [wpSummary,            setWpSummary]            = useState(null);
   const [wpSelectedBooking,    setWpSelectedBooking]    = useState(null);
+  const [missedAction,         setMissedAction]         = useState(null); // { type:'arrival'|'departure', booking }
 
   const today = localToday();
 
@@ -141,6 +142,22 @@ export default function Dashboard() {
     fetchWpSummary();
     const timer = setInterval(fetchWpSummary, 5 * 60 * 1000);
     return () => clearInterval(timer);
+  }, [property?.id, property?.rental_type]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Missed-action check (WP only, runs once on property load) ─────────────
+  useEffect(() => {
+    if (!property?.id || property.rental_type !== 'whole_property') return;
+    apiFetch('/api/bookings/missed-actions')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        if (data.missedArrival) {
+          setMissedAction({ type: 'arrival', booking: data.missedArrival });
+        } else if (data.missedDeparture) {
+          setMissedAction({ type: 'departure', booking: data.missedDeparture });
+        }
+      })
+      .catch(() => {});
   }, [property?.id, property?.rental_type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived data ───────────────────────────────────────────────────────────
@@ -774,6 +791,131 @@ export default function Dashboard() {
         onConfirm={() => { pendingConfirm.action(); setPendingConfirm(null); }}
         onCancel={() => setPendingConfirm(null)}
       />
+
+      {/* ── Missed-action modal (WP only) ──────────────────────────────────── */}
+      {missedAction && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 12, padding: '28px 28px 24px',
+            maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          }}>
+            <div style={{
+              background: '#fef3c7', border: '1.5px solid #f59e0b', borderRadius: 8,
+              padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <i className="ti ti-alert-triangle" style={{ color: '#d97706', fontSize: '1.2rem' }} />
+              <div style={{ fontWeight: 600, color: '#92400e', fontSize: '0.9rem' }}>
+                {missedAction.type === 'arrival' ? 'Attention needed — missed arrival' : 'Attention needed — guests due to depart'}
+              </div>
+            </div>
+
+            {missedAction.type === 'arrival' ? (
+              <>
+                <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 8, color: '#111827' }}>
+                  Did {missedAction.booking.guest_first_name} {missedAction.booking.guest_last_name} arrive?
+                </div>
+                <div style={{ fontSize: '0.88rem', color: '#6b7280', marginBottom: 22, lineHeight: 1.5 }}>
+                  This booking was due to check in yesterday but hasn't been marked as arrived yet.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      const b = missedAction.booking;
+                      setMissedAction(null);
+                      apiFetch(`/api/bookings/${b.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...b, _wp_action: 'wp_checkin' }),
+                      })
+                        .then((r) => r.ok ? r.json() : null)
+                        .then((saved) => {
+                          if (!saved) return;
+                          setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                          fetchWpSummary();
+                        })
+                        .catch(() => {});
+                    }}
+                  >
+                    Yes — guests arrived
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                    onClick={() => {
+                      const b = missedAction.booking;
+                      setMissedAction(null);
+                      apiFetch(`/api/bookings/${b.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...b, status: 'cancelled' }),
+                      })
+                        .then((r) => r.ok ? r.json() : null)
+                        .then((saved) => {
+                          if (!saved) return;
+                          setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                          fetchWpSummary();
+                        })
+                        .catch(() => {});
+                    }}
+                  >
+                    No — mark as no-show / cancel
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    style={{ border: '1.5px solid var(--border)', marginTop: 2 }}
+                    onClick={() => setMissedAction(null)}
+                  >
+                    Remind me later
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 8, color: '#111827' }}>
+                  Have your guests departed?
+                </div>
+                <div style={{ fontSize: '0.88rem', color: '#6b7280', marginBottom: 22, lineHeight: 1.5 }}>
+                  {missedAction.booking.guest_first_name} {missedAction.booking.guest_last_name} is due to check out today but is still marked as in stay.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      const b = missedAction.booking;
+                      setMissedAction(null);
+                      apiFetch(`/api/bookings/${b.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...b, _wp_action: 'wp_departure' }),
+                      })
+                        .then((r) => r.ok ? r.json() : null)
+                        .then((saved) => {
+                          if (!saved) return;
+                          setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                          fetchWpSummary();
+                        })
+                        .catch(() => {});
+                    }}
+                  >
+                    Yes — guests have departed
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    style={{ border: '1.5px solid var(--border)' }}
+                    onClick={() => setMissedAction(null)}
+                  >
+                    Still here — dismiss for now
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Deposit gate modal ─────────────────────────────────────────────── */}
       {depositGate && (

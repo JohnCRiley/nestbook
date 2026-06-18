@@ -323,7 +323,8 @@ function BookingRow({ booking: b, isSelected, onClick }) {
   const t = useT();
   const rowToday = localToday();
   const statusLabel = {
-    arriving:               b.check_in_date === rowToday ? 'Arriving today' : t('calLegendInHouse'),
+    arriving:               'Arriving today',
+    in_house:               t('calLegendInHouse'),
     confirmed:              t('confirmed'),
     checked_out:            t('checkedOut'),
     cancelled:              t('cancelled'),
@@ -385,7 +386,8 @@ function BookingCard({ booking: b, isSelected, onClick }) {
   const t = useT();
   const cardToday = localToday();
   const statusLabel = {
-    arriving:               b.check_in_date === cardToday ? 'Arriving today' : t('calLegendInHouse'),
+    arriving:               'Arriving today',
+    in_house:               t('calLegendInHouse'),
     confirmed:              t('confirmed'),
     checked_out:            t('checkedOut'),
     cancelled:              t('cancelled'),

@@ -1398,6 +1398,10 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN balance_email_sent TEXT`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN deposit_forfeited INTEGER NOT NULL DEFAULT 0`); } catch {}
 
+  // Missed action reminder tracking — prevents duplicate owner emails
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_email_sent TEXT DEFAULT NULL`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

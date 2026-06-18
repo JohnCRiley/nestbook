@@ -1872,6 +1872,88 @@ export async function sendFreeWelcomeEmail(user) {
 }
 
 // ── Outreach / prospect email ─────────────────────────────────────────────────
+/**
+ * Notify owner that a guest's arrival wasn't confirmed — auto-advanced to in_house.
+ */
+export async function sendMissedArrivalReminder(booking) {
+  if (!resend) return;
+  if (!booking?.owner_email) return;
+
+  const subject = `Did ${booking.guest_first_name} arrive? — ${booking.property_name}`;
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.3rem;font-weight:700;color:#1a4710;">
+      Action may be needed
+    </h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      <strong>${booking.guest_first_name} ${booking.guest_last_name}</strong> was due to check in
+      on <strong>${fmtDate(booking.check_in_date, 'en')}</strong> at ${booking.property_name}.
+    </p>
+
+    <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;
+                border-radius:0 8px 8px 0;margin-bottom:20px;">
+      <p style="margin:0;font-size:0.875rem;color:#78350f;line-height:1.6;">
+        We've automatically marked this booking as in progress, but please log in to
+        confirm the arrival — or mark it as a no-show if they didn't turn up.
+      </p>
+    </div>
+
+    <a href="https://nestbook.io/app/bookings"
+       style="display:inline-block;background:#1a4710;color:white;padding:12px 24px;
+              border-radius:8px;text-decoration:none;font-weight:700;font-size:0.875rem;">
+      View booking →
+    </a>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">NestBook · Powered by nestbook.io</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.owner_email, subject, html: shell(body) });
+  } catch (err) {
+    console.error('[email] Failed to send missed arrival reminder:', err.message);
+  }
+}
+
+/**
+ * Remind owner that check-out is today and the booking is still in_house.
+ */
+export async function sendMissedDepartureReminder(booking) {
+  if (!resend) return;
+  if (!booking?.owner_email) return;
+
+  const subject = `Have your guests departed? — ${booking.property_name}`;
+  const body = `
+    <h1 style="margin:0 0 4px;font-size:1.3rem;font-weight:700;color:#1a4710;">
+      Departure day
+    </h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      <strong>${booking.guest_first_name} ${booking.guest_last_name}</strong> is due to check out
+      today (<strong>${fmtDate(booking.check_out_date, 'en')}</strong>) from ${booking.property_name}.
+    </p>
+
+    <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;
+                border-radius:0 8px 8px 0;margin-bottom:20px;">
+      <p style="margin:0;font-size:0.875rem;color:#78350f;line-height:1.6;">
+        Please confirm in NestBook when your guests have departed and returned the key —
+        this triggers the cleaning status and updates your calendar.
+      </p>
+    </div>
+
+    <a href="https://nestbook.io/app/bookings"
+       style="display:inline-block;background:#1a4710;color:white;padding:12px 24px;
+              border-radius:8px;text-decoration:none;font-weight:700;font-size:0.875rem;">
+      Confirm departure →
+    </a>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">NestBook · Powered by nestbook.io</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: booking.owner_email, subject, html: shell(body) });
+  } catch (err) {
+    console.error('[email] Failed to send missed departure reminder:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');
