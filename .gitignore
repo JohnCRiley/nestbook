@@ -46,3 +46,4 @@ server/uploads/
 server/public/images/blog/*.jpg
 server/public/images/blog/*.png
 server/public/images/blog/*.webp
+client/dist/index.html
