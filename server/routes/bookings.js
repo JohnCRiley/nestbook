@@ -267,6 +267,7 @@ bookingsRouter.get('/:id/check-extension', (req, res) => {
       currency:     booking.currency ?? 'GBP',
     });
   } catch (err) {
+    console.error('[check-extension] ERROR:', err.message, err.stack);
     res.status(500).json({ error: err.message });
   }
 });
