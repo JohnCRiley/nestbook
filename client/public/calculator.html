@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NestBook — Commission Calculator</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --green: #1a4710; --green-mid: #2f771b; --green-lite: #d9f0cc; --green-tint: #f0fdf4;
+  --amber: #f59e0b; --amber-lite: #fef3c7; --amber-dark: #92400e;
+  --red: #dc2626; --red-lite: #fef2f2; --purple: #7c3aed; --purple-lt: #f5f3ff;
+  --grey: #475569; --grey-lt: #f8fafc; --border: #e2e8f0; --white: #ffffff; --text: #1a2e14;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+       background: var(--green-tint); color: var(--text); min-height: 100vh; padding-bottom: 40px; }
+
+/* ── Password gate ──────────────────────────────────────────────────────── */
+#pw-gate { position: fixed; inset: 0; z-index: 9999; background: var(--green);
+           display: flex; align-items: center; justify-content: center; }
+#pw-box { background: white; border-radius: 18px; padding: 36px 28px 28px;
+          max-width: 340px; width: 90%; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+.pw-logo { font-size: 26px; font-weight: 800; color: var(--green); letter-spacing: -0.03em; }
+.pw-sub  { font-size: 12px; color: var(--grey); margin: 4px 0 28px; }
+#pw-input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 16px; outline: none; color: var(--text);
+            margin-bottom: 10px; transition: border-color 0.15s; }
+#pw-input:focus { border-color: var(--green-mid); }
+#pw-btn { width: 100%; padding: 13px; background: var(--green); color: white; border: none;
+          border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+          transition: background 0.15s; }
+#pw-btn:hover { background: var(--green-mid); }
+#pw-err { color: var(--red); font-size: 13px; margin-top: 10px; display: none; font-weight: 600; }
+
+.header { background: var(--green); padding: 18px 20px 16px; position: sticky; top: 0; z-index: 100; }
+.header-row { display: flex; align-items: center; justify-content: space-between; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.logo { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.03em; }
+.logo span { color: var(--green-lite); font-weight: 400; font-size: 14px; display: block; margin-top: 1px; }
+.header-tag { background: rgba(255,255,255,0.15); color: var(--green-lite); font-size: 11px;
+              font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+              padding: 4px 10px; border-radius: 20px; }
+.fullscreen-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+                  color: white; width: 36px; height: 36px; border-radius: 8px;
+                  display: flex; align-items: center; justify-content: center;
+                  cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+.fullscreen-btn:hover { background: rgba(255,255,255,0.25); }
+.fullscreen-btn .ti { font-size: 18px; }
+
+.main { padding: 16px; max-width: 720px; margin: 0 auto; }
+
+.section-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                 letter-spacing: 0.08em; color: var(--green-mid); margin: 20px 0 8px;
+                 display: flex; align-items: center; gap: 6px; }
+.section-label .ti { font-size: 13px; }
+
+.input-card { background: white; border: 1.5px solid var(--border); border-radius: 14px;
+              padding: 18px 20px; margin-bottom: 10px; }
+.input-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.input-card-title { font-size: 15px; font-weight: 700; color: var(--text);
+                    display: flex; align-items: center; gap: 8px; }
+.input-card-title .ti { font-size: 18px; color: var(--green); }
+.input-value { font-size: 22px; font-weight: 800; color: var(--green); min-width: 80px; text-align: right; }
+
+input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none;
+                      height: 6px; border-radius: 3px; background: var(--green-lite);
+                      outline: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px;
+  border-radius: 50%; background: var(--green); cursor: pointer; box-shadow: 0 2px 6px rgba(26,71,16,0.3); }
+input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%;
+  background: var(--green); cursor: pointer; border: none; }
+.range-labels { display: flex; justify-content: space-between; font-size: 11px;
+                color: var(--grey); margin-top: 4px; }
+
+/* ── PLATFORM ALLOCATION ── */
+.alloc-card { background: white; border: 1.5px solid var(--border); border-radius: 14px;
+              padding: 20px; margin-bottom: 10px; }
+.alloc-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 16px;
+               display: flex; align-items: center; gap: 8px; }
+.alloc-title .ti { font-size: 18px; color: var(--green); }
+
+.alloc-bar { height: 14px; border-radius: 7px; overflow: hidden; display: flex;
+             margin-bottom: 16px; gap: 2px; }
+.alloc-bar-seg { height: 100%; transition: width 0.2s ease; border-radius: 0; }
+.alloc-bar-seg:first-child { border-radius: 7px 0 0 7px; }
+.alloc-bar-seg:last-child  { border-radius: 0 7px 7px 0; }
+
+.platform-row { display: grid; align-items: center; margin-bottom: 14px;
+                grid-template-columns: 90px 1fr 52px; gap: 12px; }
+.platform-row:last-child { margin-bottom: 0; }
+.platform-label { display: flex; align-items: center; gap: 6px; }
+.platform-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.platform-name { font-size: 13px; font-weight: 700; }
+.platform-name.bc  { color: #003087; }
+.platform-name.ab  { color: #ff385c; }
+.platform-name.vr  { color: var(--purple); }
+.platform-name.dir { color: var(--green); }
+.platform-pct { font-size: 15px; font-weight: 800; text-align: right; }
+.platform-pct.bc  { color: #003087; }
+.platform-pct.ab  { color: #ff385c; }
+.platform-pct.vr  { color: var(--purple); }
+.platform-pct.dir { color: var(--green); }
+
+input[type="range"].bc::-webkit-slider-thumb  { background: #003087; }
+input[type="range"].ab::-webkit-slider-thumb  { background: #ff385c; }
+input[type="range"].vr::-webkit-slider-thumb  { background: var(--purple); }
+input[type="range"].dir::-webkit-slider-thumb { background: var(--green); }
+input[type="range"].bc  { background: linear-gradient(to right, #003087 var(--pct, 0%), #e2e8f0 var(--pct, 0%)); }
+input[type="range"].ab  { background: linear-gradient(to right, #ff385c var(--pct, 0%), #e2e8f0 var(--pct, 0%)); }
+input[type="range"].vr  { background: linear-gradient(to right, var(--purple) var(--pct, 0%), #e2e8f0 var(--pct, 0%)); }
+input[type="range"].dir { background: linear-gradient(to right, var(--green) var(--pct, 0%), #e2e8f0 var(--pct, 0%)); }
+
+.total-check { display: flex; align-items: center; justify-content: space-between;
+               margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.total-check-label { font-size: 13px; color: var(--grey); }
+.total-check-value { font-size: 15px; font-weight: 800; }
+.total-check-value.ok  { color: var(--green); }
+.total-check-value.bad { color: var(--red); }
+.total-check-hint { font-size: 11px; color: var(--grey); margin-top: 4px; font-style: italic; }
+
+/* ── OCCUPANCY ── */
+.occupancy-bar { background: var(--green-lite); border-radius: 6px; height: 10px;
+                 margin-top: 10px; overflow: hidden; }
+.occupancy-fill { height: 100%; background: var(--green); border-radius: 6px; transition: width 0.3s; }
+
+/* ── RESULTS TABLE ── */
+.results-section { margin-top: 4px; }
+.results-header { background: var(--green); border-radius: 14px 14px 0 0;
+                  padding: 16px 20px; display: flex; align-items: center; gap: 10px; }
+.results-header-text { color: white; font-size: 16px; font-weight: 700; }
+.results-header-sub  { color: var(--green-lite); font-size: 12px; margin-top: 2px; }
+.results-body { background: white; border: 1.5px solid var(--border); border-top: none;
+                border-radius: 0 0 14px 14px; overflow: hidden; overflow-x: auto; }
+
+table.results-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+table.results-table th { padding: 9px 10px; font-size: 10px; font-weight: 700;
+                          text-transform: uppercase; letter-spacing: 0.05em; color: var(--grey);
+                          text-align: right; border-bottom: 2px solid var(--border);
+                          background: var(--grey-lt); white-space: nowrap; }
+table.results-table th:first-child { text-align: left; width: 110px; }
+table.results-table td { padding: 11px 10px; font-size: 13px; border-bottom: 1px solid var(--border);
+                          text-align: right; vertical-align: middle; }
+table.results-table td:first-child { text-align: left; }
+table.results-table tr:last-child td { border-bottom: none; }
+
+.plat-cell { display: flex; flex-direction: column; }
+.plat-cell-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.plat-cell-rate { font-size: 10px; margin-top: 1px; }
+.plat-cell.bc  .plat-cell-name { color: #003087; }
+.plat-cell.bc  .plat-cell-rate { color: #6b8cc7; }
+.plat-cell.ab  .plat-cell-name { color: #ff385c; }
+.plat-cell.ab  .plat-cell-rate { color: #e87a8c; }
+.plat-cell.vr  .plat-cell-name { color: var(--purple); }
+.plat-cell.vr  .plat-cell-rate { color: #9f70ed; }
+.plat-cell.dir .plat-cell-name { color: var(--green); }
+.plat-cell.dir .plat-cell-rate { color: var(--green-mid); }
+.plat-cell.tot .plat-cell-name { color: var(--red); }
+.plat-cell.tot .plat-cell-rate { color: #e87a8c; }
+
+.val-bad  { color: var(--red); font-weight: 700; }
+.val-good { color: var(--green); font-weight: 700; }
+.val-neu  { color: var(--text); font-weight: 600; }
+.val-sub  { font-size: 10px; color: var(--grey); margin-top: 2px; display: block; }
+
+tr.row-bc  { background: #f8f9ff; }
+tr.row-ab  { background: #fff8f9; }
+tr.row-vr  { background: #fdf8ff; }
+tr.row-dir { background: var(--green-tint); }
+tr.row-tot { background: var(--red-lite); }
+tr.row-nb  { background: var(--green-tint); }
+
+/* ── SAVING BOX ── */
+.saving-box { background: var(--green); border-radius: 14px; padding: 20px;
+              margin-top: 12px; display: flex; align-items: center; gap: 14px; }
+.saving-box .ti { font-size: 28px; color: var(--green-lite); flex-shrink: 0; }
+.saving-headline { font-size: 16px; font-weight: 700; color: white; margin-bottom: 4px; line-height: 1.3; }
+.saving-sub { font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.4; }
+
+.disclaimer { font-size: 11px; color: var(--grey); text-align: center; margin-top: 16px;
+              line-height: 1.5; font-style: italic; padding: 0 8px; }
+
+@media print {
+  body { background: white; }
+  .header { position: static; }
+  .fullscreen-btn { display: none; }
+  #pw-gate { display: none; }
+  input[type="range"] { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Password gate ─────────────────────────────────────────────────────── -->
+<div id="pw-gate">
+  <div id="pw-box">
+    <div class="pw-logo">NestBook</div>
+    <div class="pw-sub">Sales tool · Commission calculator</div>
+    <input type="password" id="pw-input" placeholder="Password"
+           autocomplete="current-password"
+           onkeydown="if(event.key==='Enter')checkPw()">
+    <button id="pw-btn" onclick="checkPw()">Open calculator</button>
+    <div id="pw-err">Incorrect password — try again</div>
+  </div>
+</div>
+<script>
+// Change this to whatever password you prefer
+var PW = 'nestbook';
+if (sessionStorage.getItem('nb-calc-auth') === '1') {
+  document.getElementById('pw-gate').style.display = 'none';
+}
+function checkPw() {
+  if (document.getElementById('pw-input').value === PW) {
+    sessionStorage.setItem('nb-calc-auth', '1');
+    document.getElementById('pw-gate').style.display = 'none';
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+    document.getElementById('pw-input').select();
+  }
+}
+</script>
+
+<div class="header">
+  <div class="header-row">
+    <div class="logo">NestBook<span>Commission calculator</span></div>
+    <div class="header-right">
+      <div class="header-tag">Sales tool</div>
+      <button class="fullscreen-btn" onclick="toggleFullscreen()" id="fs-btn" aria-label="Toggle fullscreen">
+        <i class="ti ti-maximize" id="fs-icon"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- NIGHTLY RATE -->
+  <div class="section-label"><i class="ti ti-currency-pound"></i> Average nightly rate</div>
+  <div class="input-card">
+    <div class="input-card-header">
+      <div class="input-card-title"><i class="ti ti-bed"></i> Price per room / property per night</div>
+      <div class="input-value" id="rate-display">£120</div>
+    </div>
+    <input type="range" id="rate" min="30" max="600" value="120" step="5" oninput="calc()">
+    <div class="range-labels"><span>£30</span><span>£150</span><span>£300</span><span>£600</span></div>
+  </div>
+
+  <!-- OCCUPANCY -->
+  <div class="section-label"><i class="ti ti-calendar"></i> Occupancy</div>
+  <div class="input-card">
+    <div class="input-card-header">
+      <div class="input-card-title"><i class="ti ti-moon"></i> Nights booked per week (average)</div>
+      <div class="input-value" id="nights-display">4 nights/wk</div>
+    </div>
+    <input type="range" id="nights" min="1" max="7" value="4" step="1" oninput="calc()">
+    <div class="range-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
+    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:13px;color:var(--grey);">Annual occupancy rate</span>
+      <span style="font-size:15px;font-weight:700;color:var(--green)" id="occ-display">57%</span>
+    </div>
+    <div class="occupancy-bar"><div class="occupancy-fill" id="occ-bar" style="width:57%"></div></div>
+    <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:12px;color:var(--grey);">
+      <span>Bookings/year: <strong id="bookings-display" style="color:var(--green)">—</strong></span>
+      <span>Nights/year: <strong id="yearly-nights" style="color:var(--green)">—</strong></span>
+    </div>
+  </div>
+
+  <!-- BOOKING SOURCE ALLOCATION -->
+  <div class="section-label"><i class="ti ti-chart-pie"></i> Where do your bookings come from?</div>
+  <div class="alloc-card">
+    <div class="alloc-title"><i class="ti ti-adjustments-horizontal"></i> Booking source — must total 100%</div>
+
+    <div class="alloc-bar">
+      <div class="alloc-bar-seg" id="bar-bc"  style="background:#003087;width:40%"></div>
+      <div class="alloc-bar-seg" id="bar-ab"  style="background:#ff385c;width:30%"></div>
+      <div class="alloc-bar-seg" id="bar-vr"  style="background:#7c3aed;width:0%"></div>
+      <div class="alloc-bar-seg" id="bar-dir" style="background:#1a4710;width:30%"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      <span style="font-size:11px;display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#003087;display:inline-block;"></span>
+        <span style="color:#003087;font-weight:700;">Booking.com</span>
+      </span>
+      <span style="font-size:11px;display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#ff385c;display:inline-block;"></span>
+        <span style="color:#ff385c;font-weight:700;">Airbnb</span>
+      </span>
+      <span style="font-size:11px;display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#7c3aed;display:inline-block;"></span>
+        <span style="color:#7c3aed;font-weight:700;">VRBO</span>
+      </span>
+      <span style="font-size:11px;display:flex;align-items:center;gap:4px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#1a4710;display:inline-block;"></span>
+        <span style="color:#1a4710;font-weight:700;">Direct</span>
+      </span>
+    </div>
+
+    <!-- Booking.com -->
+    <div class="platform-row">
+      <div class="platform-label">
+        <span class="platform-dot" style="background:#003087;"></span>
+        <span class="platform-name bc">Booking.com</span>
+      </div>
+      <input type="range" class="bc" id="bc-pct" min="0" max="100" value="40" step="5"
+             oninput="onSlide('bc')" style="--pct:40%">
+      <div class="platform-pct bc" id="bc-pct-display">40%</div>
+    </div>
+
+    <!-- Airbnb -->
+    <div class="platform-row">
+      <div class="platform-label">
+        <span class="platform-dot" style="background:#ff385c;"></span>
+        <span class="platform-name ab">Airbnb</span>
+      </div>
+      <input type="range" class="ab" id="ab-pct" min="0" max="100" value="30" step="5"
+             oninput="onSlide('ab')" style="--pct:30%">
+      <div class="platform-pct ab" id="ab-pct-display">30%</div>
+    </div>
+
+    <!-- VRBO -->
+    <div class="platform-row">
+      <div class="platform-label">
+        <span class="platform-dot" style="background:#7c3aed;"></span>
+        <span class="platform-name vr">VRBO</span>
+      </div>
+      <input type="range" class="vr" id="vr-pct" min="0" max="100" value="0" step="5"
+             oninput="onSlide('vr')" style="--pct:0%">
+      <div class="platform-pct vr" id="vr-pct-display">0%</div>
+    </div>
+
+    <!-- Direct -->
+    <div class="platform-row">
+      <div class="platform-label">
+        <span class="platform-dot" style="background:#1a4710;"></span>
+        <span class="platform-name dir">Direct</span>
+      </div>
+      <input type="range" class="dir" id="dir-pct" min="0" max="100" value="30" step="5"
+             oninput="onSlide('dir')" style="--pct:30%">
+      <div class="platform-pct dir" id="dir-pct-display">30%</div>
+    </div>
+
+    <div class="total-check">
+      <div>
+        <div class="total-check-label">Total allocation</div>
+        <div class="total-check-hint" id="total-hint">Sliders lock automatically at 100%</div>
+      </div>
+      <div class="total-check-value ok" id="total-check">100%</div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="section-label" style="margin-top:24px;">
+    <i class="ti ti-report-money"></i> The real numbers
+  </div>
+
+  <div class="results-section">
+    <div class="results-header">
+      <i class="ti ti-calculator" style="font-size:22px;color:var(--green-lite);"></i>
+      <div>
+        <div class="results-header-text">Commission breakdown</div>
+        <div class="results-header-sub" id="results-sub">Based on your figures above</div>
+      </div>
+    </div>
+
+    <div class="results-body">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Platform</th>
+            <th>Bookings/yr</th>
+            <th>Revenue/yr</th>
+            <th>Commission/yr</th>
+            <th>Per booking</th>
+            <th>Per week</th>
+            <th>You keep/yr</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Booking.com -->
+          <tr class="row-bc">
+            <td><div class="plat-cell bc">
+              <span class="plat-cell-name">Booking.com</span>
+              <span class="plat-cell-rate">15% host fee</span>
+            </div></td>
+            <td><span id="bc-bookings" class="val-neu">—</span></td>
+            <td><span id="bc-revenue"  class="val-neu">—</span></td>
+            <td><span id="bc-commission"  class="val-bad">—</span></td>
+            <td><span id="bc-per-booking" class="val-bad">—</span></td>
+            <td><span id="bc-per-week"    class="val-bad">—</span></td>
+            <td><span id="bc-you-keep"    class="val-good">—</span></td>
+          </tr>
+
+          <!-- Airbnb -->
+          <tr class="row-ab">
+            <td><div class="plat-cell ab">
+              <span class="plat-cell-name">Airbnb</span>
+              <span class="plat-cell-rate">15.5% host fee</span>
+            </div></td>
+            <td><span id="ab-bookings" class="val-neu">—</span></td>
+            <td><span id="ab-revenue"  class="val-neu">—</span></td>
+            <td><span id="ab-commission"  class="val-bad">—</span></td>
+            <td><span id="ab-per-booking" class="val-bad">—</span></td>
+            <td><span id="ab-per-week"    class="val-bad">—</span></td>
+            <td><span id="ab-you-keep"    class="val-good">—</span></td>
+          </tr>
+
+          <!-- VRBO -->
+          <tr class="row-vr">
+            <td><div class="plat-cell vr">
+              <span class="plat-cell-name">VRBO</span>
+              <span class="plat-cell-rate">8% host + ~10% guest</span>
+            </div></td>
+            <td><span id="vr-bookings" class="val-neu">—</span></td>
+            <td><span id="vr-revenue"  class="val-neu">—</span></td>
+            <td><span id="vr-commission" class="val-bad">—</span>
+                <span class="val-sub" id="vr-guest-note"></span></td>
+            <td><span id="vr-per-booking" class="val-bad">—</span></td>
+            <td><span id="vr-per-week"    class="val-bad">—</span></td>
+            <td><span id="vr-you-keep"    class="val-good">—</span></td>
+          </tr>
+
+          <!-- Direct -->
+          <tr class="row-dir">
+            <td><div class="plat-cell dir">
+              <span class="plat-cell-name">Direct bookings</span>
+              <span class="plat-cell-rate">£0 commission</span>
+            </div></td>
+            <td><span id="dir-bookings" class="val-neu">—</span></td>
+            <td><span id="dir-revenue"  class="val-neu">—</span></td>
+            <td><span class="val-good" style="font-size:13px;">£0</span></td>
+            <td><span class="val-good" style="font-size:13px;">£0</span></td>
+            <td><span class="val-good" style="font-size:13px;">£0</span></td>
+            <td><span id="dir-you-keep" class="val-good">—</span></td>
+          </tr>
+
+          <!-- Total platforms lost -->
+          <tr class="row-tot">
+            <td><div class="plat-cell tot">
+              <span class="plat-cell-name">Total lost</span>
+              <span class="plat-cell-rate">all platforms</span>
+            </div></td>
+            <td><span id="tot-bookings"     class="val-neu">—</span></td>
+            <td><span id="tot-revenue"      class="val-neu">—</span></td>
+            <td><span id="tot-commission"   class="val-bad">—</span>
+                <span class="val-sub" id="tot-commission-pct"></span></td>
+            <td>—</td>
+            <td><span id="tot-per-week"     class="val-bad">—</span></td>
+            <td><span id="tot-you-keep"     class="val-good">—</span></td>
+          </tr>
+
+          <!-- NestBook -->
+          <tr class="row-nb" style="border-top:2px solid var(--green);">
+            <td><div class="plat-cell dir">
+              <span class="plat-cell-name">NestBook Pro</span>
+              <span class="plat-cell-rate">Zero commission</span>
+            </div></td>
+            <td><span id="tot-bookings-nb" class="val-neu">—</span></td>
+            <td><span id="tot-revenue-nb"  class="val-neu">—</span></td>
+            <td><span style="font-size:12px;font-weight:800;color:var(--green);">£228/yr flat</span>
+                <span class="val-sub">£19/month</span></td>
+            <td><span id="nb-per-booking" class="val-good">—</span>
+                <span class="val-sub">flat fee only</span></td>
+            <td><span id="nb-per-week"    class="val-good">—</span></td>
+            <td><span id="nb-you-keep"    class="val-good">—</span></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SAVING BOX -->
+  <div class="saving-box">
+    <i class="ti ti-pig-money"></i>
+    <div>
+      <div class="saving-headline" id="saving-headline">Calculating…</div>
+      <div class="saving-sub" id="saving-sub"></div>
+    </div>
+  </div>
+
+  <p class="disclaimer">
+    Commission rates based on publicly available platform information. Airbnb introduced a 15.5% host-only fee in December 2025. Booking.com 15–18%, VRBO 8% host + ~10% guest fee. Rates may vary by region — check each platform for current terms. NestBook Pro £228/year based on £19/month.
+  </p>
+
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────
+var pcts = { bc: 40, ab: 30, vr: 0, dir: 30 };
+var KEYS = ['bc','ab','vr','dir'];
+var RATES = { bc: 0.15, ab: 0.155, vr: 0.08, dir: 0 };
+var NB_FLAT = 228;
+var AVG_STAY = 2;
+
+function fmt(n) {
+  return '£' + Math.round(n).toLocaleString('en-GB');
+}
+
+// ── Slider interaction — locked to 100% total ────────────────────────────
+function onSlide(changed) {
+  var newVal = parseInt(document.getElementById(changed + '-pct').value);
+  var oldVal = pcts[changed];
+  var delta  = newVal - oldVal;
+  if (delta === 0) return;
+
+  var others = KEYS.filter(function(k) { return k !== changed; });
+  var totalOthers = others.reduce(function(s, k) { return s + pcts[k]; }, 0);
+
+  if (delta > 0 && totalOthers === 0) {
+    document.getElementById(changed + '-pct').value = oldVal;
+    return;
+  }
+
+  if (delta > 0) {
+    var distributed = 0;
+    others.forEach(function(k, i) {
+      if (i < others.length - 1) {
+        var share = Math.round((pcts[k] / totalOthers) * delta);
+        share = Math.min(share, pcts[k]);
+        pcts[k] -= share;
+        distributed += share;
+      } else {
+        var last = Math.min(delta - distributed, pcts[k]);
+        pcts[k] -= last;
+        distributed += last;
+      }
+    });
+    pcts[changed] = oldVal + distributed;
+  } else {
+    var give    = Math.abs(delta);
+    var perOther = Math.floor(give / others.length);
+    var leftover = give - perOther * others.length;
+    others.forEach(function(k, i) {
+      pcts[k] += perOther + (i === 0 ? leftover : 0);
+    });
+    pcts[changed] = newVal;
+  }
+
+  KEYS.forEach(function(k) { pcts[k] = Math.max(0, Math.min(100, pcts[k])); });
+  var total = KEYS.reduce(function(s, k) { return s + pcts[k]; }, 0);
+  if (total !== 100) {
+    pcts[changed] = Math.max(0, Math.min(100, pcts[changed] + (100 - total)));
+  }
+
+  KEYS.forEach(function(k) {
+    var el = document.getElementById(k + '-pct');
+    el.value = pcts[k];
+    el.style.setProperty('--pct', pcts[k] + '%');
+    document.getElementById(k + '-pct-display').textContent = pcts[k] + '%';
+  });
+
+  updateBar();
+  calc();
+}
+
+function updateBar() {
+  document.getElementById('bar-bc').style.width  = pcts.bc  + '%';
+  document.getElementById('bar-ab').style.width  = pcts.ab  + '%';
+  document.getElementById('bar-vr').style.width  = pcts.vr  + '%';
+  document.getElementById('bar-dir').style.width = pcts.dir + '%';
+
+  var total = KEYS.reduce(function(s, k) { return s + pcts[k]; }, 0);
+  var el = document.getElementById('total-check');
+  el.textContent  = total + '%';
+  el.className    = 'total-check-value ' + (total === 100 ? 'ok' : 'bad');
+  document.getElementById('total-hint').textContent =
+    total === 100 ? 'Sliders lock automatically at 100%' : 'Total must equal 100% — adjust sliders';
+}
+
+// ── Main calculation ──────────────────────────────────────────────────────
+function calc() {
+  var rate   = parseInt(document.getElementById('rate').value);
+  var nights = parseInt(document.getElementById('nights').value);
+
+  document.getElementById('rate-display').textContent = '£' + rate;
+  document.getElementById('nights-display').textContent =
+    nights + ' night' + (nights !== 1 ? 's' : '') + '/wk';
+
+  var occPct = Math.round((nights / 7) * 100);
+  document.getElementById('occ-display').textContent  = occPct + '%';
+  document.getElementById('occ-bar').style.width      = occPct + '%';
+
+  var yearlyNights  = Math.round(nights * 52);
+  var totalBookings = Math.round(yearlyNights / AVG_STAY);
+  var totalRevenue  = yearlyNights * rate;
+
+  document.getElementById('yearly-nights').textContent   = yearlyNights + ' nights';
+  document.getElementById('bookings-display').textContent = '~' + totalBookings;
+  document.getElementById('results-sub').textContent =
+    '£' + rate + '/night · ' + nights + ' nights/wk · ' +
+    yearlyNights + ' nights/year · ~' + totalBookings + ' bookings';
+
+  var totalCommission = 0;
+  var totalYouKeep    = 0;
+  var results = {};
+
+  KEYS.forEach(function(k) {
+    var bkgs   = Math.round(totalBookings * pcts[k] / 100);
+    var rev    = bkgs * AVG_STAY * rate;
+    var comm   = rev * RATES[k];
+    var keep   = rev - comm;
+    var perBkg = bkgs > 0 ? comm / bkgs : 0;
+    var perWk  = comm / 52;
+    results[k] = { bkgs: bkgs, rev: rev, comm: comm, keep: keep, perBkg: perBkg, perWk: perWk };
+    if (k !== 'dir') totalCommission += comm;
+    totalYouKeep += keep;
+  });
+
+  var totalCommPerWeek = totalCommission / 52;
+  var nbYouKeep        = totalRevenue - NB_FLAT;
+  var nbPerBkg         = totalBookings > 0 ? NB_FLAT / totalBookings : 0;
+  var nbPerWeek        = NB_FLAT / 52;
+  var saving           = totalCommission - NB_FLAT;
+  var savingPerWk      = saving / 52;
+
+  function setEl(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+
+  setEl('bc-bookings',    results.bc.bkgs);
+  setEl('bc-revenue',     fmt(results.bc.rev));
+  setEl('bc-commission',  fmt(results.bc.comm));
+  setEl('bc-per-booking', fmt(results.bc.perBkg));
+  setEl('bc-per-week',    fmt(results.bc.perWk) + '/wk');
+  setEl('bc-you-keep',    fmt(results.bc.keep));
+
+  setEl('ab-bookings',    results.ab.bkgs);
+  setEl('ab-revenue',     fmt(results.ab.rev));
+  setEl('ab-commission',  fmt(results.ab.comm));
+  setEl('ab-per-booking', fmt(results.ab.perBkg));
+  setEl('ab-per-week',    fmt(results.ab.perWk) + '/wk');
+  setEl('ab-you-keep',    fmt(results.ab.keep));
+
+  setEl('vr-bookings',    results.vr.bkgs);
+  setEl('vr-revenue',     fmt(results.vr.rev));
+  setEl('vr-commission',  fmt(results.vr.comm));
+  setEl('vr-guest-note',  results.vr.bkgs > 0 ? 'Guests also pay ~' + fmt(results.vr.rev * 0.10) + '/yr' : '');
+  setEl('vr-per-booking', fmt(results.vr.perBkg));
+  setEl('vr-per-week',    fmt(results.vr.perWk) + '/wk');
+  setEl('vr-you-keep',    fmt(results.vr.keep));
+
+  setEl('dir-bookings',   results.dir.bkgs);
+  setEl('dir-revenue',    fmt(results.dir.rev));
+  setEl('dir-you-keep',   fmt(results.dir.keep));
+
+  setEl('tot-bookings',       totalBookings);
+  setEl('tot-revenue',        fmt(totalRevenue));
+  setEl('tot-commission',     fmt(totalCommission));
+  setEl('tot-commission-pct',
+    totalRevenue > 0 ? Math.round(totalCommission / totalRevenue * 100) + '% of total revenue' : '');
+  setEl('tot-per-week',       fmt(totalCommPerWeek) + '/wk');
+  setEl('tot-you-keep',       fmt(totalYouKeep));
+
+  setEl('tot-bookings-nb',    totalBookings);
+  setEl('tot-revenue-nb',     fmt(totalRevenue));
+  setEl('nb-per-booking',     fmt(nbPerBkg));
+  setEl('nb-per-week',        fmt(nbPerWeek) + '/wk');
+  setEl('nb-you-keep',        fmt(nbYouKeep));
+
+  var hl  = document.getElementById('saving-headline');
+  var sub = document.getElementById('saving-sub');
+
+  if (saving > 0) {
+    hl.textContent  = 'Switch all platform bookings to NestBook and save ' + fmt(saving) + ' every year';
+    sub.textContent = "That's " + fmt(saving / 12) + "/month — or " +
+                      fmt(savingPerWk) + " every week — back in your pocket.";
+  } else if (pcts.dir === 100) {
+    hl.textContent  = 'You already take 100% direct bookings — NestBook costs just £228/year flat';
+    sub.textContent = 'Zero commission on every booking. That\'s ' + fmt(nbPerBkg) + ' per booking.';
+  } else {
+    hl.textContent  = 'NestBook Pro is £228/year flat — no commission ever';
+    sub.textContent = 'Every booking you move from platforms to direct saves you the full commission fee.';
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+KEYS.forEach(function(k) {
+  document.getElementById(k + '-pct').style.setProperty('--pct', pcts[k] + '%');
+});
+updateBar();
+calc();
+
+// ── Fullscreen ────────────────────────────────────────────────────────────
+function toggleFullscreen() {
+  var icon = document.getElementById('fs-icon');
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(function() {});
+    icon.className = 'ti ti-minimize';
+  } else {
+    document.exitFullscreen();
+    icon.className = 'ti ti-maximize';
+  }
+}
+document.addEventListener('fullscreenchange', function() {
+  document.getElementById('fs-icon').className =
+    document.fullscreenElement ? 'ti ti-minimize' : 'ti ti-maximize';
+});
+</script>
+</body>
+</html>
