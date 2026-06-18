@@ -430,6 +430,18 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
       b.status === 'checked_out' &&
       norm(b.check_in_date) <= iso && norm(b.check_out_date) > iso
     ) : null;
+    const activePeriod = !isPast && ratePeriods ? getActivePeriod(ratePeriods, iso) : null;
+    const rateDot = activePeriod ? (
+      <span
+        style={{
+          position: 'absolute', top: 3, right: 3,
+          width: 7, height: 7, borderRadius: '50%',
+          background: '#f59e0b', border: '1.5px solid white',
+          zIndex: 10, display: 'block', pointerEvents: 'none',
+        }}
+        title={activePeriod.name}
+      />
+    ) : null;
 
     if (booking) {
       const checkInNorm  = norm(booking.check_in_date);
@@ -444,6 +456,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
         <div
           key={iso}
           className={`wpc-cell ${statusCls}${isToday ? ' wpc-today' : ''}`}
+          style={{ position: 'relative' }}
           onClick={() => onBookedClick(booking)}
           title={fullName}
         >
@@ -451,6 +464,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
           {isLastNight && iso === today && (booking.status === 'arriving' || booking.status === 'in_house') && <span className="wpc-badge">{t ? t('calCoBadge') : 'CO'}</span>}
           <span className="wpc-day-num">{d}</span>
           <span className="wpc-guest">{displayName}</span>
+          {rateDot}
         </div>
       );
     } else if (historical) {
@@ -464,14 +478,15 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
         <div
           key={iso}
           className={`wpc-cell wpc-historical ${cleanCls}${isToday ? ' wpc-today' : ''}`}
+          style={{ position: 'relative' }}
           onClick={isPast ? undefined : () => onEmptyClick(iso)}
           title={`${historical.guest_first_name} ${historical.guest_last_name} — checked out`}
         >
           <span className="wpc-day-num">{d}</span>
+          {rateDot}
         </div>
       );
     } else {
-      const activePeriod = !isPast && ratePeriods ? getActivePeriod(ratePeriods, iso) : null;
       cells.push(
         <div
           key={iso}
@@ -480,17 +495,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
           onClick={isPast ? undefined : () => onEmptyClick(iso)}
         >
           <span className="wpc-day-num">{d}</span>
-          {activePeriod && (
-            <span
-              style={{
-                position: 'absolute', top: 3, right: 3,
-                width: 7, height: 7, borderRadius: '50%',
-                background: '#f59e0b', border: '1.5px solid white',
-                zIndex: 10, display: 'block', pointerEvents: 'none',
-              }}
-              title={activePeriod.name}
-            />
-          )}
+          {rateDot}
         </div>
       );
     }
