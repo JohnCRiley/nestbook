@@ -136,6 +136,7 @@ export default function Settings() {
   const [ratePeriodDeleteTarget, setRatePeriodDeleteTarget] = useState(null);
 
   const [rentalTypeHint, setRentalTypeHint] = useState(null);
+  const [billingMessage, setBillingMessage] = useState(null); // { type, text }
 
   // Bug report form
   const [bugReportingEnabled, setBugReportingEnabled] = useState(false);
@@ -221,6 +222,32 @@ export default function Settings() {
       .then(({ enabled }) => setBugReportingEnabled(enabled))
       .catch(() => {});
   }, []);
+
+  // Detect ?billing=success redirect back from Stripe promo checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('billing') === 'success') {
+      setBillingMessage({
+        type: 'success',
+        text: 'Payment details saved — your Pro subscription will continue automatically after your promotional period ends.',
+      });
+      window.history.replaceState({}, '', '/app/settings');
+    }
+  }, []);
+
+  async function handleAddPromoPayment() {
+    try {
+      const res = await apiFetch('/api/stripe/create-promo-checkout', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast('Could not start checkout. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Could not start checkout. Please try again.', 'error');
+    }
+  }
 
   // ── Bug report handler ────────────────────────────────────────────────────
   async function handleSubmitReport() {
@@ -1063,6 +1090,147 @@ export default function Settings() {
               )}
             </div>
           )}
+
+          {/* Billing success/cancelled flash message */}
+          {billingMessage && (
+            <div style={{
+              background: billingMessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
+              border: `1px solid ${billingMessage.type === 'success' ? '#d9f0cc' : '#fecaca'}`,
+              borderRadius: 8,
+              padding: '12px 16px',
+              marginTop: 16,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}>
+              <i className={`ti ${billingMessage.type === 'success' ? 'ti-circle-check' : 'ti-alert-circle'}`}
+                 style={{ color: billingMessage.type === 'success' ? '#16a34a' : '#dc2626', marginTop: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.875rem', color: billingMessage.type === 'success' ? '#166534' : '#991b1b', lineHeight: 1.5 }}>
+                {billingMessage.text}
+              </span>
+              <button onClick={() => setBillingMessage(null)}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
+                         color: '#94a3b8', fontSize: '1rem', padding: 0, lineHeight: 1 }}>
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* Promotional Pro panel — shown to users on Pro via discount code with no Stripe sub yet */}
+          {user?.role === 'owner' && (() => {
+            const isPromoPro = user?.plan === 'pro'
+              && user?.trial_ends_at
+              && !sub?.current_period_end;
+            if (!isPromoPro) return null;
+
+            const promoExpiryDate = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'long', year: 'numeric',
+            });
+            const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
+
+            return (
+              <div style={{
+                background: 'var(--card-bg)',
+                border: '1.5px solid var(--border)',
+                borderRadius: 12,
+                overflow: 'hidden',
+                marginTop: 16,
+              }}>
+                <div style={{ background: '#1a4710', padding: '16px 20px' }}>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>
+                    🎉 NestBook Pro — Promotional access
+                  </div>
+                  <div style={{ color: '#d9f0cc', fontSize: '0.82rem' }}>
+                    Your free promotional period ends {promoExpiryDate}
+                    {daysLeft > 0 && ` (${daysLeft} days remaining)`}
+                  </div>
+                </div>
+
+                <div style={{ padding: '20px' }}>
+                  <div style={{
+                    background: '#fef3c7',
+                    border: '1px solid #f59e0b',
+                    borderLeft: '4px solid #f59e0b',
+                    borderRadius: '0 8px 8px 0',
+                    padding: '12px 16px',
+                    marginBottom: 20,
+                    fontSize: '0.85rem',
+                    color: '#78350f',
+                    lineHeight: 1.6,
+                  }}>
+                    <strong>What happens on {promoExpiryDate}?</strong><br />
+                    If you have added payment details, your NestBook Pro subscription
+                    continues automatically at £19/month — no interruption to your service.<br /><br />
+                    If you have not added payment details, your account will move back
+                    to the Free plan on that date.
+                  </div>
+
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: 'var(--text-muted)',
+                      marginBottom: 10,
+                    }}>
+                      What you keep with Pro
+                    </div>
+                    {[
+                      'Unlimited rooms',
+                      '5 photos per room',
+                      'Booking widget for your website',
+                      'Seasonal pricing',
+                      'Revenue reports',
+                    ].map(feature => (
+                      <div key={feature} style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6,
+                      }}>
+                        <i className="ti ti-circle-check"
+                           style={{ color: 'var(--accent)', fontSize: '0.9rem', flexShrink: 0 }} />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleAddPromoPayment}
+                    style={{
+                      background: 'var(--accent)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '13px 24px',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    <i className="ti ti-credit-card" />
+                    Add payment details — continue Pro after {promoExpiryDate}
+                  </button>
+
+                  <p style={{
+                    fontSize: '0.72rem',
+                    color: 'var(--text-muted)',
+                    textAlign: 'center',
+                    marginTop: 8,
+                    lineHeight: 1.5,
+                  }}>
+                    Your card will <strong>not be charged</strong> until {promoExpiryDate}.
+                    Cancel anytime before that date to stay on the free plan.
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Subscription */}
           {user?.role === 'owner' && (

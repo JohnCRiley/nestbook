@@ -2160,6 +2160,77 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
   }
 }
 
+export async function sendPromoPaymentConfirmedEmail(user) {
+  if (!resend) return;
+  if (!user?.email) return;
+  const firstName = user.name?.split(' ')[0] || 'there';
+  const expiryDate = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      Payment details saved! 🌿
+    </h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">
+      Hi ${firstName} — you're all set! Here's what happens next:
+    </p>
+
+    <div style="background:#f0fdf4;border:1.5px solid #d9f0cc;border-radius:8px;
+                padding:16px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px;">
+      <span style="font-size:22px;line-height:1;">✓</span>
+      <div>
+        <div style="font-weight:700;color:#166534;font-size:1rem;">Payment details saved successfully</div>
+        <div style="font-size:0.85rem;color:#166534;margin-top:2px;">Your Pro subscription will continue automatically</div>
+      </div>
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="padding:10px 0;color:#64748b;font-size:0.875rem;
+                   border-bottom:1px solid #e2e8f0;width:160px;">Until ${expiryDate}</td>
+        <td style="padding:10px 0;font-size:0.875rem;border-bottom:1px solid #e2e8f0;
+                   color:#166534;font-weight:600;">✓ NestBook Pro — no charge</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;color:#64748b;font-size:0.875rem;">From ${expiryDate}</td>
+        <td style="padding:10px 0;font-size:0.875rem;color:#1a2e14;font-weight:600;">
+          £19/month — Pro continues uninterrupted</td>
+      </tr>
+    </table>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;
+                padding:14px 18px;margin-bottom:24px;">
+      <p style="color:#475569;font-size:0.85rem;margin:0;line-height:1.6;">
+        You can cancel anytime before ${expiryDate} from
+        <strong>Settings → Billing</strong> in your NestBook dashboard,
+        and your account will return to the free plan. No questions asked.
+      </p>
+    </div>
+
+    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+      Thank you for being part of NestBook — if you ever need anything just reply to this email.
+    </p>
+
+    <a href="https://nestbook.io/app"
+       style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
+              padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
+      Go to my dashboard →
+    </a>`;
+
+  try {
+    await resend.emails.send({
+      from:    'John at NestBook <hello@nestbook.io>',
+      to:      user.email,
+      subject: `Payment details saved — you're all set! 🌿`,
+      html:    shell(body),
+    });
+    console.log(`[email] Promo payment confirmed email sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send promo payment confirmed email:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');

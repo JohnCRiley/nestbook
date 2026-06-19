@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
 import db from '../db/database.js';
-import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail } from '../email/emailService.js';
+import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
@@ -216,6 +216,61 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
   }
 });
 
+// ── POST /api/stripe/create-promo-checkout ────────────────────────────────────
+// Creates a Stripe Checkout session for promotional Pro users.
+// Saves the card and creates a subscription that only charges after trial_ends_at.
+stripeRouter.post('/create-promo-checkout', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (!user.trial_ends_at) {
+      return res.status(400).json({ error: 'No promotional period found.' });
+    }
+
+    // Create or reuse Stripe customer
+    let customerId = user.stripe_customer_id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email:    user.email,
+        name:     user.name || user.email,
+        metadata: { nestbook_user_id: String(user.id) },
+      });
+      customerId = customer.id;
+      db.prepare('UPDATE users SET stripe_customer_id = ? WHERE id = ?')
+        .run(customerId, user.id);
+    }
+
+    const trialEnd = Math.floor(new Date(user.trial_ends_at).getTime() / 1000);
+
+    const session = await stripe.checkout.sessions.create({
+      customer:             customerId,
+      mode:                 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
+      subscription_data: {
+        trial_end: trialEnd,
+        metadata: {
+          userId:           String(user.id),
+          promo_conversion: 'true',
+        },
+      },
+      success_url: `${process.env.APP_URL}/app/settings?billing=success`,
+      cancel_url:  `${process.env.APP_URL}/app/settings?billing=cancelled`,
+      metadata: {
+        userId: String(user.id),
+        type:   'promo_conversion',
+      },
+    });
+
+    console.log(`[stripe] Promo checkout created for ${user.email} — trial ends ${user.trial_ends_at}`);
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error('[stripe] create-promo-checkout error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/stripe/webhook ──────────────────────────────────────────────────
 // Exported as a plain handler and mounted directly in index.js BEFORE
 // requireAuth and express.json(). Stripe uses its own signature verification
@@ -244,8 +299,45 @@ export async function stripeWebhookHandler(req, res) {
         const userId         = session.metadata?.userId;
         const subscriptionId = session.subscription;
         const customerId     = session.customer;
+        const isPromoConversion = session.metadata?.type === 'promo_conversion';
 
         if (!userId || !subscriptionId) break;
+
+        if (isPromoConversion) {
+          // Promo user added card — save Stripe IDs to users table and upsert subscriptions
+          db.prepare(`
+            UPDATE users
+            SET stripe_customer_id = ?, stripe_subscription_id = ?
+            WHERE id = ?
+          `).run(customerId, subscriptionId, userId);
+
+          const existingPromoSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+          const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+          const periodEnd = stripeSub.current_period_end
+            ? new Date(stripeSub.current_period_end * 1000).toISOString()
+            : null;
+          if (existingPromoSub) {
+            db.prepare(`
+              UPDATE subscriptions
+              SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = 'pro',
+                  status = 'active', current_period_end = ?, cancel_at_period_end = 0
+              WHERE user_id = ?
+            `).run(customerId, subscriptionId, periodEnd, userId);
+          } else {
+            db.prepare(`
+              INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end)
+              VALUES (?, ?, ?, 'pro', 'active', ?)
+            `).run(userId, customerId, subscriptionId, periodEnd);
+          }
+
+          const promoUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+          if (promoUser) {
+            sendPromoPaymentConfirmedEmail(promoUser)
+              .catch(err => console.error('[stripe] Promo confirmed email failed:', err.message));
+          }
+          console.log(`[stripe] Promo conversion complete for user ${userId}`);
+          break;
+        }
 
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId   = stripeSub.items.data[0]?.price?.id;
