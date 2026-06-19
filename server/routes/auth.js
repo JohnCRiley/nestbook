@@ -20,15 +20,19 @@ const stripe      = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIP
 // Only runs once per user — guarded by discount_applied_at being NULL.
 async function applyDiscountCodeOnRegistration(user) {
   try {
+    // Re-fetch a full row so stripe_customer_id and all migrated columns are present.
+    const fullUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+    if (!fullUser?.discount_code) return;
+
     const code = db.prepare(`
       SELECT * FROM discount_codes
       WHERE UPPER(code) = UPPER(?)
         AND active = 1
         AND (max_uses IS NULL OR max_uses = 0 OR current_uses < max_uses)
-    `).get(user.discount_code);
+    `).get(fullUser.discount_code);
 
     if (!code) {
-      console.log(`[discount] Code "${user.discount_code}" not valid — ${user.email} stays on Free`);
+      console.log(`[discount] Code "${fullUser.discount_code}" not valid — ${fullUser.email} stays on Free`);
       return;
     }
 
@@ -40,28 +44,28 @@ async function applyDiscountCodeOnRegistration(user) {
         UPDATE users
         SET plan = 'pro', trial_ends_at = ?, discount_applied_at = datetime('now')
         WHERE id = ?
-      `).run(trialEnd.toISOString(), user.id);
+      `).run(trialEnd.toISOString(), fullUser.id);
 
       db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
 
-      sendProWelcomeEmail(user, code, trialEnd).catch(() => {});
-      console.log(`[discount] ${user.email} upgraded to Pro via "${user.discount_code}" until ${trialEnd.toISOString().split('T')[0]}`);
+      sendProWelcomeEmail(fullUser, code, trialEnd).catch(() => {});
+      console.log(`[discount] ${fullUser.email} upgraded to Pro via "${fullUser.discount_code}" until ${trialEnd.toISOString().split('T')[0]}`);
       return;
     }
 
     // Partial discount — apply via Stripe if the user already has a customer ID
-    if (stripe && code.stripe_coupon_id && user.stripe_customer_id) {
+    if (stripe && code.stripe_coupon_id && fullUser.stripe_customer_id) {
       const sub = await stripe.subscriptions.create({
-        customer:           user.stripe_customer_id,
+        customer:           fullUser.stripe_customer_id,
         items:              [{ price: process.env.STRIPE_PRO_PRICE_ID }],
         discounts:          [{ coupon: code.stripe_coupon_id }],
         trial_period_days:  30,
       });
       db.prepare(`
         UPDATE users SET plan = 'pro', discount_applied_at = datetime('now') WHERE id = ?
-      `).run(user.id);
+      `).run(fullUser.id);
       db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
-      console.log(`[discount] Stripe subscription ${sub.id} created for ${user.email}`);
+      console.log(`[discount] Stripe subscription ${sub.id} created for ${fullUser.email}`);
     }
   } catch (e) {
     console.error('[discount] applyDiscountCodeOnRegistration error:', e.message);
@@ -282,7 +286,7 @@ authRouter.get('/verify-email', async (req, res) => {
   if (!token) return res.status(400).json({ error: 'Token is required.' });
 
   const user = db.prepare(`
-    SELECT id, name, email, plan, discount_code, discount_applied_at, stripe_customer_id
+    SELECT id, name, email, plan, discount_code, discount_applied_at
     FROM users WHERE email_verification_token = ?
   `).get(token);
 

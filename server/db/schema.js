@@ -1403,9 +1403,19 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_actioned INTEGER DEFAULT 0`); } catch {}
 
-  // Discount code promotion tracking
-  try { db.exec(`ALTER TABLE users ADD COLUMN trial_ends_at TEXT DEFAULT NULL`); } catch {}
-  try { db.exec(`ALTER TABLE users ADD COLUMN discount_applied_at TEXT DEFAULT NULL`); } catch {}
+  // Discount code promotion tracking + Stripe identity on users row
+  const userColsToAdd = [
+    `ALTER TABLE users ADD COLUMN trial_ends_at TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN discount_applied_at TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN stripe_customer_id TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT DEFAULT NULL`,
+  ];
+  for (const sql of userColsToAdd) {
+    try {
+      db.exec(sql);
+      console.log(`✓ Added column: ${sql.match(/ADD COLUMN (\w+)/)[1]}`);
+    } catch { /* already exists — skip */ }
+  }
 
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
