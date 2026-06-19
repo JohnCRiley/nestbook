@@ -352,7 +352,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Promotional Pro trial expiry banner ────────────────────────── */}
-      {user?.trial_ends_at && (() => {
+      {user?.trial_ends_at && !user?.stripe_subscription_id && (() => {
         const daysLeft = Math.ceil(
           (new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)
         );
