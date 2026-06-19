@@ -1121,7 +1121,7 @@ export default function Settings() {
             const isPromoPro = user?.plan === 'pro'
               && user?.trial_ends_at
               && new Date(user.trial_ends_at) > new Date()
-              && !sub?.current_period_end;
+              && !user?.stripe_subscription_id;
             if (!isPromoPro) return null;
 
             const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
@@ -1273,7 +1273,7 @@ export default function Settings() {
                     </span>
                   </div>
 
-                  {sub?.plan !== 'free' && (
+                  {user?.stripe_subscription_id && sub?.plan !== 'free' && (
                     <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
                       {sub?.cancel_at_period_end
                         ? <span style={{ color: '#dc2626' }}>
@@ -1284,7 +1284,7 @@ export default function Settings() {
                     </div>
                   )}
 
-                  {!!sub?.cancel_at_period_end && (
+                  {user?.stripe_subscription_id && !!sub?.cancel_at_period_end && (
                     <div style={{ fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 12px' }}>
                       {t('subCancelScheduled')}
                     </div>
