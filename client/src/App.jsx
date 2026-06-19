@@ -54,9 +54,7 @@ function EmailVerifyBanner() {
   const { user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
 
-  // Only show for users who explicitly have email_verified === false
-  // (new registrations). Existing/undefined values don't trigger the banner.
-  if (dismissed || !user || user.email_verified !== false) return null;
+  if (dismissed || !user || user.email_verified) return null;
 
   return (
     <div className="verify-email-banner">

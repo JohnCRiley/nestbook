@@ -20,15 +20,24 @@ export default function VerifyEmail() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          // Always set all fields — including trial_ends_at: null for permanent Pro
-          // so stale values don't linger in localStorage.
+          // Write to localStorage synchronously first so the value is definitely
+          // present before the hard redirect fires (React state updates are async).
+          try {
+            const stored = JSON.parse(localStorage.getItem('nb_user') || '{}');
+            localStorage.setItem('nb_user', JSON.stringify({
+              ...stored,
+              email_verified: true,
+              plan:          data.plan          ?? stored.plan,
+              trial_ends_at: data.trial_ends_at ?? null,
+            }));
+          } catch (_) {}
+
           updateUser({
             email_verified: true,
-            plan:           data.plan          ?? undefined,
-            trial_ends_at:  data.trial_ends_at ?? null,
+            plan:          data.plan          ?? undefined,
+            trial_ends_at: data.trial_ends_at ?? null,
           });
           setStatus('success');
-          // Full page reload so dashboard picks up fresh localStorage state.
           setTimeout(() => { window.location.href = '/app'; }, 2500);
         } else {
           setErrorMsg(data.error || 'Verification failed.');
