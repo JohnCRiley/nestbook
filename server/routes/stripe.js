@@ -255,8 +255,8 @@ stripeRouter.post('/create-promo-checkout', async (req, res) => {
           promo_conversion: 'true',
         },
       },
-      success_url: `${process.env.APP_URL}/app/settings?billing=success`,
-      cancel_url:  `${process.env.APP_URL}/app/settings?billing=cancelled`,
+      success_url: `https://nestbook.io/app/settings?billing=success`,
+      cancel_url:  `https://nestbook.io/app/settings?billing=cancelled`,
       metadata: {
         userId: String(user.id),
         type:   'promo_conversion',
