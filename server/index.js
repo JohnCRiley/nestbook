@@ -29,7 +29,7 @@ import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { errorReportsRouter }        from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
-import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder } from './email/emailService.js';
+import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { getBalanceDueDate } from './utils/deposits.js';
 import db from './db/database.js';
 
@@ -291,6 +291,68 @@ function autoAdvanceBookings() {
   }
 }
 
+// ── Promotional Pro lifecycle — reminders and auto-downgrade ─────────────────
+async function runPromoLifecycle() {
+  try {
+    const today   = new Date().toISOString().split('T')[0];
+    const in30    = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    const in7     = new Date(Date.now() +  7 * 86400000).toISOString().split('T')[0];
+
+    console.log('[promo-lifecycle] Running daily check...');
+
+    // 30-day reminder
+    const remind30 = db.prepare(`
+      SELECT * FROM users
+      WHERE plan = 'pro'
+        AND trial_ends_at IS NOT NULL
+        AND date(trial_ends_at) = ?
+        AND stripe_subscription_id IS NULL
+        AND promo_reminder_30_sent IS NULL
+    `).all(in30);
+    for (const user of remind30) {
+      await sendPromoExpiryReminderEmail(user, 30);
+      db.prepare(`UPDATE users SET promo_reminder_30_sent = datetime('now') WHERE id = ?`).run(user.id);
+    }
+
+    // 7-day reminder
+    const remind7 = db.prepare(`
+      SELECT * FROM users
+      WHERE plan = 'pro'
+        AND trial_ends_at IS NOT NULL
+        AND date(trial_ends_at) = ?
+        AND stripe_subscription_id IS NULL
+        AND promo_reminder_7_sent IS NULL
+    `).all(in7);
+    for (const user of remind7) {
+      await sendPromoExpiryReminderEmail(user, 7);
+      db.prepare(`UPDATE users SET promo_reminder_7_sent = datetime('now') WHERE id = ?`).run(user.id);
+    }
+
+    // Auto-downgrade expired users
+    const expired = db.prepare(`
+      SELECT * FROM users
+      WHERE plan = 'pro'
+        AND trial_ends_at IS NOT NULL
+        AND date(trial_ends_at) < ?
+        AND stripe_subscription_id IS NULL
+        AND promo_expired_at IS NULL
+    `).all(today);
+    for (const user of expired) {
+      db.prepare(`
+        UPDATE users SET plan = 'free', promo_expired_at = datetime('now') WHERE id = ?
+      `).run(user.id);
+      await sendPromoExpiredEmail(user);
+      console.log(`[promo-lifecycle] Downgraded ${user.email} to Free — promo expired`);
+    }
+
+    const total = remind30.length + remind7.length + expired.length;
+    if (total === 0) console.log('[promo-lifecycle] Nothing to do today');
+    else console.log(`[promo-lifecycle] Done — 30d: ${remind30.length}, 7d: ${remind7.length}, expired: ${expired.length}`);
+  } catch (err) {
+    console.error('[promo-lifecycle] Error:', err.message);
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`NestBook server running on http://localhost:${PORT}`);
@@ -317,4 +379,15 @@ app.listen(PORT, () => {
     sendMissedActionReminders();
     setInterval(sendMissedActionReminders, 24 * 60 * 60 * 1000);
   }, next10am - now10);
+
+  // Promo lifecycle (reminders + auto-downgrade) — run on boot to catch missed days,
+  // then daily at 9am
+  runPromoLifecycle();
+  const now9 = new Date();
+  const next9am = new Date(now9.getFullYear(), now9.getMonth(), now9.getDate(), 9, 0, 0);
+  if (next9am <= now9) next9am.setDate(next9am.getDate() + 1);
+  setTimeout(() => {
+    runPromoLifecycle();
+    setInterval(runPromoLifecycle, 24 * 60 * 60 * 1000);
+  }, next9am - now9);
 });

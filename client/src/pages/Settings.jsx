@@ -1116,17 +1116,28 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Promotional Pro panel — shown to users on Pro via discount code with no Stripe sub yet */}
+          {/* Promotional Pro panel — shown throughout the promo period, urgency-aware */}
           {user?.role === 'owner' && (() => {
             const isPromoPro = user?.plan === 'pro'
               && user?.trial_ends_at
+              && new Date(user.trial_ends_at) > new Date()
               && !sub?.current_period_end;
             if (!isPromoPro) return null;
 
+            const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
             const promoExpiryDate = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
               day: 'numeric', month: 'long', year: 'numeric',
             });
-            const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
+            const promoExpiryShort = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'long',
+            });
+
+            const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : '#1a4710';
+            const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#f0fdf4';
+            const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#d9f0cc';
+            const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#1a4710';
+            const urgencyText = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#78350f' : '#166534';
+            const btnBg       = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
 
             return (
               <div style={{
@@ -1136,33 +1147,42 @@ export default function Settings() {
                 overflow: 'hidden',
                 marginTop: 16,
               }}>
-                <div style={{ background: '#1a4710', padding: '16px 20px' }}>
-                  <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>
-                    🎉 NestBook Pro — Promotional access
+                <div style={{ background: headerBg, padding: '16px 20px' }}>
+                  <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <i className={`ti ${daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-star'}`} />
+                    {daysLeft <= 7  ? 'Pro access expiring very soon' :
+                     daysLeft <= 14 ? 'Pro access expiring soon' :
+                     'NestBook Pro — Promotional access'}
                   </div>
-                  <div style={{ color: '#d9f0cc', fontSize: '0.82rem' }}>
-                    Your free promotional period ends {promoExpiryDate}
-                    {daysLeft > 0 && ` (${daysLeft} days remaining)`}
+                  <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.82rem' }}>
+                    Your free promotional period ends {promoExpiryDate} ({daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining)
                   </div>
                 </div>
 
                 <div style={{ padding: '20px' }}>
                   <div style={{
-                    background: '#fef3c7',
-                    border: '1px solid #f59e0b',
-                    borderLeft: '4px solid #f59e0b',
+                    background: urgencyBg,
+                    border: `1px solid ${urgencyBdr}`,
+                    borderLeft: `4px solid ${urgencyAcct}`,
                     borderRadius: '0 8px 8px 0',
                     padding: '12px 16px',
                     marginBottom: 20,
                     fontSize: '0.85rem',
-                    color: '#78350f',
+                    color: urgencyText,
                     lineHeight: 1.6,
                   }}>
-                    <strong>What happens on {promoExpiryDate}?</strong><br />
-                    If you have added payment details, your NestBook Pro subscription
-                    continues automatically at £19/month — no interruption to your service.<br /><br />
-                    If you have not added payment details, your account will move back
-                    to the Free plan on that date.
+                    {daysLeft <= 7 ? (
+                      <><strong>Action needed — {daysLeft} day{daysLeft !== 1 ? 's' : ''} left!</strong><br />
+                      Add payment details now to avoid losing Pro access on {promoExpiryShort}.</>
+                    ) : daysLeft <= 14 ? (
+                      <><strong>Coming up soon!</strong><br />
+                      Add a card now to continue Pro uninterrupted after your promotional period ends.
+                      You won't be charged until {promoExpiryDate}.</>
+                    ) : (
+                      <><strong>No action needed yet</strong><br />
+                      You have {daysLeft} days of Pro access remaining. Add payment details anytime
+                      before your promotional period ends to continue without interruption.</>
+                    )}
                   </div>
 
                   <div style={{ marginBottom: 20 }}>
@@ -1187,8 +1207,7 @@ export default function Settings() {
                         display: 'flex', alignItems: 'center', gap: 8,
                         fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6,
                       }}>
-                        <i className="ti ti-circle-check"
-                           style={{ color: 'var(--accent)', fontSize: '0.9rem', flexShrink: 0 }} />
+                        <i className="ti ti-circle-check" style={{ color: 'var(--accent)', fontSize: '0.9rem', flexShrink: 0 }} />
                         {feature}
                       </div>
                     ))}
@@ -1197,7 +1216,7 @@ export default function Settings() {
                   <button
                     onClick={handleAddPromoPayment}
                     style={{
-                      background: 'var(--accent)',
+                      background: btnBg,
                       color: 'white',
                       border: 'none',
                       borderRadius: 8,
@@ -1214,7 +1233,7 @@ export default function Settings() {
                     }}
                   >
                     <i className="ti ti-credit-card" />
-                    Add payment details — continue Pro after {promoExpiryDate}
+                    Add payment details — continue Pro after {promoExpiryShort}
                   </button>
 
                   <p style={{

@@ -338,21 +338,31 @@ export default function Dashboard() {
         const daysLeft = Math.ceil(
           (new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)
         );
-        if (daysLeft <= 0 || daysLeft > 14) return null;
+        if (daysLeft <= 0 || daysLeft > 30) return null;
+
+        const bg  = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#f0fdf4';
+        const bdr = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#d9f0cc';
+        const clr = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#92400e' : '#166534';
+        const lnk = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
+        const ico = daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-info-circle';
+
         return (
           <div style={{
-            background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8,
+            background: bg, border: `1px solid ${bdr}`, borderRadius: 8,
             padding: '10px 16px', marginBottom: 16,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             fontSize: '0.85rem',
           }}>
-            <span style={{ color: '#92400e' }}>
-              <i className="ti ti-clock" style={{ marginRight: 6 }} />
-              Your Pro promotional access expires in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong>
+            <span style={{ color: clr }}>
+              <i className={`ti ${ico}`} style={{ marginRight: 6 }} />
+              {daysLeft <= 7
+                ? <>Pro access expires in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong> — add billing now</>
+                : <>Your Pro promotional access expires in <strong>{daysLeft} days</strong></>
+              }
               {' '}({new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })})
             </span>
             <a href="/app/settings"
-               style={{ color: '#1a4710', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+               style={{ color: lnk, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', fontSize: '0.82rem' }}>
               Add billing →
             </a>
           </div>

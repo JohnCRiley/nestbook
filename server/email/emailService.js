@@ -2171,6 +2171,127 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
   }
 }
 
+export async function sendPromoExpiryReminderEmail(user, daysLeft) {
+  if (!resend) return;
+  if (!user?.email) return;
+  const firstName = user.name?.split(' ')[0] || 'there';
+  const expiryDate = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+  const isUrgent = daysLeft <= 7;
+
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      ${isUrgent ? 'Action needed — Pro access expiring soon' : 'Your NestBook Pro promotional period is ending'}
+    </h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">Hi ${firstName},</p>
+
+    <div style="background:${isUrgent ? '#fef2f2' : '#fef3c7'};
+                border:1.5px solid ${isUrgent ? '#fca5a5' : '#f59e0b'};
+                border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+      <div style="font-weight:700;color:${isUrgent ? '#7f1d1d' : '#92400e'};font-size:1rem;margin-bottom:4px;">
+        ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining
+      </div>
+      <div style="font-size:0.875rem;color:${isUrgent ? '#7f1d1d' : '#78350f'};">
+        Your NestBook Pro promotional access ends on ${expiryDate}
+      </div>
+    </div>
+
+    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:20px;">
+      Just a reminder that your promotional Pro access ends on <strong>${expiryDate}</strong>.
+      ${isUrgent
+        ? ' Please add your payment details today to avoid any interruption to your service.'
+        : ' Add your payment details before that date to continue uninterrupted.'}
+    </p>
+
+    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+      Your card will <strong>not be charged</strong> until ${expiryDate}.
+      After that, NestBook Pro continues at £19/month.
+      Cancel anytime before ${expiryDate} to stay on the free plan — no questions asked.
+    </p>
+
+    <a href="https://nestbook.io/app/settings"
+       style="display:inline-block;background:${isUrgent ? '#dc2626' : '#1a4710'};color:white;
+              text-decoration:none;padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
+      Add payment details →
+    </a>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
+    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+      Questions? Email us at hello@nestbook.io — we're here to help.
+    </p>`;
+
+  try {
+    await resend.emails.send({
+      from:    'John at NestBook <hello@nestbook.io>',
+      to:      user.email,
+      subject: isUrgent
+        ? `Your NestBook Pro access expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+        : `Your NestBook Pro promotional period ends in ${daysLeft} days`,
+      html: shell(body),
+    });
+    console.log(`[email] Promo ${daysLeft}-day reminder sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send promo expiry reminder:', err.message);
+  }
+}
+
+export async function sendPromoExpiredEmail(user) {
+  if (!resend) return;
+  if (!user?.email) return;
+  const firstName = user.name?.split(' ')[0] || 'there';
+
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      Your promotional period has ended
+    </h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">Hi ${firstName},</p>
+
+    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:16px;">
+      Your NestBook Pro promotional access has now ended and your account has moved
+      to the free plan.
+    </p>
+
+    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+      Your property page, bookings and all your data are safe —
+      you just have access to the free plan features now.
+    </p>
+
+    <div style="background:#f0fdf4;border:1.5px solid #d9f0cc;border-radius:8px;
+                padding:16px 20px;margin-bottom:24px;">
+      <div style="font-weight:700;color:#1a4710;font-size:0.9rem;margin-bottom:8px;">
+        Want to continue with Pro?
+      </div>
+      <p style="color:#374151;font-size:0.875rem;margin:0;line-height:1.6;">
+        NestBook Pro is £19/month — unlimited rooms, 5 photos per room,
+        booking widget, seasonal pricing and revenue reports. No commission ever.
+      </p>
+    </div>
+
+    <a href="https://nestbook.io/app/settings"
+       style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
+              padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
+      Upgrade to Pro →
+    </a>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
+    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+      Thank you for trying NestBook Pro — any questions, just reply to this email.
+    </p>`;
+
+  try {
+    await resend.emails.send({
+      from:    'John at NestBook <hello@nestbook.io>',
+      to:      user.email,
+      subject: 'Your NestBook Pro promotional period has ended',
+      html:    shell(body),
+    });
+    console.log(`[email] Promo expired email sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send promo expired email:', err.message);
+  }
+}
+
 export async function sendPromoPaymentConfirmedEmail(user) {
   if (!resend) return;
   if (!user?.email) return;

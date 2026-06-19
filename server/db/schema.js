@@ -1409,6 +1409,9 @@ John`
     `ALTER TABLE users ADD COLUMN discount_applied_at TEXT DEFAULT NULL`,
     `ALTER TABLE users ADD COLUMN stripe_customer_id TEXT DEFAULT NULL`,
     `ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN promo_reminder_30_sent TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN promo_reminder_7_sent TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN promo_expired_at TEXT DEFAULT NULL`,
   ];
   for (const sql of userColsToAdd) {
     try {
