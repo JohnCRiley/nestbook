@@ -20,8 +20,10 @@ export default function VerifyEmail() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          console.log('[verify-email] Calling updateUser({ email_verified: true })');
-          updateUser({ email_verified: true });
+          const updates = { email_verified: true };
+          if (data.plan)          updates.plan          = data.plan;
+          if (data.trial_ends_at) updates.trial_ends_at = data.trial_ends_at;
+          updateUser(updates);
           setStatus('success');
         } else {
           setErrorMsg(data.error || 'Verification failed.');

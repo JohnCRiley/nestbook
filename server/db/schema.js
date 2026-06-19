@@ -1403,6 +1403,10 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_actioned INTEGER DEFAULT 0`); } catch {}
 
+  // Discount code promotion tracking
+  try { db.exec(`ALTER TABLE users ADD COLUMN trial_ends_at TEXT DEFAULT NULL`); } catch {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN discount_applied_at TEXT DEFAULT NULL`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

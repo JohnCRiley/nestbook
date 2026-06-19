@@ -160,11 +160,14 @@ export default function Register() {
 
           <div className="auth-field">
             <label className="auth-label" htmlFor="discountCode">
-              Discount code <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+              Promotional code <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
             </label>
             <input id="discountCode" type="text" className="auth-input" value={form.discountCode}
-              onChange={set('discountCode')} placeholder="e.g. BETA50"
+              onChange={set('discountCode')} placeholder="Enter code if you have one"
               style={{ textTransform: 'uppercase' }} />
+            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.4 }}>
+              Pro access will be applied automatically when you verify your email.
+            </p>
           </div>
 
           <button type="submit" className="auth-btn" disabled={loading}>

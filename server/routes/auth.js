@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import Stripe from 'stripe';
 import db from '../db/database.js';
-import { sendWelcomeEmail, sendFreeWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail } from '../email/emailService.js';
+import { sendWelcomeEmail, sendFreeWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail, sendProWelcomeEmail } from '../email/emailService.js';
 import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
@@ -14,6 +14,59 @@ export const authRouter = Router();
 
 const JWT_SECRET  = process.env.JWT_SECRET || 'nestbook-dev-secret-change-in-production';
 const JWT_EXPIRES = '7d';
+const stripe      = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+
+// Apply a discount code at email verification time.
+// Only runs once per user — guarded by discount_applied_at being NULL.
+async function applyDiscountCodeOnRegistration(user) {
+  try {
+    const code = db.prepare(`
+      SELECT * FROM discount_codes
+      WHERE UPPER(code) = UPPER(?)
+        AND active = 1
+        AND (max_uses IS NULL OR max_uses = 0 OR current_uses < max_uses)
+    `).get(user.discount_code);
+
+    if (!code) {
+      console.log(`[discount] Code "${user.discount_code}" not valid — ${user.email} stays on Free`);
+      return;
+    }
+
+    if (code.discount_percent === 100) {
+      const trialEnd = new Date();
+      trialEnd.setMonth(trialEnd.getMonth() + (code.duration_months || 1));
+
+      db.prepare(`
+        UPDATE users
+        SET plan = 'pro', trial_ends_at = ?, discount_applied_at = datetime('now')
+        WHERE id = ?
+      `).run(trialEnd.toISOString(), user.id);
+
+      db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
+
+      sendProWelcomeEmail(user, code, trialEnd).catch(() => {});
+      console.log(`[discount] ${user.email} upgraded to Pro via "${user.discount_code}" until ${trialEnd.toISOString().split('T')[0]}`);
+      return;
+    }
+
+    // Partial discount — apply via Stripe if the user already has a customer ID
+    if (stripe && code.stripe_coupon_id && user.stripe_customer_id) {
+      const sub = await stripe.subscriptions.create({
+        customer:           user.stripe_customer_id,
+        items:              [{ price: process.env.STRIPE_PRO_PRICE_ID }],
+        discounts:          [{ coupon: code.stripe_coupon_id }],
+        trial_period_days:  30,
+      });
+      db.prepare(`
+        UPDATE users SET plan = 'pro', discount_applied_at = datetime('now') WHERE id = ?
+      `).run(user.id);
+      db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
+      console.log(`[discount] Stripe subscription ${sub.id} created for ${user.email}`);
+    }
+  } catch (e) {
+    console.error('[discount] applyDiscountCodeOnRegistration error:', e.message);
+  }
+}
 
 // ── POST /api/auth/login ──────────────────────────────────────────────────
 authRouter.post('/login', (req, res) => {
@@ -68,6 +121,7 @@ authRouter.post('/login', (req, res) => {
       id: user.id, name: user.name, email: user.email, role: user.role,
       property_id: user.property_id, email_verified: !!user.email_verified,
       subscription_status: user.subscription_status ?? 'active',
+      trial_ends_at: user.trial_ends_at ?? null,
     },
   });
 });
@@ -217,7 +271,7 @@ authRouter.post('/reset-password', async (req, res) => {
 // ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, email, name, plan, email_verified FROM users WHERE id = ?'
+    'SELECT id, email, name, plan, email_verified, trial_ends_at FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   res.json(user);
@@ -227,9 +281,10 @@ authRouter.get('/verify-email', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ error: 'Token is required.' });
 
-  const user = db.prepare(
-    'SELECT id, name, email, plan FROM users WHERE email_verification_token = ?'
-  ).get(token);
+  const user = db.prepare(`
+    SELECT id, name, email, plan, discount_code, discount_applied_at, stripe_customer_id
+    FROM users WHERE email_verification_token = ?
+  `).get(token);
 
   if (!user) {
     return res.status(400).json({ error: 'Invalid or expired verification link.' });
@@ -239,24 +294,26 @@ authRouter.get('/verify-email', async (req, res) => {
     'UPDATE users SET email_verified = 1, email_verification_token = NULL WHERE id = ?'
   ).run(user.id);
 
-  // Send rich onboarding email to new Free plan users — never block verification if it fails
-  if (user.plan === 'free') {
-    try {
-      await sendFreeWelcomeEmail(user);
-      console.log(`[welcome-email] Sent to ${user.email}`);
-    } catch (e) {
-      console.error('[welcome-email] Failed:', e.message);
-    }
+  // Apply discount code upgrade before deciding which welcome email to send
+  if (user.discount_code && !user.discount_applied_at) {
+    await applyDiscountCodeOnRegistration(user);
   }
 
-  res.json({ success: true });
+  // Re-read plan after potential upgrade so we send the right welcome email
+  const { plan, trial_ends_at } = db.prepare(
+    'SELECT plan, trial_ends_at FROM users WHERE id = ?'
+  ).get(user.id);
+
+  if (plan === 'free') {
+    sendFreeWelcomeEmail(user).catch((e) => console.error('[welcome-email] Failed:', e.message));
+  }
+
+  res.json({ success: true, plan, trial_ends_at });
 });
 
 // ── DELETE /api/auth/account ──────────────────────────────────────────────
 // Self-service GDPR account deletion. Requires valid Bearer token.
 // Cancels Stripe sub, deletes all properties/rooms/bookings, then the user.
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-
 authRouter.delete('/account', requireAuth, async (req, res) => {
   const userId = req.user.userId;
   console.log('[delete-account] Request received from user:', userId);

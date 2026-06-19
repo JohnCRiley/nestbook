@@ -333,6 +333,32 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Promotional Pro trial expiry banner ────────────────────────── */}
+      {user?.trial_ends_at && (() => {
+        const daysLeft = Math.ceil(
+          (new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)
+        );
+        if (daysLeft <= 0 || daysLeft > 14) return null;
+        return (
+          <div style={{
+            background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8,
+            padding: '10px 16px', marginBottom: 16,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+            fontSize: '0.85rem',
+          }}>
+            <span style={{ color: '#92400e' }}>
+              <i className="ti ti-clock" style={{ marginRight: 6 }} />
+              Your Pro promotional access expires in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong>
+              {' '}({new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })})
+            </span>
+            <a href="/app/settings"
+               style={{ color: '#1a4710', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              Add billing →
+            </a>
+          </div>
+        );
+      })()}
+
       {/* ── Stat cards — hidden in WP mode (info shown in booking cards below) */}
       {property?.rental_type !== 'whole_property' && (
         <div className="stats-grid">

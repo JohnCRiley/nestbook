@@ -2080,6 +2080,86 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
   }
 }
 
+/**
+ * Send a Pro upgrade confirmation to a user who registered with a 100% discount code.
+ * @param {object} user         — { name, email }
+ * @param {object} discountCode — { code, duration_months }
+ * @param {Date}   trialEnd     — when the promotional Pro access expires
+ */
+export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
+  if (!resend) return;
+  if (!user?.email) return;
+  const firstName = user.name?.split(' ')[0] || 'there';
+  const expiryStr = (trialEnd ?? new Date()).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const featureItem = (title, desc) => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">
+        <span style="color:#1a4710;font-weight:700;margin-right:8px;">✓</span>
+        <strong style="font-size:0.875rem;color:#1a2e14;">${title}</strong>
+        <div style="font-size:0.8rem;color:#64748b;margin-top:2px;padding-left:20px;">${desc}</div>
+      </td>
+    </tr>`;
+
+  const body = `
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+      You're on NestBook Pro! 🎉
+    </h1>
+    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">Hi ${firstName},</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">
+      Your promotional code <strong>${discountCode.code}</strong> has been applied —
+      here's everything that's now unlocked:
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0fdf4;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+      ${featureItem('Unlimited rooms', 'No cap on how many rooms you can add')}
+      ${featureItem('5 photos per room', 'Showcase your rooms beautifully')}
+      ${featureItem('Booking widget', 'Add a booking button to your own website')}
+      ${featureItem('Seasonal pricing', 'Set different rates for peak periods')}
+      ${featureItem('Revenue reports', 'See your income at a glance')}
+      ${featureItem('iCal sync', 'Stay in sync with Booking.com and Airbnb')}
+    </table>
+
+    <div style="background:#fef3c7;border-left:4px solid #f59e0b;
+                padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <p style="color:#78350f;font-size:0.875rem;margin:0;line-height:1.6;">
+        <strong>Access runs until ${expiryStr}.</strong> After that your account
+        continues on Pro at £19/month. Add payment details in Settings → Billing,
+        or cancel before that date to stay on the free plan.
+      </p>
+    </div>
+
+    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+      Any questions at all — just reply to this email. I'm here to help.
+    </p>
+
+    <a href="https://nestbook.io/app"
+       style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
+              padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
+      Go to my dashboard →
+    </a>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
+    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+      Questions? Email us at hello@nestbook.io — we're here to help.
+    </p>`;
+
+  try {
+    await resend.emails.send({
+      from:    'John at NestBook <hello@nestbook.io>',
+      to:      user.email,
+      subject: `Welcome to NestBook Pro, ${firstName}! 🌿`,
+      html:    shell(body),
+    });
+    console.log(`[email] Pro welcome email sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send Pro welcome email:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');
