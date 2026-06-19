@@ -20,11 +20,16 @@ export default function VerifyEmail() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          const updates = { email_verified: true };
-          if (data.plan)          updates.plan          = data.plan;
-          if (data.trial_ends_at) updates.trial_ends_at = data.trial_ends_at;
-          updateUser(updates);
+          // Always set all fields — including trial_ends_at: null for permanent Pro
+          // so stale values don't linger in localStorage.
+          updateUser({
+            email_verified: true,
+            plan:           data.plan          ?? undefined,
+            trial_ends_at:  data.trial_ends_at ?? null,
+          });
           setStatus('success');
+          // Full page reload so dashboard picks up fresh localStorage state.
+          setTimeout(() => { window.location.href = '/app'; }, 2500);
         } else {
           setErrorMsg(data.error || 'Verification failed.');
           setStatus('error');
@@ -59,11 +64,11 @@ export default function VerifyEmail() {
           <>
             <h1 className="auth-heading" style={{ color: 'var(--accent)' }}>Email verified!</h1>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-              Your email address has been verified. You can now use all NestBook features.
+              Your email address has been verified. Taking you to your dashboard…
             </p>
-            <Link to="/dashboard" className="auth-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+            <a href="/app" className="auth-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
               Go to dashboard →
-            </Link>
+            </a>
           </>
         )}
 

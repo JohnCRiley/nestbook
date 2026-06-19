@@ -2090,9 +2090,10 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
   if (!resend) return;
   if (!user?.email) return;
   const firstName = user.name?.split(' ')[0] || 'there';
-  const expiryStr = (trialEnd ?? new Date()).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  });
+  const hasDuration = trialEnd != null;
+  const expiryStr = hasDuration
+    ? trialEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
 
   const featureItem = (title, desc) => `
     <tr>
@@ -2102,6 +2103,23 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
         <div style="font-size:0.8rem;color:#64748b;margin-top:2px;padding-left:20px;">${desc}</div>
       </td>
     </tr>`;
+
+  const billingSection = hasDuration ? `
+    <div style="background:#fef3c7;border-left:4px solid #f59e0b;
+                padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <p style="color:#78350f;font-size:0.875rem;margin:0;line-height:1.6;">
+        <strong>Access runs until ${expiryStr}.</strong> After that your account
+        continues on Pro at £19/month. Add payment details in Settings → Billing,
+        or cancel before that date to stay on the free plan.
+      </p>
+    </div>` : `
+    <div style="background:#f0fdf4;border-left:4px solid #1a4710;
+                padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <p style="color:#166534;font-size:0.875rem;margin:0;line-height:1.6;">
+        Your Pro access is yours to keep — no expiry date.
+        Enjoy NestBook Pro and we hope it helps you grow your direct bookings!
+      </p>
+    </div>`;
 
   const body = `
     <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
@@ -2123,14 +2141,7 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
       ${featureItem('iCal sync', 'Stay in sync with Booking.com and Airbnb')}
     </table>
 
-    <div style="background:#fef3c7;border-left:4px solid #f59e0b;
-                padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
-      <p style="color:#78350f;font-size:0.875rem;margin:0;line-height:1.6;">
-        <strong>Access runs until ${expiryStr}.</strong> After that your account
-        continues on Pro at £19/month. Add payment details in Settings → Billing,
-        or cancel before that date to stay on the free plan.
-      </p>
-    </div>
+    ${billingSection}
 
     <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
       Any questions at all — just reply to this email. I'm here to help.

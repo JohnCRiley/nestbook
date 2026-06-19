@@ -37,19 +37,30 @@ async function applyDiscountCodeOnRegistration(user) {
     }
 
     if (code.discount_percent === 100) {
-      const trialEnd = new Date();
-      trialEnd.setMonth(trialEnd.getMonth() + (code.duration_months || 1));
+      const hasDuration = code.duration_months && code.duration_months > 0;
 
-      db.prepare(`
-        UPDATE users
-        SET plan = 'pro', trial_ends_at = ?, discount_applied_at = datetime('now')
-        WHERE id = ?
-      `).run(trialEnd.toISOString(), fullUser.id);
-
-      db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
-
-      sendProWelcomeEmail(fullUser, code, trialEnd).catch(() => {});
-      console.log(`[discount] ${fullUser.email} upgraded to Pro via "${fullUser.discount_code}" until ${trialEnd.toISOString().split('T')[0]}`);
+      if (hasDuration) {
+        const trialEnd = new Date();
+        trialEnd.setMonth(trialEnd.getMonth() + code.duration_months);
+        db.prepare(`
+          UPDATE users
+          SET plan = 'pro', trial_ends_at = ?, discount_applied_at = datetime('now')
+          WHERE id = ?
+        `).run(trialEnd.toISOString(), fullUser.id);
+        db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
+        sendProWelcomeEmail(fullUser, code, trialEnd).catch(() => {});
+        console.log(`[discount] ${fullUser.email} upgraded to Pro via "${fullUser.discount_code}" until ${trialEnd.toISOString().split('T')[0]}`);
+      } else {
+        // No duration — permanent Pro, no trial expiry
+        db.prepare(`
+          UPDATE users
+          SET plan = 'pro', trial_ends_at = NULL, discount_applied_at = datetime('now')
+          WHERE id = ?
+        `).run(fullUser.id);
+        db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
+        sendProWelcomeEmail(fullUser, code, null).catch(() => {});
+        console.log(`[discount] ${fullUser.email} upgraded to permanent Pro via "${fullUser.discount_code}"`);
+      }
       return;
     }
 
@@ -312,7 +323,7 @@ authRouter.get('/verify-email', async (req, res) => {
     sendFreeWelcomeEmail(user).catch((e) => console.error('[welcome-email] Failed:', e.message));
   }
 
-  res.json({ success: true, plan, trial_ends_at });
+  res.json({ success: true, plan, trial_ends_at, email_verified: 1 });
 });
 
 // ── DELETE /api/auth/account ──────────────────────────────────────────────
