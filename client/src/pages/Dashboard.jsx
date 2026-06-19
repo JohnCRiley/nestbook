@@ -109,6 +109,24 @@ export default function Dashboard() {
     setTimeout(() => setUpgradeToast(false), 5000);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Detect return from promo checkout ────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('billing') !== 'success') return;
+    window.history.replaceState({}, '', '/app/dashboard');
+    apiFetch('/api/auth/me')
+      .then((r) => r.ok ? r.json() : null)
+      .then((freshUser) => {
+        if (freshUser?.id) {
+          const stored = JSON.parse(localStorage.getItem('nb_user') || '{}');
+          const updated = { ...stored, ...freshUser };
+          localStorage.setItem('nb_user', JSON.stringify(updated));
+          updateUser(updated);
+        }
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Fetch bookings + rooms + guests ───────────────────────────────────────
   useEffect(() => {
     if (!property?.id) {

@@ -82,7 +82,7 @@ const LOCALES = [
 export default function Settings() {
   const t = useT();
   const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty, locale, currencySymbol } = useLocale();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const plan = usePlan();
   const FEATURES = [
     {
@@ -223,17 +223,39 @@ export default function Settings() {
       .catch(() => {});
   }, []);
 
-  // Detect ?billing=success redirect back from Stripe promo checkout
+  // Detect ?billing=success/cancelled redirect back from Stripe promo checkout
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
     if (params.get('billing') === 'success') {
       setBillingMessage({
         type: 'success',
         text: 'Payment details saved — your Pro subscription will continue automatically after your promotional period ends.',
       });
+      // Refresh user from server so stripe_subscription_id is in localStorage
+      // and the promo panel disappears without requiring a manual re-login.
+      apiFetch('/api/auth/me')
+        .then((r) => r.ok ? r.json() : null)
+        .then((freshUser) => {
+          if (freshUser?.id) {
+            const stored = JSON.parse(localStorage.getItem('nb_user') || '{}');
+            const updated = { ...stored, ...freshUser };
+            localStorage.setItem('nb_user', JSON.stringify(updated));
+            updateUser(updated);
+          }
+        })
+        .catch(() => {});
       window.history.replaceState({}, '', '/app/settings');
     }
-  }, []);
+
+    if (params.get('billing') === 'cancelled') {
+      setBillingMessage({
+        type: 'info',
+        text: 'Checkout cancelled — your promotional access continues unchanged.',
+      });
+      window.history.replaceState({}, '', '/app/settings');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAddPromoPayment() {
     try {
@@ -1094,8 +1116,8 @@ export default function Settings() {
           {/* Billing success/cancelled flash message */}
           {billingMessage && (
             <div style={{
-              background: billingMessage.type === 'success' ? '#f0fdf4' : '#fef2f2',
-              border: `1px solid ${billingMessage.type === 'success' ? '#d9f0cc' : '#fecaca'}`,
+              background: billingMessage.type === 'success' ? '#f0fdf4' : billingMessage.type === 'info' ? '#f8fafc' : '#fef2f2',
+              border: `1px solid ${billingMessage.type === 'success' ? '#d9f0cc' : billingMessage.type === 'info' ? '#e2e8f0' : '#fecaca'}`,
               borderRadius: 8,
               padding: '12px 16px',
               marginTop: 16,
@@ -1103,9 +1125,9 @@ export default function Settings() {
               alignItems: 'flex-start',
               gap: 10,
             }}>
-              <i className={`ti ${billingMessage.type === 'success' ? 'ti-circle-check' : 'ti-alert-circle'}`}
-                 style={{ color: billingMessage.type === 'success' ? '#16a34a' : '#dc2626', marginTop: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.875rem', color: billingMessage.type === 'success' ? '#166534' : '#991b1b', lineHeight: 1.5 }}>
+              <i className={`ti ${billingMessage.type === 'success' ? 'ti-circle-check' : billingMessage.type === 'info' ? 'ti-info-circle' : 'ti-alert-circle'}`}
+                 style={{ color: billingMessage.type === 'success' ? '#16a34a' : billingMessage.type === 'info' ? '#64748b' : '#dc2626', marginTop: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: '0.875rem', color: billingMessage.type === 'success' ? '#166534' : billingMessage.type === 'info' ? '#475569' : '#991b1b', lineHeight: 1.5 }}>
                 {billingMessage.text}
               </span>
               <button onClick={() => setBillingMessage(null)}
