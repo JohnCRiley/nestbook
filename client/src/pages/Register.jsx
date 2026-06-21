@@ -67,15 +67,15 @@ export default function Register() {
     setError('');
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('register.passwordMatch'));
       return;
     }
     if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError(t('register.passwordLength'));
       return;
     }
     if (!form.propertyType) {
-      setError('Please select a property type.');
+      setError(t('register.selectType'));
       return;
     }
 
@@ -103,14 +103,14 @@ export default function Register() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Registration failed. Please try again.');
+        setError(data.error || t('register.failed'));
         return;
       }
 
       login(data.token, data.user);
       navigate('/dashboard', { replace: true });
     } catch {
-      setError('Could not connect to server. Is it running?');
+      setError(t('register.noServer'));
     } finally {
       setLoading(false);
     }
@@ -125,10 +125,10 @@ export default function Register() {
           <img src="/icon.svg" alt="NestBook" className="auth-leaf-icon" />
           <span className="auth-logo-name">NestBook</span>
         </div>
-        <p className="auth-tagline">Property Management</p>
+        <p className="auth-tagline">{t('tagline')}</p>
 
-        <h1 className="auth-heading">Create your account</h1>
-        <p className="auth-subheading">Free forever on the Starter plan. No card needed.</p>
+        <h1 className="auth-heading">{t('auth.createAccount')}</h1>
+        <p className="auth-subheading">{t('register.freeForever')}</p>
 
         {error && <div className="auth-error">{error}</div>}
 
@@ -136,41 +136,41 @@ export default function Register() {
 
           <div className="auth-field-row">
             <div className="auth-field">
-              <label className="auth-label" htmlFor="name">Full name</label>
+              <label className="auth-label" htmlFor="name">{t('register.fullName')}</label>
               <input id="name" type="text" className="auth-input" value={form.name}
-                onChange={set('name')} placeholder="Jane Smith" required autoFocus />
+                onChange={set('name')} placeholder={t('register.namePlaceholder')} required autoFocus />
             </div>
             <div className="auth-field">
               <label className="auth-label" htmlFor="reg-email">{t('auth.emailAddress')}</label>
               <input id="reg-email" type="email" className="auth-input" value={form.email}
-                onChange={set('email')} placeholder="you@example.com" required />
+                onChange={set('email')} placeholder={t('register.emailPlaceholder')} required />
             </div>
           </div>
 
           <div className="auth-field-row">
             <div className="auth-field">
-              <label className="auth-label" htmlFor="reg-password">Password</label>
+              <label className="auth-label" htmlFor="reg-password">{t('register.password')}</label>
               <PasswordInput id="reg-password" className="auth-input" value={form.password}
-                onChange={set('password')} placeholder="At least 8 characters" required />
+                onChange={set('password')} placeholder={t('register.passwordPlaceholder')} required />
             </div>
             <div className="auth-field">
               <label className="auth-label" htmlFor="confirm">{t('auth.confirmPassword')}</label>
               <PasswordInput id="confirm" className="auth-input" value={form.confirmPassword}
-                onChange={set('confirmPassword')} placeholder="••••••••" required />
+                onChange={set('confirmPassword')} placeholder={t('register.passwordPlaceholder')} required />
             </div>
           </div>
 
           <div className="auth-field-row">
             <div className="auth-field">
-              <label className="auth-label" htmlFor="propName">Property name</label>
+              <label className="auth-label" htmlFor="propName">{t('register.propertyName')}</label>
               <input id="propName" type="text" className="auth-input" value={form.propertyName}
-                onChange={set('propertyName')} placeholder="e.g. The Old Mill B&B" required />
+                onChange={set('propertyName')} placeholder={t('register.propertyPlaceholder')} required />
             </div>
             <div className="auth-field">
-              <label className="auth-label" htmlFor="propType">Property type</label>
+              <label className="auth-label" htmlFor="propType">{t('register.propertyType')}</label>
               <select id="propType" className="auth-input auth-select" value={form.propertyType}
                 onChange={set('propertyType')} required>
-                <option value="" disabled>Select a type…</option>
+                <option value="" disabled>{t('register.typePlaceholder')}</option>
                 {PROPERTY_GROUPS.map((grp) => (
                   <optgroup key={grp.group} label={grp.group}>
                     {grp.options.map((opt) => (
@@ -184,23 +184,23 @@ export default function Register() {
 
           <div className="auth-field">
             <label className="auth-label" htmlFor="discountCode">
-              Promotional code <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+              {t('register.promoCode')}
             </label>
             <input id="discountCode" type="text" className="auth-input" value={form.discountCode}
-              onChange={set('discountCode')} placeholder="Enter code if you have one"
+              onChange={set('discountCode')} placeholder={t('register.codePlaceholder')}
               style={{ textTransform: 'uppercase' }} />
             <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.4 }}>
-              Pro access will be applied automatically when you verify your email.
+              {t('register.promoHint')}
             </p>
           </div>
 
           <button type="submit" className="auth-btn" disabled={loading}>
-            {loading ? 'Creating account…' : 'Create free account'}
+            {loading ? t('register.creating') : t('register.createFree')}
           </button>
         </form>
 
         <p className="auth-switch">
-          Already have an account?{' '}
+          {t('register.alreadyAccount')}{' '}
           <Link to="/login">{t('auth.signIn')}</Link>
         </p>
       </div>
