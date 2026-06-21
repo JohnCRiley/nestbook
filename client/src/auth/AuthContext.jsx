@@ -37,6 +37,10 @@ export function AuthProvider({ children }) {
     localStorage.setItem('nb_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
+    // Sync public-page language switcher so returning users see the right language
+    if (newUser?.language && newUser.language !== 'en') {
+      try { localStorage.setItem('nb-lang', newUser.language); } catch (_) {}
+    }
   }
 
   function logout() {

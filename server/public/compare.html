@@ -1365,6 +1365,25 @@ document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
 </script>
 
 <script>
+// ── Capture ?lang= URL parameter — set before auto-detect runs ──────────────
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var langParam = params.get('lang');
+  var supported = ['en', 'fr', 'de', 'es', 'nl'];
+  if (langParam && supported.indexOf(langParam) !== -1) {
+    try {
+      localStorage.setItem('nb-lang', langParam);
+      // Clear any auto-detect state — this is an explicit choice via link
+      sessionStorage.removeItem('nb_lang_auto');
+      sessionStorage.removeItem('nb_lang_dismissed');
+    } catch (_) {}
+    // Remove ?lang= from URL cleanly
+    var url = new URL(window.location.href);
+    url.searchParams.delete('lang');
+    window.history.replaceState({}, '', url.toString());
+  }
+})();
+
 // ── Auto-detect browser language (only if no manual choice saved) ──────────
 (function () {
   var SUPPORTED = ['en', 'fr', 'de', 'es', 'nl'];

@@ -273,6 +273,15 @@ outreachRouter.post('/send', async (req, res) => {
       finalBody    = finalBody.replace(regex, value);
     });
 
+    // Tag nestbook.io links with prospect language so landing pages auto-switch
+    const prospectLang = p.language && ['en','fr','de','es','nl'].includes(p.language) ? p.language : null;
+    if (prospectLang && prospectLang !== 'en') {
+      finalBody = finalBody.replace(
+        /(https?:\/\/(?:www\.)?nestbook\.io[^\s"'<>]*)/g,
+        (url) => url.includes('?') ? `${url}&lang=${prospectLang}` : `${url}?lang=${prospectLang}`
+      );
+    }
+
     // Body is HTML when sent from Quill editor; fall back to wrapping plain text for old templates
     const bodyHtml = finalBody.trim().startsWith('<')
       ? finalBody

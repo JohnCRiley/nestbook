@@ -139,13 +139,14 @@ authRouter.post('/login', (req, res) => {
       plan: user.plan ?? 'free',
       trial_ends_at: user.trial_ends_at ?? null,
       stripe_subscription_id: user.stripe_subscription_id ?? null,
+      language: user.language ?? 'en',
     },
   });
 });
 
 // ── POST /api/auth/register ───────────────────────────────────────────────
 authRouter.post('/register', (req, res) => {
-  const { name, email, password, confirmPassword, propertyName, propertyType, discountCode } = req.body;
+  const { name, email, password, confirmPassword, propertyName, propertyType, discountCode, language } = req.body;
 
   if (!name || !email || !password || !propertyName || !propertyType) {
     return res.status(400).json({ error: 'All required fields must be filled in.' });
@@ -165,6 +166,9 @@ authRouter.post('/register', (req, res) => {
 
   const hash = bcrypt.hashSync(password, 10);
 
+  const SUPPORTED_LANGS = ['en', 'fr', 'de', 'es', 'nl'];
+  const userLang = SUPPORTED_LANGS.includes(language) ? language : 'en';
+
   // Validate discount code outside the transaction (read-only, safe to do first)
   const upperCode = discountCode?.trim().toUpperCase() || null;
   const validCode = upperCode
@@ -183,9 +187,9 @@ authRouter.post('/register', (req, res) => {
     propId = Number(prop.lastInsertRowid);
 
     const user = db.prepare(
-      `INSERT INTO users (property_id, name, email, password_hash, role, discount_code, email_verified, email_verification_token)
-       VALUES (?, ?, ?, ?, 'owner', ?, 0, ?)`
-    ).run(propId, name, normalEmail, hash, validCode ?? null, verificationToken);
+      `INSERT INTO users (property_id, name, email, password_hash, role, language, discount_code, email_verified, email_verification_token)
+       VALUES (?, ?, ?, ?, 'owner', ?, ?, 0, ?)`
+    ).run(propId, name, normalEmail, hash, userLang, validCode ?? null, verificationToken);
     userId = Number(user.lastInsertRowid);
 
     db.prepare('UPDATE properties SET owner_id = ? WHERE id = ?').run(userId, propId);
@@ -222,7 +226,7 @@ authRouter.post('/register', (req, res) => {
 
   res.status(201).json({
     token,
-    user: { id: userId, name, email: normalEmail, role: 'owner', property_id: propId, email_verified: false },
+    user: { id: userId, name, email: normalEmail, role: 'owner', property_id: propId, email_verified: false, language: userLang },
   });
 
   // Auto-convert prospect if this email was in the outreach CRM
@@ -230,12 +234,12 @@ authRouter.post('/register', (req, res) => {
 
   // Fire-and-forget — must not delay the registration response
   sendWelcomeEmail(
-    { name, email: normalEmail },
+    { name, email: normalEmail, language: userLang },
     { name: propertyName, type: propertyType }
   ).catch(() => {});
 
   sendVerificationEmail(
-    { name, email: normalEmail },
+    { name, email: normalEmail, language: userLang },
     verificationToken
   ).catch(() => {});
 });
@@ -288,7 +292,7 @@ authRouter.post('/reset-password', async (req, res) => {
 // ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id FROM users WHERE id = ?'
+    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   res.json({ ...user, email_verified: !!user.email_verified });
@@ -299,7 +303,7 @@ authRouter.get('/verify-email', async (req, res) => {
   if (!token) return res.status(400).json({ error: 'Token is required.' });
 
   const user = db.prepare(`
-    SELECT id, name, email, plan, discount_code, discount_applied_at
+    SELECT id, name, email, plan, language, discount_code, discount_applied_at
     FROM users WHERE email_verification_token = ?
   `).get(token);
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
@@ -35,6 +35,8 @@ const PROPERTY_GROUPS = [
   { group: 'Other', options: [{ value: 'other', label: 'Other' }] },
 ];
 
+const SUPPORTED_LANGS = ['en', 'fr', 'de', 'es', 'nl'];
+
 export default function Register() {
   const t          = useT();
   const { login }  = useAuth();
@@ -46,6 +48,15 @@ export default function Register() {
   });
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Capture ?lang= from URL (e.g. when arriving via outreach email link)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const langParam = params.get('lang');
+    if (langParam && SUPPORTED_LANGS.includes(langParam)) {
+      try { localStorage.setItem('nb-lang', langParam); } catch (_) {}
+    }
+  }, []);
 
   function set(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -68,12 +79,25 @@ export default function Register() {
       return;
     }
 
+    // Detect language: manual choice in localStorage → browser language → English
+    const SUPPORTED = ['en', 'fr', 'de', 'es', 'nl'];
+    let language = 'en';
+    try {
+      const stored = localStorage.getItem('nb-lang');
+      if (stored && SUPPORTED.includes(stored)) {
+        language = stored;
+      } else {
+        const browserLang = (navigator.languages?.[0] || navigator.language || 'en').split('-')[0].toLowerCase();
+        if (SUPPORTED.includes(browserLang)) language = browserLang;
+      }
+    } catch (_) {}
+
     setLoading(true);
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, language }),
       });
 
       const data = await res.json();

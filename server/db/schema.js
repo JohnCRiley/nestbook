@@ -1403,7 +1403,7 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_actioned INTEGER DEFAULT 0`); } catch {}
 
-  // Discount code promotion tracking + Stripe identity on users row
+  // Discount code promotion tracking + Stripe identity + language preference on users row
   const userColsToAdd = [
     `ALTER TABLE users ADD COLUMN trial_ends_at TEXT DEFAULT NULL`,
     `ALTER TABLE users ADD COLUMN discount_applied_at TEXT DEFAULT NULL`,
@@ -1412,6 +1412,7 @@ John`
     `ALTER TABLE users ADD COLUMN promo_reminder_30_sent TEXT DEFAULT NULL`,
     `ALTER TABLE users ADD COLUMN promo_reminder_7_sent TEXT DEFAULT NULL`,
     `ALTER TABLE users ADD COLUMN promo_expired_at TEXT DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'en'`,
   ];
   for (const sql of userColsToAdd) {
     try {

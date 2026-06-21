@@ -92,6 +92,14 @@ const T = {
     step3Desc:         'Embed the booking widget on your website so guests can book directly.',
     goToDashboard:     'Go to your dashboard',
     welcomeFooter:     'You\'re on the free Starter plan. Upgrade any time to unlock more rooms and features.',
+    verifySubject:     'Please verify your email address — NestBook',
+    verifyHeading:     'Almost there!',
+    verifyBody:        'Thank you for joining NestBook. Please verify your email address by clicking the button below.',
+    verifyButton:      'Verify my email address',
+    verifyExpiry:      'This link expires in 24 hours.',
+    proWelcomeSubject: 'Welcome to NestBook Pro! 🌿',
+    proWelcomeHeading: 'You\'re on NestBook Pro!',
+    proWelcomeBody:    'Your promotional code has been applied — here\'s everything that\'s now unlocked:',
   },
   fr: {
     proUpgradeSubject:    'Bienvenue sur NestBook Pro — tout est prêt !',
@@ -156,6 +164,14 @@ const T = {
     step3Desc:         'Intégrez le widget de réservation sur votre site pour que les clients puissent réserver directement.',
     goToDashboard:     'Accéder à votre tableau de bord',
     welcomeFooter:     'Vous êtes sur le plan Starter gratuit. Passez à un plan supérieur à tout moment.',
+    verifySubject:     'Veuillez vérifier votre adresse e-mail — NestBook',
+    verifyHeading:     'Presque terminé !',
+    verifyBody:        'Merci de rejoindre NestBook. Veuillez vérifier votre adresse e-mail en cliquant sur le bouton ci-dessous.',
+    verifyButton:      'Vérifier mon adresse e-mail',
+    verifyExpiry:      'Ce lien expire dans 24 heures.',
+    proWelcomeSubject: 'Bienvenue sur NestBook Pro ! 🌿',
+    proWelcomeHeading: 'Vous êtes sur NestBook Pro !',
+    proWelcomeBody:    'Votre code promotionnel a été appliqué — voici tout ce qui est maintenant disponible :',
   },
   es: {
     proUpgradeSubject:    '¡Bienvenido a NestBook Pro — todo listo!',
@@ -220,6 +236,14 @@ const T = {
     step3Desc:         'Integre el widget en su web para que los huéspedes puedan reservar directamente.',
     goToDashboard:     'Ir a su panel de control',
     welcomeFooter:     'Está en el plan Starter gratuito. Actualice en cualquier momento.',
+    verifySubject:     'Por favor, verifique su dirección de correo electrónico — NestBook',
+    verifyHeading:     '¡Casi listo!',
+    verifyBody:        'Gracias por unirse a NestBook. Por favor, verifique su dirección de correo electrónico haciendo clic en el botón de abajo.',
+    verifyButton:      'Verificar mi dirección de correo',
+    verifyExpiry:      'Este enlace caduca en 24 horas.',
+    proWelcomeSubject: '¡Bienvenido a NestBook Pro! 🌿',
+    proWelcomeHeading: '¡Está en NestBook Pro!',
+    proWelcomeBody:    'Su código promocional ha sido aplicado — esto es lo que está ahora disponible:',
   },
   de: {
     proUpgradeSubject:    'Willkommen bei NestBook Pro — alles ist bereit!',
@@ -284,6 +308,14 @@ const T = {
     step3Desc:         'Betten Sie das Widget in Ihre Website ein, damit Gäste direkt buchen können.',
     goToDashboard:     'Zum Dashboard',
     welcomeFooter:     'Sie nutzen den kostenlosen Starter-Plan. Jederzeit upgraden.',
+    verifySubject:     'Bitte bestätigen Sie Ihre E-Mail-Adresse — NestBook',
+    verifyHeading:     'Fast geschafft!',
+    verifyBody:        'Vielen Dank, dass Sie sich bei NestBook angemeldet haben. Bitte bestätigen Sie Ihre E-Mail-Adresse durch Klicken auf den Button unten.',
+    verifyButton:      'E-Mail-Adresse bestätigen',
+    verifyExpiry:      'Dieser Link läuft in 24 Stunden ab.',
+    proWelcomeSubject: 'Willkommen bei NestBook Pro! 🌿',
+    proWelcomeHeading: 'Sie nutzen NestBook Pro!',
+    proWelcomeBody:    'Ihr Aktionscode wurde angewendet — folgendes ist jetzt freigeschaltet:',
   },
   nl: {
     proUpgradeSubject:    'Welkom bij NestBook Pro — alles is klaar!',
@@ -348,6 +380,14 @@ const T = {
     step3Desc:         'Integreer de widget in uw website zodat gasten direct kunnen boeken.',
     goToDashboard:     'Ga naar uw dashboard',
     welcomeFooter:     'U gebruikt het gratis Starter-abonnement. Upgrade op elk moment.',
+    verifySubject:     'Bevestig uw e-mailadres — NestBook',
+    verifyHeading:     'Bijna klaar!',
+    verifyBody:        'Bedankt voor uw aanmelding bij NestBook. Bevestig uw e-mailadres door op de knop hieronder te klikken.',
+    verifyButton:      'Mijn e-mailadres bevestigen',
+    verifyExpiry:      'Deze link verloopt over 24 uur.',
+    proWelcomeSubject: 'Welkom bij NestBook Pro! 🌿',
+    proWelcomeHeading: 'U gebruikt NestBook Pro!',
+    proWelcomeBody:    'Uw actiecode is toegepast — dit is nu beschikbaar:',
   },
 };
 
@@ -490,6 +530,8 @@ function bookingConfirmationHtml(booking, property) {
 // ── Welcome email HTML ────────────────────────────────────────────────────────
 
 function welcomeHtml(user, property) {
+  const lang = user.language || 'en';
+
   const step = (num, title, desc) => `
     <tr>
       <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
@@ -507,35 +549,35 @@ function welcomeHtml(user, property) {
 
   const body = `
     <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
-      ${t('en', 'welcomeHeading')}
+      ${t(lang, 'welcomeHeading')}
     </h1>
     <p style="margin:0 0 6px;font-size:1rem;color:#374151;">
       Hi ${user.name},
     </p>
     <p style="margin:0 0 28px;font-size:0.95rem;color:#374151;">
-      <strong>${property.name}</strong> is live on NestBook. ${t('en', 'welcomeIntro')}
+      <strong>${property.name || ''}</strong>${property.name ? ' is live on NestBook. ' : ''}${t(lang, 'welcomeIntro')}
     </p>
 
     <p style="margin:0 0 12px;font-size:0.82rem;font-weight:700;text-transform:uppercase;
-              letter-spacing:0.5px;color:#1a4710;">Get started in 3 steps</p>
+              letter-spacing:0.5px;color:#1a4710;">${lang === 'en' ? 'Get started in 3 steps' : ''}</p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      ${step(1, t('en', 'step1Title'), t('en', 'step1Desc'))}
-      ${step(2, t('en', 'step2Title'), t('en', 'step2Desc'))}
-      ${step(3, t('en', 'step3Title'), t('en', 'step3Desc'))}
+      ${step(1, t(lang, 'step1Title'), t(lang, 'step1Desc'))}
+      ${step(2, t(lang, 'step2Title'), t(lang, 'step2Desc'))}
+      ${step(3, t(lang, 'step3Title'), t(lang, 'step3Desc'))}
     </table>
 
     <div style="text-align:center;margin-bottom:28px;">
       <a href="https://nestbook.io/app/login"
          style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
                 padding:13px 32px;border-radius:8px;font-size:0.9rem;font-weight:600;">
-        ${t('en', 'goToDashboard')} →
+        ${t(lang, 'goToDashboard')} →
       </a>
     </div>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
     <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
-      ${t('en', 'welcomeFooter')}
+      ${t(lang, 'welcomeFooter')}
     </p>`;
 
   return shell(body);
@@ -893,29 +935,30 @@ export async function sendVerificationEmail(user, token) {
   if (!resend) return;
   if (!user?.email) return;
 
+  const lang = user.language || 'en';
   const link = `https://nestbook.io/app/verify-email?token=${token}`;
 
   const html = shell(`
     <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
-      Verify your email address
+      ${t(lang, 'verifyHeading')}
     </h1>
     <p style="margin:0 0 6px;font-size:1rem;color:#374151;">
       Hi ${user.name},
     </p>
     <p style="margin:0 0 28px;font-size:0.95rem;color:#374151;line-height:1.6;">
-      Thanks for signing up for NestBook. Please verify your email address to confirm your account.
+      ${t(lang, 'verifyBody')}
     </p>
 
     <div style="text-align:center;margin-bottom:28px;">
       <a href="${link}"
          style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
                 padding:13px 32px;border-radius:8px;font-size:0.9rem;font-weight:600;">
-        Verify email address
+        ${t(lang, 'verifyButton')}
       </a>
     </div>
 
     <p style="margin:0 0 16px;font-size:0.82rem;color:#6b7280;line-height:1.6;">
-      If the button doesn't work, copy and paste this link into your browser:<br>
+      ${t(lang, 'verifyExpiry')}<br>
       <a href="${link}" style="color:#1a4710;word-break:break-all;">${link}</a>
     </p>
 
@@ -928,7 +971,7 @@ export async function sendVerificationEmail(user, token) {
     await resend.emails.send({
       from:    FROM,
       to:      user.email,
-      subject: 'Verify your NestBook email address',
+      subject: t(lang, 'verifySubject'),
       html,
     });
     console.log(`[email] Verification email sent → ${user.email}`);
@@ -946,11 +989,12 @@ export async function sendWelcomeEmail(user, property) {
   if (!resend) return;
   if (!user?.email) return;
 
+  const lang = user.language || 'en';
   try {
     await resend.emails.send({
       from:    FROM,
       to:      user.email,
-      subject: t('en', 'welcomeSubject'),
+      subject: t(lang, 'welcomeSubject'),
       html:    welcomeHtml(user, property ?? {}),
     });
     console.log(`[email] Welcome email sent → ${user.email}`);
@@ -2089,10 +2133,11 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
 export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
   if (!resend) return;
   if (!user?.email) return;
+  const lang = user.language || 'en';
   const firstName = user.name?.split(' ')[0] || 'there';
   const hasDuration = trialEnd != null;
   const expiryStr = hasDuration
-    ? trialEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? trialEnd.toLocaleDateString(LOCALE_MAP[lang] ?? 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
 
   const featureItem = (title, desc) => `
@@ -2104,53 +2149,69 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
       </td>
     </tr>`;
 
+  const BILLING_NOTE = {
+    en: hasDuration
+      ? `<strong>Access runs until ${expiryStr}.</strong> After that your account continues on Pro at £19/month. Add payment details in Settings → Billing, or cancel before that date to stay on the free plan.`
+      : `Your Pro access is yours to keep — no expiry date. Enjoy NestBook Pro and we hope it helps you grow your direct bookings!`,
+    fr: hasDuration
+      ? `<strong>L'accès se termine le ${expiryStr}.</strong> Ensuite, votre compte continue sur Pro à 19£/mois. Ajoutez vos coordonnées de paiement dans Paramètres → Facturation, ou annulez avant cette date pour rester sur le plan gratuit.`
+      : `Votre accès Pro est permanent — sans date d'expiration. Profitez de NestBook Pro et nous espérons que cela vous aidera à obtenir plus de réservations directes !`,
+    de: hasDuration
+      ? `<strong>Der Zugang läuft bis ${expiryStr}.</strong> Danach läuft Ihr Konto auf Pro für 19£/Monat weiter. Fügen Sie Zahlungsdetails in Einstellungen → Abrechnung hinzu oder kündigen Sie vorher, um beim kostenlosen Plan zu bleiben.`
+      : `Ihr Pro-Zugang ist dauerhaft — kein Ablaufdatum. Genießen Sie NestBook Pro und wir hoffen, es hilft Ihnen, mehr Direktbuchungen zu erhalten!`,
+    es: hasDuration
+      ? `<strong>El acceso termina el ${expiryStr}.</strong> Después, su cuenta continúa en Pro a £19/mes. Añada datos de pago en Configuración → Facturación, o cancele antes para permanecer en el plan gratuito.`
+      : `Su acceso Pro es permanente — sin fecha de caducidad. ¡Disfrute de NestBook Pro y esperamos que le ayude a conseguir más reservas directas!`,
+    nl: hasDuration
+      ? `<strong>Toegang loopt tot ${expiryStr}.</strong> Daarna gaat uw account door op Pro voor £19/maand. Voeg betalingsgegevens toe in Instellingen → Facturering, of annuleer vóór die datum om op het gratis plan te blijven.`
+      : `Uw Pro-toegang is permanent — geen vervaldatum. Geniet van NestBook Pro en we hopen dat het u helpt meer directe boekingen te krijgen!`,
+  };
+
   const billingSection = hasDuration ? `
     <div style="background:#fef3c7;border-left:4px solid #f59e0b;
                 padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
       <p style="color:#78350f;font-size:0.875rem;margin:0;line-height:1.6;">
-        <strong>Access runs until ${expiryStr}.</strong> After that your account
-        continues on Pro at £19/month. Add payment details in Settings → Billing,
-        or cancel before that date to stay on the free plan.
+        ${BILLING_NOTE[lang] ?? BILLING_NOTE.en}
       </p>
     </div>` : `
     <div style="background:#f0fdf4;border-left:4px solid #1a4710;
                 padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
       <p style="color:#166534;font-size:0.875rem;margin:0;line-height:1.6;">
-        Your Pro access is yours to keep — no expiry date.
-        Enjoy NestBook Pro and we hope it helps you grow your direct bookings!
+        ${BILLING_NOTE[lang] ?? BILLING_NOTE.en}
       </p>
     </div>`;
 
+  const FEATURES = {
+    en: ['Unlimited rooms', '5 photos per room', 'Booking widget for your website', 'Seasonal pricing', 'Revenue reports', 'iCal sync'],
+    fr: ['Chambres illimitées', '5 photos par chambre', 'Widget de réservation pour votre site', 'Tarification saisonnière', 'Rapports de revenus', 'Sync iCal'],
+    de: ['Unbegrenzte Zimmer', '5 Fotos pro Zimmer', 'Buchungs-Widget für Ihre Website', 'Saisonale Preisgestaltung', 'Umsatzberichte', 'iCal-Sync'],
+    es: ['Habitaciones ilimitadas', '5 fotos por habitación', 'Widget de reservas para su web', 'Precios de temporada', 'Informes de ingresos', 'Sincronización iCal'],
+    nl: ['Onbeperkte kamers', '5 foto\'s per kamer', 'Boekingswidget voor uw website', 'Seizoensprijzen', 'Omzetrapporten', 'iCal-sync'],
+  };
+  const features = FEATURES[lang] ?? FEATURES.en;
+
+  const CTА_LABEL = { en: 'Go to my dashboard →', fr: 'Accéder à mon tableau de bord →', de: 'Zum Dashboard →', es: 'Ir a mi panel →', nl: 'Naar mijn dashboard →' };
+
   const body = `
     <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
-      You're on NestBook Pro! 🎉
+      ${t(lang, 'proWelcomeHeading')}
     </h1>
     <p style="margin:0 0 6px;font-size:1rem;color:#374151;">Hi ${firstName},</p>
     <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">
-      Your promotional code <strong>${discountCode.code}</strong> has been applied —
-      here's everything that's now unlocked:
+      ${t(lang, 'proWelcomeBody')}
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f0fdf4;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
-      ${featureItem('Unlimited rooms', 'No cap on how many rooms you can add')}
-      ${featureItem('5 photos per room', 'Showcase your rooms beautifully')}
-      ${featureItem('Booking widget', 'Add a booking button to your own website')}
-      ${featureItem('Seasonal pricing', 'Set different rates for peak periods')}
-      ${featureItem('Revenue reports', 'See your income at a glance')}
-      ${featureItem('iCal sync', 'Stay in sync with Booking.com and Airbnb')}
+      ${features.map(f => featureItem(f, '')).join('')}
     </table>
 
     ${billingSection}
 
-    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
-      Any questions at all — just reply to this email. I'm here to help.
-    </p>
-
     <a href="https://nestbook.io/app"
        style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
               padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
-      Go to my dashboard →
+      ${CTА_LABEL[lang] ?? CTА_LABEL.en}
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
@@ -2162,7 +2223,7 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
     await resend.emails.send({
       from:    'John at NestBook <hello@nestbook.io>',
       to:      user.email,
-      subject: `Welcome to NestBook Pro, ${firstName}! 🌿`,
+      subject: t(lang, 'proWelcomeSubject'),
       html:    shell(body),
     });
     console.log(`[email] Pro welcome email sent → ${user.email}`);
