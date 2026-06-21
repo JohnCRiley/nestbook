@@ -70,10 +70,22 @@ export function LocaleProvider({ children }) {
   // Derive locale directly from property so calling setProperty() anywhere
   // (e.g. after saving Settings) updates the language instantly without a refresh.
   // When no property is loaded yet (unauthenticated pages like Register/Login),
-  // fall back to the language saved by the public site in nb-lang.
+  // fall back to nb-lang saved by the public site, then to the browser language.
   const SUPPORTED = ['en', 'fr', 'de', 'es', 'nl'];
   const nbLang = (() => { try { return localStorage.getItem('nb-lang'); } catch { return null; } })();
-  const locale = property?.locale ?? (nbLang && SUPPORTED.includes(nbLang) ? nbLang : 'en');
+  const browserLang = (() => {
+    try {
+      const langs = navigator.languages?.length ? navigator.languages : [navigator.language || 'en'];
+      for (const l of langs) {
+        const code = l.toLowerCase().split('-')[0];
+        if (SUPPORTED.includes(code)) return code;
+      }
+    } catch { return null; }
+    return null;
+  })();
+  const locale = property?.locale
+    ?? (nbLang && SUPPORTED.includes(nbLang) ? nbLang : null)
+    ?? (browserLang && browserLang !== 'en' ? browserLang : 'en');
 
   function t(key) {
     return (LANGS[locale] ?? LANGS.en)?.[key] ?? LANGS.en?.[key] ?? key;
