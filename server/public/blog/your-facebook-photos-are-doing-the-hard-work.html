@@ -695,6 +695,86 @@ const nb = document.querySelector('.navbar');
 window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(26,71,16,0.10)' : ''; }, { passive: true });
 </script>
 
+<script>
+// ── Auto-detect browser language (only if no manual choice saved) ──────────
+(function () {
+  var SUPPORTED = ['en', 'fr', 'de', 'es', 'nl'];
+  // Manual choice always takes priority
+  try { if (localStorage.getItem('nb-lang')) return; } catch (_) {}
+  // User dismissed the banner this session — re-apply silently, no banner
+  var dismissed = false;
+  try { dismissed = !!sessionStorage.getItem('nb_lang_dismissed'); } catch (_) {}
+  // Already auto-applied this session — re-apply silently
+  var prev = null;
+  try { prev = sessionStorage.getItem('nb_lang_auto'); } catch (_) {}
+  if (prev && SUPPORTED.indexOf(prev) !== -1 && prev !== 'en') {
+    applyLang(prev);
+    try { localStorage.removeItem('nb-lang'); } catch (_) {}
+    return;
+  }
+  // Detect from browser preferred languages
+  var langs = (navigator.languages && navigator.languages.length)
+    ? Array.from(navigator.languages)
+    : [navigator.language || 'en'];
+  var detected = null;
+  for (var i = 0; i < langs.length; i++) {
+    var code = langs[i].toLowerCase().split('-')[0];
+    if (SUPPORTED.indexOf(code) !== -1) { detected = code; break; }
+  }
+  if (detected && detected !== 'en') {
+    applyLang(detected);
+    // Remove the key applyLang just wrote — this is auto-detect, not a manual choice
+    try { localStorage.removeItem('nb-lang'); } catch (_) {}
+    if (!dismissed) {
+      try { sessionStorage.setItem('nb_lang_auto', detected); } catch (_) {}
+    }
+  }
+})();
+
+// ── Show banner when language was auto-switched ────────────────────────────
+(function () {
+  var autoLang = null;
+  try { autoLang = sessionStorage.getItem('nb_lang_auto'); } catch (_) {}
+  if (!autoLang || autoLang === 'en') return;
+  var messages = {
+    fr: 'Cette page a été affichée en français selon les préférences de votre navigateur.',
+    de: 'Diese Seite wurde gemäß Ihren Browsereinstellungen auf Deutsch angezeigt.',
+    es: 'Esta página se ha mostrado en español según las preferencias de su navegador.',
+    nl: 'Deze pagina wordt weergegeven in het Nederlands op basis van uw browservoorkeuren.',
+  };
+  var changeText = {
+    fr: 'Changer de langue', de: 'Sprache ändern',
+    es: 'Cambiar idioma',    nl: 'Taal wijzigen',
+  };
+  var banner = document.createElement('div');
+  banner.style.cssText = [
+    'background:#1a4710', 'color:white', 'padding:8px 16px', 'font-size:13px',
+    'display:flex', 'align-items:center', 'justify-content:center', 'gap:16px',
+    'position:relative', 'z-index:1000', 'font-family:inherit',
+  ].join(';');
+  var msg     = messages[autoLang]  || '';
+  var chgTxt  = (changeText[autoLang] || '') + ' / Change language';
+  var btnBase = 'cursor:pointer;font-family:inherit;';
+  banner.innerHTML =
+    '<span>' + msg + '</span>' +
+    '<button onclick="' +
+      "localStorage.setItem('nb-lang','en');" +
+      "sessionStorage.removeItem('nb_lang_auto');" +
+      "sessionStorage.removeItem('nb_lang_dismissed');" +
+      "applyLang('en');" +
+      'this.parentElement.remove();' +
+    '" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);' +
+    'color:white;padding:3px 10px;border-radius:4px;font-size:12px;white-space:nowrap;' + btnBase + '">' +
+    chgTxt + '</button>' +
+    '<button onclick="' +
+      "sessionStorage.removeItem('nb_lang_auto');" +
+      "sessionStorage.setItem('nb_lang_dismissed','1');" +
+      'this.parentElement.remove();' +
+    '" style="background:none;border:none;color:rgba(255,255,255,0.6);' +
+    'font-size:18px;line-height:1;padding:0 4px;' + btnBase + '">×</button>';
+  document.body.insertBefore(banner, document.body.firstChild);
+})();
+</script>
 <script src="/cookie-banner.js"></script>
 <script src="/navbar.js"></script>
 </body>
