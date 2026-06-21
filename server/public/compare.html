@@ -1384,6 +1384,16 @@ document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
   }
 })();
 
+// ── Apply saved language preference (covers ?lang= just captured above) ──────
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('nb-lang'); } catch (_) {}
+  var supported = ['en', 'fr', 'de', 'es', 'nl'];
+  if (saved && supported.indexOf(saved) !== -1 && saved !== 'en') {
+    applyLang(saved);
+  }
+})();
+
 // ── Auto-detect browser language (only if no manual choice saved) ──────────
 (function () {
   var SUPPORTED = ['en', 'fr', 'de', 'es', 'nl'];
