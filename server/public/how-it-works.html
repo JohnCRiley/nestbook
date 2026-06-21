@@ -1413,7 +1413,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
 document.addEventListener('DOMContentLoaded', function () {
   let lang = 'en';
   try { lang = localStorage.getItem('nb-lang') || 'en'; } catch (_) {}
-  applyLang(lang);
+  if (lang !== 'en') applyLang(lang);
 });
 
 const navbar = document.querySelector('.navbar');

@@ -1365,7 +1365,7 @@ document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
   var lang = 'en';
   try { lang = localStorage.getItem('nb-lang') || 'en'; } catch(_) {}
   if (!I18N[lang]) lang = 'en';
-  applyLang(lang);
+  if (lang !== 'en') applyLang(lang);
 })();
 </script>
 
