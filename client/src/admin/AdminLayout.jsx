@@ -12,6 +12,7 @@ import Outreach          from './pages/Outreach.jsx';
 import PhoneOutreach     from './pages/PhoneOutreach.jsx';
 import ErrorReports      from './pages/ErrorReports.jsx';
 import BlogImages        from './pages/BlogImages.jsx';
+import LandingImages     from './pages/LandingImages.jsx';
 import { clearSASession, saApiFetch } from './saApiFetch.js';
 
 const NAV = [
@@ -27,6 +28,7 @@ const NAV = [
   { to: '/super-admin/settings',          label: 'Settings',                    icon: <IconSettings /> },
   { to: '/super-admin/business-finances', label: 'NestBook Business',           icon: <IconFinances /> },
   { to: '/super-admin/blog-images',       label: 'Blog Images',                  icon: <IconPhoto /> },
+  { to: '/super-admin/landing-images',   label: 'Landing Images',               icon: <IconPhotoStar /> },
 ];
 
 export default function AdminLayout() {
@@ -140,6 +142,7 @@ export default function AdminLayout() {
           <Route path="settings"          element={<AdminSettings      />} />
           <Route path="business-finances" element={<BusinessFinances   />} />
           <Route path="blog-images"       element={<BlogImages         />} />
+          <Route path="landing-images"    element={<LandingImages      />} />
         </Routes>
       </main>
     </div>
@@ -273,6 +276,17 @@ function IconPhoto() {
       <rect x="3" y="3" width="18" height="18" rx="2"/>
       <circle cx="8.5" cy="8.5" r="1.5"/>
       <polyline points="21 15 16 10 5 21"/>
+    </svg>
+  );
+}
+
+function IconPhotoStar() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22H5a2 2 0 0 1-2-2V7l3-3h11a2 2 0 0 1 2 2v4"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <circle cx="17" cy="17" r="1"/>
+      <path d="M17 14l.8 1.6 1.8.3-1.3 1.2.3 1.8L17 18l-1.6.9.3-1.8-1.3-1.2 1.8-.3z"/>
     </svg>
   );
 }

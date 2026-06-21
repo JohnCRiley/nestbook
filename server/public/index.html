@@ -910,6 +910,15 @@ img { display: block; max-width: 100%; }
             <div class="preview-dot" style="background:#28c840"></div>
             <div class="preview-bar">nestbook.app/dashboard</div>
           </div>
+          <!-- Uploaded dashboard screenshot (shown if available, CSS mockup shows otherwise) -->
+          <img
+            src="/images/landing/dashboard.jpg"
+            alt="NestBook dashboard"
+            class="landing-preview-img"
+            style="display:none;width:100%;border-radius:0 0 10px 10px;vertical-align:top"
+            onload="this.style.display='block';this.nextElementSibling.style.display='none'"
+            onerror="this.style.display='none'"
+          />
           <!-- App shell -->
           <div class="preview-app">
             <!-- Sidebar -->
@@ -1026,6 +1035,15 @@ img { display: block; max-width: 100%; }
           <div class="preview-dot" style="background:#28c840"></div>
           <div class="preview-bar">nestbook.app/calendar</div>
         </div>
+        <!-- Uploaded calendar screenshot (shown if available, CSS mockup shows otherwise) -->
+        <img
+          src="/images/landing/calendar.jpg"
+          alt="NestBook calendar"
+          class="landing-preview-img"
+          style="display:none;width:100%;height:260px;object-fit:cover;vertical-align:top"
+          onload="this.style.display='block';this.nextElementSibling.style.display='none'"
+          onerror="this.style.display='none'"
+        />
         <!-- Calendar grid mockup -->
         <div style="display:flex; height:260px; background:#f3f7f2; overflow:hidden">
           <!-- Sidebar (same as above but inline) -->
@@ -1669,6 +1687,11 @@ window.addEventListener('scroll', () => {
     'font-size:18px;line-height:1;padding:0 4px;' + btnBase + '">×</button>';
   document.body.insertBefore(banner, document.body.firstChild);
 })();
+
+// Cache-bust landing preview images so browsers always fetch the latest upload
+document.querySelectorAll('.landing-preview-img').forEach(function(img) {
+  img.src = img.src.split('?')[0] + '?t=' + Date.now();
+});
 </script>
 <script src="/cookie-banner.js"></script>
 <script src="/navbar.js"></script>

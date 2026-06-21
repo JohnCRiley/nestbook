@@ -1288,6 +1288,82 @@ adminRouter.delete('/blog-images/:slug', (req, res) => {
   }
 });
 
+// ── Landing image upload setup ────────────────────────────────────────────────
+const LANDING_IMG_DIR = join(__dirname, '../public/images/landing');
+fs.mkdirSync(LANDING_IMG_DIR, { recursive: true });
+
+const LANDING_SLOTS = [
+  { id: 'dashboard', label: 'Dashboard screenshot' },
+  { id: 'calendar',  label: 'Calendar screenshot' },
+];
+
+const landingImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, '/tmp'),
+    filename:    (req, file, cb) => cb(null, `landing-${Date.now()}.tmp`),
+  }),
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('JPEG, PNG or WebP only'));
+    }
+  },
+});
+
+// GET /api/admin/landing-images — list slots with status
+adminRouter.get('/landing-images', (req, res) => {
+  const slots = LANDING_SLOTS.map(slot => {
+    const filePath = join(LANDING_IMG_DIR, `${slot.id}.jpg`);
+    const exists   = fs.existsSync(filePath);
+    const stat     = exists ? fs.statSync(filePath) : null;
+    return {
+      ...slot,
+      exists,
+      size:     stat ? Math.round(stat.size / 1024) + 'KB' : null,
+      modified: stat ? stat.mtime.toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric',
+      }) : null,
+    };
+  });
+  res.json({ slots });
+});
+
+// POST /api/admin/landing-images/:id — upload image for a slot
+adminRouter.post('/landing-images/:id', landingImageUpload.single('image'), async (req, res) => {
+  try {
+    const slot = LANDING_SLOTS.find(s => s.id === req.params.id);
+    if (!slot)     return res.status(404).json({ error: 'Unknown slot' });
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+
+    const outputPath = join(LANDING_IMG_DIR, `${slot.id}.jpg`);
+    await sharp(req.file.path)
+      .resize(1600, null, { withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toFile(outputPath);
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+
+    const size = Math.round(fs.statSync(outputPath).size / 1024) + 'KB';
+    console.log(`[landing-images] Uploaded ${slot.id}: ${size}`);
+    res.json({ success: true, size });
+  } catch (e) {
+    console.error('[landing-images]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE /api/admin/landing-images/:id — remove image
+adminRouter.delete('/landing-images/:id', (req, res) => {
+  try {
+    const filePath = join(LANDING_IMG_DIR, `${req.params.id}.jpg`);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── GET /api/admin/phone-prospects ────────────────────────────────────────────
 adminRouter.get('/phone-prospects', (req, res) => {
   const { region, town, status, search } = req.query;
