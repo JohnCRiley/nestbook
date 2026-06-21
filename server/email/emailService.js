@@ -97,9 +97,38 @@ const T = {
     verifyBody:        'Thank you for joining NestBook. Please verify your email address by clicking the button below.',
     verifyButton:      'Verify my email address',
     verifyExpiry:      'This link expires in 24 hours.',
-    proWelcomeSubject: 'Welcome to NestBook Pro! 🌿',
-    proWelcomeHeading: 'You\'re on NestBook Pro!',
-    proWelcomeBody:    'Your promotional code has been applied — here\'s everything that\'s now unlocked:',
+    proWelcomeSubject:  'Welcome to NestBook Pro! 🌿',
+    proWelcomeHeading:  'You\'re on NestBook Pro!',
+    proWelcomeBody:     'Your promotional code has been applied — here\'s everything that\'s now unlocked:',
+    onboardSubject:     "Welcome to NestBook! Here's how to get started 🌿",
+    onboardHeroTag:     'Welcome aboard 🌿',
+    onboardHeading:     "It's great to have you, there!",
+    onboardIntro:       "Your NestBook account is ready. You've taken the first step toward taking more direct bookings — and keeping more of what you earn. Let's get your property set up.",
+    onboardPlanTitle:   "✦ What's included in your Free plan",
+    onboardStepsTitle:  'So, what do you do now?',
+    onboardStepsSub:    'Follow these steps and your property page will be live in about 20 minutes.',
+    onboardStep1Title:  'Complete your property details',
+    onboardStep1Body:   'Click Settings in the left sidebar and fill in your property name, location, property type and a short description. This information appears on your public booking page — so take a moment to make it shine.',
+    onboardStep2Title:  'Create your booking page link',
+    onboardStep2Body:   'Still in Settings, scroll down to find your property slug — this is the web address for your booking page. Choose something memorable that reflects your property name.',
+    onboardStep2Hint:   'For example: my-cotswold-cottage becomes nestbook.io/book/my-cotswold-cottage. Copy that link and paste it into your browser to see exactly what your guests will see!',
+    onboardStep3Title:  'Add a cover photo',
+    onboardStep3Body:   'Upload a cover photo for your property — this is the first image guests see when they visit your booking page. Use your best exterior shot, garden photo or the image that shows your property at its most beautiful.',
+    onboardStep4Title:  'Add your rooms',
+    onboardStep4Body:   'Click Rooms in the left sidebar (or Property if you\'re in whole property mode) and add each of your rooms or spaces. Give each one a name, a description and set the nightly rate.',
+    onboardStep4Hint:   'On the Free plan you get 1 photo per room. Make it count — choose the photo that best shows the room at its most welcoming. Click on a room to upload its photo.',
+    onboardStep5Title:  'Add a Book Now button to your Facebook page',
+    onboardStep5Body:   'This is the step most owners love. In Settings, scroll to Facebook Booking Button — you\'ll find a 5-step guide showing exactly how to add a Book Now button to your Facebook business page.',
+    onboardStep5Tip:    'Every person who visits your Facebook page can now book directly with you — without going through Booking.com or Airbnb. Zero commission.',
+    onboardStep6Title:  'Sync your calendar with Booking.com and Airbnb',
+    onboardStep6Body:   'In Settings, find Calendar Sync — copy your iCal URL and add it to your Booking.com and Airbnb accounts. This keeps all your calendars in sync automatically so you never get a double booking.',
+    onboardStep7Title:  'Share your booking page link everywhere',
+    onboardStep7Body:   'Copy your nestbook.io/book/your-property link and add it to your Instagram bio, your email signature, your WhatsApp status, your TripAdvisor replies — anywhere your guests might find you. Every link is a direct booking opportunity.',
+    onboardCTA:         'Go to my NestBook dashboard →',
+    onboardPrintBtn:    '💡 Want to keep this as a reference? Most email apps let you print via File → Print or your browser\'s print option.',
+    onboardProTitle:    'Thinking about more?',
+    onboardProBody:     'When you\'re ready — NestBook Pro is £19/month and unlocks unlimited rooms, 5 photos per room, a direct booking widget for your own website, seasonal pricing, revenue reports and a 30-day free trial. No pressure — your Free plan is yours to keep for as long as you like.',
+    onboardProCTA:      'See what Pro includes →',
   },
   fr: {
     proUpgradeSubject:    'Bienvenue sur NestBook Pro — tout est prêt !',
@@ -169,9 +198,38 @@ const T = {
     verifyBody:        'Merci de rejoindre NestBook. Veuillez vérifier votre adresse e-mail en cliquant sur le bouton ci-dessous.',
     verifyButton:      'Vérifier mon adresse e-mail',
     verifyExpiry:      'Ce lien expire dans 24 heures.',
-    proWelcomeSubject: 'Bienvenue sur NestBook Pro ! 🌿',
-    proWelcomeHeading: 'Vous êtes sur NestBook Pro !',
-    proWelcomeBody:    'Votre code promotionnel a été appliqué — voici tout ce qui est maintenant disponible :',
+    proWelcomeSubject:  'Bienvenue sur NestBook Pro ! 🌿',
+    proWelcomeHeading:  'Vous êtes sur NestBook Pro !',
+    proWelcomeBody:     'Votre code promotionnel a été appliqué — voici tout ce qui est maintenant disponible :',
+    onboardSubject:     'Bienvenue sur NestBook ! Voici comment commencer 🌿',
+    onboardHeroTag:     'Bienvenue à bord 🌿',
+    onboardHeading:     'Ravi de vous accueillir, there !',
+    onboardIntro:       "Votre compte NestBook est prêt. Vous avez fait le premier pas vers plus de réservations directes — et garder davantage de ce que vous gagnez. Configurons votre propriété.",
+    onboardPlanTitle:   '✦ Ce qui est inclus dans votre plan Gratuit',
+    onboardStepsTitle:  'Alors, que faire maintenant ?',
+    onboardStepsSub:    'Suivez ces étapes et votre page de réservation sera en ligne en environ 20 minutes.',
+    onboardStep1Title:  'Complétez les détails de votre propriété',
+    onboardStep1Body:   "Cliquez sur Paramètres dans la barre latérale et renseignez le nom, l'emplacement, le type de propriété et une courte description. Ces informations apparaissent sur votre page de réservation publique.",
+    onboardStep2Title:  'Créez le lien de votre page de réservation',
+    onboardStep2Body:   "Toujours dans Paramètres, faites défiler pour trouver votre slug — c'est l'adresse web de votre page de réservation. Choisissez quelque chose de mémorable.",
+    onboardStep2Hint:   "Par exemple : mon-gite-en-provence devient nestbook.io/book/mon-gite-en-provence. Copiez ce lien et collez-le dans votre navigateur pour voir exactement ce que verront vos clients !",
+    onboardStep3Title:  'Ajoutez une photo de couverture',
+    onboardStep3Body:   "Téléchargez une photo de couverture — c'est la première image que voient les clients sur votre page de réservation. Utilisez votre meilleure photo extérieure ou de jardin.",
+    onboardStep4Title:  'Ajoutez vos chambres',
+    onboardStep4Body:   "Cliquez sur Chambres dans la barre latérale et ajoutez chaque chambre avec un nom, une description et un tarif.",
+    onboardStep4Hint:   "En plan Gratuit vous avez 1 photo par chambre. Faites-la compter — cliquez sur une chambre pour télécharger sa photo.",
+    onboardStep5Title:  'Ajoutez un bouton Réserver sur votre page Facebook',
+    onboardStep5Body:   "Dans Paramètres, trouvez Bouton de réservation Facebook — vous trouverez un guide en 5 étapes vous montrant exactement comment ajouter un bouton Réserver maintenant à votre page Facebook.",
+    onboardStep5Tip:    "Chaque personne qui visite votre page Facebook peut maintenant réserver directement avec vous — sans passer par Booking.com ou Airbnb. Zéro commission.",
+    onboardStep6Title:  'Synchronisez votre calendrier avec Booking.com et Airbnb',
+    onboardStep6Body:   "Dans Paramètres, trouvez Synchronisation calendrier — copiez votre URL iCal et ajoutez-la à vos comptes Booking.com et Airbnb.",
+    onboardStep7Title:  'Partagez votre lien de réservation partout',
+    onboardStep7Body:   "Copiez votre lien nestbook.io/book/votre-propriété et ajoutez-le à votre bio Instagram, signature e-mail, statut WhatsApp, réponses TripAdvisor — partout où vos clients peuvent vous trouver.",
+    onboardCTA:         'Accéder à mon tableau de bord →',
+    onboardPrintBtn:    '💡 Vous voulez le conserver ? La plupart des applications e-mail permettent d\'imprimer via Fichier → Imprimer.',
+    onboardProTitle:    'Vous voulez aller plus loin ?',
+    onboardProBody:     "Quand vous êtes prêt — NestBook Pro est à 19£/mois et débloque des chambres illimitées, 5 photos par chambre, un widget de réservation pour votre site, la tarification saisonnière et des rapports de revenus. Sans pression — votre plan Gratuit est le vôtre pour aussi longtemps que vous le souhaitez.",
+    onboardProCTA:      'Voir ce qu\'inclut Pro →',
   },
   es: {
     proUpgradeSubject:    '¡Bienvenido a NestBook Pro — todo listo!',
@@ -241,9 +299,38 @@ const T = {
     verifyBody:        'Gracias por unirse a NestBook. Por favor, verifique su dirección de correo electrónico haciendo clic en el botón de abajo.',
     verifyButton:      'Verificar mi dirección de correo',
     verifyExpiry:      'Este enlace caduca en 24 horas.',
-    proWelcomeSubject: '¡Bienvenido a NestBook Pro! 🌿',
-    proWelcomeHeading: '¡Está en NestBook Pro!',
-    proWelcomeBody:    'Su código promocional ha sido aplicado — esto es lo que está ahora disponible:',
+    proWelcomeSubject:  '¡Bienvenido a NestBook Pro! 🌿',
+    proWelcomeHeading:  '¡Está en NestBook Pro!',
+    proWelcomeBody:     'Su código promocional ha sido aplicado — esto es lo que está ahora disponible:',
+    onboardSubject:     '¡Bienvenido a NestBook! Cómo empezar 🌿',
+    onboardHeroTag:     'Bienvenido a bordo 🌿',
+    onboardHeading:     '¡Nos alegra tenerle con nosotros, there!',
+    onboardIntro:       'Su cuenta NestBook está lista. Ha dado el primer paso hacia más reservas directas — y quedarse con más de lo que gana. Vamos a configurar su propiedad.',
+    onboardPlanTitle:   '✦ Qué incluye su plan Gratuito',
+    onboardStepsTitle:  '¿Y ahora qué?',
+    onboardStepsSub:    'Siga estos pasos y su página de reservas estará en línea en unos 20 minutos.',
+    onboardStep1Title:  'Complete los detalles de su propiedad',
+    onboardStep1Body:   'Haga clic en Configuración en la barra lateral e introduzca el nombre, ubicación, tipo de propiedad y una breve descripción. Esta información aparece en su página de reservas pública.',
+    onboardStep2Title:  'Cree el enlace de su página de reservas',
+    onboardStep2Body:   'En Configuración, desplácese hacia abajo para encontrar su slug — es la dirección web de su página de reservas. Elija algo memorable que refleje el nombre de su propiedad.',
+    onboardStep2Hint:   '¡Por ejemplo: mi-casa-rural se convierte en nestbook.io/book/mi-casa-rural. Copie ese enlace y péguelo en su navegador para ver exactamente lo que verán sus huéspedes!',
+    onboardStep3Title:  'Añada una foto de portada',
+    onboardStep3Body:   'Suba una foto de portada — es la primera imagen que ven los huéspedes en su página de reservas. Use su mejor foto exterior o de jardín.',
+    onboardStep4Title:  'Añada sus habitaciones',
+    onboardStep4Body:   'Haga clic en Habitaciones en la barra lateral y añada cada habitación con nombre, descripción y tarifa.',
+    onboardStep4Hint:   'En el plan Gratuito tiene 1 foto por habitación. Haga clic en una habitación para subir su foto.',
+    onboardStep5Title:  'Añada un botón Reservar ahora a su página de Facebook',
+    onboardStep5Body:   'En Configuración, encuentre Botón de reserva de Facebook — encontrará una guía de 5 pasos que muestra exactamente cómo añadir un botón Reservar ahora a su página de Facebook.',
+    onboardStep5Tip:    'Cada persona que visita su página de Facebook ahora puede reservar directamente con usted — sin pasar por Booking.com o Airbnb. Cero comisión.',
+    onboardStep6Title:  'Sincronice su calendario con Booking.com y Airbnb',
+    onboardStep6Body:   'En Configuración, encuentre Sincronización de calendario — copie su URL iCal y añádala a sus cuentas de Booking.com y Airbnb.',
+    onboardStep7Title:  'Comparta su enlace de reservas en todas partes',
+    onboardStep7Body:   'Copie su enlace nestbook.io/book/su-propiedad y añádalo a su bio de Instagram, firma de correo, estado de WhatsApp, respuestas de TripAdvisor — donde sus huéspedes puedan encontrarle.',
+    onboardCTA:         'Ir a mi panel →',
+    onboardPrintBtn:    '💡 ¿Quiere conservarlo? La mayoría de aplicaciones de correo permiten imprimir mediante Archivo → Imprimir.',
+    onboardProTitle:    '¿Quiere ir más lejos?',
+    onboardProBody:     'NestBook Pro es £19/mes y desbloquea habitaciones ilimitadas, 5 fotos por habitación, un widget de reservas para su web, precios de temporada e informes de ingresos. Sin presión — su plan Gratuito es suyo el tiempo que quiera.',
+    onboardProCTA:      'Ver qué incluye Pro →',
   },
   de: {
     proUpgradeSubject:    'Willkommen bei NestBook Pro — alles ist bereit!',
@@ -313,9 +400,38 @@ const T = {
     verifyBody:        'Vielen Dank, dass Sie sich bei NestBook angemeldet haben. Bitte bestätigen Sie Ihre E-Mail-Adresse durch Klicken auf den Button unten.',
     verifyButton:      'E-Mail-Adresse bestätigen',
     verifyExpiry:      'Dieser Link läuft in 24 Stunden ab.',
-    proWelcomeSubject: 'Willkommen bei NestBook Pro! 🌿',
-    proWelcomeHeading: 'Sie nutzen NestBook Pro!',
-    proWelcomeBody:    'Ihr Aktionscode wurde angewendet — folgendes ist jetzt freigeschaltet:',
+    proWelcomeSubject:  'Willkommen bei NestBook Pro! 🌿',
+    proWelcomeHeading:  'Sie nutzen NestBook Pro!',
+    proWelcomeBody:     'Ihr Aktionscode wurde angewendet — folgendes ist jetzt freigeschaltet:',
+    onboardSubject:     'Willkommen bei NestBook! So fangen Sie an 🌿',
+    onboardHeroTag:     'Herzlich willkommen 🌿',
+    onboardHeading:     'Schön, dass Sie dabei sind, there!',
+    onboardIntro:       'Ihr NestBook-Konto ist bereit. Sie haben den ersten Schritt zu mehr Direktbuchungen gemacht — und behalten mehr von dem, was Sie verdienen. Lassen Sie uns Ihre Unterkunft einrichten.',
+    onboardPlanTitle:   '✦ Was in Ihrem Free-Plan enthalten ist',
+    onboardStepsTitle:  'Was tun Sie jetzt?',
+    onboardStepsSub:    'Folgen Sie diesen Schritten — Ihre Buchungsseite ist in etwa 20 Minuten live.',
+    onboardStep1Title:  'Unterkunftsdetails vervollständigen',
+    onboardStep1Body:   'Klicken Sie auf Einstellungen in der Seitenleiste und geben Sie Name, Standort, Unterkunftstyp und eine kurze Beschreibung ein. Diese Informationen erscheinen auf Ihrer öffentlichen Buchungsseite.',
+    onboardStep2Title:  'Buchungsseiten-Link erstellen',
+    onboardStep2Body:   'Scrollen Sie in den Einstellungen nach unten, um Ihren Slug zu finden — das ist die Webadresse Ihrer Buchungsseite. Wählen Sie etwas Einprägsames, das Ihren Unterkunftsnamen widerspiegelt.',
+    onboardStep2Hint:   'Zum Beispiel: mein-ferienhaus wird zu nestbook.io/book/mein-ferienhaus. Kopieren Sie diesen Link und fügen Sie ihn in Ihren Browser ein, um genau zu sehen, was Ihre Gäste sehen werden!',
+    onboardStep3Title:  'Titelbild hinzufügen',
+    onboardStep3Body:   'Laden Sie ein Titelbild hoch — das ist das erste Bild, das Gäste auf Ihrer Buchungsseite sehen. Verwenden Sie Ihr bestes Außen- oder Gartenfoto.',
+    onboardStep4Title:  'Zimmer hinzufügen',
+    onboardStep4Body:   'Klicken Sie auf Zimmer in der Seitenleiste und fügen Sie jedes Zimmer mit Name, Beschreibung und Preis hinzu.',
+    onboardStep4Hint:   'Im Free-Plan erhalten Sie 1 Foto pro Zimmer. Klicken Sie auf ein Zimmer, um sein Foto hochzuladen.',
+    onboardStep5Title:  'Jetzt-buchen-Button zu Ihrer Facebook-Seite hinzufügen',
+    onboardStep5Body:   'Finden Sie in den Einstellungen Facebook-Buchungsbutton — mit einer 5-Schritte-Anleitung, die genau zeigt, wie Sie einen Jetzt-buchen-Button zu Ihrer Facebook-Seite hinzufügen.',
+    onboardStep5Tip:    'Jeder, der Ihre Facebook-Seite besucht, kann jetzt direkt bei Ihnen buchen — ohne Booking.com oder Airbnb. Null Provision.',
+    onboardStep6Title:  'Kalender mit Booking.com und Airbnb synchronisieren',
+    onboardStep6Body:   'Finden Sie in den Einstellungen Kalender-Sync — kopieren Sie Ihre iCal-URL und fügen Sie sie zu Ihren Booking.com- und Airbnb-Konten hinzu.',
+    onboardStep7Title:  'Buchungsseiten-Link überall teilen',
+    onboardStep7Body:   'Kopieren Sie Ihren nestbook.io/book/ihre-unterkunft Link und fügen Sie ihn zu Ihrer Instagram-Bio, E-Mail-Signatur, WhatsApp-Status und TripAdvisor-Antworten hinzu.',
+    onboardCTA:         'Zum Dashboard →',
+    onboardPrintBtn:    '💡 Behalten möchten? Die meisten E-Mail-Apps ermöglichen das Drucken über Datei → Drucken.',
+    onboardProTitle:    'Möchten Sie mehr?',
+    onboardProBody:     'NestBook Pro ist für 19£/Monat verfügbar und schaltet unbegrenzte Zimmer, 5 Fotos pro Zimmer, ein Buchungs-Widget für Ihre Website, saisonale Preisgestaltung und Umsatzberichte frei. Kein Druck — Ihr Free-Plan gehört Ihnen, so lange Sie möchten.',
+    onboardProCTA:      'Sehen, was Pro beinhaltet →',
   },
   nl: {
     proUpgradeSubject:    'Welkom bij NestBook Pro — alles is klaar!',
@@ -385,9 +501,38 @@ const T = {
     verifyBody:        'Bedankt voor uw aanmelding bij NestBook. Bevestig uw e-mailadres door op de knop hieronder te klikken.',
     verifyButton:      'Mijn e-mailadres bevestigen',
     verifyExpiry:      'Deze link verloopt over 24 uur.',
-    proWelcomeSubject: 'Welkom bij NestBook Pro! 🌿',
-    proWelcomeHeading: 'U gebruikt NestBook Pro!',
-    proWelcomeBody:    'Uw actiecode is toegepast — dit is nu beschikbaar:',
+    proWelcomeSubject:  'Welkom bij NestBook Pro! 🌿',
+    proWelcomeHeading:  'U gebruikt NestBook Pro!',
+    proWelcomeBody:     'Uw actiecode is toegepast — dit is nu beschikbaar:',
+    onboardSubject:     'Welkom bij NestBook! Zo begint u 🌿',
+    onboardHeroTag:     'Welkom aan boord 🌿',
+    onboardHeading:     'Fijn dat u erbij bent, there!',
+    onboardIntro:       'Uw NestBook-account is klaar. U heeft de eerste stap gezet naar meer directe boekingen — en meer houden van wat u verdient. Laten we uw accommodatie instellen.',
+    onboardPlanTitle:   '✦ Wat inbegrepen is in uw Gratis plan',
+    onboardStepsTitle:  'Wat doet u nu?',
+    onboardStepsSub:    'Volg deze stappen en uw boekingspagina staat in ongeveer 20 minuten live.',
+    onboardStep1Title:  'Vul uw accommodatiegegevens in',
+    onboardStep1Body:   'Klik op Instellingen in de zijbalk en vul naam, locatie, type accommodatie en een korte beschrijving in. Deze informatie verschijnt op uw openbare boekingspagina.',
+    onboardStep2Title:  'Maak uw boekingspaginalink aan',
+    onboardStep2Body:   'Scroll in Instellingen omlaag om uw slug te vinden — dit is het webadres van uw boekingspagina. Kies iets memorabels dat de naam van uw accommodatie weerspiegelt.',
+    onboardStep2Hint:   'Bijvoorbeeld: mijn-vakantiewoning wordt nestbook.io/book/mijn-vakantiewoning. Kopieer die link en plak hem in uw browser om precies te zien wat uw gasten zien!',
+    onboardStep3Title:  'Voeg een omslagfoto toe',
+    onboardStep3Body:   'Upload een omslagfoto — dit is de eerste afbeelding die gasten zien op uw boekingspagina. Gebruik uw beste buitenfoto of tuinfoto.',
+    onboardStep4Title:  'Voeg uw kamers toe',
+    onboardStep4Body:   'Klik op Kamers in de zijbalk en voeg elke kamer toe met naam, beschrijving en nachtprijs.',
+    onboardStep4Hint:   'In het Gratis plan krijgt u 1 foto per kamer. Klik op een kamer om zijn foto te uploaden.',
+    onboardStep5Title:  'Voeg een Nu boeken-knop toe aan uw Facebook-pagina',
+    onboardStep5Body:   'Vind in Instellingen Facebook-boekingsknop — u vindt een stapsgewijze handleiding die precies laat zien hoe u een Nu boeken-knop aan uw Facebook-pagina toevoegt.',
+    onboardStep5Tip:    'Iedereen die uw Facebook-pagina bezoekt kan nu rechtstreeks bij u boeken — zonder Booking.com of Airbnb. Nul commissie.',
+    onboardStep6Title:  'Synchroniseer uw kalender met Booking.com en Airbnb',
+    onboardStep6Body:   'Vind in Instellingen Kalendersynchronisatie — kopieer uw iCal-URL en voeg deze toe aan uw Booking.com- en Airbnb-accounts.',
+    onboardStep7Title:  'Deel uw boekingspaginalink overal',
+    onboardStep7Body:   'Kopieer uw nestbook.io/book/uw-accommodatie link en voeg hem toe aan uw Instagram-bio, e-mailhandtekening, WhatsApp-status en TripAdvisor-reacties.',
+    onboardCTA:         'Naar mijn dashboard →',
+    onboardPrintBtn:    '💡 Bewaren? De meeste e-mailapps laten u afdrukken via Bestand → Afdrukken.',
+    onboardProTitle:    'Wilt u meer?',
+    onboardProBody:     "NestBook Pro is £19/maand en ontgrendelt onbeperkte kamers, 5 foto's per kamer, een boekingswidget voor uw website, seizoensprijzen en omzetrapporten. Geen druk — uw Gratis plan is van u zolang u wilt.",
+    onboardProCTA:      'Zie wat Pro inhoudt →',
   },
 };
 
@@ -1708,14 +1853,15 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
 // ── Free-plan welcome email (sent on email verification) ─────────────────────
 
 function welcomeEmailHTML(user) {
+  const lang      = user.language || 'en';
   const firstName = user.name?.split(' ')[0] || 'there';
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to NestBook</title>
+  <title>${t(lang, 'onboardSubject')}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f8fbf6; color: #1a2e14; line-height: 1.6; }
@@ -1777,15 +1923,15 @@ function welcomeEmailHTML(user) {
   </div>
 
   <div class="hero">
-    <div class="hero-tag">Welcome aboard 🌿</div>
-    <h1>It's great to have you, ${firstName}!</h1>
-    <p>Your NestBook account is ready. You've taken the first step toward taking more direct bookings — and keeping more of what you earn. Let's get your property set up.</p>
+    <div class="hero-tag">${t(lang, 'onboardHeroTag')}</div>
+    <h1>${t(lang, 'onboardHeading').replace('there', firstName)}</h1>
+    <p>${t(lang, 'onboardIntro')}</p>
   </div>
 
   <div class="body">
 
     <div class="plan-box">
-      <div class="plan-box-title">✦ What's included in your Free plan</div>
+      <div class="plan-box-title">${t(lang, 'onboardPlanTitle')}</div>
       <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Up to 3 rooms</strong> — add your rooms or spaces and manage availability</span></div>
       <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Your own property webpage</strong> — a beautiful booking page at nestbook.io/book/your-property</span></div>
       <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>1 photo per room</strong> — shown on your booking page for guests to see</span></div>
@@ -1796,65 +1942,65 @@ function welcomeEmailHTML(user) {
       <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>7 colour themes</strong> — make NestBook feel like yours</span></div>
     </div>
 
-    <p class="steps-title">So, what do you do now?</p>
-    <p class="steps-sub">Follow these steps and your property page will be live in about 20 minutes.</p>
+    <p class="steps-title">${t(lang, 'onboardStepsTitle')}</p>
+    <p class="steps-sub">${t(lang, 'onboardStepsSub')}</p>
 
     <div class="step">
       <div class="step-num">1</div>
       <div>
-        <div class="step-title">Complete your property details</div>
-        <div class="step-desc">Click <strong>Settings</strong> in the left sidebar and fill in your property name, location, property type and a short description. This information appears on your public booking page — so take a moment to make it shine.</div>
+        <div class="step-title">${t(lang, 'onboardStep1Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep1Body')}</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">2</div>
       <div>
-        <div class="step-title">Create your booking page link</div>
-        <div class="step-desc">Still in Settings, scroll down to find your <strong>property slug</strong> — this is the web address for your booking page. Choose something memorable that reflects your property name.</div>
-        <div class="step-hint">💡 For example: <strong>my-cotswold-cottage</strong> becomes <strong>nestbook.io/book/my-cotswold-cottage</strong>. Copy that link and paste it into your browser to see exactly what your guests will see!</div>
+        <div class="step-title">${t(lang, 'onboardStep2Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep2Body')}</div>
+        <div class="step-hint">💡 ${t(lang, 'onboardStep2Hint')}</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">3</div>
       <div>
-        <div class="step-title">Add a cover photo</div>
-        <div class="step-desc">Upload a cover photo for your property — this is the first image guests see when they visit your booking page. Use your best exterior shot, garden photo or the image that shows your property at its most beautiful.</div>
+        <div class="step-title">${t(lang, 'onboardStep3Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep3Body')}</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">4</div>
       <div>
-        <div class="step-title">Add your rooms</div>
-        <div class="step-desc">Click <strong>Rooms</strong> in the left sidebar (or <strong>Property</strong> if you're in whole property mode) and add each of your rooms or spaces. Give each one a name, a description and set the nightly rate.</div>
-        <div class="step-hint">📸 On the Free plan you get <strong>1 photo per room</strong>. Make it count — choose the photo that best shows the room at its most welcoming. Click on a room to upload its photo.</div>
+        <div class="step-title">${t(lang, 'onboardStep4Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep4Body')}</div>
+        <div class="step-hint">📸 ${t(lang, 'onboardStep4Hint')}</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">5</div>
       <div>
-        <div class="step-title">Add a Book Now button to your Facebook page</div>
-        <div class="step-desc">This is the step most owners love. In Settings, scroll to <strong>Facebook Booking Button</strong> — you'll find a 5-step guide showing exactly how to add a Book Now button to your Facebook business page that links directly to your NestBook booking page.</div>
-        <div class="step-tip">✓ Every person who visits your Facebook page can now book directly with you — without going through Booking.com or Airbnb. Zero commission.</div>
+        <div class="step-title">${t(lang, 'onboardStep5Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep5Body')}</div>
+        <div class="step-tip">✓ ${t(lang, 'onboardStep5Tip')}</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">6</div>
       <div>
-        <div class="step-title">Sync your calendar with Booking.com and Airbnb</div>
-        <div class="step-desc">In Settings, find <strong>Calendar Sync</strong> — copy your iCal URL and add it to your Booking.com and Airbnb accounts. This keeps all your calendars in sync automatically so you never get a double booking.</div>
+        <div class="step-title">${t(lang, 'onboardStep6Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep6Body')}</div>
       </div>
     </div>
 
     <div class="step">
       <div class="step-num">7</div>
       <div>
-        <div class="step-title">Share your booking page link everywhere</div>
-        <div class="step-desc">Copy your nestbook.io/book/your-property link and add it to your Instagram bio, your email signature, your WhatsApp status, your TripAdvisor replies — anywhere your guests might find you. Every link is a direct booking opportunity.</div>
+        <div class="step-title">${t(lang, 'onboardStep7Title')}</div>
+        <div class="step-desc">${t(lang, 'onboardStep7Body')}</div>
       </div>
     </div>
 
@@ -1863,20 +2009,18 @@ function welcomeEmailHTML(user) {
   </div>
 
   <div class="cta-wrap">
-    <a href="https://nestbook.io/app" class="cta-btn">Go to my NestBook dashboard →</a>
+    <a href="https://nestbook.io/app" class="cta-btn">${t(lang, 'onboardCTA')}</a>
     <p class="cta-sub">nestbook.io/app</p>
   </div>
 
   <p style="text-align:center;font-size:12px;color:#94a3b8;margin:0 0 20px;line-height:1.6;">
-    💡 Want to keep this as a reference? Most email apps let you print via
-    <strong>File → Print</strong> or your browser's print option —
-    though some email clients may not support this directly.
+    ${t(lang, 'onboardPrintBtn')}
   </p>
 
   <div class="upgrade-box">
-    <div class="upgrade-box-title">Thinking about more?</div>
-    <div class="upgrade-box-body">When you're ready — NestBook Pro is £19/month and unlocks unlimited rooms, 5 photos per room, a direct booking widget for your own website, seasonal pricing, revenue reports and a 30-day free trial. No pressure — your Free plan is yours to keep for as long as you like.</div>
-    <a href="https://nestbook.io/app/settings/billing" class="upgrade-link">See what Pro includes →</a>
+    <div class="upgrade-box-title">${t(lang, 'onboardProTitle')}</div>
+    <div class="upgrade-box-body">${t(lang, 'onboardProBody')}</div>
+    <a href="https://nestbook.io/app/settings/billing" class="upgrade-link">${t(lang, 'onboardProCTA')}</a>
   </div>
 
   <div class="footer">
@@ -1902,11 +2046,12 @@ function welcomeEmailHTML(user) {
 export async function sendFreeWelcomeEmail(user) {
   if (!resend) return;
   if (!user?.email) return;
+  const lang = user.language || 'en';
   try {
     await resend.emails.send({
       from:    'John at NestBook <hello@nestbook.io>',
       to:      user.email,
-      subject: "Welcome to NestBook! Here's how to get started 🌿",
+      subject: t(lang, 'onboardSubject'),
       html:    welcomeEmailHTML(user),
     });
     console.log(`[email] Free welcome email sent → ${user.email}`);
