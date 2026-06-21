@@ -2296,19 +2296,19 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
 
   const BILLING_NOTE = {
     en: hasDuration
-      ? `<strong>Access runs until ${expiryStr}.</strong> After that your account continues on Pro at £19/month. Add payment details in Settings → Billing, or cancel before that date to stay on the free plan.`
+      ? `Your promotional access ends on ${expiryStr}. Add payment details in Settings → Billing before that date to continue on Pro, or your account will return to the free plan.`
       : `Your Pro access is yours to keep — no expiry date. Enjoy NestBook Pro and we hope it helps you grow your direct bookings!`,
     fr: hasDuration
-      ? `<strong>L'accès se termine le ${expiryStr}.</strong> Ensuite, votre compte continue sur Pro à 19£/mois. Ajoutez vos coordonnées de paiement dans Paramètres → Facturation, ou annulez avant cette date pour rester sur le plan gratuit.`
+      ? `Votre accès promotionnel se termine le ${expiryStr}. Ajoutez vos coordonnées de paiement dans Paramètres → Facturation avant cette date pour continuer sur Pro, ou votre compte reviendra au plan gratuit.`
       : `Votre accès Pro est permanent — sans date d'expiration. Profitez de NestBook Pro et nous espérons que cela vous aidera à obtenir plus de réservations directes !`,
     de: hasDuration
-      ? `<strong>Der Zugang läuft bis ${expiryStr}.</strong> Danach läuft Ihr Konto auf Pro für 19£/Monat weiter. Fügen Sie Zahlungsdetails in Einstellungen → Abrechnung hinzu oder kündigen Sie vorher, um beim kostenlosen Plan zu bleiben.`
+      ? `Ihr Aktionszugang endet am ${expiryStr}. Fügen Sie vor diesem Datum Ihre Zahlungsdaten in Einstellungen → Abrechnung hinzu, um Pro fortzusetzen, oder Ihr Konto kehrt zum kostenlosen Plan zurück.`
       : `Ihr Pro-Zugang ist dauerhaft — kein Ablaufdatum. Genießen Sie NestBook Pro und wir hoffen, es hilft Ihnen, mehr Direktbuchungen zu erhalten!`,
     es: hasDuration
-      ? `<strong>El acceso termina el ${expiryStr}.</strong> Después, su cuenta continúa en Pro a £19/mes. Añada datos de pago en Configuración → Facturación, o cancele antes para permanecer en el plan gratuito.`
+      ? `Su acceso promocional termina el ${expiryStr}. Añada sus datos de pago en Configuración → Facturación antes de esa fecha para continuar en Pro, o su cuenta volverá al plan gratuito.`
       : `Su acceso Pro es permanente — sin fecha de caducidad. ¡Disfrute de NestBook Pro y esperamos que le ayude a conseguir más reservas directas!`,
     nl: hasDuration
-      ? `<strong>Toegang loopt tot ${expiryStr}.</strong> Daarna gaat uw account door op Pro voor £19/maand. Voeg betalingsgegevens toe in Instellingen → Facturering, of annuleer vóór die datum om op het gratis plan te blijven.`
+      ? `Uw promotionele toegang eindigt op ${expiryStr}. Voeg vóór die datum uw betalingsgegevens toe in Instellingen → Facturering om Pro te blijven gebruiken, of uw account keert terug naar het gratis plan.`
       : `Uw Pro-toegang is permanent — geen vervaldatum. Geniet van NestBook Pro en we hopen dat het u helpt meer directe boekingen te krijgen!`,
   };
 
@@ -2412,7 +2412,6 @@ export async function sendPromoExpiryReminderEmail(user, daysLeft) {
 
     <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
       Your card will <strong>not be charged</strong> until ${expiryDate}.
-      After that, NestBook Pro continues at £19/month.
       Cancel anytime before ${expiryDate} to stay on the free plan — no questions asked.
     </p>
 
@@ -2469,7 +2468,7 @@ export async function sendPromoExpiredEmail(user) {
         Want to continue with Pro?
       </div>
       <p style="color:#374151;font-size:0.875rem;margin:0;line-height:1.6;">
-        NestBook Pro is £19/month — unlimited rooms, 5 photos per room,
+        NestBook Pro includes unlimited rooms, 5 photos per room,
         booking widget, seasonal pricing and revenue reports. No commission ever.
       </p>
     </div>
@@ -2533,7 +2532,7 @@ export async function sendPromoPaymentConfirmedEmail(user) {
       <tr>
         <td style="padding:10px 0;color:#64748b;font-size:0.875rem;">From ${expiryDate}</td>
         <td style="padding:10px 0;font-size:0.875rem;color:#1a2e14;font-weight:600;">
-          £19/month — Pro continues uninterrupted</td>
+          NestBook Pro continues uninterrupted</td>
       </tr>
     </table>
 

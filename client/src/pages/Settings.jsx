@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
@@ -84,6 +85,7 @@ export default function Settings() {
   const { setProperty: setContextProperty, properties, addPropertyToList, updatePropertyInList, removePropertyFromList, property: activeProperty, locale, currencySymbol } = useLocale();
   const { user, logout, updateUser } = useAuth();
   const plan = usePlan();
+  const [searchParams] = useSearchParams();
   const FEATURES = [
     {
       key:     'widget',
@@ -215,6 +217,16 @@ export default function Settings() {
       setRatePeriods(Array.isArray(rp) ? rp : []);
     });
   }, [activeProperty?.id, plan]);
+
+  // Pre-fill locale from ?lang= query param (set by the language suggestion modal).
+  useEffect(() => {
+    const langParam = searchParams.get('lang');
+    if (!langParam || !form?.name) return;
+    const SUPPORTED = ['en', 'fr', 'de', 'es', 'nl'];
+    if (SUPPORTED.includes(langParam)) {
+      setForm(prev => ({ ...prev, locale: langParam }));
+    }
+  }, [form?.name]); // fires once when form is first loaded // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     apiFetch('/api/error-reports/enabled')

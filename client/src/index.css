@@ -3153,6 +3153,63 @@ a { text-decoration: none; }
   .verify-email-banner { margin: -24px -20px 24px; padding: 11px 20px; }
 }
 
+/* ── Language suggestion modal ───────────────────────────────────────────── */
+.lang-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+.lang-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 380px;
+  width: calc(100% - 48px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+.lang-modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin: 0 0 10px;
+}
+.lang-modal-body {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #374151);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.lang-modal-actions { display: flex; flex-direction: column; gap: 8px; }
+.lang-modal-confirm {
+  background: var(--accent, #1a4710);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.lang-modal-confirm:hover { background: var(--accent-dark, #0f2d08); }
+.lang-modal-dismiss {
+  background: none;
+  color: var(--text-muted, #6b7280);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.lang-modal-dismiss:hover { background: #f9fafb; }
+
 /* ── Sidebar user + logout ───────────────────────────────────────────────── */
 .sidebar-user {
   padding: 10px 0 0;

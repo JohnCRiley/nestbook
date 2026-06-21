@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { LocaleProvider, useLocale, useT } from './i18n/LocaleContext.jsx';
 import ProtectedRoute   from './components/ProtectedRoute.jsx';
@@ -51,23 +51,92 @@ function OfflineBanner() {
 }
 
 function EmailVerifyBanner() {
-  const { user } = useAuth();
+  const { user, token, updateUser } = useAuth();
+  const t = useT();
   const [dismissed, setDismissed] = useState(false);
+
+  // Refresh email_verified from the server on mount — handles the case where the
+  // user verified in a different browser or device and localStorage wasn't updated.
+  useEffect(() => {
+    if (!user || user.email_verified || !token) return;
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => { if (data.email_verified) updateUser({ email_verified: true }); })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (dismissed || !user || user.email_verified) return null;
 
   return (
     <div className="verify-email-banner">
-      <span>
-        Please verify your email address. Check your inbox for a verification link from NestBook.
-      </span>
+      <span>{t('verify.banner')}</span>
       <button
         className="verify-email-banner-dismiss"
         onClick={() => setDismissed(true)}
-        aria-label="Dismiss"
+        aria-label={t('verify.dismiss')}
       >
         ✕
       </button>
+    </div>
+  );
+}
+
+const LANG_NAMES = { en: 'English', fr: 'Français', de: 'Deutsch', es: 'Español', nl: 'Nederlands' };
+const SUPPORTED_LANGS = ['en', 'fr', 'de', 'es', 'nl'];
+
+function LangSuggestionModal() {
+  const { property } = useLocale();
+  const t = useT();
+  const navigate = useNavigate();
+  const [suggestedLang, setSuggestedLang] = useState(null);
+
+  useEffect(() => {
+    if (!property) return;
+    if (localStorage.getItem('nb_lang_modal_dismissed')) return;
+    const propLocale = property.locale ?? 'en';
+    try {
+      const langs = navigator.languages?.length ? navigator.languages : [navigator.language || ''];
+      for (const l of langs) {
+        const code = l.toLowerCase().split('-')[0];
+        if (SUPPORTED_LANGS.includes(code) && code !== propLocale) {
+          setSuggestedLang(code);
+          return;
+        }
+      }
+    } catch {}
+  }, [property?.id]);
+
+  if (!suggestedLang) return null;
+
+  function dismiss() {
+    localStorage.setItem('nb_lang_modal_dismissed', '1');
+    setSuggestedLang(null);
+  }
+
+  function confirm() {
+    localStorage.setItem('nb_lang_modal_dismissed', '1');
+    setSuggestedLang(null);
+    navigate(`/settings?lang=${suggestedLang}`);
+  }
+
+  const langName = LANG_NAMES[suggestedLang] ?? suggestedLang;
+
+  return (
+    <div className="lang-modal-overlay" onClick={dismiss}>
+      <div className="lang-modal" onClick={e => e.stopPropagation()}>
+        <p className="lang-modal-title">{t('lang.modal.title')}</p>
+        <p className="lang-modal-body">
+          {t('lang.modal.body').replace(/\{lang\}/g, langName)}
+        </p>
+        <div className="lang-modal-actions">
+          <button className="lang-modal-confirm" onClick={confirm}>
+            {t('lang.modal.confirm').replace(/\{lang\}/g, langName)}
+          </button>
+          <button className="lang-modal-dismiss" onClick={dismiss}>
+            {t('lang.modal.dismiss')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -149,6 +218,7 @@ function AppLayout() {
       <Sidebar />
       <main className="main-content">
         <EmailVerifyBanner />
+        <LangSuggestionModal />
         <UpgradeBanner />
         <PropertyBanner />
         <Routes>
