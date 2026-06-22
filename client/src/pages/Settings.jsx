@@ -121,6 +121,10 @@ export default function Settings() {
   const [showDeleteAccount,    setShowDeleteAccount]    = useState(false);
   const [deleteAccountOpen,    setDeleteAccountOpen]    = useState(false);
   const [calendarSyncOpen,     setCalendarSyncOpen]     = useState(false);
+  const [icalFeeds,            setIcalFeeds]            = useState([]);
+  const [newFeedUrl,           setNewFeedUrl]           = useState('');
+  const [newFeedName,          setNewFeedName]          = useState('');
+  const [addingFeed,           setAddingFeed]           = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
   const [theme,            setTheme]            = useState('forest');
   const [categories,       setCategories]       = useState([]);
@@ -234,6 +238,53 @@ export default function Settings() {
       .then(({ enabled }) => setBugReportingEnabled(enabled))
       .catch(() => {});
   }, []);
+
+  // Fetch iCal import feeds
+  useEffect(() => {
+    if (!activeProperty?.id) return;
+    apiFetch('/api/ical/feeds')
+      .then((r) => r.ok ? r.json() : { feeds: [] })
+      .then((data) => setIcalFeeds(data.feeds || []))
+      .catch(() => {});
+  }, [activeProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleAddFeed() {
+    if (!newFeedUrl) return;
+    setAddingFeed(true);
+    try {
+      const res = await apiFetch('/api/ical/feeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: newFeedUrl, name: newFeedName || 'External calendar' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewFeedUrl('');
+        setNewFeedName('');
+        const r = await apiFetch('/api/ical/feeds');
+        const d = await r.json();
+        setIcalFeeds(d.feeds || []);
+      } else {
+        alert(data.error || 'Failed to add calendar');
+      }
+    } catch {
+      alert('Could not add calendar — please check the URL');
+    }
+    setAddingFeed(false);
+  }
+
+  async function handleDeleteFeed(id) {
+    if (!confirm('Remove this calendar feed? External blocks from it will be deleted.')) return;
+    await apiFetch(`/api/ical/feeds/${id}`, { method: 'DELETE' });
+    setIcalFeeds((prev) => prev.filter((f) => f.id !== id));
+  }
+
+  async function handleSyncFeed(id) {
+    await apiFetch(`/api/ical/feeds/${id}/sync`, { method: 'POST' });
+    const r = await apiFetch('/api/ical/feeds');
+    const d = await r.json();
+    setIcalFeeds(d.feeds || []);
+  }
 
   // Detect ?billing=success/cancelled redirect back from Stripe promo checkout
   useEffect(() => {
@@ -1120,6 +1171,118 @@ export default function Settings() {
                   <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '14px 0 0' }}>
                     Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong> or <strong>Airbnb → Availability → Sync calendars</strong>.
                   </p>
+
+                  {/* ── External calendar import ── */}
+                  <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>
+                      {t('settings.icalImportTitle')}
+                    </h3>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.55 }}>
+                      {t('settings.icalImportHint')}
+                    </p>
+
+                    {icalFeeds.length > 0 && (
+                      <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {icalFeeds.map((feed) => (
+                          <div key={feed.id} style={{
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            padding: '10px 14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 12,
+                          }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{feed.name}</div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                {feed.last_synced_at
+                                  ? `Last synced: ${new Date(feed.last_synced_at).toLocaleString('en-GB')}`
+                                  : 'Not yet synced'}
+                                {feed.last_error && (
+                                  <span style={{ color: '#dc2626', marginLeft: 8 }}>
+                                    ⚠ {feed.last_error}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button
+                                onClick={() => handleSyncFeed(feed.id)}
+                                style={{
+                                  background: 'none', border: '1px solid var(--border)',
+                                  borderRadius: 6, padding: '4px 10px',
+                                  fontSize: '0.75rem', cursor: 'pointer',
+                                  fontFamily: 'inherit', color: 'var(--text-secondary)',
+                                }}
+                              >
+                                <i className="ti ti-refresh" style={{ marginRight: 4 }} />
+                                Sync
+                              </button>
+                              <button
+                                onClick={() => handleDeleteFeed(feed.id)}
+                                style={{
+                                  background: 'none', border: '1px solid #fca5a5',
+                                  borderRadius: 6, padding: '4px 10px',
+                                  fontSize: '0.75rem', cursor: 'pointer',
+                                  fontFamily: 'inherit', color: '#dc2626',
+                                }}
+                              >
+                                <i className="ti ti-trash" style={{ fontSize: '0.8rem' }} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{
+                      background: 'var(--tint-bg)', border: '1px solid var(--border)',
+                      borderRadius: 8, padding: '14px 16px',
+                    }}>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-secondary)' }}>
+                          Calendar name
+                        </label>
+                        <input
+                          type="text"
+                          value={newFeedName}
+                          onChange={(e) => setNewFeedName(e.target.value)}
+                          placeholder="e.g. Booking.com, Airbnb"
+                          className="form-control"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-secondary)' }}>
+                          iCal URL
+                        </label>
+                        <input
+                          type="url"
+                          value={newFeedUrl}
+                          onChange={(e) => setNewFeedUrl(e.target.value)}
+                          placeholder="https://ical.booking.com/..."
+                          className="form-control"
+                          style={{ width: '100%' }}
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddFeed}
+                        disabled={!newFeedUrl || addingFeed}
+                        className="btn-primary"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          opacity: (!newFeedUrl || addingFeed) ? 0.6 : 1,
+                          cursor: (!newFeedUrl || addingFeed) ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        <i className={`ti ${addingFeed ? 'ti-loader-2' : 'ti-plus'}`}
+                           style={{ animation: addingFeed ? 'spin 1s linear infinite' : 'none' }} />
+                        {addingFeed ? 'Adding…' : 'Add calendar'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

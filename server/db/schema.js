@@ -1424,6 +1424,40 @@ John`
     } catch { /* already exists — skip */ }
   }
 
+  // ── iCal import — external feed tracking ─────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ical_feeds (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id     INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      room_id         INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+      name            TEXT NOT NULL DEFAULT 'External calendar',
+      url             TEXT NOT NULL,
+      last_synced_at  TEXT DEFAULT NULL,
+      last_error      TEXT DEFAULT NULL,
+      active          INTEGER DEFAULT 1,
+      created_at      TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ical_blocks (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      room_id     INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+      feed_id     INTEGER NOT NULL REFERENCES ical_feeds(id) ON DELETE CASCADE,
+      start_date  TEXT NOT NULL,
+      end_date    TEXT NOT NULL,
+      summary     TEXT DEFAULT 'External booking',
+      uid         TEXT NOT NULL,
+      created_at  TEXT DEFAULT (datetime('now')),
+      UNIQUE(feed_id, uid)
+    )
+  `);
+
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ical_blocks_property ON ical_blocks(property_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ical_blocks_feed     ON ical_blocks(feed_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_ical_blocks_dates    ON ical_blocks(start_date, end_date)`);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

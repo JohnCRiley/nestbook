@@ -160,11 +160,12 @@ export default function Calendar() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  const [bookings,     setBookings]     = useState([]);
-  const [rooms,        setRooms]        = useState([]);
-  const [guests,       setGuests]       = useState([]);
-  const [ratePeriods,  setRatePeriods]  = useState([]);
-  const [loading,      setLoading]      = useState(true);
+  const [bookings,        setBookings]        = useState([]);
+  const [rooms,           setRooms]           = useState([]);
+  const [guests,          setGuests]          = useState([]);
+  const [ratePeriods,     setRatePeriods]     = useState([]);
+  const [externalBlocks,  setExternalBlocks]  = useState([]);
+  const [loading,         setLoading]         = useState(true);
 
   const [selectedBooking,  setSelectedBooking]  = useState(null);
   const [newModalValues,   setNewModalValues]   = useState(null);
@@ -178,11 +179,13 @@ export default function Calendar() {
       apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/guests?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
       apiFetch(`/api/rate-periods?property_id=${property.id}`).then((r) => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([b, r, g, rp]) => {
+      apiFetch(`/api/ical/blocks?property_id=${property.id}`).then((r) => r.ok ? r.json() : { blocks: [] }).catch(() => ({ blocks: [] })),
+    ]).then(([b, r, g, rp, eb]) => {
       setBookings(Array.isArray(b) ? b : []);
       setRooms(Array.isArray(r) ? r : []);
       setGuests(Array.isArray(g) ? g : []);
       setRatePeriods(Array.isArray(rp) ? rp : []);
+      setExternalBlocks(Array.isArray(eb?.blocks) ? eb.blocks : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [property?.id]);
@@ -306,6 +309,7 @@ export default function Calendar() {
         /* ── Whole-property monthly calendar ──────────────────────────── */
         <WholePropertyCalendar
           bookings={bookings}
+          externalBlocks={externalBlocks}
           today={today}
           t={t}
           locale={locale}
@@ -352,6 +356,7 @@ export default function Calendar() {
                 today={today}
                 todayIso={today}
                 bookings={bookings}
+                externalBlocks={externalBlocks}
                 selectedBookingId={selectedBooking?.id}
                 onBookedClick={handleBookedClick}
                 onEmptyClick={handleEmptyClick}
@@ -409,7 +414,7 @@ function firstDowOfMonth(year, month) {
   return d === 0 ? 6 : d - 1; // 0=Mon … 6=Sun
 }
 
-function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, monthNames, dayNames, t, ratePeriods }) {
+function MonthGrid({ year, month, bookings, externalBlocks, today, onBookedClick, onEmptyClick, monthNames, dayNames, t, ratePeriods }) {
   const numDays  = daysInMonth(year, month);
   const startDow = firstDowOfMonth(year, month);
 
@@ -487,17 +492,37 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
         </div>
       );
     } else {
-      cells.push(
-        <div
-          key={iso}
-          className={`wpc-cell wpc-available${isPast ? ' wpc-past' : ''}${isToday ? ' wpc-today' : ''}`}
-          style={{ position: 'relative' }}
-          onClick={isPast ? undefined : () => onEmptyClick(iso)}
-        >
-          <span className="wpc-day-num">{d}</span>
-          {rateDot}
-        </div>
+      const extBlock = externalBlocks?.find(
+        (bl) => bl.start_date <= iso && bl.end_date > iso
       );
+      if (extBlock) {
+        cells.push(
+          <div
+            key={iso}
+            className={`wpc-cell wpc-external-block${isToday ? ' wpc-today' : ''}`}
+            style={{ position: 'relative' }}
+            title={`${extBlock.feed_name || 'External'}: ${extBlock.summary || 'External booking'}`}
+          >
+            <span className="wpc-day-num">{d}</span>
+            <span className="wpc-guest" style={{ fontSize: '9px' }}>
+              {extBlock.feed_name || 'External'}
+            </span>
+            {rateDot}
+          </div>
+        );
+      } else {
+        cells.push(
+          <div
+            key={iso}
+            className={`wpc-cell wpc-available${isPast ? ' wpc-past' : ''}${isToday ? ' wpc-today' : ''}`}
+            style={{ position: 'relative' }}
+            onClick={isPast ? undefined : () => onEmptyClick(iso)}
+          >
+            <span className="wpc-day-num">{d}</span>
+            {rateDot}
+          </div>
+        );
+      }
     }
   }
 
@@ -512,7 +537,7 @@ function MonthGrid({ year, month, bookings, today, onBookedClick, onEmptyClick, 
   );
 }
 
-function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEmptyClick, ratePeriods }) {
+function WholePropertyCalendar({ bookings, externalBlocks, today, t, locale, onBookedClick, onEmptyClick, ratePeriods }) {
   const todayDate = parseDate(today);
   const [offset, setOffset] = useState(0);
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 900);
@@ -546,13 +571,13 @@ function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEm
       </div>
       <div className={`wpc-months${isWide ? ' wpc-two-up' : ''}`}>
         <MonthGrid
-          year={year1} month={month1} bookings={bookings} today={today}
+          year={year1} month={month1} bookings={bookings} externalBlocks={externalBlocks} today={today}
           onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
           monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t} ratePeriods={ratePeriods}
         />
         {isWide && (
           <MonthGrid
-            year={year2} month={month2} bookings={bookings} today={today}
+            year={year2} month={month2} bookings={bookings} externalBlocks={externalBlocks} today={today}
             onBookedClick={onBookedClick} onEmptyClick={onEmptyClick}
             monthNames={MONTH_NAMES} dayNames={DAY_NAMES} t={t} ratePeriods={ratePeriods}
           />
@@ -564,7 +589,7 @@ function WholePropertyCalendar({ bookings, today, t, locale, onBookedClick, onEm
 
 // ── RoomRow ───────────────────────────────────────────────────────────────────
 
-function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property, isMobile }) {
+function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property, isMobile }) {
   const isMaintenance = room.status === 'maintenance';
 
   return (
@@ -609,6 +634,17 @@ function RoomRow({ room, days, today, bookings, selectedBookingId, onBookedClick
               onClick={() => onEmptyClick(room.id, iso)}
             />
           );
+        }
+
+        // Check for an external iCal block (property-wide or room-specific)
+        const extBlock = externalBlocks?.find(
+          (bl) =>
+            bl.start_date <= iso &&
+            bl.end_date > iso &&
+            (bl.room_id === null || bl.room_id === room.id)
+        );
+        if (extBlock) {
+          return <ExternalBlockCell key={iso} block={extBlock} />;
         }
 
         return (
@@ -702,15 +738,33 @@ function HistoricalCell({ booking: b, onClick }) {
   );
 }
 
+// ── ExternalBlockCell ─────────────────────────────────────────────────────────
+
+function ExternalBlockCell({ block }) {
+  return (
+    <div
+      className="cal-cell is-external-block"
+      title={`${block.feed_name || 'External'}: ${block.summary || 'External booking'}`}
+    >
+      <div className="cal-cell-inner">
+        <div className="cal-guest-name" style={{ color: 'white', opacity: 0.9 }}>
+          {block.feed_name || 'External'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Legend ────────────────────────────────────────────────────────────────────
 
 function Legend({ t, showBreakfast = true, isWholeProp = false }) {
   const items = [
     { cls: isWholeProp ? 'sw-wp-arriving' : 'sw-arriving', label: t('calLegendInHouse') },
-    { cls: 'sw-booked',      label: t('calLegendConfirmed') },
-    { cls: 'sw-checked-out', label: t('calLegendCheckedOut') },
-    { cls: 'sw-available',   label: t('calLegendAvailable') },
-    { cls: 'sw-maintenance', label: t('calLegendMaintenance') },
+    { cls: 'sw-booked',         label: t('calLegendConfirmed') },
+    { cls: 'sw-checked-out',    label: t('calLegendCheckedOut') },
+    { cls: 'sw-available',      label: t('calLegendAvailable') },
+    { cls: 'sw-maintenance',    label: t('calLegendMaintenance') },
+    { cls: 'sw-external-block', label: 'External booking' },
     ...(isWholeProp ? [
       { cls: 'sw-wp-needs-cleaning',       label: 'Needs cleaning' },
       { cls: 'sw-wp-cleaning-in-progress', label: 'Cleaning' },

@@ -400,8 +400,22 @@ bookingsRouter.get('/check', (req, res) => {
     if (!room_id || !check_in_date || !check_out_date) {
       return res.status(400).json({ error: 'room_id, check_in_date and check_out_date are required' });
     }
-    const conflict = hasOverlap(Number(room_id), check_in_date, check_out_date, exclude_id ? Number(exclude_id) : null);
-    res.json({ available: !conflict });
+    if (hasOverlap(Number(room_id), check_in_date, check_out_date, exclude_id ? Number(exclude_id) : null)) {
+      return res.json({ available: false });
+    }
+    // Also check external iCal blocks
+    const room = db.prepare('SELECT property_id FROM rooms WHERE id = ?').get(Number(room_id));
+    if (room) {
+      const externalBlock = db.prepare(`
+        SELECT id FROM ical_blocks
+        WHERE property_id = ?
+          AND (room_id IS NULL OR room_id = ?)
+          AND start_date < ?
+          AND end_date > ?
+      `).get(room.property_id, Number(room_id), check_out_date, check_in_date);
+      if (externalBlock) return res.json({ available: false, reason: 'external_block' });
+    }
+    res.json({ available: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

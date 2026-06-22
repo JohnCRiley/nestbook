@@ -209,6 +209,18 @@ widgetRouter.post('/bookings', (req, res) => {
       return res.status(409).json({ error: 'This room is no longer available for the selected dates. Please choose different dates.' });
     }
 
+    // Also check external iCal blocks
+    const icalBlock = db.prepare(`
+      SELECT id FROM ical_blocks
+      WHERE property_id = ?
+        AND (room_id IS NULL OR room_id = ?)
+        AND start_date < ?
+        AND end_date > ?
+    `).get(property_id, room_id, check_out_date, check_in_date);
+    if (icalBlock) {
+      return res.status(409).json({ error: 'This room is no longer available for the selected dates. Please choose different dates.' });
+    }
+
     // Flag the booking if the guest's email matches a blacklisted guest
     const guestData = db.prepare('SELECT email, blacklisted FROM guests WHERE id = ?').get(guest_id);
     let flagged = guestData?.blacklisted ? 1 : 0;

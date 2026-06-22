@@ -1708,6 +1708,18 @@ a { text-decoration: none; }
   cursor: default;
 }
 
+/* external iCal block — grey, non-clickable */
+.cal-cell.is-external-block {
+  background: #94a3b8;
+  cursor: default;
+}
+.cal-cell.is-external-block .cal-guest-name {
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* maintenance room — all cells greyed */
 .cal-cell.is-maintenance {
   background: repeating-linear-gradient(
@@ -1811,6 +1823,7 @@ a { text-decoration: none; }
 .legend-swatch.sw-wp-needs-cleaning       { background: #fef3c7; border: 1px solid #f59e0b; }
 .legend-swatch.sw-wp-cleaning-in-progress { background: #dbeafe; border: 1px solid #93c5fd; }
 .legend-swatch.sw-wp-ready                { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.legend-swatch.sw-external-block          { background: #94a3b8; }
 .legend-swatch.sw-breakfast {
   background: repeating-conic-gradient(var(--accent) 0% 25%, rgba(255,255,255,0.55) 0% 50%) 0 0 / 7px 7px;
   border-radius: 3px;
@@ -2002,6 +2015,13 @@ a { text-decoration: none; }
 
 .wpc-arriving:hover {
   opacity: 0.88;
+}
+
+.wpc-external-block {
+  background: #94a3b8;
+  color: #fff;
+  border: 1px solid #64748b;
+  cursor: default;
 }
 
 .wpc-historical {

@@ -17,7 +17,7 @@ import { bookingsRouter }            from './routes/bookings.js';
 import { usersRouter }               from './routes/users.js';
 import { adminRouter }               from './routes/admin.js';
 import { handleUnsubscribe } from './routes/outreach.js';
-import { icalRouter }                from './routes/ical.js';
+import { icalRouter, syncFeed }      from './routes/ical.js';
 import { contactRouter }             from './routes/contact.js';
 import { widgetRouter }              from './routes/widget.js';
 import { reportsRouter }             from './routes/reports.js';
@@ -353,6 +353,16 @@ async function runPromoLifecycle() {
   }
 }
 
+// ── iCal import scheduler ────────────────────────────────────────────────────
+async function syncAllIcalFeeds() {
+  const feeds = db.prepare(`SELECT id FROM ical_feeds WHERE active = 1`).all();
+  if (feeds.length === 0) return;
+  console.log(`[ical-sync] Syncing ${feeds.length} feed(s)...`);
+  for (const feed of feeds) {
+    try { await syncFeed(feed.id); } catch { /* error already logged in syncFeed */ }
+  }
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`NestBook server running on http://localhost:${PORT}`);
@@ -379,6 +389,10 @@ app.listen(PORT, () => {
     sendMissedActionReminders();
     setInterval(sendMissedActionReminders, 24 * 60 * 60 * 1000);
   }, next10am - now10);
+
+  // iCal import — sync all active feeds on boot, then every 15 minutes
+  syncAllIcalFeeds();
+  setInterval(syncAllIcalFeeds, 15 * 60 * 1000);
 
   // Promo lifecycle (reminders + auto-downgrade) — run on boot to catch missed days,
   // then daily at 9am
