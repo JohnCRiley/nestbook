@@ -544,6 +544,9 @@ export function initSchema() {
   // Add tax_rate to service_categories (idempotent)
   try { db.exec(`ALTER TABLE service_categories ADD COLUMN tax_rate REAL NOT NULL DEFAULT 0`); } catch {}
 
+  // Ensure rental_type exists before querying it in the categories seeding below
+  try { db.exec(`ALTER TABLE properties ADD COLUMN rental_type TEXT DEFAULT 'rooms'`); } catch {}
+
   // Seed correct service categories for properties that have none yet
   {
     const propertiesWithoutCategories = db.prepare(`
