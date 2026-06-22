@@ -183,9 +183,21 @@
   flex-direction: column;
   gap: 2px;
   margin-bottom: 4px;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  text-align: center !important;
+  text-decoration: none !important;
 }
 .mega-cta:hover { background: var(--mid, #2f771b) !important; color: #fff !important; }
-.mega-cta span { font-size: 0.72rem; opacity: 0.75; font-weight: 400; }
+/* Only the sub-label ("No credit card needed") gets the small/faint style.
+   Using :last-child avoids touching index.html's first <span data-i18n> wrapper. */
+.mega-cta span:last-child {
+  display: block;
+  font-size: 0.75rem !important;
+  font-weight: 400 !important;
+  opacity: 0.85;
+  margin-top: 2px;
+}
 
 /* Language buttons in mega menu */
 .mega-lang {
