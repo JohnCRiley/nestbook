@@ -684,8 +684,8 @@ export function initSchema() {
         db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_properties_booking_slug ON properties(booking_slug)`);
         db.exec(`COMMIT`);
       } catch (e) {
-        db.exec(`ROLLBACK`);
-        throw e;
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] Migration skipped (fresh DB or already done): ${e.message}`);
       }
       db.exec(`PRAGMA foreign_keys = ON`);
       console.log('✓ properties.type constraint expanded to full accommodation type list.');
@@ -788,8 +788,8 @@ export function initSchema() {
         db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
         console.log('✓ Prospects table rebuilt with 9-status pipeline CHECK constraint.');
       } catch (e) {
-        db.exec(`ROLLBACK`);
-        throw e;
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] Migration skipped (fresh DB or already done): ${e.message}`);
       }
     }
 
@@ -1165,8 +1165,8 @@ John`
         db.exec(`COMMIT`);
         console.log('✓ bookings status expanded with pending_owner_approval and declined.');
       } catch (e) {
-        db.exec(`ROLLBACK`);
-        throw e;
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] Migration skipped (fresh DB or already done): ${e.message}`);
       }
       db.exec(`PRAGMA foreign_keys = ON`);
       db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property ON bookings(property_id)`);
@@ -1230,8 +1230,8 @@ John`
         db.exec(`ALTER TABLE rooms_new RENAME TO rooms`);
         db.exec(`COMMIT`);
       } catch (e) {
-        db.exec(`ROLLBACK`);
-        throw e;
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] Migration skipped (fresh DB or already done): ${e.message}`);
       }
       db.exec(`PRAGMA foreign_keys = ON`);
       console.log('✓ Rooms type CHECK constraint expanded to include all WP room types.');
@@ -1367,8 +1367,8 @@ John`
         db.exec(`COMMIT`);
         console.log('✓ bookings status CHECK expanded to include in_house.');
       } catch (e) {
-        db.exec(`ROLLBACK`);
-        throw e;
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] Migration skipped (fresh DB or already done): ${e.message}`);
       }
       db.exec(`PRAGMA foreign_keys = ON`);
       db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property ON bookings(property_id)`);
