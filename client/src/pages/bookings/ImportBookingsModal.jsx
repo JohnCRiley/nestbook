@@ -16,7 +16,8 @@ const TEMPLATE_WP =
 function parseCSV(text) {
   text = text.replace(/^﻿/, '');
   const firstLine = text.split(/\r?\n/)[0] ?? '';
-  const delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+  const delim = firstLine.includes('\t') ? '\t'
+    : (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
   const rows = [];
   const lines = text.split(/\r?\n/);
   for (const line of lines) {
