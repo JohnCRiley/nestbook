@@ -637,7 +637,7 @@ bookingsRouter.post('/import', (req, res) => {
         const total_price = parseFloat(row.total_amount) || null;
         const notes       = (row.notes ?? '').trim() || null;
 
-        insertBook.run(property_id, room_id, guest_id, check_in, check_out, status, 'import', notes, total_price);
+        insertBook.run(property_id, room_id, guest_id, check_in, check_out, status, 'other', notes, total_price);
         imported++;
       }
       db.exec('COMMIT');
