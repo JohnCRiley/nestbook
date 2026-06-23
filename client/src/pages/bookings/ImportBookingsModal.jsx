@@ -55,7 +55,6 @@ function downloadBlob(content, filename) {
   URL.revokeObjectURL(url);
 }
 
-const COLS = ['guest_name','guest_email','guest_phone','check_in','check_out','room','total_amount','status','notes'];
 
 export default function ImportBookingsModal({ onClose, onImported, propertyId }) {
   const t = useT();
@@ -111,10 +110,14 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
       if (rows.length < 2) { setFileError(t('csvErrorEmpty')); return; }
       if (rows.length > 1001) { setFileError(t('csvErrorTooLarge')); return; }
 
+      const cols = isWP
+        ? ['guest_name','guest_email','guest_phone','check_in','check_out','total_amount','status','notes']
+        : ['guest_name','guest_email','guest_phone','check_in','check_out','room','total_amount','status','notes'];
+
       const headers = rows[0].map(h => h.toLowerCase().replace(/[\s-]/g, '_'));
       const objects = rows.slice(1).map(row =>
-        Object.fromEntries(COLS.map(col => {
-          const idx = headers.findIndex(h => h === col || h.includes(col.split('_')[0]));
+        Object.fromEntries(cols.map(col => {
+          const idx = headers.indexOf(col);
           return [col, idx !== -1 ? (row[idx] ?? '') : ''];
         }))
       );
