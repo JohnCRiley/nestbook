@@ -565,9 +565,14 @@ bookingsRouter.post('/import', (req, res) => {
     function parseDate(raw) {
       if (!raw) return null;
       const s = raw.trim();
+      // ISO YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      // D/M/YYYY or DD/MM/YYYY (slash-separated)
+      const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (slash) return `${slash[3]}-${slash[2].padStart(2,'0')}-${slash[1].padStart(2,'0')}`;
+      // D-M-YYYY or DD-MM-YYYY (dash-separated, European)
+      const dash = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (dash) return `${dash[3]}-${dash[2].padStart(2,'0')}-${dash[1].padStart(2,'0')}`;
       return null;
     }
 

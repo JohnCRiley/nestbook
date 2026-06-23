@@ -251,6 +251,9 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
               <p style={{ marginTop: isWP ? 6 : 12, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {t('importTemplateHint')}
               </p>
+              <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {t('importBookingsDateHint')}
+              </p>
             </div>
           )}
 
