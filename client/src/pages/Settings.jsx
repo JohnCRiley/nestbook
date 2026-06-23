@@ -3062,6 +3062,13 @@ function DepositSection({ form, onChange, onToggle, t, currencySymbol }) {
             </div>
           )}
 
+          {type === 'full' && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: 12 }}>
+              The full booking amount is required before arrival.
+              Once marked received, the booking will show as paid in full.
+            </p>
+          )}
+
           <FormField label={t('settings.balanceDue')}>
             <select name="deposit_balance_due" className="form-control" value={form.deposit_balance_due ?? 'checkin'} onChange={onChange}>
               <option value="checkin">On check-in day</option>

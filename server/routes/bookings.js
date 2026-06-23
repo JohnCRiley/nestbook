@@ -996,7 +996,14 @@ bookingsRouter.post('/:id/mark-deposit-paid', (req, res) => {
     }
 
     const now = new Date().toISOString();
-    db.prepare(`UPDATE bookings SET deposit_paid = 1, deposit_paid_at = ? WHERE id = ?`).run(now, req.params.id);
+    const isFullyPaid = (booking.balance_amount ?? 0) === 0;
+    if (isFullyPaid) {
+      db.prepare(`UPDATE bookings SET deposit_paid = 1, deposit_paid_at = ?, balance_paid = 1, balance_paid_at = ? WHERE id = ?`)
+        .run(now, now, req.params.id);
+    } else {
+      db.prepare(`UPDATE bookings SET deposit_paid = 1, deposit_paid_at = ? WHERE id = ?`)
+        .run(now, req.params.id);
+    }
 
     const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
     res.json(updated);
@@ -1019,6 +1026,59 @@ bookingsRouter.post('/:id/mark-deposit-paid', (req, res) => {
     if (property?.deposit_balance_auto_email && updated.balance_amount > 0) {
       // Balance email is sent by the scheduler; just mark it as pending here
     }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/mark-paid-full ────────────────────────────────
+// One-action shortcut: marks both deposit and balance as received and sends receipt email.
+bookingsRouter.post('/:id/mark-paid-full', (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const now        = new Date().toISOString();
+    const totalPrice = parseFloat(booking.total_price) || 0;
+    const depAmount  = (booking.deposit_amount && booking.deposit_amount > 0)
+      ? booking.deposit_amount
+      : totalPrice;
+
+    db.prepare(`
+      UPDATE bookings SET
+        deposit_paid = 1, deposit_paid_at = ?,
+        balance_paid = 1, balance_paid_at = ?,
+        deposit_amount = ?, balance_amount = 0
+      WHERE id = ?
+    `).run(now, now, depAmount, req.params.id);
+
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    res.json(updated);
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
+    const ownerRow = db.prepare('SELECT email FROM users WHERE id = ?').get(property?.owner_id);
+    const charges  = db.prepare(`
+      SELECT rc.*, sc.name AS category_name
+      FROM room_charges rc
+      LEFT JOIN service_categories sc ON sc.id = rc.category_id
+      WHERE rc.booking_id = ?
+    `).all(booking.id);
+    sendReceiptEmail(updated, property, charges, ownerRow?.email ?? '').catch(() => {});
+
+    logAction(db, {
+      ...actorFromReq(req),
+      propertyId: booking.property_id,
+      action: 'PAID_IN_FULL',
+      category: 'booking',
+      targetType: 'booking',
+      targetId: booking.id,
+      targetName: `${booking.guest_first_name} ${booking.guest_last_name}`,
+      detail: `Marked as paid in full`,
+      ipAddress: getIp(req),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

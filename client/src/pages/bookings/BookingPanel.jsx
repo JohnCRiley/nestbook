@@ -118,7 +118,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [depositGateOpen,    setDepositGateOpen]    = useState(false);
   const [depositAction,      setDepositAction]      = useState(null);
   const [depositWorking,     setDepositWorking]     = useState(false);
-  const [balanceWorking,     setBalanceWorking]     = useState(false);
+  const [balanceWorking,          setBalanceWorking]          = useState(false);
+  const [showMarkPaidFullConfirm, setShowMarkPaidFullConfirm] = useState(false);
+  const [markPaidFullWorking,     setMarkPaidFullWorking]     = useState(false);
   const [toast,              setToast]              = useState(null);
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [showReprint,        setShowReprint]        = useState(false);
@@ -221,6 +223,22 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       // silent
     } finally {
       setBalanceWorking(false);
+    }
+  };
+
+  const handleMarkPaidInFull = async () => {
+    setMarkPaidFullWorking(true);
+    try {
+      const res = await apiFetch(`/api/bookings/${b.id}/mark-paid-full`, { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      if (onBookingUpdated) onBookingUpdated(updated);
+      setShowMarkPaidFullConfirm(false);
+      showToast(t('booking.paidInFull'));
+    } catch {
+      // silent
+    } finally {
+      setMarkPaidFullWorking(false);
     }
   };
 
@@ -568,9 +586,24 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               </div>
             )}
 
+            {!allPaid && !isHistorical && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--border)' }}>
+                <button
+                  className="btn-panel-secondary"
+                  style={{ fontSize: '0.75rem', padding: '5px 12px', width: '100%' }}
+                  onClick={() => setShowMarkPaidFullConfirm(true)}
+                  disabled={markPaidFullWorking}
+                >
+                  <i className="ti ti-circle-check" style={{ marginRight: 5 }} />
+                  {t('booking.markPaidFull')}
+                </button>
+              </div>
+            )}
+
             {allPaid && (
-              <div style={{ fontSize: '0.78rem', color: '#065f46', fontWeight: 600, marginTop: 6 }}>
-                ✓ Paid in full
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: '#065f46', fontWeight: 600, marginTop: 6 }}>
+                <i className="ti ti-circle-check" />
+                {t('booking.paidInFull')}
               </div>
             )}
           </div>
@@ -1396,6 +1429,28 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Mark as paid in full confirmation ──────────────────────────────── */}
+      {showMarkPaidFullConfirm && (
+        <ConfirmModal
+          isOpen={true}
+          title={t('booking.markPaidFull')}
+          message={
+            <span>
+              {t('booking.paidInFullConfirm')}
+              <br /><br />
+              <strong>{b.guest_first_name} {b.guest_last_name} — {fmtCurrency(b.total_price)}</strong>
+              <br />A receipt will be emailed to the guest.
+            </span>
+          }
+          confirmLabel={t('booking.markPaidFull')}
+          cancelLabel={t('cancel')}
+          variant="success"
+          busy={markPaidFullWorking}
+          onConfirm={handleMarkPaidInFull}
+          onCancel={() => setShowMarkPaidFullConfirm(false)}
+        />
       )}
 
       {/* ── Mark as paid confirmation ────────────────────────────────────── */}
