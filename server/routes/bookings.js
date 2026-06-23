@@ -517,6 +517,121 @@ bookingsRouter.get('/:id', (req, res) => {
   }
 });
 
+// ── POST /api/bookings/import ─────────────────────────────────────────────
+bookingsRouter.post('/import', (req, res) => {
+  try {
+    const { property_id, rows, room_map } = req.body;
+    if (!property_id || !Array.isArray(rows) || !room_map) {
+      return res.status(400).json({ error: 'Missing property_id, rows, or room_map' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Prepared statements
+    const findGuest   = db.prepare('SELECT id FROM guests WHERE email = ? AND property_id = ? AND deleted = 0 LIMIT 1');
+    const insertGuest = db.prepare('INSERT INTO guests (first_name, last_name, email, phone, property_id) VALUES (?,?,?,?,?)');
+    const overlapChk  = db.prepare(`
+      SELECT id FROM bookings
+      WHERE room_id = ? AND property_id = ? AND status NOT IN ('cancelled','declined')
+        AND check_in_date < ? AND check_out_date > ?
+    `);
+    const insertBook  = db.prepare(`
+      INSERT INTO bookings
+        (property_id, room_id, guest_id, check_in_date, check_out_date,
+         num_guests, status, source, notes, total_price)
+      VALUES (?,?,?,?,?,1,?,?,?,?)
+    `);
+
+    function normaliseStatus(raw) {
+      const s = (raw ?? '').trim().toLowerCase();
+      if (/^(confirmed?|con|yes)$/.test(s))                    return 'confirmed';
+      if (/^(pending|tentative)$/.test(s))                     return 'pending_owner_approval';
+      if (/^(cancell?ed?|canc|no)$/.test(s))                   return 'cancelled';
+      if (/^(checked_out|complete[d]?|done)$/.test(s))         return 'checked_out';
+      return 'confirmed';
+    }
+
+    function parseDate(raw) {
+      if (!raw) return null;
+      const s = raw.trim();
+      // YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      // DD/MM/YYYY
+      const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+      return null;
+    }
+
+    function splitName(full) {
+      const parts = (full ?? '').trim().split(/\s+/);
+      if (parts.length === 1) return { first: parts[0], last: '.' };
+      return { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] };
+    }
+
+    let imported = 0, skipped = 0;
+    const errors = [];
+
+    db.exec('BEGIN');
+    try {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const roomName   = (row.room ?? '').trim();
+        const roomIdRaw  = room_map[roomName];
+        if (!roomIdRaw || roomIdRaw === 'skip') { skipped++; continue; }
+        const room_id = Number(roomIdRaw);
+
+        const check_in  = parseDate(row.check_in);
+        const check_out = parseDate(row.check_out);
+        if (!check_in || !check_out || check_in >= check_out) {
+          errors.push(`Row ${i + 2}: invalid dates (${row.check_in} – ${row.check_out})`);
+          continue;
+        }
+
+        const guestName = (row.guest_name ?? '').trim();
+        if (!guestName) { errors.push(`Row ${i + 2}: missing guest name`); continue; }
+
+        // Overlap check
+        if (overlapChk.get(room_id, property_id, check_out, check_in)) {
+          skipped++;
+          continue;
+        }
+
+        // Find or create guest
+        const email = (row.guest_email ?? '').trim().toLowerCase() || null;
+        let guest_id;
+        if (email) {
+          const existing = findGuest.get(email, property_id);
+          if (existing) {
+            guest_id = existing.id;
+          } else {
+            const { first, last } = splitName(guestName);
+            guest_id = insertGuest.run(first, last, email, (row.guest_phone ?? '').trim() || null, property_id).lastInsertRowid;
+          }
+        } else {
+          const { first, last } = splitName(guestName);
+          guest_id = insertGuest.run(first, last, null, (row.guest_phone ?? '').trim() || null, property_id).lastInsertRowid;
+        }
+
+        const status      = normaliseStatus(row.status);
+        const total_price = parseFloat(row.total_amount) || null;
+        const notes       = (row.notes ?? '').trim() || null;
+
+        insertBook.run(property_id, room_id, guest_id, check_in, check_out, status, 'import', notes, total_price);
+        imported++;
+      }
+      db.exec('COMMIT');
+    } catch (innerErr) {
+      db.exec('ROLLBACK');
+      throw innerErr;
+    }
+
+    res.json({ imported, skipped, errors });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/bookings ────────────────────────────────────────────────────
 bookingsRouter.post('/', (req, res) => {
   try {

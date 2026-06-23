@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { localToday, LOCALE_MAP } from '../utils/format.js';
 import { BADGE_CLASS, SOURCE_LABELS } from '../utils/bookingConstants.js';
-import BookingPanel    from './bookings/BookingPanel.jsx';
-import NewBookingModal from './bookings/NewBookingModal.jsx';
+import BookingPanel          from './bookings/BookingPanel.jsx';
+import NewBookingModal       from './bookings/NewBookingModal.jsx';
+import ImportBookingsModal   from './bookings/ImportBookingsModal.jsx';
 import Pagination      from '../components/Pagination.jsx';
 import { apiFetch }    from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
@@ -47,6 +48,7 @@ export default function Bookings() {
   const [totalPages,      setTotalPages]      = useState(0);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showNewModal,    setShowNewModal]    = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [pageToast,       setPageToast]       = useState(null);
 
   // Debounced search — only fires 350 ms after typing stops
@@ -195,10 +197,16 @@ export default function Bookings() {
             <h1>{t('bookings')}</h1>
             <div className="page-date">{total} {t('totalReservations')}</div>
           </div>
-          <button className="btn-primary" onClick={() => setShowNewModal(true)}>
-            <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-            {t('newBooking').replace('+ ', '')}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
+              <i className="ti ti-file-import" style={{ marginRight: 6 }} />
+              {t('importBookingsBtn')}
+            </button>
+            <button className="btn-primary" onClick={() => setShowNewModal(true)}>
+              <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+              {t('newBooking').replace('+ ', '')}
+            </button>
+          </div>
         </div>
 
         {/* ── Controls: search + filters ────────────────────────────────────── */}
@@ -309,6 +317,20 @@ export default function Bookings() {
             : undefined}
           onClose={() => setShowNewModal(false)}
           onSuccess={handleNewBookingSuccess}
+        />
+      )}
+
+      {/* ── Import bookings modal ─────────────────────────────────────────── */}
+      {showImportModal && (
+        <ImportBookingsModal
+          propertyId={property?.id}
+          onClose={() => setShowImportModal(false)}
+          onImported={() => {
+            fetchBookings();
+            fetchCounts();
+            setPageToast('Bookings imported successfully');
+            setTimeout(() => setPageToast(null), 3000);
+          }}
         />
       )}
     </>
