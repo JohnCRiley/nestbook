@@ -884,7 +884,7 @@ No complicated setup. No per-booking fees. Just a flat monthly subscription star
 Would you be open to a quick look? There's a 30-day free trial, no credit card required.
 
 Best wishes,
-John at NestBook`
+The NestBook Team`
     );
     insertTmpl.run(
       'Free Trial Offer',
@@ -899,7 +899,7 @@ If you run a B&B, gîte, or small guesthouse and you're still relying on spreads
 
 Try it free at nestbook.io
 
-John at NestBook`
+The NestBook Team`
     );
     insertTmpl.run(
       'Welcome — You Just Signed Up',
@@ -917,7 +917,7 @@ A few things worth knowing:
 
 Happy to jump on a quick call if that would help.
 
-John at NestBook`
+The NestBook Team`
     );
     insertTmpl.run(
       'Feature Highlight — Booking Widget',

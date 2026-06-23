@@ -2049,7 +2049,7 @@ export async function sendFreeWelcomeEmail(user) {
   const lang = user.language || 'en';
   try {
     await resend.emails.send({
-      from:    'John at NestBook <hello@nestbook.io>',
+      from:    'NestBook <hello@nestbook.io>',
       to:      user.email,
       subject: t(lang, 'onboardSubject'),
       html:    welcomeEmailHTML(user),
@@ -2366,7 +2366,7 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd) {
 
   try {
     await resend.emails.send({
-      from:    'John at NestBook <hello@nestbook.io>',
+      from:    'NestBook <hello@nestbook.io>',
       to:      user.email,
       subject: t(lang, 'proWelcomeSubject'),
       html:    shell(body),
@@ -2428,7 +2428,7 @@ export async function sendPromoExpiryReminderEmail(user, daysLeft) {
 
   try {
     await resend.emails.send({
-      from:    'John at NestBook <hello@nestbook.io>',
+      from:    'NestBook <hello@nestbook.io>',
       to:      user.email,
       subject: isUrgent
         ? `Your NestBook Pro access expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
@@ -2486,7 +2486,7 @@ export async function sendPromoExpiredEmail(user) {
 
   try {
     await resend.emails.send({
-      from:    'John at NestBook <hello@nestbook.io>',
+      from:    'NestBook <hello@nestbook.io>',
       to:      user.email,
       subject: 'Your NestBook Pro promotional period has ended',
       html:    shell(body),
@@ -2557,7 +2557,7 @@ export async function sendPromoPaymentConfirmedEmail(user) {
 
   try {
     await resend.emails.send({
-      from:    'John at NestBook <hello@nestbook.io>',
+      from:    'NestBook <hello@nestbook.io>',
       to:      user.email,
       subject: `Payment details saved — you're all set! 🌿`,
       html:    shell(body),

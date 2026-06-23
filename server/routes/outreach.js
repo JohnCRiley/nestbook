@@ -319,9 +319,8 @@ outreachRouter.post('/send', async (req, res) => {
       <img src="https://nestbook.io/icon-192.png"
            width="28" height="28"
            style="border-radius:6px;vertical-align:middle;display:inline-block">
-      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px">John Riley</strong><br>
+      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px">The NestBook Team</strong><br>
       <span style="color:#64748b;font-size:13px;line-height:1.8">
-        Founder, NestBook<br>
         <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none">hello@nestbook.io</a>
         &nbsp;&middot;&nbsp;
         <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none">nestbook.io</a>
