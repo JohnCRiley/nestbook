@@ -2,14 +2,19 @@ import { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
 
-const TEMPLATE_CSV =
+const TEMPLATE_IP =
   'guest_name,guest_email,guest_phone,check_in,check_out,room,total_amount,status,notes\n' +
   'Marie Dupont,marie.dupont@example.com,+33612345678,2025-07-01,2025-07-05,Garden Room,320,confirmed,Early check-in requested\n' +
   'John Smith,john.smith@example.com,+44771234567,2025-08-10,2025-08-14,Suite,480,confirmed,\n';
 
-// ── Pure JS CSV parser (same as ImportGuestsModal) ────────────────────────
+const TEMPLATE_WP =
+  'guest_name,guest_email,guest_phone,check_in,check_out,total_amount,status,notes\n' +
+  'Marie Dupont,marie.dupont@example.com,+33612345678,2025-07-01,2025-07-05,320,confirmed,Early check-in requested\n' +
+  'John Smith,john.smith@example.com,+44771234567,2025-08-10,2025-08-14,480,confirmed,\n';
+
+// ── Pure JS CSV parser ────────────────────────────────────────────────────
 function parseCSV(text) {
-  text = text.replace(/^﻿/, ''); // strip BOM
+  text = text.replace(/^﻿/, '');
   const firstLine = text.split(/\r?\n/)[0] ?? '';
   const delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
   const rows = [];
@@ -53,21 +58,22 @@ const COLS = ['guest_name','guest_email','guest_phone','check_in','check_out','r
 
 export default function ImportBookingsModal({ onClose, onImported, propertyId }) {
   const t = useT();
+  const { property } = useLocale();
+  const isWP = property?.rental_type === 'whole_property';
   const fileRef = useRef(null);
 
+  // Steps: IP = 1,2,3,4,5  |  WP = 1,2,4,5  (step 3 skipped in WP)
   const [step,       setStep]       = useState(1);
-  const [dataRows,   setDataRows]   = useState([]);   // parsed CSV data rows (objects)
-  const [roomMap,    setRoomMap]    = useState({});   // { csvRoomName: roomId | 'skip' }
-  const [rooms,      setRooms]      = useState([]);   // NestBook rooms for property
+  const [dataRows,   setDataRows]   = useState([]);
+  const [roomMap,    setRoomMap]    = useState({});
+  const [rooms,      setRooms]      = useState([]);
   const [result,     setResult]     = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [fileError,  setFileError]  = useState(null);
   const [howToOpen,  setHowToOpen]  = useState(false);
 
-  // hasData: once CSV is parsed, prevent accidental close
   const hasData = dataRows.length > 0;
 
-  // Block Escape and backdrop click when data is loaded
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key !== 'Escape') return;
@@ -84,16 +90,15 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
     onClose();
   }
 
-  // Fetch rooms when we reach step 3
+  // Fetch rooms only needed for IP mode step 3
   useEffect(() => {
-    if (step !== 3 || rooms.length > 0) return;
+    if (isWP || step !== 3 || rooms.length > 0) return;
     apiFetch(`/api/rooms?property_id=${propertyId}`)
       .then(r => r.json())
       .then(data => setRooms(Array.isArray(data) ? data : (data.rooms ?? [])))
       .catch(() => {});
-  }, [step, propertyId, rooms.length]);
+  }, [isWP, step, propertyId, rooms.length]);
 
-  // Step 2 — handle file upload
   const handleFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -114,25 +119,25 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
       );
       setDataRows(objects);
 
-      // Pre-populate room map with unique room names → needs mapping
-      const uniqueRooms = [...new Set(objects.map(r => r.room?.trim()).filter(Boolean))];
-      const initMap = Object.fromEntries(uniqueRooms.map(r => [r, '']));
-      setRoomMap(initMap);
-      setStep(3);
+      if (isWP) {
+        // Skip room mapping entirely in WP mode
+        setStep(4);
+      } else {
+        const uniqueRooms = [...new Set(objects.map(r => r.room?.trim()).filter(Boolean))];
+        const initMap = Object.fromEntries(uniqueRooms.map(r => [r, '']));
+        setRoomMap(initMap);
+        setStep(3);
+      }
     };
     reader.readAsText(file, 'UTF-8');
   };
 
-  // Unique room names from CSV
   const csvRooms = Object.keys(roomMap);
-
-  // Can proceed from step 3 only when every room is mapped or skipped
   const canProceedMapping = csvRooms.length > 0 && csvRooms.every(r => roomMap[r] !== '');
 
-  // Preview rows: first 5, with resolved room name
   const previewRows = dataRows.slice(0, 5).map(row => ({
     ...row,
-    _roomLabel: (() => {
+    _roomLabel: isWP ? t('booking.wholeProperty') ?? 'Whole property' : (() => {
       const mapped = roomMap[row.room?.trim()];
       if (!mapped || mapped === 'skip') return '— skip —';
       const rm = rooms.find(r => String(r.id) === String(mapped));
@@ -140,7 +145,6 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
     })(),
   }));
 
-  // Step 4 — submit
   const handleImport = async () => {
     setSubmitting(true);
     setFileError(null);
@@ -148,7 +152,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
       const res  = await apiFetch('/api/bookings/import', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ property_id: propertyId, rows: dataRows, room_map: roomMap }),
+        body:    JSON.stringify({ property_id: propertyId, rows: dataRows, room_map: isWP ? {} : roomMap }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
@@ -161,12 +165,22 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
     }
   };
 
-  const STEP_LABELS = [
-    t('importBookingsStepInstr'),
-    t('importBookingsStepUpload'),
-    t('importBookingsStepMap'),
-    t('importBookingsStepPreview'),
-  ];
+  // Step indicator: WP shows 3 labels, IP shows 4
+  // Map internal step numbers to display index (0-based)
+  const stepLabels = isWP
+    ? [t('importBookingsStepInstr'), t('importBookingsStepUpload'), t('importBookingsStepPreview')]
+    : [t('importBookingsStepInstr'), t('importBookingsStepUpload'), t('importBookingsStepMap'), t('importBookingsStepPreview')];
+
+  // Internal step → display index
+  function stepToDisplay(s) {
+    if (isWP) {
+      if (s === 1) return 1;
+      if (s === 2) return 2;
+      return 3; // step 4 shows as display step 3
+    }
+    return s;
+  }
+  const displayStep = stepToDisplay(step);
 
   return (
     <div className="modal-overlay" onClick={handleBackdropClick}>
@@ -179,26 +193,24 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
 
         <div className="modal-body">
 
-          {/* Step indicator — hidden on result step */}
           {step < 5 && (
             <div className="import-steps">
-              {STEP_LABELS.map((label, i) => (
-                <div key={i} className={`import-step${step === i + 1 ? ' active' : step > i + 1 ? ' done' : ''}`}>
-                  <div className="import-step-num">{step > i + 1 ? '✓' : i + 1}</div>
+              {stepLabels.map((label, i) => (
+                <div key={i} className={`import-step${displayStep === i + 1 ? ' active' : displayStep > i + 1 ? ' done' : ''}`}>
+                  <div className="import-step-num">{displayStep > i + 1 ? '✓' : i + 1}</div>
                   <div className="import-step-label">{label}</div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ── Step 1: Instructions + template ────────────────────────── */}
+          {/* ── Step 1: Instructions + template ──────────────────────────── */}
           {step === 1 && (
             <div className="import-step-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.6 }}>
                 {t('importBookingsIntro')}
               </p>
 
-              {/* Collapsible how-to section */}
               <div style={{ marginBottom: 20, border: '1px solid var(--border)', borderRadius: 8 }}>
                 <button
                   type="button"
@@ -224,18 +236,25 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
 
               <button
                 className="btn-secondary"
-                onClick={() => downloadBlob(TEMPLATE_CSV, 'nestbook-bookings-template.csv')}
+                onClick={() => downloadBlob(isWP ? TEMPLATE_WP : TEMPLATE_IP, 'nestbook-bookings-template.csv')}
               >
                 <i className="ti ti-download" style={{ marginRight: 6 }} />
                 {t('importBookingsTemplate')}
               </button>
-              <p style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+
+              {isWP && (
+                <p style={{ marginTop: 10, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}>
+                  {t('importBookingsWPNote')}
+                </p>
+              )}
+
+              <p style={{ marginTop: isWP ? 6 : 12, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {t('importTemplateHint')}
               </p>
             </div>
           )}
 
-          {/* ── Step 2: Upload ──────────────────────────────────────────── */}
+          {/* ── Step 2: Upload ────────────────────────────────────────────── */}
           {step === 2 && (
             <div className="import-step-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.6 }}>
@@ -260,8 +279,8 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
             </div>
           )}
 
-          {/* ── Step 3: Room mapping ────────────────────────────────────── */}
-          {step === 3 && (
+          {/* ── Step 3: Room mapping (IP mode only) ───────────────────────── */}
+          {step === 3 && !isWP && (
             <div className="import-step-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: 12, fontSize: '0.85rem' }}>
                 {t('importBookingsMapping')} &mdash; {dataRows.length} {t('importRowsFound')}
@@ -308,7 +327,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
             </div>
           )}
 
-          {/* ── Step 4: Preview + import ────────────────────────────────── */}
+          {/* ── Step 4: Preview + import ──────────────────────────────────── */}
           {step === 4 && (
             <div className="import-step-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: 12, fontSize: '0.85rem' }}>
@@ -319,7 +338,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
                   <thead>
                     <tr>
                       <th>Guest</th>
-                      <th>Room</th>
+                      {!isWP && <th>Room</th>}
                       <th>Check-in</th>
                       <th>Check-out</th>
                       <th>Total</th>
@@ -330,9 +349,11 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
                     {previewRows.map((row, i) => (
                       <tr key={i}>
                         <td>{row.guest_name || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
-                        <td style={{ fontStyle: row._roomLabel === '— skip —' ? 'italic' : 'normal', color: row._roomLabel === '— skip —' ? '#94a3b8' : 'inherit' }}>
-                          {row._roomLabel}
-                        </td>
+                        {!isWP && (
+                          <td style={{ fontStyle: row._roomLabel === '— skip —' ? 'italic' : 'normal', color: row._roomLabel === '— skip —' ? '#94a3b8' : 'inherit' }}>
+                            {row._roomLabel}
+                          </td>
+                        )}
                         <td>{row.check_in || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
                         <td>{row.check_out || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
                         <td>{row.total_amount || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
@@ -359,7 +380,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
             </div>
           )}
 
-          {/* ── Step 5: Result ──────────────────────────────────────────── */}
+          {/* ── Step 5: Result ────────────────────────────────────────────── */}
           {step === 5 && result && (
             <div className="import-step-body" style={{ textAlign: 'center', padding: '24px 0' }}>
               <div style={{ fontSize: '3rem', marginBottom: 12 }}>
@@ -403,7 +424,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
           )}
         </div>
 
-        {/* ── Footer ───────────────────────────────────────────────────── */}
+        {/* ── Footer ────────────────────────────────────────────────────── */}
         <div className="modal-footer">
           {step < 5 && (
             <button type="button" className="btn-secondary" onClick={onClose}>
@@ -423,7 +444,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
             </button>
           )}
 
-          {step === 3 && (
+          {step === 3 && !isWP && (
             <>
               <button className="btn-secondary" onClick={() => { setStep(2); setDataRows([]); setRoomMap({}); }}>
                 {t('back')}
@@ -440,7 +461,15 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
 
           {step === 4 && (
             <>
-              <button className="btn-secondary" onClick={() => setStep(3)}>{t('back')}</button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  if (isWP) { setStep(2); setDataRows([]); }
+                  else { setStep(3); }
+                }}
+              >
+                {t('back')}
+              </button>
               <button
                 className="btn-primary"
                 disabled={submitting}

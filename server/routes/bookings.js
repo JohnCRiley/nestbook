@@ -521,11 +521,21 @@ bookingsRouter.get('/:id', (req, res) => {
 bookingsRouter.post('/import', (req, res) => {
   try {
     const { property_id, rows, room_map } = req.body;
-    if (!property_id || !Array.isArray(rows) || !room_map) {
-      return res.status(400).json({ error: 'Missing property_id, rows, or room_map' });
+    if (!property_id || !Array.isArray(rows)) {
+      return res.status(400).json({ error: 'Missing property_id or rows' });
     }
     if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
       return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Detect WP mode and resolve fixed room_id up-front
+    const property = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(property_id);
+    const isWP = property?.rental_type === 'whole_property';
+    let wpRoomId = null;
+    if (isWP) {
+      const firstRoom = db.prepare('SELECT id FROM rooms WHERE property_id = ? ORDER BY id ASC LIMIT 1').get(property_id);
+      if (!firstRoom) return res.status(400).json({ error: 'No rooms found for this property' });
+      wpRoomId = firstRoom.id;
     }
 
     // Prepared statements
@@ -555,9 +565,7 @@ bookingsRouter.post('/import', (req, res) => {
     function parseDate(raw) {
       if (!raw) return null;
       const s = raw.trim();
-      // YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      // DD/MM/YYYY
       const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
       if (m) return `${m[3]}-${m[2]}-${m[1]}`;
       return null;
@@ -576,10 +584,17 @@ bookingsRouter.post('/import', (req, res) => {
     try {
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const roomName   = (row.room ?? '').trim();
-        const roomIdRaw  = room_map[roomName];
-        if (!roomIdRaw || roomIdRaw === 'skip') { skipped++; continue; }
-        const room_id = Number(roomIdRaw);
+
+        // Resolve room_id: WP uses fixed first room; IP uses client room_map
+        let room_id;
+        if (isWP) {
+          room_id = wpRoomId;
+        } else {
+          const roomName  = (row.room ?? '').trim();
+          const roomIdRaw = (room_map ?? {})[roomName];
+          if (!roomIdRaw || roomIdRaw === 'skip') { skipped++; continue; }
+          room_id = Number(roomIdRaw);
+        }
 
         const check_in  = parseDate(row.check_in);
         const check_out = parseDate(row.check_out);

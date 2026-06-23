@@ -514,6 +514,7 @@
   "importBookingsStepUpload": "Upload",
   "importBookingsStepMap": "Map rooms",
   "importBookingsStepPreview": "Preview",
+  "importBookingsWPNote": "Your CSV doesn't need a room column — the whole property is booked as one unit.",
   "reports": "Reports",
   "loadingReports": "Loading reports…",
   "reportsTitle": "Revenue Reports",
