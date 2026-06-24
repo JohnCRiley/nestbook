@@ -634,7 +634,7 @@ bookingsRouter.post('/import', (req, res) => {
         }
 
         const status      = normaliseStatus(row.status);
-        const total_price = parseFloat(row.total_amount) || null;
+        const total_price = parseFloat(row.total_stay_amount) || null;
         const notes       = (row.notes ?? '').trim() || null;
 
         insertBook.run(property_id, room_id, guest_id, check_in, check_out, status, 'other', notes, total_price);

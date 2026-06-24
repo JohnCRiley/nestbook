@@ -132,6 +132,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const depositRequired = !!property?.require_deposit;
   const isWP          = property?.rental_type === 'whole_property';
   const isHistorical  = ['checked_out', 'cancelled', 'declined', 'no_show'].includes(b.status);
+  const storedRateBreakdown = b.rate_breakdown ? JSON.parse(b.rate_breakdown) : null;
+  const useStoredTotal = !!(b.total_price && b.total_price > 0) && !storedRateBreakdown?.length && !(b.price_per_night > 0);
   const todayStr      = new Date().toISOString().split('T')[0];
   const canMarkArrived  = todayStr >= b.check_in_date;
   const canMarkDeparted = todayStr >= b.check_out_date;
@@ -958,7 +960,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         <div className="panel-section-title">{t('sectionPricing')}</div>
         <div className="panel-price-callout">
           <div className="panel-price-main">{fmtCurrency(b.total_price)}</div>
-          {perNight > 0 && (
+          {!useStoredTotal && perNight > 0 && (
             <div className="panel-price-detail">
               {fmtCurrency(perNight)}{t('perNight')} × {t('nightWord')(nights)}
             </div>
@@ -1938,6 +1940,7 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
   const isWP             = property?.rental_type === 'whole_property';
   const wpTotal          = parseFloat(b.total_price) || 0;
   const storedBreakdown  = b.rate_breakdown ? JSON.parse(b.rate_breakdown) : null;
+  const useStoredTotal   = !!(b.total_price && b.total_price > 0) && !storedBreakdown?.length && !(b.price_per_night > 0);
   const displayBreakdown = storedBreakdown ?? roomBreakdown?.breakdown ?? null;
   const fallbackPerNight = isWP ? (nights > 0 ? wpTotal / nights : 0) : (b.price_per_night ?? 0);
   const roomSubtotal     = isWP ? wpTotal : (roomBreakdown?.total ?? (nights * fallbackPerNight));
@@ -1955,6 +1958,20 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
     : 0;
   const refundAmt        = parseFloat(b.refund_amount) || 0;
   const total            = Math.max(0, roomSubtotal + breakfastSub + chargesTotal - (depositPaid ? depositAmount : 0) - refundAmt);
+
+  if (useStoredTotal) {
+    return (
+      <div className="panel-section">
+        <div className="panel-section-title">{t('coEstimatedTotal')}</div>
+        <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 4 }}>
+          {fmtCurrency(b.total_price)}
+        </div>
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+          {t('booking.importedTotal')}
+        </div>
+      </div>
+    );
+  }
 
   if (!roomSubtotal && !breakfastCharged && !depositPaid && !chargesTotal) return null;
 
