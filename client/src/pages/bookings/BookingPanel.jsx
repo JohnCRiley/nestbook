@@ -2042,25 +2042,6 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
     </div>
   );
 
-  if (status === 'arriving') {
-    return (
-      <div className="panel-actions" style={wrapStyle}>
-        {canCheckOut ? (
-          <button
-            className="btn-panel-primary"
-            style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
-            onClick={onCheckOut}
-          >
-            {t('booking.checkOut')}
-          </button>
-        ) : (
-          lockedTile('Check-out locked', checkOutDate ? `Available from ${formatDateMedium(checkOutDate, locale)}` : null)
-        )}
-        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
-      </div>
-    );
-  }
-
   if (status === 'confirmed') {
     return (
       <div className="panel-actions" style={wrapStyle}>
@@ -2076,6 +2057,25 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
           lockedTile('Check-in locked', checkInDate ? `Available from ${formatDateMedium(checkInDate, locale)}` : null)
         )}
         {!prominent && <button className="btn-panel-danger" onClick={onCancelClick}>{t('booking.cancelBooking')}</button>}
+        {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
+      </div>
+    );
+  }
+
+  if (status === 'arriving' || status === 'in_house') {
+    return (
+      <div className="panel-actions" style={wrapStyle}>
+        {canCheckOut ? (
+          <button
+            className="btn-panel-primary"
+            style={prominent ? { fontSize: '1rem', padding: '12px 20px' } : {}}
+            onClick={onCheckOut}
+          >
+            {t('booking.checkOut')}
+          </button>
+        ) : (
+          lockedTile('Check-out locked', checkOutDate ? `Available from ${formatDateMedium(checkOutDate, locale)}` : null)
+        )}
         {!prominent && <button className="btn-panel-secondary" onClick={onEdit}>{t('booking.editBooking')}</button>}
       </div>
     );
