@@ -573,11 +573,15 @@ img { display: block; max-width: 100%; }
     text-align: left;
     flex-direction: row;
   }
+  .fs-left { flex-direction: row; justify-content: flex-start; }
   .fs-left .fs-body,
   .fs-right .fs-body {
     align-items: flex-start;
     text-align: left;
   }
+  .fs-left .fs-body  { align-items: flex-start; text-align: left; width: auto; }
+  .fs-left .fs-title { text-align: left !important; }
+  .fs-left .fs-desc  { text-align: left !important; }
   .fs-left .fs-title,
   .fs-left .fs-desc,
   .fs-right .fs-title,
