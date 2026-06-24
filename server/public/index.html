@@ -544,15 +544,19 @@ img { display: block; max-width: 100%; }
 }
 .c1  { background: #50a810; }
 .c2  { background: #58b712; }
-.c3  { background: #245006; }
+.c3  { background: #418a0c; }
 .c5  { background: #326d09; }
 .c7  { background: #1d4205; }
 .c9  { background: #173404; }
 .fs-circle i { font-size: 18px; color: white; }
 .fs-num { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; opacity: 0.32; flex-shrink: 0; }
 .fs-body { display: flex; flex-direction: column; }
-.fs-left .fs-body  { align-items: flex-end; }
-.fs-right .fs-body { align-items: flex-start; }
+.fs-left .fs-body  { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.fs-left .fs-title { text-align: right; }
+.fs-left .fs-desc  { text-align: right; }
+.fs-right .fs-body  { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+.fs-right .fs-title { text-align: left; }
+.fs-right .fs-desc  { text-align: left; }
 .fs-title { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.97); margin-bottom: 3px; }
 .fs-desc  { font-size: 13px; color: rgba(255,255,255,0.62); line-height: 1.4; }
 @media (max-width: 600px) {
@@ -560,14 +564,28 @@ img { display: block; max-width: 100%; }
     grid-template-columns: 1fr;
     gap: 5px;
   }
-  .fs-left, .fs-right {
+  .fs-mid { display: none; }
+  .fs-left,
+  .fs-right {
     border-radius: 10px;
     justify-content: flex-start;
     text-align: left;
     flex-direction: row;
   }
-  .fs-mid { display: none; }
-  .fs-tile-left:hover, .fs-tile-right:hover { transform: none; }
+  .fs-left .fs-body,
+  .fs-right .fs-body {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .fs-left .fs-title,
+  .fs-left .fs-desc,
+  .fs-right .fs-title,
+  .fs-right .fs-desc {
+    text-align: left;
+  }
+  .fs-num { display: none; }
+  .fs-tile-left:hover,
+  .fs-tile-right:hover { transform: none; }
 }
 .ti {
   vertical-align: middle;
@@ -1160,7 +1178,7 @@ img { display: block; max-width: 100%; }
       <div class="fs-body"><div class="fs-title" data-i18n="features.f1">Free property webpage</div><div class="fs-desc" data-i18n="features.f1d">Your own booking page at nestbook.io/book/your-name</div></div>
       <span class="fs-num">01</span>
     </div>
-    <div class="fs-mid"><div class="fs-circle c1"><i class="ti ti-world" aria-hidden="true"></i></div></div>
+    <div class="fs-mid"><div class="fs-circle c2"><i class="ti ti-brand-facebook" aria-hidden="true"></i></div></div>
     <div class="fs-tile fs-right r2 fs-tile-right">
       <span class="fs-num">02</span>
       <div class="fs-body"><div class="fs-title" data-i18n="features.f2">Facebook Booking Button</div><div class="fs-desc" data-i18n="features.f2d">Book Now on your Facebook page — guests book direct</div></div>
