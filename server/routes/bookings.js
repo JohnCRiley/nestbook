@@ -567,12 +567,24 @@ bookingsRouter.post('/import', (req, res) => {
       const s = raw.trim();
       // ISO YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      // D/M/YYYY or DD/MM/YYYY (slash-separated)
-      const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (slash) return `${slash[3]}-${slash[2].padStart(2,'0')}-${slash[1].padStart(2,'0')}`;
-      // D-M-YYYY or DD-MM-YYYY (dash-separated, European)
-      const dash = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-      if (dash) return `${dash[3]}-${dash[2].padStart(2,'0')}-${dash[1].padStart(2,'0')}`;
+      // D/M/YYYY, DD/MM/YYYY, D/M/YY, DD/MM/YY (slash-separated)
+      const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if (slash) {
+        const day = slash[1].padStart(2, '0');
+        const mon = slash[2].padStart(2, '0');
+        let yr = slash[3];
+        if (yr.length === 2) yr = parseInt(yr) < 50 ? `20${yr}` : `19${yr}`;
+        return `${yr}-${mon}-${day}`;
+      }
+      // D-M-YYYY, DD-MM-YYYY, D-M-YY, DD-MM-YY (dash-separated, European)
+      const dash = s.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+      if (dash) {
+        const day = dash[1].padStart(2, '0');
+        const mon = dash[2].padStart(2, '0');
+        let yr = dash[3];
+        if (yr.length === 2) yr = parseInt(yr) < 50 ? `20${yr}` : `19${yr}`;
+        return `${yr}-${mon}-${day}`;
+      }
       return null;
     }
 
@@ -620,17 +632,18 @@ bookingsRouter.post('/import', (req, res) => {
         // Find or create guest
         const email = (row.guest_email ?? '').trim().toLowerCase() || null;
         let guest_id;
+        const phone = (row.guest_phone ?? '').trim().replace(/[^\d+\s\-()]/g, '') || null;
         if (email) {
           const existing = findGuest.get(email, property_id);
           if (existing) {
             guest_id = existing.id;
           } else {
             const { first, last } = splitName(guestName);
-            guest_id = insertGuest.run(first, last, email, (row.guest_phone ?? '').trim() || null, property_id).lastInsertRowid;
+            guest_id = insertGuest.run(first, last, email, phone, property_id).lastInsertRowid;
           }
         } else {
           const { first, last } = splitName(guestName);
-          guest_id = insertGuest.run(first, last, null, (row.guest_phone ?? '').trim() || null, property_id).lastInsertRowid;
+          guest_id = insertGuest.run(first, last, null, phone, property_id).lastInsertRowid;
         }
 
         const status      = normaliseStatus(row.status);
