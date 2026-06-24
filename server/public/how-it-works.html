@@ -580,7 +580,7 @@
     display: grid;
     grid-template-columns: 1fr 54px 1fr;
     gap: 5px 0;
-    max-width: 780px;
+    max-width: 900px;
     margin: 0 auto;
   }
   .fs-tile {
@@ -633,14 +633,18 @@
     box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
   }
   .c1  { background: #50a810; }
+  .c2  { background: #58b712; }
   .c3  { background: #245006; }
   .c5  { background: #326d09; }
   .c7  { background: #1d4205; }
   .c9  { background: #173404; }
   .fs-circle i { font-size: 18px; color: white; }
   .fs-num { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; opacity: 0.32; flex-shrink: 0; }
-  .fs-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.97); margin-bottom: 3px; }
-  .fs-desc  { font-size: 11.5px; color: rgba(255,255,255,0.62); line-height: 1.4; }
+  .fs-body { display: flex; flex-direction: column; }
+  .fs-left .fs-body  { align-items: flex-end; }
+  .fs-right .fs-body { align-items: flex-start; }
+  .fs-title { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.97); margin-bottom: 3px; }
+  .fs-desc  { font-size: 13px; color: rgba(255,255,255,0.62); line-height: 1.4; }
   @media (max-width: 600px) {
     .features-split-grid {
       grid-template-columns: 1fr;
