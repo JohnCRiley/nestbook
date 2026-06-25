@@ -227,6 +227,17 @@ outreachRouter.post('/send', async (req, res) => {
   if (!Array.isArray(prospect_ids) || prospect_ids.length === 0) return res.status(400).json({ error: 'prospect_ids required' });
   if (!subject || !body) return res.status(400).json({ error: 'subject and body required' });
 
+  const limitRow = db.prepare(`SELECT value FROM app_settings WHERE key = 'outreach_limit_enabled'`).get();
+  const limitEnabled = limitRow?.value === '1';
+  if (limitEnabled) {
+    const todayCount = db.prepare(
+      `SELECT COUNT(*) as count FROM outreach_send_log WHERE date(sent_at) = date('now')`
+    ).get().count;
+    if (todayCount >= 100) {
+      return res.status(429).json({ error: 'Daily sending limit reached. Disable the limiter in settings to send more.' });
+    }
+  }
+
   const results = [];
   let sent = 0;
   let skipped = 0;
@@ -377,7 +388,31 @@ outreachRouter.get('/daily-count', (req, res) => {
   const count = db.prepare(
     `SELECT COUNT(*) as count FROM outreach_send_log WHERE date(sent_at) = date('now')`
   ).get().count;
-  res.json({ count, limit: 100, remaining: Math.max(0, 100 - count), canSend: count < 100 });
+  const limitRow = db.prepare(`SELECT value FROM app_settings WHERE key = 'outreach_limit_enabled'`).get();
+  const limitEnabled = limitRow?.value === '1';
+  const limit = 100;
+  res.json({
+    count,
+    limit,
+    limitEnabled,
+    remaining: limitEnabled ? Math.max(0, limit - count) : null,
+    canSend:   limitEnabled ? count < limit : true,
+  });
+});
+
+// ── Outreach limit toggle ─────────────────────────────────────────────────────
+outreachRouter.get('/limit-status', (req, res) => {
+  const row = db.prepare(`SELECT value FROM app_settings WHERE key = 'outreach_limit_enabled'`).get();
+  res.json({ enabled: row?.value === '1' });
+});
+
+outreachRouter.post('/limit-status', (req, res) => {
+  const { enabled } = req.body;
+  db.prepare(`
+    INSERT INTO app_settings (key, value) VALUES ('outreach_limit_enabled', ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `).run(enabled ? '1' : '0');
+  res.json({ ok: true, enabled });
 });
 
 // ── Templates — list ──────────────────────────────────────────────────────────

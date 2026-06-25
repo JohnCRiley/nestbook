@@ -313,7 +313,7 @@ function QuillEditor({ value, onChange, placeholder = 'Write your email here…'
 }
 
 // ── Email Composer modal ──────────────────────────────────────────────────────
-function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount = 0, onClose, onSent }) {
+function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount = 0, limitEnabled = true, onClose, onSent }) {
   const selected = prospects
     .filter(p => selectedIds.includes(p.id) && !BLOCKED_STATUSES.has(p.status))
     .filter((p, i, self) => self.findIndex(t => t.email === p.email) === i);
@@ -346,15 +346,16 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
     try {
       // Fresh daily capacity check before sending
       const dcRes = await saApiFetch('/api/admin/outreach/daily-count');
-      const { remaining: freshRemaining } = await dcRes.json();
-      if (freshRemaining === 0) {
+      const freshData = await dcRes.json();
+      const freshRemaining = freshData.limitEnabled ? (freshData.remaining ?? Infinity) : Infinity;
+      if (freshData.limitEnabled && freshData.count >= 100) {
         setSendError('Daily email limit reached (100/day on Resend free plan). Try again tomorrow.');
         sendingRef.current = false;
         setSending(false);
         return;
       }
       // Cap by both the selector limit and fresh remaining capacity
-      const cap = sendLimit === null ? freshRemaining : Math.min(sendLimit, freshRemaining);
+      const cap = sendLimit === null ? (freshData.limitEnabled ? freshRemaining : selected.length) : Math.min(sendLimit, freshRemaining);
       const toSend = selected.slice(0, cap);
       const res = await saApiFetch('/api/admin/outreach/send', {
         method: 'POST',
@@ -415,7 +416,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
         {/* ── Scrollable body ── */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-          {selected.length > 100 && sendLimit === null && (
+          {limitEnabled && selected.length > 100 && sendLimit === null && (
             <div style={{
               background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 8,
               padding: '10px 14px', fontSize: '0.82rem', color: '#92400e',
@@ -475,7 +476,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
 
           {/* ── Send limit selector ── */}
           {(() => {
-            const remaining = Math.max(0, 100 - dailyCount);
+            const remaining = limitEnabled ? Math.max(0, 100 - dailyCount) : null;
             return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
             <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
@@ -488,7 +489,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
                 { label: '100', value: 100 },
                 { label: 'All', value: null },
               ].map(opt => {
-                const overLimit = opt.value !== null && opt.value > remaining;
+                const overLimit = limitEnabled && opt.value !== null && opt.value > (remaining ?? Infinity);
                 return (
                   <button
                     key={opt.label}
@@ -509,25 +510,29 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
                 );
               })}
             </div>
-            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: remaining === 0 ? '#dc2626' : remaining < 20 ? '#92400e' : '#64748b' }}>
-              {remaining === 0
-                ? '⛔ Daily limit reached — try again tomorrow'
-                : `${remaining} emails remaining today`}
-            </div>
+            {limitEnabled && (
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: remaining === 0 ? '#dc2626' : remaining < 20 ? '#92400e' : '#64748b' }}>
+                {remaining === 0
+                  ? '⛔ Daily limit reached — try again tomorrow'
+                  : `${remaining} emails remaining today`}
+              </div>
+            )}
           </div>
             );
           })()}
           {sendLimit !== null && (
             <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: -8 }}>
-              Will send to {Math.min(sendLimit, Math.max(0, 100 - dailyCount), selected.length)} of {selected.length} prospects
+              Will send to {Math.min(sendLimit, limitEnabled ? Math.max(0, 100 - dailyCount) : selected.length, selected.length)} of {selected.length} prospects
             </div>
           )}
-          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '-4px 0 4px' }}>
-            Resend free plan: 100 emails/day.{' '}
-            <a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer" style={{ color: '#1a4710' }}>
-              Upgrade Resend ($20/mo)
-            </a>{' '}for unlimited sending.
-          </p>
+          {limitEnabled && (
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '-4px 0 4px' }}>
+              Resend free plan: 100 emails/day.{' '}
+              <a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer" style={{ color: '#1a4710' }}>
+                Upgrade Resend ($20/mo)
+              </a>{' '}for unlimited sending.
+            </p>
+          )}
 
         </div>
 
@@ -541,9 +546,9 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
           <Btn
             onClick={send}
-            disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>' || dailyCount >= 100}
+            disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>' || (limitEnabled && dailyCount >= 100)}
           >
-            {sending ? 'Sending…' : `Send to ${Math.min(sendLimit ?? selected.length, Math.max(0, 100 - dailyCount), selected.length)}`}
+            {sending ? 'Sending…' : `Send to ${Math.min(sendLimit ?? selected.length, limitEnabled ? Math.max(0, 100 - dailyCount) : selected.length, selected.length)}`}
           </Btn>
         </div>
 
@@ -993,7 +998,8 @@ export default function Outreach() {
   const [templates, setTemplates]   = useState([]);
   const [campaigns, setCampaigns]   = useState([]);
   const [followUps, setFollowUps]   = useState([]);
-  const [dailyCount, setDailyCount] = useState(0);
+  const [dailyCount, setDailyCount]   = useState(0);
+  const [limitEnabled, setLimitEnabled] = useState(true);
 
   // Filters — shared across both tabs (all client-side)
   const [search, setSearch]               = useState('');
@@ -1015,13 +1021,14 @@ export default function Outreach() {
   const [tab, setTab]                   = useState('prospects'); // prospects | followup
 
   const load = useCallback(async () => {
-    const [pRes, sRes, tRes, cRes, fRes, dcRes] = await Promise.all([
+    const [pRes, sRes, tRes, cRes, fRes, dcRes, lsRes] = await Promise.all([
       saApiFetch('/api/admin/outreach/prospects?limit=2000'),
       saApiFetch('/api/admin/outreach/stats'),
       saApiFetch('/api/admin/outreach/templates'),
       saApiFetch('/api/admin/outreach/campaigns'),
       saApiFetch('/api/admin/outreach/prospects/follow-up'),
       saApiFetch('/api/admin/outreach/daily-count'),
+      saApiFetch('/api/admin/outreach/limit-status'),
     ]);
     if (pRes.ok) { const d = await pRes.json(); setProspects(d.prospects); setTotal(d.total); }
     if (sRes.ok) setStats(await sRes.json());
@@ -1029,9 +1036,20 @@ export default function Outreach() {
     if (cRes.ok) setCampaigns(await cRes.json());
     if (fRes.ok) setFollowUps(await fRes.json());
     if (dcRes.ok) { const d = await dcRes.json(); setDailyCount(d.count); }
+    if (lsRes.ok) { const d = await lsRes.json(); setLimitEnabled(d.enabled); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  async function toggleLimit() {
+    const newVal = !limitEnabled;
+    setLimitEnabled(newVal);
+    await saApiFetch('/api/admin/outreach/limit-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: newVal }),
+    });
+  }
 
   // Derived state — computed every render, no useMemo needed at this scale
   const today = new Date().toISOString().split('T')[0];
@@ -1184,19 +1202,47 @@ export default function Outreach() {
 
       <StatsBar stats={stats} />
 
+      {/* ── Limiter toggle ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 14px',
+        background: limitEnabled ? '#fef9c3' : '#f0fdf4',
+        border: `1px solid ${limitEnabled ? '#fde047' : '#bbf7d0'}`,
+        borderRadius: 8,
+        marginBottom: 8,
+      }}>
+        <i className={`ti ${limitEnabled ? 'ti-lock' : 'ti-lock-open'}`}
+           style={{ fontSize: 16, color: limitEnabled ? '#854d0e' : '#166534' }} />
+        <span style={{ fontSize: 13, fontWeight: 500, color: limitEnabled ? '#854d0e' : '#166534', flex: 1 }}>
+          {limitEnabled ? 'Daily limit: ON (100/day)' : 'Daily limit: OFF — unlimited sending'}
+        </span>
+        <button
+          onClick={toggleLimit}
+          style={{
+            fontSize: 12, padding: '4px 12px', borderRadius: 6,
+            border: `1px solid ${limitEnabled ? '#fde047' : '#bbf7d0'}`,
+            background: limitEnabled ? '#fef08a' : '#dcfce7',
+            color: limitEnabled ? '#854d0e' : '#166534',
+            cursor: 'pointer', fontWeight: 500, fontFamily: 'inherit',
+          }}
+        >
+          {limitEnabled ? 'Turn off' : 'Turn on'}
+        </button>
+      </div>
+
       {/* ── Daily send counter ── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '8px 14px', borderRadius: 8, marginBottom: 16,
-        background: dailyCount >= 100 ? '#fef2f2' : dailyCount >= 80 ? '#fef3c7' : '#f0fdf4',
-        border: `1px solid ${dailyCount >= 100 ? '#fca5a5' : dailyCount >= 80 ? '#fbbf24' : '#bbf7d0'}`,
+        background: (limitEnabled && dailyCount >= 100) ? '#fef2f2' : (limitEnabled && dailyCount >= 80) ? '#fef3c7' : '#f0fdf4',
+        border: `1px solid ${(limitEnabled && dailyCount >= 100) ? '#fca5a5' : (limitEnabled && dailyCount >= 80) ? '#fbbf24' : '#bbf7d0'}`,
         fontSize: '0.85rem', fontWeight: 600,
-        color: dailyCount >= 100 ? '#dc2626' : dailyCount >= 80 ? '#92400e' : '#166534',
+        color: (limitEnabled && dailyCount >= 100) ? '#dc2626' : (limitEnabled && dailyCount >= 80) ? '#92400e' : '#166534',
       }}>
-        <i className="ti ti-mail" /> Today: {dailyCount}/100 emails sent
-        {dailyCount >= 100
-          ? ' — Daily limit reached!'
-          : ` — ${100 - dailyCount} remaining`}
+        <i className="ti ti-mail" /> Today: {dailyCount} emails sent
+        {limitEnabled
+          ? (dailyCount >= 100 ? ' — Daily limit reached!' : ` — ${100 - dailyCount} remaining`)
+          : ' — No daily limit'}
       </div>
 
       {/* ── Tab bar ── */}
@@ -1476,6 +1522,7 @@ export default function Outreach() {
           templates={templates}
           campaigns={campaigns}
           dailyCount={dailyCount}
+          limitEnabled={limitEnabled}
           onClose={() => setShowCompose(false)}
           onSent={load}
         />

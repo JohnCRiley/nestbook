@@ -1105,6 +1105,7 @@ John`
     )
   `);
   db.prepare(`INSERT OR IGNORE INTO app_settings (key, value) VALUES ('bug_reporting_enabled', 'true')`).run();
+  db.prepare(`INSERT OR IGNORE INTO app_settings (key, value) VALUES ('outreach_limit_enabled', '1')`).run();
 
   // ── WP owner-approval booking flow ─────────────────────────────────────────
   // Expand bookings.status CHECK to include pending_owner_approval and declined.
