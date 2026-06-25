@@ -689,7 +689,7 @@ img { display: block; max-width: 100%; }
 
 /* ── Coming Soon ─────────────────────────────────────────────────────────── */
 .coming-soon {
-  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  background: linear-gradient(160deg, var(--soft) 0%, var(--light) 50%, var(--soft) 100%);
   padding: 72px 24px;
 }
 .coming-soon-inner {
@@ -702,16 +702,15 @@ img { display: block; max-width: 100%; }
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #397c0b;
+  color: var(--mid);
   margin-bottom: 12px;
 }
 .coming-soon-title {
-  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-size: 2rem;
   font-weight: 800;
-  color: #173404;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
+  color: var(--dark);
   margin-bottom: 48px;
+  letter-spacing: -0.01em;
 }
 .coming-soon-grid {
   display: grid;
@@ -720,9 +719,9 @@ img { display: block; max-width: 100%; }
   text-align: left;
 }
 .coming-soon-card {
-  background: #173404;
+  background: var(--dark);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 36px 32px;
 }
 .coming-soon-card-title {
@@ -737,8 +736,12 @@ img { display: block; max-width: 100%; }
   line-height: 1.7;
 }
 @media (max-width: 600px) {
-  .coming-soon-grid { grid-template-columns: 1fr; }
-  .coming-soon-title { font-size: 1.5rem; }
+  .coming-soon-grid {
+    grid-template-columns: 1fr;
+  }
+  .coming-soon-title {
+    font-size: 1.5rem;
+  }
 }
 
 /* ── Pricing ──────────────────────────────────────────────────────────────── */
