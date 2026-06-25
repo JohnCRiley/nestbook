@@ -213,7 +213,8 @@ bookingsRouter.get('/:id/check-extension', (req, res) => {
         AND b.status NOT IN ('cancelled','declined')
         AND b.check_in_date < ?
         AND b.check_out_date > ?
-    `).get(booking.property_id, booking.id, newCheckOut, booking.check_out_date);
+        AND (? = 'whole_property' OR b.room_id = ?)
+    `).get(booking.property_id, booking.id, newCheckOut, booking.check_out_date, booking.rental_type, booking.room_id);
 
     if (clash) {
       return res.json({
