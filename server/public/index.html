@@ -687,6 +687,73 @@ img { display: block; max-width: 100%; }
 .testimonial-name  { font-size: 0.875rem; font-weight: 700; color: var(--dark); }
 .testimonial-place { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
 
+/* ── Coming Soon ─────────────────────────────────────────────────────────── */
+.coming-soon {
+  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  padding: 72px 24px;
+}
+.coming-soon-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+.coming-soon-eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #397c0b;
+  margin-bottom: 12px;
+}
+.coming-soon-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #173404;
+  margin-bottom: 48px;
+}
+.coming-soon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  text-align: left;
+}
+.coming-soon-card {
+  background: white;
+  border: 1px solid #d4e8c8;
+  border-radius: 12px;
+  padding: 32px 28px;
+}
+.coming-soon-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #edf7e6;
+  border: 1px solid #c8dfc0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.coming-soon-icon i {
+  font-size: 22px;
+  color: #2b5f08;
+}
+.coming-soon-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #173404;
+  margin-bottom: 12px;
+}
+.coming-soon-card-text {
+  font-size: 14px;
+  color: #3a5c2a;
+  line-height: 1.7;
+}
+@media (max-width: 600px) {
+  .coming-soon-grid { grid-template-columns: 1fr; }
+  .coming-soon-title { font-size: 1.5rem; }
+}
+
 /* ── Pricing ──────────────────────────────────────────────────────────────── */
 .pricing-grid {
   display: grid;
@@ -1332,6 +1399,32 @@ img { display: block; max-width: 100%; }
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  COMING SOON                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section class="coming-soon">
+  <div class="coming-soon-inner">
+    <p class="coming-soon-eyebrow">On the horizon</p>
+    <h2 class="coming-soon-title">What's Coming to NestBook</h2>
+
+    <div class="coming-soon-grid">
+
+      <div class="coming-soon-card">
+        <div class="coming-soon-icon"><i class="ti ti-credit-card" aria-hidden="true"></i></div>
+        <h3 class="coming-soon-card-title">Direct Card Payments via Stripe Connect</h3>
+        <p class="coming-soon-card-text">Stop chasing bank transfers and managing awkward payment conversations with guests. NestBook will help you take secure card payments directly through your booking page and widget. Money goes straight to your account. No middleman, no delay, no commission taken.</p>
+      </div>
+
+      <div class="coming-soon-card">
+        <div class="coming-soon-icon"><i class="ti ti-world-search" aria-hidden="true"></i></div>
+        <h3 class="coming-soon-card-title">The NestBook Global Guest Directory</h3>
+        <p class="coming-soon-card-text">A searchable directory where independent hosts showcase their properties to guests who are ready to book and pay directly. Your property. Your price. Your guest relationship. Your money to keep. No commission — ever.</p>
+      </div>
+
     </div>
   </div>
 </section>
