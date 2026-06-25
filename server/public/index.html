@@ -693,7 +693,7 @@ img { display: block; max-width: 100%; }
   padding: 72px 24px;
 }
 .coming-soon-inner {
-  max-width: 860px;
+  max-width: 1100px;
   margin: 0 auto;
   text-align: center;
 }
@@ -706,9 +706,11 @@ img { display: block; max-width: 100%; }
   margin-bottom: 12px;
 }
 .coming-soon-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 800;
   color: #173404;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
   margin-bottom: 48px;
 }
 .coming-soon-grid {
@@ -718,35 +720,20 @@ img { display: block; max-width: 100%; }
   text-align: left;
 }
 .coming-soon-card {
-  background: white;
-  border: 1px solid #d4e8c8;
+  background: #173404;
+  border: none;
   border-radius: 12px;
-  padding: 32px 28px;
-}
-.coming-soon-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #edf7e6;
-  border: 1px solid #c8dfc0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-.coming-soon-icon i {
-  font-size: 22px;
-  color: #2b5f08;
+  padding: 36px 32px;
 }
 .coming-soon-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #173404;
-  margin-bottom: 12px;
+  font-size: 19px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 14px;
 }
 .coming-soon-card-text {
   font-size: 14px;
-  color: #3a5c2a;
+  color: rgba(255,255,255,0.8);
   line-height: 1.7;
 }
 @media (max-width: 600px) {
@@ -1414,13 +1401,11 @@ img { display: block; max-width: 100%; }
     <div class="coming-soon-grid">
 
       <div class="coming-soon-card">
-        <div class="coming-soon-icon"><i class="ti ti-credit-card" aria-hidden="true"></i></div>
         <h3 class="coming-soon-card-title">Direct Card Payments via Stripe Connect</h3>
         <p class="coming-soon-card-text">Stop chasing bank transfers and managing awkward payment conversations with guests. NestBook will help you take secure card payments directly through your booking page and widget. Money goes straight to your account. No middleman, no delay, no commission taken.</p>
       </div>
 
       <div class="coming-soon-card">
-        <div class="coming-soon-icon"><i class="ti ti-world-search" aria-hidden="true"></i></div>
         <h3 class="coming-soon-card-title">The NestBook Global Guest Directory</h3>
         <p class="coming-soon-card-text">A searchable directory where independent hosts showcase their properties to guests who are ready to book and pay directly. Your property. Your price. Your guest relationship. Your money to keep. No commission — ever.</p>
       </div>
