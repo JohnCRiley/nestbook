@@ -362,6 +362,8 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
       db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(prop.id);
       // bookings → room_charges cascade; rooms, service_categories also cascade from property
       db.prepare('DELETE FROM bookings WHERE property_id = ?').run(prop.id);
+      // guests.property_id → properties(id) has no CASCADE — nullify before deleting the property row
+      db.prepare('UPDATE guests SET property_id = NULL WHERE property_id = ?').run(prop.id);
       db.prepare('DELETE FROM properties WHERE id = ?').run(prop.id);
     }
 
