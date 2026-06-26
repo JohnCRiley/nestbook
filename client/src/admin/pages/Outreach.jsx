@@ -11,10 +11,10 @@ const BLOCKED_STATUSES = new Set(['unsubscribed', 'complained', 'converted']);
 function StatusBadge({ status }) {
   const colours = {
     new:                  { bg: '#eff6ff', color: '#1d4ed8', label: 'New' },
-    '1st_contact_sent':   { bg: '#fef9c3', color: '#92400e', label: '1st contact' },
-    '1st_followup_sent':  { bg: '#fff7ed', color: '#c2410c', label: '1st follow-up' },
-    '2nd_followup_sent':  { bg: '#fef2f2', color: '#b91c1c', label: '2nd follow-up' },
-    '3rd_followup_sent':  { bg: '#fce7f3', color: '#9d174d', label: '3rd follow-up' },
+    '1st_contact_sent':   { bg: '#fef9c3', color: '#92400e', label: '1 Sent' },
+    '1st_followup_sent':  { bg: '#fff7ed', color: '#c2410c', label: '2 Sent' },
+    '2nd_followup_sent':  { bg: '#fef2f2', color: '#b91c1c', label: '3 Sent' },
+    '3rd_followup_sent':  { bg: '#fce7f3', color: '#9d174d', label: '4 Sent' },
     replied:              { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
     converted:            { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
     unsubscribed:         { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
@@ -226,10 +226,10 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
             style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
           >
             <option value="new">New</option>
-            <option value="1st_contact_sent">1st contact sent</option>
-            <option value="1st_followup_sent">1st follow-up sent</option>
-            <option value="2nd_followup_sent">2nd follow-up sent</option>
-            <option value="3rd_followup_sent">3rd follow-up sent</option>
+            <option value="1st_contact_sent">1 Sent</option>
+            <option value="1st_followup_sent">2 Sent</option>
+            <option value="2nd_followup_sent">3 Sent</option>
+            <option value="3rd_followup_sent">4 Sent</option>
             <option value="replied">Replied</option>
             <option value="converted">Converted</option>
             <option value="unsubscribed">Unsubscribed</option>
@@ -927,10 +927,10 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
             <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Status</div>
             <select value={status} onChange={e => setStatus(e.target.value)} style={selStyle}>
               <option value="new">New</option>
-              <option value="1st_contact_sent">1st contact sent</option>
-              <option value="1st_followup_sent">1st follow-up sent</option>
-              <option value="2nd_followup_sent">2nd follow-up sent</option>
-              <option value="3rd_followup_sent">3rd follow-up sent</option>
+              <option value="1st_contact_sent">1 Sent</option>
+              <option value="1st_followup_sent">2 Sent</option>
+              <option value="2nd_followup_sent">3 Sent</option>
+              <option value="3rd_followup_sent">4 Sent</option>
               <option value="replied">Replied</option>
               <option value="converted">Converted</option>
               <option value="unsubscribed">Unsubscribed</option>
@@ -1265,10 +1265,10 @@ export default function Outreach() {
           <option value="">All statuses</option>
           <option value="actionable">Actionable</option>
           <option value="new">New</option>
-          <option value="1st_contact_sent">1st contact sent</option>
-          <option value="1st_followup_sent">1st follow-up sent</option>
-          <option value="2nd_followup_sent">2nd follow-up sent</option>
-          <option value="3rd_followup_sent">3rd follow-up sent</option>
+          <option value="1st_contact_sent">1 Sent</option>
+          <option value="1st_followup_sent">2 Sent</option>
+          <option value="2nd_followup_sent">3 Sent</option>
+          <option value="3rd_followup_sent">4 Sent</option>
           <option value="replied">Replied</option>
           <option value="converted">Converted</option>
           <option value="unsubscribed">Unsubscribed</option>
@@ -1343,10 +1343,10 @@ export default function Outreach() {
           >
             <option value="">Change status ▾</option>
             <option value="new">New</option>
-            <option value="1st_contact_sent">1st contact sent</option>
-            <option value="1st_followup_sent">1st follow-up sent</option>
-            <option value="2nd_followup_sent">2nd follow-up sent</option>
-            <option value="3rd_followup_sent">3rd follow-up sent</option>
+            <option value="1st_contact_sent">1 Sent</option>
+            <option value="1st_followup_sent">2 Sent</option>
+            <option value="2nd_followup_sent">3 Sent</option>
+            <option value="3rd_followup_sent">4 Sent</option>
             <option value="replied">Replied</option>
             <option value="converted">Converted</option>
             <option value="unsubscribed">Unsubscribed</option>
