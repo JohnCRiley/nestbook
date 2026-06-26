@@ -355,17 +355,20 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
     const ownedProps = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId);
 
     for (const prop of ownedProps) {
-      // Nullify property_id for ALL users on this property (staff AND owner).
-      // Must clear before deleting the property row — users.property_id → properties(id) FK.
+      // 1. Nullify FK self-references (no CASCADE on these columns)
       db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(prop.id);
-      // audit_log.property_id has no CASCADE — delete before the property row
-      db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(prop.id);
-      // bookings → room_charges cascade; rooms, service_categories also cascade from property
-      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(prop.id);
-      // room_photos → rooms(id) has no CASCADE — delete before rooms are removed via property CASCADE
-      db.prepare('DELETE FROM room_photos WHERE room_id IN (SELECT id FROM rooms WHERE property_id = ?)').run(prop.id);
-      // guests.property_id → properties(id) has no CASCADE — nullify before deleting the property row
       db.prepare('UPDATE guests SET property_id = NULL WHERE property_id = ?').run(prop.id);
+      // 2. Delete all tables referencing property_id or room_id with no CASCADE
+      db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM property_expenses WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM error_reports WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM room_photos WHERE room_id IN (SELECT id FROM rooms WHERE property_id = ?)').run(prop.id);
+      db.prepare('DELETE FROM room_charges WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(prop.id);
+      db.prepare('DELETE FROM rate_periods WHERE property_id = ?').run(prop.id);
+      // 3. Now safe to delete rooms then the property
+      db.prepare('DELETE FROM rooms WHERE property_id = ?').run(prop.id);
       db.prepare('DELETE FROM properties WHERE id = ?').run(prop.id);
     }
 
