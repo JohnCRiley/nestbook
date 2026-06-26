@@ -521,6 +521,8 @@ adminRouter.delete('/users/:id', async (req, res) => {
       db.prepare(`DELETE FROM audit_log WHERE property_id IN (${ph})`).run(...propIds);
       // bookings → room_charges cascade; rooms, service_categories also cascade from property
       db.prepare(`DELETE FROM bookings WHERE property_id IN (${ph})`).run(...propIds);
+      // room_photos → rooms(id) has no CASCADE — delete before rooms are removed via property CASCADE
+      db.prepare(`DELETE FROM room_photos WHERE room_id IN (SELECT id FROM rooms WHERE property_id IN (${ph}))`).run(...propIds);
       // guests.property_id → properties(id) has no CASCADE — nullify before deleting the property rows
       db.prepare(`UPDATE guests SET property_id = NULL WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM properties WHERE id IN (${ph})`).run(...propIds);
