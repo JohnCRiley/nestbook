@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+import QuillHtmlEditButton from 'quill-html-edit-button';
+Quill.register('modules/htmlEditButton', QuillHtmlEditButton);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -290,7 +292,18 @@ function QuillEditor({ value, onChange, placeholder = 'Write your email here…'
     quillRef.current = new Quill(containerRef.current, {
       theme: 'snow',
       placeholder,
-      modules: { toolbar: QUILL_TOOLBAR },
+      modules: {
+        toolbar: QUILL_TOOLBAR,
+        htmlEditButton: {
+          debug: false,
+          msg: 'Edit HTML directly — paste your button code here',
+          okText: 'Apply',
+          cancelText: 'Cancel',
+          buttonHTML: '&lt;&gt;',
+          buttonTitle: 'Show HTML source',
+          syntax: false,
+        },
+      },
     });
     if (value) quillRef.current.root.innerHTML = value;
     quillRef.current.on('text-change', () => {
