@@ -593,10 +593,15 @@ function TemplateManager({ templates, onClose, onChanged }) {
   const [name, setName]         = useState('');
   const [subject, setSubject]   = useState('');
   const [body, setBody]         = useState('');
+  const [htmlMode, setHtmlMode] = useState(false);
   const [saving, setSaving]     = useState(false);
 
-  function startNew()  { setEditing('new'); setName(''); setSubject(''); setBody(''); }
-  function startEdit(t){ setEditing(t.id); setName(t.name); setSubject(t.subject); setBody(t.body); }
+  function startNew()  { setEditing('new'); setName(''); setSubject(''); setBody(''); setHtmlMode(false); }
+  function startEdit(t){
+    setEditing(t.id); setName(t.name); setSubject(t.subject); setBody(t.body);
+    // Auto-switch to HTML mode if body contains tags Quill would never produce
+    setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(t.body));
+  }
   function cancel()    { setEditing(null); }
 
   async function save() {
@@ -636,7 +641,34 @@ function TemplateManager({ templates, onClose, onChanged }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Input value={name}    onChange={setName}    placeholder="Template name" style={{ width: '100%' }} />
               <Input value={subject} onChange={setSubject} placeholder="Email subject" style={{ width: '100%' }} />
-              <QuillEditor value={body} onChange={setBody} placeholder="Email body — use {{name}}, {{company}}, {{first_name}}" minHeight={160} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+                <button
+                  onClick={() => setHtmlMode(m => !m)}
+                  title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
+                  style={{
+                    fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
+                    fontFamily: 'monospace', fontWeight: 600,
+                    border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
+                    background: htmlMode ? '#d9f0cc' : '#f8fafc',
+                    color: htmlMode ? '#1a4710' : '#64748b',
+                  }}
+                >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
+              </div>
+              {htmlMode ? (
+                <textarea
+                  value={body}
+                  onChange={e => setBody(e.target.value)}
+                  placeholder="Paste raw HTML here — rendered as-is in the email"
+                  style={{
+                    width: '100%', height: 220, fontFamily: 'monospace', fontSize: '0.78rem',
+                    border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
+                    resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              ) : (
+                <QuillEditor value={body} onChange={setBody} placeholder="Email body — use {{name}}, {{company}}, {{first_name}}" minHeight={160} />
+              )}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <Btn onClick={save} small disabled={saving}>{saving ? 'Saving…' : 'Save'}</Btn>
