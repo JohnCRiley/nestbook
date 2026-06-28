@@ -8,11 +8,13 @@ import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
 import db from '../db/database.js';
 import { outreachRouter } from './outreach.js';
+import { prospectFinderRouter } from './prospectFinder.js';
 
 export const adminRouter = Router();
 
-// Mount outreach as a sub-router — must come before any catch-all routes
+// Mount sub-routers — must come before any catch-all routes
 adminRouter.use('/outreach', outreachRouter);
+adminRouter.use('/prospect-finder', prospectFinderRouter);
 
 const PLAN_MRR  = { pro: 19, multi: 39 };
 

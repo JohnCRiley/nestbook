@@ -9,6 +9,7 @@ import MailingList       from './pages/MailingList.jsx';
 import AuditLog          from './pages/AuditLog.jsx';
 import BusinessFinances  from './pages/BusinessFinances.jsx';
 import Outreach          from './pages/Outreach.jsx';
+import ProspectFinder    from './pages/ProspectFinder.jsx';
 import PhoneOutreach     from './pages/PhoneOutreach.jsx';
 import ErrorReports      from './pages/ErrorReports.jsx';
 import BlogImages        from './pages/BlogImages.jsx';
@@ -22,7 +23,8 @@ const NAV = [
   { to: '/super-admin/revenue',           label: 'Revenue',                     icon: <IconRevenue /> },
   { to: '/super-admin/audit-log',         label: 'Audit Log',                   icon: <IconAuditLog /> },
   { to: '/super-admin/mailing-list',      label: 'Mailing List',                icon: <IconMail /> },
-  { to: '/super-admin/outreach',          label: 'Outreach CRM',                icon: <IconOutreach /> },
+  { to: '/super-admin/outreach',           label: 'Outreach CRM',                icon: <IconOutreach /> },
+  { to: '/super-admin/prospect-finder',  label: 'Prospect Finder',             icon: <IconSearch /> },
   { to: '/super-admin/phone-outreach',   label: 'Phone outreach',              icon: <IconPhone /> },
   { to: '/super-admin/error-reports',     label: 'Error Reports',               icon: <IconBug />, badgeKey: 'errorReports' },
   { to: '/super-admin/settings',          label: 'Settings',                    icon: <IconSettings /> },
@@ -137,6 +139,7 @@ export default function AdminLayout() {
           <Route path="audit-log"         element={<AuditLog      />} />
           <Route path="mailing-list"      element={<MailingList       />} />
           <Route path="outreach"          element={<Outreach           />} />
+          <Route path="prospect-finder"  element={<ProspectFinder     />} />
           <Route path="phone-outreach"    element={<PhoneOutreach      />} />
           <Route path="error-reports"     element={<ErrorReports       />} />
           <Route path="settings"          element={<AdminSettings      />} />
@@ -295,6 +298,15 @@ function IconPhone() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  );
+}
+
+function IconSearch() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="7"/>
+      <line x1="21" y1="21" x2="15" y2="15"/>
     </svg>
   );
 }
