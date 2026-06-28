@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
-import QuillHtmlEditButton from 'quill-html-edit-button';
-Quill.register('modules/htmlEditButton', QuillHtmlEditButton);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -292,18 +290,7 @@ function QuillEditor({ value, onChange, placeholder = 'Write your email here…'
     quillRef.current = new Quill(containerRef.current, {
       theme: 'snow',
       placeholder,
-      modules: {
-        toolbar: QUILL_TOOLBAR,
-        htmlEditButton: {
-          debug: false,
-          msg: 'Edit HTML directly — paste your button code here',
-          okText: 'Apply',
-          cancelText: 'Cancel',
-          buttonHTML: '&lt;&gt;',
-          buttonTitle: 'Show HTML source',
-          syntax: false,
-        },
-      },
+      modules: { toolbar: QUILL_TOOLBAR },
     });
     if (value) quillRef.current.root.innerHTML = value;
     quillRef.current.on('text-change', () => {
@@ -336,6 +323,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   }).length;
   const [subject, setSubject]       = useState('');
   const [body, setBody]             = useState('');
+  const [htmlMode, setHtmlMode]     = useState(false);
   const [tmplId, setTmplId]         = useState('');
   const [campId, setCampId]         = useState('');
   const [followUpDays, setFollowUpDays] = useState(7);
@@ -462,12 +450,41 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
 
           <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%' }} />
 
-          <QuillEditor
-            value={body}
-            onChange={setBody}
-            placeholder="Write your email here… use {{name}}, {{company}}"
-            style={{ height: 240, overflowY: 'auto', minHeight: 0 }}
-          />
+          {/* ── Editor mode toggle ── */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+            <button
+              onClick={() => setHtmlMode(m => !m)}
+              title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
+              style={{
+                fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
+                fontFamily: 'monospace', fontWeight: 600,
+                border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
+                background: htmlMode ? '#d9f0cc' : '#f8fafc',
+                color: htmlMode ? '#1a4710' : '#64748b',
+              }}
+            >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
+          </div>
+
+          {htmlMode ? (
+            <textarea
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              placeholder="Paste raw HTML here — rendered as-is in the email"
+              style={{
+                width: '100%', height: 260, fontFamily: 'monospace', fontSize: '0.78rem',
+                border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
+                resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
+                boxSizing: 'border-box',
+              }}
+            />
+          ) : (
+            <QuillEditor
+              value={body}
+              onChange={setBody}
+              placeholder="Write your email here… use {{name}}, {{company}}"
+              style={{ height: 240, overflowY: 'auto', minHeight: 0 }}
+            />
+          )}
 
           <div style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
             <span style={{ fontSize: '0.8rem', color: '#475569' }}>Follow-up reminder in:&nbsp;</span>
