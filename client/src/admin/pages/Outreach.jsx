@@ -331,12 +331,16 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   const [sending, setSending]       = useState(false);
   const [sendError, setSendError]   = useState(null);
   const [result, setResult]         = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const sendingRef                  = useRef(false); // synchronous guard against double-click
 
   function loadTemplate(id) {
     const t = templates.find(t => t.id === Number(id));
-    if (t) { setSubject(t.subject); setBody(t.body); setTmplId(id); }
-    // QuillEditor syncs from the body value via its useEffect
+    if (t) {
+      setSubject(t.subject); setBody(t.body); setTmplId(id);
+      // Auto-switch to HTML mode if template was saved as raw HTML
+      setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(t.body));
+    }
   }
 
   async function send() {
@@ -391,6 +395,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   }
 
   return (
+    <>
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 580, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
 
@@ -574,6 +579,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
             </div>
           )}
           <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+          <Btn variant="secondary" onClick={() => setShowPreview(true)} disabled={!body.trim() || body === '<p><br></p>'}>Preview</Btn>
           <Btn
             onClick={send}
             disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>' || (limitEnabled && dailyCount >= 100)}
@@ -582,6 +588,86 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           </Btn>
         </div>
 
+      </div>
+    </div>
+    {showPreview && <PreviewModal body={body} subject={subject} onClose={() => setShowPreview(false)} />}
+    </>
+  );
+}
+
+// ── Email Preview modal ───────────────────────────────────────────────────────
+function PreviewModal({ body, subject, onClose }) {
+  const samples = {
+    '{{name}}':       'Jane Smith',
+    '{{first_name}}': 'Jane',
+    '{{company}}':    'The Old Mill B&B',
+    '{{email}}':      'jane@example.com',
+    '{{source}}':     'Google',
+    '{{website}}':    'theoldmill.co.uk',
+    '{{country}}':    'UK',
+  };
+
+  let previewBody = body || '';
+  Object.entries(samples).forEach(([k, v]) => {
+    previewBody = previewBody.split(k).join(v);
+  });
+
+  // Mirror the server-side bodyHtml logic exactly
+  const bodyHtml = previewBody.trim().startsWith('<')
+    ? previewBody
+    : previewBody.split(/\n{2,}/)
+        .map(p => `<p style="margin:0 0 16px 0;line-height:1.7">${p.replace(/\n/g, '<br>')}</p>`)
+        .join('\n');
+
+  const fullHtml = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+  <tr><td style="background:#1a4710;padding:28px 32px;">
+    <img src="https://nestbook.io/icon-192.png" width="36" height="36" style="border-radius:8px;vertical-align:middle;display:inline-block;">
+    <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
+    <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Booking software for independent properties</div>
+  </td></tr>
+  <tr><td style="padding:32px 32px 0px;color:#1a2e14;font-size:15px;line-height:1.6;">
+    <div style="color:#1a2e14;">${bodyHtml}</div>
+    <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
+      <img src="https://nestbook.io/icon-192.png" width="28" height="28" style="border-radius:6px;vertical-align:middle;display:inline-block;">
+      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
+      <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
+        <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none;">hello@nestbook.io</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none;">nestbook.io</a>
+      </span>
+    </div>
+  </td></tr>
+  <tr><td style="background:#f0f7ed;padding:20px 32px;border-top:1px solid #d9f0cc;">
+    <p style="margin:0;font-size:12px;color:#5a7a52;text-align:center;line-height:1.6;">
+      You received this email because you manage a hospitality property and we thought NestBook might be useful to you.<br>
+      <a href="#" style="color:#5a7a52;text-decoration:underline;">Unsubscribe</a>
+    </p>
+  </td></tr>
+</table></td></tr></table>
+</body></html>`;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 700, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 12px 48px rgba(0,0,0,0.3)' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Email Preview</div>
+            {subject && <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: 2 }}>Subject: {subject}</div>}
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>Merge fields shown with sample values · Jane Smith · The Old Mill B&amp;B</div>
+          </div>
+          <Btn variant="secondary" onClick={onClose}>Close</Btn>
+        </div>
+        <iframe
+          srcDoc={fullHtml}
+          title="Email preview"
+          sandbox="allow-same-origin"
+          style={{ flex: 1, border: 'none', minHeight: 480 }}
+        />
       </div>
     </div>
   );
@@ -593,10 +679,11 @@ function TemplateManager({ templates, onClose, onChanged }) {
   const [name, setName]         = useState('');
   const [subject, setSubject]   = useState('');
   const [body, setBody]         = useState('');
-  const [htmlMode, setHtmlMode] = useState(false);
-  const [saving, setSaving]     = useState(false);
+  const [htmlMode, setHtmlMode]     = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [saving, setSaving]         = useState(false);
 
-  function startNew()  { setEditing('new'); setName(''); setSubject(''); setBody(''); setHtmlMode(false); }
+  function startNew()  { setEditing('new'); setName(''); setSubject(''); setBody(''); setHtmlMode(false); setShowPreview(false); }
   function startEdit(t){
     setEditing(t.id); setName(t.name); setSubject(t.subject); setBody(t.body);
     // Auto-switch to HTML mode if body contains tags Quill would never produce
@@ -672,10 +759,12 @@ function TemplateManager({ templates, onClose, onChanged }) {
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <Btn onClick={save} small disabled={saving}>{saving ? 'Saving…' : 'Save'}</Btn>
+              <Btn variant="secondary" onClick={() => setShowPreview(true)} small disabled={!body.trim()}>Preview</Btn>
               <Btn variant="secondary" onClick={cancel} small>Cancel</Btn>
             </div>
           </div>
         )}
+        {showPreview && <PreviewModal body={body} subject={subject} onClose={() => setShowPreview(false)} />}
 
         {templates.map(t => (
           <div key={t.id} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
