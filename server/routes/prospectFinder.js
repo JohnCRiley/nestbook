@@ -93,11 +93,16 @@ prospectFinderRouter.post('/search', async (req, res) => {
         console.log('[prospect-finder] Page 1 URL:', url);
       }
 
-      const data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
-
-      if (page === 0) {
-        console.log('[prospect-finder] Page 1 response:', JSON.stringify({ status: data.status, error_message: data.error_message, resultCount: data.results?.length ?? 0 }));
+      let data;
+      try {
+        data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
+      } catch (fetchErr) {
+        console.error(`[prospect-finder] Page ${page + 1} fetch threw:`, fetchErr.message);
+        sse(res, { type: 'error', message: `Network error on page ${page + 1}: ${fetchErr.message}` });
+        return res.end();
       }
+
+      console.log(`[prospect-finder] Page ${page + 1} response: status=${data.status} results=${data.results?.length ?? 0} error_message=${data.error_message ?? 'none'}`);
 
       if (data.status === 'REQUEST_DENIED') {
         sse(res, { type: 'error', message: `Google Places API error: ${data.error_message || data.status}` });
@@ -130,6 +135,7 @@ prospectFinderRouter.post('/search', async (req, res) => {
       if (pageToken && page < 3) {
         // Google requires a delay before page tokens become valid — 3s is safe
         await new Promise(r => setTimeout(r, 3000));
+        console.log(`[prospect-finder] Delay complete, fetching page ${page + 1}`);
       }
     } while (pageToken && page < 3);
 
@@ -143,12 +149,14 @@ prospectFinderRouter.post('/search', async (req, res) => {
     // ── Fetch Place Details to get website URLs ────────────────────────────
     const withDetails = [];
     for (const p of places) {
+      console.log(`[prospect-finder] Fetching details for ${p.place_id} (${p.name})`);
       try {
         const url = `https://maps.googleapis.com/maps/api/place/details/json` +
           `?place_id=${p.place_id}` +
           `&fields=name,website,formatted_address,user_ratings_total` +
           `&key=${key}`;
         const data = await fetch(url, { signal: AbortSignal.timeout(8000) }).then(r => r.json());
+        console.log(`[prospect-finder] Details response: status=${data.status} website=${data.result?.website ?? 'none'}`);
         const r = data.result || {};
         withDetails.push({
           ...p,
@@ -156,7 +164,8 @@ prospectFinderRouter.post('/search', async (req, res) => {
           address: r.formatted_address || p.address,
           website: r.website || null,
         });
-      } catch {
+      } catch (e) {
+        console.error(`[prospect-finder] Details fetch error for ${p.place_id}:`, e.message);
         withDetails.push({ ...p, website: null });
       }
     }
