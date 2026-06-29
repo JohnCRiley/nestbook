@@ -710,8 +710,8 @@ function TemplateManager({ templates, onClose, onChanged }) {
 
   async function del(id) {
     if (!window.confirm('Delete this template?')) return;
-    await saApiFetch(`/api/admin/outreach/templates/${id}`, { method: 'DELETE' });
-    onChanged();
+    const res = await saApiFetch(`/api/admin/outreach/templates/${id}`, { method: 'DELETE' });
+    if (res.ok) onChanged();
   }
 
   return (

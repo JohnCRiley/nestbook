@@ -444,8 +444,16 @@ outreachRouter.put('/templates/:id', (req, res) => {
 
 // ── Templates — delete ────────────────────────────────────────────────────────
 outreachRouter.delete('/templates/:id', (req, res) => {
-  db.prepare(`DELETE FROM email_templates WHERE id=?`).run(req.params.id);
-  res.json({ ok: true });
+  db.exec('BEGIN');
+  try {
+    db.prepare(`UPDATE prospect_emails SET template_id = NULL WHERE template_id = ?`).run(req.params.id);
+    db.prepare(`DELETE FROM email_templates WHERE id = ?`).run(req.params.id);
+    db.exec('COMMIT');
+    res.json({ ok: true });
+  } catch (err) {
+    db.exec('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Campaigns — list ──────────────────────────────────────────────────────────
