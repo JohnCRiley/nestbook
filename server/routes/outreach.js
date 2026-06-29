@@ -127,7 +127,7 @@ outreachRouter.put('/prospects/:id', (req, res) => {
       country = ?, language = ?, website = ?
     WHERE id = ?
   `).run(
-    name ?? p.name,
+    name !== undefined ? (name?.trim() || null) : p.name,
     company ?? p.company,
     email ? email.toLowerCase().trim() : p.email,
     status ?? p.status,

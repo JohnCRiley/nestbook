@@ -978,7 +978,7 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
     if (activeFields.length === 0) return;
     setSaving(true);
     const body = {};
-    if (fields.name)     body.name     = name.trim()     || null;
+    if (fields.name)     body.name     = name.trim();
     if (fields.website)  body.website  = website.trim()  || null;
     if (fields.source)   body.source   = source;
     if (fields.country)  body.country  = country.trim()  || null;
