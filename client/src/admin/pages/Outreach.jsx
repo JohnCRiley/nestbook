@@ -362,13 +362,25 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
       // Cap by both the selector limit and fresh remaining capacity
       const cap = sendLimit === null ? (freshData.limitEnabled ? freshRemaining : selected.length) : Math.min(sendLimit, freshRemaining);
       const toSend = selected.slice(0, cap);
-      const res = await saApiFetch('/api/admin/outreach/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prospect_ids: toSend.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null, followUpDays }),
-      });
-      const data = await res.json();
-      setResult(data);
+
+      // Chunk into batches of 50 — large single requests can exceed nginx's
+      // proxy_read_timeout before the server finishes writing the response
+      const CHUNK = 50;
+      let totalSent = 0, totalSkipped = 0, allResults = [], allSkippedReasons = [];
+      for (let i = 0; i < toSend.length; i += CHUNK) {
+        const chunk = toSend.slice(i, i + CHUNK);
+        const res = await saApiFetch('/api/admin/outreach/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prospect_ids: chunk.map(p => p.id), subject, body, template_id: tmplId || null, campaign_id: campId || null, followUpDays }),
+        });
+        const data = await res.json();
+        totalSent += data.sent ?? 0;
+        totalSkipped += data.skipped ?? 0;
+        if (data.results) allResults.push(...data.results);
+        if (data.skippedReasons) allSkippedReasons.push(...data.skippedReasons);
+      }
+      setResult({ sent: totalSent, skipped: totalSkipped, results: allResults, skippedReasons: allSkippedReasons });
       onSent();
     } catch {
       // Only re-enable on network error so the user can retry
