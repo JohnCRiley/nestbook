@@ -954,9 +954,10 @@ function CsvImportModal({ onClose, onImported }) {
 // ── Bulk Edit modal ───────────────────────────────────────────────────────────
 function BulkEditModal({ selectedIds, onClose, onSaved }) {
   const [fields, setFields] = useState({
-    website: false, source: false, country: false,
+    name: false, website: false, source: false, country: false,
     language: false, status: false, notes: false,
   });
+  const [name, setName]         = useState('');
   const [website, setWebsite]   = useState('');
   const [source, setSource]     = useState('csv');
   const [country, setCountry]   = useState('');
@@ -977,6 +978,7 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
     if (activeFields.length === 0) return;
     setSaving(true);
     const body = {};
+    if (fields.name)     body.name     = name.trim()     || null;
     if (fields.website)  body.website  = website.trim()  || null;
     if (fields.source)   body.source   = source;
     if (fields.country)  body.country  = country.trim()  || null;
@@ -1024,6 +1026,15 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
         <p style={{ margin: '0 0 16px', fontSize: '0.82rem', color: '#64748b' }}>
           Check a field to update it across all {selectedIds.length} selected prospect{selectedIds.length !== 1 ? 's' : ''}. Unchecked fields are left unchanged.
         </p>
+
+        {/* Name */}
+        <div style={rowStyle(fields.name)}>
+          <input type="checkbox" checked={fields.name} onChange={() => toggleField('name')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Name</div>
+            <Input value={name} onChange={setName} placeholder="e.g. Sir, Madam, or full name" style={{ width: '100%' }} />
+          </div>
+        </div>
 
         {/* Website */}
         <div style={rowStyle(fields.website)}>
