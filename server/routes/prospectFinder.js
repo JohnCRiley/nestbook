@@ -77,12 +77,15 @@ prospectFinderRouter.post('/search', async (req, res) => {
     let page = 0;
 
     do {
-      let url = `https://maps.googleapis.com/maps/api/place/textsearch/json` +
-        `?query=${encodeURIComponent(query)}` +
-        `&radius=${Number(radius)}` +
-        `&language=${language}` +
-        `&key=${key}`;
-      if (pageToken) url += `&pagetoken=${encodeURIComponent(pageToken)}`;
+      // When paginating, send ONLY pagetoken + key — sending query/radius/language
+      // alongside a pagetoken causes INVALID_REQUEST on the Places API.
+      const url = pageToken
+        ? `https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken=${pageToken}&key=${key}`
+        : `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+          `?query=${encodeURIComponent(query)}` +
+          `&radius=${Number(radius)}` +
+          `&language=${language}` +
+          `&key=${key}`;
 
       const data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
 
@@ -115,8 +118,8 @@ prospectFinderRouter.post('/search', async (req, res) => {
       page++;
 
       if (pageToken && page < 3) {
-        // Google requires a 2-second delay before page tokens become valid
-        await new Promise(r => setTimeout(r, 2000));
+        // Google requires a delay before page tokens become valid — 3s is safe
+        await new Promise(r => setTimeout(r, 3000));
       }
     } while (pageToken && page < 3);
 
