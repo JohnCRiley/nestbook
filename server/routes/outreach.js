@@ -267,10 +267,14 @@ outreachRouter.post('/send', async (req, res) => {
       csv:         'Google',
       other:       'Google',
     };
+    // Language-aware fallbacks: non-English greetings stand alone without a filler word
+    const firstNameFallbacks = { en: 'there', fr: '', es: '', de: '', nl: '' };
+    const nameFallback = firstNameFallbacks[p.language] ?? 'there';
+
     const substitutions = {
-      '{{name}}':       p.name || 'there',
+      '{{name}}':       p.name || nameFallback,
       '{{company}}':    p.company || p.name || '',
-      '{{first_name}}': (p.name || '').split(' ')[0] || 'there',
+      '{{first_name}}': (p.name || '').split(' ')[0] || nameFallback,
       '{{email}}':      p.email || '',
       '{{source}}':     SOURCE_LABELS[p.source] || p.source || 'Google',
       '{{website}}':    p.website || '',
@@ -283,6 +287,9 @@ outreachRouter.post('/send', async (req, res) => {
       finalSubject = finalSubject.replace(regex, value);
       finalBody    = finalBody.replace(regex, value);
     });
+    // Remove stray space before comma when fallback is empty (e.g. "Bonjour ," → "Bonjour,")
+    finalSubject = finalSubject.replace(/\s+,/g, ',');
+    finalBody    = finalBody.replace(/\s+,/g, ',');
 
     // Tag nestbook.io links with prospect language so landing pages auto-switch
     const prospectLang = p.language && ['en','fr','de','es','nl'].includes(p.language) ? p.language : null;
