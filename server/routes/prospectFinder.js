@@ -77,6 +77,8 @@ prospectFinderRouter.post('/search', async (req, res) => {
     let page = 0;
 
     do {
+      console.log(`[prospect-finder] loop start — page=${page} pageToken=${pageToken ? pageToken.slice(0, 30) + '…' : 'null'}`);
+
       // When paginating, send ONLY pagetoken + key — sending query/radius/language
       // alongside a pagetoken causes INVALID_REQUEST on the Places API.
       const url = pageToken
@@ -87,7 +89,15 @@ prospectFinderRouter.post('/search', async (req, res) => {
           `&language=${language}` +
           `&key=${key}`;
 
+      if (page === 0) {
+        console.log('[prospect-finder] Page 1 URL:', url);
+      }
+
       const data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
+
+      if (page === 0) {
+        console.log('[prospect-finder] Page 1 response:', JSON.stringify({ status: data.status, error_message: data.error_message, resultCount: data.results?.length ?? 0 }));
+      }
 
       if (data.status === 'REQUEST_DENIED') {
         sse(res, { type: 'error', message: `Google Places API error: ${data.error_message || data.status}` });
