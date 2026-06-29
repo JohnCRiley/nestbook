@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import db from '../db/database.js';
 
 export const prospectFinderRouter = Router();
 
@@ -112,12 +111,12 @@ prospectFinderRouter.post('/search', async (req, res) => {
     const withDetails = [];
     for (const p of places) {
       try {
-        const url = `https://maps.googleapis.com/maps/api/place/details/json` +
+        const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json` +
           `?place_id=${p.place_id}` +
           `&fields=name,website,formatted_address,user_ratings_total` +
           `&key=${key}`;
-        const data = await fetch(url, { signal: AbortSignal.timeout(8000) }).then(r => r.json());
-        const r = data.result || {};
+        const detail = await fetch(detailUrl, { signal: AbortSignal.timeout(8000) }).then(r => r.json());
+        const r = detail.result || {};
         withDetails.push({
           ...p,
           name:    r.name    || p.name,
@@ -170,47 +169,4 @@ prospectFinderRouter.post('/search', async (req, res) => {
   }
 
   res.end();
-});
-
-// ── POST /api/admin/prospect-finder/import ────────────────────────────────────
-prospectFinderRouter.post('/import', (req, res) => {
-  const { prospects: list, language = 'en' } = req.body;
-  if (!Array.isArray(list) || list.length === 0) {
-    return res.status(400).json({ error: 'No prospects provided.' });
-  }
-
-  const langToCountry = { en: 'UK', fr: 'France', de: 'Germany', es: 'Spain', nl: 'Netherlands' };
-  const country = langToCountry[language] || '';
-
-  const insert = db.prepare(`
-    INSERT OR IGNORE INTO prospects (name, email, website, source, country, language, status)
-    VALUES (?, ?, ?, 'google_places', ?, ?, 'new')
-  `);
-
-  let imported = 0;
-  let skipped = 0;
-
-  db.exec('BEGIN');
-  try {
-    for (const p of list) {
-      if (!p.email) continue;
-      const result = insert.run(
-        (p.name || 'Unknown').trim(),
-        p.email.toLowerCase().trim(),
-        p.website || null,
-        country,
-        language,
-      );
-      if (result.changes > 0) imported++;
-      else skipped++;
-    }
-    db.exec('COMMIT');
-  } catch (err) {
-    try { db.exec('ROLLBACK'); } catch {}
-    console.error('[prospect-finder] Import error:', err.message);
-    return res.status(500).json({ error: err.message });
-  }
-
-  console.log(`[prospect-finder] Imported ${imported}, skipped ${skipped} (already in CRM)`);
-  res.json({ imported, skipped });
 });
