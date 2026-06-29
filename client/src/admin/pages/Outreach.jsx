@@ -875,7 +875,7 @@ function CsvImportModal({ onClose, onImported }) {
         website:       obj.website                             || '',
         notes:         obj.notes                               || '',
       };
-    }).filter(r => r.email && r.name);
+    }).filter(r => r.email);
   }
 
   function handleFileChange(e) {
@@ -892,7 +892,7 @@ function CsvImportModal({ onClose, onImported }) {
   async function doImport() {
     const rows = parseRows(raw);
     if (rows.length === 0) {
-      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has name and email columns.'] });
+      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has an email column.'] });
       return;
     }
     setSaving(true);

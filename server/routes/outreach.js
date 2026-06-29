@@ -169,7 +169,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
   db.exec('BEGIN');
   try {
     for (const r of rows) {
-      if (!r.name || !r.email) { skipped++; continue; }
+      if (!r.email) { skipped++; continue; }
       const normalEmail = r.email.toLowerCase().trim();
       if (checkEmail.get(normalEmail)) { skipped++; continue; } // duplicate
       try {
@@ -177,7 +177,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
         const phone   = r.phone || r.Phone || r.telephone || r.Telephone || null;
         const source  = r.source || r.Source || 'csv';
         insert.run(
-          r.name.trim(),
+          (r.name || '').trim(),
           r.company?.trim() || null,
           normalEmail,
           phone?.trim() || null,
