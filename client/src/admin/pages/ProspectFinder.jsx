@@ -97,11 +97,9 @@ export default function ProspectFinder() {
     });
   }
 
-  const selectableIndices = results
-    .map((r, i) => r.status === 'email_found' ? i : -1)
-    .filter(i => i >= 0);
+  const selectableIndices = results.map((_, i) => i);
 
-  const chainCount = results.filter(r => r.status === 'email_found' && isChain(r.website)).length;
+  const chainCount  = results.filter(r => isChain(r.website)).length;
   const emailsFound = results.filter(r => r.email).length;
 
   function toggleSelect(i) {
@@ -112,7 +110,7 @@ export default function ProspectFinder() {
     });
   }
 
-  function selectAllWithEmail() {
+  function selectAll() {
     setSelected(new Set(selectableIndices));
   }
 
@@ -176,9 +174,9 @@ export default function ProspectFinder() {
               setResults(r);
               setStatusMsg(event.message || 'Done.');
               setProgress({ current: r.length, total: r.length });
-              // Auto-select all email_found rows that aren't flagged as chains
+              // Auto-select all rows that aren't flagged as chains
               setSelected(new Set(
-                r.map((item, i) => (item.status === 'email_found' && !isChain(item.website)) ? i : -1)
+                r.map((item, i) => !isChain(item.website) ? i : -1)
                  .filter(i => i >= 0)
               ));
               setPhase('done');
@@ -348,10 +346,10 @@ export default function ProspectFinder() {
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button
-                onClick={selectAllWithEmail}
+                onClick={selectAll}
                 style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #d1d5db', background: '#f8fafc', color: '#374151', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                Select all with email
+                Select all
               </button>
               <button
                 onClick={deselectAll}
@@ -384,10 +382,10 @@ export default function ProspectFinder() {
                   <th style={{ padding: '10px 12px', textAlign: 'center', width: 44 }}>
                     <input
                       type="checkbox"
-                      checked={selectableIndices.length > 0 && selected.size === selectableIndices.length}
-                      onChange={() => selected.size === selectableIndices.length ? deselectAll() : selectAllWithEmail()}
+                      checked={results.length > 0 && selected.size === results.length}
+                      onChange={() => selected.size === results.length ? deselectAll() : selectAll()}
                       style={{ accentColor: '#1a4710' }}
-                      title="Select / deselect all with emails"
+                      title="Select / deselect all"
                     />
                   </th>
                   <th style={thStyle}>Property name</th>
@@ -400,25 +398,22 @@ export default function ProspectFinder() {
                 {results.map((r, i) => {
                   const badge      = statusBadge(r.status);
                   const chain      = isChain(r.website);
-                  const canSelect  = r.status === 'email_found';
                   const isSelected = selected.has(i);
                   const rowBg      = isSelected ? '#f0fdf4' : chain ? '#fffbeb' : 'transparent';
                   return (
                     <tr
                       key={i}
-                      style={{ borderBottom: '1px solid #f1f5f9', background: rowBg, cursor: canSelect ? 'pointer' : 'default' }}
-                      onClick={() => canSelect && toggleSelect(i)}
+                      style={{ borderBottom: '1px solid #f1f5f9', background: rowBg, cursor: 'pointer' }}
+                      onClick={() => toggleSelect(i)}
                     >
                       <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                        {canSelect && (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelect(i)}
-                            onClick={e => e.stopPropagation()}
-                            style={{ accentColor: '#1a4710' }}
-                          />
-                        )}
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(i)}
+                          onClick={e => e.stopPropagation()}
+                          style={{ accentColor: '#1a4710' }}
+                        />
                       </td>
                       <td style={{ padding: '8px 12px', fontWeight: 500, color: '#1e293b', maxWidth: 200 }}>
                         {r.name}
