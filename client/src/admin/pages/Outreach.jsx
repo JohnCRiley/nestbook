@@ -187,7 +187,7 @@ function AddProspectModal({ onClose, onSaved }) {
 
 // ── Edit Prospect modal ───────────────────────────────────────────────────────
 function EditProspectModal({ prospect, onClose, onSaved }) {
-  const [name, setName]             = useState(prospect.name);
+  const [name, setName]             = useState(prospect.name ?? '');
   const [company, setCompany]       = useState(prospect.company ?? '');
   const [email, setEmail]           = useState(prospect.email);
   const [status, setStatus]         = useState(prospect.status);
