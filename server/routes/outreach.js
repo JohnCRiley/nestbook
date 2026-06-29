@@ -357,9 +357,11 @@ outreachRouter.post('/send', async (req, res) => {
 
     try {
       await sendOutreachEmail({ to: p.email, subject: finalSubject, html: htmlBody });
+      const safeCampaignId = campaign_id && db.prepare('SELECT id FROM outreach_campaigns WHERE id = ?').get(campaign_id) ? campaign_id : null;
+      const safeTemplateId = template_id && db.prepare('SELECT id FROM email_templates WHERE id = ?').get(template_id) ? template_id : null;
       db.prepare(
         `INSERT INTO prospect_emails (prospect_id, campaign_id, template_id, subject, body) VALUES (?, ?, ?, ?, ?)`
-      ).run(pid, campaign_id || null, template_id || null, finalSubject, finalBody);
+      ).run(pid, safeCampaignId, safeTemplateId, finalSubject, finalBody);
       db.prepare(
         `INSERT INTO outreach_send_log (recipient_email, prospect_id, campaign) VALUES (?, ?, ?)`
       ).run(p.email, pid, campaign_id ? String(campaign_id) : '');
