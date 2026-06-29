@@ -329,6 +329,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   const [followUpDays, setFollowUpDays] = useState(7);
   const [sendLimit, setSendLimit]   = useState(limitEnabled ? 100 : null);
   const [sending, setSending]       = useState(false);
+  const [sendProgress, setSendProgress] = useState({ done: 0, total: 0 });
   const [sendError, setSendError]   = useState(null);
   const [result, setResult]         = useState(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -367,6 +368,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
       // proxy_read_timeout before the server finishes writing the response
       const CHUNK = 50;
       let totalSent = 0, totalSkipped = 0, allResults = [], allSkippedReasons = [];
+      setSendProgress({ done: 0, total: toSend.length });
       for (let i = 0; i < toSend.length; i += CHUNK) {
         const chunk = toSend.slice(i, i + CHUNK);
         const res = await saApiFetch('/api/admin/outreach/send', {
@@ -379,6 +381,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
         totalSkipped += data.skipped ?? 0;
         if (data.results) allResults.push(...data.results);
         if (data.skippedReasons) allSkippedReasons.push(...data.skippedReasons);
+        setSendProgress({ done: Math.min(i + CHUNK, toSend.length), total: toSend.length });
       }
       setResult({ sent: totalSent, skipped: totalSkipped, results: allResults, skippedReasons: allSkippedReasons });
       onSent();
@@ -590,13 +593,27 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               ⛔ {sendError}
             </div>
           )}
-          <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-          <Btn variant="secondary" onClick={() => setShowPreview(true)} disabled={!body.trim() || body === '<p><br></p>'}>Preview</Btn>
+          {sending && sendProgress.total > 0 && (
+            <div style={{ width: '100%' }}>
+              <div style={{ fontSize: '0.82rem', color: '#1e293b', fontWeight: 600, marginBottom: 6 }}>
+                Sending {Math.min(sendProgress.done + 50, sendProgress.total)} of {sendProgress.total}…
+              </div>
+              <div style={{ height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, background: '#1a4710',
+                  width: `${Math.round((sendProgress.done / sendProgress.total) * 100)}%`,
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            </div>
+          )}
+          <Btn variant="secondary" onClick={onClose} disabled={sending}>Cancel</Btn>
+          <Btn variant="secondary" onClick={() => setShowPreview(true)} disabled={sending || !body.trim() || body === '<p><br></p>'}>Preview</Btn>
           <Btn
             onClick={send}
             disabled={sending || !subject.trim() || !body.trim() || body === '<p><br></p>' || (limitEnabled && dailyCount >= 100)}
           >
-            {sending ? 'Sending…' : `Send to ${Math.min(sendLimit ?? selected.length, limitEnabled ? Math.max(0, 100 - dailyCount) : selected.length, selected.length)}`}
+            {sending ? `Sending… (${sendProgress.done}/${sendProgress.total})` : `Send to ${Math.min(sendLimit ?? selected.length, limitEnabled ? Math.max(0, 100 - dailyCount) : selected.length, selected.length)}`}
           </Btn>
         </div>
 
