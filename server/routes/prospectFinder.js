@@ -70,74 +70,36 @@ prospectFinderRouter.post('/search', async (req, res) => {
 
     sse(res, { type: 'status', message: `Searching Google Places for ${types.join(', ')} in ${area.trim()}…` });
 
-    // ── Collect places across up to 3 pages (60 results max) ──────────────
-    const seenIds = new Set();
-    const places = [];
-    let pageToken = null;
-    let page = 0;
+    // ── Single fetch — up to 20 results (pagination dropped: page tokens unreliable) ──
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json` +
+      `?query=${encodeURIComponent(query)}` +
+      `&radius=${Number(radius)}` +
+      `&language=${language}` +
+      `&key=${key}`;
 
-    do {
-      console.log(`[prospect-finder] loop start — page=${page} pageToken=${pageToken ? pageToken.slice(0, 30) + '…' : 'null'}`);
+    const data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
 
-      // When paginating, send ONLY pagetoken + key — sending query/radius/language
-      // alongside a pagetoken causes INVALID_REQUEST on the Places API.
-      const url = pageToken
-        ? `https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken=${pageToken}&key=${key}`
-        : `https://maps.googleapis.com/maps/api/place/textsearch/json` +
-          `?query=${encodeURIComponent(query)}` +
-          `&radius=${Number(radius)}` +
-          `&language=${language}` +
-          `&key=${key}`;
+    if (data.status === 'REQUEST_DENIED') {
+      sse(res, { type: 'error', message: `Google Places API error: ${data.error_message || data.status}` });
+      return res.end();
+    }
+    if (data.status === 'OVER_QUERY_LIMIT') {
+      sse(res, { type: 'error', message: 'Google Places API quota exceeded. Try again later.' });
+      return res.end();
+    }
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      sse(res, { type: 'error', message: `Google Places returned: ${data.status}` });
+      return res.end();
+    }
 
-      if (page === 0) {
-        console.log('[prospect-finder] Page 1 URL:', url);
-      }
-
-      let data;
-      try {
-        data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
-      } catch (fetchErr) {
-        console.error(`[prospect-finder] Page ${page + 1} fetch threw:`, fetchErr.message);
-        sse(res, { type: 'error', message: `Network error on page ${page + 1}: ${fetchErr.message}` });
-        return res.end();
-      }
-
-      console.log(`[prospect-finder] Page ${page + 1} response: status=${data.status} results=${data.results?.length ?? 0} error_message=${data.error_message ?? 'none'}`);
-
-      if (data.status === 'REQUEST_DENIED') {
-        sse(res, { type: 'error', message: `Google Places API error: ${data.error_message || data.status}` });
-        return res.end();
-      }
-      if (data.status === 'OVER_QUERY_LIMIT') {
-        sse(res, { type: 'error', message: 'Google Places API quota exceeded. Try again later.' });
-        return res.end();
-      }
-      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        sse(res, { type: 'error', message: `Google Places returned: ${data.status}` });
-        return res.end();
-      }
-
-      for (const p of (data.results || [])) {
-        if (seenIds.has(p.place_id)) continue;
-        seenIds.add(p.place_id);
-        if (Number(minReviews) > 0 && (p.user_ratings_total ?? 0) < Number(minReviews)) continue;
-        places.push({
-          place_id: p.place_id,
-          name:     p.name,
-          address:  p.formatted_address,
-          ratings:  p.user_ratings_total ?? 0,
-        });
-      }
-
-      pageToken = data.next_page_token || null;
-      page++;
-
-      if (pageToken && page < 3) {
-        // Google requires a delay before page tokens become valid — 3s is safe
-        await new Promise(r => setTimeout(r, 3000));
-        console.log(`[prospect-finder] Delay complete, fetching page ${page + 1}`);
-      }
-    } while (pageToken && page < 3);
+    const places = (data.results || [])
+      .filter(p => Number(minReviews) === 0 || (p.user_ratings_total ?? 0) >= Number(minReviews))
+      .map(p => ({
+        place_id: p.place_id,
+        name:     p.name,
+        address:  p.formatted_address,
+        ratings:  p.user_ratings_total ?? 0,
+      }));
 
     if (places.length === 0) {
       sse(res, { type: 'done', results: [], emailsFound: 0, message: 'No properties found. Try a broader area or different property types.' });
@@ -149,14 +111,12 @@ prospectFinderRouter.post('/search', async (req, res) => {
     // ── Fetch Place Details to get website URLs ────────────────────────────
     const withDetails = [];
     for (const p of places) {
-      console.log(`[prospect-finder] Fetching details for ${p.place_id} (${p.name})`);
       try {
         const url = `https://maps.googleapis.com/maps/api/place/details/json` +
           `?place_id=${p.place_id}` +
           `&fields=name,website,formatted_address,user_ratings_total` +
           `&key=${key}`;
         const data = await fetch(url, { signal: AbortSignal.timeout(8000) }).then(r => r.json());
-        console.log(`[prospect-finder] Details response: status=${data.status} website=${data.result?.website ?? 'none'}`);
         const r = data.result || {};
         withDetails.push({
           ...p,
@@ -164,8 +124,7 @@ prospectFinderRouter.post('/search', async (req, res) => {
           address: r.formatted_address || p.address,
           website: r.website || null,
         });
-      } catch (e) {
-        console.error(`[prospect-finder] Details fetch error for ${p.place_id}:`, e.message);
+      } catch {
         withDetails.push({ ...p, website: null });
       }
     }
