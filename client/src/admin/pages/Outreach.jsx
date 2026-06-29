@@ -327,7 +327,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   const [tmplId, setTmplId]         = useState('');
   const [campId, setCampId]         = useState('');
   const [followUpDays, setFollowUpDays] = useState(7);
-  const [sendLimit, setSendLimit]   = useState(100);
+  const [sendLimit, setSendLimit]   = useState(limitEnabled ? 100 : null);
   const [sending, setSending]       = useState(false);
   const [sendError, setSendError]   = useState(null);
   const [result, setResult]         = useState(null);
