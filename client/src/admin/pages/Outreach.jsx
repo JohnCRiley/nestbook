@@ -1213,7 +1213,7 @@ export default function Outreach() {
 
   const load = useCallback(async () => {
     const [pRes, sRes, tRes, cRes, fRes, dcRes, lsRes] = await Promise.all([
-      saApiFetch('/api/admin/outreach/prospects?limit=2000'),
+      saApiFetch('/api/admin/outreach/prospects'),
       saApiFetch('/api/admin/outreach/stats'),
       saApiFetch('/api/admin/outreach/templates'),
       saApiFetch('/api/admin/outreach/campaigns'),

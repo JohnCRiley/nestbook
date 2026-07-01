@@ -41,14 +41,13 @@ outreachRouter.get('/stats', (req, res) => {
 
 // ── Prospects — list ──────────────────────────────────────────────────────────
 outreachRouter.get('/prospects', (req, res) => {
-  const { status, source, q, limit = 100, offset = 0 } = req.query;
+  const { status, source, q } = req.query;
   let sql = `SELECT * FROM prospects WHERE 1=1`;
   const params = [];
   if (status) { sql += ` AND status = ?`; params.push(status); }
   if (source) { sql += ` AND source = ?`; params.push(source); }
   if (q)      { sql += ` AND (name LIKE ? OR email LIKE ? OR company LIKE ?)`; params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
-  sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-  params.push(Number(limit), Number(offset));
+  sql += ` ORDER BY created_at DESC`;
 
   const rows = db.prepare(sql).all(...params);
 
