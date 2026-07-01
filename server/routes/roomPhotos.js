@@ -115,6 +115,9 @@ roomPhotosRouter.post('/:roomId/photos', upload.single('photo'), async (req, res
       `INSERT INTO room_photos (room_id, property_id, filename, thumb_filename, display_order) VALUES (?, ?, ?, ?, ?)`
     ).run(roomId, room.property_id, req.file.filename, thumbName, nextOrder);
 
+    db.prepare(`INSERT INTO content_flags (property_id, room_id, content_type, content_ref) VALUES (?, ?, 'room_photo', ?)`)
+      .run(room.property_id, roomId, req.file.filename);
+
     res.status(201).json({
       id: result.lastInsertRowid,
       url: `/uploads/rooms/${req.file.filename}`,

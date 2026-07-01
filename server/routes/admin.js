@@ -9,6 +9,8 @@ import bcrypt from 'bcryptjs';
 import db from '../db/database.js';
 import { outreachRouter } from './outreach.js';
 import { prospectFinderRouter } from './prospectFinder.js';
+import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
+import { sendContentRemovedEmail } from '../email/emailService.js';
 
 export const adminRouter = Router();
 
@@ -1452,4 +1454,77 @@ adminRouter.patch('/phone-prospects/:id', (req, res) => {
   params.push(req.params.id);
   db.prepare(`UPDATE prospects SET ${updates.join(', ')} WHERE id = ?`).run(...params);
   res.json({ success: true });
+});
+
+// ── Content flags ─────────────────────────────────────────────────────────────
+const PROP_UPLOAD_DIR = join(__dirname, '../uploads/properties');
+
+const FLAG_SELECT = `
+  SELECT cf.*, p.name AS property_name, u.email AS owner_email,
+         u.name AS owner_name, u.language AS owner_language
+  FROM content_flags cf
+  JOIN properties p ON p.id = cf.property_id
+  LEFT JOIN users u ON u.id = p.owner_id
+`;
+
+adminRouter.get('/content-flags/count', (req, res) => {
+  const pending = db.prepare(`SELECT COUNT(*) AS n FROM content_flags WHERE status = 'pending'`).get().n;
+  res.json({ pending });
+});
+
+adminRouter.get('/content-flags', (req, res) => {
+  const { status = 'pending' } = req.query;
+  let rows;
+  if (status === 'history') {
+    rows = db.prepare(`${FLAG_SELECT} WHERE cf.status IN ('verified','removed') ORDER BY cf.reviewed_at DESC`).all();
+  } else {
+    rows = db.prepare(`${FLAG_SELECT} WHERE cf.status = ? ORDER BY cf.created_at DESC`).all(status);
+  }
+  res.json(rows);
+});
+
+adminRouter.post('/content-flags/:id/verify', (req, res) => {
+  const flag = db.prepare('SELECT * FROM content_flags WHERE id = ?').get(req.params.id);
+  if (!flag) return res.status(404).json({ error: 'Not found' });
+  db.prepare(`UPDATE content_flags SET status = 'verified', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?`)
+    .run(req.user.userId, req.params.id);
+  res.json({ ok: true });
+});
+
+adminRouter.post('/content-flags/:id/remove', async (req, res) => {
+  const flag = db.prepare(`${FLAG_SELECT} WHERE cf.id = ?`).get(req.params.id);
+  if (!flag) return res.status(404).json({ error: 'Not found' });
+  const { sendEmail = false, reason = '' } = req.body;
+
+  try {
+    if (flag.content_type === 'room_photo') {
+      const photo = db.prepare('SELECT * FROM room_photos WHERE filename = ? AND room_id = ?').get(flag.content_ref, flag.room_id);
+      if (photo) {
+        db.prepare('DELETE FROM room_photos WHERE id = ?').run(photo.id);
+        try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, photo.filename)); } catch {}
+        if (photo.thumb_filename) { try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, photo.thumb_filename)); } catch {} }
+      }
+    } else if (flag.content_type === 'hero_photo') {
+      const prop = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(flag.property_id);
+      if (prop?.hero_photo === flag.content_ref) {
+        db.prepare('UPDATE properties SET hero_photo = NULL WHERE id = ?').run(flag.property_id);
+        try { fs.unlinkSync(join(PROP_UPLOAD_DIR, prop.hero_photo)); } catch {}
+      }
+    } else if (flag.content_type === 'property_description') {
+      db.prepare('UPDATE properties SET description = NULL WHERE id = ?').run(flag.property_id);
+    } else if (flag.content_type === 'room_description') {
+      db.prepare('UPDATE rooms SET description = NULL WHERE id = ?').run(flag.room_id);
+    }
+
+    db.prepare(`UPDATE content_flags SET status = 'removed', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?`)
+      .run(req.user.userId, req.params.id);
+
+    if (sendEmail && flag.owner_email) {
+      await sendContentRemovedEmail(flag.owner_email, flag.owner_name, flag.property_name, reason || null, flag.owner_language);
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });

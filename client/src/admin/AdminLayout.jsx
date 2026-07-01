@@ -14,6 +14,7 @@ import PhoneOutreach     from './pages/PhoneOutreach.jsx';
 import ErrorReports      from './pages/ErrorReports.jsx';
 import BlogImages        from './pages/BlogImages.jsx';
 import LandingImages     from './pages/LandingImages.jsx';
+import ContentReview     from './pages/ContentReview.jsx';
 import { clearSASession, saApiFetch } from './saApiFetch.js';
 
 const NAV = [
@@ -26,6 +27,7 @@ const NAV = [
   { to: '/super-admin/outreach',           label: 'Outreach CRM',                icon: <IconOutreach /> },
   { to: '/super-admin/prospect-finder',  label: 'Prospect Finder',             icon: <IconSearch /> },
   { to: '/super-admin/phone-outreach',   label: 'Phone outreach',              icon: <IconPhone /> },
+  { to: '/super-admin/content-review',   label: 'Content Review',              icon: <IconFlag />, badgeKey: 'contentReview' },
   { to: '/super-admin/error-reports',     label: 'Error Reports',               icon: <IconBug />, badgeKey: 'errorReports' },
   { to: '/super-admin/settings',          label: 'Settings',                    icon: <IconSettings /> },
   { to: '/super-admin/business-finances', label: 'NestBook Business',           icon: <IconFinances /> },
@@ -36,13 +38,22 @@ const NAV = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [badges, setBadges] = useState({ errorReports: 0 });
+  const [badges, setBadges] = useState({ errorReports: 0, contentReview: 0 });
 
   useEffect(() => {
-    saApiFetch('/api/admin/error-reports/count')
-      .then((r) => r.ok ? r.json() : { count: 0 })
-      .then(({ count }) => setBadges((b) => ({ ...b, errorReports: count })))
-      .catch(() => {});
+    function fetchBadges() {
+      saApiFetch('/api/admin/error-reports/count')
+        .then((r) => r.ok ? r.json() : { count: 0 })
+        .then(({ count }) => setBadges((b) => ({ ...b, errorReports: count })))
+        .catch(() => {});
+      saApiFetch('/api/admin/content-flags/count')
+        .then((r) => r.ok ? r.json() : { pending: 0 })
+        .then(({ pending }) => setBadges((b) => ({ ...b, contentReview: pending })))
+        .catch(() => {});
+    }
+    fetchBadges();
+    const timer = setInterval(fetchBadges, 60000);
+    return () => clearInterval(timer);
   }, []);
 
   function handleLogout() {
@@ -146,6 +157,7 @@ export default function AdminLayout() {
           <Route path="business-finances" element={<BusinessFinances   />} />
           <Route path="blog-images"       element={<BlogImages         />} />
           <Route path="landing-images"    element={<LandingImages      />} />
+          <Route path="content-review"    element={<ContentReview      />} />
         </Routes>
       </main>
     </div>
@@ -307,6 +319,15 @@ function IconSearch() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="10" cy="10" r="7"/>
       <line x1="21" y1="21" x2="15" y2="15"/>
+    </svg>
+  );
+}
+
+function IconFlag() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+      <line x1="4" y1="22" x2="4" y2="15"/>
     </svg>
   );
 }

@@ -2568,6 +2568,67 @@ export async function sendPromoPaymentConfirmedEmail(user) {
   }
 }
 
+export async function sendContentRemovedEmail(ownerEmail, ownerName, propertyName, reason, language) {
+  if (!resend) return;
+  if (!ownerEmail) return;
+
+  const CONTENT_T = {
+    en: {
+      subject:     'Content update — NestBook',
+      greeting:    (name) => `Dear ${name},`,
+      body:        (prop) => `We've removed some content from your property listing for <strong>${prop}</strong> as it did not meet NestBook's content guidelines.`,
+      reasonLabel: 'Reason:',
+      closing:     'Please review our content policy and feel free to upload replacement content at any time. If you believe this was a mistake, just reply to this email.',
+    },
+    fr: {
+      subject:     'Mise à jour du contenu — NestBook',
+      greeting:    (name) => `Bonjour ${name},`,
+      body:        (prop) => `Nous avons retiré certains contenus de votre annonce pour <strong>${prop}</strong> car ils ne respectaient pas les règles de contenu de NestBook.`,
+      reasonLabel: 'Motif :',
+      closing:     `Merci de consulter notre politique de contenu. Vous pouvez ajouter un nouveau contenu à tout moment. Si vous pensez qu'il s'agit d'une erreur, répondez simplement à cet e-mail.`,
+    },
+    de: {
+      subject:     'Inhaltsaktualisierung — NestBook',
+      greeting:    (name) => `Hallo ${name},`,
+      body:        (prop) => `Wir haben einige Inhalte aus Ihrem Eintrag für <strong>${prop}</strong> entfernt, da sie nicht den Inhaltsrichtlinien von NestBook entsprachen.`,
+      reasonLabel: 'Grund:',
+      closing:     'Bitte sehen Sie sich unsere Inhaltsrichtlinien an und laden Sie jederzeit gerne neue Inhalte hoch. Falls Sie glauben, dass dies ein Irrtum war, antworten Sie einfach auf diese E-Mail.',
+    },
+    es: {
+      subject:     'Actualización de contenido — NestBook',
+      greeting:    (name) => `Hola ${name},`,
+      body:        (prop) => `Hemos eliminado parte del contenido de su anuncio de <strong>${prop}</strong> porque no cumplía con las normas de contenido de NestBook.`,
+      reasonLabel: 'Motivo:',
+      closing:     'Revise nuestra política de contenido y no dude en subir contenido nuevo cuando quiera. Si cree que se trata de un error, simplemente responda a este correo.',
+    },
+    nl: {
+      subject:     'Content-update — NestBook',
+      greeting:    (name) => `Beste ${name},`,
+      body:        (prop) => `We hebben content van uw vermelding voor <strong>${prop}</strong> verwijderd omdat deze niet voldeed aan de inhoudsrichtlijnen van NestBook.`,
+      reasonLabel: 'Reden:',
+      closing:     'Bekijk ons contentbeleid en upload gerust op elk moment nieuwe content. Als u denkt dat dit een vergissing was, antwoord dan gewoon op deze e-mail.',
+    },
+  };
+
+  const lang = CONTENT_T[language] ? language : 'en';
+  const ct   = CONTENT_T[lang];
+  const name = ownerName || ownerEmail;
+
+  const html = shell(`
+    <p style="margin:0 0 16px;font-size:0.95rem;color:#374151;">${ct.greeting(name)}</p>
+    <p style="margin:0 0 16px;font-size:0.95rem;color:#374151;line-height:1.6;">${ct.body(propertyName)}</p>
+    ${reason ? `<p style="margin:0 0 16px;font-size:0.95rem;color:#374151;"><strong>${ct.reasonLabel}</strong> ${reason}</p>` : ''}
+    <p style="margin:0;font-size:0.95rem;color:#374151;line-height:1.6;">${ct.closing}</p>
+  `);
+
+  try {
+    await resend.emails.send({ from: FROM, to: ownerEmail, subject: ct.subject, html });
+    console.log(`[email] Content removed email sent → ${ownerEmail}`);
+  } catch (err) {
+    console.error('[email] Failed to send content removed email:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');

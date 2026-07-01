@@ -1459,6 +1459,27 @@ John`
   db.exec(`CREATE INDEX IF NOT EXISTS idx_ical_blocks_feed     ON ical_blocks(feed_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_ical_blocks_dates    ON ical_blocks(start_date, end_date)`);
 
+  // ── Content moderation flags ──────────────────────────────────────────────
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS content_flags (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id  INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+        room_id      INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+        content_type TEXT NOT NULL CHECK(content_type IN ('room_photo','hero_photo','property_description','room_description')),
+        content_ref  TEXT,
+        preview_text TEXT,
+        status       TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','verified','removed')),
+        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+        reviewed_at  TEXT,
+        reviewed_by  INTEGER REFERENCES users(id)
+      )
+    `);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_status ON content_flags(status)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_property ON content_flags(property_id)`);
+    console.log('✓ content_flags table ready');
+  } catch(e) { console.error('content_flags table error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

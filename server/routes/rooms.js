@@ -251,6 +251,11 @@ roomsRouter.put('/:id', (req, res) => {
       WHERE id = ?
     `).run(property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null, req.params.id);
 
+    if (description && description !== existing.description) {
+      db.prepare(`INSERT INTO content_flags (property_id, room_id, content_type, preview_text) VALUES (?, ?, 'room_description', ?)`)
+        .run(property_id, req.params.id, description);
+    }
+
     const updated = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     res.json(updated);
 

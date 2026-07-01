@@ -200,7 +200,7 @@ propertiesRouter.put('/:id', (req, res) => {
       access_method, access_code, arrival_instructions, send_access_hours,
       cancellation_days,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
@@ -247,6 +247,10 @@ propertiesRouter.put('/:id', (req, res) => {
     );
     if (existing && newRentalType !== existing.rental_type) {
       seedCategories(db, Number(req.params.id), newRentalType);
+    }
+    if (description && description !== existing?.description) {
+      db.prepare(`INSERT INTO content_flags (property_id, content_type, preview_text) VALUES (?, 'property_description', ?)`)
+        .run(req.params.id, description);
     }
 
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
@@ -402,6 +406,8 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
     }
 
     db.prepare('UPDATE properties SET hero_photo = ? WHERE id = ?').run(req.file.filename, propId);
+    db.prepare(`INSERT INTO content_flags (property_id, content_type, content_ref) VALUES (?, 'hero_photo', ?)`)
+      .run(propId, req.file.filename);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
     res.json(updated);
   } catch (err) {
