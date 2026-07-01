@@ -63,22 +63,18 @@ outreachRouter.get('/prospects', (req, res) => {
 });
 
 // ── Prospects — follow-up queue ───────────────────────────────────────────────
-// Shows prospects whose follow_up_date is today or past, plus any 'new' prospects
-// with no follow_up_date (never emailed). Ordered: overdue first, never-contacted last.
+// Shows prospects whose follow_up_date is today or in the past.
+// Prospects with no follow_up_date never appear here.
 outreachRouter.get('/prospects/follow-up', (req, res) => {
   const rows = db.prepare(`
     SELECT p.*, MAX(pe.sent_at) AS last_contacted
     FROM prospects p
     LEFT JOIN prospect_emails pe ON pe.prospect_id = p.id
     WHERE p.status NOT IN ('unsubscribed', 'complained', 'converted', 'replied')
-      AND (
-        (p.follow_up_date IS NOT NULL AND p.follow_up_date <= date('now'))
-        OR (p.follow_up_date IS NULL AND p.status = 'new')
-      )
+      AND p.follow_up_date IS NOT NULL
+      AND p.follow_up_date <= date('now')
     GROUP BY p.id
-    ORDER BY
-      CASE WHEN p.follow_up_date IS NULL THEN 1 ELSE 0 END,
-      p.follow_up_date ASC
+    ORDER BY p.follow_up_date ASC
     LIMIT 100
   `).all();
   res.json(rows);
