@@ -162,8 +162,8 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, [property?.id, property?.rental_type]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Missed-action check (WP only, runs once on property load) ─────────────
-  useEffect(() => {
+  // ── Missed-action check ───────────────────────────────────────────────────
+  function checkMissedActions() {
     if (!property?.id || property.rental_type !== 'whole_property') return;
     apiFetch('/api/bookings/missed-actions')
       .then((r) => r.ok ? r.json() : null)
@@ -173,9 +173,46 @@ export default function Dashboard() {
           setMissedAction({ type: 'arrival', booking: data.missedArrival });
         } else if (data.missedDeparture) {
           setMissedAction({ type: 'departure', booking: data.missedDeparture });
+        } else {
+          setMissedAction(null);
         }
       })
       .catch(() => {});
+  }
+
+  useEffect(() => {
+    checkMissedActions();
+  }, [property?.id, property?.rental_type]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Silent background re-fetch for bookings (used by visibility handler) ──
+  function fetchBookings() {
+    if (!property?.id) return;
+    Promise.all([
+      apiFetch(`/api/bookings?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/rooms?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+      apiFetch(`/api/guests?property_id=${property.id}`).then((r) => r.ok ? r.json() : []),
+    ])
+      .then(([b, r, g]) => {
+        setBookings(Array.isArray(b) ? b : []);
+        setRooms(Array.isArray(r) ? r : []);
+        setGuests(Array.isArray(g) ? g : []);
+      })
+      .catch(() => {});
+  }
+
+  // ── Re-fetch on tab focus to prevent stale state ───────────────────────────
+  useEffect(() => {
+    if (!property?.id) return;
+    function onVisible() {
+      if (document.visibilityState !== 'visible') return;
+      fetchBookings();
+      if (property.rental_type === 'whole_property') {
+        fetchWpSummary();
+        checkMissedActions();
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [property?.id, property?.rental_type]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived data ───────────────────────────────────────────────────────────
