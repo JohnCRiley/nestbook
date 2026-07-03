@@ -255,8 +255,8 @@ stripeRouter.post('/create-promo-checkout', async (req, res) => {
           promo_conversion: 'true',
         },
       },
-      success_url: `https://nestbook.io/app/settings?billing=success`,
-      cancel_url:  `https://nestbook.io/app/settings?billing=cancelled`,
+      success_url: `https://nestbook.io/app/billing?billing=success`,
+      cancel_url:  `https://nestbook.io/app/billing?billing=cancelled`,
       metadata: {
         userId: String(user.id),
         type:   'promo_conversion',
@@ -268,6 +268,33 @@ stripeRouter.post('/create-promo-checkout', async (req, res) => {
   } catch (err) {
     console.error('[stripe] create-promo-checkout error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/stripe/invoices ──────────────────────────────────────────────────
+stripeRouter.get('/invoices', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT stripe_customer_id FROM users WHERE id = ?').get(req.user.userId);
+    if (!user?.stripe_customer_id) {
+      return res.json({ invoices: [] });
+    }
+    const result = await stripe.invoices.list({
+      customer: user.stripe_customer_id,
+      limit: 24,
+    });
+    const invoices = result.data.map(inv => ({
+      id:                 inv.id,
+      date:               inv.created,
+      total:              inv.total / 100,
+      currency:           inv.currency,
+      status:             inv.status,
+      hosted_invoice_url: inv.hosted_invoice_url,
+      invoice_pdf:        inv.invoice_pdf,
+    }));
+    res.json({ invoices });
+  } catch (e) {
+    console.error('[stripe] invoices list error:', e.message);
+    res.status(500).json({ error: e.message });
   }
 });
 

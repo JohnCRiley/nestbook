@@ -18,6 +18,7 @@ import ActivityLog      from './pages/ActivityLog.jsx';
 import Charges          from './pages/Charges.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
+import Billing          from './pages/Billing.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
 import ForgotPassword  from './pages/ForgotPassword.jsx';
 import ResetPassword   from './pages/ResetPassword.jsx';
@@ -230,6 +231,7 @@ function AppLayout() {
           <Route path="/rooms"     element={<Rooms     />} />
           <Route path="/reports"       element={<Reports      />} />
           <Route path="/activity-log" element={<ActivityLog  />} />
+          <Route path="/billing"   element={<Billing   />} />
           <Route path="/settings"  element={<Settings  />} />
           <Route path="/pricing"   element={<Pricing   />} />
           <Route path="/charges"   element={<Charges   />} />

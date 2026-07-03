@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
@@ -1288,208 +1288,11 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Billing success/cancelled flash message */}
-          {billingMessage && (
-            <div style={{
-              background: billingMessage.type === 'success' ? '#f0fdf4' : billingMessage.type === 'info' ? '#f8fafc' : '#fef2f2',
-              border: `1px solid ${billingMessage.type === 'success' ? '#d9f0cc' : billingMessage.type === 'info' ? '#e2e8f0' : '#fecaca'}`,
-              borderRadius: 8,
-              padding: '12px 16px',
-              marginTop: 16,
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-            }}>
-              <i className={`ti ${billingMessage.type === 'success' ? 'ti-circle-check' : billingMessage.type === 'info' ? 'ti-info-circle' : 'ti-alert-circle'}`}
-                 style={{ color: billingMessage.type === 'success' ? '#16a34a' : billingMessage.type === 'info' ? '#64748b' : '#dc2626', marginTop: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.875rem', color: billingMessage.type === 'success' ? '#166534' : billingMessage.type === 'info' ? '#475569' : '#991b1b', lineHeight: 1.5 }}>
-                {billingMessage.text}
-              </span>
-              <button onClick={() => setBillingMessage(null)}
-                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer',
-                         color: '#94a3b8', fontSize: '1rem', padding: 0, lineHeight: 1 }}>
-                ×
-              </button>
-            </div>
-          )}
-
-          {/* Promotional Pro panel — shown throughout the promo period, urgency-aware */}
-          {user?.role === 'owner' && (() => {
-            const isPromoPro = user?.plan === 'pro'
-              && user?.trial_ends_at
-              && new Date(user.trial_ends_at) > new Date()
-              && !user?.stripe_subscription_id;
-            if (!isPromoPro) return null;
-
-            const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
-            const promoExpiryDate = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
-              day: 'numeric', month: 'long', year: 'numeric',
-            });
-            const promoExpiryShort = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
-              day: 'numeric', month: 'long',
-            });
-
-            const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : '#1a4710';
-            const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#f0fdf4';
-            const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#d9f0cc';
-            const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#1a4710';
-            const urgencyText = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#78350f' : '#166534';
-            const btnBg       = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
-
-            return (
-              <div style={{
-                background: 'var(--card-bg)',
-                border: '1.5px solid var(--border)',
-                borderRadius: 12,
-                overflow: 'hidden',
-                marginTop: 16,
-              }}>
-                <div style={{ background: headerBg, padding: '16px 20px' }}>
-                  <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <i className={`ti ${daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-star'}`} />
-                    {daysLeft <= 7  ? 'Pro access expiring very soon' :
-                     daysLeft <= 14 ? 'Pro access expiring soon' :
-                     'NestBook Pro — Promotional access'}
-                  </div>
-                  <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.82rem' }}>
-                    Your free promotional period ends {promoExpiryDate} ({daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining)
-                  </div>
-                </div>
-
-                <div style={{ padding: '20px' }}>
-                  <div style={{
-                    background: urgencyBg,
-                    border: `1px solid ${urgencyBdr}`,
-                    borderLeft: `4px solid ${urgencyAcct}`,
-                    borderRadius: '0 8px 8px 0',
-                    padding: '12px 16px',
-                    marginBottom: 20,
-                    fontSize: '0.85rem',
-                    color: urgencyText,
-                    lineHeight: 1.6,
-                  }}>
-                    {daysLeft <= 7 ? (
-                      <><strong>Action needed — {daysLeft} day{daysLeft !== 1 ? 's' : ''} left!</strong><br />
-                      Add payment details now to avoid losing Pro access on {promoExpiryShort}.</>
-                    ) : daysLeft <= 14 ? (
-                      <><strong>Coming up soon!</strong><br />
-                      Add a card now to continue Pro uninterrupted after your promotional period ends.
-                      You won't be charged until {promoExpiryDate}.</>
-                    ) : (
-                      <><strong>No action needed yet</strong><br />
-                      You have {daysLeft} days of Pro access remaining. Add payment details anytime
-                      before your promotional period ends to continue without interruption.</>
-                    )}
-                  </div>
-
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      color: 'var(--text-muted)',
-                      marginBottom: 10,
-                    }}>
-                      What you keep with Pro
-                    </div>
-                    {[
-                      'Unlimited rooms',
-                      '5 photos per room',
-                      'Booking widget for your website',
-                      'Seasonal pricing',
-                      'Revenue reports',
-                    ].map(feature => (
-                      <div key={feature} style={{
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6,
-                      }}>
-                        <i className="ti ti-circle-check" style={{ color: 'var(--accent)', fontSize: '0.9rem', flexShrink: 0 }} />
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={handleAddPromoPayment}
-                    style={{
-                      background: btnBg,
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 8,
-                      padding: '13px 24px',
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                    }}
-                  >
-                    <i className="ti ti-credit-card" />
-                    Add payment details — continue Pro after {promoExpiryShort}
-                  </button>
-
-                  <p style={{
-                    fontSize: '0.72rem',
-                    color: 'var(--text-muted)',
-                    textAlign: 'center',
-                    marginTop: 8,
-                    lineHeight: 1.5,
-                  }}>
-                    Your card will <strong>not be charged</strong> until {promoExpiryDate}.
-                    Cancel anytime before that date to stay on the free plan.
-                  </p>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Subscription */}
-          {user?.role === 'owner' && (
-            <div className="settings-card" style={{ marginTop: 16 }}>
-              <div className="settings-card-header">
-                <h2>{t('subscriptionTitle')}</h2>
-                <p>{t('subscriptionSubtitle')}</p>
-              </div>
-              <div className="settings-card-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{t('currentPlanLabel')}</span>
-                    <span style={{
-                      fontWeight: 700, fontSize: '0.85rem',
-                      color: sub?.plan === 'free' ? '#64748b' : '#166534',
-                      background: sub?.plan === 'free' ? '#f1f5f9' : '#dcfce7',
-                      padding: '2px 10px', borderRadius: 20,
-                    }}>
-                      {PLAN_LABELS[sub?.plan ?? user?.plan ?? 'free']}
-                      {sub?.notes === 'Complimentary' ? ` ${t('complimentary')}` : ''}
-                    </span>
-                  </div>
-
-                  {user?.stripe_subscription_id && sub?.plan !== 'free' && (
-                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                      {sub?.cancel_at_period_end
-                        ? <span style={{ color: '#dc2626' }}>
-                            {t('cancelsOn')} {fmtDate(sub?.current_period_end, locale) || t('billingDateUnavailable')}
-                          </span>
-                        : <>{t('nextBillingDate')} <strong style={{ color: '#0f172a' }}>{fmtDate(sub?.current_period_end, locale) || t('billingDateUnavailable')}</strong></>
-                      }
-                    </div>
-                  )}
-
-                  {user?.stripe_subscription_id && !!sub?.cancel_at_period_end && (
-                    <div style={{ fontSize: '0.8rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '8px 12px' }}>
-                      {t('subCancelScheduled')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Billing — moved to dedicated page */}
+          <p style={{ marginTop: 16, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+            Manage your plan and view invoices on the{' '}
+            <Link to="/billing">Billing page</Link>.
+          </p>
 
           {/* Service Categories — Multi plan, owner only */}
           {plan === 'multi' && user?.role === 'owner' && (
@@ -1705,78 +1508,11 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Manage Subscription — destructive actions accordion */}
-          {user?.role === 'owner' && (
-            <div className="danger-zone-card" style={{ marginTop: 16 }}>
-              <button
-                className="danger-zone-toggle"
-                onClick={() => setDeleteAccountOpen((o) => !o)}
-                aria-expanded={deleteAccountOpen}
-              >
-                <span>{t('manageSubscription')}</span>
-                <span className="danger-zone-chevron">{deleteAccountOpen ? '▲' : '▼'}</span>
-              </button>
-
-              {deleteAccountOpen && (
-                <div className="danger-zone-body">
-
-                  {/* Cancel subscription — only shown for active paid plans */}
-                  {sub?.plan && sub.plan !== 'free' && !sub?.cancel_at_period_end && sub?.notes !== 'Complimentary' && (
-                    <div className="danger-zone-row">
-                      <div>
-                        <div className="danger-zone-row-title">{t('cancelSubOnly')}</div>
-                        <div className="danger-zone-row-desc">
-                          {fmtDate(sub?.current_period_end, locale)
-                            ? t('cancelSubExplain')(fmtDate(sub.current_period_end, locale))
-                            : t('cancelSubDesc')}
-                        </div>
-                      </div>
-                      <button
-                        className="btn-danger-outline"
-                        disabled={cancelling}
-                        onClick={() => setShowCancelModal(true)}
-                      >
-                        {cancelling ? t('cancelling') : t('cancelSubTitle')}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Delete account */}
-                  <div className="danger-zone-row">
-                    <div>
-                      <div className="danger-zone-row-title">{t('deleteAccountOnly')}</div>
-                      <div className="danger-zone-row-desc">
-                        {t('deleteAccountExplain')}
-                      </div>
-                    </div>
-                    <button
-                      className="btn-danger"
-                      onClick={() => setShowDeleteAccount(true)}
-                    >
-                      {t('deleteAccountBtn')}
-                    </button>
-                  </div>
-
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
       </div>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
-      <ConfirmModal
-        isOpen={showCancelModal}
-        title={t('cancelSubMoTitle')}
-        message={`${t('cancelSubConfirm')} ${fmtDate(sub?.current_period_end, locale) ? t('cancelSubWithDate')(PLAN_LABELS[sub?.plan] ?? 'Pro', fmtDate(sub.current_period_end, locale)) : t('cancelSubNoDate')}`}
-        confirmLabel={t('confirmCancelSub')}
-        cancelLabel={t('keepSubscription')}
-        variant="danger"
-        onConfirm={handleCancelSubscription}
-        onCancel={() => setShowCancelModal(false)}
-      />
-
       {showInvite && (
         <InviteStaffModal
           onClose={() => setShowInvite(false)}
@@ -1788,14 +1524,6 @@ export default function Settings() {
         <ResetStaffPasswordModal
           user={resetTarget}
           onClose={() => setResetTarget(null)}
-        />
-      )}
-
-      {showDeleteAccount && (
-        <DeleteAccountModal
-          onClose={() => setShowDeleteAccount(false)}
-          onSuccess={() => { logout(); localStorage.clear(); window.location.href = '/?deleted=1'; }}
-          onError={(msg) => showToast(msg, 'error')}
         />
       )}
 

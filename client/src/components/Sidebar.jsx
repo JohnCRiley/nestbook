@@ -20,6 +20,7 @@ import {
   IconLogout,
   IconBuildings,
   IconCharges,
+  IconBilling,
 } from './Icons.jsx';
 
 const ALL_NAV_ITEMS = [
@@ -31,6 +32,7 @@ const ALL_NAV_ITEMS = [
   { to: '/charges',   key: 'charges',   Icon: IconCharges,  multiOnly: true },
   { to: '/reports',      key: 'reports',      Icon: IconReports      },
   { to: '/activity-log', key: 'activityLog',  Icon: IconActivityLog, ownerOnly: true },
+  { to: '/billing',   key: 'billing',   Icon: IconBilling,  ownerOnly: true },
   { to: '/settings',  key: 'settings',  Icon: IconSettings  },
   { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];
@@ -200,7 +202,7 @@ export default function Sidebar() {
             fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5,
           }}>
             <strong><i className="ti ti-alert-triangle" /> Payment failed</strong> — your Pro access may be restricted soon.{' '}
-            <Link to="/settings" style={{ color: '#92400e', fontWeight: 700 }}>
+            <Link to="/billing" style={{ color: '#92400e', fontWeight: 700 }}>
               Update billing →
             </Link>
           </div>
