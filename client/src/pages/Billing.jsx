@@ -19,6 +19,14 @@ function fmtDate(iso, locale = 'en') {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Billing() {
   const t = useT();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('connect') === 'success' || params.get('connect') === 'refresh') {
+      window.history.replaceState({}, '', '/app/billing');
+    }
+  }, []);
+
   return (
     <div style={{ padding: '24px 28px', maxWidth: 1100, margin: '0 auto' }}>
       <div className="page-header" style={{ marginBottom: 24 }}>
@@ -502,19 +510,91 @@ function GuestPaymentsCard() {
   );
 }
 
-// ── Stripe Connect placeholder card ───────────────────────────────────────────
+// ── Stripe Connect card ───────────────────────────────────────────────────────
 function StripeConnectCard() {
   const t = useT();
+  const [status,        setStatus]        = useState(null);
+  const [loading,       setLoading]       = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    apiFetch('/api/stripe/connect/status')
+      .then(r => r.json())
+      .then(setStatus)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleConnect() {
+    setActionLoading(true);
+    try {
+      const r    = await apiFetch('/api/stripe/connect/start', { method: 'POST' });
+      const data = await r.json();
+      if (data.url) { window.location.href = data.url; return; }
+      alert(t('billing.connectError'));
+    } catch {
+      alert(t('billing.connectError'));
+    }
+    setActionLoading(false);
+  }
+
+  async function handleManage() {
+    setActionLoading(true);
+    try {
+      const r    = await apiFetch('/api/stripe/connect/dashboard-link', { method: 'POST' });
+      const data = await r.json();
+      if (data.url) window.open(data.url, '_blank');
+      else alert(t('billing.connectError'));
+    } catch {
+      alert(t('billing.connectError'));
+    }
+    setActionLoading(false);
+  }
+
+  if (loading) return (
+    <div className="billing-card billing-connect-card">
+      <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>{t('billing.loadingConnect')}</p>
+    </div>
+  );
+
+  const isActive  = status?.status === 'active';
+  const isPending = status?.connected && !isActive;
+
   return (
     <div className="billing-card billing-connect-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <i className="ti ti-brand-stripe" style={{ fontSize: '1.4rem', color: '#635bff' }} />
+        <i className="ti ti-building-bank" style={{ fontSize: '1.4rem', color: '#635bff' }} />
         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('billing.stripeConnect')}</h3>
       </div>
-      <p style={{ margin: '0 0 14px', fontSize: '0.87rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+      <p style={{ margin: '0 0 4px', fontSize: '0.87rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
         {t('billing.stripeConnectDesc')}
       </p>
-      <span className="pay-badge pay-badge--coming-soon">{t('billing.comingSoon')}</span>
+
+      {!status?.connected && (
+        <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading}>
+          {actionLoading ? t('billing.connecting') : t('billing.connectWithStripe')}
+        </button>
+      )}
+
+      {isPending && (
+        <div style={{ marginTop: 12 }}>
+          <span className="billing-status-pill billing-status-pending">{t('billing.connectPending')}</span>
+          <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading} style={{ display: 'block', marginTop: 10 }}>
+            {actionLoading ? t('billing.connecting') : t('billing.finishSetup')}
+          </button>
+        </div>
+      )}
+
+      {isActive && (
+        <div style={{ marginTop: 12 }}>
+          <span className="billing-status-pill billing-status-active">
+            <i className="ti ti-circle-check" /> {t('billing.connectActive')}
+          </span>
+          <button className="billing-connect-btn billing-connect-btn-secondary" onClick={handleManage} disabled={actionLoading} style={{ display: 'block', marginTop: 10 }}>
+            {actionLoading ? t('billing.connecting') : t('billing.manageOnStripe')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

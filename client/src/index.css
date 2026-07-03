@@ -5300,3 +5300,37 @@ a { text-decoration: none; }
 
 /* Stripe Connect card accent */
 .billing-connect-card { border-top: 3px solid #635bff; }
+
+/* Stripe Connect onboarding button */
+.billing-connect-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 14px;
+}
+.billing-connect-btn:hover:not(:disabled) { opacity: 0.9; }
+.billing-connect-btn:disabled { opacity: 0.6; cursor: default; }
+.billing-connect-btn-secondary {
+  background: var(--card-bg);
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+
+/* Connect account status pills */
+.billing-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.billing-status-pending { background: #fef3c7; color: #78350f; }
+.billing-status-active  { background: #d9f0cc; color: #1a4710; }

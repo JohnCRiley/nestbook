@@ -298,6 +298,73 @@ stripeRouter.get('/invoices', async (req, res) => {
   }
 });
 
+// ── POST /api/stripe/connect/start ───────────────────────────────────────────
+// Creates an Express connected account (once) and returns a Stripe-hosted
+// onboarding link. NestBook stores only the account ID and status.
+stripeRouter.post('/connect/start', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT id, email, stripe_connect_account_id FROM users WHERE id = ?').get(req.user.userId);
+    let accountId = user.stripe_connect_account_id;
+
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        email: user.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers:     { requested: true },
+        },
+        business_type: 'individual',
+        metadata: { nestbook_user_id: String(user.id) },
+      });
+      accountId = account.id;
+      db.prepare('UPDATE users SET stripe_connect_account_id = ?, stripe_connect_status = ? WHERE id = ?')
+        .run(accountId, 'pending', user.id);
+    }
+
+    const baseUrl     = process.env.APP_URL || 'https://nestbook.io';
+    const accountLink = await stripe.accountLinks.create({
+      account:     accountId,
+      refresh_url: `${baseUrl}/app/billing?connect=refresh`,
+      return_url:  `${baseUrl}/app/billing?connect=success`,
+      type:        'account_onboarding',
+    });
+
+    console.log(`[stripe] Connect onboarding link created for ${user.email}`);
+    res.json({ url: accountLink.url });
+  } catch (e) {
+    console.error('[stripe] connect/start error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /api/stripe/connect/status ───────────────────────────────────────────
+stripeRouter.get('/connect/status', (req, res) => {
+  const user = db.prepare(
+    'SELECT stripe_connect_account_id, stripe_connect_status, stripe_connect_details_submitted FROM users WHERE id = ?'
+  ).get(req.user.userId);
+  res.json({
+    connected:        !!user?.stripe_connect_account_id,
+    status:           user?.stripe_connect_status ?? null,
+    detailsSubmitted: !!user?.stripe_connect_details_submitted,
+  });
+});
+
+// ── POST /api/stripe/connect/dashboard-link ───────────────────────────────────
+stripeRouter.post('/connect/dashboard-link', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT stripe_connect_account_id FROM users WHERE id = ?').get(req.user.userId);
+    if (!user?.stripe_connect_account_id) {
+      return res.status(400).json({ error: 'No connected account' });
+    }
+    const loginLink = await stripe.accounts.createLoginLink(user.stripe_connect_account_id);
+    res.json({ url: loginLink.url });
+  } catch (e) {
+    console.error('[stripe] connect/dashboard-link error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── POST /api/stripe/webhook ──────────────────────────────────────────────────
 // Exported as a plain handler and mounted directly in index.js BEFORE
 // requireAuth and express.json(). Stripe uses its own signature verification
@@ -499,6 +566,18 @@ export async function stripeWebhookHandler(req, res) {
           WHERE id = (SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?)
         `).run(sub.id);
         console.log(`✓ Subscription cancelled: ${sub.id}`);
+        break;
+      }
+
+      case 'account.updated': {
+        const account = event.data.object;
+        const connectUser = db.prepare('SELECT id FROM users WHERE stripe_connect_account_id = ?').get(account.id);
+        if (connectUser) {
+          const status = account.charges_enabled ? 'active' : 'pending';
+          db.prepare('UPDATE users SET stripe_connect_status = ?, stripe_connect_details_submitted = ? WHERE id = ?')
+            .run(status, account.details_submitted ? 1 : 0, connectUser.id);
+          console.log(`[stripe] Connect account ${account.id} updated — status: ${status}`);
+        }
         break;
       }
     }
