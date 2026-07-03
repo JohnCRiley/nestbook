@@ -31,10 +31,8 @@ export default function Billing() {
           <InvoicesCard />
         </div>
         <div className="billing-right">
-          <div className="billing-placeholder-card">
-            <i className="ti ti-users" style={{ fontSize: '2rem', marginBottom: 12, display: 'block', opacity: 0.35 }} />
-            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Guest payments — coming soon</p>
-          </div>
+          <GuestPaymentsCard />
+          <StripeConnectCard />
         </div>
       </div>
     </div>
@@ -415,6 +413,108 @@ function InvoicesCard() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ── Payment status badge ──────────────────────────────────────────────────────
+function PaymentBadge({ type, depositPaid, depositRequestedAt, depositAmount, balanceAmount, balancePaid, t }) {
+  if (type === 'deposit') {
+    if (depositPaid)          return <span className="pay-badge pay-badge--paid">{t('billing.status.paid')}</span>;
+    if (depositRequestedAt)   return <span className="pay-badge pay-badge--pending">{t('billing.status.pending')}</span>;
+    return <span className="pay-badge pay-badge--none">{t('billing.status.notRequested')}</span>;
+  }
+  if (balancePaid)            return <span className="pay-badge pay-badge--paid">{t('billing.status.paid')}</span>;
+  if (balanceAmount > 0)      return <span className="pay-badge pay-badge--pending">{t('billing.status.pending')}</span>;
+  return null;
+}
+
+// ── Guest payments card ───────────────────────────────────────────────────────
+function GuestPaymentsCard() {
+  const t = useT();
+  const { locale } = useLocale();
+  const [rows,    setRows]    = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiFetch('/api/bookings/payments-summary')
+      .then(r => r.json())
+      .then(data => setRows(data.rows || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="billing-card" style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+      {t('billing.loadingPayments')}
+    </div>
+  );
+
+  return (
+    <div className="billing-card">
+      <h3 style={{ margin: '0 0 14px', fontSize: '1rem', fontWeight: 700 }}>{t('billing.guestPayments')}</h3>
+      {rows.length === 0 ? (
+        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>{t('billing.noPaymentsYet')}</p>
+      ) : (
+        <table className="billing-invoices-table">
+          <thead>
+            <tr>
+              <th>{t('billing.guest')}</th>
+              <th>{t('billing.dates')}</th>
+              <th>{t('billing.deposit')}</th>
+              <th>{t('billing.balance')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.id}>
+                <td style={{ fontWeight: 500 }}>
+                  {row.guest_first_name} {row.guest_last_name}
+                </td>
+                <td style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {fmtDate(row.check_in_date, locale)}
+                  {row.check_out_date ? ` – ${fmtDate(row.check_out_date, locale)}` : ''}
+                </td>
+                <td>
+                  <PaymentBadge
+                    type="deposit"
+                    depositPaid={row.deposit_paid}
+                    depositRequestedAt={row.deposit_requested_at}
+                    t={t}
+                  />
+                </td>
+                <td>
+                  {(row.deposit_amount != null || row.balance_amount != null) && (
+                    <PaymentBadge
+                      type="balance"
+                      balancePaid={row.balance_paid}
+                      balanceAmount={row.balance_amount}
+                      t={t}
+                    />
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+// ── Stripe Connect placeholder card ───────────────────────────────────────────
+function StripeConnectCard() {
+  const t = useT();
+  return (
+    <div className="billing-card billing-connect-card">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <i className="ti ti-brand-stripe" style={{ fontSize: '1.4rem', color: '#635bff' }} />
+        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('billing.stripeConnect')}</h3>
+      </div>
+      <p style={{ margin: '0 0 14px', fontSize: '0.87rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+        {t('billing.stripeConnectDesc')}
+      </p>
+      <span className="pay-badge pay-badge--coming-soon">{t('billing.comingSoon')}</span>
     </div>
   );
 }

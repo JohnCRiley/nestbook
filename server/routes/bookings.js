@@ -507,6 +507,44 @@ bookingsRouter.get('/wp-summary', (req, res) => {
   }
 });
 
+// ── GET /api/bookings/payments-summary ────────────────────────────────────
+bookingsRouter.get('/payments-summary', (req, res) => {
+  try {
+    const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+    if (!propIds.length) return res.json({ rows: [] });
+    const placeholders = propIds.map(() => '?').join(',');
+    const rows = db.prepare(`
+      SELECT
+        b.id,
+        b.property_id,
+        b.check_in_date,
+        b.check_out_date,
+        b.status,
+        b.deposit_paid,
+        b.deposit_amount,
+        b.balance_amount,
+        b.balance_paid,
+        b.deposit_requested_at,
+        g.first_name AS guest_first_name,
+        g.last_name  AS guest_last_name
+      FROM bookings b
+      LEFT JOIN guests g ON g.id = b.guest_id
+      WHERE b.property_id IN (${placeholders})
+        AND b.status != 'cancelled'
+        AND (
+          b.deposit_requested_at IS NOT NULL
+          OR b.deposit_paid = 1
+          OR b.deposit_amount IS NOT NULL
+        )
+      ORDER BY b.check_in_date DESC
+      LIMIT 100
+    `).all(...propIds);
+    res.json({ rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/bookings/:id ─────────────────────────────────────────────────
 bookingsRouter.get('/:id', (req, res) => {
   try {
