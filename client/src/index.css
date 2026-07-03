@@ -5334,3 +5334,29 @@ a { text-decoration: none; }
 }
 .billing-status-pending { background: #fef3c7; color: #78350f; }
 .billing-status-active  { background: #d9f0cc; color: #1a4710; }
+
+/* Connect why/how sections */
+.billing-connect-why,
+.billing-connect-how {
+  text-align: left;
+  margin: 16px 0;
+}
+.billing-connect-why h4,
+.billing-connect-how h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.billing-connect-why ul,
+.billing-connect-how ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.billing-connect-why li,
+.billing-connect-how li {
+  margin-bottom: 4px;
+}

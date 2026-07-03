@@ -571,9 +571,27 @@ function StripeConnectCard() {
       </p>
 
       {!status?.connected && (
-        <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading}>
-          {actionLoading ? t('billing.connecting') : t('billing.connectWithStripe')}
-        </button>
+        <>
+          <div className="billing-connect-why">
+            <h4>{t('billing.whyTitle')}</h4>
+            <ul>
+              <li>{t('billing.why1')}</li>
+              <li>{t('billing.why2')}</li>
+              <li>{t('billing.why3')}</li>
+            </ul>
+          </div>
+          <div className="billing-connect-how">
+            <h4>{t('billing.howTitle')}</h4>
+            <ol>
+              <li>{t('billing.how1')}</li>
+              <li>{t('billing.how2')}</li>
+              <li>{t('billing.how3')}</li>
+            </ol>
+          </div>
+          <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading}>
+            {actionLoading ? t('billing.connecting') : t('billing.connectWithStripe')}
+          </button>
+        </>
       )}
 
       {isPending && (
