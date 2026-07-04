@@ -452,12 +452,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   return (
     <>
       {/* ── WP approval banner ───────────────────────────────────────────── */}
-      {isWP && b.status === 'pending_owner_approval' && (
+      {b.status === 'pending_owner_approval' && (
         <WpApprovalBanner bookingId={b.id} onBookingUpdated={onBookingUpdated} t={t} />
       )}
 
-      {/* ── WP declined banner ───────────────────────────────────────────── */}
-      {isWP && b.status === 'declined' && (
+      {/* ── declined banner ─────────────────────────────────────────────── */}
+      {b.status === 'declined' && (
         <div style={{
           padding: '12px 22px', borderBottom: '1px solid var(--border)',
           background: '#fee2e2', display: 'flex', alignItems: 'center', gap: 8,

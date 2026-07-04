@@ -1,6 +1,8 @@
 import { Router } from 'express';
-import { Resend }  from 'resend';
+import crypto from 'crypto';
 import db from '../db/database.js';
+import { sendApprovalRequestEmail } from '../email/emailService.js';
+import { Resend } from 'resend';
 
 export const enquiriesRouter = Router();
 
@@ -20,8 +22,11 @@ function esc(str) {
 
 // ── POST /api/enquiries ───────────────────────────────────────────────────────
 // Public endpoint — no auth required. For Free-plan properties only.
+// When roomId is provided (rooms-mode), creates a real booking with
+// pending_owner_approval status and sends an approve/decline email.
+// Without roomId (whole-property free plan), falls back to email-only.
 enquiriesRouter.post('/', async (req, res) => {
-  const { propertyId, guestName, guestEmail, checkIn, checkOut, guests, message } = req.body ?? {};
+  const { propertyId, roomId, guestName, guestEmail, checkIn, checkOut, guests, message } = req.body ?? {};
 
   if (!propertyId || !guestName?.trim() || !guestEmail?.trim() || !checkIn || !checkOut) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -47,6 +52,68 @@ enquiriesRouter.post('/', async (req, res) => {
     return res.status(400).json({ error: 'This property uses the full booking widget' });
   }
 
+  // ── Rooms-mode: create a real booking with approval flow ──────────────────
+  if (roomId) {
+    const room = db.prepare('SELECT id, name FROM rooms WHERE id = ? AND property_id = ?').get(Number(roomId), propertyId);
+    if (!room) return res.status(400).json({ error: 'Invalid room selection' });
+
+    const nameParts = guestName.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName  = nameParts.slice(1).join(' ') || '-';
+
+    try {
+      const guestResult = db.prepare(`
+        INSERT INTO guests (first_name, last_name, email, notes)
+        VALUES (?, ?, ?, ?)
+      `).run(firstName, lastName, guestEmail.trim(), message?.trim() || null);
+
+      const guestId       = guestResult.lastInsertRowid;
+      const approvalToken = crypto.randomBytes(32).toString('hex');
+      const numGuests     = parseInt(guests, 10) || 1;
+
+      const bookingResult = db.prepare(`
+        INSERT INTO bookings
+          (property_id, room_id, guest_id, check_in_date, check_out_date,
+           num_guests, status, source, notes, approval_token)
+        VALUES (?, ?, ?, ?, ?, ?, 'pending_owner_approval', 'website', ?, ?)
+      `).run(
+        propertyId, room.id, guestId,
+        checkIn, checkOut,
+        numGuests,
+        message?.trim() || null,
+        approvalToken,
+      );
+
+      const bookingId = bookingResult.lastInsertRowid;
+
+      const bookingForEmail = {
+        id:               bookingId,
+        guest_first_name: firstName,
+        guest_last_name:  lastName,
+        guest_email:      guestEmail.trim(),
+        guest_phone:      null,
+        check_in_date:    checkIn,
+        check_out_date:   checkOut,
+        num_guests:       numGuests,
+        notes:            message?.trim() || null,
+        room_name:        room.name,
+      };
+
+      const base       = process.env.APP_URL ?? 'https://nestbook.io';
+      const approveUrl = `${base}/api/widget/bookings/${bookingId}/approve?token=${approvalToken}`;
+      const declineUrl = `${base}/api/widget/bookings/${bookingId}/decline?token=${approvalToken}`;
+
+      sendApprovalRequestEmail(bookingForEmail, property, approveUrl, declineUrl).catch(() => {});
+
+      console.log(`[enquiry] Booking request #${bookingId} created for property ${propertyId} from ${guestEmail}`);
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[enquiry] Failed to create booking:', err.message);
+      return res.status(500).json({ error: 'Failed to create booking request' });
+    }
+  }
+
+  // ── Fallback: email-only for whole-property free plan ─────────────────────
   const msgRow = message?.trim()
     ? `<tr>
         <td style="padding:8px 0;color:#64748b;vertical-align:top;">Message</td>

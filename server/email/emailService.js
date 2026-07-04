@@ -1345,6 +1345,10 @@ export async function sendApprovalRequestEmail(booking, property, approveUrl, de
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">Guest</td>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${guestName}</td>
       </tr>
+      ${booking.room_name ? `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Room</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.room_name}</td>
+      </tr>` : ''}
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Email</td>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.guest_email ?? '—'}</td>

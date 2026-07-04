@@ -1557,6 +1557,13 @@ ${isPaidPlan ? '' : `
           <label data-i18n="page.guests">Number of guests</label>
           <input type="number" id="guestCount" min="1" value="2" required />
         </div>
+        ${property.rental_type === 'rooms' && rooms.length > 0 ? `
+        <div class="form-group">
+          <label data-i18n="page.selectRoom">Room</label>
+          <select id="roomSelect" required>
+            ${rooms.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}
+          </select>
+        </div>` : ''}
         <div class="form-group">
           <label data-i18n="page.message">Message (optional)</label>
           <textarea id="message" rows="3" data-i18n-placeholder="page.message"></textarea>
@@ -1580,8 +1587,10 @@ document.getElementById('enquiryForm').addEventListener('submit', async function
   e.preventDefault();
   var btn = this.querySelector('[type="submit"]');
   btn.disabled = true;
+  var roomEl = document.getElementById('roomSelect');
   var data = {
     propertyId: ${propId},
+    roomId:     roomEl ? Number(roomEl.value) : null,
     guestName:  document.getElementById('guestName').value,
     guestEmail: document.getElementById('guestEmail').value,
     checkIn:    document.getElementById('checkIn').value,
@@ -1738,7 +1747,8 @@ var I18N = {
     "page.yourName":                  "Your name",
     "page.yourEmail":                 "Email address",
     "page.message":                   "Message (optional)",
-    "page.enquirySuccess":            "Your enquiry has been sent! The property owner will be in touch shortly."
+    "page.selectRoom":                "Room",
+    "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly."
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -1772,7 +1782,8 @@ var I18N = {
     "page.yourName":                  "Votre nom",
     "page.yourEmail":                 "Adresse e-mail",
     "page.message":                   "Message (optionnel)",
-    "page.enquirySuccess":            "Votre demande a été envoyée ! Le propriétaire vous contactera prochainement."
+    "page.selectRoom":                "Chambre",
+    "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement."
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -1806,7 +1817,8 @@ var I18N = {
     "page.yourName":                  "Ihr Name",
     "page.yourEmail":                 "E-Mail-Adresse",
     "page.message":                   "Nachricht (optional)",
-    "page.enquirySuccess":            "Ihre Anfrage wurde gesendet! Der Eigentümer wird sich in Kürze melden."
+    "page.selectRoom":                "Zimmer",
+    "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden."
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -1840,7 +1852,8 @@ var I18N = {
     "page.yourName":                  "Su nombre",
     "page.yourEmail":                 "Correo electrónico",
     "page.message":                   "Mensaje (opcional)",
-    "page.enquirySuccess":            "¡Su consulta ha sido enviada! El propietario se pondrá en contacto pronto."
+    "page.selectRoom":                "Habitación",
+    "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto."
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -1874,7 +1887,8 @@ var I18N = {
     "page.yourName":                  "Uw naam",
     "page.yourEmail":                 "E-mailadres",
     "page.message":                   "Bericht (optioneel)",
-    "page.enquirySuccess":            "Uw aanvraag is verzonden! De eigenaar neemt binnenkort contact met u op."
+    "page.selectRoom":                "Kamer",
+    "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op."
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
