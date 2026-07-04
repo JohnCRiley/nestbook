@@ -1348,6 +1348,59 @@ a { text-decoration: none; }
 }
 .btn-panel-secondary:hover { background: var(--page-bg); color: var(--text-primary); }
 
+/* ─── Approval banner (pending_owner_approval) ───────────────────────────── */
+.approval-banner {
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  background: #fef3c7;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.approval-banner-msg {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #78350f;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.approval-banner-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-weight: 600;
+}
+.approval-buttons { display: flex; gap: 8px; }
+.approve-btn {
+  padding: 7px 18px;
+  border-radius: 7px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s;
+}
+.approve-btn:hover:not(:disabled) { background: var(--accent-dark); }
+.approve-btn:disabled { opacity: 0.6; cursor: default; }
+.decline-btn {
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: 1px solid #fca5a5;
+  background: #fff;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s;
+}
+.decline-btn:hover:not(:disabled) { background: #fee2e2; }
+.decline-btn:disabled { opacity: 0.6; cursor: default; }
+
 /* ─── New booking modal ──────────────────────────────────────────────────── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px) scale(0.98); }

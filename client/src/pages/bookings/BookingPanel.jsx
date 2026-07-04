@@ -2127,18 +2127,17 @@ function PanelRow({ label, value }) {
 // ── WP Approval Banner ────────────────────────────────────────────────────────
 
 function WpApprovalBanner({ bookingId, onBookingUpdated, t }) {
-  const [working, setWorking] = useState(null); // 'approve' | 'decline' | null
-  const [error,   setError]   = useState(null);
+  const [working,            setWorking]            = useState(null); // 'approve' | 'decline' | null
+  const [error,              setError]              = useState(null);
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
 
-  const handleAction = async (action) => {
+  const doAction = async (action) => {
     setWorking(action);
     setError(null);
     try {
-      const newStatus = action === 'approve' ? 'confirmed' : 'declined';
-      const res = await apiFetch(`/api/bookings/${bookingId}`, {
-        method: 'PUT',
+      const res = await apiFetch(`/api/bookings/${bookingId}/${action}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, _wp_action: action }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -2148,57 +2147,46 @@ function WpApprovalBanner({ bookingId, onBookingUpdated, t }) {
       if (onBookingUpdated) onBookingUpdated(updated);
     } catch (err) {
       setError(err.message);
-    } finally {
       setWorking(null);
     }
   };
 
   return (
-    <div style={{
-      padding: '12px 22px', borderBottom: '1px solid var(--border)',
-      background: '#fef3c7', display: 'flex', flexDirection: 'column', gap: 8,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: '1.1rem' }}>⏳</span>
-        <div>
-          <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#b45309' }}>
-            {t('wpPendingBannerTitle')}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: '#78350f' }}>
-            {t('wpPendingBannerMsg')}
-          </div>
+    <>
+      <ConfirmModal
+        isOpen={showDeclineConfirm}
+        title={t('bookingPanel.confirmDecline')}
+        message={t('bookingPanel.confirmDeclineMsg')}
+        confirmLabel={t('bookingPanel.yesDecline')}
+        cancelLabel={t('common.cancel')}
+        variant="danger"
+        busy={working === 'decline'}
+        onConfirm={() => { setShowDeclineConfirm(false); doAction('decline'); }}
+        onCancel={() => setShowDeclineConfirm(false)}
+      />
+      <div className="approval-banner">
+        <p className="approval-banner-msg">
+          <span>⏳</span> {t('bookingPanel.awaitingApproval')}
+        </p>
+        {error && <div className="approval-banner-error">{error}</div>}
+        <div className="approval-buttons">
+          <button
+            className="approve-btn"
+            onClick={() => doAction('approve')}
+            disabled={!!working}
+          >
+            {working === 'approve' ? '…' : t('bookingPanel.approve')}
+          </button>
+          <button
+            className="decline-btn"
+            onClick={() => setShowDeclineConfirm(true)}
+            disabled={!!working}
+          >
+            {t('bookingPanel.decline')}
+          </button>
         </div>
       </div>
-      {error && (
-        <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: 600 }}>{error}</div>
-      )}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          onClick={() => handleAction('approve')}
-          disabled={!!working}
-          style={{
-            padding: '7px 18px', borderRadius: 7, border: 'none',
-            background: 'var(--accent)', color: '#fff',
-            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
-            opacity: working ? 0.6 : 1,
-          }}
-        >
-          {working === 'approve' ? '…' : t('wpApproveBtnLabel')}
-        </button>
-        <button
-          onClick={() => handleAction('decline')}
-          disabled={!!working}
-          style={{
-            padding: '7px 14px', borderRadius: 7, border: '1px solid #fca5a5',
-            background: '#fff', color: '#dc2626',
-            fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
-            opacity: working ? 0.6 : 1,
-          }}
-        >
-          {working === 'decline' ? '…' : t('wpDeclineBtnLabel')}
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 

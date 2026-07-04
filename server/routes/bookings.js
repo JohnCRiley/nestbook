@@ -806,6 +806,67 @@ bookingsRouter.post('/', (req, res) => {
   }
 });
 
+// ── POST /api/bookings/:id/approve — in-app, authenticated ───────────────────
+bookingsRouter.post('/:id/approve', async (req, res) => {
+  try {
+    const existing = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, existing.property_id)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    if (existing.status !== 'pending_owner_approval') {
+      return res.status(400).json({ error: 'Booking is not awaiting approval' });
+    }
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(existing.property_id);
+    if (property?.deposit_enabled) {
+      const { depositAmount, balanceAmount } = calculateDeposit(property, existing.total_price);
+      const now = new Date().toISOString();
+      db.prepare(`UPDATE bookings SET status = 'confirmed', deposit_amount = ?, balance_amount = ?, deposit_requested_at = ? WHERE id = ?`)
+        .run(depositAmount, balanceAmount, now, req.params.id);
+      const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+      if (property.deposit_auto_email) {
+        sendDepositRequest(updated, property).catch(() => {});
+        db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+      }
+      return res.json(updated);
+    }
+
+    db.prepare(`UPDATE bookings SET status = 'confirmed' WHERE id = ?`).run(req.params.id);
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    sendBookingApprovedEmail(updated, property).catch(() => {});
+    console.log(`[booking] #${req.params.id} approved in-app`);
+    res.json(updated);
+  } catch (err) {
+    console.error('[booking] in-app approve error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/decline — in-app, authenticated ───────────────────
+bookingsRouter.post('/:id/decline', async (req, res) => {
+  try {
+    const existing = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, existing.property_id)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    if (existing.status !== 'pending_owner_approval') {
+      return res.status(400).json({ error: 'Booking is not awaiting approval' });
+    }
+
+    db.prepare(`UPDATE bookings SET status = 'declined' WHERE id = ?`).run(req.params.id);
+    const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
+    sendBookingDeclinedEmail(updated, property).catch(() => {});
+    console.log(`[booking] #${req.params.id} declined in-app`);
+    res.json(updated);
+  } catch (err) {
+    console.error('[booking] in-app decline error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── PUT /api/bookings/:id ─────────────────────────────────────────────────
 bookingsRouter.put('/:id', (req, res) => {
   try {
