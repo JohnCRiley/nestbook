@@ -365,6 +365,32 @@ stripeRouter.post('/connect/dashboard-link', async (req, res) => {
   }
 });
 
+// ── POST /api/stripe/connect/disconnect ──────────────────────────────────────
+stripeRouter.post('/connect/disconnect', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT stripe_connect_account_id FROM users WHERE id = ?').get(req.user.userId);
+    if (!user?.stripe_connect_account_id) {
+      return res.status(400).json({ error: 'No connected account to disconnect' });
+    }
+
+    await stripe.accounts.del(user.stripe_connect_account_id);
+
+    db.prepare(`
+      UPDATE users
+      SET stripe_connect_account_id = NULL,
+          stripe_connect_status = NULL,
+          stripe_connect_details_submitted = 0
+      WHERE id = ?
+    `).run(req.user.userId);
+
+    console.log(`[stripe] Connect account disconnected for user ${req.user.userId}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[stripe] connect/disconnect error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── POST /api/stripe/webhook ──────────────────────────────────────────────────
 // Exported as a plain handler and mounted directly in index.js BEFORE
 // requireAuth and express.json(). Stripe uses its own signature verification

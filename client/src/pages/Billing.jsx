@@ -513,9 +513,11 @@ function GuestPaymentsCard() {
 // ── Stripe Connect card ───────────────────────────────────────────────────────
 function StripeConnectCard() {
   const t = useT();
-  const [status,        setStatus]        = useState(null);
-  const [loading,       setLoading]       = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [status,              setStatus]              = useState(null);
+  const [loading,             setLoading]             = useState(true);
+  const [actionLoading,       setActionLoading]       = useState(false);
+  const [errorMsg,            setErrorMsg]            = useState(null);
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
 
   useEffect(() => {
     apiFetch('/api/stripe/connect/status')
@@ -540,13 +542,28 @@ function StripeConnectCard() {
 
   async function handleManage() {
     setActionLoading(true);
+    setErrorMsg(null);
     try {
       const r    = await apiFetch('/api/stripe/connect/dashboard-link', { method: 'POST' });
       const data = await r.json();
       if (data.url) window.open(data.url, '_blank');
-      else alert(t('billing.connectError'));
+      else setErrorMsg(t('billing.connectError'));
     } catch {
-      alert(t('billing.connectError'));
+      setErrorMsg(t('billing.connectError'));
+    }
+    setActionLoading(false);
+  }
+
+  async function handleDisconnect() {
+    setActionLoading(true);
+    setErrorMsg(null);
+    try {
+      const r    = await apiFetch('/api/stripe/connect/disconnect', { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || t('billing.connectError'));
+      setStatus({ connected: false, status: null, detailsSubmitted: false });
+    } catch (e) {
+      setErrorMsg(e.message || t('billing.connectError'));
     }
     setActionLoading(false);
   }
@@ -605,13 +622,31 @@ function StripeConnectCard() {
 
       {isActive && (
         <div style={{ marginTop: 12 }}>
+          <ConfirmModal
+            isOpen={showDisconnectModal}
+            title={t('billing.confirmDisconnectTitle')}
+            message={t('billing.confirmDisconnectMsg')}
+            confirmLabel={t('billing.yesDisconnect')}
+            cancelLabel={t('common.cancel')}
+            variant="danger"
+            busy={actionLoading}
+            onConfirm={() => { setShowDisconnectModal(false); handleDisconnect(); }}
+            onCancel={() => setShowDisconnectModal(false)}
+          />
           <span className="billing-status-pill billing-status-active">
             <i className="ti ti-circle-check" /> {t('billing.connectActive')}
           </span>
           <button className="billing-connect-btn billing-connect-btn-secondary" onClick={handleManage} disabled={actionLoading} style={{ display: 'block', marginTop: 10 }}>
             {actionLoading ? t('billing.connecting') : t('billing.manageOnStripe')}
           </button>
+          <button className="billing-disconnect-link" onClick={() => setShowDisconnectModal(true)} disabled={actionLoading}>
+            {t('billing.disconnectStripe')}
+          </button>
         </div>
+      )}
+
+      {errorMsg && (
+        <p style={{ marginTop: 10, fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>{errorMsg}</p>
       )}
     </div>
   );

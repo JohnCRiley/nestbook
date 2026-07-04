@@ -1348,6 +1348,19 @@ a { text-decoration: none; }
 }
 .btn-panel-secondary:hover { background: var(--page-bg); color: var(--text-primary); }
 
+.billing-disconnect-link {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 10px;
+  padding: 0;
+}
+.billing-disconnect-link:hover { color: #991b1b; }
+
 /* ─── Approval banner (pending_owner_approval) ───────────────────────────── */
 .approval-banner {
   padding: 12px 22px;
