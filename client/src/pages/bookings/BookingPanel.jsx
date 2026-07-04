@@ -125,6 +125,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [showCheckout,       setShowCheckout]       = useState(false);
   const [showReprint,        setShowReprint]        = useState(false);
   const [showRefund,         setShowRefund]         = useState(false);
+  const [connectStatus,      setConnectStatus]      = useState(null);
   const checkedOutBookingRef = useRef(null);
 
   const showChargesTab = plan === 'multi';
@@ -162,6 +163,15 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       .then(setCharges)
       .catch(() => setCharges([]));
   }, [b.id, plan]);
+
+  // Check Stripe Connect status — only for owners, drives payment link visibility
+  useEffect(() => {
+    if (user?.role !== 'owner') return;
+    apiFetch('/api/stripe/connect/status')
+      .then(r => r.json())
+      .then(setConnectStatus)
+      .catch(() => {});
+  }, [user?.role]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -611,6 +621,17 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           </div>
         );
       })()}
+
+      {/* ── Stripe payment link ──────────────────────────────────────────── */}
+      {connectStatus?.status === 'active' && user?.role === 'owner' &&
+        ['confirmed', 'arriving', 'in_house'].includes(b.status) && (
+        <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('bookingPanel.sendPaymentLink')}
+          </div>
+          <PaymentLinkButton booking={b} t={t} />
+        </div>
+      )}
 
       {/* ── Breakfast strip ───────────────────────────────────────────────── */}
       {property?.rental_type !== 'whole_property' && (!!property?.breakfast_included || !!b.room_breakfast_included || !!b.breakfast_added) && (() => {
@@ -2274,6 +2295,86 @@ function RefundModal({ booking: b, fmtCurrency, t, onConfirm, onClose }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Stripe payment link button ─────────────────────────────────────────────
+function PaymentLinkButton({ booking, t }) {
+  const { currencySymbol } = useLocale();
+  const [amount,  setAmount]  = useState(booking.total_price > 0 ? String(booking.total_price.toFixed(2)) : '');
+  const [loading, setLoading] = useState(false);
+  const [link,    setLink]    = useState(null);
+  const [error,   setError]   = useState(null);
+
+  if (booking.stripe_payment_status === 'paid') {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600,
+        background: '#d1fae5', color: '#065f46',
+      }}>
+        <i className="ti ti-circle-check" /> {t('billing.status.paid')}
+      </span>
+    );
+  }
+
+  async function generateLink() {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const r    = await apiFetch(`/api/bookings/${booking.id}/create-payment-link`, {
+        method: 'POST',
+        body:   JSON.stringify({
+          amount:      amt,
+          description: `Booking #${booking.id} — ${booking.guest_first_name} ${booking.guest_last_name}`,
+        }),
+      });
+      const data = await r.json();
+      if (data.url) setLink(data.url);
+      else setError(data.error || 'Failed to create link. Please try again.');
+    } catch {
+      setError('Network error — please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (link) {
+    return (
+      <div className="payment-link-box">
+        <input readOnly value={link} onClick={(e) => e.target.select()} />
+        <button onClick={() => navigator.clipboard.writeText(link)}>{t('common.copy')}</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>{currencySymbol}</span>
+        <input
+          type="number" min="0.01" step="0.01" value={amount}
+          onChange={e => setAmount(e.target.value)}
+          style={{
+            flex: 1, fontSize: '0.85rem', padding: '5px 8px',
+            border: '1px solid var(--border)', borderRadius: 6,
+            fontFamily: 'inherit',
+          }}
+          placeholder="0.00"
+        />
+        <button
+          className="btn-panel-primary"
+          style={{ fontSize: '0.78rem', padding: '5px 10px', whiteSpace: 'nowrap' }}
+          onClick={generateLink}
+          disabled={loading || !parseFloat(amount)}
+        >
+          {loading ? t('bookingPanel.generatingLink') : t('bookingPanel.sendPaymentLink')}
+        </button>
+      </div>
+      {error && <span style={{ fontSize: '0.75rem', color: '#dc2626' }}>{error}</span>}
     </div>
   );
 }

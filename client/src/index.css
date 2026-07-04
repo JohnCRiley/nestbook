@@ -5335,6 +5335,34 @@ a { text-decoration: none; }
 .billing-status-pending { background: #fef3c7; color: #78350f; }
 .billing-status-active  { background: #d9f0cc; color: #1a4710; }
 
+/* Payment link copy box */
+.payment-link-box {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.payment-link-box input {
+  flex: 1;
+  font-size: 0.8rem;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: inherit;
+}
+.payment-link-box button {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--card-bg);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.payment-link-box button:hover { opacity: 0.85; }
+
 /* Connect why/how sections */
 .billing-connect-why,
 .billing-connect-how {

@@ -1407,6 +1407,11 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_actioned INTEGER DEFAULT 0`); } catch {}
 
+  // Stripe payment link — one-off guest payment sessions
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN stripe_checkout_session_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN stripe_payment_status TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN stripe_payment_amount REAL`); } catch {}
+
   // Discount code promotion tracking + Stripe identity + language preference on users row
   const userColsToAdd = [
     `ALTER TABLE users ADD COLUMN trial_ends_at TEXT DEFAULT NULL`,

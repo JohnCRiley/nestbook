@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import Stripe from 'stripe';
 import db from '../db/database.js';
 import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail, sendStayExtendedEmail, sendStayShortenedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
@@ -6,6 +7,8 @@ import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../uti
 import { calculateDeposit } from '../utils/deposits.js';
 
 export const bookingsRouter = Router();
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function actorFromReq(req) {
   const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
@@ -87,6 +90,9 @@ const ENRICHED_SELECT = `
     b.deposit_email_sent,
     b.balance_email_sent,
     b.deposit_forfeited,
+    b.stripe_checkout_session_id,
+    b.stripe_payment_status,
+    b.stripe_payment_amount,
     g.first_name   AS guest_first_name,
     g.last_name    AS guest_last_name,
     g.email        AS guest_email,
@@ -1252,6 +1258,66 @@ bookingsRouter.post('/:id/refund', (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/bookings/:id/create-payment-link ───────────────────────────────
+// Owner only. Creates a Stripe-hosted payment link charged to the owner's
+// connected account — NestBook never touches the money.
+bookingsRouter.post('/:id/create-payment-link', async (req, res) => {
+  try {
+    const booking = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, booking.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const { amount, description } = req.body;
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
+
+    const owner = db.prepare(
+      'SELECT stripe_connect_account_id, stripe_connect_status FROM users WHERE id = ?'
+    ).get(req.user.userId);
+    if (!owner?.stripe_connect_account_id || owner.stripe_connect_status !== 'active') {
+      return res.status(400).json({ error: 'Stripe Connect not set up' });
+    }
+
+    const property = db.prepare('SELECT currency FROM properties WHERE id = ?').get(booking.property_id);
+    const currency = (property?.currency || 'EUR').toLowerCase();
+
+    const baseUrl = process.env.APP_URL || 'https://nestbook.io';
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        line_items: [{
+          price_data: {
+            currency,
+            product_data: {
+              name: description || `Booking #${booking.id} — ${booking.guest_first_name} ${booking.guest_last_name}`,
+            },
+            unit_amount: Math.round(amt * 100),
+          },
+          quantity: 1,
+        }],
+        success_url: `${baseUrl}/pay/success?booking=${booking.id}`,
+        cancel_url:  `${baseUrl}/pay/cancelled?booking=${booking.id}`,
+        metadata: {
+          booking_id:        String(booking.id),
+          nestbook_owner_id: String(req.user.userId),
+        },
+      },
+      { stripeAccount: owner.stripe_connect_account_id }
+    );
+
+    db.prepare('UPDATE bookings SET stripe_checkout_session_id = ?, stripe_payment_status = ?, stripe_payment_amount = ? WHERE id = ?')
+      .run(session.id, 'pending', amt, booking.id);
+
+    console.log(`[stripe] Payment link created for booking ${booking.id} — ${currency} ${amt}`);
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('[stripe] create-payment-link error:', e.message);
+    res.status(500).json({ error: e.message });
   }
 });
 

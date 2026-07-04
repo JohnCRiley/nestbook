@@ -389,7 +389,18 @@ export async function stripeWebhookHandler(req, res) {
     switch (event.type) {
 
       case 'checkout.session.completed': {
-        const session        = event.data.object;
+        const session = event.data.object;
+
+        if (event.account) {
+          // Connected-account payment — guest paying owner via payment link
+          if (session.metadata?.booking_id) {
+            db.prepare('UPDATE bookings SET stripe_payment_status = ? WHERE id = ?')
+              .run('paid', session.metadata.booking_id);
+            console.log(`[stripe] Booking ${session.metadata.booking_id} marked paid via payment link`);
+          }
+          break;
+        }
+
         const userId         = session.metadata?.userId;
         const subscriptionId = session.subscription;
         const customerId     = session.customer;
