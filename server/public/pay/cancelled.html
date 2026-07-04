@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment not completed — NestBook</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1a2e14;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 48px 40px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+  }
+  .icon { font-size: 3rem; margin-bottom: 20px; }
+  h1 { font-size: 1.6rem; font-weight: 700; color: #92400e; margin-bottom: 12px; }
+  p  { font-size: 1rem; color: #475569; line-height: 1.6; margin-bottom: 28px; }
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .logo img { width: 28px; height: 28px; border-radius: 6px; }
+  .logo span { font-size: 1.05rem; font-weight: 700; color: #1a4710; }
+  a.home {
+    display: inline-block;
+    color: #1a4710;
+    font-size: 0.88rem;
+    text-decoration: none;
+    border: 1.5px solid #1a4710;
+    border-radius: 8px;
+    padding: 8px 20px;
+  }
+  a.home:hover { background: #f0fdf4; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <img src="/icon-192.png" alt="NestBook">
+    <span>NestBook</span>
+  </div>
+  <div class="icon">ℹ️</div>
+  <h1 id="title">Payment not completed</h1>
+  <p id="msg">No charge was made. Your booking request was not confirmed — you can try again from the property's booking page.</p>
+  <a class="home" href="https://nestbook.io">nestbook.io</a>
+</div>
+<script>
+var T = {
+  en: { title: 'Payment not completed',     msg: 'No charge was made. Your booking request was not confirmed — you can try again from the property\'s booking page.' },
+  fr: { title: 'Paiement non finalisé',     msg: 'Aucun montant n\'a été débité. Votre demande de réservation n\'a pas été confirmée — vous pouvez réessayer depuis la page de réservation.' },
+  de: { title: 'Zahlung nicht abgeschlossen', msg: 'Es wurde kein Betrag abgebucht. Ihre Buchungsanfrage wurde nicht bestätigt — Sie können es über die Buchungsseite der Unterkunft erneut versuchen.' },
+  es: { title: 'Pago no completado',        msg: 'No se ha realizado ningún cargo. Su solicitud de reserva no se ha confirmado — puede intentarlo de nuevo desde la página de reservas del alojamiento.' },
+  nl: { title: 'Betaling niet voltooid',    msg: 'Er is niets in rekening gebracht. Uw boekingsaanvraag is niet bevestigd — u kunt het opnieuw proberen via de boekingspagina.' },
+};
+var lang = 'en';
+try { var s = sessionStorage.getItem('nb-guest-lang'); if (s && T[s]) lang = s; } catch(_) {}
+if (!T[lang]) lang = (navigator.language || '').slice(0, 2).toLowerCase();
+var t = T[lang] || T.en;
+document.getElementById('title').textContent = t.title;
+document.getElementById('msg').textContent   = t.msg;
+document.documentElement.lang = lang;
+</script>
+</body>
+</html>

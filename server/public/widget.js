@@ -468,6 +468,10 @@
             total_price:    totalPrice,
           }),
         });
+        if (booking.checkoutUrl) {
+          window.location.href = booking.checkoutUrl;
+          return;
+        }
         S.bookingRef = booking.id;
         S.step       = 5;
       }

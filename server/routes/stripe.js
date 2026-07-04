@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
 import db from '../db/database.js';
-import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail } from '../email/emailService.js';
+import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
@@ -392,11 +392,34 @@ export async function stripeWebhookHandler(req, res) {
         const session = event.data.object;
 
         if (event.account) {
-          // Connected-account payment — guest paying owner via payment link
-          if (session.metadata?.booking_id) {
+          const bookingId = session.metadata?.booking_id;
+          if (session.metadata?.source === 'widget_payment' && bookingId) {
+            // Widget booking — advance from pending_payment to confirmed
+            db.prepare(`UPDATE bookings SET status = 'confirmed', stripe_payment_status = 'paid' WHERE id = ?`)
+              .run(bookingId);
+            const confirmedBooking = db.prepare(`
+              SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+                     g.email AS guest_email, g.phone AS guest_phone,
+                     r.name AS room_name, r.type AS room_type, r.price_per_night
+              FROM bookings b
+              LEFT JOIN guests g ON b.guest_id = g.id
+              LEFT JOIN rooms  r ON b.room_id  = r.id
+              WHERE b.id = ?
+            `).get(bookingId);
+            if (confirmedBooking) {
+              const property = db.prepare(
+                `SELECT p.*, u.email AS owner_email FROM properties p
+                 LEFT JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
+                 WHERE p.id = ?`
+              ).get(confirmedBooking.property_id);
+              sendBookingConfirmation(confirmedBooking, property).catch(() => {});
+            }
+            console.log(`[stripe] Widget booking #${bookingId} confirmed after payment`);
+          } else if (bookingId) {
+            // Payment-link payment — just mark paid, don't change booking status
             db.prepare('UPDATE bookings SET stripe_payment_status = ? WHERE id = ?')
-              .run('paid', session.metadata.booking_id);
-            console.log(`[stripe] Booking ${session.metadata.booking_id} marked paid via payment link`);
+              .run('paid', bookingId);
+            console.log(`[stripe] Booking #${bookingId} marked paid via payment link`);
           }
           break;
         }

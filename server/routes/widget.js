@@ -4,6 +4,7 @@
 // checks and booking creation.
 import crypto from 'crypto';
 import { Router } from 'express';
+import Stripe from 'stripe';
 import db from '../db/database.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import {
@@ -12,6 +13,8 @@ import {
   sendBookingApprovedEmail,
   sendBookingDeclinedEmail,
 } from '../email/emailService.js';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ── Demo mode rooms (static, never blocked, no DB dependency) ─────────────────
 // These match the Domaine des Lavandes demo property rooms shown on widget-test.html.
@@ -172,7 +175,10 @@ widgetRouter.post('/guests', (req, res) => {
 
 // ── POST /api/widget/bookings ─────────────────────────────────────────────────
 // Creates a booking from the widget. Sends confirmation email.
-widgetRouter.post('/bookings', (req, res) => {
+// If the property owner has an active Stripe Connect account, creates the
+// booking as pending_payment and returns a Stripe Checkout URL instead of
+// confirming instantly. The webhook advances the booking to confirmed on payment.
+widgetRouter.post('/bookings', async (req, res) => {
   try {
     const {
       property_id, room_id, guest_id,
@@ -229,7 +235,76 @@ widgetRouter.post('/bookings', (req, res) => {
       if (bl) flagged = 1;
     }
 
+    // ── Stripe Connect payment branch ────────────────────────────────────────
+    // Rooms-mode, non-WP bookings on properties with an active Connect account
+    // are held as pending_payment. The guest completes payment via Stripe
+    // Checkout; the webhook advances the booking to confirmed.
     const isWpRequest = (status === 'pending_owner_approval');
+    if (!isWpRequest) {
+      const ownerRow = db.prepare(`
+        SELECT u.stripe_connect_account_id, u.stripe_connect_status,
+               p.currency, p.name AS property_name
+        FROM properties p
+        JOIN users u ON u.id = p.owner_id
+        WHERE p.id = ?
+      `).get(property_id);
+
+      if (ownerRow?.stripe_connect_status === 'active') {
+        const result = db.prepare(`
+          INSERT INTO bookings
+            (property_id, room_id, guest_id, check_in_date, check_out_date,
+             num_guests, status, source, notes, total_price, flagged)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?)
+        `).run(
+          property_id, room_id, guest_id,
+          check_in_date, check_out_date,
+          num_guests ?? 1,
+          source     ?? 'direct',
+          notes      ?? null,
+          total_price ?? null,
+          flagged,
+        );
+        const bookingId = result.lastInsertRowid;
+        const currency  = (ownerRow.currency || 'eur').toLowerCase();
+        const amount    = Math.round((total_price ?? 0) * 100);
+
+        let session;
+        try {
+          const base = process.env.APP_URL ?? 'https://nestbook.io';
+          session = await stripe.checkout.sessions.create(
+            {
+              mode: 'payment',
+              line_items: [{
+                price_data: {
+                  currency,
+                  product_data: { name: `${ownerRow.property_name} — ${check_in_date} to ${check_out_date}` },
+                  unit_amount: amount,
+                },
+                quantity: 1,
+              }],
+              success_url: `${base}/pay/success?booking=${bookingId}`,
+              cancel_url:  `${base}/pay/cancelled?booking=${bookingId}`,
+              metadata: {
+                booking_id: String(bookingId),
+                source:     'widget_payment',
+              },
+            },
+            { stripeAccount: ownerRow.stripe_connect_account_id },
+          );
+        } catch (stripeErr) {
+          // Roll back the pending booking so dates aren't permanently blocked
+          db.prepare('DELETE FROM bookings WHERE id = ?').run(bookingId);
+          throw stripeErr;
+        }
+
+        db.prepare('UPDATE bookings SET stripe_checkout_session_id = ? WHERE id = ?')
+          .run(session.id, bookingId);
+
+        console.log(`[widget] Booking #${bookingId} pending_payment — Stripe session ${session.id}`);
+        return res.status(201).json({ checkoutUrl: session.url });
+      }
+    }
+    // ── End Stripe Connect branch ─────────────────────────────────────────────
     const approvalToken = isWpRequest ? crypto.randomBytes(32).toString('hex') : null;
 
     const result = db.prepare(`
