@@ -2633,6 +2633,87 @@ export async function sendContentRemovedEmail(ownerEmail, ownerName, propertyNam
   }
 }
 
+export async function sendVerificationReminderEmail(user) {
+  if (!resend) return;
+  if (!user?.email || !user?.email_verification_token) return;
+
+  const verifyLink = `https://nestbook.io/app/verify-email?token=${user.email_verification_token}`;
+
+  const VERIFY_REMINDER_T = {
+    en: {
+      subject:  'Please verify your email — your NestBook account will be removed soon',
+      heading:  'Your account needs verifying',
+      body:     "We noticed you haven't verified your email address yet. To keep your NestBook account, please click the button below.",
+      warning:  "If your account isn't verified within the next few days, it will be automatically removed and this can't be undone.",
+      cta:      'Verify my email address',
+    },
+    fr: {
+      subject:  'Veuillez vérifier votre e-mail — votre compte NestBook sera bientôt supprimé',
+      heading:  'Votre compte doit être vérifié',
+      body:     "Nous avons remarqué que vous n'avez pas encore vérifié votre adresse e-mail. Pour conserver votre compte NestBook, cliquez sur le bouton ci-dessous.",
+      warning:  "Si votre compte n'est pas vérifié dans les prochains jours, il sera automatiquement supprimé et cette action est irréversible.",
+      cta:      'Vérifier mon adresse e-mail',
+    },
+    de: {
+      subject:  'Bitte bestätigen Sie Ihre E-Mail — Ihr NestBook-Konto wird bald entfernt',
+      heading:  'Ihr Konto muss bestätigt werden',
+      body:     'Uns ist aufgefallen, dass Sie Ihre E-Mail-Adresse noch nicht bestätigt haben. Um Ihr NestBook-Konto zu behalten, klicken Sie bitte auf die Schaltfläche unten.',
+      warning:  'Wird Ihr Konto nicht innerhalb der nächsten Tage bestätigt, wird es automatisch entfernt. Dies kann nicht rückgängig gemacht werden.',
+      cta:      'E-Mail-Adresse bestätigen',
+    },
+    es: {
+      subject:  'Verifique su correo electrónico — su cuenta de NestBook será eliminada pronto',
+      heading:  'Su cuenta necesita verificación',
+      body:     'Hemos notado que aún no ha verificado su dirección de correo electrónico. Para conservar su cuenta de NestBook, haga clic en el botón de abajo.',
+      warning:  'Si su cuenta no se verifica en los próximos días, se eliminará automáticamente y esta acción no se puede deshacer.',
+      cta:      'Verificar mi dirección de correo',
+    },
+    nl: {
+      subject:  'Bevestig uw e-mail — uw NestBook-account wordt binnenkort verwijderd',
+      heading:  'Uw account moet worden bevestigd',
+      body:     'We hebben gemerkt dat u uw e-mailadres nog niet heeft bevestigd. Klik op de knop hieronder om uw NestBook-account te behouden.',
+      warning:  'Als uw account niet binnen enkele dagen wordt bevestigd, wordt het automatisch verwijderd. Dit kan niet ongedaan worden gemaakt.',
+      cta:      'E-mailadres bevestigen',
+    },
+  };
+
+  const lang = VERIFY_REMINDER_T[user.language] ? user.language : 'en';
+  const tr   = VERIFY_REMINDER_T[lang];
+
+  const html = shell(`
+    <h1 style="margin:0 0 16px;font-size:1.3rem;font-weight:700;color:#1a4710;">${tr.heading}</h1>
+    <p style="margin:0 0 16px;font-size:0.95rem;color:#374151;line-height:1.6;">${tr.body}</p>
+
+    <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 18px;
+                border-radius:0 8px 8px 0;margin:0 0 24px;">
+      <p style="margin:0;color:#991b1b;font-size:0.875rem;line-height:1.6;">${tr.warning}</p>
+    </div>
+
+    <a href="${verifyLink}"
+       style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
+              padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
+      ${tr.cta}
+    </a>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0 16px;">
+    <p style="margin:0;font-size:0.75rem;color:#9ca3af;text-align:center;line-height:1.5;">
+      If you didn't create a NestBook account, you can safely ignore this email.
+    </p>
+  `);
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      user.email,
+      subject: tr.subject,
+      html,
+    });
+    console.log(`[email] Verification reminder sent → ${user.email}`);
+  } catch (err) {
+    console.error('[email] Failed to send verification reminder:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');

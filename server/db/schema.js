@@ -1579,6 +1579,18 @@ John`
     console.log('✓ content_flags table ready');
   } catch(e) { console.error('content_flags table error:', e.message); }
 
+  // Unverified account lifecycle — reminder email + soft-expiry tracking
+  const unverifiedLifecycleCols = [
+    `ALTER TABLE users ADD COLUMN verification_reminder_sent INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE users ADD COLUMN verification_expired_at TEXT DEFAULT NULL`,
+  ];
+  for (const sql of unverifiedLifecycleCols) {
+    try {
+      db.exec(sql);
+      console.log(`✓ Added column: ${sql.match(/ADD COLUMN (\w+)/)[1]}`);
+    } catch { /* already exists — skip */ }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

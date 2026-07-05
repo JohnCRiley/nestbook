@@ -30,6 +30,7 @@ import { roomPhotosRouter }          from './routes/roomPhotos.js';
 import { errorReportsRouter }        from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
+import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { getBalanceDueDate } from './utils/deposits.js';
 import db from './db/database.js';
 
@@ -404,4 +405,9 @@ app.listen(PORT, () => {
     runPromoLifecycle();
     setInterval(runPromoLifecycle, 24 * 60 * 60 * 1000);
   }, next9am - now9);
+
+  // Unverified account cleanup — reminder at day 11, soft-expire at day 14,
+  // delete at day 17. Runs on boot then every 24 hours.
+  runUnverifiedCleanup();
+  setInterval(runUnverifiedCleanup, 24 * 60 * 60 * 1000);
 });

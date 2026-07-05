@@ -9,6 +9,7 @@ import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
+import { deleteUserAccount } from '../utils/deleteUserAccount.js';
 
 export const authRouter = Router();
 
@@ -350,46 +351,10 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
   }
 
   try {
-    db.exec('BEGIN');
-
-    const ownedProps = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId);
-
-    for (const prop of ownedProps) {
-      // 1. Nullify FK self-references (no CASCADE on these columns)
-      db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(prop.id);
-      db.prepare('UPDATE guests SET property_id = NULL WHERE property_id = ?').run(prop.id);
-      // 2. Delete all tables referencing property_id or room_id with no CASCADE
-      db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM property_expenses WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM error_reports WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM room_photos WHERE room_id IN (SELECT id FROM rooms WHERE property_id = ?)').run(prop.id);
-      db.prepare('DELETE FROM room_charges WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM bookings WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM rate_periods WHERE property_id = ?').run(prop.id);
-      // 3. Now safe to delete rooms then the property
-      db.prepare('DELETE FROM rooms WHERE property_id = ?').run(prop.id);
-      db.prepare('DELETE FROM properties WHERE id = ?').run(prop.id);
-    }
-
-    // Clean orphaned guests (guests table has no property_id — use booking reference)
-    db.prepare(
-      'DELETE FROM guests WHERE id NOT IN (SELECT DISTINCT guest_id FROM bookings WHERE guest_id IS NOT NULL)'
-    ).run();
-
-    // room_charges.charged_by / voided_by → users(id) no CASCADE
-    db.prepare('UPDATE room_charges SET charged_by = NULL WHERE charged_by = ?').run(userId);
-    db.prepare('UPDATE room_charges SET voided_by = NULL WHERE voided_by = ?').run(userId);
-    // audit_log.user_id → users(id) no CASCADE
-    db.prepare('DELETE FROM audit_log WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
-
-    db.exec('COMMIT');
+    deleteUserAccount(userId);
     console.log('[delete-account] Successfully deleted user:', userId);
     res.json({ success: true });
   } catch (err) {
-    try { db.exec('ROLLBACK'); } catch {}
     console.error('[delete-account] Error:', err.message);
     res.status(500).json({ error: 'Failed to delete account: ' + err.message });
   }
