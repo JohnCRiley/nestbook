@@ -5,8 +5,14 @@ import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, s
 import { logAction, getIp } from '../utils/auditLog.js';
 import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../utils/ratePeriods.js';
 import { calculateDeposit } from '../utils/deposits.js';
+import { requireVerified } from '../middleware/requireVerified.js';
 
 export const bookingsRouter = Router();
+
+bookingsRouter.use((req, res, next) => {
+  if (req.method === 'GET') return next();
+  return requireVerified(req, res, next);
+});
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 

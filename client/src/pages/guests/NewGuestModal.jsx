@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { apiError } from '../../utils/apiError.js';
 import { useT } from '../../i18n/LocaleContext.jsx';
 
 const EMPTY = { first_name: '', last_name: '', email: '', phone: '', notes: '' };
@@ -54,7 +55,7 @@ export default function NewGuestModal({ onClose, onSuccess, propertyId }) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `Server error ${res.status}`);
+        throw new Error(apiError(body, t));
       }
       const created = await res.json();
       onSuccess(created);

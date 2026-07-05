@@ -3,8 +3,14 @@ import crypto from 'crypto';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
+import { requireVerified } from '../middleware/requireVerified.js';
 
 export const roomsRouter = Router();
+
+roomsRouter.use((req, res, next) => {
+  if (req.method === 'GET') return next();
+  return requireVerified(req, res, next);
+});
 
 function actorFromReq(req) {
   const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);

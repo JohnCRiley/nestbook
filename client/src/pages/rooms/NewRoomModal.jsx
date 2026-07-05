@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatAmenity } from './RoomPanel.jsx';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { apiError } from '../../utils/apiError.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 
 const ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
@@ -58,7 +59,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `Server error ${res.status}`);
+        throw new Error(apiError(body, t));
       }
       onSuccess(await res.json());
     } catch (err) {

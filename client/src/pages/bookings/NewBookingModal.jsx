@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { nightsBetween, addDays } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
+import { apiError } from '../../utils/apiError.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 
@@ -243,7 +244,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body.error ?? 'Could not create guest');
+          throw new Error(apiError(body, t));
         }
         resolvedGuestId = (await res.json()).id;
       } catch (err) {
@@ -291,7 +292,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       clearTimeout(timeoutId);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `Server error ${res.status}`);
+        throw new Error(apiError(body, t));
       }
       const newBooking = await res.json();
       onSuccess(newBooking);

@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { requireVerified } from '../middleware/requireVerified.js';
 
 export const ratePeriodsRouter = Router();
+
+ratePeriodsRouter.use((req, res, next) => {
+  if (req.method === 'GET') return next();
+  return requireVerified(req, res, next);
+});
 
 const PLAN_LIMITS = { free: 0, pro: 5, multi: Infinity };
 
