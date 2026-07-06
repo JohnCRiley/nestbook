@@ -32,11 +32,21 @@ cp /opt/nestbook/client/public/icon.svg     /opt/nestbook/server/public/icon.svg
 cp /opt/nestbook/client/public/manifest.json /opt/nestbook/server/public/manifest.json
 log "Shared assets synced."
 
-log "Updating nginx config..."
-cp /opt/nestbook/server/nginx.conf /etc/nginx/sites-available/nestbook
-nginx -t
-systemctl reload nginx
-log "nginx reloaded."
+log "Syncing nginx configuration..."
+if ! diff -q /opt/nestbook/server/nginx.conf /etc/nginx/sites-available/nestbook > /dev/null 2>&1; then
+  cp /etc/nginx/sites-available/nestbook /etc/nginx/sites-available/nestbook.bak
+  cp /opt/nestbook/server/nginx.conf /etc/nginx/sites-available/nestbook
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    log "Nginx config updated and reloaded."
+  else
+    log "ERROR: nginx config test FAILED — reverting. Live nginx config is unchanged."
+    cp /etc/nginx/sites-available/nestbook.bak /etc/nginx/sites-available/nestbook
+    exit 1
+  fi
+else
+  log "Nginx config already up to date, skipping."
+fi
 
 log "Restarting app..."
 pm2 restart nestbook-api
