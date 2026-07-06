@@ -602,7 +602,6 @@ function StripeConnectCard() {
             <ol>
               <li>{t('billing.how1')}</li>
               <li>{t('billing.how2')}</li>
-              <li>{t('billing.how3')}</li>
             </ol>
           </div>
           <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading}>
