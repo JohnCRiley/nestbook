@@ -583,6 +583,12 @@ img { display: block; max-width: 100%; }
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
+          <tr class="feat-row" data-detail-key="detail.stripe" data-detail="Connect your own Stripe account and accept real card payments on your booking page, widget, and payment links — zero commission, money goes straight into your own account. NestBook never touches your money.">
+            <td class="col-feature" data-i18n="feat.stripe">Direct Card Payments (Stripe Connect)</td>
+            <td class="col-free"><span class="check">✓</span></td>
+            <td class="col-pro"><span class="check">✓</span></td>
+            <td class="col-multi"><span class="check">✓</span></td>
+          </tr>
           <tr class="feat-row" data-detail-key="detail.langs" data-detail="The entire dashboard — every menu, label, and message — is available in English, French, Spanish, German and Dutch. Each staff member can use their own preferred language independently, without affecting anyone else.">
             <td class="col-feature" data-i18n="feat.langs">Interface languages</td>
             <td class="col-free"><span class="cell-text">EN FR ES DE NL</span></td>
@@ -755,6 +761,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="mpc.rooms">Rooms</span><span class="mpc-feat-value accent" data-i18n="cell.upTo3">Up to 3</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.guests">Guest management</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.ical">iCal sync (Booking.com, Airbnb)</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.stripe">Direct Card Payments (Stripe Connect)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.webpage">Your NestBook property page</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.facebook">Facebook Booking Button + slug editor</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.photos">Room photos on booking page</span><span class="mpc-feat-value accent" data-i18n="cell.onePerRoom">1 photo/room</span></div>
@@ -907,7 +914,7 @@ var I18N = {
     'feat.checkin': 'Check-in / check-out', 'feat.guests': 'Guest management',
     'feat.breakfast': 'Breakfast management', 'feat.deposit': 'Deposit tracking',
     'feat.receipt': 'Receipt printing', 'feat.themes': '7 colour themes',
-    'feat.ical': 'iCal sync (Booking.com, Airbnb)', 'feat.importWizard': 'Booking migration wizard', 'feat.langs': 'Interface languages',
+    'feat.ical': 'iCal sync (Booking.com, Airbnb)', 'feat.importWizard': 'Booking migration wizard', 'feat.stripe': 'Direct Card Payments (Stripe Connect)', 'feat.langs': 'Interface languages',
     'feat.widget': 'Booking widget for your website',
     'feat.zeroCommission': 'Zero commission on bookings',
     'feat.emails': 'Automated confirmation emails',
@@ -956,6 +963,7 @@ var I18N = {
     'detail.themes': 'Choose from 7 built-in colour themes: Forest, Royal, Ember, Ruby, Sky, Lavender, and Charcoal. Your chosen theme applies across the dashboard, the booking widget on your website, and the standalone booking page.',
     'detail.ical': 'Export a live iCal feed URL for each room and paste it into Booking.com, Airbnb, or any channel manager. Dates blocked on external platforms are automatically reflected in your NestBook calendar, preventing double-bookings.',
     'detail.importWizard': 'Import your existing bookings from any property management system via CSV. A step-by-step wizard maps your room names to NestBook rooms, validates dates, and skips duplicates automatically.',
+    'detail.stripe': 'Connect your own Stripe account and accept real card payments on your booking page, widget, and payment links — zero commission, money goes straight into your own account. NestBook never touches your money.',
     'detail.langs': 'The entire dashboard — every menu, label, and message — is available in English, French, Spanish, German and Dutch. Each staff member can use their own preferred language independently, without affecting anyone else.',
     'detail.widget': "One script tag embeds a floating 'Book Now' button on any website. Clicking it opens a branded availability calendar in a modal overlay — guests select dates, choose a room, and pay you directly. No platform account needed, no commission taken.",
     'detail.zeroCommission': 'Unlike Booking.com (12–18% commission) or Airbnb (15.5%), NestBook charges nothing per booking. Guests pay you directly. You keep 100% of every booking made through the widget or booking page.',
@@ -993,7 +1001,7 @@ var I18N = {
     'feat.checkin': 'Enregistrement / départ', 'feat.guests': 'Gestion des clients',
     'feat.breakfast': 'Gestion du petit-déjeuner', 'feat.deposit': 'Suivi des acomptes',
     'feat.receipt': 'Impression de reçus', 'feat.themes': '7 thèmes de couleur',
-    'feat.ical': 'Sync iCal (Booking.com, Airbnb)', 'feat.importWizard': 'Assistant de migration de réservations', 'feat.langs': 'Langues de l\'interface',
+    'feat.ical': 'Sync iCal (Booking.com, Airbnb)', 'feat.importWizard': 'Assistant de migration de réservations', 'feat.stripe': 'Paiements par carte (Stripe Connect)', 'feat.langs': 'Langues de l\'interface',
     'feat.widget': 'Widget de réservation pour votre site',
     'feat.zeroCommission': 'Zéro commission sur les réservations',
     'feat.emails': 'E-mails de confirmation automatisés',
@@ -1042,6 +1050,7 @@ var I18N = {
     'detail.themes': "Choisissez parmi 7 thèmes de couleur intégrés : Forêt, Royal, Braise, Rubis, Ciel, Lavande et Anthracite. Le thème choisi s'applique au tableau de bord, au widget de réservation sur votre site et à la page de réservation autonome.",
     'detail.ical': "Exportez une URL de flux iCal en direct pour chaque chambre et collez-la dans Booking.com, Airbnb ou tout gestionnaire de canaux. Les dates bloquées sur les plateformes externes sont automatiquement reflétées dans votre calendrier NestBook, évitant les doubles réservations.",
     'detail.importWizard': "Importez vos réservations existantes depuis n'importe quel système de gestion de propriété via CSV. Un assistant guidé associe les noms de vos chambres aux chambres NestBook, valide les dates et ignore automatiquement les doublons.",
+    'detail.stripe': "Connectez votre propre compte Stripe et acceptez de vrais paiements par carte sur votre page de réservation, votre widget et vos liens de paiement — zéro commission, l'argent arrive directement sur votre compte. NestBook ne touche jamais à votre argent.",
     'detail.langs': "L'intégralité du tableau de bord — chaque menu, étiquette et message — est disponible en anglais, français, espagnol, allemand et néerlandais. Chaque membre du personnel peut utiliser sa propre langue préférée de manière indépendante.",
     'detail.widget': "Une balise script intègre un bouton flottant 'Réserver maintenant' sur n'importe quel site. Un clic ouvre un calendrier de disponibilité personnalisé dans une superposition modale — les clients sélectionnent les dates, choisissent une chambre et vous paient directement. Aucune commission prélevée.",
     'detail.zeroCommission': "Contrairement à Booking.com (12–18% de commission) ou Airbnb (15.5%), NestBook ne prélève rien par réservation. Les clients vous paient directement. Vous gardez 100% de chaque réservation effectuée via le widget ou la page de réservation.",
@@ -1079,7 +1088,7 @@ var I18N = {
     'feat.checkin': 'Check-in / check-out', 'feat.guests': 'Gestión de huéspedes',
     'feat.breakfast': 'Gestión del desayuno', 'feat.deposit': 'Seguimiento de depósitos',
     'feat.receipt': 'Impresión de recibos', 'feat.themes': '7 temas de color',
-    'feat.ical': 'Sync iCal (Booking.com, Airbnb)', 'feat.importWizard': 'Asistente de migración de reservas', 'feat.langs': 'Idiomas de la interfaz',
+    'feat.ical': 'Sync iCal (Booking.com, Airbnb)', 'feat.importWizard': 'Asistente de migración de reservas', 'feat.stripe': 'Pagos con tarjeta (Stripe Connect)', 'feat.langs': 'Idiomas de la interfaz',
     'feat.widget': 'Widget de reservas para su sitio web',
     'feat.zeroCommission': 'Cero comisión en reservas',
     'feat.emails': 'Correos de confirmación automáticos',
@@ -1128,6 +1137,7 @@ var I18N = {
     'detail.themes': 'Elija entre 7 temas de color integrados: Bosque, Royal, Ember, Ruby, Sky, Lavender y Charcoal. El tema elegido se aplica en todo el panel, el widget de reservas en su sitio web y la página de reservas independiente.',
     'detail.ical': 'Exporte una URL de feed iCal en vivo para cada habitación y péguela en Booking.com, Airbnb o cualquier gestor de canales. Las fechas bloqueadas en plataformas externas se reflejan automáticamente en su calendario NestBook, evitando las dobles reservas.',
     'detail.importWizard': 'Importe sus reservas existentes desde cualquier sistema de gestión de propiedades mediante CSV. Un asistente paso a paso asocia los nombres de sus habitaciones con las habitaciones de NestBook, valida las fechas y omite duplicados automáticamente.',
+    'detail.stripe': 'Conecte su propia cuenta de Stripe y acepte pagos reales con tarjeta en su página de reservas, su widget y sus enlaces de pago — sin comisión, el dinero llega directamente a su cuenta. NestBook nunca toca su dinero.',
     'detail.langs': 'Todo el panel — cada menú, etiqueta y mensaje — está disponible en inglés, francés, español, alemán y neerlandés. Cada miembro del personal puede usar su propio idioma preferido de forma independiente, sin afectar a los demás.',
     'detail.widget': "Una etiqueta script incrusta un botón flotante 'Reservar ahora' en cualquier sitio web. Al hacer clic, se abre un calendario de disponibilidad personalizado en una superposición modal — los huéspedes seleccionan fechas, eligen una habitación y le pagan directamente. Sin comisión.",
     'detail.zeroCommission': 'A diferencia de Booking.com (comisión del 12–18%) o Airbnb (15.5%), NestBook no cobra nada por reserva. Los huéspedes le pagan directamente. Usted conserva el 100% de cada reserva realizada a través del widget o la página de reservas.',
@@ -1165,7 +1175,7 @@ var I18N = {
     'feat.checkin': 'Check-in / Check-out', 'feat.guests': 'Gästeverwaltung',
     'feat.breakfast': 'Frühstücksverwaltung', 'feat.deposit': 'Anzahlungsverfolgung',
     'feat.receipt': 'Kassenbon drucken', 'feat.themes': '7 Farbthemen',
-    'feat.ical': 'iCal-Sync (Booking.com, Airbnb)', 'feat.importWizard': 'Buchungs-Migrationsassistent', 'feat.langs': 'Schnittstellensprachen',
+    'feat.ical': 'iCal-Sync (Booking.com, Airbnb)', 'feat.importWizard': 'Buchungs-Migrationsassistent', 'feat.stripe': 'Kartenzahlungen (Stripe Connect)', 'feat.langs': 'Schnittstellensprachen',
     'feat.widget': 'Buchungs-Widget für Ihre Website',
     'feat.zeroCommission': 'Null Provision auf Buchungen',
     'feat.emails': 'Automatische Bestätigungs-E-Mails',
@@ -1214,6 +1224,7 @@ var I18N = {
     'detail.themes': 'Wählen Sie aus 7 integrierten Farbthemen: Forest, Royal, Ember, Ruby, Sky, Lavender und Charcoal. Ihr gewähltes Thema wird im Dashboard, im Buchungs-Widget auf Ihrer Website und auf der eigenständigen Buchungsseite angewendet.',
     'detail.ical': 'Exportieren Sie eine Live-iCal-Feed-URL für jedes Zimmer und fügen Sie sie in Booking.com, Airbnb oder einen beliebigen Channel-Manager ein. Auf externen Plattformen blockierte Daten werden automatisch in Ihrem NestBook-Kalender berücksichtigt und verhindern Doppelbuchungen.',
     'detail.importWizard': 'Importieren Sie Ihre bestehenden Buchungen aus einem beliebigen Verwaltungssystem per CSV. Ein schrittweiser Assistent ordnet Ihre Zimmernamen den NestBook-Zimmern zu, validiert Daten und überspringt Duplikate automatisch.',
+    'detail.stripe': 'Verbinden Sie Ihr eigenes Stripe-Konto und akzeptieren Sie echte Kartenzahlungen auf Ihrer Buchungsseite, Ihrem Widget und über Zahlungslinks — keine Provision, das Geld geht direkt auf Ihr Konto. NestBook fasst Ihr Geld nie an.',
     'detail.langs': 'Das gesamte Dashboard — jedes Menü, jede Bezeichnung und jede Nachricht — ist auf Englisch, Französisch, Spanisch, Deutsch und Niederländisch verfügbar. Jeder Mitarbeiter kann seine bevorzugte Sprache unabhängig verwenden, ohne andere zu beeinflussen.',
     'detail.widget': "Ein Script-Tag bettet einen schwebenden 'Jetzt buchen'-Button auf jeder Website ein. Ein Klick öffnet einen markenbezogenen Verfügbarkeitskalender in einem modalen Overlay — Gäste wählen Daten, wählen ein Zimmer und zahlen direkt an Sie. Keine Provision.",
     'detail.zeroCommission': 'Im Gegensatz zu Booking.com (12–18% Provision) oder Airbnb (15.5%) erhebt NestBook nichts pro Buchung. Gäste zahlen direkt an Sie. Sie behalten 100% jeder über das Widget oder die Buchungsseite getätigten Buchung.',
@@ -1251,7 +1262,7 @@ var I18N = {
     'feat.checkin': 'Inchecken / uitchecken', 'feat.guests': 'Gastenbeheer',
     'feat.breakfast': 'Ontbijtbeheer', 'feat.deposit': 'Aanbetaling bijhouden',
     'feat.receipt': 'Bon printen', 'feat.themes': "7 kleurthema's",
-    'feat.ical': 'iCal-sync (Booking.com, Airbnb)', 'feat.importWizard': 'Boekingen migratiewizard', 'feat.langs': 'Interfacetalen',
+    'feat.ical': 'iCal-sync (Booking.com, Airbnb)', 'feat.importWizard': 'Boekingen migratiewizard', 'feat.stripe': 'Kaartbetalingen (Stripe Connect)', 'feat.langs': 'Interfacetalen',
     'feat.widget': 'Boekingswidget voor uw website',
     'feat.zeroCommission': 'Nul commissie op boekingen',
     'feat.emails': 'Automatische bevestigingsmails',
@@ -1300,6 +1311,7 @@ var I18N = {
     'detail.themes': "Kies uit 7 ingebouwde kleurthema's: Forest, Royal, Ember, Ruby, Sky, Lavender en Charcoal. Uw gekozen thema wordt toegepast op het dashboard, de boekingswidget op uw website en de zelfstandige boekingspagina.",
     'detail.ical': 'Exporteer een live iCal-feed-URL voor elke kamer en plak deze in Booking.com, Airbnb of een kanalenbeheerder. Datums die op externe platforms zijn geblokkeerd, worden automatisch weergegeven in uw NestBook-kalender, waardoor dubbele boekingen worden voorkomen.',
     'detail.importWizard': 'Importeer uw bestaande boekingen vanuit elk beheersysteem via CSV. Een stapsgewijze wizard koppelt uw kamernamen aan NestBook-kamers, valideert datums en slaat automatisch duplicaten over.',
+    'detail.stripe': 'Koppel uw eigen Stripe-account en accepteer echte kaartbetalingen op uw boekingspagina, widget en betaallinks — geen commissie, het geld komt rechtstreeks op uw rekening. NestBook komt nooit aan uw geld.',
     'detail.langs': 'Het volledige dashboard — elk menu, elke label en elk bericht — is beschikbaar in het Engels, Frans, Spaans, Duits en Nederlands. Elk personeelslid kan zijn eigen voorkeurstaal onafhankelijk gebruiken, zonder anderen te beïnvloeden.',
     'detail.widget': "Één script-tag embedt een zwevende 'Nu boeken'-knop op elke website. Klikken opent een gebrandmerkte beschikbaarheidskalender in een modaal overlay — gasten kiezen datums, kiezen een kamer en betalen u direct. Geen platformaccount nodig, geen commissie.",
     'detail.zeroCommission': 'In tegenstelling tot Booking.com (12–18% commissie) of Airbnb (15.5%), brengt NestBook niets per boeking in rekening. Gasten betalen u direct. U houdt 100% van elke boeking via de widget of boekingspagina.',
