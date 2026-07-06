@@ -128,7 +128,6 @@ export default function Register() {
         <p className="auth-tagline">{t('tagline')}</p>
 
         <h1 className="auth-heading">{t('auth.createAccount')}</h1>
-        <p className="auth-subheading">{t('register.freeForever')}</p>
 
         {error && <div className="auth-error">{error}</div>}
 
