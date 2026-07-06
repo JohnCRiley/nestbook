@@ -987,6 +987,16 @@ bookingsRouter.put('/:id', (req, res) => {
           error: `Cannot check in before arrival date (${existing.check_in_date})`,
         });
       }
+      if ((status === 'arriving' || status === 'in_house') && todayIso === existing.check_in_date) {
+        const prop = db.prepare('SELECT check_in_time FROM properties WHERE id = ?').get(existing.property_id);
+        const checkInTime = prop?.check_in_time || '15:00';
+        const nowTime = new Date().toTimeString().slice(0, 5);
+        if (nowTime < checkInTime) {
+          return res.status(400).json({
+            error: `Check-in opens at ${checkInTime}. Current time is ${nowTime}.`,
+          });
+        }
+      }
       if (status === 'checked_out' && todayIso < existing.check_out_date) {
         return res.status(400).json({
           error: `Cannot check out before departure date (${existing.check_out_date}). Edit the booking to shorten the stay.`,

@@ -36,6 +36,17 @@ const WP_STATUS_LABELS = {
   declined:               'Declined',
 };
 
+function formatCheckInTime(timeStr, locale) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  if (locale === 'en') {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+  return timeStr; // FR/ES/DE/NL: "15:00" is natural
+}
+
 const WP_STATUS_COLOURS = {
   pending_owner_approval: { color: '#92400e', bg: '#fef3c7', border: '#f59e0b' },
   confirmed:              { color: '#1a4710', bg: '#f0fdf4', border: '#d9f0cc' },
@@ -591,9 +602,17 @@ export default function Dashboard() {
           padding: '12px 18px', marginBottom: 14,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <span style={{ fontWeight: 600, color: 'var(--accent-dark)', fontSize: '0.95rem' }}>
-            {t('arrivalsBanner')(arrivalsToday.filter((b) => b.status === 'confirmed').length)}
-          </span>
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--accent-dark)', fontSize: '0.95rem' }}>
+              {t('arrivalsBanner')(arrivalsToday.filter((b) => b.status === 'confirmed').length)}
+            </div>
+            {property?.check_in_time && (
+              <div style={{ fontSize: '0.8rem', color: 'var(--accent-dark)', marginTop: 2, opacity: 0.8 }}>
+                <i className="ti ti-clock" style={{ marginRight: 4 }} />
+                {t('checkin.availableFrom')(formatCheckInTime(property.check_in_time, locale))}
+              </div>
+            )}
+          </div>
           <span style={{ color: 'var(--accent-dark)', fontWeight: 700, fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
             {t('checkThemIn')}
           </span>
@@ -740,7 +759,17 @@ export default function Dashboard() {
                         } else {
                           setPendingConfirm({
                             title: t('checkInBtn'),
-                            message: t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`),
+                            message: (
+                              <>
+                                {t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`)}
+                                {property?.check_in_time && (
+                                  <span style={{ display: 'block', marginTop: 8, fontSize: '0.85rem', color: '#64748b' }}>
+                                    <i className="ti ti-clock" style={{ marginRight: 4 }} />
+                                    {t('checkin.modalNote')(formatCheckInTime(property.check_in_time, locale))}
+                                  </span>
+                                )}
+                              </>
+                            ),
                             confirmLabel: t('checkInBtn'),
                             variant: 'success',
                             action: () => handleStatusUpdate(b.id, 'arriving'),
