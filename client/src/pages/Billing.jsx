@@ -176,7 +176,7 @@ function AccountSubscriptionCard() {
         const promoExpiryShort = new Date(user.trial_ends_at).toLocaleDateString('en-GB', {
           day: 'numeric', month: 'long',
         });
-        const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : '#1a4710';
+        const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : 'var(--header-bg)';
         const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#f0fdf4';
         const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#d9f0cc';
         const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#1a4710';
@@ -186,13 +186,13 @@ function AccountSubscriptionCard() {
         return (
           <div className="billing-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ background: headerBg, padding: '16px 20px' }}>
-              <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ color: daysLeft <= 14 ? 'white' : 'var(--header-text)', fontWeight: 700, fontSize: '1rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <i className={`ti ${daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-star'}`} />
                 {daysLeft <= 7  ? 'Pro access expiring very soon' :
                  daysLeft <= 14 ? 'Pro access expiring soon' :
                  'NestBook Pro — Promotional access'}
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.82rem' }}>
+              <div style={{ color: daysLeft <= 14 ? 'rgba(255,255,255,0.85)' : 'var(--header-text)', fontSize: '0.82rem' }}>
                 Your free promotional period ends {promoExpiryDate} ({daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining)
               </div>
             </div>
