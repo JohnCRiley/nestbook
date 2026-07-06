@@ -194,6 +194,18 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
   .section-body { padding: 16px; }
   .cta-buttons { flex-direction: column; align-items: center; }
 }
+
+.help-jump-wrapper { position: relative; }
+.help-jump-fade {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 56px;
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+  background: linear-gradient(to right, transparent, var(--soft) 65%);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.help-jump-fade.hidden { opacity: 0; }
+.help-jump-fade i { color: var(--dark); font-size: 1.1rem; opacity: 0.55; animation: jump-nudge 1.6s ease-in-out infinite; }
+@keyframes jump-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
 </style>
 
 <!-- Google Analytics -->
@@ -276,6 +288,7 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 </section>
 
 <!-- QUICK JUMP -->
+<div class="help-jump-wrapper">
 <nav class="help-jump" aria-label="Jump to section">
   <div class="help-jump-inner">
     <span class="jump-label" data-i18n="help.qs.label">Jump to</span>
@@ -293,6 +306,8 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
     <a href="#plans-billing"    class="jump-btn" data-i18n="help.qs.plans">Plans &amp; billing</a>
   </div>
 </nav>
+<div class="help-jump-fade" id="jumpFade"><i class="ti ti-chevron-right"></i></div>
+</div>
 
 <!-- BODY -->
 <div class="help-body">
@@ -1030,5 +1045,19 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 </script>
 <script src="/cookie-banner.js"></script>
 <script src="/navbar.js"></script>
+<script>
+(function() {
+  var bar = document.querySelector('.help-jump');
+  var fade = document.getElementById('jumpFade');
+  if (!bar || !fade) return;
+  function update() {
+    var max = bar.scrollWidth - bar.clientWidth;
+    fade.classList.toggle('hidden', max < 4 || bar.scrollLeft >= max - 4);
+  }
+  bar.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
+</script>
 </body>
 </html>
