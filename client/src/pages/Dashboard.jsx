@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [selectedBooking,      setSelectedBooking]      = useState(null);
   const [bookingRoomFilter,    setBookingRoomFilter]    = useState(null);
   const [pendingConfirm,       setPendingConfirm]       = useState(null);
+  const [confirmBusy,          setConfirmBusy]          = useState(false);
   const [depositGate,          setDepositGate]          = useState(null); // { bookingId }
   const [wpSummary,            setWpSummary]            = useState(null);
   const [wpSelectedBooking,    setWpSelectedBooking]    = useState(null);
@@ -268,37 +269,51 @@ export default function Dashboard() {
     cancelled:   t('cancelled'),
   };
 
-  const showPageToast = (msg) => {
-    setPageToast(msg);
-    setTimeout(() => setPageToast(null), 3000);
+  const showPageToast = (msg, type = 'success') => {
+    setPageToast({ msg, type });
+    setTimeout(() => setPageToast(null), 4000);
   };
 
+  async function handleConfirm() {
+    if (!pendingConfirm) return;
+    setConfirmBusy(true);
+    const ok = await pendingConfirm.action();
+    setConfirmBusy(false);
+    if (ok) setPendingConfirm(null);
+  }
+
   // ── Status update handler (mirrors Bookings.jsx pattern) ──────────────────
-  function handleStatusUpdate(bookingId, newStatus) {
+  async function handleStatusUpdate(bookingId, newStatus) {
     const existing = bookings.find((b) => b.id === bookingId);
-    if (!existing) return;
+    if (!existing) return false;
 
-    const updated = { ...existing, status: newStatus };
-
-    apiFetch(`/api/bookings/${bookingId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
-    })
-      .then((r) => r.json())
-      .then((saved) => {
-        setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
-        if (newStatus === 'arriving') {
-          setSelectedBooking(null);
-          showPageToast(t('checkedInToast'));
-        } else if (newStatus === 'cancelled') {
-          setSelectedBooking(null);
-          showPageToast(t('bookingCancelledToast'));
-        } else {
-          setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
-        }
-      })
-      .catch(() => {});
+    try {
+      const res = await apiFetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...existing, status: newStatus }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showPageToast(body.error || `Update failed (${res.status})`, 'error');
+        return false;
+      }
+      const saved = await res.json();
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
+      if (newStatus === 'arriving') {
+        setSelectedBooking(null);
+        showPageToast(t('checkedInToast'));
+      } else if (newStatus === 'cancelled') {
+        setSelectedBooking(null);
+        showPageToast(t('bookingCancelledToast'));
+      } else {
+        setSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+      }
+      return true;
+    } catch (err) {
+      showPageToast(err.message || 'Something went wrong — please try again', 'error');
+      return false;
+    }
   }
 
   async function handleMarkDepositPaid(bookingId) {
@@ -311,29 +326,37 @@ export default function Dashboard() {
     } catch { /* silent */ }
   }
 
-  function handleWpStatusUpdate(bookingId, newStatus) {
+  async function handleWpStatusUpdate(bookingId, newStatus) {
     const existing = bookings.find((b) => b.id === bookingId);
-    if (!existing) return;
-    apiFetch(`/api/bookings/${bookingId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...existing, status: newStatus }),
-    })
-      .then((r) => r.json())
-      .then((saved) => {
-        setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
-        fetchWpSummary();
-        if (newStatus === 'arriving') {
-          showPageToast(t('checkedInToast'));
-          setWpSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
-        } else if (newStatus === 'cancelled') {
-          setWpSelectedBooking(null);
-          showPageToast(t('bookingCancelledToast'));
-        } else {
-          setWpSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
-        }
-      })
-      .catch(() => {});
+    if (!existing) return false;
+    try {
+      const res = await apiFetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...existing, status: newStatus }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showPageToast(body.error || `Update failed (${res.status})`, 'error');
+        return false;
+      }
+      const saved = await res.json();
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...saved } : b)));
+      fetchWpSummary();
+      if (newStatus === 'arriving') {
+        showPageToast(t('checkedInToast'));
+        setWpSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+      } else if (newStatus === 'cancelled') {
+        setWpSelectedBooking(null);
+        showPageToast(t('bookingCancelledToast'));
+      } else {
+        setWpSelectedBooking((prev) => (prev?.id === bookingId ? { ...prev, ...saved } : prev));
+      }
+      return true;
+    } catch (err) {
+      showPageToast(err.message || 'Something went wrong — please try again', 'error');
+      return false;
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -356,7 +379,7 @@ export default function Dashboard() {
       )}
 
       {pageToast && (
-        <div className="toast toast-success">{pageToast}</div>
+        <div className={`toast toast-${pageToast.type}`}>{pageToast.msg}</div>
       )}
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -879,8 +902,9 @@ export default function Dashboard() {
         confirmLabel={pendingConfirm?.confirmLabel ?? ''}
         cancelLabel={t('cancel')}
         variant={pendingConfirm?.variant ?? 'warning'}
-        onConfirm={() => { pendingConfirm.action(); setPendingConfirm(null); }}
-        onCancel={() => setPendingConfirm(null)}
+        busy={confirmBusy}
+        onConfirm={handleConfirm}
+        onCancel={() => { if (!confirmBusy) setPendingConfirm(null); }}
       />
 
       {/* ── Missed-action modal (WP only) ──────────────────────────────────── */}
