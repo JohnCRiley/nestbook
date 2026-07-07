@@ -74,7 +74,6 @@ outreachRouter.get('/prospects/follow-up', (req, res) => {
       AND p.follow_up_date <= date('now')
     GROUP BY p.id
     ORDER BY p.follow_up_date ASC
-    LIMIT 100
   `).all();
   res.json(rows);
 });
