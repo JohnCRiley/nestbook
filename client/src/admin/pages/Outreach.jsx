@@ -221,20 +221,28 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
             <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
             <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />
           </div>
-          <select
-            value={status} onChange={e => setStatus(e.target.value)}
-            style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
-          >
-            <option value="new">New</option>
-            <option value="1st_contact_sent">1 Sent</option>
-            <option value="1st_followup_sent">2 Sent</option>
-            <option value="2nd_followup_sent">3 Sent</option>
-            <option value="3rd_followup_sent">4 Sent</option>
-            <option value="replied">Replied</option>
-            <option value="converted">Converted</option>
-            <option value="unsubscribed">Unsubscribed</option>
-            <option value="complained">Complained</option>
-          </select>
+          <div>
+            <select
+              value={status} onChange={e => setStatus(e.target.value)}
+              style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit', width: '100%' }}
+            >
+              <option value="new">New</option>
+              <option value="1st_contact_sent">1 Sent</option>
+              <option value="1st_followup_sent">2 Sent</option>
+              <option value="2nd_followup_sent">3 Sent</option>
+              <option value="3rd_followup_sent">4 Sent</option>
+              <option value="replied">Replied</option>
+              <option value="converted">Converted</option>
+              <option value="unsubscribed">Unsubscribed</option>
+              <option value="complained">Complained</option>
+            </select>
+            {prospect.emails_sent_count > 0 && (
+              <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>
+                <i className="ti ti-send" style={{ marginRight: 4 }} />
+                {prospect.emails_sent_count} email{prospect.emails_sent_count !== 1 ? 's' : ''} sent to this prospect
+              </div>
+            )}
+          </div>
           <Textarea value={notes} onChange={setNotes} rows={3} placeholder="Notes" />
           <div>
             <label style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: 4 }}>Follow-up date</label>
@@ -1599,7 +1607,12 @@ export default function Outreach() {
                           {p.follow_up_date ? new Date(p.follow_up_date + 'T00:00:00').toLocaleDateString() : '—'}
                           {overdue && <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#f97316' }}>overdue</span>}
                         </td>
-                        <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <StatusBadge status={p.status} />
+                          {p.emails_sent_count > 0 && (
+                            <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginLeft: 6 }}>({p.emails_sent_count} sent)</span>
+                          )}
+                        </td>
                         <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', gap: 4 }}>
                             <Btn small variant="secondary" onClick={() => setEditing(p)}>Edit</Btn>
@@ -1676,7 +1689,12 @@ export default function Outreach() {
                         )}
                       </td>
                       <td className="col-hide-mobile" style={{ padding: '8px 12px' }}><SourceBadge source={p.source} /></td>
-                      <td style={{ padding: '8px 12px' }}><StatusBadge status={p.status} /></td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <StatusBadge status={p.status} />
+                        {p.emails_sent_count > 0 && (
+                          <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginLeft: 6 }}>({p.emails_sent_count} sent)</span>
+                        )}
+                      </td>
                       <td className="col-hide-mobile" style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.78rem' }}>
                         {new Date(p.created_at).toLocaleDateString()}
                         {p.follow_up_date && <div style={{ color: '#92400e', fontWeight: 600 }}>Follow-up: {new Date(p.follow_up_date).toLocaleDateString()}</div>}

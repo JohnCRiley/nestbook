@@ -362,11 +362,14 @@ outreachRouter.post('/send', async (req, res) => {
       ).run(p.email, pid, campaign_id ? String(campaign_id) : '');
 
       const days = (Number.isInteger(followUpDays) && followUpDays > 0) ? followUpDays : 7;
+      const nextStatus = getNextStatus(p.status);
       const followUpDate = new Date();
       followUpDate.setDate(followUpDate.getDate() + days);
-      const followUpStr = followUpDate.toISOString().split('T')[0];
-      db.prepare(`UPDATE prospects SET follow_up_date = ?, status = ? WHERE id = ?`)
-        .run(followUpStr, getNextStatus(p.status), pid);
+      // Once the prospect reaches 3rd_followup_sent, clear follow_up_date so they
+      // don't keep cycling back into the follow-up queue.
+      const followUpStr = nextStatus === '3rd_followup_sent' ? null : followUpDate.toISOString().split('T')[0];
+      db.prepare(`UPDATE prospects SET follow_up_date = ?, status = ?, emails_sent_count = emails_sent_count + 1 WHERE id = ?`)
+        .run(followUpStr, nextStatus, pid);
       results.push({ id: pid, ok: true });
       sent++;
     } catch (err) {

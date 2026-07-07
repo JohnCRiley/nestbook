@@ -811,6 +811,7 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE prospects ADD COLUMN town TEXT DEFAULT NULL`); console.log('✓ town column added to prospects'); } catch(e) {}
   try { db.exec(`ALTER TABLE prospects ADD COLUMN region TEXT DEFAULT NULL`); console.log('✓ region column added to prospects'); } catch(e) {}
   try { db.exec(`ALTER TABLE prospects ADD COLUMN property_type TEXT DEFAULT NULL`); console.log('✓ property_type column added to prospects'); } catch(e) {}
+  try { db.exec(`ALTER TABLE prospects ADD COLUMN emails_sent_count INTEGER DEFAULT 0`); console.log('✓ emails_sent_count column added to prospects'); } catch(e) {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
