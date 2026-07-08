@@ -609,9 +609,19 @@ function StripeChecklistModal({ onClose }) {
             </div>
           </div>
 
-          <p style={{ margin: '0 0 18px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.55, fontStyle: 'italic' }}>
+          <div style={{
+            marginTop: 4,
+            marginBottom: 18,
+            background: 'var(--soft, #f8fafc)',
+            border: '1px solid var(--border, #e2e8f0)',
+            borderRadius: 8,
+            padding: '12px 16px',
+            fontSize: '0.84rem',
+            color: 'var(--text-secondary)',
+            lineHeight: 1.65,
+          }}>
             {t('stripeChecklist.footer')}
-          </p>
+          </div>
 
           <div className="cm-actions">
             <button className="billing-connect-btn" onClick={onClose} style={{ marginTop: 0 }}>
