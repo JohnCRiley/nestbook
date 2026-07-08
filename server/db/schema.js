@@ -1592,6 +1592,41 @@ John`
     } catch { /* already exists — skip */ }
   }
 
+  // User Mailer — broadcast emails to NestBook users
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_email_templates (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        name       TEXT NOT NULL,
+        subject    TEXT NOT NULL,
+        html       TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+    console.log('✓ user_email_templates table ready');
+  } catch(e) { console.error('user_email_templates table error:', e.message); }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_broadcasts (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject          TEXT NOT NULL,
+        html             TEXT NOT NULL,
+        filter_plan      TEXT    DEFAULT NULL,
+        filter_verified  INTEGER DEFAULT NULL,
+        recipient_count  INTEGER NOT NULL DEFAULT 0,
+        sent_count       INTEGER NOT NULL DEFAULT 0,
+        status           TEXT NOT NULL DEFAULT 'pending',
+        error            TEXT    DEFAULT NULL,
+        sent_by          INTEGER REFERENCES users(id),
+        created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+        completed_at     TEXT    DEFAULT NULL
+      )
+    `);
+    console.log('✓ user_broadcasts table ready');
+  } catch(e) { console.error('user_broadcasts table error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

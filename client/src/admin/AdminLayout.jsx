@@ -15,6 +15,7 @@ import ErrorReports      from './pages/ErrorReports.jsx';
 import BlogImages        from './pages/BlogImages.jsx';
 import LandingImages     from './pages/LandingImages.jsx';
 import ContentReview     from './pages/ContentReview.jsx';
+import UserMailer        from './pages/UserMailer.jsx';
 import { clearSASession, saApiFetch } from './saApiFetch.js';
 
 const NAV = [
@@ -24,6 +25,7 @@ const NAV = [
   { to: '/super-admin/revenue',           label: 'Revenue',                     icon: <IconRevenue /> },
   { to: '/super-admin/audit-log',         label: 'Audit Log',                   icon: <IconAuditLog /> },
   { to: '/super-admin/mailing-list',      label: 'Mailing List',                icon: <IconMail /> },
+  { to: '/super-admin/user-mailer',        label: 'User Mailer',                 icon: <IconMail /> },
   { to: '/super-admin/outreach',           label: 'Outreach CRM',                icon: <IconOutreach /> },
   { to: '/super-admin/prospect-finder',  label: 'Prospect Finder',             icon: <IconSearch /> },
   { to: '/super-admin/phone-outreach',   label: 'Phone outreach',              icon: <IconPhone /> },
@@ -149,6 +151,7 @@ export default function AdminLayout() {
           <Route path="revenue"           element={<Revenue       />} />
           <Route path="audit-log"         element={<AuditLog      />} />
           <Route path="mailing-list"      element={<MailingList       />} />
+          <Route path="user-mailer"       element={<UserMailer         />} />
           <Route path="outreach"          element={<Outreach           />} />
           <Route path="prospect-finder"  element={<ProspectFinder     />} />
           <Route path="phone-outreach"    element={<PhoneOutreach      />} />

@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import db from '../db/database.js';
 import { outreachRouter } from './outreach.js';
 import { prospectFinderRouter } from './prospectFinder.js';
+import { userMailerRouter } from './userMailer.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
 
@@ -17,6 +18,7 @@ export const adminRouter = Router();
 // Mount sub-routers — must come before any catch-all routes
 adminRouter.use('/outreach', outreachRouter);
 adminRouter.use('/prospect-finder', prospectFinderRouter);
+adminRouter.use('/user-mailer', userMailerRouter);
 
 const PLAN_MRR  = { pro: 19, multi: 39 };
 
