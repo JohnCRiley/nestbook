@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { sendOutreachEmail } from '../email/emailService.js';
+import { wrapEmailBody } from '../utils/emailWrapper.js';
+
+const USER_MAILER_FOOTER = 'You received this email as a NestBook user. Questions? <a href="mailto:hello@nestbook.io" style="color:#5a7a52;">hello@nestbook.io</a>';
 
 export const userMailerRouter = Router();
 
@@ -128,11 +131,14 @@ userMailerRouter.post('/send-test', async (req, res) => {
   const saUser = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.userId);
   if (!saUser) return res.status(404).json({ error: 'Super admin user not found' });
 
+  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER });
+  console.log('[user-mailer/send-test] Sending to', saUser.email);
   try {
-    await sendOutreachEmail({ to: saUser.email, subject: `[TEST] ${subject}`, html });
+    await sendOutreachEmail({ to: saUser.email, subject: `[TEST] ${subject}`, html: wrappedHtml });
+    console.log('[user-mailer/send-test] Delivered to', saUser.email);
     res.json({ success: true, sentTo: saUser.email });
   } catch (err) {
-    console.error('[user-mailer/send-test]', err.message);
+    console.error('[user-mailer/send-test] FAILED for', saUser.email, ':', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -227,12 +233,15 @@ userMailerRouter.post('/send', async (req, res) => {
     message: `Sending to ${allRecipients.length} recipients…`,
   });
 
-  // Async send loop
+  // Async send loop — wrap HTML once, reuse for all recipients
+  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER });
+  const trimmedSubject = subject.trim();
+
   (async () => {
     let sent = 0;
     for (const r of allRecipients) {
       try {
-        await sendOutreachEmail({ to: r.email, subject: subject.trim(), html });
+        await sendOutreachEmail({ to: r.email, subject: trimmedSubject, html: wrappedHtml });
         sent++;
         if (sent % 10 === 0) {
           db.prepare('UPDATE user_broadcasts SET sent_count = ? WHERE id = ?').run(sent, broadcastId);
@@ -246,7 +255,7 @@ userMailerRouter.post('/send', async (req, res) => {
       SET sent_count = ?, status = 'done', completed_at = datetime('now')
       WHERE id = ?
     `).run(sent, broadcastId);
-    console.log(`[user-mailer] Broadcast ${broadcastId} complete: ${sent}/${allRecipients.length} sent`);
+    console.log(`[user-mailer] Broadcast ${broadcastId} done: ${sent}/${allRecipients.length} sent`);
   })().catch(err => {
     console.error('[user-mailer] Broadcast error:', err.message);
     db.prepare(`UPDATE user_broadcasts SET status = 'failed', error = ? WHERE id = ?`)

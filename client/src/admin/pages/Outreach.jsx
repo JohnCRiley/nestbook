@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 import QuillEditor from '../QuillEditor.jsx';
+import TemplateManager from '../TemplateManager.jsx';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -642,121 +643,6 @@ function PreviewModal({ body, subject, onClose }) {
           sandbox="allow-same-origin"
           style={{ flex: 1, border: 'none', minHeight: 480 }}
         />
-      </div>
-    </div>
-  );
-}
-
-// ── Template Manager modal ────────────────────────────────────────────────────
-function TemplateManager({ templates, onClose, onChanged }) {
-  const [editing, setEditing]   = useState(null);
-  const [name, setName]         = useState('');
-  const [subject, setSubject]   = useState('');
-  const [body, setBody]         = useState('');
-  const [htmlMode, setHtmlMode]     = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [saving, setSaving]         = useState(false);
-
-  function startNew()  { setEditing('new'); setName(''); setSubject(''); setBody(''); setHtmlMode(false); setShowPreview(false); }
-  function startEdit(t){
-    setEditing(t.id); setName(t.name); setSubject(t.subject); setBody(t.body);
-    // Auto-switch to HTML mode if body contains tags Quill would never produce
-    setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(t.body));
-  }
-  function cancel()    { setEditing(null); }
-
-  async function save() {
-    if (!name || !subject || !body) return;
-    setSaving(true);
-    if (editing === 'new') {
-      await saApiFetch('/api/admin/outreach/templates', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, subject, body }),
-      });
-    } else {
-      await saApiFetch(`/api/admin/outreach/templates/${editing}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, subject, body }),
-      });
-    }
-    setSaving(false); setEditing(null); onChanged();
-  }
-
-  async function del(id) {
-    if (!window.confirm('Delete this template?')) return;
-    const res = await saApiFetch(`/api/admin/outreach/templates/${id}`, { method: 'DELETE' });
-    if (res.ok) onChanged();
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 620, maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: '1rem' }}>Email Templates</h3>
-          <Btn onClick={startNew} small>+ New Template</Btn>
-        </div>
-
-        {editing && (
-          <div style={{ background: '#f8fafc', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-            <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem' }}>{editing === 'new' ? 'New Template' : 'Edit Template'}</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Input value={name}    onChange={setName}    placeholder="Template name" style={{ width: '100%' }} />
-              <Input value={subject} onChange={setSubject} placeholder="Email subject" style={{ width: '100%' }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
-                <button
-                  onClick={() => setHtmlMode(m => !m)}
-                  title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
-                  style={{
-                    fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
-                    fontFamily: 'monospace', fontWeight: 600,
-                    border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
-                    background: htmlMode ? '#d9f0cc' : '#f8fafc',
-                    color: htmlMode ? '#1a4710' : '#64748b',
-                  }}
-                >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
-              </div>
-              {htmlMode ? (
-                <textarea
-                  value={body}
-                  onChange={e => setBody(e.target.value)}
-                  placeholder="Paste raw HTML here — rendered as-is in the email"
-                  style={{
-                    width: '100%', height: 220, fontFamily: 'monospace', fontSize: '0.78rem',
-                    border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
-                    resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              ) : (
-                <QuillEditor value={body} onChange={setBody} placeholder="Email body — use {{name}}, {{company}}, {{first_name}}" minHeight={160} />
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <Btn onClick={save} small disabled={saving}>{saving ? 'Saving…' : 'Save'}</Btn>
-              <Btn variant="secondary" onClick={() => setShowPreview(true)} small disabled={!body.trim()}>Preview</Btn>
-              <Btn variant="secondary" onClick={cancel} small>Cancel</Btn>
-            </div>
-          </div>
-        )}
-        {showPreview && <PreviewModal body={body} subject={subject} onClose={() => setShowPreview(false)} />}
-
-        {templates.map(t => (
-          <div key={t.id} style={{ padding: '12px 0', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{t.subject}</div>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>{t.body.slice(0, 80)}…</div>
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-              <Btn small variant="secondary" onClick={() => startEdit(t)}>Edit</Btn>
-              <Btn small variant="danger"    onClick={() => del(t.id)}>Delete</Btn>
-            </div>
-          </div>
-        ))}
-
-        <div style={{ marginTop: 16, textAlign: 'right' }}>
-          <Btn variant="secondary" onClick={onClose}>Close</Btn>
-        </div>
       </div>
     </div>
   );
@@ -1673,7 +1559,14 @@ export default function Outreach() {
           onSent={load}
         />
       )}
-      {showTemplates && <TemplateManager templates={templates} onClose={() => setShowTemplates(false)} onChanged={load} />}
+      {showTemplates && (
+        <TemplateManager
+          apiBase="/api/admin/outreach"
+          bodyField="body"
+          onClose={() => setShowTemplates(false)}
+          onChanged={load}
+        />
+      )}
       {showCampaigns && <CampaignManager campaigns={campaigns} onClose={() => setShowCampaigns(false)} onChanged={load} />}
       {showCsv       && <CsvImportModal  onClose={() => setShowCsv(false)} onImported={load} />}
       {showBulkEdit  && <BulkEditModal  selectedIds={selected} onClose={() => setShowBulkEdit(false)} onSaved={() => { load(); setSelected([]); }} />}

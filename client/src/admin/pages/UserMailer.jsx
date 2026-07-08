@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 import QuillEditor from '../QuillEditor.jsx';
+import TemplateManager from '../TemplateManager.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const USER_MAILER_FOOTER_PREVIEW = 'You received this email as a NestBook user. Questions? hello@nestbook.io';
 
 function parseAdhocEmails(text) {
   return [...new Set(
@@ -31,20 +34,58 @@ function formatFilterDesc(b) {
   return 'All users';
 }
 
+// Mirror of server/utils/emailWrapper.js for client-side broadcast preview
+function buildPreviewHtml(bodyHtml) {
+  const raw = (bodyHtml ?? '').trim();
+  const htmlContent = raw.startsWith('<')
+    ? raw
+    : raw.split(/\n{2,}/).map(p => `<p style="margin:0 0 16px 0;line-height:1.7">${p.replace(/\n/g, '<br>')}</p>`).join('\n');
+  const footer = USER_MAILER_FOOTER_PREVIEW;
+
+  return `<!DOCTYPE html><html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+  <tr><td style="background:#1a4710;padding:28px 32px;">
+    <img src="https://nestbook.io/icon-192.png" width="36" height="36" style="border-radius:8px;vertical-align:middle;display:inline-block;">
+    <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
+    <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Booking software for independent properties</div>
+  </td></tr>
+  <tr><td style="padding:32px 32px 0px;color:#1a2e14;font-size:15px;line-height:1.6;">
+    <div style="color:#1a2e14;">${htmlContent}</div>
+    <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
+      <img src="https://nestbook.io/icon-192.png" width="28" height="28" style="border-radius:6px;vertical-align:middle;display:inline-block;">
+      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
+      <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
+        <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none;">hello@nestbook.io</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none;">nestbook.io</a>
+      </span>
+    </div>
+  </td></tr>
+  <tr><td style="background:#f0f7ed;padding:20px 32px;border-top:1px solid #d9f0cc;">
+    <p style="margin:0;font-size:12px;color:#5a7a52;text-align:center;line-height:1.6;">${footer}</p>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+}
+
 export default function UserMailer() {
   const [tab, setTab] = useState('compose');
 
   // Compose
-  const [templates, setTemplates]           = useState([]);
   const [subject, setSubject]               = useState('');
   const [html, setHtml]                     = useState('');
   const [htmlMode, setHtmlMode]             = useState(false);
 
+  // Template manager
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+
   // Targeting
   const [targetMode, setTargetMode]         = useState('all');
-  const [targetPlans, setTargetPlans]       = useState([]);     // ['free','pro','multi'] subset
-  const [targetLangs, setTargetLangs]       = useState([]);     // ['en','fr','es','de','nl'] subset
-  const [targetUsers, setTargetUsers]       = useState([]);     // [{id,name,email}]
+  const [targetPlans, setTargetPlans]       = useState([]);
+  const [targetLangs, setTargetLangs]       = useState([]);
+  const [targetUsers, setTargetUsers]       = useState([]);
   const [userSearch, setUserSearch]         = useState('');
   const [searchResults, setSearchResults]   = useState([]);
   const [filterVerified, setFilterVerified] = useState(false);
@@ -52,12 +93,10 @@ export default function UserMailer() {
   // Ad-hoc emails
   const [adhocEmails, setAdhocEmails]       = useState('');
 
-  // Preview
+  // Preview count
   const [recipientCount, setRecipientCount] = useState(null);
 
   // Actions
-  const [saveName, setSaveName]             = useState('');
-  const [showSaveModal, setShowSaveModal]   = useState(false);
   const [showSendModal, setShowSendModal]   = useState(false);
   const [sending, setSending]               = useState(false);
   const [testSending, setTestSending]       = useState(false);
@@ -68,16 +107,7 @@ export default function UserMailer() {
   // History
   const [broadcasts, setBroadcasts]         = useState([]);
   const [histLoading, setHistLoading]       = useState(false);
-
-  const fileInputRef = useRef(null);
-
-  // ── Load templates ────────────────────────────────────────────────────────
-  useEffect(() => {
-    saApiFetch('/api/admin/user-mailer/templates')
-      .then(r => r.ok ? r.json() : [])
-      .then(setTemplates)
-      .catch(() => {});
-  }, []);
+  const [viewBroadcast, setViewBroadcast]   = useState(null);
 
   // ── User search (debounced) ───────────────────────────────────────────────
   useEffect(() => {
@@ -100,14 +130,8 @@ export default function UserMailer() {
       setRecipientCount(targetUsers.length);
       return;
     }
-    if (targetMode === 'plan' && !targetPlans.length) {
-      setRecipientCount(0);
-      return;
-    }
-    if (targetMode === 'language' && !targetLangs.length) {
-      setRecipientCount(0);
-      return;
-    }
+    if (targetMode === 'plan' && !targetPlans.length) { setRecipientCount(0); return; }
+    if (targetMode === 'language' && !targetLangs.length) { setRecipientCount(0); return; }
 
     const params = new URLSearchParams({ mode: targetMode, verifiedOnly: String(filterVerified) });
     if (targetMode === 'plan')     targetPlans.forEach(p => params.append('plans', p));
@@ -133,43 +157,11 @@ export default function UserMailer() {
     if (tab === 'history') loadHistory();
   }, [tab, loadHistory]);
 
-  // ── Template actions ──────────────────────────────────────────────────────
-  function loadTemplate(tpl) {
-    setSubject(tpl.subject);
-    setHtml(tpl.html);
-    setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(tpl.html));
-  }
-
-  async function handleSaveTemplate() {
-    if (!saveName.trim()) return;
-    const res = await saApiFetch('/api/admin/user-mailer/templates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: saveName.trim(), subject, html }),
-    });
-    if (res.ok) {
-      const tpl = await res.json();
-      setTemplates(prev => [tpl, ...prev]);
-      setSaveName('');
-      setShowSaveModal(false);
-    }
-  }
-
-  async function handleDeleteTemplate(id) {
-    await saApiFetch(`/api/admin/user-mailer/templates/${id}`, { method: 'DELETE' });
-    setTemplates(prev => prev.filter(t => t.id !== id));
-  }
-
-  function handleHtmlFileUpload(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      setHtml(ev.target.result);
-      setHtmlMode(true);
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  // ── Template load callback ────────────────────────────────────────────────
+  function loadTemplate(tplSubject, tplHtml) {
+    setSubject(tplSubject);
+    setHtml(tplHtml);
+    setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(tplHtml));
   }
 
   // ── Toggle helpers ────────────────────────────────────────────────────────
@@ -213,8 +205,8 @@ export default function UserMailer() {
       body: JSON.stringify({
         subject, html,
         mode: targetMode,
-        plans: targetMode === 'plan'       ? targetPlans : undefined,
-        langs: targetMode === 'language'   ? targetLangs : undefined,
+        plans:   targetMode === 'plan'       ? targetPlans : undefined,
+        langs:   targetMode === 'language'   ? targetLangs : undefined,
         userIds: targetMode === 'individual' ? targetUsers.map(u => u.id) : undefined,
         filterVerified,
         additionalEmails: adhocParsed,
@@ -277,301 +269,242 @@ export default function UserMailer() {
 
       {/* ── Compose tab ──────────────────────────────────────────────────── */}
       {tab === 'compose' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Left: templates panel */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>Templates</span>
-              <button
-                onClick={() => setShowSaveModal(true)}
-                disabled={!canSend}
-                style={{
-                  fontSize: '0.75rem', padding: '3px 8px', borderRadius: 5,
-                  border: '1px solid #d1d5db', background: canSend ? '#f8fafc' : '#f1f5f9',
-                  color: canSend ? '#374151' : '#94a3b8', cursor: canSend ? 'pointer' : 'not-allowed',
-                  fontWeight: 500,
-                }}
-                title="Save current email as a template"
-              >
-                + New
-              </button>
-            </div>
-
-            {templates.length === 0 && (
-              <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: 10 }}>No templates yet.</p>
-            )}
-            {templates.map(tpl => (
-              <div
-                key={tpl.id}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: '1px solid #f1f5f9' }}
-              >
-                <button
-                  onClick={() => loadTemplate(tpl)}
-                  style={{
-                    flex: 1, textAlign: 'left', background: 'none', border: 'none',
-                    cursor: 'pointer', fontSize: '0.82rem', color: '#1e3a5f',
-                    padding: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}
-                  title={`Load: ${tpl.name}`}
-                >
-                  {tpl.name}
-                </button>
-                <button
-                  onClick={() => handleDeleteTemplate(tpl.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.8rem', padding: '0 2px', flexShrink: 0 }}
-                  title="Delete template"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-
-            {/* Upload HTML file */}
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
-              <input type="file" accept=".html,.htm" ref={fileInputRef} style={{ display: 'none' }} onChange={handleHtmlFileUpload} />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  width: '100%', padding: '6px 0', borderRadius: 6,
-                  border: '1px dashed #d1d5db', background: '#f8fafc',
-                  color: '#64748b', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 500,
-                }}
-              >
-                ↑ Upload HTML file
-              </button>
-            </div>
+          {/* Template row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={labelStyle}>Template</label>
+            <button
+              onClick={() => setShowTemplateManager(true)}
+              style={{
+                fontSize: '0.82rem', padding: '6px 14px', borderRadius: 6,
+                border: '1px solid #d1d5db', background: '#f8fafc',
+                color: '#374151', cursor: 'pointer', fontWeight: 500,
+              }}
+            >
+              Manage Templates →
+            </button>
           </div>
 
-          {/* Right: composer */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Subject */}
+          <div>
+            <label style={labelStyle}>Subject</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
+              placeholder="Email subject…"
+              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box' }}
+            />
+          </div>
 
-            {/* Subject */}
-            <div>
-              <label style={labelStyle}>Subject</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
-                placeholder="Email subject…"
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box' }}
-              />
+          {/* Body editor */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <label style={labelStyle}>Body</label>
+              <button
+                onClick={() => setHtmlMode(m => !m)}
+                title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
+                style={{
+                  fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
+                  fontFamily: 'monospace', fontWeight: 600,
+                  border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
+                  background: htmlMode ? '#d9f0cc' : '#f8fafc',
+                  color: htmlMode ? '#1a4710' : '#64748b',
+                }}
+              >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
             </div>
-
-            {/* Body editor */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label style={labelStyle}>Body</label>
-                <button
-                  onClick={() => setHtmlMode(m => !m)}
-                  title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
-                  style={{
-                    fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
-                    fontFamily: 'monospace', fontWeight: 600,
-                    border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
-                    background: htmlMode ? '#d9f0cc' : '#f8fafc',
-                    color: htmlMode ? '#1a4710' : '#64748b',
-                  }}
-                >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
-              </div>
-              {htmlMode ? (
-                <textarea
-                  value={html}
-                  onChange={e => setHtml(e.target.value)}
-                  placeholder="Paste raw HTML here — rendered as-is in the email"
-                  style={{
-                    width: '100%', height: 300, fontFamily: 'monospace', fontSize: '0.78rem',
-                    border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
-                    resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              ) : (
-                <QuillEditor value={html} onChange={setHtml} minHeight={260} />
-              )}
-            </div>
-
-            {/* Targeting */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: '14px 16px' }}>
-              <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#374151', marginBottom: 10 }}>Recipients</div>
-
-              {/* Radio buttons */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[
-                  { value: 'all',        label: 'All Users' },
-                  { value: 'plan',       label: 'By Plan' },
-                  { value: 'language',   label: 'By Language' },
-                  { value: 'individual', label: 'Individual Users' },
-                ].map(({ value, label }) => (
-                  <label key={value} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: '0.85rem', color: '#374151' }}>
-                    <input
-                      type="radio"
-                      name="targetMode"
-                      value={value}
-                      checked={targetMode === value}
-                      onChange={() => { setTargetMode(value); setTargetPlans([]); setTargetLangs([]); }}
-                      style={{ marginTop: 2, flexShrink: 0 }}
-                    />
-                    <div>
-                      {label}
-                      {/* Plan checkboxes */}
-                      {value === 'plan' && targetMode === 'plan' && (
-                        <div style={{ display: 'flex', gap: 16, marginTop: 6, marginLeft: 2 }}>
-                          {['free', 'pro', 'multi'].map(p => (
-                            <label key={p} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', cursor: 'pointer', fontWeight: targetPlans.includes(p) ? 600 : 400 }}>
-                              <input type="checkbox" checked={targetPlans.includes(p)} onChange={() => togglePlan(p)} />
-                              {p.charAt(0).toUpperCase() + p.slice(1)}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                      {/* Language checkboxes */}
-                      {value === 'language' && targetMode === 'language' && (
-                        <div style={{ display: 'flex', gap: 12, marginTop: 6, marginLeft: 2, flexWrap: 'wrap' }}>
-                          {['en', 'fr', 'es', 'de', 'nl'].map(l => (
-                            <label key={l} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', cursor: 'pointer', fontWeight: targetLangs.includes(l) ? 600 : 400 }}>
-                              <input type="checkbox" checked={targetLangs.includes(l)} onChange={() => toggleLang(l)} />
-                              {l.toUpperCase()}
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                      {/* Individual user search */}
-                      {value === 'individual' && targetMode === 'individual' && (
-                        <div style={{ marginTop: 8, marginLeft: 2 }}>
-                          <input
-                            type="text"
-                            value={userSearch}
-                            onChange={e => setUserSearch(e.target.value)}
-                            placeholder="Search by name, email or property…"
-                            style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.8rem', boxSizing: 'border-box' }}
-                          />
-                          {searchResults.length > 0 && (
-                            <div style={{ border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', marginTop: 2, maxHeight: 180, overflowY: 'auto' }}>
-                              {searchResults.map(u => (
-                                <button
-                                  key={u.id}
-                                  onClick={() => addUser(u)}
-                                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', borderBottom: '1px solid #f1f5f9' }}
-                                >
-                                  <span style={{ fontWeight: 500 }}>{u.name}</span>
-                                  <span style={{ color: '#64748b', marginLeft: 6 }}>{u.email}</span>
-                                  <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.72rem' }}>{u.plan}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {/* Selected user chips */}
-                          {targetUsers.length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                              {targetUsers.map(u => (
-                                <span
-                                  key={u.id}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                                    background: '#e0f0d8', color: '#1a4710',
-                                    borderRadius: 20, padding: '2px 8px',
-                                    fontSize: '0.75rem', fontWeight: 500,
-                                  }}
-                                >
-                                  {u.name || u.email}
-                                  <button
-                                    onClick={() => removeUser(u.id)}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a4710', padding: 0, fontSize: '0.7rem', lineHeight: 1 }}
-                                  >
-                                    ✕
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              {/* Verified filter */}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: '0.82rem', color: '#374151', cursor: 'pointer' }}>
-                <input type="checkbox" checked={filterVerified} onChange={e => setFilterVerified(e.target.checked)} />
-                Verified email only
-              </label>
-            </div>
-
-            {/* Ad-hoc recipients */}
-            <div>
-              <label style={labelStyle}>
-                Additional recipients
-                <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>— added on top of the selection above</span>
-              </label>
+            {htmlMode ? (
               <textarea
-                value={adhocEmails}
-                onChange={e => setAdhocEmails(e.target.value)}
-                placeholder="Paste email addresses here, one per line or comma-separated"
-                rows={3}
+                value={html}
+                onChange={e => setHtml(e.target.value)}
+                placeholder="Paste raw HTML here — rendered as-is in the email"
                 style={{
-                  width: '100%', padding: '8px 12px', border: '1px solid #d1d5db',
-                  borderRadius: 8, fontSize: '0.82rem', resize: 'vertical',
-                  fontFamily: 'monospace', boxSizing: 'border-box', color: '#1e293b',
+                  width: '100%', height: 300, fontFamily: 'monospace', fontSize: '0.78rem',
+                  border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
+                  resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
+                  boxSizing: 'border-box',
                 }}
               />
-              {adhocCount > 0 && (
-                <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '3px 0 0' }}>
-                  {adhocCount} valid address{adhocCount !== 1 ? 'es' : ''} detected
-                </p>
-              )}
-            </div>
-
-            {/* Recipient count summary */}
-            <div style={{ fontSize: '0.85rem', color: '#374151', padding: '8px 12px', background: '#f0fdf4', borderRadius: 6, border: '1px solid #d1fae5' }}>
-              <strong>Send to:</strong> {recipientSummary()}
-            </div>
-
-            {error && (
-              <div style={{ background: '#fef2f2', color: '#b91c1c', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
-                {error}
-              </div>
+            ) : (
+              <QuillEditor value={html} onChange={setHtml} minHeight={260} />
             )}
-            {sendResult && (
-              <div style={{ background: '#f0fdf4', color: '#166534', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
-                Broadcast started — sending to {sendResult.recipientCount?.toLocaleString()} recipients
-                {sendResult.adhocCount > 0 ? ` (${sendResult.adhocCount} ad-hoc)` : ''}. Check History for progress.
-              </div>
-            )}
+          </div>
 
-            {/* Action row */}
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                onClick={handleSendTest}
-                disabled={!canSend || testSending}
-                style={{
-                  padding: '8px 14px', borderRadius: 7, border: '1px solid #3b82f6',
-                  background: '#eff6ff', color: '#1d4ed8', fontWeight: 500,
-                  fontSize: '0.85rem', cursor: canSend && !testSending ? 'pointer' : 'not-allowed',
-                  opacity: canSend && !testSending ? 1 : 0.5,
-                }}
-              >
-                {testSending ? 'Sending…' : 'Send Test →'}
-              </button>
-              {testMsg && (
-                <span style={{ fontSize: '0.8rem', color: testMsg.startsWith('Test sent') ? '#16a34a' : '#dc2626' }}>
-                  {testMsg}
-                </span>
-              )}
-              <button
-                onClick={() => { setError(''); setShowSendModal(true); }}
-                disabled={!canSend || sending || totalCount === 0}
-                style={{
-                  padding: '8px 18px', borderRadius: 7, border: 'none',
-                  background: '#1a4710', color: '#fff', fontWeight: 600,
-                  fontSize: '0.875rem', cursor: 'pointer', marginLeft: 'auto',
-                  opacity: canSend && !sending && totalCount > 0 ? 1 : 0.5,
-                }}
-              >
-                {sending ? 'Sending…' : `Send to ${totalCount.toLocaleString()} recipients`}
-              </button>
+          {/* Targeting */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: '14px 16px' }}>
+            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#374151', marginBottom: 10 }}>Recipients</div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { value: 'all',        label: 'All Users' },
+                { value: 'plan',       label: 'By Plan' },
+                { value: 'language',   label: 'By Language' },
+                { value: 'individual', label: 'Individual Users' },
+              ].map(({ value, label }) => (
+                <label key={value} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: '0.85rem', color: '#374151' }}>
+                  <input
+                    type="radio"
+                    name="targetMode"
+                    value={value}
+                    checked={targetMode === value}
+                    onChange={() => { setTargetMode(value); setTargetPlans([]); setTargetLangs([]); }}
+                    style={{ marginTop: 2, flexShrink: 0 }}
+                  />
+                  <div>
+                    {label}
+                    {value === 'plan' && targetMode === 'plan' && (
+                      <div style={{ display: 'flex', gap: 16, marginTop: 6, marginLeft: 2 }}>
+                        {['free', 'pro', 'multi'].map(p => (
+                          <label key={p} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', cursor: 'pointer', fontWeight: targetPlans.includes(p) ? 600 : 400 }}>
+                            <input type="checkbox" checked={targetPlans.includes(p)} onChange={() => togglePlan(p)} />
+                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {value === 'language' && targetMode === 'language' && (
+                      <div style={{ display: 'flex', gap: 12, marginTop: 6, marginLeft: 2, flexWrap: 'wrap' }}>
+                        {['en', 'fr', 'es', 'de', 'nl'].map(l => (
+                          <label key={l} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8rem', cursor: 'pointer', fontWeight: targetLangs.includes(l) ? 600 : 400 }}>
+                            <input type="checkbox" checked={targetLangs.includes(l)} onChange={() => toggleLang(l)} />
+                            {l.toUpperCase()}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {value === 'individual' && targetMode === 'individual' && (
+                      <div style={{ marginTop: 8, marginLeft: 2 }}>
+                        <input
+                          type="text"
+                          value={userSearch}
+                          onChange={e => setUserSearch(e.target.value)}
+                          placeholder="Search by name, email or property…"
+                          style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.8rem', boxSizing: 'border-box' }}
+                        />
+                        {searchResults.length > 0 && (
+                          <div style={{ border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', marginTop: 2, maxHeight: 180, overflowY: 'auto' }}>
+                            {searchResults.map(u => (
+                              <button
+                                key={u.id}
+                                onClick={() => addUser(u)}
+                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', borderBottom: '1px solid #f1f5f9' }}
+                              >
+                                <span style={{ fontWeight: 500 }}>{u.name}</span>
+                                <span style={{ color: '#64748b', marginLeft: 6 }}>{u.email}</span>
+                                <span style={{ float: 'right', color: '#94a3b8', fontSize: '0.72rem' }}>{u.plan}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {targetUsers.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                            {targetUsers.map(u => (
+                              <span
+                                key={u.id}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  background: '#e0f0d8', color: '#1a4710',
+                                  borderRadius: 20, padding: '2px 8px',
+                                  fontSize: '0.75rem', fontWeight: 500,
+                                }}
+                              >
+                                {u.name || u.email}
+                                <button
+                                  onClick={() => removeUser(u.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a4710', padding: 0, fontSize: '0.7rem', lineHeight: 1 }}
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </label>
+              ))}
             </div>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: '0.82rem', color: '#374151', cursor: 'pointer' }}>
+              <input type="checkbox" checked={filterVerified} onChange={e => setFilterVerified(e.target.checked)} />
+              Verified email only
+            </label>
+          </div>
+
+          {/* Ad-hoc recipients */}
+          <div>
+            <label style={labelStyle}>
+              Additional recipients
+              <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6 }}>— added on top of the selection above</span>
+            </label>
+            <textarea
+              value={adhocEmails}
+              onChange={e => setAdhocEmails(e.target.value)}
+              placeholder="Paste email addresses here, one per line or comma-separated"
+              rows={3}
+              style={{
+                width: '100%', padding: '8px 12px', border: '1px solid #d1d5db',
+                borderRadius: 8, fontSize: '0.82rem', resize: 'vertical',
+                fontFamily: 'monospace', boxSizing: 'border-box', color: '#1e293b',
+              }}
+            />
+            {adhocCount > 0 && (
+              <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '3px 0 0' }}>
+                {adhocCount} valid address{adhocCount !== 1 ? 'es' : ''} detected
+              </p>
+            )}
+          </div>
+
+          {/* Recipient count summary */}
+          <div style={{ fontSize: '0.85rem', color: '#374151', padding: '8px 12px', background: '#f0fdf4', borderRadius: 6, border: '1px solid #d1fae5' }}>
+            <strong>Send to:</strong> {recipientSummary()}
+          </div>
+
+          {error && (
+            <div style={{ background: '#fef2f2', color: '#b91c1c', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
+              {error}
+            </div>
+          )}
+          {sendResult && (
+            <div style={{ background: '#f0fdf4', color: '#166534', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
+              Broadcast started — sending to {sendResult.recipientCount?.toLocaleString()} recipients
+              {sendResult.adhocCount > 0 ? ` (${sendResult.adhocCount} ad-hoc)` : ''}. Check History for progress.
+            </div>
+          )}
+
+          {/* Action row */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleSendTest}
+              disabled={!canSend || testSending}
+              style={{
+                padding: '8px 14px', borderRadius: 7, border: '1px solid #3b82f6',
+                background: '#eff6ff', color: '#1d4ed8', fontWeight: 500,
+                fontSize: '0.85rem', cursor: canSend && !testSending ? 'pointer' : 'not-allowed',
+                opacity: canSend && !testSending ? 1 : 0.5,
+              }}
+            >
+              {testSending ? 'Sending…' : 'Send Test →'}
+            </button>
+            {testMsg && (
+              <span style={{ fontSize: '0.8rem', color: testMsg.startsWith('Test sent') ? '#16a34a' : '#dc2626' }}>
+                {testMsg}
+              </span>
+            )}
+            <button
+              onClick={() => { setError(''); setShowSendModal(true); }}
+              disabled={!canSend || sending || totalCount === 0}
+              style={{
+                padding: '8px 18px', borderRadius: 7, border: 'none',
+                background: '#1a4710', color: '#fff', fontWeight: 600,
+                fontSize: '0.875rem', cursor: 'pointer', marginLeft: 'auto',
+                opacity: canSend && !sending && totalCount > 0 ? 1 : 0.5,
+              }}
+            >
+              {sending ? 'Sending…' : `Send to ${totalCount.toLocaleString()} recipients`}
+            </button>
           </div>
         </div>
       )}
@@ -599,12 +532,13 @@ export default function UserMailer() {
                   <th style={{ ...th, textAlign: 'right' }}>Recipients</th>
                   <th style={{ ...th, textAlign: 'right' }}>Sent</th>
                   <th style={th}>Status</th>
+                  <th style={th}></th>
                 </tr>
               </thead>
               <tbody>
                 {broadcasts.map((b, i) => {
                   const userCount  = b.recipient_count - (b.adhoc_count ?? 0);
-                  const adhocCount = b.adhoc_count ?? 0;
+                  const adhocCnt   = b.adhoc_count ?? 0;
                   return (
                     <tr key={b.id} style={{ borderTop: i > 0 ? '1px solid #f1f5f9' : 'none' }}>
                       <td style={td}>
@@ -612,20 +546,32 @@ export default function UserMailer() {
                           day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
                         })}
                       </td>
-                      <td style={{ ...td, maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1e293b' }}>
+                      <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1e293b' }}>
                         {b.subject}
                       </td>
                       <td style={{ ...td, color: '#64748b' }}>
                         {formatFilterDesc(b)}{b.filter_verified ? ' · verified' : ''}
                       </td>
                       <td style={{ ...td, textAlign: 'right' }}>
-                        {adhocCount > 0
-                          ? <>{userCount.toLocaleString()} <span style={{ color: '#94a3b8' }}>+{adhocCount} ad-hoc</span></>
+                        {adhocCnt > 0
+                          ? <>{userCount.toLocaleString()} <span style={{ color: '#94a3b8' }}>+{adhocCnt} ad-hoc</span></>
                           : b.recipient_count.toLocaleString()
                         }
                       </td>
                       <td style={{ ...td, textAlign: 'right', color: '#374151' }}>{b.sent_count.toLocaleString()}</td>
                       <td style={td}><StatusBadge status={b.status} /></td>
+                      <td style={td}>
+                        <button
+                          onClick={() => setViewBroadcast(b)}
+                          style={{
+                            fontSize: '0.78rem', padding: '3px 10px', borderRadius: 5,
+                            border: '1px solid #d1d5db', background: '#f8fafc',
+                            color: '#374151', cursor: 'pointer',
+                          }}
+                        >
+                          View
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -635,37 +581,62 @@ export default function UserMailer() {
         </div>
       )}
 
-      {/* Save template modal */}
-      {showSaveModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 24, width: 340, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: '0 0 14px', fontSize: '1rem', fontWeight: 700 }}>Save as Template</h3>
-            <input
-              type="text"
-              value={saveName}
-              onChange={e => setSaveName(e.target.value)}
-              placeholder="Template name…"
-              autoFocus
-              onKeyDown={e => { if (e.key === 'Enter') handleSaveTemplate(); }}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box', marginBottom: 14 }}
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowSaveModal(false)} style={{ padding: '7px 14px', borderRadius: 7, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: '0.875rem' }}>
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveTemplate}
-                disabled={!saveName.trim()}
-                style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: '#1a4710', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: saveName.trim() ? 'pointer' : 'not-allowed', opacity: saveName.trim() ? 1 : 0.5 }}
-              >
-                Save
-              </button>
+      {/* ── Template Manager modal ──────────────────────────────────────── */}
+      {showTemplateManager && (
+        <TemplateManager
+          apiBase="/api/admin/user-mailer"
+          bodyField="html"
+          footerNote={USER_MAILER_FOOTER_PREVIEW}
+          onClose={() => setShowTemplateManager(false)}
+          onChanged={() => {}}
+          onLoad={loadTemplate}
+        />
+      )}
+
+      {/* ── History View modal ───────────────────────────────────────────── */}
+      {viewBroadcast && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 720, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 12px 48px rgba(0,0,0,0.3)' }}>
+            {/* Header */}
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>{viewBroadcast.subject}</div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 4, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    <span>
+                      {new Date(viewBroadcast.created_at + 'Z').toLocaleString('en-GB', {
+                        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </span>
+                    <span>{formatFilterDesc(viewBroadcast)}{viewBroadcast.filter_verified ? ' · verified' : ''}</span>
+                    <span>{viewBroadcast.sent_count.toLocaleString()} / {viewBroadcast.recipient_count.toLocaleString()} sent</span>
+                    <StatusBadge status={viewBroadcast.status} />
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewBroadcast(null)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 6, border: '1px solid #d1d5db',
+                    background: '#fff', color: '#374151', cursor: 'pointer',
+                    fontSize: '0.82rem', fontWeight: 500, flexShrink: 0,
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
+            {/* Email preview */}
+            <iframe
+              srcDoc={buildPreviewHtml(viewBroadcast.html ?? '')}
+              title="Email preview"
+              sandbox="allow-same-origin"
+              style={{ flex: 1, border: 'none', minHeight: 480 }}
+            />
           </div>
         </div>
       )}
 
-      {/* Send confirmation modal */}
+      {/* ── Send confirmation modal ──────────────────────────────────────── */}
       <ConfirmModal
         isOpen={showSendModal}
         title="Send broadcast?"
