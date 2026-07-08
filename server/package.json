@@ -9,6 +9,9 @@
     "db:seed": "node --no-warnings=ExperimentalWarning db/seed.js",
     "db:migrate": "node --no-warnings=ExperimentalWarning db/migrate.js"
   },
+  "devDependencies": {
+    "@tabler/icons": "^2.47.0"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",

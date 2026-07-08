@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 import QuillEditor from '../QuillEditor.jsx';
 import TemplateManager from '../TemplateManager.jsx';
+import IconPicker from '../IconPicker.jsx';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -278,8 +279,24 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   const [sendProgress, setSendProgress] = useState({ done: 0, total: 0 });
   const [sendError, setSendError]   = useState(null);
   const [result, setResult]         = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const sendingRef                  = useRef(false); // synchronous guard against double-click
+  const [showPreview, setShowPreview]       = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const sendingRef  = useRef(false); // synchronous guard against double-click
+  const editorRef   = useRef(null);
+  const textareaRef = useRef(null);
+
+  function handleIconInsert(imgHtml) {
+    if (htmlMode) {
+      const ta = textareaRef.current;
+      if (!ta) { setBody(b => b + imgHtml); return; }
+      const start = ta.selectionStart;
+      const end   = ta.selectionEnd;
+      setBody(ta.value.slice(0, start) + imgHtml + ta.value.slice(end));
+      requestAnimationFrame(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = start + imgHtml.length; });
+    } else {
+      editorRef.current?.insertHtml(imgHtml);
+    }
+  }
 
   function loadTemplate(id) {
     const t = templates.find(t => t.id === Number(id));
@@ -417,7 +434,18 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           <Input value={subject} onChange={setSubject} placeholder="Subject *" style={{ width: '100%' }} />
 
           {/* ── Editor mode toggle ── */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 4 }}>
+            <button
+              onClick={() => setShowIconPicker(true)}
+              title="Insert icon"
+              style={{
+                fontSize: '0.75rem', padding: '3px 9px', borderRadius: 5, cursor: 'pointer',
+                border: '1px solid #d1d5db', background: '#f8fafc', color: '#64748b',
+                display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600,
+              }}
+            >
+              <OutreachIconSvg /> Icons
+            </button>
             <button
               onClick={() => setHtmlMode(m => !m)}
               title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
@@ -431,8 +459,18 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
             >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
           </div>
 
-          {htmlMode ? (
+          <div style={{ display: htmlMode ? 'none' : 'block' }}>
+            <QuillEditor
+              ref={editorRef}
+              value={body}
+              onChange={setBody}
+              placeholder="Write your email here… use {{name}}, {{company}}"
+              style={{ height: 240, overflowY: 'auto', minHeight: 0 }}
+            />
+          </div>
+          {htmlMode && (
             <textarea
+              ref={textareaRef}
               value={body}
               onChange={e => setBody(e.target.value)}
               placeholder="Paste raw HTML here — rendered as-is in the email"
@@ -442,13 +480,6 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
                 resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
                 boxSizing: 'border-box',
               }}
-            />
-          ) : (
-            <QuillEditor
-              value={body}
-              onChange={setBody}
-              placeholder="Write your email here… use {{name}}, {{company}}"
-              style={{ height: 240, overflowY: 'auto', minHeight: 0 }}
             />
           )}
 
@@ -566,7 +597,18 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
       </div>
     </div>
     {showPreview && <PreviewModal body={body} subject={subject} onClose={() => setShowPreview(false)} />}
+    {showIconPicker && <IconPicker onInsert={handleIconInsert} onClose={() => setShowIconPicker(false)} />}
     </>
+  );
+}
+
+function OutreachIconSvg() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M20.4 14.5L16 10 4 20" />
+    </svg>
   );
 }
 

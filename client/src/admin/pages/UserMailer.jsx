@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
 import QuillEditor from '../QuillEditor.jsx';
 import TemplateManager from '../TemplateManager.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+import IconPicker from '../IconPicker.jsx';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -80,6 +81,10 @@ export default function UserMailer() {
 
   // Template manager
   const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [showIconPicker, setShowIconPicker]           = useState(false);
+
+  const editorRef   = useRef(null); // QuillEditor ref
+  const textareaRef = useRef(null); // raw-HTML textarea ref
 
   // Targeting
   const [targetMode, setTargetMode]         = useState('all');
@@ -162,6 +167,21 @@ export default function UserMailer() {
     setSubject(tplSubject);
     setHtml(tplHtml);
     setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(tplHtml));
+  }
+
+  // ── Icon insertion ────────────────────────────────────────────────────────
+  function handleIconInsert(imgHtml) {
+    if (htmlMode) {
+      const ta = textareaRef.current;
+      if (!ta) { setHtml(h => h + imgHtml); return; }
+      const start = ta.selectionStart;
+      const end   = ta.selectionEnd;
+      const next  = ta.value.slice(0, start) + imgHtml + ta.value.slice(end);
+      setHtml(next);
+      requestAnimationFrame(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = start + imgHtml.length; });
+    } else {
+      editorRef.current?.insertHtml(imgHtml);
+    }
   }
 
   // ── Toggle helpers ────────────────────────────────────────────────────────
@@ -302,23 +322,37 @@ export default function UserMailer() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <label style={labelStyle}>Body</label>
-              <button
-                onClick={() => setHtmlMode(m => !m)}
-                title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
-                style={{
-                  fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
-                  fontFamily: 'monospace', fontWeight: 600,
-                  border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
-                  background: htmlMode ? '#d9f0cc' : '#f8fafc',
-                  color: htmlMode ? '#1a4710' : '#64748b',
-                }}
-              >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => setShowIconPicker(true)}
+                  title="Insert icon"
+                  style={{
+                    fontSize: '0.75rem', padding: '3px 9px', borderRadius: 5, cursor: 'pointer',
+                    border: '1px solid #d1d5db', background: '#f8fafc', color: '#64748b',
+                    display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600,
+                  }}
+                >
+                  <IconBtnSvg /> Icons
+                </button>
+                <button
+                  onClick={() => setHtmlMode(m => !m)}
+                  title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
+                  style={{
+                    fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
+                    fontFamily: 'monospace', fontWeight: 600,
+                    border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
+                    background: htmlMode ? '#d9f0cc' : '#f8fafc',
+                    color: htmlMode ? '#1a4710' : '#64748b',
+                  }}
+                >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
+              </div>
             </div>
             <div style={{ display: htmlMode ? 'none' : 'block' }}>
-              <QuillEditor value={html} onChange={setHtml} minHeight={260} />
+              <QuillEditor ref={editorRef} value={html} onChange={setHtml} minHeight={260} />
             </div>
             {htmlMode && (
               <textarea
+                ref={textareaRef}
                 value={html}
                 onChange={e => setHtml(e.target.value)}
                 placeholder="Paste raw HTML here — rendered as-is in the email"
@@ -582,6 +616,11 @@ export default function UserMailer() {
         </div>
       )}
 
+      {/* ── Icon Picker modal ───────────────────────────────────────────── */}
+      {showIconPicker && (
+        <IconPicker onInsert={handleIconInsert} onClose={() => setShowIconPicker(false)} />
+      )}
+
       {/* ── Template Manager modal ──────────────────────────────────────── */}
       {showTemplateManager && (
         <TemplateManager
@@ -666,6 +705,16 @@ export default function UserMailer() {
 const labelStyle = { display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#374151', marginBottom: 4 };
 const th = { padding: '10px 16px', fontWeight: 600 };
 const td = { padding: '10px 16px', color: '#64748b', whiteSpace: 'nowrap' };
+
+function IconBtnSvg() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M20.4 14.5L16 10 4 20" />
+    </svg>
+  );
+}
 
 function StatusBadge({ status }) {
   const map = {

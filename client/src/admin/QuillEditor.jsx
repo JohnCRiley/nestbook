@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
@@ -28,15 +28,55 @@ function injectQuillStyles() {
   document.head.appendChild(s);
 }
 
-export default function QuillEditor({ value, onChange, placeholder = 'Write your email here…', minHeight = 180, style: styleProp = {} }) {
+// Extend Quill's image blot to preserve width, height, style, alt attributes.
+// Without this, dangerouslyPasteHTML strips those from <img> tags.
+let emailImageRegistered = false;
+function registerEmailImage() {
+  if (emailImageRegistered) return;
+  emailImageRegistered = true;
+  const Image = Quill.import('formats/image');
+  class EmailImage extends Image {
+    static formats(node) {
+      const attrs = {};
+      for (const a of ['width', 'height', 'style', 'alt', 'src']) {
+        const v = node.getAttribute(a);
+        if (v) attrs[a] = v;
+      }
+      return attrs;
+    }
+    format(name, value) {
+      if (['width', 'height', 'style', 'alt'].includes(name)) {
+        if (value) this.domNode.setAttribute(name, value);
+        else this.domNode.removeAttribute(name);
+      } else {
+        super.format(name, value);
+      }
+    }
+  }
+  Quill.register('formats/image', EmailImage, true);
+}
+
+const QuillEditor = forwardRef(function QuillEditor(
+  { value, onChange, placeholder = 'Write your email here…', minHeight = 180, style: styleProp = {} },
+  ref
+) {
   const containerRef = useRef(null);
   const quillRef     = useRef(null);
   const onChangeRef  = useRef(onChange);
 
   useEffect(() => { onChangeRef.current = onChange; });
 
+  useImperativeHandle(ref, () => ({
+    insertHtml(html) {
+      if (!quillRef.current) return;
+      const range = quillRef.current.getSelection(true) ?? { index: Math.max(0, quillRef.current.getLength() - 1) };
+      quillRef.current.clipboard.dangerouslyPasteHTML(range.index, html);
+    },
+  }), []);
+
   useEffect(() => {
     injectQuillStyles();
+    registerEmailImage();
     if (!containerRef.current || quillRef.current) return;
     const container = containerRef.current;
     quillRef.current = new Quill(container, {
@@ -67,4 +107,6 @@ export default function QuillEditor({ value, onChange, placeholder = 'Write your
   }, [value]);
 
   return <div ref={containerRef} style={{ minHeight, ...styleProp }} />;
-}
+});
+
+export default QuillEditor;

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { saApiFetch } from './saApiFetch.js';
 import QuillEditor from './QuillEditor.jsx';
+import IconPicker from './IconPicker.jsx';
 
 // ── Local mini components ────────────────────────────────────────────────────
 
@@ -113,9 +114,26 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
   const [name, setName]           = useState('');
   const [subject, setSubject]     = useState('');
   const [body, setBody]           = useState('');
-  const [htmlMode, setHtmlMode]   = useState(false);
+  const [htmlMode, setHtmlMode]     = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [saving, setSaving]       = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [saving, setSaving]         = useState(false);
+
+  const editorRef   = useRef(null);
+  const textareaRef = useRef(null);
+
+  function handleIconInsert(imgHtml) {
+    if (htmlMode) {
+      const ta = textareaRef.current;
+      if (!ta) { setBody(b => b + imgHtml); return; }
+      const start = ta.selectionStart;
+      const end   = ta.selectionEnd;
+      setBody(ta.value.slice(0, start) + imgHtml + ta.value.slice(end));
+      requestAnimationFrame(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = start + imgHtml.length; });
+    } else {
+      editorRef.current?.insertHtml(imgHtml);
+    }
+  }
 
   useEffect(() => { load(); }, [apiBase]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -185,7 +203,18 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Input value={name}    onChange={setName}    placeholder="Template name"  style={{ width: '100%' }} />
               <Input value={subject} onChange={setSubject} placeholder="Email subject"  style={{ width: '100%' }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 2 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 2 }}>
+                <button
+                  onClick={() => setShowIconPicker(true)}
+                  title="Insert icon"
+                  style={{
+                    fontSize: '0.75rem', padding: '3px 9px', borderRadius: 5, cursor: 'pointer',
+                    border: '1px solid #d1d5db', background: '#f8fafc', color: '#64748b',
+                    display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600,
+                  }}
+                >
+                  <TmIconSvg /> Icons
+                </button>
                 <button
                   onClick={() => setHtmlMode(m => !m)}
                   title={htmlMode ? 'Switch to visual editor' : 'Edit raw HTML'}
@@ -199,10 +228,11 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                 >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
               </div>
               <div style={{ display: htmlMode ? 'none' : 'block' }}>
-                <QuillEditor value={body} onChange={setBody} minHeight={160} />
+                <QuillEditor ref={editorRef} value={body} onChange={setBody} minHeight={160} />
               </div>
               {htmlMode && (
                 <textarea
+                  ref={textareaRef}
                   value={body}
                   onChange={e => setBody(e.target.value)}
                   placeholder="Paste raw HTML here — rendered as-is in the email"
@@ -254,6 +284,20 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
       {showPreview && (
         <PreviewModal body={body} subject={subject} footerNote={footerNote} onClose={() => setShowPreview(false)} />
       )}
+
+      {showIconPicker && (
+        <IconPicker onInsert={handleIconInsert} onClose={() => setShowIconPicker(false)} />
+      )}
     </div>
+  );
+}
+
+function TmIconSvg() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M20.4 14.5L16 10 4 20" />
+    </svg>
   );
 }
