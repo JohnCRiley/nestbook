@@ -560,7 +560,13 @@ function StripeChecklistModal({ onClose }) {
           <ChecklistSection
             title={t('stripeChecklist.s1Title')}
             items={[
-              t('stripeChecklist.s1.website'),
+              <>
+                {t('stripeChecklist.s1.websitePrefix')}
+                <code style={{ fontFamily: 'monospace', fontSize: '0.82em', background: 'rgba(0,0,0,0.07)', padding: '1px 5px', borderRadius: 3, wordBreak: 'break-all' }}>
+                  {t('stripeChecklist.s1.websiteUrl')}
+                </code>
+                {' '}{t('stripeChecklist.s1.websiteNote')}
+              </>,
               t('stripeChecklist.s1.bank'),
               t('stripeChecklist.s1.descriptor'),
             ]}
