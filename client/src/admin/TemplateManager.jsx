@@ -198,7 +198,10 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                   }}
                 >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
               </div>
-              {htmlMode ? (
+              <div style={{ display: htmlMode ? 'none' : 'block' }}>
+                <QuillEditor value={body} onChange={setBody} minHeight={160} />
+              </div>
+              {htmlMode && (
                 <textarea
                   value={body}
                   onChange={e => setBody(e.target.value)}
@@ -210,8 +213,6 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                     boxSizing: 'border-box',
                   }}
                 />
-              ) : (
-                <QuillEditor value={body} onChange={setBody} minHeight={160} />
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>

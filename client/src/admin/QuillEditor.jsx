@@ -38,17 +38,23 @@ export default function QuillEditor({ value, onChange, placeholder = 'Write your
   useEffect(() => {
     injectQuillStyles();
     if (!containerRef.current || quillRef.current) return;
-    quillRef.current = new Quill(containerRef.current, {
+    const container = containerRef.current;
+    quillRef.current = new Quill(container, {
       theme: 'snow',
       placeholder,
       modules: { toolbar: QUILL_TOOLBAR },
     });
+    // Quill inserts its toolbar as a sibling before the container, outside React's
+    // render tree. Capture it now so we can remove it on unmount.
+    const toolbar = container.previousElementSibling;
     if (value) quillRef.current.root.innerHTML = value;
     quillRef.current.on('text-change', () => {
       onChangeRef.current(quillRef.current.root.innerHTML);
     });
     return () => {
       quillRef.current?.off('text-change');
+      toolbar?.remove();
+      quillRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

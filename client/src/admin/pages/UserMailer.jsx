@@ -314,7 +314,10 @@ export default function UserMailer() {
                 }}
               >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
             </div>
-            {htmlMode ? (
+            <div style={{ display: htmlMode ? 'none' : 'block' }}>
+              <QuillEditor value={html} onChange={setHtml} minHeight={260} />
+            </div>
+            {htmlMode && (
               <textarea
                 value={html}
                 onChange={e => setHtml(e.target.value)}
@@ -326,8 +329,6 @@ export default function UserMailer() {
                   boxSizing: 'border-box',
                 }}
               />
-            ) : (
-              <QuillEditor value={html} onChange={setHtml} minHeight={260} />
             )}
           </div>
 
