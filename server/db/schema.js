@@ -1607,6 +1607,14 @@ John`
     console.log('✓ user_email_templates table ready');
   } catch(e) { console.error('user_email_templates table error:', e.message); }
 
+  // New columns for user_broadcasts added in v2 (targeting mode, language, ad-hoc count)
+  for (const sql of [
+    `ALTER TABLE user_broadcasts ADD COLUMN filter_mode  TEXT    DEFAULT 'all'`,
+    `ALTER TABLE user_broadcasts ADD COLUMN filter_plans TEXT    DEFAULT NULL`,
+    `ALTER TABLE user_broadcasts ADD COLUMN filter_langs TEXT    DEFAULT NULL`,
+    `ALTER TABLE user_broadcasts ADD COLUMN adhoc_count  INTEGER DEFAULT 0`,
+  ]) { try { db.exec(sql); } catch { /* already exists */ } }
+
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS user_broadcasts (
