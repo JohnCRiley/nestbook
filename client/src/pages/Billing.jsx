@@ -510,6 +510,114 @@ function GuestPaymentsCard() {
   );
 }
 
+// ── Stripe KYC checklist modal helpers ───────────────────────────────────────
+function ChecklistSection({ title, intro, items }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+        {title}
+      </h4>
+      {intro && (
+        <p style={{ margin: '0 0 6px', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{intro}</p>
+      )}
+      <ul style={{ margin: 0, paddingLeft: 18, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+        {items.map((item, i) => (
+          <li key={i} style={{ marginBottom: 5 }}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function StripeChecklistModal({ onClose }) {
+  const t = useT();
+
+  useEffect(() => {
+    const handle = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [onClose]);
+
+  return (
+    <div className="cm-backdrop" onClick={onClose}>
+      <div
+        className="cm-card"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        style={{ maxWidth: 640 }}
+      >
+        <div className="cm-header" style={{ background: 'var(--header-bg)', color: 'var(--header-text)' }}>
+          <i className="ti ti-building-bank cm-icon" />
+          <span className="cm-title">{t('stripeChecklist.title')}</span>
+        </div>
+
+        <div className="cm-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
+          <p style={{ margin: '0 0 18px', fontSize: '0.87rem', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+            {t('stripeChecklist.intro')}
+          </p>
+
+          <ChecklistSection
+            title={t('stripeChecklist.s1Title')}
+            items={[
+              t('stripeChecklist.s1.website'),
+              t('stripeChecklist.s1.bank'),
+              t('stripeChecklist.s1.descriptor'),
+            ]}
+          />
+
+          <ChecklistSection
+            title={t('stripeChecklist.s2Title')}
+            intro={t('stripeChecklist.s2Intro')}
+            items={[
+              t('stripeChecklist.s2.id'),
+              t('stripeChecklist.s2.address'),
+            ]}
+          />
+
+          <ChecklistSection
+            title={t('stripeChecklist.s3Title')}
+            items={[
+              t('stripeChecklist.s3.company'),
+              t('stripeChecklist.s3.people'),
+            ]}
+          />
+
+          <div style={{ marginBottom: 18 }}>
+            <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+              {t('stripeChecklist.s4Title')}
+            </h4>
+            <ul style={{ margin: '0 0 10px', paddingLeft: 18, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <li>{t('stripeChecklist.s4.selfie')}</li>
+            </ul>
+            <div style={{
+              background: '#fef3c7',
+              border: '1px solid #f59e0b',
+              borderRadius: 8,
+              padding: '10px 14px',
+              fontSize: '0.84rem',
+              color: '#78350f',
+              lineHeight: 1.6,
+            }}>
+              {t('stripeChecklist.s4.warning')}
+            </div>
+          </div>
+
+          <p style={{ margin: '0 0 18px', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.55, fontStyle: 'italic' }}>
+            {t('stripeChecklist.footer')}
+          </p>
+
+          <div className="cm-actions">
+            <button className="billing-connect-btn" onClick={onClose} style={{ marginTop: 0 }}>
+              {t('stripeChecklist.close')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Stripe Connect card ───────────────────────────────────────────────────────
 function StripeConnectCard() {
   const t = useT();
@@ -518,6 +626,7 @@ function StripeConnectCard() {
   const [actionLoading,       setActionLoading]       = useState(false);
   const [errorMsg,            setErrorMsg]            = useState(null);
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+  const [showChecklist,       setShowChecklist]       = useState(false);
 
   useEffect(() => {
     apiFetch('/api/stripe/connect/status')
@@ -604,18 +713,36 @@ function StripeConnectCard() {
               <li>{t('billing.how2')}</li>
             </ol>
           </div>
-          <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading}>
-            {actionLoading ? t('billing.connecting') : t('billing.connectWithStripe')}
-          </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 14 }}>
+            <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading} style={{ marginTop: 0 }}>
+              {actionLoading ? t('billing.connecting') : t('billing.connectWithStripe')}
+            </button>
+            <button
+              className="billing-connect-btn billing-connect-btn-secondary"
+              onClick={() => setShowChecklist(true)}
+              style={{ marginTop: 0 }}
+            >
+              {t('stripeChecklist.btnLabel')}
+            </button>
+          </div>
         </>
       )}
 
       {isPending && (
         <div style={{ marginTop: 12 }}>
           <span className="billing-status-pill billing-status-pending">{t('billing.connectPending')}</span>
-          <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading} style={{ display: 'block', marginTop: 10 }}>
-            {actionLoading ? t('billing.connecting') : t('billing.finishSetup')}
-          </button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 10 }}>
+            <button className="billing-connect-btn" onClick={handleConnect} disabled={actionLoading} style={{ marginTop: 0 }}>
+              {actionLoading ? t('billing.connecting') : t('billing.finishSetup')}
+            </button>
+            <button
+              className="billing-connect-btn billing-connect-btn-secondary"
+              onClick={() => setShowChecklist(true)}
+              style={{ marginTop: 0 }}
+            >
+              {t('stripeChecklist.btnLabel')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -647,6 +774,8 @@ function StripeConnectCard() {
       {errorMsg && (
         <p style={{ marginTop: 10, fontSize: '0.82rem', color: '#dc2626', fontWeight: 600 }}>{errorMsg}</p>
       )}
+
+      {showChecklist && <StripeChecklistModal onClose={() => setShowChecklist(false)} />}
     </div>
   );
 }
