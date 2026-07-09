@@ -4,15 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 const ICON_GROUPS = {
   'Calendar & Time': [
     'calendar', 'calendar-check', 'calendar-event', 'calendar-off',
-    'calendar-plus', 'calendar-time', 'clock', 'alarm', 'hourglass', 'clock-hour-4',
+    'calendar-plus', 'calendar-time', 'calendar-minus', 'calendar-stats',
+    'clock', 'alarm', 'hourglass', 'clock-hour-4',
   ],
   'Communication': [
-    'mail', 'mail-opened', 'phone', 'phone-call', 'message',
-    'message-dots', 'bell', 'bell-ringing', 'send', 'speakerphone',
+    'mail', 'mail-opened', 'phone', 'phone-call', 'phone-off',
+    'message', 'message-dots', 'message-circle',
+    'bell', 'bell-ringing', 'send', 'speakerphone',
+    'language', 'external-link', 'link', 'world',
   ],
   'Property & Rooms': [
-    'home', 'building', 'key', 'door', 'bed',
-    'bath', 'sofa', 'lamp', 'home-2', 'stairs',
+    'home', 'home-2', 'home-check', 'home-eco',
+    'building', 'building-bank', 'building-castle',
+    'key', 'door', 'door-enter', 'door-exit',
+    'bed', 'bath', 'sofa', 'lamp', 'stairs',
   ],
   'Food & Drink': [
     'coffee', 'mug', 'bowl-spoon', 'glass-full', 'chef-hat',
@@ -21,26 +26,47 @@ const ICON_GROUPS = {
   'Travel & Transport': [
     'plane', 'car', 'bus', 'train', 'map',
     'map-pin', 'compass', 'luggage', 'anchor', 'ticket',
+    'sailboat', 'tent',
   ],
   'People & Service': [
-    'user', 'users', 'user-check', 'star', 'heart',
-    'thumb-up', 'mood-happy', 'award', 'crown', 'gift',
+    'user', 'users', 'user-check', 'user-plus',
+    'id-badge', 'badge',
+    'star', 'heart', 'thumb-up', 'mood-happy',
+    'award', 'crown', 'gift',
   ],
   'Finance': [
-    'currency-dollar', 'credit-card', 'receipt', 'coin', 'wallet',
-    'discount', 'tag', 'percentage', 'cash', 'pig-money',
+    'currency-dollar', 'currency-pound', 'credit-card',
+    'receipt', 'receipt-2', 'receipt-off',
+    'coin', 'wallet', 'discount', 'tag', 'percentage',
+    'cash', 'pig-money', 'report-money', 'calculator',
   ],
   'Status & Actions': [
-    'check', 'circle-check', 'circle-x', 'alert-circle', 'info-circle',
-    'circle-plus', 'edit', 'trash', 'copy', 'download',
+    'check', 'circle-check', 'circle-x', 'circle-plus',
+    'alert-circle', 'alert-triangle', 'info-circle',
+    'ban', 'flag', 'archive', 'replace', 'arrow-up-circle',
+    'lock', 'lock-open', 'shield',
+    'edit', 'trash', 'copy', 'download',
+    'clipboard', 'clipboard-list', 'notes', 'rocket',
   ],
   'Media & Files': [
-    'photo', 'camera', 'file-text', 'file-download', 'printer',
+    'photo', 'camera', 'camera-plus',
+    'file-text', 'file-download', 'file-import',
+    'pencil', 'table', 'printer',
     'qrcode', 'barcode', 'scan', 'share', 'eye',
   ],
   'Nature & Weather': [
     'sun', 'moon', 'cloud', 'leaf', 'tree',
     'droplet', 'wave-sine', 'mountain', 'flame', 'snowflake',
+    'plant-2', 'sparkles',
+  ],
+  'Charts & Data': [
+    'chart-bar', 'chart-line', 'chart-pie', 'trending-up',
+    'adjustments', 'adjustments-horizontal', 'list-details', 'settings',
+  ],
+  'Tech & Brands': [
+    'device-mobile', 'plug-connected', 'brush', 'bug',
+    'category', 'palette',
+    'brand-airbnb', 'brand-booking', 'brand-facebook',
   ],
 };
 
