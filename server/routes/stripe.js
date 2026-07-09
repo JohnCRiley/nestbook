@@ -44,8 +44,12 @@ const stripe = new Stripe(stripeSecretKey, { apiVersion: '2024-12-18.acacia' });
 
 if (STRIPE_MODE === 'test') {
   console.log('⚠️  [STRIPE MODE] Currently: TEST (sandbox — no real money)');
+  const testWebhookSecret = process.env.STRIPE_TEST_WEBHOOK_SECRET;
+  console.log(`[STRIPE] STRIPE_TEST_WEBHOOK_SECRET: ${testWebhookSecret ? `SET (${testWebhookSecret.slice(0, 10)}...)` : 'NOT SET — webhook signature check will be skipped'}`);
 } else {
   console.log('✅ [STRIPE MODE] Currently: LIVE (real payments)');
+  const liveWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  console.log(`[STRIPE] STRIPE_WEBHOOK_SECRET: ${liveWebhookSecret ? `SET (${liveWebhookSecret.slice(0, 10)}...)` : 'NOT SET — webhook signature check will be skipped'}`);
 }
 
 const PLAN_PRICES = {
