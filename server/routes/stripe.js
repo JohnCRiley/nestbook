@@ -6,7 +6,39 @@ import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// ── Stripe mode ───────────────────────────────────────────────────────────────
+// STRIPE_MODE (env var) controls which key pair is active. It is a server-side
+// deployment setting — never a client or per-user toggle.
+//
+//   STRIPE_MODE=test  → Stripe sandbox (staging / local dev)
+//   STRIPE_MODE=live  → real money (production)
+//
+// To run a full sandbox Connect onboarding walkthrough:
+//   1. Set STRIPE_MODE=test in server/.env (already the default for dev)
+//   2. Run: stripe listen --forward-to localhost:3001/api/stripe/webhook
+//   3. Copy the webhook signing secret it prints → STRIPE_TEST_WEBHOOK_SECRET
+//   4. Restart the server
+//   5. Go through onboarding; use Stripe's fake KYC values:
+//        Individual (UK):  Sort code 108800 · Account 00012345
+//        Individual (US):  SSN 000-00-0000
+//        Test card (pay):  4242 4242 4242 4242 · any CVC/expiry
+//      Full reference: https://stripe.com/docs/connect/testing
+//
+// Production: ecosystem.config.cjs sets STRIPE_MODE=live and supplies the live
+// STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY from server/.env on the server.
+
+const STRIPE_MODE = process.env.STRIPE_MODE ?? 'live';
+const stripeSecretKey = STRIPE_MODE === 'test'
+  ? process.env.STRIPE_TEST_SECRET_KEY
+  : process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  throw new Error(`[stripe] No secret key for STRIPE_MODE="${STRIPE_MODE}". ` +
+    `Set ${STRIPE_MODE === 'test' ? 'STRIPE_TEST_SECRET_KEY' : 'STRIPE_SECRET_KEY'} in server/.env`);
+}
+
+const stripe = new Stripe(stripeSecretKey);
+console.log(`[stripe] Initialised in ${STRIPE_MODE.toUpperCase()} mode`);
 
 const PLAN_PRICES = {
   pro:   process.env.STRIPE_PRICE_PRO,
@@ -397,7 +429,9 @@ stripeRouter.post('/connect/disconnect', async (req, res) => {
 // via stripe.webhooks.constructEvent() — no JWT needed.
 export async function stripeWebhookHandler(req, res) {
   const sig    = req.headers['stripe-signature'];
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const secret = STRIPE_MODE === 'test'
+    ? process.env.STRIPE_TEST_WEBHOOK_SECRET
+    : process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
   try {
@@ -438,7 +472,8 @@ export async function stripeWebhookHandler(req, res) {
                  LEFT JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
                  WHERE p.id = ?`
               ).get(confirmedBooking.property_id);
-              sendBookingConfirmation(confirmedBooking, property).catch(() => {});
+              sendBookingConfirmation(confirmedBooking, property)
+                .catch(err => console.error(`[stripe] Booking confirmation email failed (booking #${bookingId}):`, err.message));
             }
             console.log(`[stripe] Widget booking #${bookingId} confirmed after payment`);
           } else if (bookingId) {
