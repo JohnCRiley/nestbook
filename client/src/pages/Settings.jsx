@@ -185,12 +185,13 @@ export default function Settings() {
         check_out_time:     p.check_out_time     ?? '11:00',
         currency:           p.currency           ?? 'EUR',
         locale:             p.locale             ?? 'en',
-        breakfast_included:   p.breakfast_included ? 1 : 0,
-        require_deposit:      p.require_deposit    ? 1 : 0,
-        deposit_amount:       p.deposit_amount     ?? 0,
-        breakfast_price:      p.breakfast_price    ?? 0,
-        breakfast_start_time: p.breakfast_start_time ?? '07:00',
-        breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
+        breakfast_included:       p.breakfast_included       ? 1 : 0,
+        require_deposit:          p.require_deposit          ? 1 : 0,
+        deposit_amount:           p.deposit_amount           ?? 0,
+        breakfast_price:          p.breakfast_price          ?? 0,
+        breakfast_start_time:     p.breakfast_start_time     ?? '07:00',
+        breakfast_end_time:       p.breakfast_end_time       ?? '11:00',
+        breakfast_widget_enabled: p.breakfast_widget_enabled ? 1 : 0,
         description:          p.description          ?? '',
         rental_type:          p.rental_type          ?? 'rooms',
         total_capacity:       p.total_capacity       ?? '',
@@ -982,6 +983,28 @@ export default function Settings() {
                     }}>
                       <i className="ti ti-alert-triangle" /> {t('bfPropertyToggleWarn')}
                     </div>
+                    <ToggleRow
+                      label={t('bfWidgetToggleLabel')}
+                      desc={t('bfWidgetToggleDesc')}
+                      checked={!!form.breakfast_widget_enabled}
+                      onChange={() => setForm((p) => ({ ...p, breakfast_widget_enabled: p.breakfast_widget_enabled ? 0 : 1 }))}
+                    />
+                    {!!form.breakfast_widget_enabled && (
+                      <div style={{ padding: '4px 0 14px 0' }}>
+                        <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                          {t('breakfastPriceLabel')} ({currencySymbol})
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="0"
+                          step="0.01"
+                          value={form.breakfast_price}
+                          onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
+                          style={{ marginTop: 4, maxWidth: 160 }}
+                        />
+                      </div>
+                    )}
                     <ToggleRow
                       label={t('fDeposit')}
                       desc={t('fDepositSub')}

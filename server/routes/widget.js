@@ -183,6 +183,7 @@ widgetRouter.post('/bookings', async (req, res) => {
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
       num_guests, status, source, notes, total_price,
+      breakfast_added, breakfast_guests, breakfast_price_per_person, breakfast_start_date,
     } = req.body;
 
     if (!property_id || !room_id || !guest_id || !check_in_date || !check_out_date) {
@@ -252,8 +253,9 @@ widgetRouter.post('/bookings', async (req, res) => {
         const result = db.prepare(`
           INSERT INTO bookings
             (property_id, room_id, guest_id, check_in_date, check_out_date,
-             num_guests, status, source, notes, total_price, flagged)
-          VALUES (?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?)
+             num_guests, status, source, notes, total_price, flagged,
+             breakfast_added, breakfast_guests, breakfast_price_per_person, breakfast_start_date)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           property_id, room_id, guest_id,
           check_in_date, check_out_date,
@@ -262,6 +264,10 @@ widgetRouter.post('/bookings', async (req, res) => {
           notes      ?? null,
           total_price ?? null,
           flagged,
+          breakfast_added ? 1 : 0,
+          breakfast_guests ?? 0,
+          parseFloat(breakfast_price_per_person) || 0,
+          breakfast_start_date ?? null,
         );
         const bookingId = result.lastInsertRowid;
         const currency  = (ownerRow.currency || 'eur').toLowerCase();
@@ -277,14 +283,24 @@ widgetRouter.post('/bookings', async (req, res) => {
               // On expiry Stripe fires checkout.session.expired, which the
               // webhook handler uses to delete the pending_payment booking.
               expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
-              line_items: [{
-                price_data: {
-                  currency,
-                  product_data: { name: `${ownerRow.property_name} — ${check_in_date} to ${check_out_date}` },
-                  unit_amount: amount,
-                },
-                quantity: 1,
-              }],
+              line_items: (() => {
+                const items = [{
+                  price_data: {
+                    currency,
+                    product_data: { name: `${ownerRow.property_name} — ${check_in_date} to ${check_out_date}` },
+                    unit_amount: amount,
+                  },
+                  quantity: 1,
+                }];
+                if (breakfast_added && breakfast_price_per_person && breakfast_guests) {
+                  const nights = Math.round((new Date(check_out_date) - new Date(check_in_date)) / 86400000);
+                  const bfAmt  = Math.round(parseFloat(breakfast_price_per_person) * Number(breakfast_guests) * nights * 100);
+                  if (bfAmt > 0) {
+                    items.push({ price_data: { currency, product_data: { name: 'Breakfast' }, unit_amount: bfAmt }, quantity: 1 });
+                  }
+                }
+                return items;
+              })(),
               success_url: `${base}/pay/success?booking=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
               cancel_url:  `${base}/pay/cancelled?booking=${bookingId}`,
               metadata: {
@@ -313,8 +329,9 @@ widgetRouter.post('/bookings', async (req, res) => {
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price, flagged, approval_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         num_guests, status, source, notes, total_price, flagged, approval_token,
+         breakfast_added, breakfast_guests, breakfast_price_per_person, breakfast_start_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
@@ -325,6 +342,10 @@ widgetRouter.post('/bookings', async (req, res) => {
       total_price  ?? null,
       flagged,
       approvalToken,
+      breakfast_added ? 1 : 0,
+      breakfast_guests ?? 0,
+      parseFloat(breakfast_price_per_person) || 0,
+      breakfast_start_date ?? null,
     );
 
     const newBooking = db.prepare(`
@@ -447,17 +468,24 @@ widgetRouter.get('/property', (req, res) => {
     const { property_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id is required' });
     const row = db.prepare(`
-      SELECT name, theme, currency, rental_type, whole_property_rate, total_capacity
-      FROM properties WHERE id = ?
+      SELECT p.name, p.theme, p.currency, p.rental_type, p.whole_property_rate, p.total_capacity,
+             p.breakfast_widget_enabled, p.breakfast_price,
+             u.stripe_connect_status
+      FROM properties p
+      LEFT JOIN users u ON u.id = p.owner_id
+      WHERE p.id = ?
     `).get(property_id);
     if (!row) return res.status(404).json({ error: 'Property not found' });
     res.json({
-      theme:               row.theme              ?? 'forest',
-      name:                row.name               ?? '',
-      currency:            row.currency           ?? 'EUR',
-      rental_type:         row.rental_type        ?? 'rooms',
-      whole_property_rate: row.whole_property_rate ?? null,
-      total_capacity:      row.total_capacity      ?? null,
+      theme:                    row.theme              ?? 'forest',
+      name:                     row.name               ?? '',
+      currency:                 row.currency           ?? 'EUR',
+      rental_type:              row.rental_type        ?? 'rooms',
+      whole_property_rate:      row.whole_property_rate ?? null,
+      total_capacity:           row.total_capacity      ?? null,
+      stripe_connect_active:    row.stripe_connect_status === 'active',
+      breakfast_widget_enabled: row.breakfast_widget_enabled === 1,
+      breakfast_price:          row.breakfast_price ?? 0,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

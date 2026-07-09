@@ -86,6 +86,11 @@
       demoNote: 'Demo mode — no real booking was made',
       breakfastIncluded: 'Breakfast included',
       checkAvailabilityBook: 'Check Availability & Book',
+      payNow:           'Pay Now',
+      payNowConfirming: 'Processing…',
+      redirecting:      'Redirecting to secure checkout…',
+      addBreakfast:     (p) => `Add breakfast (${p} per person per morning)`,
+      breakfastLine:    'Breakfast',
       propertyNotAvailable: 'The property is not available for those dates. Please try different dates.',
       wpStep2Title:  'Your Booking',
       wpAvailBadge:  'Available for your dates!',
@@ -128,6 +133,11 @@
       demoNote: 'Mode démo — aucune vraie réservation n\'a été effectuée',
       breakfastIncluded: 'Petit-déjeuner inclus',
       checkAvailabilityBook: 'Vérifier et réserver',
+      payNow:           'Payer maintenant',
+      payNowConfirming: 'Traitement…',
+      redirecting:      'Redirection vers le paiement sécurisé…',
+      addBreakfast:     (p) => `Ajouter le petit-déjeuner (${p} par personne par matin)`,
+      breakfastLine:    'Petit-déjeuner',
       propertyNotAvailable: 'La propriété n\'est pas disponible pour ces dates. Veuillez essayer d\'autres dates.',
       wpStep2Title:  'Votre réservation',
       wpAvailBadge:  'Disponible pour vos dates !',
@@ -170,6 +180,11 @@
       demoNote: 'Modo demo — no se ha realizado ninguna reserva real',
       breakfastIncluded: 'Desayuno incluido',
       checkAvailabilityBook: 'Comprobar y reservar',
+      payNow:           'Pagar ahora',
+      payNowConfirming: 'Procesando…',
+      redirecting:      'Redirigiendo al pago seguro…',
+      addBreakfast:     (p) => `Añadir desayuno (${p} por persona por mañana)`,
+      breakfastLine:    'Desayuno',
       propertyNotAvailable: 'La propiedad no está disponible para esas fechas. Pruebe otras fechas.',
       wpStep2Title:  'Su reserva',
       wpAvailBadge:  '¡Disponible para sus fechas!',
@@ -212,6 +227,11 @@
       demoNote: 'Demo modus — er is geen echte reservering gemaakt',
       breakfastIncluded: 'Ontbijt inbegrepen',
       checkAvailabilityBook: 'Beschikbaarheid & boeken',
+      payNow:           'Nu betalen',
+      payNowConfirming: 'Verwerken…',
+      redirecting:      'Doorsturen naar beveiligde betaling…',
+      addBreakfast:     (p) => `Ontbijt toevoegen (${p} per persoon per ochtend)`,
+      breakfastLine:    'Ontbijt',
       propertyNotAvailable: 'Het verblijf is niet beschikbaar voor deze datums. Kies andere datums.',
       wpStep2Title:  'Uw boeking',
       wpAvailBadge:  'Beschikbaar voor uw datums!',
@@ -254,6 +274,11 @@
       demoNote: 'Demo-Modus — keine echte Buchung wurde vorgenommen',
       breakfastIncluded: 'Frühstück inbegriffen',
       checkAvailabilityBook: 'Verfügbarkeit prüfen & buchen',
+      payNow:           'Jetzt bezahlen',
+      payNowConfirming: 'Verarbeitung…',
+      redirecting:      'Weiterleitung zur sicheren Kasse…',
+      addBreakfast:     (p) => `Frühstück hinzufügen (${p} pro Person pro Morgen)`,
+      breakfastLine:    'Frühstück',
       propertyNotAvailable: 'Das Objekt ist für diese Daten nicht verfügbar. Bitte andere Daten wählen.',
       wpStep2Title:  'Ihre Buchung',
       wpAvailBadge:  'Verfügbar für Ihre Daten!',
@@ -279,13 +304,18 @@
     availableRooms: [],
     selectedRoom:   null,
     guest:          { firstName: '', lastName: '', email: '', phone: '', notes: '' },
-    bookingRef:        null,
-    loading:           false,
-    error:             null,
-    isDemo:            false,
-    wholeProperty:     false,
-    wholePropertyRate: 0,
-    totalCapacity:     10,
+    bookingRef:          null,
+    loading:             false,
+    error:               null,
+    isDemo:              false,
+    wholeProperty:       false,
+    wholePropertyRate:   0,
+    totalCapacity:       10,
+    stripeConnectActive: false,
+    breakfastEnabled:    false,
+    breakfastPrice:      0,
+    breakfastAdded:      false,
+    redirecting:         false,
   };
 
   // ── Date helpers ───────────────────────────────────────────────────────────
@@ -371,9 +401,12 @@
         // Re-confirm WP status from a fresh property fetch — makes the check
         // authoritative at availability time and not dependent on init() succeeding.
         if (freshProp) {
-          S.wholeProperty     = freshProp.rental_type === 'whole_property';
-          S.wholePropertyRate = freshProp.whole_property_rate || 0;
-          S.totalCapacity     = freshProp.total_capacity || 10;
+          S.wholeProperty         = freshProp.rental_type === 'whole_property';
+          S.wholePropertyRate     = freshProp.whole_property_rate || 0;
+          S.totalCapacity         = freshProp.total_capacity || 10;
+          S.stripeConnectActive   = freshProp.stripe_connect_active === true;
+          S.breakfastEnabled      = !S.wholeProperty && freshProp.breakfast_widget_enabled === true;
+          S.breakfastPrice        = freshProp.breakfast_price ?? 0;
         }
         console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length, '| WP mode:', S.wholeProperty);
         S.allRooms    = rooms;
@@ -456,19 +489,27 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            property_id:    Number(PROPERTY_ID),
-            room_id:        S.selectedRoom.id,
-            guest_id:       guest.id,
-            check_in_date:  S.checkIn,
-            check_out_date: S.checkOut,
-            num_guests:     S.numGuests,
-            status:         bookingStatus,
-            source:         'direct',
-            notes:          S.guest.notes.trim() || null,
-            total_price:    totalPrice,
+            property_id:              Number(PROPERTY_ID),
+            room_id:                  S.selectedRoom.id,
+            guest_id:                 guest.id,
+            check_in_date:            S.checkIn,
+            check_out_date:           S.checkOut,
+            num_guests:               S.numGuests,
+            status:                   bookingStatus,
+            source:                   'direct',
+            notes:                    S.guest.notes.trim() || null,
+            total_price:              totalPrice,
+            breakfast_added:          S.breakfastAdded ? 1 : 0,
+            breakfast_guests:         S.breakfastAdded ? S.numGuests : 0,
+            breakfast_price_per_person: S.breakfastAdded ? S.breakfastPrice : 0,
+            breakfast_start_date:     S.breakfastAdded ? S.checkIn : null,
           }),
         });
         if (booking.checkoutUrl) {
+          S.loading    = false;
+          S.redirecting = true;
+          render();
+          await new Promise((r) => setTimeout(r, 700));
           window.location.href = booking.checkoutUrl;
           return;
         }
@@ -980,6 +1021,31 @@
   margin-bottom: 12px;
 }
 
+/* Breakfast add-on toggle row (step 4) */
+.nb-bf-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: #f7fbf6;
+  border: 1.5px solid #d9ead3;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.nb-bf-check {
+  width: 18px; height: 18px;
+  accent-color: ${BRAND};
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.nb-bf-label {
+  font-size: 0.875rem;
+  color: #1a2e14;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
 /* ── Mobile responsive ── */
 @media (max-width: 540px) {
   .nb-backdrop {
@@ -1365,10 +1431,12 @@
       body.appendChild(err);
     }
 
-    const nights    = nightsBetween(S.checkIn, S.checkOut);
-    const totalPrice = S.wholeProperty
+    const nights     = nightsBetween(S.checkIn, S.checkOut);
+    const basePrice  = S.wholeProperty
       ? (S.wpTotal ?? (S.wholePropertyRate * nights))
       : S.selectedRoom.price_per_night * nights;
+    const bfTotal    = S.breakfastAdded ? S.breakfastPrice * S.numGuests * nights : 0;
+    const totalPrice = basePrice + bfTotal;
 
     // Summary card
     const summary = el('div', 'nb-summary');
@@ -1389,6 +1457,22 @@
     if (S.guest.email) summary.appendChild(row(T.email.replace(' *', ''), S.guest.email));
     if (S.guest.notes) summary.appendChild(row(T.notes, S.guest.notes));
     body.appendChild(summary);
+
+    // Breakfast add-on toggle (only if property has it enabled)
+    if (S.breakfastEnabled && !S.wholeProperty && S.breakfastPrice > 0) {
+      const bfRow = el('div', 'nb-bf-row');
+      const bfCb  = el('input', 'nb-bf-check');
+      bfCb.type    = 'checkbox';
+      bfCb.id      = 'nb-bf-cb';
+      bfCb.checked = S.breakfastAdded;
+      const bfLabel = el('label', 'nb-bf-label');
+      bfLabel.htmlFor = 'nb-bf-cb';
+      bfLabel.appendChild(txt(T.addBreakfast(CUR_SYMBOL + S.breakfastPrice.toFixed(2))));
+      bfCb.addEventListener('change', () => { S.breakfastAdded = bfCb.checked; render(); });
+      bfRow.appendChild(bfCb);
+      bfRow.appendChild(bfLabel);
+      body.appendChild(bfRow);
+    }
 
     // Price callout
     const pc    = el('div', 'nb-price-callout');
@@ -1420,7 +1504,12 @@
     backBtn.addEventListener('click', () => { S.step = 3; S.error = null; render(); });
 
     const confirmBtn = el('button', 'nb-btn-main');
-    confirmBtn.appendChild(txt(S.wholeProperty ? (S.loading ? T.wpConfirming : T.wpConfirmBtn) : (S.loading ? T.confirming : T.confirmBtn)));
+    const btnLabel = S.wholeProperty
+      ? (S.loading ? T.wpConfirming    : T.wpConfirmBtn)
+      : S.stripeConnectActive
+        ? (S.loading ? T.payNowConfirming : T.payNow)
+        : (S.loading ? T.confirming       : T.confirmBtn);
+    confirmBtn.appendChild(txt(btnLabel));
     confirmBtn.disabled = S.loading;
     confirmBtn.addEventListener('click', () => { confirmBooking(); });
 
@@ -1491,6 +1580,10 @@
       : (S.step === 2 && S.wholeProperty) ? T.wpStep2Title
       : STEP_LABELS[S.step - 1];
 
+    if (S.redirecting) {
+      renderLoading(T.redirecting);
+      return;
+    }
     if (S.loading) {
       renderLoading(S.step === 1 ? T.checking : T.confirming);
       return;
@@ -1512,6 +1605,7 @@
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
       bookingRef: null, loading: false, error: null, isDemo: false,
+      breakfastAdded: false, redirecting: false,
     });
     backdrop.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -1540,9 +1634,12 @@
           BRAND       = palette.brand;
           BRAND_DARK  = palette.dark;
           BRAND_LIGHT = palette.light;
-          S.wholeProperty    = data.rental_type === 'whole_property';
-          S.wholePropertyRate = data.whole_property_rate || 0;
-          S.totalCapacity    = data.total_capacity || 10;
+          S.wholeProperty       = data.rental_type === 'whole_property';
+          S.wholePropertyRate   = data.whole_property_rate || 0;
+          S.totalCapacity       = data.total_capacity || 10;
+          S.stripeConnectActive = data.stripe_connect_active === true;
+          S.breakfastEnabled    = !S.wholeProperty && data.breakfast_widget_enabled === true;
+          S.breakfastPrice      = data.breakfast_price ?? 0;
         }
       } catch (_) { /* network error — fall back to forest colours */ }
     }

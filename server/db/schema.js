@@ -356,6 +356,11 @@ export function initSchema() {
     db.exec(`ALTER TABLE properties ADD COLUMN breakfast_end_time TEXT DEFAULT '11:00'`);
   } catch { /* already exists */ }
 
+  // Migration: per-property opt-in for offering breakfast via the booking widget
+  try {
+    db.exec(`ALTER TABLE properties ADD COLUMN breakfast_widget_enabled INTEGER NOT NULL DEFAULT 0`);
+  } catch { /* already exists */ }
+
   // Migration: checkout tracking on bookings
   try {
     db.exec(`ALTER TABLE bookings ADD COLUMN payment_method TEXT`);
