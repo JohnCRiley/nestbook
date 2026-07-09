@@ -2314,8 +2314,9 @@ function PaymentLinkButton({ booking, t }) {
     setError(null);
     try {
       const r    = await apiFetch(`/api/bookings/${booking.id}/create-payment-link`, {
-        method: 'POST',
-        body:   JSON.stringify({
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
           amount:      amt,
           description: `Booking #${booking.id} — ${booking.guest_first_name} ${booking.guest_last_name}`,
         }),
