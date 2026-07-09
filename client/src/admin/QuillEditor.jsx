@@ -57,14 +57,18 @@ function registerEmailImage() {
 }
 
 const QuillEditor = forwardRef(function QuillEditor(
-  { value, onChange, placeholder = 'Write your email here…', minHeight = 180, style: styleProp = {} },
+  { value, onChange, placeholder = 'Write your email here…', minHeight = 180, style: styleProp = {}, paused = false },
   ref
 ) {
   const containerRef = useRef(null);
   const quillRef     = useRef(null);
   const onChangeRef  = useRef(onChange);
+  // Keep a ref so the text-change closure can read the latest paused value
+  // without needing to be re-registered.
+  const pausedRef    = useRef(paused);
 
   useEffect(() => { onChangeRef.current = onChange; });
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   useImperativeHandle(ref, () => ({
     insertHtml(html) {
@@ -89,6 +93,7 @@ const QuillEditor = forwardRef(function QuillEditor(
     const toolbar = container.previousElementSibling;
     if (value) quillRef.current.root.innerHTML = value;
     quillRef.current.on('text-change', () => {
+      if (pausedRef.current) return;
       onChangeRef.current(quillRef.current.root.innerHTML);
     });
     return () => {
@@ -99,12 +104,17 @@ const QuillEditor = forwardRef(function QuillEditor(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value into editor (e.g. template loaded)
+  // Sync external value into editor only when in rich-text mode.
+  // While paused (HTML mode active), the textarea owns the content — skip the
+  // sync so Quill never processes or sanitizes the raw HTML being edited.
+  // When paused flips back to false the effect re-runs and loads the textarea
+  // content into Quill exactly once (the deliberate mode-switch moment).
   useEffect(() => {
+    if (paused) return;
     if (quillRef.current && value !== quillRef.current.root.innerHTML) {
       quillRef.current.root.innerHTML = value || '';
     }
-  }, [value]);
+  }, [value, paused]);
 
   return <div ref={containerRef} style={{ minHeight, ...styleProp }} />;
 });

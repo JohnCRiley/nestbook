@@ -348,7 +348,7 @@ export default function UserMailer() {
               </div>
             </div>
             <div style={{ display: htmlMode ? 'none' : 'block' }}>
-              <QuillEditor ref={editorRef} value={html} onChange={setHtml} minHeight={260} />
+              <QuillEditor ref={editorRef} value={html} onChange={setHtml} minHeight={260} paused={htmlMode} />
             </div>
             {htmlMode && (
               <textarea

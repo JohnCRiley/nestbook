@@ -466,6 +466,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               onChange={setBody}
               placeholder="Write your email here… use {{name}}, {{company}}"
               style={{ height: 240, overflowY: 'auto', minHeight: 0 }}
+              paused={htmlMode}
             />
           </div>
           {htmlMode && (

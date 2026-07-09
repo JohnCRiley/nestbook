@@ -228,7 +228,7 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                 >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
               </div>
               <div style={{ display: htmlMode ? 'none' : 'block' }}>
-                <QuillEditor ref={editorRef} value={body} onChange={setBody} minHeight={160} />
+                <QuillEditor ref={editorRef} value={body} onChange={setBody} minHeight={160} paused={htmlMode} />
               </div>
               {htmlMode && (
                 <textarea
