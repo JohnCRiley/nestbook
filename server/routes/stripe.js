@@ -678,12 +678,23 @@ export async function stripeWebhookHandler(req, res) {
 
       case 'account.updated': {
         const account = event.data.object;
-        const connectUser = db.prepare('SELECT id FROM users WHERE stripe_connect_account_id = ?').get(account.id);
+        const connectUser = db.prepare(
+          'SELECT id, stripe_connect_status FROM users WHERE stripe_connect_account_id = ?'
+        ).get(account.id);
         if (connectUser) {
-          const status = account.charges_enabled ? 'active' : 'pending';
-          db.prepare('UPDATE users SET stripe_connect_status = ?, stripe_connect_details_submitted = ? WHERE id = ?')
-            .run(status, account.details_submitted ? 1 : 0, connectUser.id);
-          console.log(`[stripe] Connect account ${account.id} updated — status: ${status}`);
+          const newStatus = account.charges_enabled ? 'active' : 'pending';
+          console.log(`[stripe] Connect account ${account.id} — charges_enabled=${account.charges_enabled}, details_submitted=${account.details_submitted}, current_status=${connectUser.stripe_connect_status}, new_status=${newStatus}`);
+          // Guard: Stripe fires multiple account.updated events during onboarding.
+          // An early event may have charges_enabled:true followed by one with
+          // charges_enabled:false as capabilities settle. Never overwrite 'active'
+          // with 'pending' — only allow upgrades (pending→active) and same-level writes.
+          if (newStatus === 'active' || connectUser.stripe_connect_status !== 'active') {
+            db.prepare('UPDATE users SET stripe_connect_status = ?, stripe_connect_details_submitted = ? WHERE id = ?')
+              .run(newStatus, account.details_submitted ? 1 : 0, connectUser.id);
+            console.log(`[stripe] Connect account ${account.id} status written: ${newStatus}`);
+          } else {
+            console.log(`[stripe] Connect account ${account.id} status downgrade suppressed (already active)`);
+          }
         }
         break;
       }
