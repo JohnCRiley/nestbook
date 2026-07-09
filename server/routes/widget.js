@@ -285,7 +285,7 @@ widgetRouter.post('/bookings', async (req, res) => {
                 },
                 quantity: 1,
               }],
-              success_url: `${base}/pay/success?booking=${bookingId}`,
+              success_url: `${base}/pay/success?booking=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
               cancel_url:  `${base}/pay/cancelled?booking=${bookingId}`,
               metadata: {
                 booking_id: String(bookingId),
@@ -469,6 +469,58 @@ widgetRouter.get('/property', (req, res) => {
 // Used by widget-test.html in demo mode so visitor bookings never block rooms.
 widgetRouter.get('/demo/rooms', (_req, res) => {
   res.json(DEMO_ROOMS);
+});
+
+// ── GET /api/widget/verify-session ───────────────────────────────────────────
+// Public (no auth). Called by pay/success.html on load to confirm Stripe
+// actually completed the payment before showing the success message.
+// Also acts as a webhook fallback — updates DB if paid but webhook hasn't fired.
+widgetRouter.get('/verify-session', async (req, res) => {
+  const { session_id } = req.query;
+  if (!session_id) return res.status(400).json({ error: 'session_id required' });
+
+  const booking = db.prepare(
+    'SELECT id, stripe_payment_status, property_id FROM bookings WHERE stripe_checkout_session_id = ?'
+  ).get(session_id);
+
+  if (!booking) return res.status(404).json({ error: 'Session not found' });
+
+  // If already marked paid (webhook already fired), return immediately
+  if (booking.stripe_payment_status === 'paid') {
+    return res.json({ paid: true, payment_status: 'paid', booking_id: booking.id });
+  }
+
+  if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
+
+  // Look up which connected account owns this property
+  const owner = db.prepare(
+    'SELECT stripe_connect_account_id FROM users WHERE property_id = ? AND role = ?'
+  ).get(booking.property_id, 'owner');
+
+  if (!owner?.stripe_connect_account_id) {
+    return res.status(500).json({ error: 'Owner Stripe account not found' });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(
+      session_id,
+      {},
+      { stripeAccount: owner.stripe_connect_account_id }
+    );
+
+    const paid = session.payment_status === 'paid';
+    console.log(`[verify-session] session=${session_id} payment_status=${session.payment_status} booking=${booking.id}`);
+
+    if (paid && booking.stripe_payment_status !== 'paid') {
+      db.prepare('UPDATE bookings SET stripe_payment_status = ? WHERE id = ?').run('paid', booking.id);
+      console.log(`[verify-session] Booking #${booking.id} marked paid (webhook fallback)`);
+    }
+
+    res.json({ paid, payment_status: session.payment_status, booking_id: booking.id });
+  } catch (e) {
+    console.error('[verify-session] Stripe error:', e.message);
+    res.status(500).json({ error: 'Could not verify session' });
+  }
 });
 
 // ── POST /api/widget/demo/bookings ────────────────────────────────────────────

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment received — NestBook</title>
+<title>Payment — NestBook</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -49,6 +49,16 @@
     padding: 8px 20px;
   }
   a.home:hover { background: #f0fdf4; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #1a4710;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #state-verifying h1 { color: #475569; }
 </style>
 </head>
 <body>
@@ -57,26 +67,112 @@
     <img src="/icon-192.png" alt="NestBook">
     <span>NestBook</span>
   </div>
-  <div class="icon">✅</div>
-  <h1 id="title">Payment received!</h1>
-  <p id="msg">Your booking is confirmed. A confirmation email is on its way.</p>
-  <a class="home" href="https://nestbook.io">nestbook.io</a>
+
+  <!-- Verifying state -->
+  <div id="state-verifying">
+    <div class="spinner"></div>
+    <h1 id="title-verifying">Confirming your payment…</h1>
+    <p id="msg-verifying">Please wait while we confirm your booking.</p>
+  </div>
+
+  <!-- Success state (hidden until verified) -->
+  <div id="state-success" style="display:none">
+    <div class="icon">✅</div>
+    <h1 id="title-success">Payment received!</h1>
+    <p id="msg-success">Your booking is confirmed. A confirmation email is on its way.</p>
+    <a class="home" href="https://nestbook.io">nestbook.io</a>
+  </div>
+
+  <!-- Pending state (paid but not yet confirmed by webhook) -->
+  <div id="state-pending" style="display:none">
+    <div class="icon">⏳</div>
+    <h1 id="title-pending">Payment processing…</h1>
+    <p id="msg-pending">Your payment is being processed. You'll receive a confirmation email shortly.</p>
+    <a class="home" href="https://nestbook.io">nestbook.io</a>
+  </div>
 </div>
 <script>
 var T = {
-  en: { title: 'Payment received!',         msg: 'Your booking is confirmed. A confirmation email is on its way.' },
-  fr: { title: 'Paiement reçu !',           msg: 'Votre réservation est confirmée. Un e-mail de confirmation va vous être envoyé.' },
-  de: { title: 'Zahlung erhalten!',         msg: 'Ihre Buchung ist bestätigt. Eine Bestätigungs-E-Mail ist unterwegs.' },
-  es: { title: '¡Pago recibido!',           msg: 'Su reserva está confirmada. Le llegará un correo de confirmación en breve.' },
-  nl: { title: 'Betaling ontvangen!',       msg: 'Uw boeking is bevestigd. Er is een bevestigingsmail onderweg.' },
+  en: {
+    verifying:        'Confirming your payment…',
+    verifyingMsg:     'Please wait while we confirm your booking.',
+    success:          'Payment received!',
+    successMsg:       'Your booking is confirmed. A confirmation email is on its way.',
+    pending:          'Payment processing…',
+    pendingMsg:       'Your payment is being processed. You’ll receive a confirmation email shortly.',
+  },
+  fr: {
+    verifying:        'Confirmation du paiement…',
+    verifyingMsg:     'Veuillez patienter pendant que nous confirmons votre réservation.',
+    success:          'Paiement reçu !',
+    successMsg:       'Votre réservation est confirmée. Un e-mail de confirmation va vous être envoyé.',
+    pending:          'Paiement en cours…',
+    pendingMsg:       'Votre paiement est en cours de traitement. Vous recevrez un e-mail de confirmation sous peu.',
+  },
+  de: {
+    verifying:        'Zahlung wird bestätigt…',
+    verifyingMsg:     'Bitte warten Sie, während wir Ihre Buchung bestätigen.',
+    success:          'Zahlung erhalten!',
+    successMsg:       'Ihre Buchung ist bestätigt. Eine Bestätigungs-E-Mail ist unterwegs.',
+    pending:          'Zahlung wird verarbeitet…',
+    pendingMsg:       'Ihre Zahlung wird verarbeitet. Sie erhalten in Kürze eine Bestätigungs-E-Mail.',
+  },
+  es: {
+    verifying:        'Confirmando su pago…',
+    verifyingMsg:     'Por favor espere mientras confirmamos su reserva.',
+    success:          '¡Pago recibido!',
+    successMsg:       'Su reserva está confirmada. Le llegará un correo de confirmación en breve.',
+    pending:          'Pago en proceso…',
+    pendingMsg:       'Su pago está siendo procesado. Recibirá un correo de confirmación en breve.',
+  },
+  nl: {
+    verifying:        'Betaling bevestigen…',
+    verifyingMsg:     'Even geduld terwijl we uw boeking bevestigen.',
+    success:          'Betaling ontvangen!',
+    successMsg:       'Uw boeking is bevestigd. Er is een bevestigingsmail onderweg.',
+    pending:          'Betaling verwerken…',
+    pendingMsg:       'Uw betaling wordt verwerkt. U ontvangt binnenkort een bevestigingsmail.',
+  },
 };
+
 var lang = 'en';
 try { var s = sessionStorage.getItem('nb-guest-lang'); if (s && T[s]) lang = s; } catch(_) {}
 if (!T[lang]) lang = (navigator.language || '').slice(0, 2).toLowerCase();
 var t = T[lang] || T.en;
-document.getElementById('title').textContent = t.title;
-document.getElementById('msg').textContent   = t.msg;
+
+document.getElementById('title-verifying').textContent = t.verifying;
+document.getElementById('msg-verifying').textContent   = t.verifyingMsg;
+document.getElementById('title-success').textContent   = t.success;
+document.getElementById('msg-success').textContent     = t.successMsg;
+document.getElementById('title-pending').textContent   = t.pending;
+document.getElementById('msg-pending').textContent     = t.pendingMsg;
 document.documentElement.lang = lang;
+
+function showState(name) {
+  ['verifying', 'success', 'pending'].forEach(function(s) {
+    document.getElementById('state-' + s).style.display = s === name ? '' : 'none';
+  });
+}
+
+var params = new URLSearchParams(location.search);
+var sessionId = params.get('session_id');
+
+if (!sessionId) {
+  // No session_id — old-style URL or direct visit; show pending as safe default
+  console.warn('[nestbook] success.html loaded without session_id');
+  showState('pending');
+} else {
+  fetch('/api/widget/verify-session?session_id=' + encodeURIComponent(sessionId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      console.log('[nestbook] verify-session response:', data);
+      showState(data.paid ? 'success' : 'pending');
+    })
+    .catch(function(err) {
+      console.error('[nestbook] verify-session error:', err);
+      showState('pending');
+    });
+}
 </script>
 </body>
 </html>

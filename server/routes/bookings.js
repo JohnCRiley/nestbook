@@ -1376,7 +1376,7 @@ bookingsRouter.post('/:id/create-payment-link', async (req, res) => {
           },
           quantity: 1,
         }],
-        success_url: `${baseUrl}/pay/success?booking=${booking.id}`,
+        success_url: `${baseUrl}/pay/success?booking=${booking.id}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url:  `${baseUrl}/pay/cancelled?booking=${booking.id}`,
         metadata: {
           booking_id:        String(booking.id),
