@@ -38,7 +38,12 @@ if (!stripeSecretKey) {
 }
 
 const stripe = new Stripe(stripeSecretKey);
-console.log(`[stripe] Initialised in ${STRIPE_MODE.toUpperCase()} mode`);
+
+if (STRIPE_MODE === 'test') {
+  console.log('⚠️  [STRIPE MODE] Currently: TEST (sandbox — no real money)');
+} else {
+  console.log('✅ [STRIPE MODE] Currently: LIVE (real payments)');
+}
 
 const PLAN_PRICES = {
   pro:   process.env.STRIPE_PRICE_PRO,
