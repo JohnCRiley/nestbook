@@ -37,7 +37,10 @@ if (!stripeSecretKey) {
     `Set ${STRIPE_MODE === 'test' ? 'STRIPE_TEST_SECRET_KEY' : 'STRIPE_SECRET_KEY'} in server/.env`);
 }
 
-const stripe = new Stripe(stripeSecretKey);
+// Pin to acacia (last stable v1-era API version) so Stripe emits v1 events
+// (account.updated etc.) rather than v2.core.* events introduced in dahlia.
+// stripe@21 hardcodes 2026-03-25.dahlia which routes webhooks through v2.
+const stripe = new Stripe(stripeSecretKey, { apiVersion: '2024-12-18.acacia' });
 
 if (STRIPE_MODE === 'test') {
   console.log('⚠️  [STRIPE MODE] Currently: TEST (sandbox — no real money)');
