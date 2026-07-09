@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import Stripe from 'stripe';
 import db from '../db/database.js';
+import { stripe } from '../lib/stripeClient.js';
 import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail, sendStayExtendedEmail, sendStayShortenedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../utils/ratePeriods.js';
@@ -14,7 +14,6 @@ bookingsRouter.use((req, res, next) => {
   return requireVerified(req, res, next);
 });
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function actorFromReq(req) {
   const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);

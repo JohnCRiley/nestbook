@@ -2,8 +2,8 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import Stripe from 'stripe';
 import db from '../db/database.js';
+import { stripe } from '../lib/stripeClient.js';
 import { sendWelcomeEmail, sendFreeWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail, sendProWelcomeEmail } from '../email/emailService.js';
 import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
@@ -15,7 +15,6 @@ export const authRouter = Router();
 
 const JWT_SECRET  = process.env.JWT_SECRET || 'nestbook-dev-secret-change-in-production';
 const JWT_EXPIRES = '7d';
-const stripe      = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // Apply a discount code at email verification time.
 // Only runs once per user — guarded by discount_applied_at being NULL.

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import Stripe from 'stripe';
 import db from '../db/database.js';
+import { stripe, STRIPE_MODE } from '../lib/stripeClient.js';
 import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
@@ -27,20 +27,10 @@ export const stripeRouter = Router();
 // Production: ecosystem.config.cjs sets STRIPE_MODE=live and supplies the live
 // STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY from server/.env on the server.
 
-const STRIPE_MODE = process.env.STRIPE_MODE ?? 'live';
-const stripeSecretKey = STRIPE_MODE === 'test'
-  ? process.env.STRIPE_TEST_SECRET_KEY
-  : process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecretKey) {
+if (!stripe) {
   throw new Error(`[stripe] No secret key for STRIPE_MODE="${STRIPE_MODE}". ` +
     `Set ${STRIPE_MODE === 'test' ? 'STRIPE_TEST_SECRET_KEY' : 'STRIPE_SECRET_KEY'} in server/.env`);
 }
-
-// Pin to acacia (last stable v1-era API version) so Stripe emits v1 events
-// (account.updated etc.) rather than v2.core.* events introduced in dahlia.
-// stripe@21 hardcodes 2026-03-25.dahlia which routes webhooks through v2.
-const stripe = new Stripe(stripeSecretKey, { apiVersion: '2024-12-18.acacia' });
 
 if (STRIPE_MODE === 'test') {
   console.log('⚠️  [STRIPE MODE] Currently: TEST (sandbox — no real money)');

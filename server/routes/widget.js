@@ -4,8 +4,8 @@
 // checks and booking creation.
 import crypto from 'crypto';
 import { Router } from 'express';
-import Stripe from 'stripe';
 import db from '../db/database.js';
+import { stripe } from '../lib/stripeClient.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import {
   sendBookingConfirmation,
@@ -14,7 +14,6 @@ import {
   sendBookingDeclinedEmail,
 } from '../email/emailService.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ── Demo mode rooms (static, never blocked, no DB dependency) ─────────────────
 // These match the Domaine des Lavandes demo property rooms shown on widget-test.html.

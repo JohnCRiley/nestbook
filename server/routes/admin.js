@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
-import Stripe from 'stripe';
 import bcrypt from 'bcryptjs';
+import { stripe } from '../lib/stripeClient.js';
 import db from '../db/database.js';
 import { outreachRouter } from './outreach.js';
 import { prospectFinderRouter } from './prospectFinder.js';
@@ -43,7 +43,6 @@ const blogImageUpload = multer({
     }
   },
 });
-const stripe    = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // ── GET /api/admin/stats ──────────────────────────────────────────────────────
 adminRouter.get('/stats', (req, res) => {
