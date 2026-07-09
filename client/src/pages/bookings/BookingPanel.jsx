@@ -2290,10 +2290,13 @@ function RefundModal({ booking: b, fmtCurrency, t, onConfirm, onClose }) {
 // ── Stripe payment link button ─────────────────────────────────────────────
 function PaymentLinkButton({ booking, t }) {
   const { currencySymbol } = useLocale();
-  const [amount,  setAmount]  = useState(booking.total_price > 0 ? String(booking.total_price.toFixed(2)) : '');
-  const [loading, setLoading] = useState(false);
-  const [link,    setLink]    = useState(null);
-  const [error,   setError]   = useState(null);
+  const [amount,    setAmount]    = useState(booking.total_price > 0 ? String(booking.total_price.toFixed(2)) : '');
+  const [loading,   setLoading]   = useState(false);
+  const [link,      setLink]      = useState(null);
+  const [error,     setError]     = useState(null);
+  const [copied,    setCopied]    = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const copyTimer = useRef(null);
 
   if (booking.stripe_payment_status === 'paid') {
     return (
@@ -2331,11 +2334,31 @@ function PaymentLinkButton({ booking, t }) {
     }
   }
 
+  async function copyLink() {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setCopyError(false);
+      copyTimer.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyError(true);
+      setCopied(false);
+      copyTimer.current = setTimeout(() => setCopyError(false), 2000);
+    }
+  }
+
   if (link) {
     return (
       <div className="payment-link-box">
         <input readOnly value={link} onClick={(e) => e.target.select()} />
-        <button onClick={() => navigator.clipboard.writeText(link)}>{t('common.copy')}</button>
+        <button onClick={copyLink} style={copied ? { background: 'var(--success, #16a34a)', color: '#fff' } : copyError ? { background: '#dc2626', color: '#fff' } : {}}>
+          {copied
+            ? <><i className="ti ti-check" /> Copied</>
+            : copyError
+            ? 'Couldn\'t copy — select manually'
+            : t('common.copy')}
+        </button>
       </div>
     );
   }
