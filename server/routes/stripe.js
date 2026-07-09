@@ -675,6 +675,31 @@ export async function stripeWebhookHandler(req, res) {
         }
         break;
       }
+
+      case 'checkout.session.expired': {
+        // Only widget payment sessions are scoped to a Connect account.
+        // Non-Connect subscription sessions won't have event.account set.
+        if (!event.account) break;
+
+        const expiredSession = event.data.object;
+        const expiredBooking = db.prepare(
+          'SELECT id, status FROM bookings WHERE stripe_checkout_session_id = ?'
+        ).get(expiredSession.id);
+
+        if (!expiredBooking) {
+          console.log(`[stripe] checkout.session.expired: no booking for session ${expiredSession.id}`);
+          break;
+        }
+        if (expiredBooking.status !== 'pending_payment') {
+          // Payment already completed before expiry — nothing to do
+          console.log(`[stripe] checkout.session.expired: booking #${expiredBooking.id} is ${expiredBooking.status}, skipping`);
+          break;
+        }
+
+        db.prepare('DELETE FROM bookings WHERE id = ?').run(expiredBooking.id);
+        console.log(`[stripe] Abandoned booking #${expiredBooking.id} deleted — session ${expiredSession.id} expired`);
+        break;
+      }
     }
   } catch (err) {
     console.error('Webhook handler error:', err);

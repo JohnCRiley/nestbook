@@ -31,6 +31,7 @@ import { errorReportsRouter }        from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
+import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
 import { getBalanceDueDate } from './utils/deposits.js';
 import db from './db/database.js';
 
@@ -410,4 +411,10 @@ app.listen(PORT, () => {
   // delete at day 17. Runs on boot then every 24 hours.
   runUnverifiedCleanup();
   setInterval(runUnverifiedCleanup, 24 * 60 * 60 * 1000);
+
+  // Abandoned pending_payment cleanup — belt-and-braces backup in case
+  // checkout.session.expired webhooks are ever missed. Deletes pending_payment
+  // bookings older than 1 hour so room dates are released. Runs every 30 min.
+  cleanupAbandonedPendingPayments();
+  setInterval(cleanupAbandonedPendingPayments, 30 * 60 * 1000);
 });

@@ -274,6 +274,10 @@ widgetRouter.post('/bookings', async (req, res) => {
           session = await stripe.checkout.sessions.create(
             {
               mode: 'payment',
+              // 30 minutes is Stripe's minimum — keeps room hold short.
+              // On expiry Stripe fires checkout.session.expired, which the
+              // webhook handler uses to delete the pending_payment booking.
+              expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
               line_items: [{
                 price_data: {
                   currency,
