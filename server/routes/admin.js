@@ -462,7 +462,10 @@ adminRouter.post('/properties/:id/reset-demo-data', (req, res) => {
         const gPh = guestIds.map(() => '?').join(', ');
         const ePh = DEMO_GUEST_EMAILS.map(() => '?').join(', ');
         db.prepare(
-          `DELETE FROM guests WHERE id IN (${gPh}) AND (email IS NULL OR email NOT IN (${ePh}))`
+          `DELETE FROM guests
+           WHERE id IN (${gPh})
+             AND (email IS NULL OR email NOT IN (${ePh}))
+             AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.guest_id = guests.id)`
         ).run(...guestIds, ...DEMO_GUEST_EMAILS);
       }
 
