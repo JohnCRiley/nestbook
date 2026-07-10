@@ -69,8 +69,9 @@ export default function Properties() {
 
   const toggleDemo = useCallback(async (id, currentIsDemo) => {
     await apiFetch(`/api/admin/properties/${id}/demo`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_demo: currentIsDemo ? 0 : 1 }),
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ is_demo: currentIsDemo ? 0 : 1 }),
     });
     fetchProperties();
   }, [fetchProperties]);
