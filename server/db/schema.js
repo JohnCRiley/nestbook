@@ -1735,6 +1735,19 @@ John`
     console.log('✓ user_broadcasts table ready');
   } catch(e) { console.error('user_broadcasts table error:', e.message); }
 
+  // One-time backfill: populate stripe_payment_amount from total_price for paid bookings
+  // where the widget payment path left the column NULL.
+  try {
+    const { changes } = db.prepare(`
+      UPDATE bookings
+      SET stripe_payment_amount = total_price
+      WHERE stripe_payment_status = 'paid'
+        AND stripe_payment_amount IS NULL
+        AND total_price IS NOT NULL
+    `).run();
+    if (changes > 0) console.log(`[schema] Backfilled stripe_payment_amount on ${changes} paid booking(s)`);
+  } catch (e) { console.error('[schema] stripe_payment_amount backfill error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

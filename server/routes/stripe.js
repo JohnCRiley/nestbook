@@ -455,11 +455,15 @@ export async function stripeWebhookHandler(req, res) {
         console.log(`[stripe] checkout.session.completed — account=${event.account ?? 'platform'} session=${session.id}`);
 
         if (event.account) {
-          const bookingId = session.metadata?.booking_id;
+          const bookingId    = session.metadata?.booking_id;
+          const paidAmount   = session.amount_total != null ? session.amount_total / 100 : null;
           if (session.metadata?.source === 'widget_payment' && bookingId) {
             // Widget booking — advance from pending_payment to confirmed
-            db.prepare(`UPDATE bookings SET status = 'confirmed', stripe_payment_status = 'paid' WHERE id = ?`)
-              .run(bookingId);
+            db.prepare(`
+              UPDATE bookings
+              SET status = 'confirmed', stripe_payment_status = 'paid', stripe_payment_amount = ?
+              WHERE id = ?
+            `).run(paidAmount, bookingId);
             const confirmedBooking = db.prepare(`
               SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
                      g.email AS guest_email, g.phone AS guest_phone,
@@ -478,11 +482,14 @@ export async function stripeWebhookHandler(req, res) {
               sendBookingConfirmation(confirmedBooking, property)
                 .catch(err => console.error(`[stripe] Booking confirmation email failed (booking #${bookingId}):`, err.message));
             }
-            console.log(`[stripe] Widget booking #${bookingId} confirmed after payment`);
+            console.log(`[stripe] Widget booking #${bookingId} confirmed after payment (amount=${paidAmount})`);
           } else if (bookingId) {
-            // Payment-link payment — mark paid and notify guest
-            db.prepare('UPDATE bookings SET stripe_payment_status = ? WHERE id = ?')
-              .run('paid', bookingId);
+            // Payment-link payment — mark paid (amount already set at link-creation; overwrite for consistency)
+            db.prepare(`
+              UPDATE bookings
+              SET stripe_payment_status = 'paid', stripe_payment_amount = COALESCE(?, stripe_payment_amount)
+              WHERE id = ?
+            `).run(paidAmount, bookingId);
             const paidBooking = db.prepare(`
               SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
                      g.email AS guest_email, g.phone AS guest_phone,
@@ -501,7 +508,7 @@ export async function stripeWebhookHandler(req, res) {
               sendBookingConfirmation(paidBooking, property)
                 .catch(err => console.error(`[stripe] Payment link confirmation email failed (booking #${bookingId}):`, err.message));
             }
-            console.log(`[stripe] Booking #${bookingId} marked paid via payment link`);
+            console.log(`[stripe] Booking #${bookingId} marked paid via payment link (amount=${paidAmount})`);
           }
           break;
         }
