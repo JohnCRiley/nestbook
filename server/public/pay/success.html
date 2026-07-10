@@ -203,6 +203,21 @@ if (!sessionId) {
       if (data.paid) {
         showState('success');
         startCountdown(data.booking_slug || null);
+        // Clear any pending-booking localStorage entry for this booking so the
+        // recovery banner doesn't reappear after a successful payment.
+        try {
+          var bid = data.booking_id ? String(data.booking_id) : null;
+          if (bid) {
+            Object.keys(localStorage).forEach(function(k) {
+              if (k.indexOf('nestbook_pending_') === 0) {
+                try {
+                  var entry = JSON.parse(localStorage.getItem(k));
+                  if (entry && String(entry.bookingId) === bid) localStorage.removeItem(k);
+                } catch (_) {}
+              }
+            });
+          }
+        } catch (_) {}
       } else {
         showState('pending');
       }

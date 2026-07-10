@@ -101,6 +101,10 @@
       wpNextStep2:   'The owner reviews and confirms within 24 hours',
       wpNextStep3:   "You'll receive a confirmation email with payment details",
       wpNextStep4:   'Access details sent before your arrival',
+      steppedBack:     'Looks like you stepped back — still want to complete your booking?',
+      steppedBackBtn:  'Continue →',
+      pendingBanner:   'You have an unfinished booking — continue where you left off?',
+      pendingBannerBtn: 'Continue →',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -148,6 +152,10 @@
       wpNextStep2:   'Le propriétaire examine et confirme dans les 24 heures',
       wpNextStep3:   'Vous recevrez un e-mail de confirmation avec les modalités de paiement',
       wpNextStep4:   'Les informations d\'accès seront envoyées avant votre arrivée',
+      steppedBack:     'Vous êtes revenu en arrière — souhaitez-vous finaliser votre réservation ?',
+      steppedBackBtn:  'Continuer →',
+      pendingBanner:   'Vous avez une réservation en cours — reprendre là où vous en étiez ?',
+      pendingBannerBtn: 'Continuer →',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -195,6 +203,10 @@
       wpNextStep2:   'El propietario revisa y confirma en 24 horas',
       wpNextStep3:   'Recibirá un correo de confirmación con los detalles de pago',
       wpNextStep4:   'Datos de acceso enviados antes de su llegada',
+      steppedBack:     'Parece que ha vuelto atrás — ¿desea completar su reserva?',
+      steppedBackBtn:  'Continuar →',
+      pendingBanner:   'Tiene una reserva sin terminar — ¿continuar donde lo dejó?',
+      pendingBannerBtn: 'Continuar →',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -242,6 +254,10 @@
       wpNextStep2:   'De eigenaar beoordeelt en bevestigt binnen 24 uur',
       wpNextStep3:   'U ontvangt een bevestigingsmail met betalingsgegevens',
       wpNextStep4:   'Toegangsgegevens worden voor aankomst gestuurd',
+      steppedBack:     'U bent teruggegaan — wilt u uw boeking nog afronden?',
+      steppedBackBtn:  'Doorgaan →',
+      pendingBanner:   'U heeft een onvoltooide boeking — verder gaan waar u gebleven was?',
+      pendingBannerBtn: 'Doorgaan →',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -289,6 +305,10 @@
       wpNextStep2:   'Der Gastgeber prüft und bestätigt innerhalb von 24 Stunden',
       wpNextStep3:   'Sie erhalten eine Bestätigungs-E-Mail mit Zahlungsdetails',
       wpNextStep4:   'Zugangsdetails werden vor Ihrer Ankunft gesendet',
+      steppedBack:     'Sie sind zurückgegangen — möchten Sie Ihre Buchung noch abschließen?',
+      steppedBackBtn:  'Weiter →',
+      pendingBanner:   'Sie haben eine unvollständige Buchung — dort weitermachen, wo Sie aufgehört haben?',
+      pendingBannerBtn: 'Weiter →',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -316,6 +336,7 @@
     breakfastPrice:      0,
     breakfastAdded:      false,
     redirecting:         false,
+    steppedBack:         false,
   };
 
   // ── Date helpers ───────────────────────────────────────────────────────────
@@ -506,6 +527,17 @@
           }),
         });
         if (booking.checkoutUrl) {
+          // Persist recovery token to localStorage so the guest can resume
+          // if they close the tab, or be shown the stepped-back state if
+          // they use browser-back from Stripe Checkout.
+          try {
+            if (booking.bookingId && booking.exp && booking.t) {
+              localStorage.setItem(
+                'nestbook_pending_' + PROPERTY_ID,
+                JSON.stringify({ bookingId: booking.bookingId, exp: String(booking.exp), t: booking.t, createdAt: Date.now() }),
+              );
+            }
+          } catch (_) {}
           S.loading    = false;
           S.redirecting = true;
           render();
@@ -1069,6 +1101,59 @@
     padding: 12px 16px;
   }
 }
+
+/* ── Recovery banner — floating pill shown outside the modal ── */
+.nb-recovery-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.13);
+  padding: 10px 10px 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 440px;
+  width: calc(100% - 48px);
+  z-index: 999989;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  color: #475569;
+  animation: nb-banner-in 0.3s ease;
+}
+@keyframes nb-banner-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.nb-banner-msg { flex: 1; line-height: 1.4; }
+.nb-banner-btn {
+  background: ${BRAND};
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 7px 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.nb-banner-btn:hover { background: ${BRAND_DARK}; }
+.nb-banner-dismiss {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px 8px;
+  line-height: 1;
+  font-family: inherit;
+}
+.nb-banner-dismiss:hover { color: #475569; }
 `;
     document.head.appendChild(style);
   }
@@ -1565,6 +1650,48 @@
     footer.appendChild(el('div', ''));  // keep footer height
   }
 
+  // ── Stepped-back state (shown after bfcache restore from Stripe) ──────────
+  function renderSteppedBack() {
+    let pending = null;
+    try {
+      const raw = localStorage.getItem('nestbook_pending_' + PROPERTY_ID);
+      if (raw) pending = JSON.parse(raw);
+    } catch (_) {}
+
+    const wrap = el('div', 'nb-loading');
+    const msgEl = el('p', '');
+    msgEl.textContent = T.steppedBack;
+    msgEl.style.cssText = 'margin:0;text-align:center;color:#475569;font-size:0.9rem;line-height:1.5;';
+    wrap.appendChild(msgEl);
+    body.appendChild(wrap);
+
+    if (pending?.bookingId) {
+      const continueBtn = el('button', 'nb-btn-main');
+      continueBtn.textContent = T.steppedBackBtn;
+      continueBtn.addEventListener('click', async () => {
+        S.steppedBack = false;
+        S.redirecting = true;
+        render();
+        try {
+          const r = await fetch(API_BASE + '/api/widget/retry-payment', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ booking_id: String(pending.bookingId), exp: String(pending.exp || ''), token: String(pending.t || '') }),
+          });
+          const data = await r.json();
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            window.location.href = API_BASE + '/pay/recover?b=' + pending.bookingId + '&exp=' + (pending.exp || '') + '&t=' + (pending.t || '');
+          }
+        } catch (_) {
+          window.location.href = API_BASE + '/pay/recover?b=' + (pending.bookingId || '') + '&exp=' + (pending.exp || '') + '&t=' + (pending.t || '');
+        }
+      });
+      footer.appendChild(continueBtn);
+    }
+  }
+
   // ── Main render ────────────────────────────────────────────────────────────
   function render() {
     if (!body) return;
@@ -1580,6 +1707,10 @@
       : (S.step === 2 && S.wholeProperty) ? T.wpStep2Title
       : STEP_LABELS[S.step - 1];
 
+    if (S.steppedBack) {
+      renderSteppedBack();
+      return;
+    }
     if (S.redirecting) {
       renderLoading(T.redirecting);
       return;
@@ -1605,7 +1736,7 @@
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
       bookingRef: null, loading: false, error: null, isDemo: false,
-      breakfastAdded: false, redirecting: false,
+      breakfastAdded: false, redirecting: false, steppedBack: false,
     });
     backdrop.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -1615,6 +1746,42 @@
   function closeModal() {
     backdrop.style.display = 'none';
     document.body.style.overflow = '';
+  }
+
+  // ── Recovery banner (shown on fresh page load if pending booking exists) ──
+  function showRecoveryBanner(pending, storageKey) {
+    if (document.getElementById('nb-recovery-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.className = 'nb-recovery-banner';
+    banner.id        = 'nb-recovery-banner';
+
+    const msg = document.createElement('span');
+    msg.className   = 'nb-banner-msg';
+    msg.textContent = T.pendingBanner;
+
+    const continueBtn = document.createElement('button');
+    continueBtn.className   = 'nb-banner-btn';
+    continueBtn.textContent = T.pendingBannerBtn;
+    continueBtn.addEventListener('click', () => {
+      banner.remove();
+      window.location.href = API_BASE + '/pay/recover?b=' + pending.bookingId
+        + '&exp=' + (pending.exp || '') + '&t=' + (pending.t || '');
+    });
+
+    const dismissBtn = document.createElement('button');
+    dismissBtn.className   = 'nb-banner-dismiss';
+    dismissBtn.textContent = '✕';
+    dismissBtn.setAttribute('aria-label', T.close);
+    dismissBtn.addEventListener('click', () => {
+      try { localStorage.removeItem(storageKey); } catch (_) {}
+      banner.remove();
+    });
+
+    banner.appendChild(msg);
+    banner.appendChild(continueBtn);
+    banner.appendChild(dismissBtn);
+    document.body.appendChild(banner);
   }
 
   // ── Init ───────────────────────────────────────────────────────────────────
@@ -1716,6 +1883,48 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && backdrop.style.display !== 'none') closeModal();
     });
+
+    // ── bfcache: handle browser-back from Stripe Checkout ─────────────────
+    // When the browser restores this page from its back-forward cache (the
+    // guest pressed back from Stripe), event.persisted is true. The modal
+    // will still show the frozen redirect spinner — replace it with a clear
+    // "stepped back" state so the guest knows what to do next.
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted && S.redirecting && backdrop.style.display !== 'none') {
+        S.redirecting = false;
+        S.steppedBack = true;
+        render();
+      }
+    });
+
+    // ── localStorage: floating banner for returning guests ────────────────
+    // If the guest closed the tab while a payment was pending, check for a
+    // stored recovery token and show a non-intrusive banner offering to
+    // resume. Validate with /recovery-info before showing so we never prompt
+    // for a booking that's already been paid or cleaned up.
+    if (!DEMO_MODE) {
+      try {
+        const pendingKey = 'nestbook_pending_' + PROPERTY_ID;
+        const raw = localStorage.getItem(pendingKey);
+        if (raw) {
+          const pending = JSON.parse(raw);
+          const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+          if (pending?.bookingId && pending.createdAt && Date.now() - pending.createdAt < TWO_HOURS_MS) {
+            const q = '?b=' + encodeURIComponent(pending.bookingId)
+              + '&exp=' + encodeURIComponent(pending.exp || '')
+              + '&t=' + encodeURIComponent(pending.t || '');
+            fetch(API_BASE + '/api/widget/recovery-info' + q)
+              .then(r => {
+                if (!r.ok) { try { localStorage.removeItem(pendingKey); } catch (_) {} return; }
+                showRecoveryBanner(pending, pendingKey);
+              })
+              .catch(() => {});
+          } else {
+            try { localStorage.removeItem(pendingKey); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
   }
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────

@@ -320,8 +320,9 @@ widgetRouter.post('/bookings', async (req, res) => {
         db.prepare('UPDATE bookings SET stripe_checkout_session_id = ? WHERE id = ?')
           .run(session.id, bookingId);
 
+        const { exp: rExp, t: rTok } = makeRecoveryToken(bookingId);
         console.log(`[widget] Booking #${bookingId} pending_payment — Stripe session ${session.id}`);
-        return res.status(201).json({ checkoutUrl: session.url });
+        return res.status(201).json({ checkoutUrl: session.url, bookingId, exp: rExp, t: rTok });
       }
     }
     // ── End Stripe Connect branch ─────────────────────────────────────────────
