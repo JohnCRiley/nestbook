@@ -1713,6 +1713,15 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     (new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000
   );
 
+  const PM_RECEIPT_LABELS = {
+    cash:          'Cash',
+    card:          'Card (in person)',
+    bank_transfer: 'Bank transfer',
+    other:         'Other',
+  };
+  const pmLabel = PM_RECEIPT_LABELS[booking.payment_method]
+    ?? (booking.stripe_payment_status === 'paid' ? 'Online payment' : null);
+
   const chargeRows = outstanding.length > 0
     ? outstanding.map((c) => `
         <tr>
@@ -1788,6 +1797,10 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
           ${fmtDate(booking.check_out_date, 'en')}
         </td>
       </tr>
+      ${pmLabel ? `<tr>
+        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Payment method</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">${pmLabel}</td>
+      </tr>` : ''}
     </table>
 
     <!-- Itemised breakdown -->
