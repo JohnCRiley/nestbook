@@ -6,6 +6,7 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../utils/ratePeriods.js';
 import { calculateDeposit } from '../utils/deposits.js';
 import { requireVerified } from '../middleware/requireVerified.js';
+import { recoveryUrl } from '../lib/recoveryToken.js';
 
 export const bookingsRouter = Router();
 
@@ -1377,7 +1378,7 @@ bookingsRouter.post('/:id/create-payment-link', async (req, res) => {
           quantity: 1,
         }],
         success_url: `${baseUrl}/pay/success?booking=${booking.id}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url:  `${baseUrl}/pay/cancelled?booking=${booking.id}`,
+        cancel_url:  recoveryUrl(baseUrl, booking.id),
         metadata: {
           booking_id:        String(booking.id),
           nestbook_owner_id: String(req.user.userId),

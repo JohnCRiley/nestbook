@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete your booking — NestBook</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1a2e14;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 48px 40px;
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+  }
+  .icon { font-size: 3rem; margin-bottom: 20px; }
+  h1 { font-size: 1.5rem; font-weight: 700; color: #1a4710; margin-bottom: 12px; }
+  .subtitle { font-size: 1rem; color: #475569; line-height: 1.6; margin-bottom: 24px; }
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .logo img { width: 28px; height: 28px; border-radius: 6px; }
+  .logo span { font-size: 1.05rem; font-weight: 700; color: #1a4710; }
+  .summary {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+    font-size: 0.9rem;
+    color: #475569;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .label { color: #94a3b8; font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.03em; }
+  .summary-row .value { font-weight: 600; color: #1a2e14; text-align: right; }
+  .summary-row .value.price { color: #1a4710; font-size: 1rem; }
+  .btn-primary {
+    display: inline-block;
+    width: 100%;
+    background: #1a4710;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 14px 24px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    text-decoration: none;
+  }
+  .btn-primary:hover:not(:disabled) { background: #15380d; }
+  .btn-primary:disabled { background: #94a3b8; cursor: default; }
+  .btn-primary.loading { background: #94a3b8; cursor: default; }
+  a.home {
+    display: inline-block;
+    color: #1a4710;
+    font-size: 0.88rem;
+    text-decoration: none;
+    border: 1.5px solid #1a4710;
+    border-radius: 8px;
+    padding: 8px 20px;
+    margin-top: 8px;
+  }
+  a.home:hover { background: #f0fdf4; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #1a4710;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #state-loading h1 { color: #475569; }
+  .notice {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <img src="/icon-192.png" alt="NestBook">
+    <span>NestBook</span>
+  </div>
+
+  <!-- Loading state -->
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <h1 id="txt-loading">Checking your booking…</h1>
+  </div>
+
+  <!-- Ready state: show booking summary + retry button -->
+  <div id="state-ready" style="display:none">
+    <div class="icon">🔄</div>
+    <h1 id="txt-title">No worries — let's try that again</h1>
+    <p class="subtitle" id="txt-msg">Your payment didn't go through, but your booking details are safe. Nothing has been charged.</p>
+    <div class="summary" id="summary-box"></div>
+    <button class="btn-primary" id="btn-retry" onclick="retryPayment()"></button>
+    <p class="notice" id="txt-notice"></p>
+  </div>
+
+  <!-- Expired state -->
+  <div id="state-expired" style="display:none">
+    <div class="icon">⏰</div>
+    <h1 id="txt-expired-title">This link has expired</h1>
+    <p class="subtitle" id="txt-expired-msg">Your booking was held briefly but has since been released. You're welcome to start a new booking from the property's website.</p>
+    <a class="home" href="https://nestbook.io">nestbook.io</a>
+  </div>
+
+  <!-- Retrying state (loading after button click) -->
+  <div id="state-retrying" style="display:none">
+    <div class="spinner"></div>
+    <h1 id="txt-retrying" style="color:#475569">Opening payment page…</h1>
+  </div>
+</div>
+
+<script>
+var T = {
+  en: {
+    loading:       'Checking your booking…',
+    title:         'No worries — let’s try that again',
+    msg:           'Your payment didn’t go through, but your booking details are safe. Nothing has been charged.',
+    tryAgain:      'Try payment again →',
+    retrying:      'Opening payment page…',
+    expiredTitle:  'This link has expired',
+    expiredMsg:    'Your booking was held briefly but has since been released. You’re welcome to start a new booking from the property’s website.',
+    notice:        'You’ll be taken to a secure payment page.',
+    checkin:       'Check-in',
+    checkout:      'Check-out',
+    room:          'Room',
+    guest:         'Guest',
+    total:         'Total',
+    nights:        function(n) { return n === 1 ? '1 night' : n + ' nights'; },
+  },
+  fr: {
+    loading:       'Vérification de votre réservation…',
+    title:         'Pas d’inquiétude — on réessaie',
+    msg:           'Votre paiement n’a pas abouti, mais votre réservation est en sécurité. Aucun montant n’a été débité.',
+    tryAgain:      'Réessayer le paiement →',
+    retrying:      'Ouverture de la page de paiement…',
+    expiredTitle:  'Ce lien a expiré',
+    expiredMsg:    'Votre réservation était temporairement maintenue mais a depuis été libérée. Vous pouvez effectuer une nouvelle réservation depuis le site de l’établissement.',
+    notice:        'Vous serez redirigé vers une page de paiement sécurisée.',
+    checkin:       'Arrivée',
+    checkout:      'Départ',
+    room:          'Chambre',
+    guest:         'Client',
+    total:         'Total',
+    nights:        function(n) { return n === 1 ? '1 nuit' : n + ' nuits'; },
+  },
+  de: {
+    loading:       'Buchung wird geprüft…',
+    title:         'Kein Problem — wir versuchen es nochmal',
+    msg:           'Ihre Zahlung konnte nicht abgeschlossen werden, aber Ihre Buchungsdaten sind sicher. Es wurde nichts abgebucht.',
+    tryAgain:      'Zahlung erneut versuchen →',
+    retrying:      'Zahlungsseite wird geöffnet…',
+    expiredTitle:  'Dieser Link ist abgelaufen',
+    expiredMsg:    'Ihre Buchung war kurzzeitig reserviert, ist aber inzwischen wieder freigegeben worden. Sie können gerne eine neue Buchung auf der Website der Unterkunft vornehmen.',
+    notice:        'Sie werden zu einer sicheren Zahlungsseite weitergeleitet.',
+    checkin:       'Anreise',
+    checkout:      'Abreise',
+    room:          'Zimmer',
+    guest:         'Gast',
+    total:         'Gesamt',
+    nights:        function(n) { return n === 1 ? '1 Nacht' : n + ' Nächte'; },
+  },
+  es: {
+    loading:       'Comprobando su reserva…',
+    title:         'No se preocupe — lo intentamos de nuevo',
+    msg:           'Su pago no se ha completado, pero su reserva está a salvo. No se ha realizado ningún cargo.',
+    tryAgain:      'Intentar el pago de nuevo →',
+    retrying:      'Abriendo página de pago…',
+    expiredTitle:  'Este enlace ha caducado',
+    expiredMsg:    'Su reserva estuvo retenida durante un tiempo, pero ya ha sido liberada. Puede hacer una nueva reserva desde el sitio web del alojamiento.',
+    notice:        'Será redirigido a una página de pago segura.',
+    checkin:       'Llegada',
+    checkout:      'Salida',
+    room:          'Habitación',
+    guest:         'Huésped',
+    total:         'Total',
+    nights:        function(n) { return n === 1 ? '1 noche' : n + ' noches'; },
+  },
+  nl: {
+    loading:       'Uw boeking controleren…',
+    title:         'Geen zorgen — we proberen het opnieuw',
+    msg:           'Uw betaling is niet gelukt, maar uw boekingsgegevens zijn veilig bewaard. Er is niets in rekening gebracht.',
+    tryAgain:      'Betaling opnieuw proberen →',
+    retrying:      'Betaalpagina openen…',
+    expiredTitle:  'Deze link is verlopen',
+    expiredMsg:    'Uw boeking was tijdelijk gereserveerd, maar is inmiddels vrijgegeven. U kunt een nieuwe boeking maken via de website van het accommodatie.',
+    notice:        'U wordt doorgestuurd naar een beveiligde betaalpagina.',
+    checkin:       'Inchecken',
+    checkout:      'Uitchecken',
+    room:          'Kamer',
+    guest:         'Gast',
+    total:         'Totaal',
+    nights:        function(n) { return n === 1 ? '1 nacht' : n + ' nachten'; },
+  },
+};
+
+var lang = 'en';
+try { var s = sessionStorage.getItem('nb-guest-lang'); if (s && T[s]) lang = s; } catch(_) {}
+if (!T[lang]) lang = (navigator.language || '').slice(0, 2).toLowerCase();
+var t = T[lang] || T.en;
+
+document.documentElement.lang = lang;
+document.getElementById('txt-loading').textContent      = t.loading;
+document.getElementById('txt-title').textContent        = t.title;
+document.getElementById('txt-msg').textContent          = t.msg;
+document.getElementById('txt-notice').textContent       = t.notice;
+document.getElementById('btn-retry').textContent        = t.tryAgain;
+document.getElementById('txt-retrying').textContent     = t.retrying;
+document.getElementById('txt-expired-title').textContent = t.expiredTitle;
+document.getElementById('txt-expired-msg').textContent  = t.expiredMsg;
+
+function showState(name) {
+  ['loading','ready','expired','retrying'].forEach(function(s) {
+    document.getElementById('state-' + s).style.display = s === name ? '' : 'none';
+  });
+}
+
+function fmtDate(iso) {
+  if (!iso) return iso;
+  var locales = { fr: 'fr-FR', de: 'de-DE', es: 'es-ES', nl: 'nl-NL', en: 'en-GB' };
+  return new Date(iso + 'T12:00:00').toLocaleDateString(locales[lang] || 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function fmtPrice(amount, currency) {
+  try {
+    return new Intl.NumberFormat(lang, { style: 'currency', currency: currency || 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount);
+  } catch(_) {
+    return (currency || 'EUR') + ' ' + Number(amount).toFixed(2);
+  }
+}
+
+function nightCount(checkIn, checkOut) {
+  return Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
+}
+
+function row(label, value, cls) {
+  return '<div class="summary-row"><span class="label">' + label + '</span><span class="value' + (cls ? ' ' + cls : '') + '">' + value + '</span></div>';
+}
+
+var params = new URLSearchParams(location.search);
+var b   = params.get('b');
+var exp = params.get('exp');
+var tok = params.get('t');
+
+var bookingData = null;
+
+if (!b || !exp || !tok) {
+  showState('expired');
+} else {
+  fetch('/api/widget/recovery-info?b=' + encodeURIComponent(b) + '&exp=' + encodeURIComponent(exp) + '&t=' + encodeURIComponent(tok))
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (!res.ok) { showState('expired'); return; }
+      bookingData = res.data;
+      var nights = nightCount(bookingData.check_in, bookingData.check_out);
+      var html = '';
+      html += row(t.guest,    bookingData.guest_name);
+      html += row(t.room,     bookingData.property_name + (bookingData.room_name ? ' — ' + bookingData.room_name : ''));
+      html += row(t.checkin,  fmtDate(bookingData.check_in) + ' (' + t.nights(nights) + ')');
+      html += row(t.checkout, fmtDate(bookingData.check_out));
+      if (bookingData.total_price) {
+        html += row(t.total, fmtPrice(bookingData.total_price, bookingData.currency), 'price');
+      }
+      document.getElementById('summary-box').innerHTML = html;
+      showState('ready');
+    })
+    .catch(function() { showState('expired'); });
+}
+
+function retryPayment() {
+  var btn = document.getElementById('btn-retry');
+  btn.disabled = true;
+  btn.textContent = t.retrying;
+  showState('retrying');
+
+  fetch('/api/widget/retry-payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ booking_id: b, exp: exp, token: tok }),
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.checkoutUrl) {
+        location.href = data.checkoutUrl;
+      } else {
+        showState('expired');
+      }
+    })
+    .catch(function() { showState('expired'); });
+}
+</script>
+</body>
+</html>

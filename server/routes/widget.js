@@ -7,6 +7,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { stripe } from '../lib/stripeClient.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
+import { recoveryUrl, verifyRecoveryToken, makeRecoveryToken } from '../lib/recoveryToken.js';
 import {
   sendBookingConfirmation,
   sendApprovalRequestEmail,
@@ -302,7 +303,7 @@ widgetRouter.post('/bookings', async (req, res) => {
                 return items;
               })(),
               success_url: `${base}/pay/success?booking=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
-              cancel_url:  `${base}/pay/cancelled?booking=${bookingId}`,
+              cancel_url:  recoveryUrl(base, bookingId),
               metadata: {
                 booking_id: String(bookingId),
                 source:     'widget_payment',
@@ -489,6 +490,121 @@ widgetRouter.get('/property', (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/widget/recovery-info ────────────────────────────────────────────
+// Public. Called by pay/recover.html on load. Verifies the HMAC token and
+// returns the booking summary needed to populate the recovery page.
+widgetRouter.get('/recovery-info', (req, res) => {
+  const { b, exp, t } = req.query;
+  if (!verifyRecoveryToken(b, exp, t)) {
+    return res.status(410).json({ error: 'expired' });
+  }
+
+  const booking = db.prepare(`
+    SELECT b.id, b.check_in_date, b.check_out_date, b.total_price, b.status,
+           b.num_guests, b.breakfast_added,
+           g.first_name, g.last_name,
+           r.name AS room_name,
+           p.name AS property_name, p.currency
+    FROM bookings b
+    JOIN guests     g ON g.id = b.guest_id
+    JOIN rooms      r ON r.id = b.room_id
+    JOIN properties p ON p.id = b.property_id
+    WHERE b.id = ?
+  `).get(Number(b));
+
+  if (!booking || booking.status !== 'pending_payment') {
+    return res.status(410).json({ error: 'expired' });
+  }
+
+  res.json({
+    booking_id:    booking.id,
+    guest_name:    `${booking.first_name} ${booking.last_name}`,
+    check_in:      booking.check_in_date,
+    check_out:     booking.check_out_date,
+    room_name:     booking.room_name,
+    property_name: booking.property_name,
+    total_price:   booking.total_price,
+    currency:      booking.currency,
+  });
+});
+
+// ── POST /api/widget/retry-payment ───────────────────────────────────────────
+// Public. Called by pay/recover.html "Try again" button. Creates a fresh
+// Stripe Checkout session for the same pending_payment booking and returns
+// the URL to redirect to.
+widgetRouter.post('/retry-payment', async (req, res) => {
+  const { booking_id, exp, token } = req.body;
+  if (!verifyRecoveryToken(booking_id, exp, token)) {
+    return res.status(410).json({ error: 'Link expired — please start a new booking.' });
+  }
+
+  const booking = db.prepare(`
+    SELECT b.*, p.currency, p.name AS property_name,
+           u.stripe_connect_account_id, u.stripe_connect_status
+    FROM bookings b
+    JOIN properties p ON p.id = b.property_id
+    JOIN users      u ON u.id = p.owner_id
+    WHERE b.id = ?
+  `).get(Number(booking_id));
+
+  if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+  if (booking.status !== 'pending_payment') {
+    return res.status(410).json({ error: 'This booking is no longer available.' });
+  }
+  if (booking.stripe_connect_status !== 'active') {
+    return res.status(400).json({ error: 'Payment not available for this property.' });
+  }
+
+  const base     = process.env.APP_URL ?? 'https://nestbook.io';
+  const currency = (booking.currency || 'eur').toLowerCase();
+  const amount   = Math.round((booking.total_price ?? 0) * 100);
+
+  const lineItems = [{
+    price_data: {
+      currency,
+      product_data: { name: `${booking.property_name} — ${booking.check_in_date} to ${booking.check_out_date}` },
+      unit_amount: amount,
+    },
+    quantity: 1,
+  }];
+
+  if (booking.breakfast_added && booking.breakfast_price_per_person && booking.breakfast_guests) {
+    const nights = Math.round((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000);
+    const bfAmt  = Math.round(parseFloat(booking.breakfast_price_per_person) * Number(booking.breakfast_guests) * nights * 100);
+    if (bfAmt > 0) {
+      lineItems.push({ price_data: { currency, product_data: { name: 'Breakfast' }, unit_amount: bfAmt }, quantity: 1 });
+    }
+  }
+
+  try {
+    // Issue fresh recovery token for the new cancel_url (resets the 2-hour window)
+    const { exp: newExp, t: newTok } = makeRecoveryToken(booking_id);
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+        line_items: lineItems,
+        success_url: `${base}/pay/success?booking=${booking_id}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url:  `${base}/pay/recover?b=${booking_id}&exp=${newExp}&t=${newTok}`,
+        metadata: {
+          booking_id: String(booking_id),
+          source:     'widget_recovery',
+        },
+      },
+      { stripeAccount: booking.stripe_connect_account_id },
+    );
+
+    db.prepare('UPDATE bookings SET stripe_checkout_session_id = ? WHERE id = ?')
+      .run(session.id, booking_id);
+
+    console.log(`[widget] Recovery retry — booking #${booking_id}, new session ${session.id}`);
+    res.json({ checkoutUrl: session.url });
+  } catch (e) {
+    console.error('[widget] retry-payment error:', e.message);
+    res.status(500).json({ error: e.message });
   }
 });
 
