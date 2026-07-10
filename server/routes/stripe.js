@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { stripe, STRIPE_MODE } from '../lib/stripeClient.js';
-import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation } from '../email/emailService.js';
+import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
@@ -714,9 +714,13 @@ export async function stripeWebhookHandler(req, res) {
         if (!event.account) break;
 
         const expiredSession = event.data.object;
-        const expiredBooking = db.prepare(
-          'SELECT id, status FROM bookings WHERE stripe_checkout_session_id = ?'
-        ).get(expiredSession.id);
+        const expiredBooking = db.prepare(`
+          SELECT b.id, b.status, b.room_id, b.check_in_date, b.check_out_date, b.property_id,
+                 g.email AS guest_email, g.first_name AS guest_first_name, g.last_name AS guest_last_name
+          FROM bookings b
+          LEFT JOIN guests g ON g.id = b.guest_id
+          WHERE b.stripe_checkout_session_id = ?
+        `).get(expiredSession.id);
 
         if (!expiredBooking) {
           console.log(`[stripe] checkout.session.expired: no booking for session ${expiredSession.id}`);
@@ -728,8 +732,31 @@ export async function stripeWebhookHandler(req, res) {
           break;
         }
 
-        db.prepare('DELETE FROM bookings WHERE id = ?').run(expiredBooking.id);
-        console.log(`[stripe] Abandoned booking #${expiredBooking.id} deleted — session ${expiredSession.id} expired`);
+        db.prepare(`UPDATE bookings SET status = 'cancelled_unpaid' WHERE id = ?`).run(expiredBooking.id);
+        console.log(`[stripe] Abandoned booking #${expiredBooking.id} soft-cancelled (cancelled_unpaid) — session ${expiredSession.id} expired`);
+
+        // Send assistance email on second consecutive failed attempt for same guest+dates+room
+        if (expiredBooking.guest_email) {
+          const prior = db.prepare(`
+            SELECT COUNT(*) as n FROM bookings b
+            JOIN guests g ON g.id = b.guest_id
+            WHERE b.id != ?
+              AND b.room_id = ?
+              AND b.check_in_date = ?
+              AND b.check_out_date = ?
+              AND g.email = ?
+              AND b.status = 'cancelled_unpaid'
+          `).get(expiredBooking.id, expiredBooking.room_id, expiredBooking.check_in_date, expiredBooking.check_out_date, expiredBooking.guest_email);
+
+          if (prior.n >= 1) {
+            const property = db.prepare(`
+              SELECT p.*, u.email AS owner_email FROM properties p
+              LEFT JOIN users u ON u.id = p.user_id WHERE p.id = ?
+            `).get(expiredBooking.property_id);
+            sendPaymentAssistanceEmail(expiredBooking, property)
+              .catch(err => console.error(`[stripe] Assistance email failed (booking #${expiredBooking.id}):`, err.message));
+          }
+        }
         break;
       }
     }

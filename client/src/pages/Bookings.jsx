@@ -21,13 +21,14 @@ export default function Bookings() {
   const pageSize = usePageSize(56, RESERVED);
 
   const FILTERS = [
-    { key: 'all',         label: t('filters')[0] },
-    { key: 'arriving',    label: t('filters')[1] },
-    { key: 'in_house',    label: t('filters')[2] },
-    { key: 'confirmed',   label: t('filters')[3] },
-    { key: 'checked_out', label: t('filters')[4] },
-    { key: 'cancelled',   label: t('filters')[5] },
-    { key: 'pending',     label: 'Pending' },
+    { key: 'all',              label: t('filters')[0] },
+    { key: 'arriving',         label: t('filters')[1] },
+    { key: 'in_house',         label: t('filters')[2] },
+    { key: 'confirmed',        label: t('filters')[3] },
+    { key: 'checked_out',      label: t('filters')[4] },
+    { key: 'cancelled',        label: t('filters')[5] },
+    { key: 'pending',          label: 'Pending' },
+    { key: 'cancelled_unpaid', label: t('filters')[6] },
   ];
 
   // If we arrived via "New Booking" on the dashboard, remember the intent but
@@ -39,7 +40,7 @@ export default function Bookings() {
   const [rooms,           setRooms]           = useState([]);
   const [guests,          setGuests]          = useState([]);
   const [guestsLoaded,    setGuestsLoaded]    = useState(false);
-  const [counts,          setCounts]          = useState({ all: 0, arriving: 0, in_house: 0, confirmed: 0, checked_out: 0, cancelled: 0, pending: 0 });
+  const [counts,          setCounts]          = useState({ all: 0, arriving: 0, in_house: 0, confirmed: 0, checked_out: 0, cancelled: 0, pending: 0, cancelled_unpaid: 0 });
   const [loading,         setLoading]         = useState(true);
   const [activeFilter,    setActiveFilter]    = useState(location.state?.filter ?? 'all');
   const [search,          setSearch]          = useState('');

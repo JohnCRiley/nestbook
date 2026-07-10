@@ -118,7 +118,7 @@ function hasOverlap(roomId, checkIn, checkOut, excludeId = null) {
   const sql = `
     SELECT id FROM bookings
     WHERE room_id = ?
-      AND status NOT IN ('cancelled', 'checked_out')
+      AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
       AND check_in_date < ?
       AND check_out_date > ?
       ${excludeId ? 'AND id != ?' : ''}
@@ -222,7 +222,7 @@ bookingsRouter.get('/:id/check-extension', (req, res) => {
       LEFT JOIN guests g ON g.id = b.guest_id
       WHERE r.property_id = ?
         AND b.id != ?
-        AND b.status NOT IN ('cancelled','declined')
+        AND b.status NOT IN ('cancelled','declined','cancelled_unpaid')
         AND b.check_in_date < ?
         AND b.check_out_date > ?
         AND (? = 'whole_property' OR b.room_id = ?)
@@ -288,13 +288,14 @@ bookingsRouter.get('/counts', (req, res) => {
     }
     const base = `FROM bookings b WHERE b.property_id = ?`;
     res.json({
-      all:         db.prepare(`SELECT COUNT(*) as n ${base}`).get(property_id).n,
-      arriving:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'arriving' AND b.check_in_date = date('now')`).get(property_id).n,
-      in_house:    db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'in_house'`).get(property_id).n,
-      confirmed:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'confirmed'`).get(property_id).n,
-      checked_out: db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'checked_out'`).get(property_id).n,
-      cancelled:   db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled'`).get(property_id).n,
-      pending:     db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'pending_owner_approval'`).get(property_id).n,
+      all:              db.prepare(`SELECT COUNT(*) as n ${base}`).get(property_id).n,
+      arriving:         db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'arriving' AND b.check_in_date = date('now')`).get(property_id).n,
+      in_house:         db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'in_house'`).get(property_id).n,
+      confirmed:        db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'confirmed'`).get(property_id).n,
+      checked_out:      db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'checked_out'`).get(property_id).n,
+      cancelled:        db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled'`).get(property_id).n,
+      pending:          db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'pending_owner_approval'`).get(property_id).n,
+      cancelled_unpaid: db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled_unpaid'`).get(property_id).n,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -341,12 +342,13 @@ bookingsRouter.get('/', (req, res) => {
     // Named filter tab — maps to status + optional date conditions (no user input in SQL)
     if (filter && filter !== 'all') {
       switch (filter) {
-        case 'arriving':    conditions.push("b.status = 'arriving'"); break;
-        case 'in_house':    conditions.push("b.status = 'in_house'"); break;
-        case 'confirmed':   conditions.push("b.status = 'confirmed'");   break;
-        case 'checked_out': conditions.push("b.status = 'checked_out'"); break;
-        case 'cancelled':   conditions.push("b.status = 'cancelled'");   break;
-        case 'pending':     conditions.push("b.status = 'pending_owner_approval'"); break;
+        case 'arriving':         conditions.push("b.status = 'arriving'"); break;
+        case 'in_house':         conditions.push("b.status = 'in_house'"); break;
+        case 'confirmed':        conditions.push("b.status = 'confirmed'");   break;
+        case 'checked_out':      conditions.push("b.status = 'checked_out'"); break;
+        case 'cancelled':        conditions.push("b.status = 'cancelled'");   break;
+        case 'pending':          conditions.push("b.status = 'pending_owner_approval'"); break;
+        case 'cancelled_unpaid': conditions.push("b.status = 'cancelled_unpaid'"); break;
       }
     }
 
@@ -394,7 +396,7 @@ bookingsRouter.get('/booked-rooms', (req, res) => {
       SELECT DISTINCT room_id FROM bookings
       WHERE property_id = ?
         AND room_id IS NOT NULL
-        AND status NOT IN ('cancelled', 'checked_out')
+        AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
         AND check_in_date < ?
         AND check_out_date > ?
     `).all(property_id, check_out_date, check_in_date);
@@ -542,7 +544,7 @@ bookingsRouter.get('/payments-summary', (req, res) => {
       FROM bookings b
       LEFT JOIN guests g ON g.id = b.guest_id
       WHERE b.property_id IN (${placeholders})
-        AND b.status != 'cancelled'
+        AND b.status NOT IN ('cancelled', 'cancelled_unpaid')
         AND (
           b.deposit_requested_at IS NOT NULL
           OR b.deposit_paid = 1
@@ -594,7 +596,7 @@ bookingsRouter.post('/import', (req, res) => {
     const insertGuest = db.prepare('INSERT INTO guests (first_name, last_name, email, phone, property_id) VALUES (?,?,?,?,?)');
     const overlapChk  = db.prepare(`
       SELECT id FROM bookings
-      WHERE room_id = ? AND property_id = ? AND status NOT IN ('cancelled','declined')
+      WHERE room_id = ? AND property_id = ? AND status NOT IN ('cancelled','declined','cancelled_unpaid')
         AND check_in_date < ? AND check_out_date > ?
     `);
     const insertBook  = db.prepare(`

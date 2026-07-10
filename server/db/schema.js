@@ -1479,6 +1479,97 @@ John`
     }
   }
 
+  // ── Add cancelled_unpaid to bookings.status CHECK constraint ─────────────────
+  {
+    const bookingSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
+    if (!bookingSql.includes('cancelled_unpaid')) {
+      const existingCols = db.prepare(`PRAGMA table_info(bookings)`).all().map(c => c.name);
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE bookings_cunpaid (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL REFERENCES properties(id),
+            room_id INTEGER REFERENCES rooms(id),
+            guest_id INTEGER NOT NULL REFERENCES guests(id),
+            check_in_date TEXT NOT NULL,
+            check_out_date TEXT NOT NULL,
+            num_guests INTEGER NOT NULL DEFAULT 1,
+            status TEXT NOT NULL DEFAULT 'confirmed'
+              CHECK(status IN ('confirmed','arriving','in_house','checked_out','cancelled',
+                               'pending_owner_approval','declined','pending_payment','cancelled_unpaid')),
+            source TEXT NOT NULL DEFAULT 'direct'
+              CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
+            notes TEXT,
+            total_price REAL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            flagged INTEGER NOT NULL DEFAULT 0,
+            breakfast_added INTEGER NOT NULL DEFAULT 0,
+            deposit_paid INTEGER NOT NULL DEFAULT 0,
+            deposit_requested_at TEXT,
+            deposit_paid_at TEXT,
+            payment_method TEXT,
+            checked_out_at TEXT,
+            breakfast_start_date TEXT,
+            breakfast_guests INTEGER DEFAULT 0,
+            breakfast_price_per_person REAL DEFAULT 0,
+            refund_amount REAL DEFAULT 0,
+            refund_reason TEXT,
+            refunded_at TEXT,
+            refunded_by TEXT,
+            approval_token TEXT,
+            access_email_sent INTEGER DEFAULT 0,
+            cleaning_status TEXT DEFAULT NULL,
+            payment_status TEXT DEFAULT 'unpaid',
+            paid_at TEXT DEFAULT NULL,
+            charges_email_sent TEXT DEFAULT NULL,
+            rate_breakdown TEXT,
+            deposit_amount REAL DEFAULT NULL,
+            balance_amount REAL DEFAULT NULL,
+            balance_paid INTEGER NOT NULL DEFAULT 0,
+            balance_paid_at TEXT,
+            deposit_email_sent TEXT,
+            balance_email_sent TEXT,
+            deposit_forfeited INTEGER NOT NULL DEFAULT 0,
+            missed_arrival_email_sent TEXT DEFAULT NULL,
+            missed_departure_email_sent TEXT DEFAULT NULL,
+            missed_arrival_actioned INTEGER DEFAULT 0,
+            stripe_checkout_session_id TEXT,
+            stripe_payment_status TEXT,
+            stripe_payment_amount REAL
+          )
+        `);
+        const toCopy = existingCols.filter(c => [
+          'id','property_id','room_id','guest_id','check_in_date','check_out_date',
+          'num_guests','status','source','notes','total_price','created_at','flagged',
+          'breakfast_added','deposit_paid','deposit_requested_at','deposit_paid_at',
+          'payment_method','checked_out_at','breakfast_start_date','breakfast_guests',
+          'breakfast_price_per_person','refund_amount','refund_reason','refunded_at','refunded_by',
+          'approval_token','access_email_sent','cleaning_status','payment_status','paid_at',
+          'charges_email_sent','rate_breakdown','deposit_amount','balance_amount','balance_paid',
+          'balance_paid_at','deposit_email_sent','balance_email_sent','deposit_forfeited',
+          'missed_arrival_email_sent','missed_departure_email_sent','missed_arrival_actioned',
+          'stripe_checkout_session_id','stripe_payment_status','stripe_payment_amount',
+        ].includes(c));
+        const colList = toCopy.join(', ');
+        db.exec(`INSERT INTO bookings_cunpaid (${colList}) SELECT ${colList} FROM bookings`);
+        db.exec(`DROP TABLE bookings`);
+        db.exec(`ALTER TABLE bookings_cunpaid RENAME TO bookings`);
+        db.exec(`COMMIT`);
+        console.log('✓ bookings status CHECK expanded to include cancelled_unpaid.');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] cancelled_unpaid migration skipped: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property ON bookings(property_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin  ON bookings(check_in_date)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_status   ON bookings(status)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_room     ON bookings(room_id)`);
+    }
+  }
+
   // WP deposit management — property-level settings
   try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_enabled INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN deposit_type TEXT DEFAULT 'fixed'`); } catch {}

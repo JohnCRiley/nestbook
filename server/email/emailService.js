@@ -2714,6 +2714,112 @@ export async function sendVerificationReminderEmail(user) {
   }
 }
 
+// ── Payment assistance email ──────────────────────────────────────────────────
+// Sent to the guest on their second consecutive failed/expired payment attempt
+// for the same room + dates. reply-to = property owner so replies land with them.
+export async function sendPaymentAssistanceEmail(booking, property) {
+  if (!resend) return;
+  const guestEmail = booking.guest_email;
+  if (!guestEmail) return;
+
+  const locale = property?.locale ?? 'en';
+  const lang = ['en','fr','de','es','nl'].includes(locale) ? locale : 'en';
+  const ownerEmail = property?.owner_email;
+  const guestName = [booking.guest_first_name, booking.guest_last_name].filter(Boolean).join(' ') || 'Guest';
+  const propertyName = property?.name ?? 'the property';
+
+  const locales = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES', nl: 'nl-NL' };
+  const fmtDate = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString(locales[lang] || 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const T = {
+    en: {
+      subject:      `Your booking at ${propertyName} — we're here to help`,
+      heading:      `Having trouble completing your booking?`,
+      intro:        `Hi ${guestName}, we noticed your payment didn't go through for your upcoming stay at ${propertyName}.`,
+      details:      `Your booking details:`,
+      checkin:      `Check-in`,
+      checkout:     `Check-out`,
+      reassurance:  `No worries — nothing has been charged and your details are safe. The team at ${propertyName} would love to help you complete your booking.`,
+      cta:          `Simply reply to this email and the team will get back to you directly.`,
+      closing:      `We hope to welcome you soon!`,
+    },
+    fr: {
+      subject:      `Votre réservation à ${propertyName} — nous sommes là pour vous aider`,
+      heading:      `Des difficultés à finaliser votre réservation ?`,
+      intro:        `Bonjour ${guestName}, nous avons remarqué que votre paiement n'a pas abouti pour votre séjour à ${propertyName}.`,
+      details:      `Détails de votre réservation :`,
+      checkin:      `Arrivée`,
+      checkout:     `Départ`,
+      reassurance:  `Pas d'inquiétude — aucun montant n'a été débité et vos informations sont en sécurité. L'équipe de ${propertyName} serait ravie de vous aider à finaliser votre réservation.`,
+      cta:          `Répondez simplement à cet e-mail et l'équipe vous contactera directement.`,
+      closing:      `Nous espérons vous accueillir bientôt !`,
+    },
+    de: {
+      subject:      `Ihre Buchung bei ${propertyName} — wir helfen Ihnen gerne`,
+      heading:      `Probleme beim Abschluss Ihrer Buchung?`,
+      intro:        `Hallo ${guestName}, wir haben bemerkt, dass Ihre Zahlung für Ihren geplanten Aufenthalt bei ${propertyName} nicht abgeschlossen werden konnte.`,
+      details:      `Ihre Buchungsdetails:`,
+      checkin:      `Anreise`,
+      checkout:     `Abreise`,
+      reassurance:  `Keine Sorge — es wurde nichts abgebucht und Ihre Daten sind sicher. Das Team von ${propertyName} hilft Ihnen gerne dabei, Ihre Buchung abzuschließen.`,
+      cta:          `Antworten Sie einfach auf diese E-Mail und das Team wird sich direkt bei Ihnen melden.`,
+      closing:      `Wir hoffen, Sie bald willkommen zu heißen!`,
+    },
+    es: {
+      subject:      `Su reserva en ${propertyName} — estamos aquí para ayudarle`,
+      heading:      `¿Tiene problemas para completar su reserva?`,
+      intro:        `Hola ${guestName}, hemos notado que su pago no se ha completado para su próxima estancia en ${propertyName}.`,
+      details:      `Detalles de su reserva:`,
+      checkin:      `Llegada`,
+      checkout:     `Salida`,
+      reassurance:  `No se preocupe — no se ha realizado ningún cargo y sus datos están seguros. El equipo de ${propertyName} estará encantado de ayudarle a completar su reserva.`,
+      cta:          `Simplemente responda a este correo y el equipo se pondrá en contacto con usted directamente.`,
+      closing:      `¡Esperamos recibirle pronto!`,
+    },
+    nl: {
+      subject:      `Uw boeking bij ${propertyName} — we helpen u graag`,
+      heading:      `Heeft u moeite met het voltooien van uw boeking?`,
+      intro:        `Hallo ${guestName}, we hebben gemerkt dat uw betaling voor uw aankomende verblijf bij ${propertyName} niet is geslaagd.`,
+      details:      `Uw boekingsgegevens:`,
+      checkin:      `Inchecken`,
+      checkout:     `Uitchecken`,
+      reassurance:  `Geen zorgen — er is niets in rekening gebracht en uw gegevens zijn veilig. Het team van ${propertyName} helpt u graag bij het voltooien van uw boeking.`,
+      cta:          `Stuur gewoon een antwoord op deze e-mail en het team neemt direct contact met u op.`,
+      closing:      `We hopen u snel te mogen verwelkomen!`,
+    },
+  };
+
+  const tr = T[lang] || T.en;
+
+  const body = `
+    <p style="margin:0 0 16px;font-size:1rem;font-weight:700;color:#1a4710;">${tr.heading}</p>
+    <p style="margin:0 0 16px;color:#374151;">${tr.intro}</p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin:0 0 16px;">
+      <p style="margin:0 0 8px;font-size:0.8rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">${tr.details}</p>
+      <p style="margin:0 0 4px;color:#1a2e14;"><strong>${tr.checkin}:</strong> ${fmtDate(booking.check_in_date)}</p>
+      <p style="margin:0;color:#1a2e14;"><strong>${tr.checkout}:</strong> ${fmtDate(booking.check_out_date)}</p>
+    </div>
+
+    <p style="margin:0 0 16px;color:#374151;">${tr.reassurance}</p>
+    <p style="margin:0 0 24px;color:#374151;font-weight:600;">${tr.cta}</p>
+    <p style="margin:0;color:#6b7280;">${tr.closing}</p>
+  `;
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      guestEmail,
+      replyTo: ownerEmail || undefined,
+      subject: tr.subject,
+      html:    shell(body),
+    });
+    console.log(`[assistance-email] Sent → ${guestEmail} (booking #${booking.id})`);
+  } catch (err) {
+    console.error('[assistance-email] Failed:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');

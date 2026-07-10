@@ -144,7 +144,7 @@ widgetRouter.get('/bookings', (req, res) => {
       SELECT id, room_id, check_in_date, check_out_date, status
       FROM bookings
       WHERE property_id = ?
-        AND status NOT IN ('cancelled', 'checked_out')
+        AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
       ORDER BY check_in_date
     `).all(property_id);
     res.json(rows);
@@ -208,7 +208,7 @@ widgetRouter.post('/bookings', async (req, res) => {
     const conflict = db.prepare(`
       SELECT id FROM bookings
       WHERE room_id = ?
-        AND status NOT IN ('cancelled', 'checked_out')
+        AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
         AND check_in_date < ?
         AND check_out_date > ?
     `).get(room_id, check_out_date, check_in_date);
