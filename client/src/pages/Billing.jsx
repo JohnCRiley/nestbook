@@ -272,27 +272,34 @@ function AccountSubscriptionCard() {
 
       {/* ── Partial-discount trial panel ──────────────────────────────────── */}
       {isPartialTrial && (() => {
+        // trial_ends_at = real Stripe trial end (30-day payment deadline)
+        // discount_ends_at = when the coupon itself expires (e.g. 18 months after trial)
         const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
-        const expiryDate  = new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        const expiryShort = new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+        const payDeadline      = new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        const payDeadlineShort = new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+        const discountEndsDate = user?.discount_ends_at
+          ? new Date(user.discount_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+          : null;
+        const pctStr = user?.discount_percent ? `${user.discount_percent}% off ` : '';
+
         const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : 'var(--header-bg)';
-        const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#dcfce7';
-        const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#86efac';
-        const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#16a34a';
-        const urgencyText = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#78350f' : '#166534';
+        const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : '#fef3c7';
+        const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : '#f59e0b';
+        const urgencyAcct = daysLeft <= 7 ? '#dc2626' : '#f59e0b';
+        const urgencyText = daysLeft <= 7 ? '#7f1d1d' : '#78350f';
         const btnBg       = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
 
         return (
           <div className="billing-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ background: headerBg, padding: '16px 20px' }}>
               <div style={{ color: daysLeft <= 14 ? 'white' : 'var(--header-text)', fontWeight: 700, fontSize: '1rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <i className={`ti ${daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-star'}`} />
-                {daysLeft <= 7  ? 'Discounted period ending very soon' :
-                 daysLeft <= 14 ? 'Discounted period ending soon' :
-                 'NestBook Pro — Discounted period active'}
+                <i className={`ti ${daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-credit-card'}`} />
+                {daysLeft <= 7  ? 'Payment method needed urgently' :
+                 daysLeft <= 14 ? 'Add a payment method soon' :
+                 'NestBook Pro — add a payment method'}
               </div>
               <div style={{ color: daysLeft <= 14 ? 'rgba(255,255,255,0.85)' : 'var(--header-text)', fontSize: '0.82rem' }}>
-                Your discounted rate ends {expiryDate} ({daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining)
+                First charge ({pctStr}rate) due {payDeadline} — {daysLeft} day{daysLeft !== 1 ? 's' : ''} to add a card
               </div>
             </div>
 
@@ -305,14 +312,12 @@ function AccountSubscriptionCard() {
               }}>
                 {daysLeft <= 7 ? (
                   <><strong>Action needed — {daysLeft} day{daysLeft !== 1 ? 's' : ''} left!</strong><br />
-                  Ensure a payment method is saved now so billing continues at the standard rate after {expiryShort}.</>
-                ) : daysLeft <= 14 ? (
-                  <><strong>Coming up soon!</strong><br />
-                  Make sure a payment method is saved before your discounted period ends on {expiryDate}.</>
+                  Add a payment method now. Your first charge (at the {pctStr}rate) is due on {payDeadlineShort}.
+                  {discountEndsDate && <> Your discount then continues until {discountEndsDate}.</>}</>
                 ) : (
-                  <><strong>No action needed yet</strong><br />
-                  You have {daysLeft} days remaining at your discounted rate. Ensure a payment method
-                  is saved before {expiryDate} so billing continues uninterrupted.</>
+                  <><strong>Your first charge is due on {payDeadline}.</strong><br />
+                  Add a payment method before then to keep your {pctStr}rate.
+                  {discountEndsDate && <> Your discount continues until {discountEndsDate}.</>}</>
                 )}
               </div>
 
@@ -326,10 +331,11 @@ function AccountSubscriptionCard() {
                 }}
               >
                 <i className="ti ti-credit-card" />
-                Manage payment method
+                Add payment method
               </button>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
-                After {expiryShort}, standard Pro pricing applies. You can cancel anytime from this page.
+                Without a payment method, access reverts to the free plan on {payDeadlineShort}.
+                {discountEndsDate && <> After adding a card, your {pctStr}rate runs until {discountEndsDate}.</>}
               </p>
             </div>
           </div>

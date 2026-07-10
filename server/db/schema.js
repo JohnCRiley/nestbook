@@ -1748,6 +1748,43 @@ John`
     if (changes > 0) console.log(`[schema] Backfilled stripe_payment_amount on ${changes} paid booking(s)`);
   } catch (e) { console.error('[schema] stripe_payment_amount backfill error:', e.message); }
 
+  // Migration: partial-discount trial tracking
+  // discount_ends_at = when the coupon expires (separate from the 30-day Stripe trial)
+  // discount_percent = the applied discount percentage, for display in the billing panel
+  try { db.exec(`ALTER TABLE users ADD COLUMN discount_ends_at TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE users ADD COLUMN discount_percent INTEGER`); } catch {}
+
+  // Backfill: users created before this fix have trial_ends_at = coupon duration (18+ months).
+  // Move that long date to discount_ends_at and reset trial_ends_at to now+30 days so the
+  // billing panel urgency deadline is correct.
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() + 60);
+    const staleUsers = db.prepare(`
+      SELECT u.id, dc.discount_percent AS pct
+      FROM users u
+      LEFT JOIN discount_codes dc ON LOWER(dc.code) = LOWER(u.discount_code)
+      WHERE u.stripe_subscription_id IS NOT NULL
+        AND u.discount_applied_at IS NOT NULL
+        AND u.trial_ends_at IS NOT NULL
+        AND u.trial_ends_at > ?
+        AND u.discount_ends_at IS NULL
+    `).all(cutoff.toISOString());
+    if (staleUsers.length > 0) {
+      const newTrialEnd = new Date();
+      newTrialEnd.setDate(newTrialEnd.getDate() + 30);
+      const stmt = db.prepare(`
+        UPDATE users
+        SET discount_ends_at = trial_ends_at,
+            trial_ends_at    = ?,
+            discount_percent = COALESCE(discount_percent, ?)
+        WHERE id = ?
+      `);
+      for (const u of staleUsers) stmt.run(newTrialEnd.toISOString(), u.pct ?? null, u.id);
+      console.log(`[schema] Corrected trial_ends_at for ${staleUsers.length} partial-discount user(s); old value moved to discount_ends_at`);
+    }
+  } catch (e) { console.error('[schema] discount_ends_at backfill error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

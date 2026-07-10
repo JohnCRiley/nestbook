@@ -2308,23 +2308,25 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd, discount
 
   const pct   = discountInfo?.percent ?? 0;
   const months = discountInfo?.months  ?? null;
+  const discountEndDate = discountInfo?.discountEnd ?? null;
+  const discountEndStr = discountEndDate
+    ? (discountEndDate instanceof Date ? discountEndDate : new Date(discountEndDate))
+        .toLocaleDateString(LOCALE_MAP[lang] ?? 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+  const discountEndNote = {
+    en: discountEndStr ? ` Your ${pct}% discount continues until ${discountEndStr}, after which standard pricing applies.` : '',
+    fr: discountEndStr ? ` Votre réduction de ${pct}% est valable jusqu'au ${discountEndStr}, après quoi les tarifs standard s'appliquent.` : '',
+    de: discountEndStr ? ` Ihr Rabatt von ${pct}% gilt bis zum ${discountEndStr}, danach gelten die Standardpreise.` : '',
+    es: discountEndStr ? ` Su descuento del ${pct}% es válido hasta el ${discountEndStr}, tras lo cual se aplican las tarifas estándar.` : '',
+    nl: discountEndStr ? ` Uw korting van ${pct}% geldt tot ${discountEndStr}, waarna de standaardtarieven van toepassing zijn.` : '',
+  };
 
   const PARTIAL_BILLING_NOTE = {
-    en: months
-      ? `You're subscribed at ${pct}% off for ${months} month${months !== 1 ? 's' : ''}. Your card will be billed at the discounted rate — no action needed. After the promotional period, billing continues at the standard monthly rate.`
-      : `You're subscribed at ${pct}% off. Your card will be billed at the discounted rate — no action needed.`,
-    fr: months
-      ? `Vous êtes abonné(e) à ${pct}% de réduction pendant ${months} mois. Votre carte sera débitée au tarif réduit — aucune action requise. Après la période promotionnelle, la facturation reprend au tarif mensuel standard.`
-      : `Vous êtes abonné(e) à ${pct}% de réduction. Votre carte sera débitée au tarif réduit — aucune action requise.`,
-    de: months
-      ? `Sie haben ein Abonnement mit ${pct}% Rabatt für ${months} Monat${months !== 1 ? 'e' : ''}. Ihre Karte wird zum ermäßigten Preis belastet — kein Handlungsbedarf. Nach der Aktionszeit wird zum regulären Monatspreis abgerechnet.`
-      : `Sie haben ein Abonnement mit ${pct}% Rabatt. Ihre Karte wird zum ermäßigten Preis belastet — kein Handlungsbedarf.`,
-    es: months
-      ? `Está suscrito/a con un ${pct}% de descuento durante ${months} mes${months !== 1 ? 'es' : ''}. Su tarjeta será cobrada al precio reducido — no se necesita ninguna acción. Tras el período promocional, la facturación continúa al precio mensual estándar.`
-      : `Está suscrito/a con un ${pct}% de descuento. Su tarjeta será cobrada al precio reducido — no se necesita ninguna acción.`,
-    nl: months
-      ? `U heeft een abonnement met ${pct}% korting voor ${months} maand${months !== 1 ? 'en' : ''}. Uw kaart wordt belast tegen het gereduceerde tarief — geen actie vereist. Na de promotieperiode wordt het standaard maandtarief in rekening gebracht.`
-      : `U heeft een abonnement met ${pct}% korting. Uw kaart wordt belast tegen het gereduceerde tarief — geen actie vereist.`,
+    en: `Please add a payment method before ${expiryStr} — your first charge (at the ${pct}% discounted rate) will be on that date.${discountEndNote.en}`,
+    fr: `Veuillez ajouter un moyen de paiement avant le ${expiryStr} — votre premier prélèvement (au tarif réduit de ${pct}%) aura lieu à cette date.${discountEndNote.fr}`,
+    de: `Bitte fügen Sie vor dem ${expiryStr} eine Zahlungsmethode hinzu — Ihre erste Abbuchung (zum ermäßigten Preis von ${pct}%) erfolgt an diesem Datum.${discountEndNote.de}`,
+    es: `Por favor, añada un método de pago antes del ${expiryStr} — su primer cargo (al precio reducido del ${pct}%) se realizará en esa fecha.${discountEndNote.es}`,
+    nl: `Voeg vóór ${expiryStr} een betaalmethode toe — uw eerste betaling (tegen het verlaagde tarief van ${pct}%) vindt plaats op die datum.${discountEndNote.nl}`,
   };
 
   const BILLING_NOTE = {
@@ -2349,7 +2351,7 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd, discount
     ? (PARTIAL_BILLING_NOTE[lang] ?? PARTIAL_BILLING_NOTE.en)
     : (BILLING_NOTE[lang] ?? BILLING_NOTE.en);
 
-  const billingSection = (isPartialDiscount || !hasDuration) ? `
+  const billingSection = (!isPartialDiscount && !hasDuration) ? `
     <div style="background:#f0fdf4;border-left:4px solid #1a4710;
                 padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
       <p style="color:#166534;font-size:0.875rem;margin:0;line-height:1.6;">

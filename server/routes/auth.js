@@ -77,25 +77,31 @@ async function applyDiscountCodeOnRegistration(user) {
         db.prepare(`UPDATE users SET stripe_customer_id = ? WHERE id = ?`).run(customerId, fullUser.id);
       }
 
+      // 30-day trial gives the user time to add a payment method via the billing portal.
+      // discount_ends_at tracks when the coupon itself expires (coupon duration after trial).
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 30);
+
       const hasDuration = code.duration_months && code.duration_months > 0;
-      const trialEnd = hasDuration ? new Date() : null;
-      if (hasDuration) trialEnd.setMonth(trialEnd.getMonth() + code.duration_months);
+      const discountEnd = hasDuration ? new Date(trialEnd) : null;
+      if (discountEnd) discountEnd.setMonth(discountEnd.getMonth() + code.duration_months);
 
       const subParams = {
         customer:  customerId,
         items:     [{ price: process.env.STRIPE_PRICE_PRO }],
         discounts: [{ coupon: code.stripe_coupon_id }],
+        trial_end: Math.floor(trialEnd.getTime() / 1000),
       };
-      if (hasDuration) subParams.trial_end = Math.floor(trialEnd.getTime() / 1000);
 
       const sub = await stripe.subscriptions.create(subParams);
 
       db.prepare(`
         UPDATE users
         SET plan = 'pro', stripe_customer_id = ?, stripe_subscription_id = ?,
-            trial_ends_at = ?, discount_applied_at = datetime('now')
+            trial_ends_at = ?, discount_ends_at = ?, discount_percent = ?,
+            discount_applied_at = datetime('now')
         WHERE id = ?
-      `).run(customerId, sub.id, hasDuration ? trialEnd.toISOString() : null, fullUser.id);
+      `).run(customerId, sub.id, trialEnd.toISOString(), discountEnd ? discountEnd.toISOString() : null, code.discount_percent, fullUser.id);
 
       const periodEnd = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString()
@@ -116,10 +122,11 @@ async function applyDiscountCodeOnRegistration(user) {
       }
 
       db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
-      sendProWelcomeEmail(fullUser, code, hasDuration ? trialEnd : null, {
-        isPartial: true,
-        percent:   code.discount_percent,
-        months:    code.duration_months,
+      sendProWelcomeEmail(fullUser, code, trialEnd, {
+        isPartial:   true,
+        percent:     code.discount_percent,
+        months:      code.duration_months,
+        discountEnd,
       }).catch(() => {});
       console.log(`[discount] Stripe subscription ${sub.id} created for ${fullUser.email} at ${code.discount_percent}% off`);
     }
@@ -337,7 +344,7 @@ authRouter.post('/reset-password', async (req, res) => {
 // ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language FROM users WHERE id = ?'
+    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   res.json({ ...user, email_verified: !!user.email_verified });
