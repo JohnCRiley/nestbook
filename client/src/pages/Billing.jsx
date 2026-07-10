@@ -115,6 +115,20 @@ function AccountSubscriptionCard() {
     }
   }
 
+  async function handleOpenBillingPortal() {
+    try {
+      const res = await apiFetch('/api/stripe/create-portal-session', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast('Could not open billing portal. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Could not open billing portal. Please try again.', 'error');
+    }
+  }
+
   async function handleCancelSubscription() {
     setShowCancelModal(false);
     const accessUntil = sub?.current_period_end ? fmtDate(sub.current_period_end, locale) : null;
@@ -144,6 +158,11 @@ function AccountSubscriptionCard() {
     && user?.trial_ends_at
     && new Date(user.trial_ends_at) > new Date()
     && !user?.stripe_subscription_id;
+
+  const isPartialTrial = user?.plan === 'pro'
+    && !!user?.stripe_subscription_id
+    && !!user?.trial_ends_at
+    && new Date(user.trial_ends_at) > new Date();
 
   return (
     <>
@@ -245,6 +264,72 @@ function AccountSubscriptionCard() {
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
                 Your card will <strong>not be charged</strong> until {promoExpiryDate}.
                 Cancel anytime before that date to stay on the free plan.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Partial-discount trial panel ──────────────────────────────────── */}
+      {isPartialTrial && (() => {
+        const daysLeft = Math.ceil((new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24));
+        const expiryDate  = new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+        const expiryShort = new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+        const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : 'var(--header-bg)';
+        const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#dcfce7';
+        const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#86efac';
+        const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#16a34a';
+        const urgencyText = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#78350f' : '#166534';
+        const btnBg       = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
+
+        return (
+          <div className="billing-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ background: headerBg, padding: '16px 20px' }}>
+              <div style={{ color: daysLeft <= 14 ? 'white' : 'var(--header-text)', fontWeight: 700, fontSize: '1rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className={`ti ${daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-star'}`} />
+                {daysLeft <= 7  ? 'Discounted period ending very soon' :
+                 daysLeft <= 14 ? 'Discounted period ending soon' :
+                 'NestBook Pro — Discounted period active'}
+              </div>
+              <div style={{ color: daysLeft <= 14 ? 'rgba(255,255,255,0.85)' : 'var(--header-text)', fontSize: '0.82rem' }}>
+                Your discounted rate ends {expiryDate} ({daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining)
+              </div>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <div style={{
+                background: urgencyBg, border: `1px solid ${urgencyBdr}`,
+                borderLeft: `4px solid ${urgencyAcct}`, borderRadius: '0 8px 8px 0',
+                padding: '12px 16px', marginBottom: 20, fontSize: '0.85rem',
+                color: urgencyText, lineHeight: 1.6,
+              }}>
+                {daysLeft <= 7 ? (
+                  <><strong>Action needed — {daysLeft} day{daysLeft !== 1 ? 's' : ''} left!</strong><br />
+                  Ensure a payment method is saved now so billing continues at the standard rate after {expiryShort}.</>
+                ) : daysLeft <= 14 ? (
+                  <><strong>Coming up soon!</strong><br />
+                  Make sure a payment method is saved before your discounted period ends on {expiryDate}.</>
+                ) : (
+                  <><strong>No action needed yet</strong><br />
+                  You have {daysLeft} days remaining at your discounted rate. Ensure a payment method
+                  is saved before {expiryDate} so billing continues uninterrupted.</>
+                )}
+              </div>
+
+              <button
+                onClick={handleOpenBillingPortal}
+                style={{
+                  background: btnBg, color: 'white', border: 'none', borderRadius: 8,
+                  padding: '13px 24px', fontWeight: 700, fontSize: '0.95rem',
+                  cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <i className="ti ti-credit-card" />
+                Manage payment method
+              </button>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
+                After {expiryShort}, standard Pro pricing applies. You can cancel anytime from this page.
               </p>
             </div>
           </div>

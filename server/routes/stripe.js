@@ -332,6 +332,27 @@ stripeRouter.get('/invoices', async (req, res) => {
   }
 });
 
+// ── POST /api/stripe/create-portal-session ───────────────────────────────────
+// Opens the Stripe Billing Portal for users who already have a subscription
+// (e.g. partial-discount trial users who need to add a payment method).
+stripeRouter.post('/create-portal-session', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT stripe_customer_id FROM users WHERE id = ?').get(req.user.userId);
+    if (!user?.stripe_customer_id) {
+      return res.status(400).json({ error: 'No billing account found.' });
+    }
+    const returnUrl = (process.env.APP_URL || 'http://localhost:3000') + '/app/billing';
+    const session = await stripe.billingPortal.sessions.create({
+      customer: user.stripe_customer_id,
+      return_url: returnUrl,
+    });
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('[stripe] create-portal-session error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── POST /api/stripe/connect/start ───────────────────────────────────────────
 // Creates an Express connected account (once) and returns a Stripe-hosted
 // onboarding link. NestBook stores only the account ID and status.

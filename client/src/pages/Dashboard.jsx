@@ -424,7 +424,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Promotional Pro trial expiry banner ────────────────────────── */}
-      {user?.trial_ends_at && !user?.stripe_subscription_id && (() => {
+      {user?.trial_ends_at && (() => {
         const daysLeft = Math.ceil(
           (new Date(user.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24)
         );
@@ -435,6 +435,7 @@ export default function Dashboard() {
         const clr = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#92400e' : '#166534';
         const lnk = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
         const ico = daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-info-circle';
+        const hasSubscription = !!user?.stripe_subscription_id;
 
         return (
           <div style={{
@@ -446,14 +447,14 @@ export default function Dashboard() {
             <span style={{ color: clr }}>
               <i className={`ti ${ico}`} style={{ marginRight: 6 }} />
               {daysLeft <= 7
-                ? <>Pro access expires in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong> — add billing now</>
-                : <>Your Pro promotional access expires in <strong>{daysLeft} days</strong></>
+                ? <>{hasSubscription ? 'Discounted' : 'Pro'} access expires in <strong>{daysLeft} day{daysLeft !== 1 ? 's' : ''}</strong> — {hasSubscription ? 'add a payment method' : 'add billing'} now</>
+                : <>{hasSubscription ? 'Your discounted Pro access' : 'Your Pro promotional access'} expires in <strong>{daysLeft} days</strong></>
               }
               {' '}({new Date(user.trial_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })})
             </span>
-            <a href="/app/settings"
+            <a href={hasSubscription ? '/app/billing' : '/app/settings'}
                style={{ color: lnk, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', fontSize: '0.82rem' }}>
-              Add billing →
+              {hasSubscription ? 'View billing →' : 'Add billing →'}
             </a>
           </div>
         );
