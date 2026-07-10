@@ -103,8 +103,9 @@
       wpNextStep4:   'Access details sent before your arrival',
       steppedBack:     'Looks like you stepped back — still want to complete your booking?',
       steppedBackBtn:  'Continue →',
-      pendingBanner:   'You have an unfinished booking — continue where you left off?',
+      pendingBanner:    'You have an unfinished booking — continue where you left off?',
       pendingBannerBtn: 'Continue →',
+      pendingEmailNote: "You'll receive an email as soon as the owner confirms your booking.",
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -154,8 +155,9 @@
       wpNextStep4:   'Les informations d\'accès seront envoyées avant votre arrivée',
       steppedBack:     'Vous êtes revenu en arrière — souhaitez-vous finaliser votre réservation ?',
       steppedBackBtn:  'Continuer →',
-      pendingBanner:   'Vous avez une réservation en cours — reprendre là où vous en étiez ?',
+      pendingBanner:    'Vous avez une réservation en cours — reprendre là où vous en étiez ?',
       pendingBannerBtn: 'Continuer →',
+      pendingEmailNote: 'Vous recevrez un e-mail dès que le propriétaire aura confirmé votre réservation.',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -205,8 +207,9 @@
       wpNextStep4:   'Datos de acceso enviados antes de su llegada',
       steppedBack:     'Parece que ha vuelto atrás — ¿desea completar su reserva?',
       steppedBackBtn:  'Continuar →',
-      pendingBanner:   'Tiene una reserva sin terminar — ¿continuar donde lo dejó?',
+      pendingBanner:    'Tiene una reserva sin terminar — ¿continuar donde lo dejó?',
       pendingBannerBtn: 'Continuar →',
+      pendingEmailNote: 'Recibirá un correo en cuanto el propietario confirme su reserva.',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -256,8 +259,9 @@
       wpNextStep4:   'Toegangsgegevens worden voor aankomst gestuurd',
       steppedBack:     'U bent teruggegaan — wilt u uw boeking nog afronden?',
       steppedBackBtn:  'Doorgaan →',
-      pendingBanner:   'U heeft een onvoltooide boeking — verder gaan waar u gebleven was?',
+      pendingBanner:    'U heeft een onvoltooide boeking — verder gaan waar u gebleven was?',
       pendingBannerBtn: 'Doorgaan →',
+      pendingEmailNote: 'U ontvangt een e-mail zodra de eigenaar uw boeking heeft bevestigd.',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -307,8 +311,9 @@
       wpNextStep4:   'Zugangsdetails werden vor Ihrer Ankunft gesendet',
       steppedBack:     'Sie sind zurückgegangen — möchten Sie Ihre Buchung noch abschließen?',
       steppedBackBtn:  'Weiter →',
-      pendingBanner:   'Sie haben eine unvollständige Buchung — dort weitermachen, wo Sie aufgehört haben?',
+      pendingBanner:    'Sie haben eine unvollständige Buchung — dort weitermachen, wo Sie aufgehört haben?',
       pendingBannerBtn: 'Weiter →',
+      pendingEmailNote: 'Sie erhalten eine E-Mail, sobald der Gastgeber Ihre Buchung bestätigt hat.',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -337,6 +342,7 @@
     breakfastAdded:      false,
     redirecting:         false,
     steppedBack:         false,
+    bookingPending:      false,
   };
 
   // ── Date helpers ───────────────────────────────────────────────────────────
@@ -545,8 +551,9 @@
           window.location.href = booking.checkoutUrl;
           return;
         }
-        S.bookingRef = booking.id;
-        S.step       = 5;
+        S.bookingRef     = booking.id;
+        S.bookingPending = booking.status === 'pending_owner_approval';
+        S.step           = 5;
       }
     } catch (err) {
       console.error('[NestBook widget] confirmBooking failed:', err);
@@ -1605,20 +1612,27 @@
   // ── Step 5: Success ────────────────────────────────────────────────────────
   function renderSuccess() {
     const wrap = el('div', 'nb-success');
+    // isPending: rooms-mode booking routed to pending_owner_approval (block-booking protection)
+    const isPending = S.bookingPending && !S.wholeProperty;
+    const isRequest = S.wholeProperty || isPending;
 
-    const icon = el('div', 'nb-success-icon'); icon.appendChild(txt(S.wholeProperty ? '⏳' : '✓'));
-    const title = el('h2', 'nb-success-title'); title.appendChild(txt(S.wholeProperty ? T.wpSuccessTitle : T.successTitle));
-    const msg   = el('p', 'nb-success-msg'); msg.appendChild(txt(S.wholeProperty ? T.wpSuccessMsg : T.successMsg));
+    const icon = el('div', 'nb-success-icon'); icon.appendChild(txt(isRequest ? '⏳' : '✓'));
+    const title = el('h2', 'nb-success-title'); title.appendChild(txt(isRequest ? T.wpSuccessTitle : T.successTitle));
+    const msg   = el('p', 'nb-success-msg'); msg.appendChild(txt(isRequest ? T.wpSuccessMsg : T.successMsg));
 
-    if (!S.wholeProperty) {
+    if (!isRequest) {
       const ref = el('div', 'nb-ref'); ref.appendChild(txt('#' + String(S.bookingRef).padStart(4, '0')));
       wrap.appendChild(ref);
     }
 
-    const sub   = el('p', 'nb-success-sub');
-    sub.appendChild(txt(S.guest.email
-      ? (LANG === 'fr' ? 'Un récapitulatif sera envoyé à ' : LANG === 'de' ? 'Eine Bestätigung wird gesendet an ' : LANG === 'es' ? 'Se enviará una confirmación a ' : 'A confirmation will be sent to ') + S.guest.email
-      : ''));
+    const sub = el('p', 'nb-success-sub');
+    if (isPending) {
+      sub.appendChild(txt(T.pendingEmailNote));
+    } else {
+      sub.appendChild(txt(S.guest.email
+        ? (LANG === 'fr' ? 'Un récapitulatif sera envoyé à ' : LANG === 'de' ? 'Eine Bestätigung wird gesendet an ' : LANG === 'es' ? 'Se enviará una confirmación a ' : LANG === 'nl' ? 'Een bevestiging wordt verstuurd naar ' : 'A confirmation will be sent to ') + S.guest.email
+        : ''));
+    }
 
     wrap.appendChild(icon); wrap.appendChild(title); wrap.appendChild(msg);
     if (S.guest.email && !S.isDemo) wrap.appendChild(sub);
@@ -1702,7 +1716,7 @@
 
     // Update the title row
     const titleRow = modal.querySelector('.nb-hd-title-row');
-    titleRow.textContent = S.step === 5 ? (S.wholeProperty ? T.wpSuccessTitle : T.successTitle)
+    titleRow.textContent = S.step === 5 ? ((S.wholeProperty || S.bookingPending) ? T.wpSuccessTitle : T.successTitle)
       : (S.step === 4 && S.wholeProperty) ? T.wpStep4Title
       : (S.step === 2 && S.wholeProperty) ? T.wpStep2Title
       : STEP_LABELS[S.step - 1];
@@ -1736,7 +1750,7 @@
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
       bookingRef: null, loading: false, error: null, isDemo: false,
-      breakfastAdded: false, redirecting: false, steppedBack: false,
+      breakfastAdded: false, redirecting: false, steppedBack: false, bookingPending: false,
     });
     backdrop.style.display = 'flex';
     document.body.style.overflow = 'hidden';
