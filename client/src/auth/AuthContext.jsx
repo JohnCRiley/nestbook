@@ -8,6 +8,26 @@ export function AuthProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('nb_user')); } catch { return null; }
   });
 
+  // On app load: fetch fresh user profile from the server so any server-side
+  // changes (plan updates, trial dates, new fields) since last login are reflected
+  // immediately without requiring a logout/login cycle.
+  useEffect(() => {
+    const t = localStorage.getItem('nb_token');
+    if (!t) return;
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${t}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && !data.error) {
+          setUser(prev => {
+            const updated = { ...(prev ?? {}), ...data };
+            localStorage.setItem('nb_user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync user state when another tab calls updateUser (e.g. email verification).
   // The storage event fires for changes from OTHER documents; visibilitychange
   // catches the case where the event was missed while the tab was in the background.
