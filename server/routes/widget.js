@@ -623,15 +623,20 @@ widgetRouter.get('/verify-session', async (req, res) => {
   const { session_id } = req.query;
   if (!session_id) return res.status(400).json({ error: 'session_id required' });
 
-  const booking = db.prepare(
-    'SELECT id, stripe_payment_status, property_id FROM bookings WHERE stripe_checkout_session_id = ?'
-  ).get(session_id);
+  const booking = db.prepare(`
+    SELECT b.id, b.stripe_payment_status, b.property_id, p.booking_slug
+    FROM bookings b
+    JOIN properties p ON p.id = b.property_id
+    WHERE b.stripe_checkout_session_id = ?
+  `).get(session_id);
 
   if (!booking) return res.status(404).json({ error: 'Session not found' });
 
+  const bookingSlug = booking.booking_slug ?? null;
+
   // If already marked paid (webhook already fired), return immediately
   if (booking.stripe_payment_status === 'paid') {
-    return res.json({ paid: true, payment_status: 'paid', booking_id: booking.id });
+    return res.json({ paid: true, payment_status: 'paid', booking_id: booking.id, booking_slug: bookingSlug });
   }
 
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
@@ -660,7 +665,7 @@ widgetRouter.get('/verify-session', async (req, res) => {
       console.log(`[verify-session] Booking #${booking.id} marked paid (webhook fallback)`);
     }
 
-    res.json({ paid, payment_status: session.payment_status, booking_id: booking.id });
+    res.json({ paid, payment_status: session.payment_status, booking_id: booking.id, booking_slug: bookingSlug });
   } catch (e) {
     console.error('[verify-session] Stripe error:', e.message);
     res.status(500).json({ error: 'Could not verify session' });

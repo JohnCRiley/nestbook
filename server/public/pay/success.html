@@ -49,6 +49,11 @@
     padding: 8px 20px;
   }
   a.home:hover { background: #f0fdf4; }
+  .countdown {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 14px;
+  }
   .spinner {
     width: 40px; height: 40px;
     border: 3px solid #e2e8f0;
@@ -80,7 +85,8 @@
     <div class="icon">✅</div>
     <h1 id="title-success">Payment received!</h1>
     <p id="msg-success">Your booking is confirmed. A confirmation email is on its way.</p>
-    <a class="home" href="https://nestbook.io">nestbook.io</a>
+    <p class="countdown" id="countdown-text"></p>
+    <a class="home" id="return-now" href="https://nestbook.io"></a>
   </div>
 
   <!-- Pending state (paid but not yet confirmed by webhook) -->
@@ -100,6 +106,8 @@ var T = {
     successMsg:       'Your booking is confirmed. A confirmation email is on its way.',
     pending:          'Payment processing…',
     pendingMsg:       'Your payment is being processed. You’ll receive a confirmation email shortly.',
+    redirecting:      function(n) { return 'Redirecting you in ' + n + '…'; },
+    returnNow:        'Return now →',
   },
   fr: {
     verifying:        'Confirmation du paiement…',
@@ -108,6 +116,8 @@ var T = {
     successMsg:       'Votre réservation est confirmée. Un e-mail de confirmation va vous être envoyé.',
     pending:          'Paiement en cours…',
     pendingMsg:       'Votre paiement est en cours de traitement. Vous recevrez un e-mail de confirmation sous peu.',
+    redirecting:      function(n) { return 'Redirection dans ' + n + '…'; },
+    returnNow:        'Retourner maintenant →',
   },
   de: {
     verifying:        'Zahlung wird bestätigt…',
@@ -116,6 +126,8 @@ var T = {
     successMsg:       'Ihre Buchung ist bestätigt. Eine Bestätigungs-E-Mail ist unterwegs.',
     pending:          'Zahlung wird verarbeitet…',
     pendingMsg:       'Ihre Zahlung wird verarbeitet. Sie erhalten in Kürze eine Bestätigungs-E-Mail.',
+    redirecting:      function(n) { return 'Weiterleitung in ' + n + '…'; },
+    returnNow:        'Jetzt zurückgehen →',
   },
   es: {
     verifying:        'Confirmando su pago…',
@@ -124,6 +136,8 @@ var T = {
     successMsg:       'Su reserva está confirmada. Le llegará un correo de confirmación en breve.',
     pending:          'Pago en proceso…',
     pendingMsg:       'Su pago está siendo procesado. Recibirá un correo de confirmación en breve.',
+    redirecting:      function(n) { return 'Redirigiendo en ' + n + '…'; },
+    returnNow:        'Volver ahora →',
   },
   nl: {
     verifying:        'Betaling bevestigen…',
@@ -132,6 +146,8 @@ var T = {
     successMsg:       'Uw boeking is bevestigd. Er is een bevestigingsmail onderweg.',
     pending:          'Betaling verwerken…',
     pendingMsg:       'Uw betaling wordt verwerkt. U ontvangt binnenkort een bevestigingsmail.',
+    redirecting:      function(n) { return 'Doorsturen in ' + n + '…'; },
+    returnNow:        'Nu teruggaan →',
   },
 };
 
@@ -146,12 +162,30 @@ document.getElementById('title-success').textContent   = t.success;
 document.getElementById('msg-success').textContent     = t.successMsg;
 document.getElementById('title-pending').textContent   = t.pending;
 document.getElementById('msg-pending').textContent     = t.pendingMsg;
+document.getElementById('return-now').textContent      = t.returnNow;
 document.documentElement.lang = lang;
 
 function showState(name) {
   ['verifying', 'success', 'pending'].forEach(function(s) {
     document.getElementById('state-' + s).style.display = s === name ? '' : 'none';
   });
+}
+
+function startCountdown(slug) {
+  var dest = slug ? 'https://nestbook.io/book/' + slug : 'https://nestbook.io';
+  document.getElementById('return-now').href = dest;
+  var secs = 5;
+  var el = document.getElementById('countdown-text');
+  el.textContent = t.redirecting(secs);
+  var timer = setInterval(function() {
+    secs--;
+    if (secs <= 0) {
+      clearInterval(timer);
+      location.href = dest;
+    } else {
+      el.textContent = t.redirecting(secs);
+    }
+  }, 1000);
 }
 
 var params = new URLSearchParams(location.search);
@@ -166,7 +200,12 @@ if (!sessionId) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       console.log('[nestbook] verify-session response:', data);
-      showState(data.paid ? 'success' : 'pending');
+      if (data.paid) {
+        showState('success');
+        startCountdown(data.booking_slug || null);
+      } else {
+        showState('pending');
+      }
     })
     .catch(function(err) {
       console.error('[nestbook] verify-session error:', err);
