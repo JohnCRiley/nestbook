@@ -64,19 +64,64 @@ async function applyDiscountCodeOnRegistration(user) {
       return;
     }
 
-    // Partial discount — apply via Stripe if the user already has a customer ID
-    if (stripe && code.stripe_coupon_id && fullUser.stripe_customer_id) {
-      const sub = await stripe.subscriptions.create({
-        customer:           fullUser.stripe_customer_id,
-        items:              [{ price: process.env.STRIPE_PRO_PRICE_ID }],
-        discounts:          [{ coupon: code.stripe_coupon_id }],
-        trial_period_days:  30,
-      });
+    // Partial discount — create Stripe customer + subscription with coupon
+    if (stripe && code.stripe_coupon_id) {
+      let customerId = fullUser.stripe_customer_id;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email:    fullUser.email,
+          name:     fullUser.name || undefined,
+          metadata: { userId: String(fullUser.id) },
+        });
+        customerId = customer.id;
+        db.prepare(`UPDATE users SET stripe_customer_id = ? WHERE id = ?`).run(customerId, fullUser.id);
+      }
+
+      const hasDuration = code.duration_months && code.duration_months > 0;
+      const trialEnd = hasDuration ? new Date() : null;
+      if (hasDuration) trialEnd.setMonth(trialEnd.getMonth() + code.duration_months);
+
+      const subParams = {
+        customer:  customerId,
+        items:     [{ price: process.env.STRIPE_PRICE_PRO }],
+        discounts: [{ coupon: code.stripe_coupon_id }],
+      };
+      if (hasDuration) subParams.trial_end = Math.floor(trialEnd.getTime() / 1000);
+
+      const sub = await stripe.subscriptions.create(subParams);
+
       db.prepare(`
-        UPDATE users SET plan = 'pro', discount_applied_at = datetime('now') WHERE id = ?
-      `).run(fullUser.id);
+        UPDATE users
+        SET plan = 'pro', stripe_customer_id = ?, stripe_subscription_id = ?,
+            trial_ends_at = ?, discount_applied_at = datetime('now')
+        WHERE id = ?
+      `).run(customerId, sub.id, hasDuration ? trialEnd.toISOString() : null, fullUser.id);
+
+      const periodEnd = sub.current_period_end
+        ? new Date(sub.current_period_end * 1000).toISOString()
+        : null;
+      const existingSub = db.prepare(`SELECT id FROM subscriptions WHERE user_id = ?`).get(fullUser.id);
+      if (existingSub) {
+        db.prepare(`
+          UPDATE subscriptions
+          SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = 'pro',
+              status = 'active', current_period_end = ?
+          WHERE user_id = ?
+        `).run(customerId, sub.id, periodEnd, fullUser.id);
+      } else {
+        db.prepare(`
+          INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end)
+          VALUES (?, ?, ?, 'pro', 'active', ?)
+        `).run(fullUser.id, customerId, sub.id, periodEnd);
+      }
+
       db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);
-      console.log(`[discount] Stripe subscription ${sub.id} created for ${fullUser.email}`);
+      sendProWelcomeEmail(fullUser, code, hasDuration ? trialEnd : null, {
+        isPartial: true,
+        percent:   code.discount_percent,
+        months:    code.duration_months,
+      }).catch(() => {});
+      console.log(`[discount] Stripe subscription ${sub.id} created for ${fullUser.email} at ${code.discount_percent}% off`);
     }
   } catch (e) {
     console.error('[discount] applyDiscountCodeOnRegistration error:', e.message);

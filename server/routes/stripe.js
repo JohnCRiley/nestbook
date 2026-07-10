@@ -281,7 +281,7 @@ stripeRouter.post('/create-promo-checkout', async (req, res) => {
       customer:             customerId,
       mode:                 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: PLAN_PRICES.pro, quantity: 1 }],
       subscription_data: {
         trial_end: trialEnd,
         metadata: {
