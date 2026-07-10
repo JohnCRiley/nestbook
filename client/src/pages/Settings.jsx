@@ -203,6 +203,8 @@ export default function Settings() {
         arrival_instructions: p.arrival_instructions ?? '',
         send_access_hours:    p.send_access_hours    ?? 24,
         cancellation_days:    p.cancellation_days    ?? 7,
+        block_booking_protection:    p.block_booking_protection ? 1 : 0,
+        block_booking_threshold:     p.block_booking_threshold ?? 2,
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -1025,6 +1027,31 @@ export default function Settings() {
                           onChange={(e) => setForm((p) => ({ ...p, deposit_amount: e.target.value }))}
                           style={{ marginTop: 4, maxWidth: 160 }}
                         />
+                      </div>
+                    )}
+                    <ToggleRow
+                      label={t('settings.blockBookingProtection')}
+                      desc={t('settings.blockBookingProtectionHint')}
+                      checked={!!form.block_booking_protection}
+                      onChange={() => setForm((p) => ({ ...p, block_booking_protection: p.block_booking_protection ? 0 : 1 }))}
+                    />
+                    {!!form.block_booking_protection && (
+                      <div style={{ padding: '4px 0 14px 0' }}>
+                        <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                          {t('settings.blockBookingThreshold')}
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control"
+                          min="2"
+                          step="1"
+                          value={form.block_booking_threshold ?? 2}
+                          onChange={(e) => setForm((p) => ({ ...p, block_booking_threshold: Math.max(2, parseInt(e.target.value, 10) || 2) }))}
+                          style={{ marginTop: 4, maxWidth: 120 }}
+                        />
+                        <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '6px 0 0', lineHeight: 1.5 }}>
+                          {t('settings.blockBookingThresholdHint')}
+                        </p>
                       </div>
                     )}
                   </>

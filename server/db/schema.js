@@ -1595,6 +1595,10 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_departure_email_sent TEXT DEFAULT NULL`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN missed_arrival_actioned INTEGER DEFAULT 0`); } catch {}
 
+  // Block-booking protection — property-level opt-in
+  try { db.exec(`ALTER TABLE properties ADD COLUMN block_booking_protection INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN block_booking_threshold INTEGER NOT NULL DEFAULT 2`); } catch {}
+
   // Stripe payment link — one-off guest payment sessions
   try { db.exec(`ALTER TABLE bookings ADD COLUMN stripe_checkout_session_id TEXT`); } catch {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN stripe_payment_status TEXT`); } catch {}

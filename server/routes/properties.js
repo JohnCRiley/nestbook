@@ -199,6 +199,7 @@ propertiesRouter.put('/:id', (req, res) => {
       rental_type, total_capacity, bedroom_count, bathroom_count, whole_property_rate,
       access_method, access_code, arrival_instructions, send_access_hours,
       cancellation_days,
+      block_booking_protection, block_booking_threshold,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
@@ -220,7 +221,8 @@ propertiesRouter.put('/:id', (req, res) => {
           rental_type = ?, total_capacity = ?, bedroom_count = ?, bathroom_count = ?,
           whole_property_rate = ?,
           access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
-          cancellation_days = ?
+          cancellation_days = ?,
+          block_booking_protection = ?, block_booking_threshold = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -245,6 +247,8 @@ propertiesRouter.put('/:id', (req, res) => {
       arrival_instructions || null,
       send_access_hours ? parseInt(send_access_hours, 10) : 24,
       cancellation_days != null ? parseInt(cancellation_days, 10) : 7,
+      block_booking_protection ? 1 : 0,
+      block_booking_threshold != null ? Math.max(2, parseInt(block_booking_threshold, 10)) : 2,
       req.params.id,
     );
     if (existing && newRentalType !== existing.rental_type) {

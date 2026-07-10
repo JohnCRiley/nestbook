@@ -326,7 +326,36 @@ widgetRouter.post('/bookings', async (req, res) => {
       }
     }
     // ── End Stripe Connect branch ─────────────────────────────────────────────
-    const approvalToken = isWpRequest ? crypto.randomBytes(32).toString('hex') : null;
+    // Block-booking protection: if the property has the setting enabled and this
+    // guest already has enough overlapping room bookings to meet the threshold,
+    // route through pending_owner_approval instead of auto-confirming.
+    // Only applies to non-WP bookings and only when Stripe is not active
+    // (Stripe-active properties already require payment for every booking).
+    let isBlockProtected = false;
+    if (!isWpRequest && guestData?.email) {
+      const protProp = db.prepare(
+        'SELECT block_booking_protection, block_booking_threshold FROM properties WHERE id = ?'
+      ).get(property_id);
+      if (protProp?.block_booking_protection) {
+        const threshold = protProp.block_booking_threshold ?? 2;
+        const { n } = db.prepare(`
+          SELECT COUNT(*) as n FROM bookings b
+          JOIN guests g ON g.id = b.guest_id
+          WHERE b.property_id = ?
+            AND g.email = ?
+            AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
+            AND b.check_in_date < ?
+            AND b.check_out_date > ?
+        `).get(property_id, guestData.email, check_out_date, check_in_date);
+        if ((n + 1) >= threshold) {
+          isBlockProtected = true;
+          console.log(`[widget] Block-booking protection triggered for ${guestData.email} at property ${property_id} (${n + 1} rooms >= threshold ${threshold})`);
+        }
+      }
+    }
+
+    const needsApproval = isWpRequest || isBlockProtected;
+    const approvalToken = needsApproval ? crypto.randomBytes(32).toString('hex') : null;
 
     const result = db.prepare(`
       INSERT INTO bookings
@@ -338,7 +367,7 @@ widgetRouter.post('/bookings', async (req, res) => {
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
       num_guests   ?? 1,
-      status       ?? 'confirmed',
+      needsApproval ? 'pending_owner_approval' : (status ?? 'confirmed'),
       source       ?? 'direct',
       notes        ?? null,
       total_price  ?? null,
@@ -367,7 +396,7 @@ widgetRouter.post('/bookings', async (req, res) => {
 
     // Fire-and-forget emails — must not delay or break the HTTP response
     const property = db.prepare('SELECT p.*, u.email AS owner_email FROM properties p LEFT JOIN users u ON u.id = p.owner_id AND u.role = \'owner\' WHERE p.id = ?').get(newBooking.property_id);
-    if (isWpRequest && approvalToken) {
+    if (needsApproval && approvalToken) {
       const base = process.env.APP_URL ?? 'https://nestbook.io';
       const approveUrl = `${base}/api/widget/bookings/${newBooking.id}/approve?token=${approvalToken}`;
       const declineUrl = `${base}/api/widget/bookings/${newBooking.id}/decline?token=${approvalToken}`;
