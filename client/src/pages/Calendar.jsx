@@ -100,6 +100,7 @@ function cellInfo(bookings, roomId, dayIso) {
     (b) =>
       b.room_id === roomId &&
       b.status !== 'cancelled' &&
+      b.status !== 'cancelled_unpaid' &&
       b.status !== 'checked_out' &&
       b.check_in_date <= dayIso &&
       b.check_out_date > dayIso
@@ -428,7 +429,7 @@ function MonthGrid({ year, month, bookings, externalBlocks, today, onBookedClick
     const isToday = iso === today;
     const norm = (s) => (s ?? '').split('T')[0];
     const booking = bookings.find(b =>
-      b.status !== 'cancelled' && b.status !== 'checked_out' &&
+      b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && b.status !== 'checked_out' &&
       norm(b.check_in_date) <= iso && norm(b.check_out_date) > iso
     );
     const historical = !booking ? bookings.find(b =>

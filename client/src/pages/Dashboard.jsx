@@ -233,15 +233,15 @@ export default function Dashboard() {
 
   const occupiedTonight = bookings.filter((b) => b.status === 'arriving' || b.status === 'in_house');
 
-  const arrivalsToday = bookings.filter((b) => norm(b.check_in_date) === today);
+  const arrivalsToday = bookings.filter((b) => norm(b.check_in_date) === today && b.status !== 'cancelled_unpaid' && b.status !== 'cancelled');
 
   const departuresToday = bookings.filter(
-    (b) => norm(b.check_out_date) === today && b.status !== 'cancelled'
+    (b) => norm(b.check_out_date) === today && b.status !== 'cancelled' && b.status !== 'cancelled_unpaid'
   );
 
   const monthStart   = today.slice(0, 7) + '-01';
   const monthRevenue = bookings
-    .filter((b) => b.status !== 'cancelled' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
+    .filter((b) => b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
     .reduce((sum, b) => sum + (b.total_price || 0), 0);
 
   const in7Days = addDays(today, 7);
@@ -254,6 +254,7 @@ export default function Dashboard() {
     bookings
       .filter((b) =>
         b.status !== 'cancelled' &&
+        b.status !== 'cancelled_unpaid' &&
         b.status !== 'checked_out' &&
         norm(b.check_in_date) <= today &&
         norm(b.check_out_date) > today
@@ -267,7 +268,7 @@ export default function Dashboard() {
     ? Math.round((occupiedRoomIds.size / activeRooms.length) * 100)
     : 0;
 
-  const flaggedBookings = bookings.filter((b) => b.flagged && b.status !== 'cancelled');
+  const flaggedBookings = bookings.filter((b) => b.flagged && b.status !== 'cancelled' && b.status !== 'cancelled_unpaid');
 
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');

@@ -336,6 +336,7 @@ widgetRouter.post('/bookings', async (req, res) => {
       const protProp = db.prepare(
         'SELECT block_booking_protection, block_booking_threshold FROM properties WHERE id = ?'
       ).get(property_id);
+      console.log(`[widget] Block-booking check — property ${property_id}, protection=${protProp?.block_booking_protection}, threshold=${protProp?.block_booking_threshold}, email=${guestData.email}`);
       if (protProp?.block_booking_protection) {
         const threshold = protProp.block_booking_threshold ?? 2;
         const { n } = db.prepare(`
@@ -347,6 +348,7 @@ widgetRouter.post('/bookings', async (req, res) => {
             AND b.check_in_date < ?
             AND b.check_out_date > ?
         `).get(property_id, guestData.email, check_out_date, check_in_date);
+        console.log(`[widget] Block-booking count — existing overlapping rooms for ${guestData.email}: ${n}, threshold: ${threshold}, would trigger: ${(n + 1) >= threshold}`);
         if ((n + 1) >= threshold) {
           isBlockProtected = true;
           console.log(`[widget] Block-booking protection triggered for ${guestData.email} at property ${property_id} (${n + 1} rooms >= threshold ${threshold})`);

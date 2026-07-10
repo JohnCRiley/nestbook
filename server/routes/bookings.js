@@ -502,7 +502,7 @@ bookingsRouter.get('/wp-summary', (req, res) => {
       WHERE property_id = ?
         AND check_in_date >= ?
         AND check_in_date <= ?
-        AND status NOT IN ('cancelled')
+        AND status NOT IN ('cancelled', 'cancelled_unpaid')
     `).get(propId, monthStart, today);
 
     res.json({
