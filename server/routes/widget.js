@@ -193,6 +193,8 @@ widgetRouter.post('/bookings', async (req, res) => {
       });
     }
 
+    console.log(`[widget-booking] started — property=${property_id} room=${room_id} guest=${guest_id} status=${status ?? 'none'}`);
+
     // Demo properties: return fake confirmation, never write to DB
     const propCheck = db.prepare('SELECT is_demo FROM properties WHERE id = ?').get(property_id);
     if (propCheck?.is_demo === 1) {
@@ -236,12 +238,41 @@ widgetRouter.post('/bookings', async (req, res) => {
       if (bl) flagged = 1;
     }
 
+    // ── Block-booking protection check ───────────────────────────────────────
+    // Must run BEFORE the Stripe Connect branch so it applies even when the
+    // property has an active Connect account (Stripe branch returns early and
+    // would otherwise bypass this check entirely).
+    const isWpRequest = (status === 'pending_owner_approval');
+    let isBlockProtected = false;
+    console.log(`[widget-booking] isWpRequest=${isWpRequest}, guestEmail=${guestData?.email ?? 'null'}`);
+    if (!isWpRequest && guestData?.email) {
+      const protProp = db.prepare(
+        'SELECT block_booking_protection, block_booking_threshold FROM properties WHERE id = ?'
+      ).get(property_id);
+      console.log(`[widget-booking] block_booking_protection=${protProp?.block_booking_protection}, threshold=${protProp?.block_booking_threshold}`);
+      if (protProp?.block_booking_protection) {
+        const threshold = protProp.block_booking_threshold ?? 2;
+        const { n } = db.prepare(`
+          SELECT COUNT(*) as n FROM bookings b
+          JOIN guests g ON g.id = b.guest_id
+          WHERE b.property_id = ?
+            AND g.email = ?
+            AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
+            AND b.check_in_date < ?
+            AND b.check_out_date > ?
+        `).get(property_id, guestData.email, check_out_date, check_in_date);
+        console.log(`[widget-booking] overlapping rooms for ${guestData.email}: n=${n}, threshold=${threshold}, triggers=${(n + 1) >= threshold}`);
+        if ((n + 1) >= threshold) {
+          isBlockProtected = true;
+        }
+      }
+    }
+
     // ── Stripe Connect payment branch ────────────────────────────────────────
     // Rooms-mode, non-WP bookings on properties with an active Connect account
-    // are held as pending_payment. The guest completes payment via Stripe
-    // Checkout; the webhook advances the booking to confirmed.
-    const isWpRequest = (status === 'pending_owner_approval');
-    if (!isWpRequest) {
+    // are held as pending_payment. Block-booking protection takes priority:
+    // if triggered the booking goes to pending_owner_approval, bypassing Stripe.
+    if (!isWpRequest && !isBlockProtected) {
       const ownerRow = db.prepare(`
         SELECT u.stripe_connect_account_id, u.stripe_connect_status,
                p.currency, p.name AS property_name
@@ -326,35 +357,6 @@ widgetRouter.post('/bookings', async (req, res) => {
       }
     }
     // ── End Stripe Connect branch ─────────────────────────────────────────────
-    // Block-booking protection: if the property has the setting enabled and this
-    // guest already has enough overlapping room bookings to meet the threshold,
-    // route through pending_owner_approval instead of auto-confirming.
-    // Only applies to non-WP bookings and only when Stripe is not active
-    // (Stripe-active properties already require payment for every booking).
-    let isBlockProtected = false;
-    if (!isWpRequest && guestData?.email) {
-      const protProp = db.prepare(
-        'SELECT block_booking_protection, block_booking_threshold FROM properties WHERE id = ?'
-      ).get(property_id);
-      console.log(`[widget] Block-booking check — property ${property_id}, protection=${protProp?.block_booking_protection}, threshold=${protProp?.block_booking_threshold}, email=${guestData.email}`);
-      if (protProp?.block_booking_protection) {
-        const threshold = protProp.block_booking_threshold ?? 2;
-        const { n } = db.prepare(`
-          SELECT COUNT(*) as n FROM bookings b
-          JOIN guests g ON g.id = b.guest_id
-          WHERE b.property_id = ?
-            AND g.email = ?
-            AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
-            AND b.check_in_date < ?
-            AND b.check_out_date > ?
-        `).get(property_id, guestData.email, check_out_date, check_in_date);
-        console.log(`[widget] Block-booking count — existing overlapping rooms for ${guestData.email}: ${n}, threshold: ${threshold}, would trigger: ${(n + 1) >= threshold}`);
-        if ((n + 1) >= threshold) {
-          isBlockProtected = true;
-          console.log(`[widget] Block-booking protection triggered for ${guestData.email} at property ${property_id} (${n + 1} rooms >= threshold ${threshold})`);
-        }
-      }
-    }
 
     const needsApproval = isWpRequest || isBlockProtected;
     const approvalToken = needsApproval ? crypto.randomBytes(32).toString('hex') : null;
