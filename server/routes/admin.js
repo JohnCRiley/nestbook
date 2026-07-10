@@ -12,6 +12,7 @@ import { prospectFinderRouter } from './prospectFinder.js';
 import { userMailerRouter } from './userMailer.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
+import { logAction, getIp } from '../utils/auditLog.js';
 
 export const adminRouter = Router();
 
@@ -410,6 +411,93 @@ adminRouter.patch('/properties/:id/demo', (req, res) => {
     db.prepare(`UPDATE properties SET is_demo = ? WHERE id = ?`).run(is_demo ? 1 : 0, req.params.id);
     res.json({ success: true });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/properties/:id/reset-demo-data ───────────────────────────
+// Wipes all bookings + guests for a demo property, then seeds 5 repeat guests.
+// Server-side guard: always re-checks is_demo = 1 directly from the database.
+adminRouter.post('/properties/:id/reset-demo-data', (req, res) => {
+  const propId = Number(req.params.id);
+
+  const property = db.prepare('SELECT id, name, is_demo FROM properties WHERE id = ?').get(propId);
+  if (!property)      return res.status(404).json({ error: 'Property not found' });
+  if (!property.is_demo) return res.status(403).json({ error: 'Only available for demo properties' });
+
+  const DEMO_GUEST_EMAILS = [
+    'sophie.laurent@example.com',
+    'marco.conti@example.com',
+    'freya.andersen@example.com',
+    'liam.osullivan@example.com',
+    'aiko.tanaka@example.com',
+  ];
+
+  const DEMO_GUESTS = [
+    { first_name: 'Sophie', last_name: 'Laurent',    email: 'sophie.laurent@example.com',  phone: '+33 6 12 34 56 78',  notes: 'Always requests the room with the garden view. Loves a late checkout when possible.' },
+    { first_name: 'Marco',  last_name: 'Conti',      email: 'marco.conti@example.com',     phone: '+39 345 678 9012',   notes: 'Regular business traveller — usually books last-minute, 1-2 nights.' },
+    { first_name: 'Freya',  last_name: 'Andersen',   email: 'freya.andersen@example.com',  phone: '+47 912 34 567',     notes: 'Travels with her dog — confirm pet-friendly room each time.' },
+    { first_name: 'Liam',   last_name: "O'Sullivan", email: 'liam.osullivan@example.com',  phone: '+353 87 123 4567',   notes: "Celebrated his anniversary with us last year — left a lovely review." },
+    { first_name: 'Aiko',   last_name: 'Tanaka',     email: 'aiko.tanaka@example.com',     phone: '+81 90 1234 5678',   notes: 'Prefers breakfast delivered to the room rather than the dining area.' },
+  ];
+
+  try {
+    // Collect guest IDs before deleting bookings so we can clean up orphan guests
+    const guestIds = db.prepare(
+      'SELECT DISTINCT guest_id FROM bookings WHERE property_id = ?'
+    ).all(propId).map(r => r.guest_id);
+
+    let deletedBookings = 0;
+
+    db.exec('BEGIN');
+    try {
+      db.prepare('DELETE FROM room_charges      WHERE property_id = ?').run(propId);
+      db.prepare('DELETE FROM property_expenses WHERE property_id = ?').run(propId);
+      db.prepare('DELETE FROM audit_log         WHERE property_id = ?').run(propId);
+
+      deletedBookings = db.prepare('DELETE FROM bookings WHERE property_id = ?').run(propId).changes;
+
+      // Delete guests linked to this property's bookings, preserving the 5 demo emails
+      if (guestIds.length > 0) {
+        const gPh = guestIds.map(() => '?').join(', ');
+        const ePh = DEMO_GUEST_EMAILS.map(() => '?').join(', ');
+        db.prepare(
+          `DELETE FROM guests WHERE id IN (${gPh}) AND (email IS NULL OR email NOT IN (${ePh}))`
+        ).run(...guestIds, ...DEMO_GUEST_EMAILS);
+      }
+
+      // Seed repeat guests — check by email to prevent duplicates on re-run
+      const insertGuest = db.prepare(
+        'INSERT INTO guests (first_name, last_name, email, phone, notes, property_id) VALUES (?, ?, ?, ?, ?, ?)'
+      );
+      for (const g of DEMO_GUESTS) {
+        const exists = db.prepare('SELECT id FROM guests WHERE email = ?').get(g.email);
+        if (!exists) insertGuest.run(g.first_name, g.last_name, g.email, g.phone, g.notes, propId);
+      }
+
+      db.exec('COMMIT');
+    } catch (innerErr) {
+      db.exec('ROLLBACK');
+      throw innerErr;
+    }
+
+    // Log after COMMIT so this single entry survives the wipe
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user?.userId ?? null,
+      action:     'DEMO_DATA_RESET',
+      category:   'admin',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Demo data reset — ${deletedBookings} booking(s) deleted, 5 repeat guests seeded`,
+      ipAddress:  getIp(req),
+    });
+
+    console.log(`[admin] Demo data reset for property ${propId} (${property.name}) — ${deletedBookings} bookings removed`);
+    res.json({ success: true, deletedBookings, seededGuests: 5 });
+  } catch (err) {
+    console.error('[reset-demo-data] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

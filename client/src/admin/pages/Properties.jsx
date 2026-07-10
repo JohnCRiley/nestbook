@@ -17,6 +17,19 @@ export default function Properties() {
   const [totalPages, setTotalPages] = useState(0);
   const [search,     setSearch]     = useState('');
 
+  // Demo reset state
+  const [resetTarget,  setResetTarget]  = useState(null); // property object | null
+  const [confirmInput, setConfirmInput] = useState('');
+  const [resetting,    setResetting]    = useState(false);
+  const [toast,        setToast]        = useState(null);
+
+  const toastTimerRef = useRef(null);
+  const showToast = useCallback((msg, type = 'success') => {
+    clearTimeout(toastTimerRef.current);
+    setToast({ msg, type });
+    toastTimerRef.current = setTimeout(() => setToast(null), 5000);
+  }, []);
+
   const prevPageSizeRef = useRef(pageSize);
   useEffect(() => {
     if (prevPageSizeRef.current !== pageSize) {
@@ -61,6 +74,34 @@ export default function Properties() {
     });
     fetchProperties();
   }, [fetchProperties]);
+
+  const openResetModal = useCallback((property) => {
+    setResetTarget(property);
+    setConfirmInput('');
+  }, []);
+
+  const cancelReset = useCallback(() => {
+    setResetTarget(null);
+    setConfirmInput('');
+  }, []);
+
+  const confirmReset = useCallback(async () => {
+    if (!resetTarget) return;
+    setResetting(true);
+    try {
+      const res  = await apiFetch(`/api/admin/properties/${resetTarget.id}/reset-demo-data`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Reset failed');
+      setResetTarget(null);
+      setConfirmInput('');
+      showToast(`Demo data reset — ${data.deletedBookings} booking(s) deleted, 5 repeat guests ready`);
+      fetchProperties();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setResetting(false);
+    }
+  }, [resetTarget, fetchProperties, showToast]);
 
   return (
     <>
@@ -107,18 +148,34 @@ export default function Properties() {
                 <td>{p.bookings_count}</td>
                 <td className="admin-muted">{fmtDate(p.created_at)}</td>
                 <td>
-                  <button
-                    onClick={() => toggleDemo(p.id, p.is_demo)}
-                    style={{
-                      background: p.is_demo ? '#fef3c7' : 'var(--card-bg)',
-                      border: `1px solid ${p.is_demo ? '#f59e0b' : 'var(--border)'}`,
-                      color: p.is_demo ? '#92400e' : 'var(--text-secondary)',
-                      padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
-                      fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                    }}
-                  >
-                    {p.is_demo ? '⚠ Demo' : 'Set demo'}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => toggleDemo(p.id, p.is_demo)}
+                      style={{
+                        background: p.is_demo ? '#fef3c7' : 'var(--card-bg)',
+                        border: `1px solid ${p.is_demo ? '#f59e0b' : 'var(--border)'}`,
+                        color: p.is_demo ? '#92400e' : 'var(--text-secondary)',
+                        padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                        fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                    >
+                      {p.is_demo ? '⚠ Demo' : 'Set demo'}
+                    </button>
+                    {p.is_demo ? (
+                      <button
+                        onClick={() => openResetModal(p)}
+                        style={{
+                          background: '#fee2e2',
+                          border: '1px solid #fca5a5',
+                          color: '#991b1b',
+                          padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                          fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                      >
+                        Reset data
+                      </button>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -142,7 +199,78 @@ export default function Properties() {
           </div>
         </div>
       )}
+
+      {resetTarget && (
+        <ResetDemoModal
+          property={resetTarget}
+          confirmInput={confirmInput}
+          onInput={setConfirmInput}
+          onConfirm={confirmReset}
+          onCancel={cancelReset}
+          busy={resetting}
+        />
+      )}
+
+      {toast && (
+        <div className={`sa-toast sa-toast-${toast.type}`}>{toast.msg}</div>
+      )}
     </>
+  );
+}
+
+function ResetDemoModal({ property, confirmInput, onInput, onConfirm, onCancel, busy }) {
+  const nameMatch = confirmInput.trim() === property.name.trim();
+
+  useEffect(() => {
+    const handle = (e) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [onCancel]);
+
+  return (
+    <div className="cm-backdrop" onClick={onCancel}>
+      <div className="cm-card" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+        <div className="cm-header" style={{ background: '#991b1b', color: '#fff' }}>
+          <span className="cm-icon" aria-hidden="true">🗑</span>
+          <span className="cm-title">Reset Demo Data</span>
+        </div>
+        <div className="cm-body">
+          <p className="cm-message">
+            This will permanently delete all bookings and guests for{' '}
+            <strong>{property.name}</strong>, and cannot be undone.{' '}
+            Rooms, photos, and settings are untouched.
+          </p>
+          <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '12px 0 6px' }}>
+            Type the property name to confirm:
+          </p>
+          <input
+            type="text"
+            value={confirmInput}
+            onChange={e => onInput(e.target.value)}
+            placeholder={property.name}
+            autoFocus
+            style={{
+              width: '100%', padding: '8px 10px', borderRadius: 6,
+              border: '1.5px solid #e2e8f0', fontSize: '0.875rem',
+              marginBottom: 16, fontFamily: 'inherit',
+            }}
+          />
+          <div className="cm-actions">
+            <button className="cm-btn-cancel" onClick={onCancel} disabled={busy}>
+              Cancel
+            </button>
+            <button
+              className="cm-btn-confirm"
+              style={{ background: nameMatch && !busy ? '#dc2626' : '#9ca3af' }}
+              onClick={nameMatch && !busy ? onConfirm : undefined}
+              disabled={!nameMatch || busy}
+            >
+              {busy ? 'Resetting…' : 'Reset Demo Data'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
