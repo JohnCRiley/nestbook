@@ -8,6 +8,16 @@ import ConfirmModal from '../components/ConfirmModal.jsx';
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 const LOCALE_MAP  = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
 
+function fmtAmount(amount, currency) {
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency', currency: currency?.toUpperCase() ?? 'GBP',
+    }).format(amount);
+  } catch {
+    return amount != null ? String(amount) : '';
+  }
+}
+
 function fmtDate(iso, locale = 'en') {
   if (!iso || iso === '0') return null;
   const browserLocale = LOCALE_MAP[locale] || 'en-GB';
@@ -280,7 +290,14 @@ function AccountSubscriptionCard() {
         const discountEndsDate = user?.discount_ends_at
           ? new Date(user.discount_ends_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
           : null;
-        const pctStr = user?.discount_percent ? `${user.discount_percent}% off ` : '';
+
+        // chargeDesc: real amount from Stripe upcoming invoice (e.g. "£9.50"),
+        // falling back to percentage if available, then plain "discounted rate".
+        const chargeDesc = sub?.upcoming_amount != null
+          ? fmtAmount(sub.upcoming_amount, sub.upcoming_currency)
+          : user?.discount_percent
+            ? `${user.discount_percent}% off`
+            : 'discounted rate';
 
         const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : 'var(--header-bg)';
         const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : '#fef3c7';
@@ -299,7 +316,7 @@ function AccountSubscriptionCard() {
                  'NestBook Pro — add a payment method'}
               </div>
               <div style={{ color: daysLeft <= 14 ? 'rgba(255,255,255,0.85)' : 'var(--header-text)', fontSize: '0.82rem' }}>
-                First charge ({pctStr}rate) due {payDeadline} — {daysLeft} day{daysLeft !== 1 ? 's' : ''} to add a card
+                First charge ({chargeDesc}) due {payDeadline} — {daysLeft} day{daysLeft !== 1 ? 's' : ''} to add a card
               </div>
             </div>
 
@@ -312,11 +329,11 @@ function AccountSubscriptionCard() {
               }}>
                 {daysLeft <= 7 ? (
                   <><strong>Action needed — {daysLeft} day{daysLeft !== 1 ? 's' : ''} left!</strong><br />
-                  Add a payment method now. Your first charge (at the {pctStr}rate) is due on {payDeadlineShort}.
+                  Add a payment method now. Your first charge ({chargeDesc}) is due on {payDeadlineShort}.
                   {discountEndsDate && <> Your discount then continues until {discountEndsDate}.</>}</>
                 ) : (
-                  <><strong>Your first charge is due on {payDeadline}.</strong><br />
-                  Add a payment method before then to keep your {pctStr}rate.
+                  <><strong>Your first charge ({chargeDesc}) is due on {payDeadline}.</strong><br />
+                  Add a payment method before then to keep your discounted rate.
                   {discountEndsDate && <> Your discount continues until {discountEndsDate}.</>}</>
                 )}
               </div>
@@ -335,7 +352,7 @@ function AccountSubscriptionCard() {
               </button>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
                 Without a payment method, access reverts to the free plan on {payDeadlineShort}.
-                {discountEndsDate && <> After adding a card, your {pctStr}rate runs until {discountEndsDate}.</>}
+                {discountEndsDate && <> After adding a card, your {chargeDesc}/month rate runs until {discountEndsDate}.</>}
               </p>
             </div>
           </div>

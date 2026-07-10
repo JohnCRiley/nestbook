@@ -49,19 +49,47 @@ const PLAN_PRICES = {
 
 // ── GET /api/stripe/subscription ─────────────────────────────────────────────
 // Returns the logged-in user's current plan and subscription status.
-stripeRouter.get('/subscription', (req, res) => {
-  const user = db.prepare('SELECT plan, subscription_status, past_due_since FROM users WHERE id = ?').get(req.user.userId);
-  const sub  = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+// For partial-discount trial users, also fetches the upcoming invoice amount
+// from Stripe so the Billing page can show the real first charge (e.g. £9.50).
+stripeRouter.get('/subscription', async (req, res) => {
+  try {
+    const user = db.prepare('SELECT plan, subscription_status, past_due_since, trial_ends_at FROM users WHERE id = ?').get(req.user.userId);
+    const sub  = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
 
-  res.json({
-    plan:                user?.plan                ?? 'free',
-    status:              sub?.status               ?? 'active',
-    subscription_status: user?.subscription_status ?? 'active',
-    past_due_since:      user?.past_due_since       ?? null,
-    current_period_end:  sub?.current_period_end   ?? null,
-    cancel_at_period_end: sub?.cancel_at_period_end ?? 0,
-    notes:               sub?.notes                ?? null,
-  });
+    let upcoming_amount   = null;
+    let upcoming_currency = null;
+
+    const isInTrial = sub?.stripe_subscription_id
+      && user?.trial_ends_at
+      && new Date(user.trial_ends_at) > new Date();
+
+    if (isInTrial) {
+      try {
+        const upcoming = await stripe.invoices.retrieveUpcoming({
+          subscription: sub.stripe_subscription_id,
+        });
+        upcoming_amount   = upcoming.amount_due / 100;
+        upcoming_currency = upcoming.currency ?? 'gbp';
+      } catch (e) {
+        console.error('[stripe] retrieveUpcoming error:', e.message);
+      }
+    }
+
+    res.json({
+      plan:                 user?.plan                ?? 'free',
+      status:               sub?.status               ?? 'active',
+      subscription_status:  user?.subscription_status ?? 'active',
+      past_due_since:       user?.past_due_since       ?? null,
+      current_period_end:   sub?.current_period_end   ?? null,
+      cancel_at_period_end: sub?.cancel_at_period_end ?? 0,
+      notes:                sub?.notes                ?? null,
+      upcoming_amount,
+      upcoming_currency,
+    });
+  } catch (e) {
+    console.error('[stripe] subscription endpoint error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── POST /api/stripe/cancel-subscription ─────────────────────────────────────
