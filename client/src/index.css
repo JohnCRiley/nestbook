@@ -177,8 +177,8 @@ html[data-theme="lavender"] {
 }
 html[data-theme="aero"] {
   --sidebar-bg:         #FAFAFD;
-  --sidebar-hover:      rgba(83, 149, 178, 0.10);
-  --sidebar-text:       #454F59;
+  --sidebar-hover:      rgba(83, 149, 178, 0.12);
+  --sidebar-text:       #1C1C1E;
   --sidebar-active:     #E0ECF5;
   --accent:             #5395B2;
   --accent-dark:        #1C1C1E;
@@ -204,6 +204,18 @@ html[data-theme="aero"] {
   --text-secondary:     #454F59;
   --text-muted:         #556070;
 }
+/* Aero: light sidebar — override every hardcoded-white rule */
+html[data-theme="aero"] .nav-section-label                           { color: #8090A0; }
+html[data-theme="aero"] .nav-link:hover                              { color: #1C1C1E; }
+html[data-theme="aero"] .nav-link.active                             { color: #1C1C1E; }
+html[data-theme="aero"] .sidebar-nav                                 { scrollbar-color: rgba(0,0,0,0.15) transparent; }
+html[data-theme="aero"] .sidebar-nav::-webkit-scrollbar-thumb        { background: rgba(0,0,0,0.15); }
+html[data-theme="aero"] .sidebar-nav::-webkit-scrollbar-thumb:hover  { background: rgba(0,0,0,0.28); }
+html[data-theme="aero"] .sidebar-footer                              { border-top: 1px solid #DDE1E6; }
+html[data-theme="aero"] .sidebar-footer .footer-label                { color: #8090A0; }
+html[data-theme="aero"] .sidebar-footer .footer-property             { color: #1C1C1E; }
+html[data-theme="aero"] .sidebar-footer .footer-type                 { color: #8090A0; }
+
 html[data-theme="charcoal"] {
   --sidebar-bg:         #292929;
   --sidebar-text:       #E5E0D8;
