@@ -175,6 +175,34 @@ html[data-theme="lavender"] {
   --text-secondary:     #4F4582;
   --text-muted:         #928CB1;
 }
+html[data-theme="aero"] {
+  --sidebar-bg:         #7090A8;
+  --sidebar-text:       #F0F4F8;
+  --sidebar-active:     #9AB5CB;
+  --accent:             #6080A0;
+  --accent-dark:        #3E6480;
+  --card-bg:            #FFFFFF;
+  --panel-bg:           #F8FAFC;
+  --header-bg:          #EEF2F7;
+  --header-text:        #3E6480;
+  --heading-text:       #3E6480;
+  --accent-bar:         #9AB5CB;
+  --section-bg:         #EEF2F7;
+  --section-text:       #3E6480;
+  --tint-bg:            #E8EFF8;
+  --tint-border:        #B5CCE0;
+  --tint-text:          #2A5278;
+  --light-green:        #EEF2F7;
+  --btn-secondary-bg:   #E8EFF8;
+  --btn-secondary-text: #2A5278;
+  --toggle-on:          #6080A0;
+  --toggle-off:         #C4D4E4;
+  --page-bg:            #F0F3F8;
+  --border:             #D0DAE8;
+  --text-primary:       #1A1D24;
+  --text-secondary:     #3E6480;
+  --text-muted:         #7A92A8;
+}
 html[data-theme="charcoal"] {
   --sidebar-bg:         #292929;
   --sidebar-text:       #E5E0D8;
