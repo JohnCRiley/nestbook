@@ -246,6 +246,14 @@ html[data-theme="aero"] .embed-header p                               { color: v
 /* Aero: table row hover uses accent-dark (#1C1C1E = near-black) — swap to a light tint */
 html[data-theme="aero"] .bookings-table tbody tr:hover td,
 html[data-theme="aero"] .data-table tr:hover td                       { background: var(--tint-bg); color: var(--text-primary); }
+/* Aero: calendar cell hover also uses accent-dark — swap to tint blue */
+html[data-theme="aero"] .cal-cell:hover,
+html[data-theme="aero"] .calendar-tile:hover                          { background: var(--tint-bg); color: var(--text-primary); }
+html[data-theme="aero"] .cal-cell.is-booked:hover                     { background: #3E7A9E; color: white; }
+html[data-theme="aero"] .cal-cell.is-arriving:hover .cal-guest-name,
+html[data-theme="aero"] .cal-cell.is-arriving:hover .cal-booking-nights { color: var(--text-primary); }
+/* Legend: sw-wp-arriving swatch was accent-dark (near-black) — match hover colour */
+html[data-theme="aero"] .legend-swatch.sw-wp-arriving                 { background: var(--tint-bg); border: 1px solid var(--tint-border); }
 
 html[data-theme="charcoal"] {
   --sidebar-bg:         #292929;
