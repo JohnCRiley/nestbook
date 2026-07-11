@@ -65,13 +65,13 @@ stripeRouter.get('/subscription', async (req, res) => {
 
     if (isInTrial) {
       try {
-        const upcoming = await stripe.invoices.retrieveUpcoming({
+        const preview = await stripe.invoices.createPreview({
           subscription: sub.stripe_subscription_id,
         });
-        upcoming_amount   = upcoming.amount_due / 100;
-        upcoming_currency = upcoming.currency ?? 'gbp';
+        upcoming_amount   = preview.amount_due / 100;
+        upcoming_currency = preview.currency ?? 'gbp';
       } catch (e) {
-        console.error('[stripe] retrieveUpcoming error:', e.message);
+        console.error('[stripe] createPreview error:', e.message);
       }
     }
 
