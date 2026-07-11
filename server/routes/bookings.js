@@ -926,7 +926,8 @@ bookingsRouter.put('/:id', (req, res) => {
     // WP arrival — guests have the key
     if (_wp_action === 'wp_checkin') {
       const todayIso = new Date().toISOString().split('T')[0];
-      if (todayIso < existing.check_in_date) {
+      const wpProp = db.prepare('SELECT is_demo FROM properties WHERE id = ?').get(existing.property_id);
+      if (!wpProp?.is_demo && todayIso < existing.check_in_date) {
         return res.status(400).json({
           error: `Cannot confirm arrival before check-in date (${existing.check_in_date})`,
         });
@@ -939,7 +940,8 @@ bookingsRouter.put('/:id', (req, res) => {
     // WP departure — guests have left and returned the key
     if (_wp_action === 'wp_departure') {
       const todayIso = new Date().toISOString().split('T')[0];
-      if (todayIso < existing.check_out_date) {
+      const wpProp = db.prepare('SELECT is_demo FROM properties WHERE id = ?').get(existing.property_id);
+      if (!wpProp?.is_demo && todayIso < existing.check_out_date) {
         return res.status(400).json({
           error: `Cannot confirm departure before check-out date (${existing.check_out_date}). To shorten the stay, use Edit booking.`,
         });
@@ -981,28 +983,30 @@ bookingsRouter.put('/:id', (req, res) => {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
     }
 
-    // Date guardrails for status transitions — applies to all rental types
+    // Date guardrails for status transitions — skipped for demo properties
     if (status && status !== existing.status) {
-      const todayIso = new Date().toISOString().split('T')[0];
-      if ((status === 'arriving' || status === 'in_house') && todayIso < existing.check_in_date) {
-        return res.status(400).json({
-          error: `Cannot check in before arrival date (${existing.check_in_date})`,
-        });
-      }
-      if ((status === 'arriving' || status === 'in_house') && todayIso === existing.check_in_date) {
-        const prop = db.prepare('SELECT check_in_time FROM properties WHERE id = ?').get(existing.property_id);
-        const checkInTime = prop?.check_in_time || '15:00';
-        const nowTime = new Date().toTimeString().slice(0, 5);
-        if (nowTime < checkInTime) {
+      const prop = db.prepare('SELECT is_demo, check_in_time FROM properties WHERE id = ?').get(existing.property_id);
+      if (!prop?.is_demo) {
+        const todayIso = new Date().toISOString().split('T')[0];
+        if ((status === 'arriving' || status === 'in_house') && todayIso < existing.check_in_date) {
           return res.status(400).json({
-            error: `Check-in opens at ${checkInTime}. Current time is ${nowTime}.`,
+            error: `Cannot check in before arrival date (${existing.check_in_date})`,
           });
         }
-      }
-      if (status === 'checked_out' && todayIso < existing.check_out_date) {
-        return res.status(400).json({
-          error: `Cannot check out before departure date (${existing.check_out_date}). Edit the booking to shorten the stay.`,
-        });
+        if ((status === 'arriving' || status === 'in_house') && todayIso === existing.check_in_date) {
+          const checkInTime = prop?.check_in_time || '15:00';
+          const nowTime = new Date().toTimeString().slice(0, 5);
+          if (nowTime < checkInTime) {
+            return res.status(400).json({
+              error: `Check-in opens at ${checkInTime}. Current time is ${nowTime}.`,
+            });
+          }
+        }
+        if (status === 'checked_out' && todayIso < existing.check_out_date) {
+          return res.status(400).json({
+            error: `Cannot check out before departure date (${existing.check_out_date}). Edit the booking to shorten the stay.`,
+          });
+        }
       }
     }
 

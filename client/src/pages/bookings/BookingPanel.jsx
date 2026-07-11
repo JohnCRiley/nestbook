@@ -136,8 +136,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const storedRateBreakdown = b.rate_breakdown ? JSON.parse(b.rate_breakdown) : null;
   const useStoredTotal = !!(b.total_price && b.total_price > 0) && !storedRateBreakdown?.length && !(b.price_per_night > 0);
   const todayStr      = new Date().toISOString().split('T')[0];
-  const canMarkArrived  = todayStr >= b.check_in_date;
-  const canMarkDeparted = todayStr >= b.check_out_date;
+  const isDemoProperty  = !!property?.is_demo;
+  const canMarkArrived  = isDemoProperty || todayStr >= b.check_in_date;
+  const canMarkDeparted = isDemoProperty || todayStr >= b.check_out_date;
 
   const cancellationDays   = property?.cancellation_days ?? 7;
   const daysUntilCheckIn   = Math.ceil((new Date(b.check_in_date) - new Date(todayStr)) / (1000 * 60 * 60 * 24));
