@@ -37,7 +37,7 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl } = {}) {
     <img src="https://nestbook.io/icon-192.png" width="36" height="36"
          style="border-radius:8px;vertical-align:middle;display:inline-block;">
     <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
-    <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Booking software for independent properties</div>
+    <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Management platform for independent holiday rentals</div>
   </td></tr>
 
   <!-- Body -->
@@ -63,6 +63,9 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl } = {}) {
   <tr><td style="background:#f0f7ed;padding:20px 32px;border-top:1px solid #d9f0cc;">
     <p style="margin:0;font-size:12px;color:#5a7a52;text-align:center;line-height:1.6;">
       ${footer}${unsubLine}
+    </p>
+    <p style="margin:12px 0 0;font-size:11px;color:#8ab885;text-align:center;">
+      Sent via <a href="https://nestbook.io" style="color:#5a7a52;text-decoration:none;">NestBook</a> — management platform for independent holiday rentals
     </p>
   </td></tr>
 
