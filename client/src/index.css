@@ -204,17 +204,41 @@ html[data-theme="aero"] {
   --text-secondary:     #454F59;
   --text-muted:         #556070;
 }
-/* Aero: light sidebar — override every hardcoded-white rule */
+/* ── Aero: light sidebar — override every hardcoded-white rule ─────────────── */
+/* Brand */
+html[data-theme="aero"] .sidebar-brand                               { border-bottom: 1px solid #DDE1E6; }
+html[data-theme="aero"] .sidebar-brand .brand-name                   { color: #1C1C1E; }
+html[data-theme="aero"] .sidebar-brand .brand-name .brand-dot        { background: #5395B2; }
+html[data-theme="aero"] .sidebar-brand .brand-sub                    { color: #556070; }
+/* Nav */
 html[data-theme="aero"] .nav-section-label                           { color: #454F59; }
 html[data-theme="aero"] .nav-link:hover                              { color: #1C1C1E; }
 html[data-theme="aero"] .nav-link.active                             { color: #1C1C1E; }
 html[data-theme="aero"] .sidebar-nav                                 { scrollbar-color: rgba(0,0,0,0.15) transparent; }
 html[data-theme="aero"] .sidebar-nav::-webkit-scrollbar-thumb        { background: rgba(0,0,0,0.15); }
 html[data-theme="aero"] .sidebar-nav::-webkit-scrollbar-thumb:hover  { background: rgba(0,0,0,0.28); }
+/* Footer — property block */
 html[data-theme="aero"] .sidebar-footer                              { border-top: 1px solid #DDE1E6; }
-html[data-theme="aero"] .sidebar-footer .footer-label                { color: #8090A0; }
+html[data-theme="aero"] .sidebar-footer .footer-label                { color: #454F59; }
 html[data-theme="aero"] .sidebar-footer .footer-property             { color: #1C1C1E; }
-html[data-theme="aero"] .sidebar-footer .footer-type                 { color: #8090A0; }
+html[data-theme="aero"] .sidebar-footer .footer-type                 { color: #556070; }
+/* Property switcher */
+html[data-theme="aero"] .property-switch-item                        { color: #454F59; }
+html[data-theme="aero"] .property-switch-item:hover                  { background: #E0ECF5; color: #1C1C1E; }
+html[data-theme="aero"] .property-switch-item.active                 { background: #E0ECF5; color: #1C1C1E; }
+html[data-theme="aero"] .property-add-link                           { color: #556070; }
+html[data-theme="aero"] .property-add-link:hover                     { color: #1C1C1E; }
+/* User block */
+html[data-theme="aero"] .sidebar-user                                { border-top: 1px solid #DDE1E6; }
+html[data-theme="aero"] .sidebar-user-name                           { color: #1C1C1E; }
+html[data-theme="aero"] .sidebar-user-role                           { color: #556070; }
+/* Utility + logout buttons */
+html[data-theme="aero"] .sidebar-util-btn                            { border-color: #DDE1E6; color: #454F59; }
+html[data-theme="aero"] .sidebar-util-btn:hover                      { background: #E0ECF5; color: #1C1C1E; }
+html[data-theme="aero"] .sidebar-util-btn--subtle                    { border-color: #DDE1E6; color: #556070; }
+html[data-theme="aero"] .sidebar-util-btn--subtle:hover              { color: #1C1C1E; }
+html[data-theme="aero"] .sidebar-logout-btn                          { background: transparent; border-color: #DDE1E6; color: #454F59; }
+html[data-theme="aero"] .sidebar-logout-btn:hover                    { background: #E0ECF5; color: #1C1C1E; }
 /* Aero: embed widget header uses sidebar-bg as background — near-white here, so text must be dark */
 html[data-theme="aero"] .embed-header                                 { background: var(--section-bg); }
 html[data-theme="aero"] .embed-header h2                              { color: var(--text-primary); }
