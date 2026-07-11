@@ -731,8 +731,8 @@ export default function Settings() {
                       gap: 12,
                     }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>{p.name}</div>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'capitalize' }}>{p.type}</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{p.type}</div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         {p.id === activeProperty?.id && (
@@ -1866,21 +1866,21 @@ function EmbedSection({ snippet, t, propertyId }) {
       </div>
       <div className="embed-body">
         {propertyId != null && (
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14, fontSize: '0.82rem', color: '#6b7280' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
             <span>{t('propIdLabel')}:</span>
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#374151' }}>{propertyId}</span>
+            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-primary)' }}>{propertyId}</span>
             <button
               onClick={handleCopyId}
               style={{
                 padding: '2px 9px', borderRadius: 4,
-                border: '1px solid #e2e8f0', background: '#f8fafc',
+                border: '1px solid var(--border)', background: 'var(--page-bg)',
                 cursor: 'pointer', fontSize: '0.75rem',
-                color: idCopied ? '#16a34a' : '#64748b', fontWeight: 600,
+                color: idCopied ? '#16a34a' : 'var(--text-secondary)', fontWeight: 600,
               }}
             >
               {idCopied ? t('embedCopied') : t('embedCopy')}
             </button>
-            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>{t('propIdHint')}</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{t('propIdHint')}</span>
           </div>
         )}
         <p className="embed-desc">

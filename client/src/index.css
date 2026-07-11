@@ -205,7 +205,7 @@ html[data-theme="aero"] {
   --text-muted:         #556070;
 }
 /* Aero: light sidebar — override every hardcoded-white rule */
-html[data-theme="aero"] .nav-section-label                           { color: #8090A0; }
+html[data-theme="aero"] .nav-section-label                           { color: #454F59; }
 html[data-theme="aero"] .nav-link:hover                              { color: #1C1C1E; }
 html[data-theme="aero"] .nav-link.active                             { color: #1C1C1E; }
 html[data-theme="aero"] .sidebar-nav                                 { scrollbar-color: rgba(0,0,0,0.15) transparent; }
@@ -215,6 +215,13 @@ html[data-theme="aero"] .sidebar-footer                              { border-to
 html[data-theme="aero"] .sidebar-footer .footer-label                { color: #8090A0; }
 html[data-theme="aero"] .sidebar-footer .footer-property             { color: #1C1C1E; }
 html[data-theme="aero"] .sidebar-footer .footer-type                 { color: #8090A0; }
+/* Aero: embed widget header uses sidebar-bg as background — near-white here, so text must be dark */
+html[data-theme="aero"] .embed-header                                 { background: var(--section-bg); }
+html[data-theme="aero"] .embed-header h2                              { color: var(--text-primary); }
+html[data-theme="aero"] .embed-header p                               { color: var(--text-muted); }
+/* Aero: table row hover uses accent-dark (#1C1C1E = near-black) — swap to a light tint */
+html[data-theme="aero"] .bookings-table tbody tr:hover td,
+html[data-theme="aero"] .data-table tr:hover td                       { background: var(--tint-bg); color: var(--text-primary); }
 
 html[data-theme="charcoal"] {
   --sidebar-bg:         #292929;
