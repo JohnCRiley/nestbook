@@ -464,7 +464,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                 <div className="form-group span-2">
                   {isWP ? (
                     !datesValid ? (
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{t('nbSelectDatesFirst')}</span>
+                      <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{t('nbSelectDatesFirst')}</span>
                     ) : wpPropertyBooked ? (
                       <div className="form-error" style={{ display: 'inline-block' }}>
                         {t('noRoomsForDates')}
@@ -476,7 +476,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                       }}>
                         <span style={{ fontWeight: 600 }}>{t('booking.wholeProperty')}</span>
                         {nightsCount && wpRate > 0 && (
-                          <span style={{ marginLeft: 12, color: '#6b7280' }}>
+                          <span style={{ marginLeft: 12, color: 'var(--text-muted)' }}>
                             {nightsCount} × {currencySymbol}{wpRate.toFixed(2)}{t('perNight')} = {fmtCurrency(roomSubtotal)}
                           </span>
                         )}
@@ -535,10 +535,10 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                         style={{ marginTop: 3, flexShrink: 0 }}
                       />
                       <div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1f2937' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {t('nbBfComplimentaryLabel')}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 1 }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>
                           {t('nbBfComplimentaryHint')}
                         </div>
                       </div>
@@ -564,7 +564,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                         style={{ marginTop: 3, flexShrink: 0 }}
                       />
                       <div style={{ width: '100%' }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1f2937' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {t('nbBfPaidLabel')}
                         </div>
 
@@ -575,12 +575,12 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                             background: 'var(--tint-bg)', borderRadius: 6,
                             border: '1px solid var(--tint-border)',
                           }}>
-                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 8 }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8 }}>
                               {t('bfMorningHint')}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                               <div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 3 }}>
                                   {t('bfAddFrom')}
                                 </div>
                                 <input
@@ -593,7 +593,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                                 />
                               </div>
                               <div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 3 }}>
                                   {t('bfGuestCountLabel')}
                                 </div>
                                 <input
@@ -607,7 +607,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                               </div>
                             </div>
                             <div>
-                              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 3 }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 3 }}>
                                 {t('bfPricePerPersonDay')} ({currencySymbol})
                               </div>
                               <input
@@ -623,7 +623,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                             {bfServings > 0 && bfPriceNum > 0 && (
                               <div style={{
                                 marginTop: 8, fontSize: '0.8rem', color: 'var(--tint-text)',
-                                background: 'var(--light-green)', padding: '5px 8px', borderRadius: 5,
+                                background: 'var(--tint-bg)', padding: '5px 8px', borderRadius: 5,
                               }}>
                                 {t('bfPreviewCalc')(bfServings, bfGuestsNum, `${currencySymbol}${bfPriceNum.toFixed(2)}`, fmtCurrency(bfSubtotal))}
                               </div>
@@ -685,7 +685,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                 {((isWP && nightsCount && wpRate > 0) || (!isWP && selectedRoom && nightsCount)) && (
                   <div className="form-group span-2">
                     <div style={{
-                      background: '#f8fafc', border: '1px solid var(--border)',
+                      background: 'var(--card-bg)', border: '1px solid var(--border)',
                       borderRadius: 8, overflow: 'hidden', fontSize: '0.85rem',
                     }}>
                       {/* Room row(s) */}
@@ -696,19 +696,19 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                               display: 'flex', justifyContent: 'space-between',
                               padding: '7px 12px', borderBottom: '1px solid var(--border)',
                             }}>
-                              <span style={{ color: '#64748b' }}>
+                              <span style={{ color: 'var(--text-secondary)' }}>
                                 {t('nbPriceBreakdownRoom')(t('nightWord')(seg.nights), `${currencySymbol}${seg.ratePerNight.toFixed(2)}`)}
                                 {seg.periodName && (
                                   <span style={{
                                     marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
-                                    background: '#fef9c3', color: '#854d0e',
+                                    background: 'var(--tint-bg)', color: 'var(--tint-text)',
                                     padding: '1px 6px', borderRadius: 4,
                                   }}>
                                     {t('nbSeasonalRate')(seg.periodName)}
                                   </span>
                                 )}
                               </span>
-                              <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(seg.subtotal)}</span>
+                              <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>{fmtCurrency(seg.subtotal)}</span>
                             </div>
                           ))
                         ) : (
@@ -716,10 +716,10 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                             display: 'flex', justifyContent: 'space-between',
                             padding: '7px 12px', borderBottom: '1px solid var(--border)',
                           }}>
-                            <span style={{ color: '#64748b' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>
                               {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${wpRate.toFixed(2)}`)}
                             </span>
-                            <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
+                            <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>{fmtCurrency(roomSubtotal)}</span>
                           </div>
                         )
                       ) : (rateBreakdown?.breakdown ?? []).length > 0 ? (
@@ -728,19 +728,19 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                             display: 'flex', justifyContent: 'space-between',
                             padding: '7px 12px', borderBottom: '1px solid var(--border)',
                           }}>
-                            <span style={{ color: '#64748b' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>
                               {t('nbPriceBreakdownRoom')(t('nightWord')(seg.nights), `${currencySymbol}${seg.ratePerNight.toFixed(2)}`)}
                               {seg.periodName && (
                                 <span style={{
                                   marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
-                                  background: '#fef9c3', color: '#854d0e',
+                                  background: 'var(--tint-bg)', color: 'var(--tint-text)',
                                   padding: '1px 6px', borderRadius: 4,
                                 }}>
                                   {t('nbSeasonalRate')(seg.periodName)}
                                 </span>
                               )}
                             </span>
-                            <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(seg.subtotal)}</span>
+                            <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>{fmtCurrency(seg.subtotal)}</span>
                           </div>
                         ))
                       ) : (
@@ -748,10 +748,10 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                           display: 'flex', justifyContent: 'space-between',
                           padding: '7px 12px', borderBottom: '1px solid var(--border)',
                         }}>
-                          <span style={{ color: '#64748b' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
                             {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${(selectedRoom?.price_per_night ?? 0).toFixed(2)}`)}
                           </span>
-                          <span style={{ fontWeight: 600, color: '#1a2e14' }}>{fmtCurrency(roomSubtotal)}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>{fmtCurrency(roomSubtotal)}</span>
                         </div>
                       )}
                       {form.breakfastType === 'paid' && bfSubtotal > 0 && (
