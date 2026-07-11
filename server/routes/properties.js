@@ -202,7 +202,7 @@ propertiesRouter.put('/:id', (req, res) => {
       block_booking_protection, block_booking_threshold,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
-    const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','charcoal'];
+    const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal'];
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     // Preserve the existing rental_type if the field is absent from the body — never silently
