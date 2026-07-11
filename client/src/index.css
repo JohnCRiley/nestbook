@@ -177,6 +177,7 @@ html[data-theme="lavender"] {
 }
 html[data-theme="aero"] {
   --sidebar-bg:         #FAFAFD;
+  --sidebar-hover:      rgba(83, 149, 178, 0.10);
   --sidebar-text:       #454F59;
   --sidebar-active:     #E0ECF5;
   --accent:             #5395B2;
@@ -201,7 +202,7 @@ html[data-theme="aero"] {
   --border:             #DDE1E6;
   --text-primary:       #1C1C1E;
   --text-secondary:     #454F59;
-  --text-muted:         #8090A0;
+  --text-muted:         #556070;
 }
 html[data-theme="charcoal"] {
   --sidebar-bg:         #292929;
