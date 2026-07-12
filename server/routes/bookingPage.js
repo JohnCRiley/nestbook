@@ -11,6 +11,7 @@ const THEME_COLOURS = {
   ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
   sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6' },
   lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
+  aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
   charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
 };
 
