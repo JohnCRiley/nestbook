@@ -134,6 +134,26 @@ export default function SocialKit() {
     navigator.clipboard.writeText(caption).then(() => showToast(t('sk.copied')));
   }
 
+  async function copyImage(url) {
+    try {
+      if (!navigator.clipboard?.write) throw new Error('unsupported');
+      const res  = await fetch(url);
+      const blob = await res.blob();
+      // Draw onto canvas so we can export as PNG — the only format
+      // reliably accepted by clipboard.write() across all browsers.
+      const img  = await createImageBitmap(blob);
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+      showToast(t('sk.imageCopied'));
+    } catch {
+      showToast(t('sk.imageCopyFail'));
+    }
+  }
+
   async function downloadPhoto(url, filename) {
     try {
       const res  = await fetch(url);
@@ -184,6 +204,7 @@ export default function SocialKit() {
                 t={t}
                 onCycle={() => cycleVariant(photo.id)}
                 onCopy={() => copyCaption(caption)}
+                onCopyImage={() => copyImage(photo.url)}
                 onDownload={() => downloadPhoto(photo.url, photo.filename)}
               />
             );
@@ -196,7 +217,7 @@ export default function SocialKit() {
   );
 }
 
-function PhotoCard({ photo, caption, vIdx, t, onCycle, onCopy, onDownload }) {
+function PhotoCard({ photo, caption, vIdx, t, onCycle, onCopy, onCopyImage, onDownload }) {
   return (
     <div style={{
       background: 'var(--card-bg)',
@@ -258,11 +279,11 @@ function PhotoCard({ photo, caption, vIdx, t, onCycle, onCopy, onDownload }) {
         </button>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <button
             onClick={onCopy}
             style={{
-              flex: 1, padding: '8px 10px',
+              padding: '8px 10px',
               background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: 8,
               fontSize: '0.8rem', fontWeight: 600,
@@ -271,18 +292,32 @@ function PhotoCard({ photo, caption, vIdx, t, onCycle, onCopy, onDownload }) {
           >
             {t('sk.copyCaption')}
           </button>
-          <button
-            onClick={onDownload}
-            style={{
-              flex: 1, padding: '8px 10px',
-              background: 'var(--btn-secondary-bg)', color: 'var(--btn-secondary-text)',
-              border: '1px solid var(--border)', borderRadius: 8,
-              fontSize: '0.8rem', fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            {t('sk.download')}
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={onCopyImage}
+              style={{
+                flex: 1, padding: '8px 10px',
+                background: 'var(--btn-secondary-bg)', color: 'var(--btn-secondary-text)',
+                border: '1px solid var(--border)', borderRadius: 8,
+                fontSize: '0.8rem', fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {t('sk.copyImage')}
+            </button>
+            <button
+              onClick={onDownload}
+              style={{
+                flex: 1, padding: '8px 10px',
+                background: 'var(--btn-secondary-bg)', color: 'var(--btn-secondary-text)',
+                border: '1px solid var(--border)', borderRadius: 8,
+                fontSize: '0.8rem', fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {t('sk.download')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

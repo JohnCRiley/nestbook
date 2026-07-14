@@ -1107,6 +1107,9 @@ export const LANGS = {
     'sk.tryAnother':    'Try another',
     'sk.noPhotos':      'No photos uploaded yet',
     'sk.noPhotosHint':  'Upload photos in the Rooms section to get ready-made social posts here.',
+    'sk.copyImage':     'Copy image',
+    'sk.imageCopied':   'Image copied!',
+    'sk.imageCopyFail': 'Could not copy image — try Download instead.',
   },
 
   fr: {
@@ -2176,6 +2179,9 @@ planGateProFeature:    'Fonctionnalité Pro',
     'sk.tryAnother':    'Essayer une autre',
     'sk.noPhotos':      'Aucune photo encore',
     'sk.noPhotosHint':  'Ajoutez des photos dans la section Chambres pour generer vos publications ici.',
+    'sk.copyImage':     'Copier l\'image',
+    'sk.imageCopied':   'Image copiee !',
+    'sk.imageCopyFail': 'Impossible de copier l\'image — utilisez Telecharger.',
   },
 
   es: {
@@ -3245,6 +3251,9 @@ planGateProFeature:    'Función Pro',
     'sk.tryAnother':    'Otro texto',
     'sk.noPhotos':      'Aun no hay fotos',
     'sk.noPhotosHint':  'Sube fotos en la seccion Habitaciones para obtener publicaciones listas aqui.',
+    'sk.copyImage':     'Copiar imagen',
+    'sk.imageCopied':   'Imagen copiada!',
+    'sk.imageCopyFail': 'No se pudo copiar la imagen — prueba Descargar.',
   },
 
   de: {
@@ -4314,6 +4323,9 @@ planGateProFeature:    'Pro-Funktion',
     'sk.tryAnother':    'Anderen Text',
     'sk.noPhotos':      'Noch keine Fotos hochgeladen',
     'sk.noPhotosHint':  'Laden Sie Fotos im Bereich Zimmer hoch, um fertige Beitrage zu erhalten.',
+    'sk.copyImage':     'Bild kopieren',
+    'sk.imageCopied':   'Bild kopiert!',
+    'sk.imageCopyFail': 'Bild konnte nicht kopiert werden — bitte Herunterladen verwenden.',
   },
 
   nl: {
@@ -5438,5 +5450,8 @@ planGateProFeature:    'Pro-functie',
     'sk.tryAnother':    'Andere tekst',
     'sk.noPhotos':      'Nog geen fotos geupload',
     'sk.noPhotosHint':  'Upload fotos in de Kamers sectie voor kant-en-klare berichten hier.',
+    'sk.copyImage':     'Afbeelding kopieren',
+    'sk.imageCopied':   'Afbeelding gekopieerd!',
+    'sk.imageCopyFail': 'Afbeelding kon niet worden gekopieerd — gebruik Downloaden.',
   },
 };
