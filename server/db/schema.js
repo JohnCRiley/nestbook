@@ -829,6 +829,7 @@ export function initSchema() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+  try { db.exec(`ALTER TABLE email_templates ADD COLUMN body_bg TEXT NOT NULL DEFAULT 'white'`); } catch(e) {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS outreach_campaigns (
