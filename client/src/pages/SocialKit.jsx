@@ -56,8 +56,17 @@ export default function SocialKit() {
   const [loading, setLoading]     = useState(true);
   const [variantIdx, setVariantIdx] = useState({});
   const [toast, setToast]         = useState(null);
+  const [guide1Open, setGuide1Open] = useState(false);
+  const [guide2Open, setGuide2Open] = useState(false);
 
   const bookingUrl = `https://nestbook.io/book/${property?.booking_slug || property?.id}`;
+
+  function fillStep(str) {
+    return str
+      .replace(/\{copyImage\}/g, t('sk.copyImage'))
+      .replace(/\{copyCaption\}/g, t('sk.copyCaption'))
+      .replace(/\{download\}/g, t('sk.download'));
+  }
 
   useEffect(() => {
     if (!property?.id) return;
@@ -180,6 +189,65 @@ export default function SocialKit() {
         </p>
       </div>
 
+      {/* Help guide accordions */}
+      <div style={{ marginBottom: 28, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="danger-zone-card">
+          <button
+            className="danger-zone-toggle"
+            onClick={() => setGuide1Open((o) => !o)}
+            aria-expanded={guide1Open}
+          >
+            <span>{t('sk.help1.heading')}</span>
+            <span className="danger-zone-chevron">{guide1Open ? '▲' : '▼'}</span>
+          </button>
+          {guide1Open && (
+            <div className="danger-zone-body" style={{ padding: '20px 24px' }}>
+              <StepSection number={1} title={t('sk.help1.s1.title')}>
+                <p style={GUIDE_P}>{t('sk.help1.s1.p1')}</p>
+                <p style={GUIDE_P}>{t('sk.help1.s1.p2')}</p>
+              </StepSection>
+              <StepSection number={2} title={t('sk.help1.s2.title')}>
+                <ol style={GUIDE_OL}>
+                  {(t('sk.help1.s2.steps') || []).map((s, i) => <li key={i}>{s}</li>)}
+                </ol>
+                <p style={GUIDE_P}>{t('sk.help1.s2.done')}</p>
+              </StepSection>
+              <StepSection number={3} title={t('sk.help1.s3.title')}>
+                <ol style={GUIDE_OL}>
+                  {(t('sk.help1.s3.steps') || []).map((s, i) => <li key={i}>{s}</li>)}
+                </ol>
+                <p style={GUIDE_P}>{t('sk.help1.s3.why')}</p>
+              </StepSection>
+            </div>
+          )}
+        </div>
+
+        <div className="danger-zone-card">
+          <button
+            className="danger-zone-toggle"
+            onClick={() => setGuide2Open((o) => !o)}
+            aria-expanded={guide2Open}
+          >
+            <span>{t('sk.help2.heading')}</span>
+            <span className="danger-zone-chevron">{guide2Open ? '▲' : '▼'}</span>
+          </button>
+          {guide2Open && (
+            <div className="danger-zone-body" style={{ padding: '20px 24px' }}>
+              <PlatformSection title={t('sk.help2.fb.title')}>
+                <ol style={GUIDE_OL}>
+                  {(t('sk.help2.fb.steps') || []).map((s, i) => <li key={i}>{fillStep(s)}</li>)}
+                </ol>
+              </PlatformSection>
+              <PlatformSection title={t('sk.help2.ig.title')}>
+                <ol style={GUIDE_OL}>
+                  {(t('sk.help2.ig.steps') || []).map((s, i) => <li key={i}>{fillStep(s)}</li>)}
+                </ol>
+              </PlatformSection>
+            </div>
+          )}
+        </div>
+      </div>
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           Loading&hellip;
@@ -209,6 +277,23 @@ export default function SocialKit() {
               />
             );
           })}
+        </div>
+      )}
+
+      {!loading && (
+        <div style={{
+          marginTop: 40,
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
+          padding: '20px 24px',
+        }}>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 12, color: 'var(--text-primary)' }}>
+            {t('sk.reassure.heading')}
+          </p>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8, margin: 0, fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--text-secondary)' }}>
+            {(t('sk.reassure.items') || []).map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
         </div>
       )}
 
@@ -337,6 +422,35 @@ function EmptyState({ t }) {
       <p style={{ fontSize: '0.875rem', maxWidth: 340, margin: '0 auto', lineHeight: 1.6 }}>
         {t('sk.noPhotosHint')}
       </p>
+    </div>
+  );
+}
+
+const GUIDE_P  = { fontSize: '0.875rem', lineHeight: 1.65, marginTop: 8, color: 'var(--text-primary)' };
+const GUIDE_OL = { paddingLeft: 20, margin: '8px 0 12px', display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--text-primary)' };
+
+function StepSection({ number, title, children }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
+        <span style={{
+          background: 'var(--accent)', color: '#fff',
+          borderRadius: '50%', minWidth: 24, height: 24,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '0.78rem', fontWeight: 700, flexShrink: 0,
+        }}>{number}</span>
+        <strong style={{ fontSize: '0.9rem', lineHeight: 1.4 }}>{title}</strong>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function PlatformSection({ title, children }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <strong style={{ display: 'block', fontSize: '0.88rem', marginBottom: 8, color: 'var(--text-primary)' }}>{title}</strong>
+      {children}
     </div>
   );
 }
