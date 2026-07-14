@@ -305,7 +305,12 @@ outreachRouter.post('/send', async (req, res) => {
 
     const unsubUrl = `${process.env.BASE_URL || 'https://nestbook.io'}/api/outreach/unsubscribe?token=${p.unsubscribe_token}`;
 
-    const htmlBody = wrapEmailBody(bodyHtml, { unsubUrl });
+    let body_bg = 'white';
+    if (template_id) {
+      const tmpl = db.prepare('SELECT body_bg FROM email_templates WHERE id = ?').get(template_id);
+      body_bg = tmpl?.body_bg ?? 'white';
+    }
+    const htmlBody = wrapEmailBody(bodyHtml, { unsubUrl, body_bg });
 
     try {
       await sendOutreachEmail({ to: p.email, subject: finalSubject, html: htmlBody });
@@ -383,17 +388,17 @@ outreachRouter.get('/templates', (req, res) => {
 
 // ── Templates — create ────────────────────────────────────────────────────────
 outreachRouter.post('/templates', (req, res) => {
-  const { name, subject, body } = req.body;
+  const { name, subject, body, body_bg = 'white' } = req.body;
   if (!name || !subject || !body) return res.status(400).json({ error: 'name, subject and body required' });
-  const r = db.prepare(`INSERT INTO email_templates (name, subject, body) VALUES (?, ?, ?)`).run(name, subject, body);
+  const r = db.prepare(`INSERT INTO email_templates (name, subject, body, body_bg) VALUES (?, ?, ?, ?)`).run(name, subject, body, body_bg);
   res.status(201).json({ id: r.lastInsertRowid });
 });
 
 // ── Templates — update ────────────────────────────────────────────────────────
 outreachRouter.put('/templates/:id', (req, res) => {
-  const { name, subject, body } = req.body;
-  db.prepare(`UPDATE email_templates SET name=?, subject=?, body=?, updated_at=datetime('now') WHERE id=?`)
-    .run(name, subject, body, req.params.id);
+  const { name, subject, body, body_bg = 'white' } = req.body;
+  db.prepare(`UPDATE email_templates SET name=?, subject=?, body=?, body_bg=?, updated_at=datetime('now') WHERE id=?`)
+    .run(name, subject, body, body_bg, req.params.id);
   res.json({ ok: true });
 });
 

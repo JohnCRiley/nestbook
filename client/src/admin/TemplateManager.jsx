@@ -38,32 +38,37 @@ function Input({ value, onChange, placeholder, style }) {
 }
 
 // ── Client-side email wrapper (mirrors server/utils/emailWrapper.js) ──────────
-function buildPreviewHtml(bodyHtml, footerNote) {
+function buildPreviewHtml(bodyHtml, footerNote, bodyBg = 'white') {
   const raw = (bodyHtml ?? '').trim();
   const htmlContent = raw.startsWith('<')
     ? raw
     : raw.split(/\n{2,}/).map(p => `<p style="margin:0 0 16px 0;line-height:1.7">${p.replace(/\n/g, '<br>')}</p>`).join('\n');
   const footer = footerNote ?? 'You received this email because you manage a hospitality property.';
 
+  const isGreen    = bodyBg === 'green';
+  const outerBg    = isGreen ? '#1a4710' : '#ffffff';
+  const bodyBorder = isGreen ? 'border-top:1px solid #d9f0cc;' : '';
+  const sigColor   = isGreen ? '#ffffff' : '#1a4710';
+
   return `<!DOCTYPE html><html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;">
   <tr><td style="background:#1a4710;padding:28px 32px;">
     <img src="https://nestbook.io/icon-192.png" width="36" height="36" style="border-radius:8px;vertical-align:middle;display:inline-block;">
     <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
     <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Booking software for independent properties</div>
   </td></tr>
-  <tr><td style="padding:32px 32px 0px;color:#1a2e14;font-size:15px;line-height:1.6;">
+  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#1a2e14;font-size:15px;line-height:1.6;">
     <div style="color:#1a2e14;">${htmlContent}</div>
     <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
       <img src="https://nestbook.io/icon-192.png" width="28" height="28" style="border-radius:6px;vertical-align:middle;display:inline-block;">
-      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
+      <strong style="color:${sigColor};margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
       <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
-        <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none;">hello@nestbook.io</a>
+        <a href="mailto:hello@nestbook.io" style="color:${sigColor};text-decoration:none;">hello@nestbook.io</a>
         &nbsp;&middot;&nbsp;
-        <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none;">nestbook.io</a>
+        <a href="https://nestbook.io" style="color:${sigColor};text-decoration:none;">nestbook.io</a>
       </span>
     </div>
   </td></tr>
@@ -75,7 +80,7 @@ function buildPreviewHtml(bodyHtml, footerNote) {
 
 // ── Preview modal ─────────────────────────────────────────────────────────────
 
-function PreviewModal({ body, subject, footerNote, onClose }) {
+function PreviewModal({ body, subject, footerNote, bodyBg, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 700, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 12px 48px rgba(0,0,0,0.3)' }}>
@@ -87,7 +92,7 @@ function PreviewModal({ body, subject, footerNote, onClose }) {
           <Btn variant="secondary" onClick={onClose}>Close</Btn>
         </div>
         <iframe
-          srcDoc={buildPreviewHtml(body, footerNote)}
+          srcDoc={buildPreviewHtml(body, footerNote, bodyBg)}
           title="Email preview"
           sandbox="allow-same-origin"
           style={{ flex: 1, border: 'none', minHeight: 480 }}
@@ -114,10 +119,11 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
   const [name, setName]           = useState('');
   const [subject, setSubject]     = useState('');
   const [body, setBody]           = useState('');
-  const [htmlMode, setHtmlMode]     = useState(false);
+  const [bodyBg, setBodyBg]           = useState('white');
+  const [htmlMode, setHtmlMode]       = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [saving, setSaving]         = useState(false);
+  const [saving, setSaving]           = useState(false);
 
   const editorRef   = useRef(null);
   const textareaRef = useRef(null);
@@ -144,12 +150,13 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
 
   function startNew() {
     setEditing('new'); setName(''); setSubject(''); setBody('');
-    setHtmlMode(false); setShowPreview(false);
+    setBodyBg('white'); setHtmlMode(false); setShowPreview(false);
   }
 
   function startEdit(t) {
     setEditing(t.id); setName(t.name); setSubject(t.subject);
     setBody(t[bodyField] ?? '');
+    setBodyBg(t.body_bg ?? 'white');
     setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(t[bodyField] ?? ''));
     setShowPreview(false);
   }
@@ -159,7 +166,7 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
   async function save() {
     if (!name.trim() || !subject.trim() || !body.trim()) return;
     setSaving(true);
-    const payload = { name: name.trim(), subject: subject.trim(), [bodyField]: body };
+    const payload = { name: name.trim(), subject: subject.trim(), [bodyField]: body, body_bg: bodyBg };
     if (editing === 'new') {
       await saApiFetch(`${apiBase}/templates`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -245,6 +252,16 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                 />
               )}
             </div>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginTop: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', cursor: 'pointer', userSelect: 'none' }}>
+                <input type="checkbox" checked={bodyBg === 'green'} onChange={() => setBodyBg('green')} />
+                Green body
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', cursor: 'pointer', userSelect: 'none' }}>
+                <input type="checkbox" checked={bodyBg === 'white'} onChange={() => setBodyBg('white')} />
+                White body
+              </label>
+            </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <Btn onClick={save} small disabled={saving || !name.trim() || !subject.trim() || !body.trim()}>
                 {saving ? 'Saving…' : 'Save'}
@@ -282,7 +299,7 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
       </div>
 
       {showPreview && (
-        <PreviewModal body={body} subject={subject} footerNote={footerNote} onClose={() => setShowPreview(false)} />
+        <PreviewModal body={body} subject={subject} footerNote={footerNote} bodyBg={bodyBg} onClose={() => setShowPreview(false)} />
       )}
 
       {showIconPicker && (

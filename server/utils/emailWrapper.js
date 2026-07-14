@@ -7,7 +7,7 @@
  *   footerNote  – override the footer paragraph text
  *   unsubUrl    – if provided, appends an Unsubscribe link in the footer
  */
-export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl } = {}) {
+export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white' } = {}) {
   const raw = (bodyHtml ?? '').trim();
 
   // Convert plain text to HTML paragraphs; leave real HTML as-is
@@ -25,12 +25,17 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl } = {}) {
     ? `<br><a href="${unsubUrl}" style="color:#5a7a52;text-decoration:underline;">Unsubscribe</a>`
     : '';
 
+  const isGreen    = body_bg === 'green';
+  const outerBg    = isGreen ? '#1a4710' : '#ffffff';
+  const bodyBorder = isGreen ? 'border-top:1px solid #d9f0cc;' : '';
+  const sigColor   = isGreen ? '#ffffff' : '#1a4710';
+
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;">
 
   <!-- Header -->
   <tr><td style="background:#1a4710;padding:28px 32px;">
@@ -41,7 +46,7 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl } = {}) {
   </td></tr>
 
   <!-- Body -->
-  <tr><td style="padding:32px 32px 0px;color:#1a2e14;font-size:15px;line-height:1.6;">
+  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#1a2e14;font-size:15px;line-height:1.6;">
     <div style="color:#1a2e14;">
       ${htmlContent}
     </div>
@@ -50,11 +55,11 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl } = {}) {
     <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
       <img src="https://nestbook.io/icon-192.png" width="28" height="28"
            style="border-radius:6px;vertical-align:middle;display:inline-block;">
-      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
+      <strong style="color:${sigColor};margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
       <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
-        <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none;">hello@nestbook.io</a>
+        <a href="mailto:hello@nestbook.io" style="color:${sigColor};text-decoration:none;">hello@nestbook.io</a>
         &nbsp;&middot;&nbsp;
-        <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none;">nestbook.io</a>
+        <a href="https://nestbook.io" style="color:${sigColor};text-decoration:none;">nestbook.io</a>
       </span>
     </div>
   </td></tr>
