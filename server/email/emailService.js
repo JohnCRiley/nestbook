@@ -2855,12 +2855,12 @@ export async function sendPaymentAssistanceEmail(booking, property) {
   }
 }
 
-export async function sendOutreachEmail({ to, subject, html }) {
+export async function sendOutreachEmail({ to, subject, html, from: fromOverride }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');
     return;
   }
   const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const result = await resend.emails.send({ from: FROM, to, subject, html, text });
+  const result = await resend.emails.send({ from: fromOverride || FROM, to, subject, html, text });
   console.log('[email] Outreach email sent →', to, '| id:', result?.id ?? result?.data?.id);
 }

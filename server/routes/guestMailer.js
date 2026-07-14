@@ -167,9 +167,12 @@ guestMailerRouter.post('/send', async (req, res) => {
       mailerSignature: prop.mailer_signature || null,
     });
 
+    const mailerFrom = `"${prop.name}" <hello@nestbook.io>`;
+
     // Test mode: send only to owner, no logging
     if (test_mode) {
       await sendOutreachEmail({
+        from:    mailerFrom,
         to:      ownerUser.email,
         subject: `[TEST] ${trimmedSubject}`,
         html:    wrappedHtml,
@@ -211,7 +214,7 @@ guestMailerRouter.post('/send', async (req, res) => {
 
     for (const email of allRecipients) {
       try {
-        await sendOutreachEmail({ to: email, subject: trimmedSubject, html: wrappedHtml });
+        await sendOutreachEmail({ from: mailerFrom, to: email, subject: trimmedSubject, html: wrappedHtml });
       } catch (e) {
         console.error('[guest-mailer] send failed →', email, e.message);
       }
