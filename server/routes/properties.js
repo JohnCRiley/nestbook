@@ -13,8 +13,25 @@ import { seedCategories } from '../utils/categories.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROP_UPLOAD_DIR   = join(__dirname, '../uploads/properties');
 const ACCESS_PHOTO_DIR  = join(__dirname, '../uploads/access');
+const LOGO_UPLOAD_DIR   = join(__dirname, '../uploads/logos');
 fs.mkdirSync(PROP_UPLOAD_DIR,  { recursive: true });
 fs.mkdirSync(ACCESS_PHOTO_DIR, { recursive: true });
+fs.mkdirSync(LOGO_UPLOAD_DIR,  { recursive: true });
+
+const logoStorage = multer.diskStorage({
+  destination: LOGO_UPLOAD_DIR,
+  filename: (req, file, cb) => {
+    cb(null, `logo-${req.params.id}-${Date.now()}.tmp`);
+  },
+});
+const logoUpload = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Images only'));
+    cb(null, true);
+  },
+});
 
 const propPhotoStorage = multer.diskStorage({
   destination: PROP_UPLOAD_DIR,
@@ -504,6 +521,71 @@ propertiesRouter.delete('/:id/access-photo', (req, res) => {
       db.prepare('UPDATE properties SET access_photo = NULL WHERE id = ?').run(propId);
     }
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/properties/:id/logo ─────────────────────────────────────────────
+propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    const filename = `logo-${propId}-${Date.now()}.jpg`;
+    const finalPath = join(LOGO_UPLOAD_DIR, filename);
+
+    await sharp(req.file.path)
+      .resize(300, 300, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toFile(finalPath);
+    try { fs.unlinkSync(req.file.path); } catch {}
+
+    const existing = db.prepare('SELECT logo_url FROM properties WHERE id = ?').get(propId);
+    if (existing?.logo_url && existing.logo_url !== filename) {
+      try { fs.unlinkSync(join(LOGO_UPLOAD_DIR, existing.logo_url)); } catch {}
+    }
+
+    db.prepare('UPDATE properties SET logo_url = ? WHERE id = ?').run(filename, propId);
+    res.json({ logo_url: filename });
+  } catch (err) {
+    if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/properties/:id/logo ───────────────────────────────────────────
+propertiesRouter.delete('/:id/logo', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const existing = db.prepare('SELECT logo_url FROM properties WHERE id = ?').get(propId);
+    if (existing?.logo_url) {
+      try { fs.unlinkSync(join(LOGO_UPLOAD_DIR, existing.logo_url)); } catch {}
+      db.prepare('UPDATE properties SET logo_url = NULL WHERE id = ?').run(propId);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PUT /api/properties/:id/mailer-signature ──────────────────────────────────
+propertiesRouter.put('/:id/mailer-signature', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const signature = typeof req.body.signature === 'string' ? req.body.signature : null;
+    db.prepare('UPDATE properties SET mailer_signature = ? WHERE id = ?').run(signature || null, propId);
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

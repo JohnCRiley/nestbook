@@ -1786,6 +1786,26 @@ John`
     }
   } catch (e) { console.error('[schema] discount_ends_at backfill error:', e.message); }
 
+  // Guest Mailer: logo + signature on properties, send log table
+  try { db.exec(`ALTER TABLE properties ADD COLUMN logo_url TEXT`); } catch(e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN mailer_signature TEXT`); } catch(e) {}
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS guest_mailer_log (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id      INTEGER NOT NULL REFERENCES properties(id),
+        subject          TEXT NOT NULL,
+        body_html        TEXT NOT NULL,
+        cta_label        TEXT,
+        cta_url          TEXT,
+        cta_enabled      INTEGER NOT NULL DEFAULT 0,
+        recipient_count  INTEGER NOT NULL DEFAULT 0,
+        recipients_json  TEXT,
+        sent_at          TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `);
+  } catch(e) { console.error('[schema] guest_mailer_log error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

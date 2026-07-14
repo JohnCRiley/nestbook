@@ -102,6 +102,11 @@ export const IconBilling = () => icon(<>
   <line x1="1" y1="10" x2="23" y2="10" />
 </>);
 
+export const IconGuestMailer = () => icon(<>
+  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+  <polyline points="22,6 12,13 2,6" />
+</>);
+
 export const IconSocialKit = () => icon(<>
   <circle cx="18" cy="5"  r="3" />
   <circle cx="6"  cy="12" r="3" />
