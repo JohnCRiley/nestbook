@@ -1806,6 +1806,14 @@ John`
     `);
   } catch(e) { console.error('[schema] guest_mailer_log error:', e.message); }
 
+  // Review request emails
+  try { db.exec(`ALTER TABLE properties ADD COLUMN review_requests_enabled INTEGER NOT NULL DEFAULT 0`); } catch(e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN review_delay_days INTEGER NOT NULL DEFAULT 2`); } catch(e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN google_review_url TEXT`); } catch(e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN tripadvisor_review_url TEXT`); } catch(e) {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN review_request_sent INTEGER NOT NULL DEFAULT 0`); } catch(e) {}
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN review_request_sent_at TEXT`); } catch(e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

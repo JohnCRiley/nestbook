@@ -33,6 +33,7 @@ import { guestMailerRouter }         from './routes/guestMailer.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
+import { sendReviewRequestReminders } from './schedulers/reviewRequestScheduler.js';
 import { getBalanceDueDate } from './utils/deposits.js';
 import db from './db/database.js';
 
@@ -419,4 +420,8 @@ app.listen(PORT, () => {
   // bookings older than 1 hour so room dates are released. Runs every 30 min.
   cleanupAbandonedPendingPayments();
   setInterval(cleanupAbandonedPendingPayments, 30 * 60 * 1000);
+
+  // Review request emails — sent N days after checkout. Runs on boot then every 4 hours.
+  sendReviewRequestReminders();
+  setInterval(sendReviewRequestReminders, 4 * 60 * 60 * 1000);
 });

@@ -217,6 +217,7 @@ propertiesRouter.put('/:id', (req, res) => {
       access_method, access_code, arrival_instructions, send_access_hours,
       cancellation_days,
       block_booking_protection, block_booking_threshold,
+      review_requests_enabled, review_delay_days, google_review_url, tripadvisor_review_url,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal'];
@@ -239,7 +240,9 @@ propertiesRouter.put('/:id', (req, res) => {
           whole_property_rate = ?,
           access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
           cancellation_days = ?,
-          block_booking_protection = ?, block_booking_threshold = ?
+          block_booking_protection = ?, block_booking_threshold = ?,
+          review_requests_enabled = ?, review_delay_days = ?,
+          google_review_url = ?, tripadvisor_review_url = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -266,6 +269,10 @@ propertiesRouter.put('/:id', (req, res) => {
       cancellation_days != null ? parseInt(cancellation_days, 10) : 7,
       block_booking_protection ? 1 : 0,
       block_booking_threshold != null ? Math.max(2, parseInt(block_booking_threshold, 10)) : 2,
+      review_requests_enabled ? 1 : 0,
+      review_delay_days != null ? Math.max(0, parseInt(review_delay_days, 10)) : 2,
+      google_review_url?.trim()    || null,
+      tripadvisor_review_url?.trim() || null,
       req.params.id,
     );
     if (existing && newRentalType !== existing.rental_type) {

@@ -206,6 +206,10 @@ export default function Settings() {
         cancellation_days:    p.cancellation_days    ?? 7,
         block_booking_protection:    p.block_booking_protection ? 1 : 0,
         block_booking_threshold:     p.block_booking_threshold ?? 2,
+        review_requests_enabled:     p.review_requests_enabled ? 1 : 0,
+        review_delay_days:           p.review_delay_days ?? 2,
+        google_review_url:           p.google_review_url ?? '',
+        tripadvisor_review_url:      p.tripadvisor_review_url ?? '',
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -1338,6 +1342,79 @@ export default function Settings() {
               )}
             </div>
           )}
+
+          {/* Review Requests — Pro/Multi only */}
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro" title={t('settings.reviewRequests')} detail={t('settings.reviewRequestsDetail')}>
+              {form && (
+                <div className="settings-card">
+                  <div className="settings-card-header">
+                    <h2>{t('settings.reviewRequests')}</h2>
+                    <p>{t('settings.reviewRequestsHint')}</p>
+                  </div>
+                  <div className="settings-card-body">
+                    <div className="settings-form">
+                      <ToggleRow
+                        label={t('settings.reviewRequestsEnabled')}
+                        desc={t('settings.reviewRequestsEnabledHint')}
+                        checked={!!form.review_requests_enabled}
+                        onChange={() => setForm((p) => ({ ...p, review_requests_enabled: p.review_requests_enabled ? 0 : 1 }))}
+                      />
+                      {!!form.review_requests_enabled && (
+                        <>
+                          <FormField label={t('settings.reviewDelayDays')}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <input
+                                type="number"
+                                name="review_delay_days"
+                                className="form-control"
+                                min={0}
+                                max={30}
+                                value={form.review_delay_days}
+                                onChange={handleFormChange}
+                                style={{ width: 80 }}
+                              />
+                              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                {t('settings.reviewDelayDaysUnit')}
+                              </span>
+                            </div>
+                          </FormField>
+                          <FormField label={t('settings.googleReviewUrl')}>
+                            <input
+                              type="url"
+                              name="google_review_url"
+                              className="form-control"
+                              value={form.google_review_url}
+                              onChange={handleFormChange}
+                              placeholder="https://g.page/r/…/review"
+                            />
+                          </FormField>
+                          <FormField label={t('settings.tripadvisorUrl')}>
+                            <input
+                              type="url"
+                              name="tripadvisor_review_url"
+                              className="form-control"
+                              value={form.tripadvisor_review_url}
+                              onChange={handleFormChange}
+                              placeholder="https://www.tripadvisor.com/…"
+                            />
+                          </FormField>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.55 }}>
+                            {t('settings.reviewLinksNote')}
+                          </p>
+                        </>
+                      )}
+                      <div className="settings-save-row">
+                        <button className="btn-primary" onClick={handleSave} disabled={saving}>
+                          {saving ? t('saving') : t('saveChanges')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </PlanGate>
+          </div>
 
           {/* Billing — moved to dedicated page */}
           <p style={{ marginTop: 16, fontSize: '0.88rem', color: 'var(--text-muted)' }}>

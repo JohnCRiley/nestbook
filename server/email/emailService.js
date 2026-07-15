@@ -9,6 +9,7 @@ import { Resend } from 'resend';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { wrapGuestMailerEmail } from '../utils/emailWrapper.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -2863,4 +2864,101 @@ export async function sendOutreachEmail({ to, subject, html, from: fromOverride 
   const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const result = await resend.emails.send({ from: fromOverride || FROM, to, subject, html, text });
   console.log('[email] Outreach email sent →', to, '| id:', result?.id ?? result?.data?.id);
+}
+
+// ── Review request emails ─────────────────────────────────────────────────────
+// Sent automatically N days after checkout. Property-branded (not NestBook branded).
+// All 5 supported locales; defaults to EN for unknown locales.
+
+const REVIEW_TX = {
+  en: {
+    subject:      (name) => `How was your stay at ${name}?`,
+    greeting:     (first) => `Hi ${first},`,
+    p1:           (name) => `Thank you so much for staying with us at ${name} — we hope you had a wonderful time.`,
+    p2:           `If you enjoyed your stay, we'd be so grateful if you could take a minute to share it with a quick review. It genuinely makes a difference for a small, independent property like ours.`,
+    closing:      `Thank you again for choosing us — we hope to welcome you back soon.`,
+    google:       'Leave a review on Google',
+    tripadvisor:  'Leave a review on TripAdvisor',
+  },
+  fr: {
+    subject:      (name) => `Comment s'est passé votre séjour à ${name} ?`,
+    greeting:     (first) => `Bonjour ${first},`,
+    p1:           (name) => `Merci beaucoup d'avoir séjourné chez nous à ${name} — nous espérons que vous avez passé un excellent moment.`,
+    p2:           `Si vous avez apprécié votre séjour, nous vous serions très reconnaissants de prendre un instant pour le partager avec un avis. Cela fait vraiment une différence pour un établissement indépendant comme le nôtre.`,
+    closing:      `Merci encore de nous avoir choisis — nous espérons vous accueillir à nouveau bientôt.`,
+    google:       'Laisser un avis sur Google',
+    tripadvisor:  'Laisser un avis sur TripAdvisor',
+  },
+  de: {
+    subject:      (name) => `Wie war Ihr Aufenthalt in ${name}?`,
+    greeting:     (first) => `Hallo ${first},`,
+    p1:           (name) => `Vielen Dank, dass Sie bei uns in ${name} übernachtet haben — wir hoffen, Sie hatten eine wunderbare Zeit.`,
+    p2:           `Wenn Ihnen Ihr Aufenthalt gefallen hat, würden wir uns sehr freuen, wenn Sie sich einen Moment Zeit nehmen könnten, um dies mit einer kurzen Bewertung zu teilen. Für eine kleine, unabhängige Unterkunft wie unsere macht das wirklich einen Unterschied.`,
+    closing:      `Vielen Dank, dass Sie sich für uns entschieden haben — wir hoffen, Sie bald wieder bei uns begrüßen zu dürfen.`,
+    google:       'Bewertung bei Google hinterlassen',
+    tripadvisor:  'Bewertung bei TripAdvisor hinterlassen',
+  },
+  es: {
+    subject:      (name) => `¿Cómo fue tu estancia en ${name}?`,
+    greeting:     (first) => `Hola ${first},`,
+    p1:           (name) => `Muchas gracias por alojarte con nosotros en ${name} — esperamos que hayas disfrutado de una estancia maravillosa.`,
+    p2:           `Si disfrutaste tu estancia, te agradeceríamos muchísimo que dedicaras un momento a compartirlo con una breve reseña. Realmente marca la diferencia para un alojamiento independiente como el nuestro.`,
+    closing:      `Gracias de nuevo por elegirnos — esperamos darte la bienvenida de nuevo pronto.`,
+    google:       'Dejar una reseña en Google',
+    tripadvisor:  'Dejar una reseña en TripAdvisor',
+  },
+  nl: {
+    subject:      (name) => `Hoe was je verblijf in ${name}?`,
+    greeting:     (first) => `Hallo ${first},`,
+    p1:           (name) => `Hartelijk dank dat je bij ons hebt verbleven in ${name} — we hopen dat je een fantastische tijd hebt gehad.`,
+    p2:           `Als je van je verblijf hebt genoten, zouden we het enorm waarderen als je een moment de tijd neemt om dit te delen met een korte review. Dat maakt echt een verschil voor een kleine, onafhankelijke accommodatie zoals de onze.`,
+    closing:      `Nogmaals bedankt dat je voor ons hebt gekozen — we hopen je snel weer te mogen verwelkomen.`,
+    google:       'Laat een review achter op Google',
+    tripadvisor:  'Laat een review achter op TripAdvisor',
+  },
+};
+
+const BTN_STYLE = 'display:inline-block;padding:12px 22px;background:#1a4710;color:#ffffff;' +
+  'border-radius:6px;text-decoration:none;font-weight:bold;font-size:15px;margin:6px 4px;';
+
+export async function sendReviewRequestEmail({ booking, property }) {
+  if (!resend) return;
+
+  const tx = REVIEW_TX[property.locale] || REVIEW_TX.en;
+  const firstName = booking.first_name || 'there';
+  const propName  = property.name || '';
+
+  const googleBtn = property.google_review_url?.trim()
+    ? `<a href="${property.google_review_url}" style="${BTN_STYLE}">${tx.google}</a>`
+    : '';
+  const taBtn = property.tripadvisor_review_url?.trim()
+    ? `<a href="${property.tripadvisor_review_url}" style="${BTN_STYLE}">${tx.tripadvisor}</a>`
+    : '';
+
+  const bodyHtml = `
+<p style="margin:0 0 16px;line-height:1.7">${tx.greeting(firstName)}</p>
+<p style="margin:0 0 16px;line-height:1.7">${tx.p1(propName)}</p>
+<p style="margin:0 0 16px;line-height:1.7">${tx.p2}</p>
+<div style="text-align:center;margin:28px 0;">${googleBtn}${taBtn}</div>
+<p style="margin:0 0 16px;line-height:1.7">${tx.closing}</p>
+`;
+
+  const logoAbsUrl = property.logo_url
+    ? `${process.env.APP_BASE_URL || 'https://nestbook.io'}/uploads/logos/${property.logo_url}`
+    : null;
+
+  const html = wrapGuestMailerEmail(bodyHtml, {
+    propertyName:    propName,
+    logoAbsUrl,
+    ctaEnabled:      false,
+    mailerSignature: property.mailer_signature || null,
+  });
+
+  const from = `"${propName}" <hello@nestbook.io>`;
+  await resend.emails.send({
+    from, to: booking.guest_email,
+    subject: tx.subject(propName),
+    html,
+    text: html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+  });
 }
