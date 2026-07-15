@@ -5,6 +5,7 @@ import { makeGuestNoteToken } from '../lib/recoveryToken.js';
 const BASE_URL = process.env.APP_BASE_URL || 'https://nestbook.io';
 
 export async function sendReviewRequestReminders() {
+  console.log('[review-request] Scheduler running...');
   try {
     const candidates = db.prepare(`
       SELECT b.id, b.check_out_date,
@@ -29,11 +30,11 @@ export async function sendReviewRequestReminders() {
           OR p.guest_notes_enabled = 1
         )
         AND g.email IS NOT NULL AND TRIM(g.email) != ''
-        AND DATE(b.check_out_date) <= DATE('now', '-' || p.review_delay_days || ' days')
+        AND DATE(COALESCE(b.checked_out_at, b.check_out_date)) <= DATE('now', '-' || p.review_delay_days || ' days')
     `).all();
 
-    if (candidates.length === 0) return;
     console.log(`[review-request] ${candidates.length} email(s) to send`);
+    if (candidates.length === 0) return;
 
     for (const row of candidates) {
       try {
