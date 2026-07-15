@@ -614,6 +614,20 @@ function shell(bodyHtml) {
 </html>`;
 }
 
+// Property-branded wrapper helper — used by all guest-facing transactional emails.
+// Falls back to a property-initial avatar when no logo has been uploaded.
+function guestMailerHtml(bodyHtml, property) {
+  const logoAbsUrl = property?.logo_url
+    ? `${process.env.APP_BASE_URL || 'https://nestbook.io'}/uploads/logos/${property.logo_url}`
+    : null;
+  return wrapGuestMailerEmail(bodyHtml, {
+    propertyName:    property?.name || '',
+    logoAbsUrl,
+    ctaEnabled:      false,
+    mailerSignature: property?.mailer_signature || null,
+  });
+}
+
 // ── Booking confirmation HTML ─────────────────────────────────────────────────
 
 function bookingConfirmationHtml(booking, property) {
@@ -663,14 +677,9 @@ function bookingConfirmationHtml(booking, property) {
 
     <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
       ${t(locale, 'questions')}
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">
-      ${t(locale, 'poweredBy')}
     </p>`;
 
-  return shell(body);
+  return body;
 }
 
 // ── Welcome email HTML ────────────────────────────────────────────────────────
@@ -883,7 +892,7 @@ export async function sendBookingConfirmation(booking, property) {
       from:    FROM,
       to:      booking.guest_email,
       subject,
-      html:    bookingConfirmationHtml(booking, property ?? {}),
+      html:    guestMailerHtml(bookingConfirmationHtml(booking, property ?? {}), property ?? {}),
     });
     console.log(`[email] Booking confirmation sent → ${booking.guest_email}`);
   } catch (err) {
@@ -933,13 +942,10 @@ export async function sendDepositRequest(booking, property) {
 
     <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
       ${t(locale, 'depositPaymentInstr')}
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">${t(locale, 'poweredBy')}</p>`;
+    </p>`;
 
   try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
     console.log(`[email] Deposit request sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send deposit request:', err.message);
@@ -982,13 +988,10 @@ export async function sendDepositConfirmation(booking, property) {
         ${(booking.deposit_amount ?? property?.deposit_amount) ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#166534;font-weight:700;">${fmtDepositAmount(booking.deposit_amount ?? property.deposit_amount, property.currency)}</span>`) : ''}
         ${booking.balance_amount > 0 ? row('Balance remaining', `<span style="color:#374151;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
       </tr>
-    </table>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">${t(locale, 'poweredBy')}</p>`;
+    </table>`;
 
   try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
     console.log(`[email] Deposit confirmation sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send deposit confirmation:', err.message);
@@ -1032,13 +1035,10 @@ export async function sendBalanceDueEmail(booking, property) {
 
     <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
       Please arrange payment at your earliest convenience. Contact us if you have any questions.
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">${t(locale, 'poweredBy')}</p>`;
+    </p>`;
 
   try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
     console.log(`[email] Balance due reminder sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send balance due email:', err.message);
@@ -1442,12 +1442,10 @@ export async function sendBookingApprovedEmail(booking, property) {
     </table>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
       Questions? Reply to this email and we'll get back to you.
-    </p>
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    </p>`;
 
   try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
     console.log(`[email] Booking approved email sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send booking approved email:', err.message);
@@ -1469,12 +1467,10 @@ export async function sendBookingDeclinedEmail(booking, property) {
     </p>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
       We're sorry for any inconvenience. If you'd like to try alternative dates, please visit our booking page or contact us directly.
-    </p>
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    </p>`;
 
   try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
     console.log(`[email] Booking declined email sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send booking declined email:', err.message);
@@ -1553,12 +1549,10 @@ export async function sendAccessEmail(booking, property) {
     </table>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
       If you have any questions, please reply to this email to contact the owner directly.
-    </p>
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    </p>`;
 
   try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: shell(body) });
+    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
     console.log(`[email] Access details sent → ${booking.guest_email} (booking ${booking.id})`);
   } catch (err) {
     console.error('[email] Failed to send access email:', err.message);
@@ -1680,10 +1674,7 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
     <p style="margin:0 0 24px;font-size:0.82rem;color:#9ca3af;line-height:1.6;">
       Once payment is confirmed you will receive a full receipt by email.
       Thank you for choosing ${property.name} — we hope to welcome you back soon.
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    </p>`;
 
   try {
     await resend.emails.send({
@@ -1691,7 +1682,7 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
       to:      booking.guest_email,
       replyTo: ownerEmail || undefined,
       subject: `Your stay at ${property.name} — charges summary`,
-      html:    shell(body),
+      html:    guestMailerHtml(body, property),
     });
     console.log(`[charges-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
   } catch (err) {
@@ -1849,10 +1840,7 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     <p style="margin:0 0 24px;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.6;">
       This receipt was issued by ${property.name} via NestBook.<br>
       Ref: ${receiptRef} · Issued: ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
-    </p>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    </p>`;
 
   try {
     await resend.emails.send({
@@ -1860,7 +1848,7 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
       to:      booking.guest_email,
       replyTo: ownerEmail || undefined,
       subject: `Receipt — ${property.name} · ${fmtDate(booking.check_in_date, 'en')}`,
-      html:    shell(body),
+      html:    guestMailerHtml(body, property),
     });
     console.log(`[receipt-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
   } catch (err) {
@@ -2217,7 +2205,7 @@ export async function sendStayExtendedEmail(booking, property, newCheckOut, newT
       to: booking.guest_email,
       replyTo: ownerEmail || undefined,
       subject: `Stay extended — ${property.name} · now until ${fmtDate(newCheckOut, 'en')}`,
-      html: shell(body),
+      html: guestMailerHtml(body, property),
     });
     console.log(`[stay-extended] Email sent to ${booking.guest_email}`);
   } catch (err) {
@@ -2279,7 +2267,7 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
       to: booking.guest_email,
       replyTo: ownerEmail || undefined,
       subject: `Booking updated — ${property.name} · check-out now ${fmtDate(newCheckOut, 'en')}`,
-      html: shell(body),
+      html: guestMailerHtml(body, property),
     });
     console.log(`[stay-shortened] Email sent to ${booking.guest_email}`);
   } catch (err) {
@@ -2848,7 +2836,7 @@ export async function sendPaymentAssistanceEmail(booking, property) {
       to:      guestEmail,
       replyTo: ownerEmail || undefined,
       subject: tr.subject,
-      html:    shell(body),
+      html:    guestMailerHtml(body, property),
     });
     console.log(`[assistance-email] Sent → ${guestEmail} (booking #${booking.id})`);
   } catch (err) {
