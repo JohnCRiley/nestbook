@@ -1814,6 +1814,10 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN review_request_sent INTEGER NOT NULL DEFAULT 0`); } catch(e) {}
   try { db.exec(`ALTER TABLE bookings ADD COLUMN review_request_sent_at TEXT`); } catch(e) {}
 
+  // WiFi QR card
+  try { db.exec(`ALTER TABLE properties ADD COLUMN wifi_network_name TEXT`); } catch(e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN wifi_password TEXT`); } catch(e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

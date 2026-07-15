@@ -218,6 +218,7 @@ propertiesRouter.put('/:id', (req, res) => {
       cancellation_days,
       block_booking_protection, block_booking_threshold,
       review_requests_enabled, review_delay_days, google_review_url, tripadvisor_review_url,
+      wifi_network_name, wifi_password,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal'];
@@ -242,7 +243,8 @@ propertiesRouter.put('/:id', (req, res) => {
           cancellation_days = ?,
           block_booking_protection = ?, block_booking_threshold = ?,
           review_requests_enabled = ?, review_delay_days = ?,
-          google_review_url = ?, tripadvisor_review_url = ?
+          google_review_url = ?, tripadvisor_review_url = ?,
+          wifi_network_name = ?, wifi_password = ?
       WHERE id = ?
     `).run(
       name, type, address, city, country,
@@ -273,6 +275,8 @@ propertiesRouter.put('/:id', (req, res) => {
       review_delay_days != null ? Math.max(0, parseInt(review_delay_days, 10)) : 2,
       google_review_url?.trim()    || null,
       tripadvisor_review_url?.trim() || null,
+      wifi_network_name?.trim() || null,
+      wifi_password?.trim()     || null,
       req.params.id,
     );
     if (existing && newRentalType !== existing.rental_type) {

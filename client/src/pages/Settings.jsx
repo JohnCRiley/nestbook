@@ -211,6 +211,8 @@ export default function Settings() {
         review_delay_days:           p.review_delay_days ?? 2,
         google_review_url:           p.google_review_url ?? '',
         tripadvisor_review_url:      p.tripadvisor_review_url ?? '',
+        wifi_network_name:           p.wifi_network_name ?? '',
+        wifi_password:               p.wifi_password ?? '',
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -1076,6 +1078,11 @@ export default function Settings() {
           {/* QR Code — all plans */}
           <div style={{ marginTop: 16 }}>
             <QrCodeSection property={property} t={t} />
+          </div>
+
+          {/* WiFi QR Card — all plans */}
+          <div style={{ marginTop: 16 }}>
+            <WifiQrSection property={property} form={form} setForm={setForm} t={t} />
           </div>
 
           {/* Facebook Booking Button & slug editor — available on all plans */}
@@ -2221,6 +2228,30 @@ function AddPropertyForm({ onSave, onCancel }) {
   );
 }
 
+// ── Shared QR helpers ─────────────────────────────────────────────────────────
+
+function accentColor() {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent').trim() || '#1a4710';
+}
+
+function buildStyledQr(data, size, { logoSrc, color } = {}) {
+  return new QRCodeStyling({
+    width:  size,
+    height: size,
+    data,
+    qrOptions:            { errorCorrectionLevel: 'H' },
+    dotsOptions:          { type: 'rounded',       color },
+    cornersSquareOptions: { type: 'extra-rounded', color },
+    cornersDotOptions:    { type: 'dot',           color },
+    backgroundOptions:    { color: '#ffffff' },
+    image:        logoSrc,
+    imageOptions: logoSrc
+      ? { crossOrigin: 'anonymous', margin: 4, imageSize: 0.2 }
+      : undefined,
+  });
+}
+
 // ── QrCodeSection ─────────────────────────────────────────────────────────────
 
 function QrCodeSection({ property, t }) {
@@ -2234,27 +2265,8 @@ function QrCodeSection({ property, t }) {
     ? `/uploads/logos/${property.logo_url}`
     : undefined;
 
-  function accentColor() {
-    return getComputedStyle(document.documentElement)
-      .getPropertyValue('--accent').trim() || '#1a4710';
-  }
-
   function makeQr(size) {
-    const color = accentColor();
-    return new QRCodeStyling({
-      width:  size,
-      height: size,
-      data:   url,
-      qrOptions:            { errorCorrectionLevel: 'H' },
-      dotsOptions:          { type: 'rounded',       color },
-      cornersSquareOptions: { type: 'extra-rounded', color },
-      cornersDotOptions:    { type: 'dot',           color },
-      backgroundOptions:    { color: '#ffffff' },
-      image:        logoSrc,
-      imageOptions: logoSrc
-        ? { crossOrigin: 'anonymous', margin: 4, imageSize: 0.2 }
-        : undefined,
-    });
+    return buildStyledQr(url, size, { logoSrc, color: accentColor() });
   }
 
   // Re-render preview whenever URL, logo, or theme changes
@@ -2327,6 +2339,117 @@ function QrCodeSection({ property, t }) {
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── WifiQrSection ─────────────────────────────────────────────────────────────
+
+function WifiQrSection({ property, form, setForm, t }) {
+  const containerRef = useRef(null);
+  const [copyState, setCopyState] = useState(null);
+
+  const ssid     = form?.wifi_network_name?.trim() || '';
+  const password = form?.wifi_password?.trim()     || '';
+  const hasWifi  = ssid && password;
+  const wifiData = hasWifi ? `WIFI:T:WPA;S:${ssid};P:${password};;` : null;
+
+  const logoSrc = property?.logo_url
+    ? `/uploads/logos/${property.logo_url}`
+    : undefined;
+
+  function makeQr(size) {
+    return buildStyledQr(wifiData, size, { logoSrc, color: accentColor() });
+  }
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    containerRef.current.innerHTML = '';
+    if (wifiData) makeQr(240).append(containerRef.current);
+  }, [wifiData, logoSrc, property?.theme]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleDownload() {
+    if (!wifiData) return;
+    makeQr(1000).download({ name: `wifi-${property.booking_slug || property.id}`, extension: 'png' });
+  }
+
+  async function handleCopy() {
+    if (!wifiData) return;
+    try {
+      if (!navigator.clipboard?.write) throw new Error('unsupported');
+      const blob = await makeQr(600).getRawData('png');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopyState('copied');
+      setTimeout(() => setCopyState(null), 2000);
+    } catch {
+      setCopyState('failed');
+      setTimeout(() => setCopyState(null), 3000);
+    }
+  }
+
+  if (!property) return null;
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.wifiQrCard')}</h2>
+        <p>{t('settings.wifiQrCardHint')}</p>
+      </div>
+      <div className="settings-card-body">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: hasWifi ? 20 : 0 }}>
+          <div className="form-group">
+            <label className="form-label">{t('settings.wifiNetwork')}</label>
+            <input
+              className="form-control"
+              value={form?.wifi_network_name || ''}
+              onChange={e => setForm(f => ({ ...f, wifi_network_name: e.target.value }))}
+              placeholder="MyNetworkName"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t('settings.wifiPassword')}</label>
+            <input
+              className="form-control"
+              value={form?.wifi_password || ''}
+              onChange={e => setForm(f => ({ ...f, wifi_password: e.target.value }))}
+              placeholder="••••••••"
+            />
+          </div>
+        </div>
+
+        {hasWifi ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{
+              border: '1px solid var(--border)', borderRadius: 14,
+              padding: '20px 20px 14px', background: '#fff',
+              display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+              <div ref={containerRef} style={{ lineHeight: 0 }} />
+              <p style={{ margin: 0, textAlign: 'center', fontSize: '0.8rem', color: '#374151', fontWeight: 500 }}>
+                {t('settings.wifiQrScanCaption')}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button className="btn-secondary" onClick={handleCopy}>
+                {copyState === 'copied' ? t('settings.qrCopied') : t('settings.qrCopy')}
+              </button>
+              <button className="btn-secondary" onClick={handleDownload}>
+                {t('settings.qrDownload')}
+              </button>
+              {copyState === 'failed' && (
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('settings.qrCopyFail')}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>
+            {t('settings.wifiQrPlaceholder')}
+          </p>
+        )}
       </div>
     </div>
   );
