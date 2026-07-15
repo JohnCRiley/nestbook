@@ -2875,7 +2875,8 @@ const REVIEW_TX = {
     subject:      (name) => `How was your stay at ${name}?`,
     greeting:     (first) => `Hi ${first},`,
     p1:           (name) => `Thank you so much for staying with us at ${name} — we hope you had a wonderful time.`,
-    p2:           `If you enjoyed your stay, we'd be so grateful if you could take a minute to share it with a quick review. It genuinely makes a difference for a small, independent property like ours.`,
+    p2:           `If you enjoyed your stay, we'd be so grateful if you could take a minute to share it with a quick review on Google or TripAdvisor. It genuinely makes a difference for a small, independent property like ours.`,
+    p3:           `You're also welcome to leave a note directly on our own website, if you'd prefer.`,
     closing:      `Thank you again for choosing us — we hope to welcome you back soon.`,
     google:       'Leave a review on Google',
     tripadvisor:  'Leave a review on TripAdvisor',
@@ -2885,7 +2886,8 @@ const REVIEW_TX = {
     subject:      (name) => `Comment s'est passé votre séjour à ${name} ?`,
     greeting:     (first) => `Bonjour ${first},`,
     p1:           (name) => `Merci beaucoup d'avoir séjourné chez nous à ${name} — nous espérons que vous avez passé un excellent moment.`,
-    p2:           `Si vous avez apprécié votre séjour, nous vous serions très reconnaissants de prendre un instant pour le partager avec un avis. Cela fait vraiment une différence pour un établissement indépendant comme le nôtre.`,
+    p2:           `Si vous avez apprécié votre séjour, nous vous serions très reconnaissants de prendre un instant pour le partager avec un avis rapide sur Google ou TripAdvisor. Cela fait vraiment une différence pour un établissement indépendant comme le nôtre.`,
+    p3:           `Vous pouvez également laisser un mot directement sur notre site, si vous préférez.`,
     closing:      `Merci encore de nous avoir choisis — nous espérons vous accueillir à nouveau bientôt.`,
     google:       'Laisser un avis sur Google',
     tripadvisor:  'Laisser un avis sur TripAdvisor',
@@ -2895,7 +2897,8 @@ const REVIEW_TX = {
     subject:      (name) => `Wie war Ihr Aufenthalt in ${name}?`,
     greeting:     (first) => `Hallo ${first},`,
     p1:           (name) => `Vielen Dank, dass Sie bei uns in ${name} übernachtet haben — wir hoffen, Sie hatten eine wunderbare Zeit.`,
-    p2:           `Wenn Ihnen Ihr Aufenthalt gefallen hat, würden wir uns sehr freuen, wenn Sie sich einen Moment Zeit nehmen könnten, um dies mit einer kurzen Bewertung zu teilen. Für eine kleine, unabhängige Unterkunft wie unsere macht das wirklich einen Unterschied.`,
+    p2:           `Wenn Ihnen Ihr Aufenthalt gefallen hat, würden wir uns sehr freuen, wenn Sie sich einen Moment Zeit nehmen könnten, um dies mit einer kurzen Bewertung bei Google oder TripAdvisor zu teilen. Für eine kleine, unabhängige Unterkunft wie unsere macht das wirklich einen Unterschied.`,
+    p3:           `Sie können uns auch gerne direkt auf unserer eigenen Website eine Nachricht hinterlassen, falls Sie das bevorzugen.`,
     closing:      `Vielen Dank, dass Sie sich für uns entschieden haben — wir hoffen, Sie bald wieder bei uns begrüßen zu dürfen.`,
     google:       'Bewertung bei Google hinterlassen',
     tripadvisor:  'Bewertung bei TripAdvisor hinterlassen',
@@ -2905,7 +2908,8 @@ const REVIEW_TX = {
     subject:      (name) => `¿Cómo fue tu estancia en ${name}?`,
     greeting:     (first) => `Hola ${first},`,
     p1:           (name) => `Muchas gracias por alojarte con nosotros en ${name} — esperamos que hayas disfrutado de una estancia maravillosa.`,
-    p2:           `Si disfrutaste tu estancia, te agradeceríamos muchísimo que dedicaras un momento a compartirlo con una breve reseña. Realmente marca la diferencia para un alojamiento independiente como el nuestro.`,
+    p2:           `Si disfrutaste tu estancia, te agradeceríamos muchísimo que dedicaras un momento a compartirlo con una breve reseña en Google o TripAdvisor. Realmente marca la diferencia para un alojamiento independiente como el nuestro.`,
+    p3:           `También puedes dejarnos unas palabras directamente en nuestra web, si lo prefieres.`,
     closing:      `Gracias de nuevo por elegirnos — esperamos darte la bienvenida de nuevo pronto.`,
     google:       'Dejar una reseña en Google',
     tripadvisor:  'Dejar una reseña en TripAdvisor',
@@ -2915,7 +2919,8 @@ const REVIEW_TX = {
     subject:      (name) => `Hoe was je verblijf in ${name}?`,
     greeting:     (first) => `Hallo ${first},`,
     p1:           (name) => `Hartelijk dank dat je bij ons hebt verbleven in ${name} — we hopen dat je een fantastische tijd hebt gehad.`,
-    p2:           `Als je van je verblijf hebt genoten, zouden we het enorm waarderen als je een moment de tijd neemt om dit te delen met een korte review. Dat maakt echt een verschil voor een kleine, onafhankelijke accommodatie zoals de onze.`,
+    p2:           `Als je van je verblijf hebt genoten, zouden we het enorm waarderen als je een moment de tijd neemt om dit te delen met een korte review op Google of TripAdvisor. Dat maakt echt een verschil voor een kleine, onafhankelijke accommodatie zoals de onze.`,
+    p3:           `Je mag ons ook rechtstreeks op onze eigen website een berichtje achterlaten, als je dat liever hebt.`,
     closing:      `Nogmaals bedankt dat je voor ons hebt gekozen — we hopen je snel weer te mogen verwelkomen.`,
     google:       'Laat een review achter op Google',
     tripadvisor:  'Laat een review achter op TripAdvisor',
@@ -2925,6 +2930,8 @@ const REVIEW_TX = {
 
 const BTN_STYLE = 'display:inline-block;padding:12px 22px;background:#1a4710;color:#ffffff;' +
   'border-radius:6px;text-decoration:none;font-weight:bold;font-size:15px;margin:6px 4px;';
+const BTN_SECONDARY = 'display:inline-block;padding:10px 20px;background:transparent;color:#1a4710;' +
+  'border:2px solid #1a4710;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;margin:6px 4px;';
 
 export async function sendReviewRequestEmail({ booking, property, noteUrl }) {
   if (!resend) return;
@@ -2940,14 +2947,22 @@ export async function sendReviewRequestEmail({ booking, property, noteUrl }) {
     ? `<a href="${property.tripadvisor_review_url}" style="${BTN_STYLE}">${tx.tripadvisor}</a>`
     : '';
   const noteBtn = noteUrl
-    ? `<a href="${noteUrl}" style="${BTN_STYLE}">${tx.leaveNote}</a>`
+    ? `<a href="${noteUrl}" style="${BTN_SECONDARY}">${tx.leaveNote}</a>`
+    : '';
+
+  const primaryBtns = (googleBtn || taBtn)
+    ? `<div style="text-align:center;margin:28px 0 20px;">${googleBtn}${taBtn}</div>`
+    : '';
+  const secondaryBtns = noteBtn
+    ? `<p style="margin:0 0 12px;line-height:1.7;color:#555">${tx.p3}</p>` +
+      `<div style="text-align:center;margin:0 0 28px;">${noteBtn}</div>`
     : '';
 
   const bodyHtml = `
 <p style="margin:0 0 16px;line-height:1.7">${tx.greeting(firstName)}</p>
 <p style="margin:0 0 16px;line-height:1.7">${tx.p1(propName)}</p>
 <p style="margin:0 0 16px;line-height:1.7">${tx.p2}</p>
-<div style="text-align:center;margin:28px 0;">${googleBtn}${taBtn}${noteBtn}</div>
+${primaryBtns}${secondaryBtns}
 <p style="margin:0 0 16px;line-height:1.7">${tx.closing}</p>
 `;
 
