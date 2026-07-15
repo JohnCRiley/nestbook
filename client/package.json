@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "qr-code-styling": "^1.9.2",
     "qrcode": "^1.5.4",
     "quill": "^2.0.3",
     "quill-html-edit-button": "^3.0.0",

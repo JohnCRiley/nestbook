@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import QRCode from 'qrcode';
+import QRCodeStyling from 'qr-code-styling';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
@@ -2224,25 +2224,63 @@ function AddPropertyForm({ onSave, onCancel }) {
 // ── QrCodeSection ─────────────────────────────────────────────────────────────
 
 function QrCodeSection({ property, t }) {
-  const [qrSrc, setQrSrc] = useState(null);
-  const url = property
+  const containerRef  = useRef(null);
+  const [copyState, setCopyState] = useState(null); // null | 'copied' | 'failed'
+
+  const url     = property
     ? `https://nestbook.io/book/${property.booking_slug || property.id}`
     : null;
+  const logoSrc = property?.logo_url
+    ? `/uploads/logos/${property.logo_url}`
+    : undefined;
 
+  function accentColor() {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue('--accent').trim() || '#1a4710';
+  }
+
+  function makeQr(size) {
+    const color = accentColor();
+    return new QRCodeStyling({
+      width:  size,
+      height: size,
+      data:   url,
+      qrOptions:            { errorCorrectionLevel: 'H' },
+      dotsOptions:          { type: 'rounded',       color },
+      cornersSquareOptions: { type: 'extra-rounded', color },
+      cornersDotOptions:    { type: 'dot',           color },
+      backgroundOptions:    { color: '#ffffff' },
+      image:        logoSrc,
+      imageOptions: logoSrc
+        ? { crossOrigin: 'anonymous', margin: 4, imageSize: 0.2 }
+        : undefined,
+    });
+  }
+
+  // Re-render preview whenever URL, logo, or theme changes
   useEffect(() => {
-    if (!url) return;
-    QRCode.toDataURL(url, { width: 240, margin: 2, color: { dark: '#111827', light: '#ffffff' } })
-      .then(setQrSrc)
-      .catch(() => {});
-  }, [url]);
+    if (!url || !containerRef.current) return;
+    containerRef.current.innerHTML = '';
+    makeQr(240).append(containerRef.current);
+  }, [url, logoSrc, property?.theme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleDownload() {
     if (!url) return;
-    const dataUrl = await QRCode.toDataURL(url, { width: 1000, margin: 3, color: { dark: '#111827', light: '#ffffff' } });
-    const a = document.createElement('a');
-    a.href    = dataUrl;
-    a.download = `qr-${property.booking_slug || property.id}.png`;
-    a.click();
+    makeQr(1000).download({ name: `qr-${property.booking_slug || property.id}`, extension: 'png' });
+  }
+
+  async function handleCopy() {
+    if (!url) return;
+    try {
+      if (!navigator.clipboard?.write) throw new Error('unsupported');
+      const blob = await makeQr(600).getRawData('png');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopyState('copied');
+      setTimeout(() => setCopyState(null), 2000);
+    } catch {
+      setCopyState('failed');
+      setTimeout(() => setCopyState(null), 3000);
+    }
   }
 
   if (!property) return null;
@@ -2254,25 +2292,41 @@ function QrCodeSection({ property, t }) {
         <p>{t('settings.qrCodeHint')}</p>
       </div>
       <div className="settings-card-body">
-        {qrSrc && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14 }}>
-            <div style={{
-              border: '1px solid var(--border)', borderRadius: 10,
-              padding: 16, background: '#fff', display: 'inline-block',
-            }}>
-              <img src={qrSrc} alt="QR code" width={200} height={200} style={{ display: 'block' }} />
-              <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.8rem', color: '#374151', fontWeight: 500 }}>
-                {t('settings.qrScanCaption')}
-              </p>
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
-              {url}
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14 }}>
+
+          {/* Styled QR card */}
+          <div style={{
+            border: '1px solid var(--border)', borderRadius: 14,
+            padding: '20px 20px 14px', background: '#fff',
+            display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          }}>
+            <div ref={containerRef} style={{ lineHeight: 0 }} />
+            <p style={{ margin: 0, textAlign: 'center', fontSize: '0.8rem', color: '#374151', fontWeight: 500 }}>
+              {t('settings.qrScanCaption')}
+            </p>
+          </div>
+
+          {/* URL */}
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+            {url}
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button className="btn-secondary" onClick={handleCopy}>
+              {copyState === 'copied' ? t('settings.qrCopied') : t('settings.qrCopy')}
+            </button>
             <button className="btn-secondary" onClick={handleDownload}>
               {t('settings.qrDownload')}
             </button>
+            {copyState === 'failed' && (
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                {t('settings.qrCopyFail')}
+              </span>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
