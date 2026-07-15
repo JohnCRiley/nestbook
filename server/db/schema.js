@@ -1873,6 +1873,9 @@ John`
   db.exec(`CREATE INDEX IF NOT EXISTS idx_guest_notes_property ON guest_notes(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_guest_notes_status   ON guest_notes(status)`);
 
+  try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_enabled INTEGER NOT NULL DEFAULT 0`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_text TEXT`); } catch {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

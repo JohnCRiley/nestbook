@@ -431,6 +431,11 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 </div>`;
   }
 
+  const specialsBannerSection = (property.special_banner_enabled && property.special_banner_text?.trim()) ? `
+<div class="specials-banner">
+  <div class="specials-banner-inner">${esc(property.special_banner_text.trim())}</div>
+</div>` : '';
+
   const aboutSection = property.description ? `
 <section class="about">
   <div class="section-inner">
@@ -1010,6 +1015,22 @@ section h2 {
   font-weight: 700;
   color: ${esc(palette.dark)};
   margin-bottom: 24px;
+}
+
+/* ── Specials banner ────────────────────────────────────────────────── */
+.specials-banner {
+  background: ${esc(palette.light)};
+  border-bottom: 3px solid ${esc(palette.brand)};
+  padding: 16px 24px;
+  text-align: center;
+}
+.specials-banner-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  font-size: 1rem;
+  font-weight: 600;
+  color: ${esc(palette.dark)};
+  line-height: 1.5;
 }
 
 /* ── About ─────────────────────────────────────────────────────────── */
@@ -1599,6 +1620,7 @@ ${isDemo ? `<div class="demo-banner">
   <a href="https://nestbook.io/app/register">Create your own free page →</a>
 </div>` : ''}
 ${heroSection}
+${specialsBannerSection}
 ${aboutSection}
 ${roomsSection}
 ${notesSection}

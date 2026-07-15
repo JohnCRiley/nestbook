@@ -214,6 +214,8 @@ export default function Settings() {
         wifi_network_name:           p.wifi_network_name ?? '',
         wifi_password:               p.wifi_password ?? '',
         guest_notes_enabled:         p.guest_notes_enabled ? 1 : 0,
+        special_banner_enabled:      p.special_banner_enabled ? 1 : 0,
+        special_banner_text:         p.special_banner_text ?? '',
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -1085,6 +1087,13 @@ export default function Settings() {
           <div style={{ marginTop: 16 }}>
             <WifiQrSection property={property} form={form} setForm={setForm} t={t} />
           </div>
+
+          {/* Specials Banner — all plans */}
+          {form && (
+            <div style={{ marginTop: 16 }}>
+              <SpecialsBannerSection form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
+            </div>
+          )}
 
           {/* Facebook Booking Button & slug editor — available on all plans */}
           <div style={{ marginTop: 16 }}>
@@ -2450,6 +2459,50 @@ function GuestNotesSection({ form, setForm, handleSave, saving, t }) {
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── SpecialsBannerSection ─────────────────────────────────────────────────────
+
+function SpecialsBannerSection({ form, setForm, handleSave, saving, t }) {
+  const MAX = 200;
+  const text = form?.special_banner_text ?? '';
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.specials')}</h2>
+        <p>{t('settings.specialsHint')}</p>
+      </div>
+      <div className="settings-card-body">
+        <div className="settings-form">
+          <ToggleRow
+            label={t('settings.specialsToggle')}
+            checked={!!form.special_banner_enabled}
+            onChange={() => setForm(p => ({ ...p, special_banner_enabled: p.special_banner_enabled ? 0 : 1 }))}
+          />
+          <div>
+            <label className="form-label">{t('settings.specialsText')}</label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={text}
+              onChange={e => setForm(p => ({ ...p, special_banner_text: e.target.value.slice(0, MAX) }))}
+              placeholder={t('settings.specialsPlaceholder')}
+              style={{ resize: 'vertical' }}
+            />
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              {text.length}/{MAX}
+            </div>
+          </div>
+          <div className="settings-save-row">
+            <button className="btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? t('saving') : t('saveChanges')}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
