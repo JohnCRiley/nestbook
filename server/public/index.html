@@ -475,9 +475,11 @@ img { display: block; max-width: 100%; }
 }
 .hiw-features-title {
   text-align: center;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #173404;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 800;
+  color: var(--dark);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
   margin-bottom: 8px;
 }
 .hiw-features-sub {
@@ -784,11 +786,12 @@ img { display: block; max-width: 100%; }
   margin-bottom: 12px;
 }
 .coming-soon-title {
-  font-size: 2rem;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
   font-weight: 800;
   color: var(--dark);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
   margin-bottom: 48px;
-  letter-spacing: -0.01em;
 }
 .coming-soon-grid {
   display: grid;
@@ -818,9 +821,6 @@ img { display: block; max-width: 100%; }
 @media (max-width: 600px) {
   .coming-soon-grid {
     grid-template-columns: 1fr;
-  }
-  .coming-soon-title {
-    font-size: 1.5rem;
   }
 }
 
