@@ -6,6 +6,7 @@ import PlanGate from '../components/PlanGate.jsx';
 import QuillEditor from '../admin/QuillEditor.jsx';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const MONTHLY_LIMIT = 100;
 
 // Same list as server — client-side first check before even submitting
 const BLOCKED_DOMAINS = [
@@ -69,6 +70,9 @@ function GuestMailerInner({ property, updatePropertyInList, setProperty, t }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [sending, setSending]         = useState(false);
 
+  // Monthly quota
+  const [monthlyUsed, setMonthlyUsed] = useState(0);
+
   // History
   const [history, setHistory]         = useState([]);
   const [historyItem, setHistoryItem] = useState(null);
@@ -93,9 +97,12 @@ function GuestMailerInner({ property, updatePropertyInList, setProperty, t }) {
     if (!pid) return;
     setLoadingR(true);
     apiFetch(`/api/guest-mailer/recipients?property_id=${pid}`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { setRecipients(Array.isArray(data) ? data : []); })
-      .catch(() => setRecipients([]))
+      .then(r => r.ok ? r.json() : { recipients: [], monthlyUsed: 0 })
+      .then(data => {
+        setRecipients(data.recipients || []);
+        setMonthlyUsed(data.monthlyUsed ?? 0);
+      })
+      .catch(() => { setRecipients([]); setMonthlyUsed(0); })
       .finally(() => setLoadingR(false));
   }, [pid]);
 
@@ -173,6 +180,10 @@ function GuestMailerInner({ property, updatePropertyInList, setProperty, t }) {
   );
   const uniqueAdditional = additionalValid.filter(e => !guestEmailsSet.has(e));
   const totalCount       = selectedIds.size + new Set(uniqueAdditional).size;
+
+  // Monthly quota
+  const monthlyRemaining = MONTHLY_LIMIT - monthlyUsed;
+  const wouldExceed      = totalCount > 0 && totalCount > monthlyRemaining;
 
   const filteredRecipients = recipients.filter(g => {
     if (!guestSearch) return true;
@@ -263,6 +274,7 @@ function GuestMailerInner({ property, updatePropertyInList, setProperty, t }) {
       const data = await r.json();
       if (r.ok) {
         showToast(`Email sent to ${data.recipientCount} guests`);
+        setMonthlyUsed(prev => prev + (data.recipientCount || 0));
         setSelectedIds(new Set());
         setAdditionalRaw('');
         setSubject('');
@@ -539,6 +551,28 @@ function GuestMailerInner({ property, updatePropertyInList, setProperty, t }) {
             </div>
           </div>
 
+          {/* Monthly quota panel */}
+          <div style={{
+            background: wouldExceed ? '#fef2f2' : 'var(--card-bg)',
+            border: `1px solid ${wouldExceed ? '#fca5a5' : 'var(--border)'}`,
+            borderRadius: 10, padding: '12px 16px', marginTop: 8, marginBottom: 4,
+            fontSize: '0.82rem',
+          }}>
+            <span style={{ fontWeight: 600, color: wouldExceed ? '#dc2626' : 'var(--text-primary)' }}>
+              {t('gm.quotaUsed').replace('{used}', monthlyUsed).replace('{limit}', MONTHLY_LIMIT)}
+            </span>
+            {totalCount > 0 && !wouldExceed && (
+              <span style={{ color: 'var(--text-secondary)', marginLeft: 10 }}>
+                {t('gm.quotaWillUse').replace('{n}', totalCount).replace('{remaining}', monthlyRemaining)}
+              </span>
+            )}
+            {wouldExceed && (
+              <div style={{ color: '#dc2626', marginTop: 4 }}>
+                {t('gm.quotaExceeded').replace('{remaining}', monthlyRemaining)}
+              </div>
+            )}
+          </div>
+
           {/* Action bar */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
             <button style={BTN_S} onClick={handlePreview} disabled={!bodyHtml.trim()}>
@@ -548,8 +582,8 @@ function GuestMailerInner({ property, updatePropertyInList, setProperty, t }) {
               {t('gm.sendTest')}
             </button>
             <button
-              style={{ ...BTN_P, marginLeft: 'auto', opacity: totalCount === 0 || sending ? 0.5 : 1 }}
-              disabled={totalCount === 0 || sending || !!additionalError}
+              style={{ ...BTN_P, marginLeft: 'auto', opacity: totalCount === 0 || sending || wouldExceed ? 0.5 : 1 }}
+              disabled={totalCount === 0 || sending || !!additionalError || wouldExceed}
               onClick={() => setShowConfirm(true)}
             >
               {t('gm.send').replace('{n}', totalCount)}

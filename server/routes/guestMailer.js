@@ -54,6 +54,19 @@ function buildLogoUrl(prop) {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+const MONTHLY_LIMIT = 100;
+
+function getMonthlyUsed(propertyId) {
+  const now = new Date();
+  const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+  const row = db.prepare(`
+    SELECT COALESCE(SUM(recipient_count), 0) AS used
+    FROM guest_mailer_log
+    WHERE property_id = ? AND strftime('%Y-%m', sent_at) = ?
+  `).get(Number(propertyId), yearMonth);
+  return Number(row?.used ?? 0);
+}
+
 // ── GET /api/guest-mailer/recipients ─────────────────────────────────────────
 guestMailerRouter.get('/recipients', (req, res) => {
   try {
@@ -74,7 +87,12 @@ guestMailerRouter.get('/recipients', (req, res) => {
       ORDER BY last_stay DESC NULLS LAST, g.last_name, g.first_name
     `).all(pid);
 
-    res.json(rows.filter(r => !isBlockedEmail(r.email)));
+    const monthlyUsed = getMonthlyUsed(pid);
+    res.json({
+      recipients:   rows.filter(r => !isBlockedEmail(r.email)),
+      monthlyUsed,
+      monthlyLimit: MONTHLY_LIMIT,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -182,6 +200,17 @@ guestMailerRouter.post('/send', async (req, res) => {
 
     if (allRecipients.length === 0) {
       return res.status(400).json({ error: 'No recipients selected.' });
+    }
+
+    // Enforce monthly limit server-side
+    const usedThisMonth = getMonthlyUsed(property_id);
+    const remaining = MONTHLY_LIMIT - usedThisMonth;
+    if (allRecipients.length > remaining) {
+      return res.status(400).json({
+        error: `Monthly limit reached. You have ${remaining} email${remaining === 1 ? '' : 's'} remaining this month.`,
+        monthlyUsed: usedThisMonth,
+        monthlyLimit: MONTHLY_LIMIT,
+      });
     }
 
     // Log before sending
