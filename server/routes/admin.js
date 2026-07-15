@@ -1580,6 +1580,10 @@ adminRouter.post('/content-flags/:id/verify', (req, res) => {
   if (!flag) return res.status(404).json({ error: 'Not found' });
   db.prepare(`UPDATE content_flags SET status = 'verified', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?`)
     .run(req.user.userId, req.params.id);
+  if (flag.content_type === 'guest_note' && flag.content_ref) {
+    db.prepare(`UPDATE guest_notes SET status = 'approved', moderated_at = datetime('now') WHERE id = ?`)
+      .run(Number(flag.content_ref));
+  }
   res.json({ ok: true });
 });
 
@@ -1606,6 +1610,9 @@ adminRouter.post('/content-flags/:id/remove', async (req, res) => {
       db.prepare('UPDATE properties SET description = NULL WHERE id = ?').run(flag.property_id);
     } else if (flag.content_type === 'room_description') {
       db.prepare('UPDATE rooms SET description = NULL WHERE id = ?').run(flag.room_id);
+    } else if (flag.content_type === 'guest_note' && flag.content_ref) {
+      db.prepare(`UPDATE guest_notes SET status = 'rejected', moderated_at = datetime('now') WHERE id = ?`)
+        .run(Number(flag.content_ref));
     }
 
     db.prepare(`UPDATE content_flags SET status = 'removed', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?`)

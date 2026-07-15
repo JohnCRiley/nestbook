@@ -2879,6 +2879,7 @@ const REVIEW_TX = {
     closing:      `Thank you again for choosing us — we hope to welcome you back soon.`,
     google:       'Leave a review on Google',
     tripadvisor:  'Leave a review on TripAdvisor',
+    leaveNote:    'Leave us a note',
   },
   fr: {
     subject:      (name) => `Comment s'est passé votre séjour à ${name} ?`,
@@ -2888,6 +2889,7 @@ const REVIEW_TX = {
     closing:      `Merci encore de nous avoir choisis — nous espérons vous accueillir à nouveau bientôt.`,
     google:       'Laisser un avis sur Google',
     tripadvisor:  'Laisser un avis sur TripAdvisor',
+    leaveNote:    'Laissez-nous un mot',
   },
   de: {
     subject:      (name) => `Wie war Ihr Aufenthalt in ${name}?`,
@@ -2897,6 +2899,7 @@ const REVIEW_TX = {
     closing:      `Vielen Dank, dass Sie sich für uns entschieden haben — wir hoffen, Sie bald wieder bei uns begrüßen zu dürfen.`,
     google:       'Bewertung bei Google hinterlassen',
     tripadvisor:  'Bewertung bei TripAdvisor hinterlassen',
+    leaveNote:    'Hinterlassen Sie uns eine Nachricht',
   },
   es: {
     subject:      (name) => `¿Cómo fue tu estancia en ${name}?`,
@@ -2906,6 +2909,7 @@ const REVIEW_TX = {
     closing:      `Gracias de nuevo por elegirnos — esperamos darte la bienvenida de nuevo pronto.`,
     google:       'Dejar una reseña en Google',
     tripadvisor:  'Dejar una reseña en TripAdvisor',
+    leaveNote:    'Déjanos unas palabras',
   },
   nl: {
     subject:      (name) => `Hoe was je verblijf in ${name}?`,
@@ -2915,13 +2919,14 @@ const REVIEW_TX = {
     closing:      `Nogmaals bedankt dat je voor ons hebt gekozen — we hopen je snel weer te mogen verwelkomen.`,
     google:       'Laat een review achter op Google',
     tripadvisor:  'Laat een review achter op TripAdvisor',
+    leaveNote:    'Laat ons een berichtje achter',
   },
 };
 
 const BTN_STYLE = 'display:inline-block;padding:12px 22px;background:#1a4710;color:#ffffff;' +
   'border-radius:6px;text-decoration:none;font-weight:bold;font-size:15px;margin:6px 4px;';
 
-export async function sendReviewRequestEmail({ booking, property }) {
+export async function sendReviewRequestEmail({ booking, property, noteUrl }) {
   if (!resend) return;
 
   const tx = REVIEW_TX[property.locale] || REVIEW_TX.en;
@@ -2934,12 +2939,15 @@ export async function sendReviewRequestEmail({ booking, property }) {
   const taBtn = property.tripadvisor_review_url?.trim()
     ? `<a href="${property.tripadvisor_review_url}" style="${BTN_STYLE}">${tx.tripadvisor}</a>`
     : '';
+  const noteBtn = noteUrl
+    ? `<a href="${noteUrl}" style="${BTN_STYLE}">${tx.leaveNote}</a>`
+    : '';
 
   const bodyHtml = `
 <p style="margin:0 0 16px;line-height:1.7">${tx.greeting(firstName)}</p>
 <p style="margin:0 0 16px;line-height:1.7">${tx.p1(propName)}</p>
 <p style="margin:0 0 16px;line-height:1.7">${tx.p2}</p>
-<div style="text-align:center;margin:28px 0;">${googleBtn}${taBtn}</div>
+<div style="text-align:center;margin:28px 0;">${googleBtn}${taBtn}${noteBtn}</div>
 <p style="margin:0 0 16px;line-height:1.7">${tx.closing}</p>
 `;
 

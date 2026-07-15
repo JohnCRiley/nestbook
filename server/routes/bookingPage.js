@@ -439,6 +439,30 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   </div>
 </section>` : '';
 
+  const approvedNotes = property.guest_notes_enabled
+    ? db.prepare(`
+        SELECT guest_name, note_text
+        FROM guest_notes
+        WHERE property_id = ? AND status = 'approved' AND owner_visible = 1
+        ORDER BY submitted_at DESC
+        LIMIT 12
+      `).all(property.id)
+    : [];
+
+  const notesSection = approvedNotes.length > 0 ? `
+<section class="guest-notes-section">
+  <div class="section-inner">
+    <h2 data-i18n="page.whatGuestsSay">What Our Guests Say</h2>
+    <div class="notes-grid">
+      ${approvedNotes.map(n => `
+      <div class="note-card">
+        <p class="note-text">&ldquo;${esc(n.note_text)}&rdquo;</p>
+        ${n.guest_name ? `<p class="note-author">— ${esc(n.guest_name)}</p>` : ''}
+      </div>`).join('\n')}
+    </div>
+  </div>
+</section>` : '';
+
   let roomsSection;
   if (isWholeProperty) {
     roomsSection = `
@@ -1250,6 +1274,35 @@ section h2 {
 .room-capacity .ti, .room-breakfast .ti { font-size: 0.9rem; }
 #enquirySuccess .ti { font-size: 1.1rem; color: #16a34a; margin-right: 4px; }
 
+/* ── Guest Notes ────────────────────────────────────────────────────── */
+.guest-notes-section { background: #f8f9fa; }
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 8px;
+}
+.note-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid ${esc(palette.brand)};
+  border-radius: 10px;
+  padding: 22px;
+}
+.note-text {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #374151;
+  margin: 0 0 10px;
+  font-style: italic;
+}
+.note-author {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: ${esc(palette.dark)};
+  margin: 0;
+}
+
 /* ── CTA ───────────────────────────────────────────────────────────── */
 .cta { background: ${esc(palette.light)}; }
 .cta-inner { text-align: center; }
@@ -1548,6 +1601,7 @@ ${isDemo ? `<div class="demo-banner">
 ${heroSection}
 ${aboutSection}
 ${roomsSection}
+${notesSection}
 ${ctaSection}
 ${mapSection}
 ${isPaidPlan ? '' : `
@@ -1768,7 +1822,8 @@ var I18N = {
     "page.yourEmail":                 "Email address",
     "page.message":                   "Message (optional)",
     "page.selectRoom":                "Room",
-    "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly."
+    "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly.",
+    "page.whatGuestsSay":             "What Our Guests Say"
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -1803,7 +1858,8 @@ var I18N = {
     "page.yourEmail":                 "Adresse e-mail",
     "page.message":                   "Message (optionnel)",
     "page.selectRoom":                "Chambre",
-    "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement."
+    "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement.",
+    "page.whatGuestsSay":             "Ce que disent nos clients"
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -1838,7 +1894,8 @@ var I18N = {
     "page.yourEmail":                 "E-Mail-Adresse",
     "page.message":                   "Nachricht (optional)",
     "page.selectRoom":                "Zimmer",
-    "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden."
+    "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden.",
+    "page.whatGuestsSay":             "Was unsere Gäste sagen"
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -1873,7 +1930,8 @@ var I18N = {
     "page.yourEmail":                 "Correo electrónico",
     "page.message":                   "Mensaje (opcional)",
     "page.selectRoom":                "Habitación",
-    "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto."
+    "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto.",
+    "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes"
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -1908,7 +1966,8 @@ var I18N = {
     "page.yourEmail":                 "E-mailadres",
     "page.message":                   "Bericht (optioneel)",
     "page.selectRoom":                "Kamer",
-    "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op."
+    "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op.",
+    "page.whatGuestsSay":             "Wat onze gasten zeggen"
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };

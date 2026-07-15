@@ -21,6 +21,7 @@ import PaymentCancel    from './pages/PaymentCancel.jsx';
 import Billing          from './pages/Billing.jsx';
 import SocialKit        from './pages/SocialKit.jsx';
 import GuestMailer      from './pages/GuestMailer.jsx';
+import GuestNote        from './pages/GuestNote.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
 import ForgotPassword  from './pages/ForgotPassword.jsx';
 import ResetPassword   from './pages/ResetPassword.jsx';
@@ -259,6 +260,7 @@ export default function App() {
           <Route path="/reset-password"  element={<ResetPassword  />} />
           <Route path="/success"      element={<PaymentSuccess />} />
           <Route path="/cancel"       element={<PaymentCancel  />} />
+          <Route path="/guest-note"    element={<GuestNote      />} />
           <Route path="/super-admin/login" element={<SuperAdminLogin />} />
           <Route path="/super-admin/*" element={
             <AdminRoute>

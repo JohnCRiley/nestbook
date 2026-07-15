@@ -1818,6 +1818,61 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN wifi_network_name TEXT`); } catch(e) {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN wifi_password TEXT`); } catch(e) {}
 
+  // ── Guest Notes ───────────────────────────────────────────────────────────────
+  // Expand content_flags CHECK to include 'guest_note'
+  {
+    const cfSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='content_flags'`).get()?.sql ?? '';
+    if (!cfSql.includes("'guest_note'")) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE content_flags_v2 (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id  INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+            room_id      INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+            content_type TEXT NOT NULL CHECK(content_type IN ('room_photo','hero_photo','property_description','room_description','guest_note')),
+            content_ref  TEXT,
+            preview_text TEXT,
+            status       TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','verified','removed')),
+            created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            reviewed_at  TEXT,
+            reviewed_by  INTEGER REFERENCES users(id)
+          )
+        `);
+        db.exec(`INSERT INTO content_flags_v2 SELECT * FROM content_flags`);
+        db.exec(`DROP TABLE content_flags`);
+        db.exec(`ALTER TABLE content_flags_v2 RENAME TO content_flags`);
+        db.exec(`COMMIT`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_status ON content_flags(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_property ON content_flags(property_id)`);
+        console.log('✓ content_flags expanded to include guest_note type');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] content_flags migration skipped: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+    }
+  }
+
+  try { db.exec(`ALTER TABLE properties ADD COLUMN guest_notes_enabled INTEGER NOT NULL DEFAULT 0`); } catch(e) {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS guest_notes (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id   INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      booking_id    INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+      guest_name    TEXT,
+      note_text     TEXT NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      owner_visible INTEGER NOT NULL DEFAULT 1,
+      submitted_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      moderated_at  TEXT
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_guest_notes_property ON guest_notes(property_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_guest_notes_status   ON guest_notes(status)`);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

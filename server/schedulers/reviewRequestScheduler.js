@@ -1,5 +1,8 @@
 import db from '../db/database.js';
 import { sendReviewRequestEmail } from '../email/emailService.js';
+import { makeGuestNoteToken } from '../lib/recoveryToken.js';
+
+const BASE_URL = process.env.APP_BASE_URL || 'https://nestbook.io';
 
 export async function sendReviewRequestReminders() {
   try {
@@ -8,17 +11,23 @@ export async function sendReviewRequestReminders() {
              g.first_name, g.email AS guest_email,
              p.id AS property_id, p.name AS property_name, p.locale,
              p.logo_url, p.google_review_url, p.tripadvisor_review_url,
-             p.review_delay_days, p.mailer_signature
+             p.review_delay_days, p.mailer_signature,
+             p.review_requests_enabled, p.guest_notes_enabled
       FROM bookings b
       JOIN guests g ON g.id = b.guest_id
       JOIN properties p ON p.id = b.property_id
       WHERE b.status = 'checked_out'
         AND b.review_request_sent = 0
-        AND p.review_requests_enabled = 1
         AND (
+          (
+            p.review_requests_enabled = 1
+            AND (
               (p.google_review_url    IS NOT NULL AND TRIM(p.google_review_url)    != '')
            OR (p.tripadvisor_review_url IS NOT NULL AND TRIM(p.tripadvisor_review_url) != '')
             )
+          )
+          OR p.guest_notes_enabled = 1
+        )
         AND g.email IS NOT NULL AND TRIM(g.email) != ''
         AND DATE(b.check_out_date) <= DATE('now', '-' || p.review_delay_days || ' days')
     `).all();
@@ -28,6 +37,12 @@ export async function sendReviewRequestReminders() {
 
     for (const row of candidates) {
       try {
+        let noteUrl = null;
+        if (row.guest_notes_enabled) {
+          const { exp, t } = makeGuestNoteToken(row.id);
+          noteUrl = `${BASE_URL}/app/guest-note?b=${row.id}&exp=${exp}&t=${t}`;
+        }
+
         await sendReviewRequestEmail({
           booking: {
             id:           row.id,
@@ -38,10 +53,11 @@ export async function sendReviewRequestReminders() {
             name:                    row.property_name,
             locale:                  row.locale,
             logo_url:                row.logo_url,
-            google_review_url:       row.google_review_url,
-            tripadvisor_review_url:  row.tripadvisor_review_url,
+            google_review_url:       row.review_requests_enabled ? row.google_review_url : null,
+            tripadvisor_review_url:  row.review_requests_enabled ? row.tripadvisor_review_url : null,
             mailer_signature:        row.mailer_signature,
           },
+          noteUrl,
         });
         db.prepare(`
           UPDATE bookings

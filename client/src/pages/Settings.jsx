@@ -213,6 +213,7 @@ export default function Settings() {
         tripadvisor_review_url:      p.tripadvisor_review_url ?? '',
         wifi_network_name:           p.wifi_network_name ?? '',
         wifi_password:               p.wifi_password ?? '',
+        guest_notes_enabled:         p.guest_notes_enabled ? 1 : 0,
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -1429,6 +1430,22 @@ export default function Settings() {
             </PlanGate>
           </div>
 
+          {/* Guest Notes — Pro/Multi only */}
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro" title={t('settings.guestNotes')} detail={t('settings.guestNotesHint')}>
+              {form && (
+                <GuestNotesSection
+                  form={form}
+                  setForm={setForm}
+                  property={property}
+                  handleSave={handleSave}
+                  saving={saving}
+                  t={t}
+                />
+              )}
+            </PlanGate>
+          </div>
+
           {/* Billing — moved to dedicated page */}
           <p style={{ marginTop: 16, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
             Manage your plan and view invoices on the{' '}
@@ -2339,6 +2356,100 @@ function QrCodeSection({ property, t }) {
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── GuestNotesSection ─────────────────────────────────────────────────────────
+
+function GuestNotesSection({ form, setForm, handleSave, saving, t }) {
+  const [notes, setNotes]       = useState([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+
+  useEffect(() => {
+    if (!form?.guest_notes_enabled) return;
+    setLoadingNotes(true);
+    apiFetch('/api/guest-notes/my')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setNotes(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoadingNotes(false));
+  }, [form?.guest_notes_enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function toggleVisibility(note) {
+    const newVal = note.owner_visible ? 0 : 1;
+    await apiFetch(`/api/guest-notes/${note.id}/visibility`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ owner_visible: newVal }),
+    });
+    setNotes(prev => prev.map(n => n.id === note.id ? { ...n, owner_visible: newVal } : n));
+  }
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.guestNotes')}</h2>
+        <p>{t('settings.guestNotesHint')}</p>
+      </div>
+      <div className="settings-card-body">
+        <div className="settings-form">
+          <ToggleRow
+            label={t('settings.guestNotesToggle')}
+            desc={t('settings.guestNotesToggleHint')}
+            checked={!!form.guest_notes_enabled}
+            onChange={() => setForm(p => ({ ...p, guest_notes_enabled: p.guest_notes_enabled ? 0 : 1 }))}
+          />
+          <div className="settings-save-row">
+            <button className="btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? t('saving') : t('saveChanges')}
+            </button>
+          </div>
+        </div>
+
+        {!!form.guest_notes_enabled && (
+          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+            <h3 style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: 12 }}>
+              {t('settings.guestNotesApproved')}
+            </h3>
+            {loadingNotes ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>…</p>
+            ) : notes.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{t('settings.guestNotesNone')}</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {notes.map(note => (
+                  <div key={note.id} style={{
+                    border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px',
+                    background: note.owner_visible ? '#fff' : '#f8f9fa',
+                    opacity: note.owner_visible ? 1 : 0.65,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        {note.guest_name && (
+                          <p style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>
+                            {note.guest_name}
+                          </p>
+                        )}
+                        <p style={{ fontSize: '0.88rem', lineHeight: 1.65, color: '#374151', margin: 0 }}>
+                          "{note.note_text}"
+                        </p>
+                      </div>
+                      <button
+                        className="btn-secondary"
+                        style={{ fontSize: '0.78rem', padding: '4px 12px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                        onClick={() => toggleVisibility(note)}
+                      >
+                        {note.owner_visible ? t('settings.guestNotesHide') : t('settings.guestNotesShow')}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -26,3 +26,26 @@ export function recoveryUrl(base, bookingId) {
   const { exp, t } = makeRecoveryToken(bookingId);
   return `${base}/pay/recover?b=${bookingId}&exp=${exp}&t=${t}`;
 }
+
+// ── Guest note tokens — 7-day TTL, prefixed payload to prevent cross-type reuse ──
+
+const NOTE_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+export function makeGuestNoteToken(bookingId) {
+  const exp = Math.floor(Date.now() / 1000) + NOTE_TTL_SECONDS;
+  const payload = `note:${bookingId}:${exp}`;
+  const t = crypto.createHmac('sha256', SECRET()).update(payload).digest('hex').slice(0, 40);
+  return { exp, t };
+}
+
+export function verifyGuestNoteToken(bookingId, exp, t) {
+  if (!bookingId || !exp || !t) return false;
+  if (Date.now() / 1000 > Number(exp)) return false;
+  const payload = `note:${bookingId}:${exp}`;
+  const expected = crypto.createHmac('sha256', SECRET()).update(payload).digest('hex').slice(0, 40);
+  try {
+    return crypto.timingSafeEqual(Buffer.from(t, 'hex'), Buffer.from(expected, 'hex'));
+  } catch {
+    return false;
+  }
+}
