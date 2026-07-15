@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import QRCode from 'qrcode';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
@@ -1070,6 +1071,11 @@ export default function Settings() {
             <PlanGate requiredPlan="pro" title={t('settings.widgetEmbed')} detail={t('settings.widgetEmbedHint')}>
               <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
             </PlanGate>
+          </div>
+
+          {/* QR Code — all plans */}
+          <div style={{ marginTop: 16 }}>
+            <QrCodeSection property={property} t={t} />
           </div>
 
           {/* Facebook Booking Button & slug editor — available on all plans */}
@@ -2212,6 +2218,63 @@ function AddPropertyForm({ onSave, onCancel }) {
         </button>
       </div>
     </form>
+  );
+}
+
+// ── QrCodeSection ─────────────────────────────────────────────────────────────
+
+function QrCodeSection({ property, t }) {
+  const [qrSrc, setQrSrc] = useState(null);
+  const url = property
+    ? `https://nestbook.io/book/${property.booking_slug || property.id}`
+    : null;
+
+  useEffect(() => {
+    if (!url) return;
+    QRCode.toDataURL(url, { width: 240, margin: 2, color: { dark: '#111827', light: '#ffffff' } })
+      .then(setQrSrc)
+      .catch(() => {});
+  }, [url]);
+
+  async function handleDownload() {
+    if (!url) return;
+    const dataUrl = await QRCode.toDataURL(url, { width: 1000, margin: 3, color: { dark: '#111827', light: '#ffffff' } });
+    const a = document.createElement('a');
+    a.href    = dataUrl;
+    a.download = `qr-${property.booking_slug || property.id}.png`;
+    a.click();
+  }
+
+  if (!property) return null;
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.qrCode')}</h2>
+        <p>{t('settings.qrCodeHint')}</p>
+      </div>
+      <div className="settings-card-body">
+        {qrSrc && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{
+              border: '1px solid var(--border)', borderRadius: 10,
+              padding: 16, background: '#fff', display: 'inline-block',
+            }}>
+              <img src={qrSrc} alt="QR code" width={200} height={200} style={{ display: 'block' }} />
+              <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: '0.8rem', color: '#374151', fontWeight: 500 }}>
+                {t('settings.qrScanCaption')}
+              </p>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+              {url}
+            </div>
+            <button className="btn-secondary" onClick={handleDownload}>
+              {t('settings.qrDownload')}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
