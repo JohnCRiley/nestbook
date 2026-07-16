@@ -21,6 +21,7 @@ import PaymentCancel    from './pages/PaymentCancel.jsx';
 import Billing          from './pages/Billing.jsx';
 import SocialKit        from './pages/SocialKit.jsx';
 import GuestMailer      from './pages/GuestMailer.jsx';
+import InfoSheet        from './pages/InfoSheet.jsx';
 import GuestNote        from './pages/GuestNote.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
 import ForgotPassword  from './pages/ForgotPassword.jsx';
@@ -235,6 +236,7 @@ function AppLayout() {
           <Route path="/reports"       element={<Reports      />} />
           <Route path="/social-kit"   element={<SocialKit    />} />
           <Route path="/guest-mailer" element={<GuestMailer  />} />
+          <Route path="/info-sheet"   element={<InfoSheet    />} />
           <Route path="/activity-log" element={<ActivityLog  />} />
           <Route path="/billing"   element={<Billing   />} />
           <Route path="/settings"  element={<Settings  />} />

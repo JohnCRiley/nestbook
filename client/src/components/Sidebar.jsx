@@ -23,6 +23,7 @@ import {
   IconBilling,
   IconSocialKit,
   IconGuestMailer,
+  IconInfoSheet,
 } from './Icons.jsx';
 
 const ALL_NAV_ITEMS = [
@@ -35,6 +36,7 @@ const ALL_NAV_ITEMS = [
   { to: '/reports',      key: 'reports',      Icon: IconReports      },
   { to: '/social-kit',    key: 'socialKit',    Icon: IconSocialKit    },
   { to: '/guest-mailer',  key: 'guestMailer',  Icon: IconGuestMailer, ownerOnly: true },
+  { to: '/info-sheet',    key: 'infoSheet',    Icon: IconInfoSheet,   ownerOnly: true },
   { to: '/activity-log', key: 'activityLog',  Icon: IconActivityLog, ownerOnly: true },
   { to: '/billing',   key: 'billing',   Icon: IconBilling,  ownerOnly: true },
   { to: '/settings',  key: 'settings',  Icon: IconSettings  },
