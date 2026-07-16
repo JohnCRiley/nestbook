@@ -60,6 +60,30 @@ const MARKETING_MATERIALS = [
   },
 ];
 
+const DOWNLOADABLE_RESOURCES = [
+  {
+    key: 'guide',
+    title: 'Getting Started Guide',
+    desc: 'Onboarding PDF — share with new hosts after sign-up',
+    url: 'https://nestbook.io/nestbook-getting-started-guide.pdf',
+    icon: 'ti ti-book',
+  },
+  {
+    key: 'checklist',
+    title: 'Direct Booking Checklist',
+    desc: 'One-page checklist — hand out at events or email to leads',
+    url: 'https://nestbook.io/direct-booking-checklist.pdf',
+    icon: 'ti ti-checklist',
+  },
+  {
+    key: 'calculator',
+    title: 'Commission Calculator',
+    desc: 'Password-protected sales tool — for OTA cost comparison',
+    url: 'https://nestbook.io/calculator.html',
+    icon: 'ti ti-calculator',
+  },
+];
+
 export default function Overview() {
   const [stats,    setStats]    = useState(null);
   const [signups,  setSignups]  = useState([]);
@@ -221,6 +245,42 @@ export default function Overview() {
         </div>
       </div>
 
+      {/* Downloadable Resources */}
+      <div className="admin-card" style={{ marginTop: 16 }}>
+        <div className="admin-card-header">
+          <h2>Downloadable Resources</h2>
+          <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>Links for outreach &amp; onboarding</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '4px 0 4px' }}>
+          {DOWNLOADABLE_RESOURCES.map(({ key, title, desc, url, icon }, idx) => (
+            <div key={key} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 0',
+              borderBottom: idx < DOWNLOADABLE_RESOURCES.length - 1 ? '1px solid #f1f5f9' : 'none',
+            }}>
+              <i className={icon} style={{ fontSize: '1.1rem', color: '#6b7280', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1a2e14' }}>{title}</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 1 }}>{desc}</div>
+              </div>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  padding: '4px 10px', borderRadius: 5, fontSize: '0.75rem', fontWeight: 600,
+                  background: '#f0fdf4', border: '1px solid #86efac', color: '#166534',
+                  textDecoration: 'none', flexShrink: 0,
+                }}
+              >
+                Open
+              </a>
+              <CopyLinkBtn url={url} />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Recent signups */}
       <div className="admin-card" style={{ marginTop: 28 }}>
         <div className="admin-card-header">
@@ -252,6 +312,31 @@ export default function Overview() {
         </div>
       </div>
     </>
+  );
+}
+
+function CopyLinkBtn({ url }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  }
+  return (
+    <button
+      onClick={copy}
+      style={{
+        padding: '4px 10px', borderRadius: 5, fontSize: '0.75rem', fontWeight: 600,
+        background: copied ? '#1a4710' : '#f8fafc',
+        color: copied ? '#fff' : '#374151',
+        border: '1px solid #e2e8f0',
+        cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+        transition: 'background 0.15s, color 0.15s',
+      }}
+    >
+      {copied ? '✓ Copied' : 'Copy link'}
+    </button>
   );
 }
 
