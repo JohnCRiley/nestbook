@@ -692,64 +692,6 @@ function bookingConfirmationHtml(booking, property) {
   return body;
 }
 
-// ── Welcome email HTML ────────────────────────────────────────────────────────
-
-function welcomeHtml(user, property) {
-  const lang      = user.language || 'en';
-  const rawFirst  = (user.name?.split(' ')[0] || '').replace(/[,;]+$/, '').trim();
-  const greeting  = rawFirst ? `Hi ${rawFirst},` : 'Hi,';
-
-  const step = (num, title, desc) => `
-    <tr>
-      <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;">
-        <div style="display:flex;align-items:flex-start;gap:14px;">
-          <div style="min-width:28px;width:28px;height:28px;background:#1a4710;color:#fff;
-                      border-radius:50%;font-size:0.8rem;font-weight:700;text-align:center;
-                      line-height:28px;flex-shrink:0;">${num}</div>
-          <div>
-            <div style="font-size:0.875rem;font-weight:600;color:#111827;margin-bottom:3px;">${title}</div>
-            <div style="font-size:0.82rem;color:#6b7280;line-height:1.5;">${desc}</div>
-          </div>
-        </div>
-      </td>
-    </tr>`;
-
-  const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
-      ${t(lang, 'welcomeHeading')}
-    </h1>
-    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">
-      ${greeting}
-    </p>
-    <p style="margin:0 0 28px;font-size:0.95rem;color:#374151;">
-      <strong>${property.name || ''}</strong>${property.name ? ' is live on NestBook. ' : ''}${t(lang, 'welcomeIntro')}
-    </p>
-
-    <p style="margin:0 0 12px;font-size:0.82rem;font-weight:700;text-transform:uppercase;
-              letter-spacing:0.5px;color:#1a4710;">${lang === 'en' ? 'Get started in 3 steps' : ''}</p>
-
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      ${step(1, t(lang, 'step1Title'), t(lang, 'step1Desc'))}
-      ${step(2, t(lang, 'step2Title'), t(lang, 'step2Desc'))}
-      ${step(3, t(lang, 'step3Title'), t(lang, 'step3Desc'))}
-    </table>
-
-    <div style="text-align:center;margin-bottom:28px;">
-      <a href="https://nestbook.io/app/login"
-         style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
-                padding:13px 32px;border-radius:8px;font-size:0.9rem;font-weight:600;">
-        ${t(lang, 'goToDashboard')} →
-      </a>
-    </div>
-
-    <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
-    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
-      ${t(lang, 'welcomeFooter')}
-    </p>`;
-
-  return shell(body);
-}
-
 // ── Pro upgrade email HTML ────────────────────────────────────────────────────
 
 function proUpgradeHtml(user, property, periodEnd) {
@@ -1135,29 +1077,6 @@ export async function sendVerificationEmail(user, token) {
     console.log(`[email] Verification email sent → ${user.email}`);
   } catch (err) {
     console.error('[email] Failed to send verification email:', err.message);
-  }
-}
-
-/**
- * Send a welcome email to a newly-registered owner.
- * @param {object} user     — { name, email }
- * @param {object} property — { name, type, ... }
- */
-export async function sendWelcomeEmail(user, property) {
-  if (!resend) return;
-  if (!user?.email) return;
-
-  const lang = user.language || 'en';
-  try {
-    await resend.emails.send({
-      from:    FROM,
-      to:      user.email,
-      subject: t(lang, 'welcomeSubject'),
-      html:    welcomeHtml(user, property ?? {}),
-    });
-    console.log(`[email] Welcome email sent → ${user.email}`);
-  } catch (err) {
-    console.error('[email] Failed to send welcome email:', err.message);
   }
 }
 
