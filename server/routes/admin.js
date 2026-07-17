@@ -13,6 +13,7 @@ import { userMailerRouter } from './userMailer.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
+import { seedCategories } from '../utils/categories.js';
 
 export const adminRouter = Router();
 
@@ -409,6 +410,24 @@ adminRouter.patch('/properties/:id/demo', (req, res) => {
   try {
     const { is_demo } = req.body;
     db.prepare(`UPDATE properties SET is_demo = ? WHERE id = ?`).run(is_demo ? 1 : 0, req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PATCH /api/admin/properties/:id/rental-type ───────────────────────────────
+adminRouter.patch('/properties/:id/rental-type', (req, res) => {
+  try {
+    const { rental_type } = req.body;
+    const VALID = ['rooms', 'whole_property'];
+    if (!VALID.includes(rental_type)) return res.status(400).json({ error: 'Invalid rental_type.' });
+    const existing = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ error: 'Property not found.' });
+    db.prepare('UPDATE properties SET rental_type = ? WHERE id = ?').run(rental_type, req.params.id);
+    if (rental_type !== existing.rental_type) {
+      seedCategories(db, Number(req.params.id), rental_type);
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

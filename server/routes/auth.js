@@ -192,6 +192,7 @@ authRouter.post('/login', (req, res) => {
       trial_ends_at: user.trial_ends_at ?? null,
       stripe_subscription_id: user.stripe_subscription_id ?? null,
       language: user.language ?? 'en',
+      onboarding_completed: !!user.onboarding_completed,
     },
   });
 });
@@ -239,8 +240,8 @@ authRouter.post('/register', (req, res) => {
     propId = Number(prop.lastInsertRowid);
 
     const user = db.prepare(
-      `INSERT INTO users (property_id, name, email, password_hash, role, language, discount_code, email_verified, email_verification_token)
-       VALUES (?, ?, ?, ?, 'owner', ?, ?, 0, ?)`
+      `INSERT INTO users (property_id, name, email, password_hash, role, language, discount_code, email_verified, onboarding_completed, email_verification_token)
+       VALUES (?, ?, ?, ?, 'owner', ?, ?, 0, 0, ?)`
     ).run(propId, name, normalEmail, hash, userLang, validCode ?? null, verificationToken);
     userId = Number(user.lastInsertRowid);
 
@@ -278,7 +279,7 @@ authRouter.post('/register', (req, res) => {
 
   res.status(201).json({
     token,
-    user: { id: userId, name, email: normalEmail, role: 'owner', property_id: propId, email_verified: false, language: userLang },
+    user: { id: userId, name, email: normalEmail, role: 'owner', property_id: propId, email_verified: false, onboarding_completed: false, language: userLang },
   });
 
   // Auto-convert prospect if this email was in the outreach CRM
@@ -344,10 +345,16 @@ authRouter.post('/reset-password', async (req, res) => {
 // ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent FROM users WHERE id = ?'
+    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent, onboarding_completed FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
-  res.json({ ...user, email_verified: !!user.email_verified });
+  res.json({ ...user, email_verified: !!user.email_verified, onboarding_completed: !!user.onboarding_completed });
+});
+
+// ── PATCH /api/auth/complete-onboarding ──────────────────────────────────
+authRouter.patch('/complete-onboarding', requireAuth, (req, res) => {
+  db.prepare('UPDATE users SET onboarding_completed = 1 WHERE id = ?').run(req.user.userId);
+  res.json({ success: true });
 });
 
 authRouter.get('/verify-email', async (req, res) => {
@@ -373,15 +380,15 @@ authRouter.get('/verify-email', async (req, res) => {
   }
 
   // Re-read plan after potential upgrade so we send the right welcome email
-  const { plan, trial_ends_at } = db.prepare(
-    'SELECT plan, trial_ends_at FROM users WHERE id = ?'
+  const { plan, trial_ends_at, onboarding_completed } = db.prepare(
+    'SELECT plan, trial_ends_at, onboarding_completed FROM users WHERE id = ?'
   ).get(user.id);
 
   if (plan === 'free') {
     sendFreeWelcomeEmail(user).catch((e) => console.error('[welcome-email] Failed:', e.message));
   }
 
-  res.json({ success: true, plan, trial_ends_at, email_verified: 1 });
+  res.json({ success: true, plan, trial_ends_at, email_verified: 1, onboarding_completed: !!onboarding_completed });
 });
 
 // ── DELETE /api/auth/account ──────────────────────────────────────────────

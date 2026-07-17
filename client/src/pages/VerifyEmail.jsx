@@ -27,6 +27,7 @@ export default function VerifyEmail() {
             localStorage.setItem('nb_user', JSON.stringify({
               ...stored,
               email_verified: true,
+              onboarding_completed: data.onboarding_completed ?? stored.onboarding_completed ?? true,
               plan:          data.plan          ?? stored.plan,
               trial_ends_at: data.trial_ends_at ?? null,
             }));
@@ -34,11 +35,13 @@ export default function VerifyEmail() {
 
           updateUser({
             email_verified: true,
+            onboarding_completed: data.onboarding_completed ?? true,
             plan:          data.plan          ?? undefined,
             trial_ends_at: data.trial_ends_at ?? null,
           });
           setStatus('success');
-          setTimeout(() => { window.location.href = '/app'; }, 2500);
+          const dest = data.onboarding_completed === false ? '/app/onboarding' : '/app';
+          setTimeout(() => { window.location.href = dest; }, 2500);
         } else {
           setErrorMsg(data.error || 'Verification failed.');
           setStatus('error');
@@ -73,11 +76,8 @@ export default function VerifyEmail() {
           <>
             <h1 className="auth-heading" style={{ color: 'var(--accent)' }}>Email verified!</h1>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
-              Your email address has been verified. Taking you to your dashboard…
+              Your email address has been verified. Taking you to your account…
             </p>
-            <a href="/app" className="auth-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-              Go to dashboard →
-            </a>
           </>
         )}
 

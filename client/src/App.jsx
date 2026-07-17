@@ -23,6 +23,7 @@ import SocialKit        from './pages/SocialKit.jsx';
 import GuestMailer      from './pages/GuestMailer.jsx';
 import InfoSheet        from './pages/InfoSheet.jsx';
 import GuestNote        from './pages/GuestNote.jsx';
+import Onboarding       from './pages/Onboarding.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
 import ForgotPassword  from './pages/ForgotPassword.jsx';
 import ResetPassword   from './pages/ResetPassword.jsx';
@@ -268,6 +269,11 @@ export default function App() {
             <AdminRoute>
               <AdminLayout />
             </AdminRoute>
+          } />
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <Onboarding />
+            </ProtectedRoute>
           } />
           <Route path="/*" element={
             <ProtectedRoute>

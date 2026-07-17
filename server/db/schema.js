@@ -170,6 +170,12 @@ export function initSchema() {
     db.exec(`ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1`);
   } catch { /* already exists */ }
 
+  // onboarding_completed defaults to 1 so existing users skip the wizard;
+  // new registrations set it to 0 until the wizard is finished.
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN onboarding_completed INTEGER NOT NULL DEFAULT 1`);
+  } catch { /* already exists */ }
+
   try {
     db.exec(`ALTER TABLE users ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0`);
   } catch { /* already exists */ }

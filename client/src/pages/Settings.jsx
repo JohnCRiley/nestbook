@@ -551,34 +551,57 @@ export default function Settings() {
                   <label style={{ fontWeight: 600, fontSize: '0.85rem' }}>
                     {t('settings.rentalType')}
                   </label>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, rental_type: 'rooms' })}
-                      className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
-                    >
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                        <i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}
+                  {user?.onboarding_completed ? (
+                    <div style={{ marginTop: 8 }}>
+                      <div className={`rental-type-btn active`} style={{ display: 'inline-flex', flexDirection: 'column', cursor: 'default', opacity: 0.85 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                          {form.rental_type === 'whole_property'
+                            ? <><i className="ti ti-home" /> {t('settings.rentalTypeWhole')}</>
+                            : <><i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}</>
+                          }
+                        </div>
+                        <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
+                          {form.rental_type === 'whole_property'
+                            ? t('settings.rentalTypeWholeHint')
+                            : t('settings.rentalTypeRoomsHint')
+                          }
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
-                        {t('settings.rentalTypeRoomsHint')}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
-                      className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
-                    >
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                        <i className="ti ti-home" /> {t('settings.rentalTypeWhole')}
-                      </div>
-                      <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
-                        {t('settings.rentalTypeWholeHint')}
-                      </div>
-                    </button>
-                  </div>
+                      <p style={{ marginTop: 8, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        <i className="ti ti-lock" style={{ marginRight: 4 }} />
+                        {t('settings.rentalTypeLocked')}
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, rental_type: 'rooms' })}
+                        className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                          <i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
+                          {t('settings.rentalTypeRoomsHint')}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
+                        className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                          <i className="ti ti-home" /> {t('settings.rentalTypeWhole')}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
+                          {t('settings.rentalTypeWholeHint')}
+                        </div>
+                      </button>
+                    </div>
+                  )}
 
-                  {rentalTypeHint && (
+                  {!user?.onboarding_completed && rentalTypeHint && (
                     <div style={{ marginTop: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', padding: '6px 10px', background: 'var(--tint-bg)', borderRadius: 6 }}>
                       {rentalTypeHint}
                     </div>
