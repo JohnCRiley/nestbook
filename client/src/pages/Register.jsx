@@ -108,7 +108,7 @@ export default function Register() {
       }
 
       login(data.token, data.user);
-      navigate('/dashboard', { replace: true });
+      navigate('/check-email', { replace: true });
     } catch {
       setError(t('register.noServer'));
     } finally {

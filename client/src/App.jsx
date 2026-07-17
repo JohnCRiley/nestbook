@@ -24,6 +24,7 @@ import GuestMailer      from './pages/GuestMailer.jsx';
 import InfoSheet        from './pages/InfoSheet.jsx';
 import GuestNote        from './pages/GuestNote.jsx';
 import Onboarding       from './pages/Onboarding.jsx';
+import CheckEmail       from './pages/CheckEmail.jsx';
 import VerifyEmail      from './pages/VerifyEmail.jsx';
 import ForgotPassword  from './pages/ForgotPassword.jsx';
 import ResetPassword   from './pages/ResetPassword.jsx';
@@ -273,6 +274,11 @@ export default function App() {
           <Route path="/onboarding" element={
             <ProtectedRoute>
               <Onboarding />
+            </ProtectedRoute>
+          } />
+          <Route path="/check-email" element={
+            <ProtectedRoute>
+              <CheckEmail />
             </ProtectedRoute>
           } />
           <Route path="/*" element={

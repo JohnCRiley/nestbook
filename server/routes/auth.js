@@ -373,6 +373,23 @@ authRouter.patch('/complete-onboarding', requireAuth, (req, res) => {
   res.json({ success: true });
 });
 
+// ── POST /api/auth/resend-verification ───────────────────────────────────
+authRouter.post('/resend-verification', requireAuth, (req, res) => {
+  const user = db.prepare(
+    'SELECT id, name, email, language, email_verified FROM users WHERE id = ?'
+  ).get(req.user.userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+  if (user.email_verified) return res.json({ success: true }); // already verified, no-op
+
+  const newToken = crypto.randomBytes(32).toString('hex');
+  db.prepare('UPDATE users SET email_verification_token = ? WHERE id = ?').run(newToken, user.id);
+  sendVerificationEmail(
+    { name: user.name, email: user.email, language: user.language },
+    newToken
+  ).catch(() => {});
+  res.json({ success: true });
+});
+
 authRouter.get('/verify-email', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).json({ error: 'Token is required.' });
