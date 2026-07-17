@@ -85,6 +85,8 @@ export default function Onboarding() {
           name:                p.name               ?? '',
           type:                p.type               ?? 'bnb',
           address:             p.address            ?? '',
+          city:                p.city               ?? '',
+          country:             p.country            ?? '',
           check_in_time:       p.check_in_time      ?? '15:00',
           check_out_time:      p.check_out_time     ?? '11:00',
           currency:            p.currency           ?? 'EUR',
@@ -219,15 +221,35 @@ export default function Onboarding() {
             </select>
           </div>
 
-          {/* Street Address */}
-          <div style={{ marginBottom: 4 }}>
-            <label style={labelStyle}>{t('onboard.address')}</label>
+          {/* Address */}
+          <div style={{ marginBottom: 8 }}>
+            <label style={labelStyle}>{t('address')}</label>
             <input
               className="form-control"
               value={form.address}
               onChange={e => setForm({ ...form, address: e.target.value })}
-              placeholder="12 Rue des Fleurs, Lyon"
+              placeholder="47 Route de Gordes"
             />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 4 }}>
+            <div>
+              <label style={labelStyle}>{t('cityLabel')}</label>
+              <input
+                className="form-control"
+                value={form.city}
+                onChange={e => setForm({ ...form, city: e.target.value })}
+                placeholder="Roussillon"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>{t('countryLabel')}</label>
+              <input
+                className="form-control"
+                value={form.country}
+                onChange={e => setForm({ ...form, country: e.target.value })}
+                placeholder="France"
+              />
+            </div>
           </div>
           <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 16, marginTop: 4 }}>
             {t('onboard.addressHint')}
