@@ -208,8 +208,8 @@ propertiesRouter.put('/:id', (req, res) => {
       return res.status(404).json({ error: 'Property not found.' });
     }
     const {
-      name, type, address, city, country,
-      check_in_time, check_out_time, currency, locale, theme,
+      name ?? null, type ?? null, address ?? null, city ?? null, country ?? null,
+      check_in_time ?? null, check_out_time ?? null, currency ?? null, locale ?? null, theme,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time, breakfast_widget_enabled,
       description, hero_image_url,
@@ -255,8 +255,8 @@ propertiesRouter.put('/:id', (req, res) => {
           house_rules = ?, local_tips = ?
       WHERE id = ?
     `).run(
-      name, type, address, city, country,
-      check_in_time, check_out_time, currency, locale,
+      name ?? null, type ?? null, address ?? null, city ?? null, country ?? null,
+      check_in_time ?? null, check_out_time ?? null, currency ?? null, locale ?? null,
       VALID_THEMES.includes(theme) ? theme : 'forest',
       breakfast_included ? 1 : 0,
       require_deposit    ? 1 : 0,
