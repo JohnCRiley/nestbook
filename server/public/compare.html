@@ -754,7 +754,7 @@ img { display: block; max-width: 100%; }
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row" data-detail-key="detail.partnerLinks" data-detail="Partner with local restaurants, spas, and event venues to fill your quiet season — add their link to your booking page as a thank-you for the partnership. We believe small independent businesses do better working together, not competing for the same commission-driven platforms.">
+          <tr class="feat-row" data-detail-key="detail.partnerLinks" data-detail="Partner with local restaurants, spas, and event venues to fill your quiet season — add their link to your booking page as a thank-you for the partnership. We believe small independent businesses do better working together, not competing for the same commission-driven platforms. &lt;a href=&quot;/blog/partner-with-local-businesses.html&quot; style=&quot;color:var(--mid);font-weight:600&quot;&gt;Read the full story →&lt;/a&gt;">
             <td class="col-feature" data-i18n="feat.partnerLinks">Partnership Links</td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
@@ -1064,7 +1064,7 @@ var I18N = {
     'detail.reviewReqs': 'After check-out, NestBook automatically sends guests a polite review request linking to your Google or TripAdvisor page. Timing is configurable per property.',
     'detail.guestNotes': 'After their stay, guests can leave a private note for the owner — honest feedback that goes directly to you without affecting your public star rating on any platform.',
     'feat.partnerLinks': 'Partnership Links',
-    'detail.partnerLinks': 'Partner with local restaurants, spas, and event venues to fill your quiet season — add their link to your booking page as a thank-you for the partnership. We believe small independent businesses do better working together, not competing for the same commission-driven platforms.'
+    'detail.partnerLinks': 'Partner with local restaurants, spas, and event venues to fill your quiet season — add their link to your booking page as a thank-you for the partnership. We believe small independent businesses do better working together, not competing for the same commission-driven platforms. <a href="/blog/partner-with-local-businesses.html" style="color:var(--mid);font-weight:600">Read the full story →</a>'
   },
   fr: {
     'nav.features': 'Fonctionnalités', 'nav.pricing': 'Tarifs', 'nav.compare': 'Comparer les plans',
@@ -1497,7 +1497,7 @@ function applyLang(lang) {
       row.setAttribute('data-detail', t[key]);
       var next = row.nextElementSibling;
       if (next && next.classList.contains('detail-row')) {
-        next.querySelector('td').textContent = t[key];
+        next.querySelector('td').innerHTML = t[key];
       }
     }
   });
@@ -1528,7 +1528,7 @@ document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
       var td = document.createElement('td');
       td.colSpan = 4;
       td.className = 'detail-cell';
-      td.textContent = this.dataset.detail;
+      td.innerHTML = this.dataset.detail;
       tr.appendChild(td);
       this.after(tr);
     }

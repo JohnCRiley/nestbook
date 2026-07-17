@@ -3534,6 +3534,9 @@ function PartnershipLinksSection({ propertyId, links, setLinks, saving, setSavin
       <div className="settings-card-header">
         <h2>{t('settings.partnerLinks')}</h2>
         <p>{t('settings.partnerLinksHint')}</p>
+        <a href="https://nestbook.io/blog/partner-with-local-businesses.html" target="_blank" rel="noopener" style={{ fontSize: '0.8rem', color: 'var(--mid)', marginTop: 6, display: 'inline-block' }}>
+          Learn more about Partnership Links →
+        </a>
       </div>
       <div className="settings-card-body">
 
