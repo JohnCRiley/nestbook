@@ -32,6 +32,7 @@ import { enquiriesRouter }           from './routes/enquiries.js';
 import { guestMailerRouter }         from './routes/guestMailer.js';
 import { guestNotesPublicRouter, guestNotesProtectedRouter } from './routes/guestNotes.js';
 import { infoSheetRouter }            from './routes/infoSheet.js';
+import { partnershipLinksRouter }     from './routes/partnershipLinks.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
@@ -125,6 +126,7 @@ app.use('/api/error-reports', errorReportsRouter);
 app.use('/api/guest-mailer', guestMailerRouter);
 app.use('/api/guest-notes', guestNotesProtectedRouter);
 app.use('/api', infoSheetRouter);
+app.use('/api/partnerships', partnershipLinksRouter);
 
 // ── Standalone per-property booking page — slug or numeric ID ────────────────
 app.use('/book', bookingPageRouter);

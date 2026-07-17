@@ -1886,6 +1886,58 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN house_rules TEXT`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN local_tips TEXT`); } catch {}
 
+  // ── Partnership Links ─────────────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS partnership_links (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id   INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      label         TEXT    NOT NULL,
+      description   TEXT,
+      url           TEXT    NOT NULL,
+      icon_url      TEXT,
+      display_order INTEGER NOT NULL DEFAULT 0,
+      status        TEXT    NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_partnership_links_property ON partnership_links(property_id)`);
+
+  // Expand content_flags CHECK to include 'partnership_link'
+  {
+    const cfSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='content_flags'`).get()?.sql ?? '';
+    if (!cfSql.includes("'partnership_link'")) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE content_flags_v3 (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id  INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+            room_id      INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+            content_type TEXT NOT NULL CHECK(content_type IN ('room_photo','hero_photo','property_description','room_description','guest_note','partnership_link')),
+            content_ref  TEXT,
+            preview_text TEXT,
+            status       TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','verified','removed')),
+            created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            reviewed_at  TEXT,
+            reviewed_by  INTEGER REFERENCES users(id)
+          )
+        `);
+        db.exec(`INSERT INTO content_flags_v3 SELECT * FROM content_flags`);
+        db.exec(`DROP TABLE content_flags`);
+        db.exec(`ALTER TABLE content_flags_v3 RENAME TO content_flags`);
+        db.exec(`COMMIT`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_status ON content_flags(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_property ON content_flags(property_id)`);
+        console.log('✓ content_flags expanded to include partnership_link type');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] content_flags partnership_link migration skipped: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+    }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

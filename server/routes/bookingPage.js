@@ -313,7 +313,7 @@ const LANG_MAP = {
   'nl': 'nl', 'nl-NL': 'nl',
 };
 
-function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan) {
+function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = []) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -538,6 +538,19 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     <button class="lang-btn" data-lang="nl" onclick="applyLang('nl')">NL</button>
   </div>
 </footer>`;
+
+  const visiblePartners = partnerLinks.filter(l => l.status !== 'rejected');
+  const partnersSection = visiblePartners.length ? `
+<section class="partners-section">
+  <div class="partners-row">
+    ${visiblePartners.map(l => `
+    <a href="${esc(l.url)}" rel="nofollow sponsored" target="_blank" class="partner-link" title="${esc(l.description || l.label)}">
+      ${l.icon_url ? `<img src="${esc(l.icon_url)}" alt="${esc(l.label)}" class="partner-icon" loading="lazy">` : ''}
+      <span class="partner-label">${esc(l.label)}</span>
+      ${l.description ? `<span class="partner-desc">${esc(l.description)}</span>` : ''}
+    </a>`).join('')}
+  </div>
+</section>` : '';
 
   const hasLocation = city || property.address;
   const mapSection = hasLocation ? `
@@ -1582,6 +1595,43 @@ footer a:hover { text-decoration: underline; }
     min-height: 160px;
   }
 }
+/* ── Partnership Links ──────────────────────────────────────────────────── */
+.partners-section {
+  padding: 14px 16px 0;
+  max-width: var(--content-max, 960px);
+  margin: 0 auto;
+}
+.partners-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  opacity: 0.68;
+}
+.partner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  text-decoration: none;
+  color: #64748b;
+  font-size: 0.75rem;
+  background: #fff;
+  transition: opacity 0.15s;
+  line-height: 1.3;
+}
+.partner-link:hover { opacity: 1; border-color: #cbd5e1; }
+.partner-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.partner-label { font-weight: 600; }
+.partner-desc  { color: #94a3b8; }
 .demo-banner {
   background: #fffbeb;
   border-bottom: 2px solid #f59e0b;
@@ -1626,6 +1676,7 @@ ${roomsSection}
 ${notesSection}
 ${ctaSection}
 ${mapSection}
+${partnersSection}
 ${isPaidPlan ? '' : `
 <section id="booking-enquiry" class="enquiry-section">
   <div class="section-inner">
@@ -2138,7 +2189,14 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     }
 
     const isPaidPlan = ['pro', 'multi'].includes(property.plan);
-    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan));
+
+    const partnerLinks = isPaidPlan
+      ? db.prepare(
+          `SELECT * FROM partnership_links WHERE property_id = ? AND status != 'rejected' ORDER BY display_order ASC, id ASC`
+        ).all(property.id)
+      : [];
+
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');

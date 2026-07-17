@@ -6,6 +6,8 @@ const TYPE_LABEL = {
   hero_photo:           'Hero photo',
   property_description: 'Property description',
   room_description:     'Room description',
+  guest_note:           'Guest note',
+  partnership_link:     'Partnership link',
 };
 
 function timeAgo(dateStr) {

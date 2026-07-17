@@ -143,6 +143,10 @@ export default function Settings() {
   const [editingRatePeriod,   setEditingRatePeriod]   = useState(null); // period object | null
   const [ratePeriodDeleteTarget, setRatePeriodDeleteTarget] = useState(null);
 
+  const [partnerLinks, setPartnerLinks] = useState([]);
+  const [linkSaving,   setLinkSaving]   = useState(false);
+  const [linkError,    setLinkError]    = useState(null);
+
   const [rentalTypeHint, setRentalTypeHint] = useState(null);
   const [billingMessage, setBillingMessage] = useState(null); // { type, text }
 
@@ -261,6 +265,14 @@ export default function Settings() {
       .then((data) => setIcalFeeds(data.feeds || []))
       .catch(() => {});
   }, [activeProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!activeProperty?.id || plan === 'free') return;
+    apiFetch(`/api/partnerships/${activeProperty.id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setPartnerLinks(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [activeProperty?.id, plan]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAddFeed() {
     if (!newFeedUrl) return;
@@ -746,6 +758,22 @@ export default function Settings() {
 
               </div>
             </div>
+          </div>
+
+          {/* Partnership Links — Pro/Multi only */}
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro" title={t('settings.partnerLinks')} detail={t('settings.partnerLinksHint')}>
+              <PartnershipLinksSection
+                propertyId={activeProperty?.id}
+                links={partnerLinks}
+                setLinks={setPartnerLinks}
+                saving={linkSaving}
+                setSaving={setLinkSaving}
+                error={linkError}
+                setError={setLinkError}
+                t={t}
+              />
+            </PlanGate>
           </div>
 
           {/* Multi-property management — Multi plan only */}
@@ -3405,6 +3433,233 @@ function DepositSection({ form, onChange, onToggle, t, currencySymbol }) {
           </FormField>
         </>
       )}
+    </div>
+  );
+}
+
+// ── PartnershipLinksSection ───────────────────────────────────────────────────
+
+function PartnershipLinksSection({ propertyId, links, setLinks, saving, setSaving, error, setError, t }) {
+  const [addForm,     setAddForm]     = useState({ label: '', description: '', url: '', iconFile: null });
+  const [adding,      setAdding]      = useState(false);
+  const [editId,      setEditId]      = useState(null);
+  const [editForm,    setEditForm]    = useState({ label: '', description: '', url: '' });
+  const [editSaving,  setEditSaving]  = useState(false);
+  const iconInputRef = useRef(null);
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!addForm.label.trim() || !addForm.url.trim()) {
+      setError(t('settings.partnerLinksRequired'));
+      return;
+    }
+    setAdding(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('label', addForm.label.trim());
+      if (addForm.description.trim()) fd.append('description', addForm.description.trim());
+      fd.append('url', addForm.url.trim());
+      if (addForm.iconFile) fd.append('icon', addForm.iconFile);
+      const res = await apiFetch(`/api/partnerships/${propertyId}`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to add link');
+      } else {
+        setLinks(prev => [...prev, data]);
+        setAddForm({ label: '', description: '', url: '', iconFile: null });
+        if (iconInputRef.current) iconInputRef.current.value = '';
+      }
+    } catch {
+      setError('Network error — please try again');
+    }
+    setAdding(false);
+  }
+
+  async function handleDelete(id) {
+    if (!confirm(t('settings.partnerLinksDeleteConfirm'))) return;
+    await apiFetch(`/api/partnerships/${propertyId}/${id}`, { method: 'DELETE' });
+    setLinks(prev => prev.filter(l => l.id !== id));
+  }
+
+  async function handleMove(id, dir) {
+    const idx = links.findIndex(l => l.id === id);
+    if (idx < 0) return;
+    const newIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= links.length) return;
+    const reordered = [...links];
+    [reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]];
+    setLinks(reordered);
+    await apiFetch(`/api/partnerships/${propertyId}/reorder`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order: reordered.map(l => l.id) }),
+    });
+  }
+
+  function startEdit(link) {
+    setEditId(link.id);
+    setEditForm({ label: link.label, description: link.description || '', url: link.url });
+  }
+
+  async function handleEditSave() {
+    if (!editForm.label.trim() || !editForm.url.trim()) return;
+    setEditSaving(true);
+    const res = await apiFetch(`/api/partnerships/${propertyId}/${editId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: editForm.label, description: editForm.description, url: editForm.url }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setLinks(prev => prev.map(l => l.id === editId ? updated : l));
+      setEditId(null);
+    }
+    setEditSaving(false);
+  }
+
+  async function handleIconChange(id, file) {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('icon', file);
+    const res = await apiFetch(`/api/partnerships/${propertyId}/${id}/icon`, { method: 'POST', body: fd });
+    if (res.ok) {
+      const { icon_url } = await res.json();
+      setLinks(prev => prev.map(l => l.id === id ? { ...l, icon_url } : l));
+    }
+  }
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.partnerLinks')}</h2>
+        <p>{t('settings.partnerLinksHint')}</p>
+      </div>
+      <div className="settings-card-body">
+
+        {/* Existing links */}
+        {links.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+            {links.map((link, idx) => (
+              <div key={link.id} style={{ border: '1px solid var(--border)', borderRadius: 9, padding: '12px 14px', background: '#fff' }}>
+                {editId === link.id ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <input
+                      className="form-control"
+                      value={editForm.label}
+                      onChange={e => setEditForm(p => ({ ...p, label: e.target.value }))}
+                      placeholder={t('settings.partnerLinksLabel')}
+                    />
+                    <input
+                      className="form-control"
+                      value={editForm.description}
+                      onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))}
+                      placeholder={t('settings.partnerLinksDesc')}
+                    />
+                    <input
+                      className="form-control"
+                      value={editForm.url}
+                      onChange={e => setEditForm(p => ({ ...p, url: e.target.value }))}
+                      placeholder="https://"
+                      type="url"
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn-primary" onClick={handleEditSave} disabled={editSaving} style={{ fontSize: '0.82rem', padding: '6px 14px' }}>
+                        {editSaving ? t('saving') : t('saveChanges')}
+                      </button>
+                      <button className="btn-secondary" onClick={() => setEditId(null)} style={{ fontSize: '0.82rem', padding: '6px 12px' }}>
+                        {t('cancel')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {link.icon_url && (
+                      <img src={link.icon_url} alt="" style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{link.label}</div>
+                      {link.description && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{link.description}</div>}
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link.url}</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+                      <button
+                        onClick={() => handleMove(link.id, 'up')} disabled={idx === 0}
+                        style={{ border: '1px solid var(--border)', background: '#f8fafc', borderRadius: 4, padding: '2px 6px', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.35 : 1, fontSize: '0.7rem', lineHeight: 1 }}
+                      >▲</button>
+                      <button
+                        onClick={() => handleMove(link.id, 'down')} disabled={idx === links.length - 1}
+                        style={{ border: '1px solid var(--border)', background: '#f8fafc', borderRadius: 4, padding: '2px 6px', cursor: idx === links.length - 1 ? 'default' : 'pointer', opacity: idx === links.length - 1 ? 0.35 : 1, fontSize: '0.7rem', lineHeight: 1 }}
+                      >▼</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+                      <button className="btn-secondary" onClick={() => startEdit(link)} style={{ fontSize: '0.78rem', padding: '4px 10px' }}>
+                        {t('settings.partnerLinksEdit')}
+                      </button>
+                      <label style={{ cursor: 'pointer' }} title={t('settings.partnerLinksIcon')}>
+                        <span className="btn-secondary" style={{ fontSize: '0.78rem', padding: '4px 10px', display: 'inline-block', cursor: 'pointer' }}>
+                          {t('settings.partnerLinksIcon')}
+                        </span>
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleIconChange(link.id, e.target.files[0])} />
+                      </label>
+                      <button
+                        onClick={() => handleDelete(link.id)}
+                        style={{ border: 'none', background: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.78rem', padding: '4px 6px', fontFamily: 'inherit' }}
+                      >
+                        {t('settings.partnerLinksDelete')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add new link form */}
+        <div style={{ borderTop: links.length > 0 ? '1px solid var(--border)' : 'none', paddingTop: links.length > 0 ? 20 : 0 }}>
+          <h3 style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: 12 }}>{t('settings.partnerLinksAdd')}</h3>
+          {error && <p style={{ fontSize: '0.82rem', color: '#ef4444', marginBottom: 10 }}>{error}</p>}
+          <form onSubmit={handleAdd}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input
+                className="form-control"
+                value={addForm.label}
+                onChange={e => setAddForm(p => ({ ...p, label: e.target.value }))}
+                placeholder={t('settings.partnerLinksLabel')}
+                required
+              />
+              <input
+                className="form-control"
+                value={addForm.description}
+                onChange={e => setAddForm(p => ({ ...p, description: e.target.value }))}
+                placeholder={t('settings.partnerLinksDesc')}
+              />
+              <input
+                className="form-control"
+                value={addForm.url}
+                onChange={e => setAddForm(p => ({ ...p, url: e.target.value }))}
+                placeholder="https://"
+                type="url"
+                required
+              />
+              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>{t('settings.partnerLinksIconUpload')}</span>
+                <input
+                  ref={iconInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ fontSize: '0.82rem' }}
+                  onChange={e => setAddForm(p => ({ ...p, iconFile: e.target.files[0] || null }))}
+                />
+              </label>
+              <button className="btn-primary" type="submit" disabled={adding} style={{ alignSelf: 'flex-start', fontSize: '0.85rem' }}>
+                {adding ? t('saving') : t('settings.partnerLinksAdd')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
