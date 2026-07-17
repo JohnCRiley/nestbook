@@ -2294,10 +2294,9 @@ function buildStyledQr(data, size, { logoSrc, color } = {}) {
     cornersSquareOptions: { type: 'extra-rounded', color },
     cornersDotOptions:    { type: 'dot',           color },
     backgroundOptions:    { color: '#ffffff' },
-    image:        logoSrc,
-    imageOptions: logoSrc
-      ? { crossOrigin: 'anonymous', margin: 4, imageSize: 0.2 }
-      : undefined,
+    ...(logoSrc
+      ? { image: logoSrc, imageOptions: { crossOrigin: 'anonymous', margin: 4, imageSize: 0.2 } }
+      : {}),
   });
 }
 
