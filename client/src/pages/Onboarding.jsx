@@ -164,7 +164,7 @@ export default function Onboarding() {
   const isWhole = form.rental_type === 'whole_property';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '32px 16px' }}>
+    <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: '#f8fafc', padding: '32px 16px' }}>
       <div style={{ maxWidth: 560, margin: '0 auto' }}>
 
         {/* Logo */}

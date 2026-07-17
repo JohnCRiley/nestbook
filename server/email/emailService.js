@@ -104,7 +104,7 @@ const T = {
     onboardSubject:     "Welcome to NestBook! Here's how to get started 🌿",
     onboardHeroTag:     'Welcome aboard 🌿',
     onboardHeading:     "It's great to have you, there!",
-    onboardIntro:       "Your NestBook account is ready. You've taken the first step toward taking more direct bookings — and keeping more of what you earn. Let's get your property set up.",
+    onboardIntro:       'Your property management account is set up and ready to go.',
     onboardPlanTitle:   "✦ What's included in your Free plan",
     onboardStepsTitle:  'So, what do you do now?',
     onboardStepsSub:    'Follow these steps and your property page will be live in about 20 minutes.',
@@ -130,6 +130,8 @@ const T = {
     onboardProTitle:    'Thinking about more?',
     onboardProBody:     'When you\'re ready — NestBook Pro is £19/month and unlocks unlimited rooms, 5 photos per room, a direct booking widget for your own website, seasonal pricing, revenue reports and a 30-day free trial. No pressure — your Free plan is yours to keep for as long as you like.',
     onboardProCTA:      'See what Pro includes →',
+    onboardGuideIntro:  "You've already worked through the basics during setup — rooms, rates, and your first few settings. If you'd like a complete reference to come back to any time, we've put together a full Getting Started guide covering everything from seasonal pricing to your booking widget.",
+    onboardGuideLink:   'Read the Getting Started Guide →',
   },
   fr: {
     proUpgradeSubject:    'Bienvenue sur NestBook Pro — tout est prêt !',
@@ -205,7 +207,7 @@ const T = {
     onboardSubject:     'Bienvenue sur NestBook ! Voici comment commencer 🌿',
     onboardHeroTag:     'Bienvenue à bord 🌿',
     onboardHeading:     'Ravi de vous accueillir, there !',
-    onboardIntro:       "Votre compte NestBook est prêt. Vous avez fait le premier pas vers plus de réservations directes — et garder davantage de ce que vous gagnez. Configurons votre propriété.",
+    onboardIntro:       "Votre compte de gestion de propriété est configuré et prêt à l'emploi.",
     onboardPlanTitle:   '✦ Ce qui est inclus dans votre plan Gratuit',
     onboardStepsTitle:  'Alors, que faire maintenant ?',
     onboardStepsSub:    'Suivez ces étapes et votre page de réservation sera en ligne en environ 20 minutes.',
@@ -231,6 +233,8 @@ const T = {
     onboardProTitle:    'Vous voulez aller plus loin ?',
     onboardProBody:     "Quand vous êtes prêt — NestBook Pro est à 19£/mois et débloque des chambres illimitées, 5 photos par chambre, un widget de réservation pour votre site, la tarification saisonnière et des rapports de revenus. Sans pression — votre plan Gratuit est le vôtre pour aussi longtemps que vous le souhaitez.",
     onboardProCTA:      'Voir ce qu\'inclut Pro →',
+    onboardGuideIntro:  "Vous avez déjà parcouru les bases pendant la configuration — chambres, tarifs et premiers paramètres. Si vous souhaitez une référence complète à consulter à tout moment, nous avons préparé un guide de démarrage complet couvrant tout : des tarifs saisonniers à votre widget de réservation.",
+    onboardGuideLink:   'Lire le guide de démarrage →',
   },
   es: {
     proUpgradeSubject:    '¡Bienvenido a NestBook Pro — todo listo!',
@@ -306,7 +310,7 @@ const T = {
     onboardSubject:     '¡Bienvenido a NestBook! Cómo empezar 🌿',
     onboardHeroTag:     'Bienvenido a bordo 🌿',
     onboardHeading:     '¡Nos alegra tenerle con nosotros, there!',
-    onboardIntro:       'Su cuenta NestBook está lista. Ha dado el primer paso hacia más reservas directas — y quedarse con más de lo que gana. Vamos a configurar su propiedad.',
+    onboardIntro:       'Su cuenta de gestión de alojamiento está configurada y lista para usar.',
     onboardPlanTitle:   '✦ Qué incluye su plan Gratuito',
     onboardStepsTitle:  '¿Y ahora qué?',
     onboardStepsSub:    'Siga estos pasos y su página de reservas estará en línea en unos 20 minutos.',
@@ -332,6 +336,8 @@ const T = {
     onboardProTitle:    '¿Quiere ir más lejos?',
     onboardProBody:     'NestBook Pro es £19/mes y desbloquea habitaciones ilimitadas, 5 fotos por habitación, un widget de reservas para su web, precios de temporada e informes de ingresos. Sin presión — su plan Gratuito es suyo el tiempo que quiera.',
     onboardProCTA:      'Ver qué incluye Pro →',
+    onboardGuideIntro:  'Ya ha trabajado con los aspectos básicos durante la configuración: habitaciones, tarifas y sus primeros ajustes. Si desea una referencia completa a la que volver en cualquier momento, hemos preparado una guía de inicio completa que cubre todo, desde los precios de temporada hasta su widget de reservas.',
+    onboardGuideLink:   'Leer la guía de inicio →',
   },
   de: {
     proUpgradeSubject:    'Willkommen bei NestBook Pro — alles ist bereit!',
@@ -407,7 +413,7 @@ const T = {
     onboardSubject:     'Willkommen bei NestBook! So fangen Sie an 🌿',
     onboardHeroTag:     'Herzlich willkommen 🌿',
     onboardHeading:     'Schön, dass Sie dabei sind, there!',
-    onboardIntro:       'Ihr NestBook-Konto ist bereit. Sie haben den ersten Schritt zu mehr Direktbuchungen gemacht — und behalten mehr von dem, was Sie verdienen. Lassen Sie uns Ihre Unterkunft einrichten.',
+    onboardIntro:       'Ihr Unterkunftsverwaltungskonto ist eingerichtet und einsatzbereit.',
     onboardPlanTitle:   '✦ Was in Ihrem Free-Plan enthalten ist',
     onboardStepsTitle:  'Was tun Sie jetzt?',
     onboardStepsSub:    'Folgen Sie diesen Schritten — Ihre Buchungsseite ist in etwa 20 Minuten live.',
@@ -433,6 +439,8 @@ const T = {
     onboardProTitle:    'Möchten Sie mehr?',
     onboardProBody:     'NestBook Pro ist für 19£/Monat verfügbar und schaltet unbegrenzte Zimmer, 5 Fotos pro Zimmer, ein Buchungs-Widget für Ihre Website, saisonale Preisgestaltung und Umsatzberichte frei. Kein Druck — Ihr Free-Plan gehört Ihnen, so lange Sie möchten.',
     onboardProCTA:      'Sehen, was Pro beinhaltet →',
+    onboardGuideIntro:  'Sie haben während der Einrichtung bereits die Grundlagen durchgearbeitet — Zimmer, Preise und erste Einstellungen. Wenn Sie jederzeit eine vollständige Referenz zur Hand haben möchten, haben wir einen umfassenden Leitfaden für den Einstieg zusammengestellt, der alles von Saisonpreisen bis zum Buchungs-Widget abdeckt.',
+    onboardGuideLink:   'Leitfaden für den Einstieg lesen →',
   },
   nl: {
     proUpgradeSubject:    'Welkom bij NestBook Pro — alles is klaar!',
@@ -508,7 +516,7 @@ const T = {
     onboardSubject:     'Welkom bij NestBook! Zo begint u 🌿',
     onboardHeroTag:     'Welkom aan boord 🌿',
     onboardHeading:     'Fijn dat u erbij bent, there!',
-    onboardIntro:       'Uw NestBook-account is klaar. U heeft de eerste stap gezet naar meer directe boekingen — en meer houden van wat u verdient. Laten we uw accommodatie instellen.',
+    onboardIntro:       'Uw accommodatiebeheeraccount is ingesteld en klaar voor gebruik.',
     onboardPlanTitle:   '✦ Wat inbegrepen is in uw Gratis plan',
     onboardStepsTitle:  'Wat doet u nu?',
     onboardStepsSub:    'Volg deze stappen en uw boekingspagina staat in ongeveer 20 minuten live.',
@@ -534,6 +542,8 @@ const T = {
     onboardProTitle:    'Wilt u meer?',
     onboardProBody:     "NestBook Pro is £19/maand en ontgrendelt onbeperkte kamers, 5 foto's per kamer, een boekingswidget voor uw website, seizoensprijzen en omzetrapporten. Geen druk — uw Gratis plan is van u zolang u wilt.",
     onboardProCTA:      'Zie wat Pro inhoudt →',
+    onboardGuideIntro:  'U hebt de basisinstellingen al doorlopen tijdens het instellen — kamers, tarieven en uw eerste instellingen. Als u altijd een volledige referentie bij de hand wilt hebben, hebben we een uitgebreide startgids samengesteld die alles behandelt van seizoensprijzen tot uw boekingswidget.',
+    onboardGuideLink:   'Lees de startgids →',
   },
 };
 
@@ -685,7 +695,9 @@ function bookingConfirmationHtml(booking, property) {
 // ── Welcome email HTML ────────────────────────────────────────────────────────
 
 function welcomeHtml(user, property) {
-  const lang = user.language || 'en';
+  const lang      = user.language || 'en';
+  const rawFirst  = (user.name?.split(' ')[0] || '').replace(/[,;]+$/, '').trim();
+  const greeting  = rawFirst ? `Hi ${rawFirst},` : 'Hi,';
 
   const step = (num, title, desc) => `
     <tr>
@@ -707,7 +719,7 @@ function welcomeHtml(user, property) {
       ${t(lang, 'welcomeHeading')}
     </h1>
     <p style="margin:0 0 6px;font-size:1rem;color:#374151;">
-      Hi ${user.name},
+      ${greeting}
     </p>
     <p style="margin:0 0 28px;font-size:0.95rem;color:#374151;">
       <strong>${property.name || ''}</strong>${property.name ? ' is live on NestBook. ' : ''}${t(lang, 'welcomeIntro')}
@@ -1856,11 +1868,12 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
   }
 }
 
-// ── Free-plan welcome email (sent on email verification) ─────────────────────
+// ── Free-plan welcome email (sent after onboarding completes) ─────────────────
 
-function welcomeEmailHTML(user) {
+function welcomeEmailHTML(user, property) {
   const lang      = user.language || 'en';
-  const firstName = user.name?.split(' ')[0] || 'there';
+  const rawFirst  = (user.name?.split(' ')[0] || '').replace(/[,;]+$/, '').trim();
+  const firstName = rawFirst || 'there';
 
   return `<!DOCTYPE html>
 <html lang="${lang}">
@@ -1931,7 +1944,7 @@ function welcomeEmailHTML(user) {
   <div class="hero">
     <div class="hero-tag">${t(lang, 'onboardHeroTag')}</div>
     <h1>${t(lang, 'onboardHeading').replace('there', firstName)}</h1>
-    <p>${t(lang, 'onboardIntro')}</p>
+    <p>${property?.name ? `<strong>${property.name}</strong> is live on NestBook. ` : ''}${t(lang, 'onboardIntro')}</p>
   </div>
 
   <div class="body">
@@ -1948,66 +1961,13 @@ function welcomeEmailHTML(user) {
       <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>7 colour themes</strong> — make NestBook feel like yours</span></div>
     </div>
 
-    <p class="steps-title">${t(lang, 'onboardStepsTitle')}</p>
-    <p class="steps-sub">${t(lang, 'onboardStepsSub')}</p>
+    <p style="font-size:15px;color:#475569;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardGuideIntro')}</p>
 
-    <div class="step">
-      <div class="step-num">1</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep1Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep1Body')}</div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">2</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep2Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep2Body')}</div>
-        <div class="step-hint">💡 ${t(lang, 'onboardStep2Hint')}</div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">3</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep3Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep3Body')}</div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">4</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep4Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep4Body')}</div>
-        <div class="step-hint">📸 ${t(lang, 'onboardStep4Hint')}</div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">5</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep5Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep5Body')}</div>
-        <div class="step-tip">✓ ${t(lang, 'onboardStep5Tip')}</div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">6</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep6Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep6Body')}</div>
-      </div>
-    </div>
-
-    <div class="step">
-      <div class="step-num">7</div>
-      <div>
-        <div class="step-title">${t(lang, 'onboardStep7Title')}</div>
-        <div class="step-desc">${t(lang, 'onboardStep7Body')}</div>
-      </div>
+    <div style="text-align:center;margin-bottom:28px;">
+      <a href="https://nestbook.io/nestbook-getting-started-guide.pdf"
+         style="display:inline-block;background:#f0fdf4;color:#1a4710;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:700;border:1.5px solid #d9f0cc;">
+        ${t(lang, 'onboardGuideLink')}
+      </a>
     </div>
 
     <div class="divider"></div>
@@ -2046,10 +2006,11 @@ function welcomeEmailHTML(user) {
 }
 
 /**
- * Send a rich onboarding welcome email to a newly-verified Free plan user.
- * @param {object} user — { name, email }
+ * Send a welcome email to a newly-onboarded Free plan user.
+ * @param {object} user     — { name, email, language }
+ * @param {object} property — { name }
  */
-export async function sendFreeWelcomeEmail(user) {
+export async function sendFreeWelcomeEmail(user, property) {
   if (!resend) return;
   if (!user?.email) return;
   const lang = user.language || 'en';
@@ -2058,7 +2019,7 @@ export async function sendFreeWelcomeEmail(user) {
       from:    'NestBook <hello@nestbook.io>',
       to:      user.email,
       subject: t(lang, 'onboardSubject'),
-      html:    welcomeEmailHTML(user),
+      html:    welcomeEmailHTML(user, property ?? {}),
     });
     console.log(`[email] Free welcome email sent → ${user.email}`);
   } catch (err) {

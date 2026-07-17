@@ -353,7 +353,23 @@ authRouter.get('/me', requireAuth, (req, res) => {
 
 // ── PATCH /api/auth/complete-onboarding ──────────────────────────────────
 authRouter.patch('/complete-onboarding', requireAuth, (req, res) => {
-  db.prepare('UPDATE users SET onboarding_completed = 1 WHERE id = ?').run(req.user.userId);
+  const userId = req.user.userId;
+
+  // Read plan and previous completion state before updating
+  const before = db.prepare('SELECT plan, onboarding_completed FROM users WHERE id = ?').get(userId);
+  const wasAlreadyCompleted = !!before?.onboarding_completed;
+
+  db.prepare('UPDATE users SET onboarding_completed = 1 WHERE id = ?').run(userId);
+
+  // Send the free welcome email exactly once, on the first completion
+  if (!wasAlreadyCompleted && before?.plan === 'free') {
+    const user     = db.prepare('SELECT id, name, email, language FROM users WHERE id = ?').get(userId);
+    const property = db.prepare('SELECT name FROM properties WHERE id = (SELECT property_id FROM users WHERE id = ?)').get(userId);
+    if (user) {
+      sendFreeWelcomeEmail(user, property ?? {}).catch((e) => console.error('[welcome-email] Failed:', e.message));
+    }
+  }
+
   res.json({ success: true });
 });
 
@@ -383,10 +399,6 @@ authRouter.get('/verify-email', async (req, res) => {
   const { plan, trial_ends_at, onboarding_completed } = db.prepare(
     'SELECT plan, trial_ends_at, onboarding_completed FROM users WHERE id = ?'
   ).get(user.id);
-
-  if (plan === 'free') {
-    sendFreeWelcomeEmail(user).catch((e) => console.error('[welcome-email] Failed:', e.message));
-  }
 
   res.json({ success: true, plan, trial_ends_at, email_verified: 1, onboarding_completed: !!onboarding_completed });
 });
