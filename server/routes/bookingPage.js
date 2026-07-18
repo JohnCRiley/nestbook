@@ -1640,7 +1640,7 @@ footer a:hover { text-decoration: underline; }
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
-  filter: grayscale(1) opacity(0.55);
+  filter: grayscale(1) opacity(0.38);
 }
 .partner-icon-placeholder {
   width: 40px;
@@ -1653,7 +1653,7 @@ footer a:hover { text-decoration: underline; }
   font-size: 0.7rem;
   font-weight: 600;
   line-height: 1.3;
-  color: #64748b;
+  color: #94a3b8;
 }
 .partner-desc {
   font-size: 0.65rem;
