@@ -542,11 +542,12 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
   const visiblePartners = partnerLinks.filter(l => l.status !== 'rejected');
   const partnersSection = visiblePartners.length ? `
 <section class="partners-section">
-  <div class="partners-row">
+  <p class="partners-heading" data-i18n="page.ourPartners">Our Partners</p>
+  <div class="partners-grid">
     ${visiblePartners.map(l => `
-    <a href="${esc(l.url)}" rel="nofollow sponsored" target="_blank" class="partner-link" title="${esc(l.description || l.label)}">
-      ${l.icon_url ? `<img src="${esc(l.icon_url)}" alt="${esc(l.label)}" class="partner-icon" loading="lazy">` : ''}
-      <span class="partner-label">${esc(l.label)}</span>
+    <a href="${esc(l.url)}" rel="nofollow sponsored" target="_blank" class="partner-card">
+      ${l.icon_url ? `<img src="${esc(l.icon_url)}" alt="${esc(l.label)}" class="partner-icon" loading="lazy">` : `<div class="partner-icon-placeholder"></div>`}
+      <span class="partner-name">${esc(l.label)}</span>
       ${l.description ? `<span class="partner-desc">${esc(l.description)}</span>` : ''}
     </a>`).join('')}
   </div>
@@ -1597,41 +1598,68 @@ footer a:hover { text-decoration: underline; }
 }
 /* ── Partnership Links ──────────────────────────────────────────────────── */
 .partners-section {
-  padding: 14px 16px 0;
+  padding: 28px 20px 0;
   max-width: var(--content-max, 960px);
   margin: 0 auto;
 }
-.partners-row {
+.partners-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  margin-bottom: 14px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+.partners-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  opacity: 0.68;
 }
-.partner-link {
-  display: inline-flex;
+.partner-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
+  padding: 12px 12px 10px;
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
   text-decoration: none;
-  color: #64748b;
-  font-size: 0.75rem;
-  background: #fff;
-  transition: opacity 0.15s;
-  line-height: 1.3;
+  background: #f8fafc;
+  min-width: 76px;
+  max-width: 110px;
+  text-align: center;
+  transition: border-color 0.15s;
 }
-.partner-link:hover { opacity: 1; border-color: #cbd5e1; }
+.partner-card:hover { border-color: #cbd5e1; }
 .partner-icon {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
+  filter: grayscale(1) opacity(0.55);
 }
-.partner-label { font-weight: 600; }
-.partner-desc  { color: #94a3b8; }
+.partner-icon-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+.partner-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #64748b;
+}
+.partner-desc {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
 .demo-banner {
   background: #fffbeb;
   border-bottom: 2px solid #f59e0b;
@@ -1896,7 +1924,8 @@ var I18N = {
     "page.message":                   "Message (optional)",
     "page.selectRoom":                "Room",
     "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly.",
-    "page.whatGuestsSay":             "What Our Guests Say"
+    "page.whatGuestsSay":             "What Our Guests Say",
+    "page.ourPartners":               "Our Partners"
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -1932,7 +1961,8 @@ var I18N = {
     "page.message":                   "Message (optionnel)",
     "page.selectRoom":                "Chambre",
     "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement.",
-    "page.whatGuestsSay":             "Ce que disent nos clients"
+    "page.whatGuestsSay":             "Ce que disent nos clients",
+    "page.ourPartners":               "Nos partenaires"
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -1968,7 +1998,8 @@ var I18N = {
     "page.message":                   "Nachricht (optional)",
     "page.selectRoom":                "Zimmer",
     "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden.",
-    "page.whatGuestsSay":             "Was unsere Gäste sagen"
+    "page.whatGuestsSay":             "Was unsere Gäste sagen",
+    "page.ourPartners":               "Unsere Partner"
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -2004,7 +2035,8 @@ var I18N = {
     "page.message":                   "Mensaje (opcional)",
     "page.selectRoom":                "Habitación",
     "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto.",
-    "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes"
+    "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes",
+    "page.ourPartners":               "Nuestros socios"
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -2040,7 +2072,8 @@ var I18N = {
     "page.message":                   "Bericht (optioneel)",
     "page.selectRoom":                "Kamer",
     "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op.",
-    "page.whatGuestsSay":             "Wat onze gasten zeggen"
+    "page.whatGuestsSay":             "Wat onze gasten zeggen",
+    "page.ourPartners":               "Onze partners"
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
