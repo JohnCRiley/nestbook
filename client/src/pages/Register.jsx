@@ -188,14 +188,16 @@ export default function Register() {
             <input id="discountCode" type="text" className="auth-input" value={form.discountCode}
               onChange={set('discountCode')} placeholder={t('register.codePlaceholder')}
               style={{ textTransform: 'uppercase' }} />
-            <p style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.4 }}>
-              {t('register.promoHint')}
-            </p>
           </div>
 
           <button type="submit" className="auth-btn" disabled={loading}>
             {loading ? t('register.creating') : t('register.createFree')}
           </button>
+          <p style={{ textAlign: 'center', marginTop: 14, fontSize: '0.8rem' }}>
+            <a href="https://nestbook.io/" style={{ color: '#94a3b8', textDecoration: 'none' }}>
+              {t('register.moreInfo')}
+            </a>
+          </p>
         </form>
 
         <p className="auth-switch">
