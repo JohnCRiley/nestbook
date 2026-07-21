@@ -91,7 +91,7 @@ const QuillEditor = forwardRef(function QuillEditor(
     // Quill inserts its toolbar as a sibling before the container, outside React's
     // render tree. Capture it now so we can remove it on unmount.
     const toolbar = container.previousElementSibling;
-    if (value) quillRef.current.root.innerHTML = value;
+    if (value && !paused) quillRef.current.root.innerHTML = value;
     quillRef.current.on('text-change', () => {
       if (pausedRef.current) return;
       onChangeRef.current(quillRef.current.root.innerHTML);
