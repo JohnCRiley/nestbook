@@ -270,6 +270,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
   }).length;
   const [subject, setSubject]       = useState('');
   const [body, setBody]             = useState('');
+  const [bodyBg, setBodyBg]         = useState('white');
   const [htmlMode, setHtmlMode]     = useState(false);
   const [tmplId, setTmplId]         = useState('');
   const [campId, setCampId]         = useState('');
@@ -302,6 +303,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
     const t = templates.find(t => t.id === Number(id));
     if (t) {
       setSubject(t.subject); setBody(t.body); setTmplId(id);
+      setBodyBg(t.body_bg ?? 'white');
       // Auto-switch to HTML mode if template was saved as raw HTML
       setHtmlMode(/<(div|table|td|tr|section|style)\b/i.test(t.body));
     }
@@ -597,7 +599,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
 
       </div>
     </div>
-    {showPreview && <PreviewModal body={body} subject={subject} onClose={() => setShowPreview(false)} />}
+    {showPreview && <PreviewModal body={body} subject={subject} bodyBg={bodyBg} onClose={() => setShowPreview(false)} />}
     {showIconPicker && <IconPicker onInsert={handleIconInsert} onClose={() => setShowIconPicker(false)} />}
     </>
   );
@@ -614,7 +616,7 @@ function OutreachIconSvg() {
 }
 
 // ── Email Preview modal ───────────────────────────────────────────────────────
-function PreviewModal({ body, subject, onClose }) {
+function PreviewModal({ body, subject, bodyBg = 'white', onClose }) {
   const samples = {
     '{{name}}':       'Jane Smith',
     '{{first_name}}': 'Jane',
@@ -630,7 +632,12 @@ function PreviewModal({ body, subject, onClose }) {
     previewBody = previewBody.split(k).join(v);
   });
 
-  // Mirror the server-side bodyHtml logic exactly
+  // Mirror the server-side bodyHtml + wrapEmailBody logic exactly
+  const isGreen  = bodyBg === 'green';
+  const outerBg  = isGreen ? '#1a4710' : '#ffffff';
+  const bodyBorder = isGreen ? 'border-top:1px solid #d9f0cc;' : '';
+  const sigColor = isGreen ? '#ffffff' : '#1a4710';
+
   const bodyHtml = previewBody.trim().startsWith('<')
     ? previewBody
     : previewBody.split(/\n{2,}/)
@@ -642,21 +649,21 @@ function PreviewModal({ body, subject, onClose }) {
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;">
   <tr><td style="background:#1a4710;padding:28px 32px;">
     <img src="https://nestbook.io/icon-192.png" width="36" height="36" style="border-radius:8px;vertical-align:middle;display:inline-block;">
     <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
     <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Booking software for independent properties</div>
   </td></tr>
-  <tr><td style="padding:32px 32px 0px;color:#1a2e14;font-size:15px;line-height:1.6;">
+  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#1a2e14;font-size:15px;line-height:1.6;">
     <div style="color:#1a2e14;">${bodyHtml}</div>
     <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
       <img src="https://nestbook.io/icon-192.png" width="28" height="28" style="border-radius:6px;vertical-align:middle;display:inline-block;">
-      <strong style="color:#1a4710;margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
+      <strong style="color:${sigColor};margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
       <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
-        <a href="mailto:hello@nestbook.io" style="color:#1a4710;text-decoration:none;">hello@nestbook.io</a>
+        <a href="mailto:hello@nestbook.io" style="color:${sigColor};text-decoration:none;">hello@nestbook.io</a>
         &nbsp;&middot;&nbsp;
-        <a href="https://nestbook.io" style="color:#1a4710;text-decoration:none;">nestbook.io</a>
+        <a href="https://nestbook.io" style="color:${sigColor};text-decoration:none;">nestbook.io</a>
       </span>
     </div>
   </td></tr>
