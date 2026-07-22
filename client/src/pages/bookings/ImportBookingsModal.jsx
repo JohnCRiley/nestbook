@@ -3,14 +3,14 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
 
 const TEMPLATE_IP =
-  'guest_name,guest_email,guest_phone,check_in,check_out,room,total_stay_amount,status,notes\n' +
-  'Marie Dupont,marie.dupont@example.com,+33612345678,2025-07-01,2025-07-05,Garden Room,320,confirmed,Early check-in requested\n' +
-  'John Smith,john.smith@example.com,+44771234567,2025-08-10,2025-08-14,Suite,480,confirmed,\n';
+  'guest_name,guest_email,guest_phone,check_in,check_out,room,total_stay_amount,status,notes,source,deposit_paid\n' +
+  'Marie Dupont,marie.dupont@example.com,+33612345678,2025-07-01,2025-07-05,Garden Room,320,confirmed,Early check-in requested,Direct,Yes\n' +
+  'John Smith,john.smith@example.com,+44771234567,2025-08-10,2025-08-14,Suite,480,confirmed,,Booking.com,No\n';
 
 const TEMPLATE_WP =
-  'guest_name,guest_email,guest_phone,check_in,check_out,total_stay_amount,status,notes\n' +
-  'Marie Dupont,marie.dupont@example.com,+33612345678,2025-07-01,2025-07-05,320,confirmed,Early check-in requested\n' +
-  'John Smith,john.smith@example.com,+44771234567,2025-08-10,2025-08-14,480,confirmed,\n';
+  'guest_name,guest_email,guest_phone,check_in,check_out,total_stay_amount,status,notes,source,deposit_paid\n' +
+  'Marie Dupont,marie.dupont@example.com,+33612345678,2025-07-01,2025-07-05,320,confirmed,Early check-in requested,Direct,Yes\n' +
+  'John Smith,john.smith@example.com,+44771234567,2025-08-10,2025-08-14,480,confirmed,,Booking.com,No\n';
 
 // ── Pure JS CSV parser ────────────────────────────────────────────────────
 function parseCSV(text) {
@@ -111,8 +111,8 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
       if (rows.length > 1001) { setFileError(t('csvErrorTooLarge')); return; }
 
       const cols = isWP
-        ? ['guest_name','guest_email','guest_phone','check_in','check_out','total_stay_amount','status','notes']
-        : ['guest_name','guest_email','guest_phone','check_in','check_out','room','total_stay_amount','status','notes'];
+        ? ['guest_name','guest_email','guest_phone','check_in','check_out','total_stay_amount','status','notes','source','deposit_paid']
+        : ['guest_name','guest_email','guest_phone','check_in','check_out','room','total_stay_amount','status','notes','source','deposit_paid'];
 
       const headers = rows[0].map(h => h.toLowerCase().replace(/[\s-]/g, '_'));
       const objects = rows.slice(1).map(row =>
@@ -260,6 +260,9 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
               </p>
               <p style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {t('importBookingsTotalHint')}
+              </p>
+              <p style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {t('importBookingsOptionalHint')}
               </p>
             </div>
           )}

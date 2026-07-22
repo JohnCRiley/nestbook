@@ -602,8 +602,8 @@ bookingsRouter.post('/import', (req, res) => {
     const insertBook  = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price)
-      VALUES (?,?,?,?,?,1,?,?,?,?)
+         num_guests, status, source, notes, total_price, deposit_paid)
+      VALUES (?,?,?,?,?,1,?,?,?,?,?)
     `);
 
     function normaliseStatus(raw) {
@@ -613,6 +613,25 @@ bookingsRouter.post('/import', (req, res) => {
       if (/^(cancell?ed?|canc|no)$/.test(s))                   return 'cancelled';
       if (/^(checked_out|complete[d]?|done)$/.test(s))         return 'checked_out';
       return 'confirmed';
+    }
+
+    function normaliseSource(raw) {
+      if (!raw) return 'other';
+      const s = raw.trim().toLowerCase();
+      if (s.includes('booking.com') || s === 'booking_com' || s === 'bdc') return 'booking_com';
+      if (s.includes('airbnb'))                                              return 'airbnb';
+      if (s.includes('direct'))                                              return 'direct';
+      if (s.includes('phone') || s.includes('tel'))                         return 'phone';
+      if (s.includes('email'))                                               return 'email';
+      if (s.includes('website') || s.includes('web'))                       return 'website';
+      if (s.includes('walk'))                                                return 'walk_in';
+      return 'other';
+    }
+
+    function normaliseDepositPaid(raw) {
+      if (!raw) return 0;
+      const s = raw.trim().toLowerCase();
+      return ['1', 'yes', 'true', 'paid', 'y', 'oui', 'ja', 'sí', 'si'].includes(s) ? 1 : 0;
     }
 
     function parseDate(raw) {
@@ -699,11 +718,13 @@ bookingsRouter.post('/import', (req, res) => {
           guest_id = insertGuest.run(first, last, null, phone, property_id).lastInsertRowid;
         }
 
-        const status      = normaliseStatus(row.status);
-        const total_price = parseFloat(row.total_stay_amount) || null;
-        const notes       = (row.notes ?? '').trim() || null;
+        const status       = normaliseStatus(row.status);
+        const source       = normaliseSource(row.source ?? row.Source ?? row.channel ?? row.Channel ?? '');
+        const total_price  = parseFloat(row.total_stay_amount) || null;
+        const deposit_paid = normaliseDepositPaid(row.deposit_paid ?? row['Deposit Paid'] ?? row.deposit ?? '');
+        const notes        = (row.notes ?? '').trim() || null;
 
-        insertBook.run(property_id, room_id, guest_id, check_in, check_out, status, 'other', notes, total_price);
+        insertBook.run(property_id, room_id, guest_id, check_in, check_out, status, source, notes, total_price, deposit_paid);
         imported++;
       }
       db.exec('COMMIT');
