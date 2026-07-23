@@ -481,7 +481,12 @@ stripeRouter.post('/addon/charges/add', async (req, res) => {
   try {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
 
-    const sub = db.prepare('SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+    const sub = db.prepare(`
+      SELECT stripe_subscription_id, stripe_customer_id
+      FROM subscriptions
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY created_at DESC LIMIT 1
+    `).get(req.user.userId);
     if (!sub?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
 
     const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
@@ -515,7 +520,12 @@ stripeRouter.post('/addon/charges/remove', async (req, res) => {
   try {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
 
-    const sub = db.prepare('SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+    const sub = db.prepare(`
+      SELECT stripe_subscription_id, stripe_customer_id
+      FROM subscriptions
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY created_at DESC LIMIT 1
+    `).get(req.user.userId);
     if (!sub?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
 
     const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
