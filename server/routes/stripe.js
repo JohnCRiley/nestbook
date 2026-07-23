@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { createHash } from 'node:crypto';
 import db from '../db/database.js';
 import { stripe, STRIPE_MODE } from '../lib/stripeClient.js';
 import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail } from '../email/emailService.js';
@@ -554,10 +555,12 @@ export async function stripeWebhookHandler(req, res) {
     ? process.env.STRIPE_TEST_WEBHOOK_SECRET
     : process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log('[webhook debug] STRIPE_MODE:', process.env.STRIPE_MODE ?? '(unset — defaulting to live)');
   console.log('[webhook debug] sig header:', sig);
   console.log('[webhook debug] body type:', typeof req.body, Buffer.isBuffer(req.body));
   console.log('[webhook debug] body length:', req.body?.length);
-  console.log('[webhook debug] secret used (first 15 chars):', secret?.slice(0, 15));
+  console.log('[webhook debug] body first 60 bytes (utf8):', req.body?.slice(0, 60).toString('utf8'));
+  console.log('[webhook debug] secret SHA-256:', createHash('sha256').update(secret ?? '').digest('hex'));
 
   let event;
   try {
