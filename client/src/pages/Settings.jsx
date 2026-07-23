@@ -131,6 +131,7 @@ export default function Settings() {
   const [theme,            setTheme]            = useState('forest');
   const [categories,       setCategories]       = useState([]);
   const [newCatForm,       setNewCatForm]       = useState({ name: '', color: '#64748b', icon: '' });
+  const newCatInputRef = useRef(null);
   const [catSaving,        setCatSaving]        = useState(false);
   const [editingCatId,     setEditingCatId]     = useState(null);
   const [editCatForm,      setEditCatForm]      = useState({ name: '', color: '#64748b' });
@@ -1512,8 +1513,8 @@ export default function Settings() {
             <Link to="/billing">Billing page</Link>.
           </p>
 
-          {/* Service Categories — Multi plan, owner only */}
-          {plan === 'multi' && user?.role === 'owner' && (
+          {/* Service Categories — Multi plan or Charges add-on, owner only */}
+          {(plan === 'multi' || !!user?.has_charges_addon) && user?.role === 'owner' && (
             <div className="settings-card" style={{ marginTop: 16 }}>
               <div className="settings-card-header">
                 <h2>{t('chargesCatTitle')}</h2>
@@ -1522,7 +1523,17 @@ export default function Settings() {
               <div className="settings-card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 14 }}>
                   {categories.length === 0 && (
-                    <div style={{ fontSize: '0.85rem', color: '#94a3b8', padding: '8px 0' }}>{t('chargesCatEmpty')}</div>
+                    <div style={{ textAlign: 'center', padding: '24px 0 16px', color: '#94a3b8' }}>
+                      <div style={{ fontSize: '2rem', marginBottom: 8 }}>🍺</div>
+                      <div style={{ fontSize: '0.85rem', marginBottom: 12 }}>{t('chargesAddonCatBlank')}</div>
+                      <button
+                        className="btn-primary"
+                        style={{ fontSize: '0.82rem', padding: '6px 16px' }}
+                        onClick={() => newCatInputRef.current?.focus()}
+                      >
+                        {t('chargesCatAdd')}
+                      </button>
+                    </div>
                   )}
                   {categories.map((cat) => (
                     <div key={cat.id} style={{
@@ -1643,6 +1654,7 @@ export default function Settings() {
                       {t('chargesCatName')}
                     </label>
                     <input
+                      ref={newCatInputRef}
                       value={newCatForm.name}
                       onChange={(e) => setNewCatForm((f) => ({ ...f, name: e.target.value }))}
                       placeholder="e.g. Room Service"
