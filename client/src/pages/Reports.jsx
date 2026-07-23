@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
+import { useAuth } from '../auth/AuthContext.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export default function Reports() {
 function ReportsContent() {
   const t = useT();
   const plan = usePlan();
+  const { user } = useAuth();
   const { property, properties } = useLocale();
   const currency = property?.currency ?? 'EUR';
   const isWP     = property?.rental_type === 'whole_property';
@@ -1196,8 +1198,8 @@ ${plSection}
         )}
       </div>
 
-      {/* ── Room Charges Report (Multi plan only, not applicable for whole_property) ── */}
-      {plan === 'multi' && !isWP && (
+      {/* ── Room Charges Report (Multi or Charges add-on, not applicable for whole_property) ── */}
+      {(plan === 'multi' || !!user?.has_charges_addon) && !isWP && (
         <div className="admin-card" style={{ marginBottom: 24 }}>
           <div className="admin-card-header">
             <h2>{t('reportRoomChargesTitle')}</h2>

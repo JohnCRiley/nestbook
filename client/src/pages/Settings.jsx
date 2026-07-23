@@ -166,7 +166,7 @@ export default function Settings() {
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!activeProperty?.id) return;
-    const catFetch = plan === 'multi'
+    const catFetch = (plan === 'multi' || user?.has_charges_addon)
       ? apiFetch(`/api/charges/categories?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => [])
       : Promise.resolve([]);
     const rpFetch = plan !== 'free'
@@ -239,7 +239,7 @@ export default function Settings() {
       setRooms(Array.isArray(rms) ? rms : (rms?.rooms ?? []));
       setRatePeriods(Array.isArray(rp) ? rp : []);
     });
-  }, [activeProperty?.id, plan]);
+  }, [activeProperty?.id, plan, user?.has_charges_addon]);
 
   // Pre-fill locale from ?lang= query param (set by the language suggestion modal).
   useEffect(() => {

@@ -108,9 +108,9 @@ reportsRouter.get('/revenue', (req, res) => {
 // Query params: from (YYYY-MM-DD), to (YYYY-MM-DD), propertyId
 // Multi plan only. Returns charges grouped by category with per-category tax.
 reportsRouter.get('/charges', (req, res) => {
-  const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
-  if (!user || user.plan !== 'multi') {
-    return res.status(403).json({ error: 'Multi plan required.' });
+  const user = db.prepare('SELECT plan, has_charges_addon FROM users WHERE id = ?').get(req.user.userId);
+  if (!user || (user.plan !== 'multi' && !user.has_charges_addon)) {
+    return res.status(403).json({ error: 'Multi plan or Bar & Charges add-on required.' });
   }
 
   const { from, to, propertyId } = req.query;

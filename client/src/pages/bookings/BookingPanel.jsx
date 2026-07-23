@@ -158,12 +158,12 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
   // Fetch charges eagerly so EstimatedTotal can include them
   useEffect(() => {
-    if (plan !== 'multi') return;
+    if (plan !== 'multi' && !user?.has_charges_addon) return;
     apiFetch(`/api/charges/booking/${b.id}?property_id=${b.property_id}`)
       .then((r) => r.ok ? r.json() : [])
       .then(setCharges)
       .catch(() => setCharges([]));
-  }, [b.id, plan]);
+  }, [b.id, plan, user?.has_charges_addon]);
 
   // Check Stripe Connect status — only for owners, drives payment link visibility
   useEffect(() => {
