@@ -60,6 +60,13 @@ usersRouter.post('/', (req, res) => {
       return res.status(409).json({ error: 'An account with that email already exists.' });
     }
 
+    if (role === 'charges_staff') {
+      const requestor = db.prepare('SELECT plan, has_charges_addon FROM users WHERE id = ?').get(req.user.userId);
+      if (requestor?.plan !== 'multi' && !requestor?.has_charges_addon) {
+        return res.status(403).json({ error: 'Charges Staff role requires Multi plan or the Bar & Charges add-on.' });
+      }
+    }
+
     const hash = bcrypt.hashSync(password, 10);
 
     const result = db.prepare(`
