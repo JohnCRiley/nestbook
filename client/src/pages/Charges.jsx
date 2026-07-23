@@ -137,7 +137,7 @@ export default function Charges() {
   const canAddFromDetail = user?.role === 'owner' || user?.role === 'reception';
 
   useEffect(() => {
-    if (plan !== 'multi' && !isChargesStaff) { setLoading(false); return; }
+    if (plan !== 'multi' && !isChargesStaff && !user?.has_charges_addon) { setLoading(false); return; }
     if (!property?.id) return;
     setLoading(true);
     Promise.all([
@@ -148,7 +148,7 @@ export default function Charges() {
       setCategories(Array.isArray(c) ? c : []);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [property?.id, plan, isChargesStaff]);
+  }, [property?.id, plan, isChargesStaff, user?.has_charges_addon]);
 
   const activeBooking = isWP ? (rooms[0] ?? null) : null;
 
@@ -160,7 +160,7 @@ export default function Charges() {
       .catch(() => setWpCharges([]));
   }, [isWP, activeBooking?.booking_id, wpChargesKey]);
 
-  if (plan !== 'multi' && !isChargesStaff) return <UpgradeGate />;
+  if (plan !== 'multi' && !isChargesStaff && !user?.has_charges_addon) return <UpgradeGate />;
 
   if (loading) {
     return (
