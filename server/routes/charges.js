@@ -9,13 +9,13 @@ function actorFromReq(req) {
 
 export const chargesRouter = Router();
 
-// Returns the Multi plan status based on the property owner, not the requesting user.
-// charges_staff users have plan='free' personally but their property may be Multi.
-function propertyIsMulti(propertyId) {
+// Returns true if the property's owner is on Multi OR has the Charges add-on.
+// charges_staff users have plan='free' personally but their property may qualify.
+function propertyHasChargesAccess(propertyId) {
   const row = db.prepare(
-    `SELECT u.plan FROM users u JOIN properties p ON p.owner_id = u.id WHERE p.id = ?`
+    `SELECT u.plan, u.has_charges_addon FROM users u JOIN properties p ON p.owner_id = u.id WHERE p.id = ?`
   ).get(propertyId);
-  return row?.plan === 'multi';
+  return row?.plan === 'multi' || !!row?.has_charges_addon;
 }
 
 // Resolve the active property ID: prefer an explicit query/body param (owner only),
@@ -31,15 +31,15 @@ function getPropertyId(req) {
   return req.user.propertyId;
 }
 
-function requireMulti(req, res, next) {
-  if (!propertyIsMulti(getPropertyId(req))) {
-    return res.status(403).json({ error: 'Room charges require the Multi plan.' });
+function requireChargesAccess(req, res, next) {
+  if (!propertyHasChargesAccess(getPropertyId(req))) {
+    return res.status(403).json({ error: 'Room charges require the Multi plan or the Charges add-on.' });
   }
   next();
 }
 
 // ── GET /api/charges/categories ───────────────────────────────────────────────
-chargesRouter.get('/categories', requireMulti, (req, res) => {
+chargesRouter.get('/categories', requireChargesAccess, (req, res) => {
   const propertyId = getPropertyId(req);
   const cats = db.prepare(
     `SELECT * FROM service_categories WHERE property_id = ? ORDER BY sort_order, name`
@@ -48,7 +48,7 @@ chargesRouter.get('/categories', requireMulti, (req, res) => {
 });
 
 // ── POST /api/charges/categories ──────────────────────────────────────────────
-chargesRouter.post('/categories', requireMulti, (req, res) => {
+chargesRouter.post('/categories', requireChargesAccess, (req, res) => {
   if (req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Only owners can manage categories.' });
   }
@@ -66,7 +66,7 @@ chargesRouter.post('/categories', requireMulti, (req, res) => {
 });
 
 // ── PUT /api/charges/categories/:id ──────────────────────────────────────────
-chargesRouter.put('/categories/:id', requireMulti, (req, res) => {
+chargesRouter.put('/categories/:id', requireChargesAccess, (req, res) => {
   if (req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Only owners can manage categories.' });
   }
@@ -84,7 +84,7 @@ chargesRouter.put('/categories/:id', requireMulti, (req, res) => {
 });
 
 // ── DELETE /api/charges/categories/:id ───────────────────────────────────────
-chargesRouter.delete('/categories/:id', requireMulti, (req, res) => {
+chargesRouter.delete('/categories/:id', requireChargesAccess, (req, res) => {
   if (req.user.role !== 'owner') {
     return res.status(403).json({ error: 'Only owners can manage categories.' });
   }
@@ -111,7 +111,7 @@ chargesRouter.delete('/categories/:id', requireMulti, (req, res) => {
 // ── GET /api/charges/rooms-today ──────────────────────────────────────────────
 // Returns rooms with active (arriving/confirmed) in-house bookings today,
 // plus total active charge amount per booking.
-chargesRouter.get('/rooms-today', requireMulti, (req, res) => {
+chargesRouter.get('/rooms-today', requireChargesAccess, (req, res) => {
   const propertyId = getPropertyId(req);
   const rows = db.prepare(`
     SELECT
@@ -150,7 +150,7 @@ chargesRouter.get('/rooms-today', requireMulti, (req, res) => {
 
 // ── GET /api/charges/today-summary ───────────────────────────────────────────
 // Dashboard stat: total active charges for today.
-chargesRouter.get('/today-summary', requireMulti, (req, res) => {
+chargesRouter.get('/today-summary', requireChargesAccess, (req, res) => {
   const propertyId = getPropertyId(req);
   const row = db.prepare(`
     SELECT
@@ -163,7 +163,7 @@ chargesRouter.get('/today-summary', requireMulti, (req, res) => {
 });
 
 // ── GET /api/charges/booking/:bookingId ───────────────────────────────────────
-chargesRouter.get('/booking/:bookingId', requireMulti, (req, res) => {
+chargesRouter.get('/booking/:bookingId', requireChargesAccess, (req, res) => {
   const bookingId = Number(req.params.bookingId);
   const propertyId = getPropertyId(req);
 
@@ -190,7 +190,7 @@ chargesRouter.get('/booking/:bookingId', requireMulti, (req, res) => {
 });
 
 // ── POST /api/charges ─────────────────────────────────────────────────────────
-chargesRouter.post('/', requireMulti, (req, res) => {
+chargesRouter.post('/', requireChargesAccess, (req, res) => {
   const { booking_id, category_id, description, amount, charge_date } = req.body;
   const propertyId = getPropertyId(req);
 
@@ -254,7 +254,7 @@ chargesRouter.post('/', requireMulti, (req, res) => {
 });
 
 // ── DELETE /api/charges/:id (void) ────────────────────────────────────────────
-chargesRouter.delete('/:id', requireMulti, (req, res) => {
+chargesRouter.delete('/:id', requireChargesAccess, (req, res) => {
   console.log('[charges/void] chargeId:', req.params.id, 'user role:', req.user?.role, 'propertyId:', getPropertyId(req));
   if (req.user.role === 'charges_staff') {
     return res.status(403).json({ error: 'Only owners and reception staff can void charges.' });

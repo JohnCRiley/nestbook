@@ -101,11 +101,13 @@ export default function Sidebar() {
     return () => document.removeEventListener('mousedown', handler);
   }, [tabletExpanded]);
 
+  const hasChargesAddon = !!user?.has_charges_addon;
+  const canSeeCharges = (i) => !i.multiOnly || plan === 'multi' || (i.key === 'charges' && hasChargesAddon);
   const navItems = user?.role === 'reception'
-    ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key) && (!i.multiOnly || plan === 'multi'))
+    ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key) && canSeeCharges(i))
     : ALL_NAV_ITEMS.filter((i) =>
         (!i.ownerOnly || user?.role === 'owner') &&
-        (!i.multiOnly || plan === 'multi')
+        canSeeCharges(i)
       );
 
   function handleLogout() {

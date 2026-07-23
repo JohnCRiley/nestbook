@@ -339,7 +339,7 @@ authRouter.post('/reset-password', async (req, res) => {
 // ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent, onboarding_completed FROM users WHERE id = ?'
+    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent, onboarding_completed, has_charges_addon FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   res.json({ ...user, email_verified: !!user.email_verified, onboarding_completed: !!user.onboarding_completed });

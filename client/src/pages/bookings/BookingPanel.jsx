@@ -128,7 +128,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
   const [connectStatus,      setConnectStatus]      = useState(null);
   const checkedOutBookingRef = useRef(null);
 
-  const showChargesTab = plan === 'multi';
+  const showChargesTab = plan === 'multi' || !!user?.has_charges_addon;
 
   const depositRequired = !!property?.require_deposit;
   const isWP          = property?.rental_type === 'whole_property';

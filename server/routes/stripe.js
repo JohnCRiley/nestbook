@@ -474,6 +474,66 @@ stripeRouter.post('/connect/disconnect', async (req, res) => {
   }
 });
 
+// ── POST /api/stripe/addon/charges/add ───────────────────────────────────────
+// Adds the Charges add-on as a second line item on the user's existing subscription.
+// The webhook confirms the add and flips has_charges_addon — we don't set it here.
+stripeRouter.post('/addon/charges/add', async (req, res) => {
+  try {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
+
+    const sub = db.prepare('SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+    if (!sub?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
+
+    const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+    const currency = subscription.currency ?? 'gbp';
+    const addonPriceId = currency === 'gbp'
+      ? process.env.STRIPE_PRICE_CHARGES_ADDON_GBP
+      : process.env.STRIPE_PRICE_CHARGES_ADDON_EUR;
+
+    if (!addonPriceId) return res.status(500).json({ error: 'Charges add-on price not configured.' });
+
+    // Check not already subscribed
+    const alreadyHas = subscription.items.data.some(
+      item => item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_GBP ||
+              item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
+    );
+    if (alreadyHas) return res.status(400).json({ error: 'Charges add-on already active.' });
+
+    await stripe.subscriptionItems.create({ subscription: sub.stripe_subscription_id, price: addonPriceId });
+    console.log(`[stripe] Charges add-on added for user ${req.user.userId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[stripe] addon/charges/add error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/stripe/addon/charges/remove ────────────────────────────────────
+// Removes the Charges add-on line item from the user's subscription.
+// The webhook confirms the removal and clears has_charges_addon.
+stripeRouter.post('/addon/charges/remove', async (req, res) => {
+  try {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
+
+    const sub = db.prepare('SELECT stripe_subscription_id FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+    if (!sub?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
+
+    const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+    const addonItem = subscription.items.data.find(
+      item => item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_GBP ||
+              item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
+    );
+    if (!addonItem) return res.status(400).json({ error: 'Charges add-on not found on subscription.' });
+
+    await stripe.subscriptionItems.del(addonItem.id);
+    console.log(`[stripe] Charges add-on removed for user ${req.user.userId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[stripe] addon/charges/remove error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/stripe/webhook ──────────────────────────────────────────────────
 // Exported as a plain handler and mounted directly in index.js BEFORE
 // requireAuth and express.json(). Stripe uses its own signature verification
@@ -663,14 +723,23 @@ export async function stripeWebhookHandler(req, res) {
       }
 
       case 'customer.subscription.updated': {
-        const sub     = event.data.object;
-        const priceId = sub.items.data[0]?.price?.id;
-        const plan    = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
+        const sub = event.data.object;
+        // Search all items for the plan price — addon is a second line item
+        const planItem = sub.items.data.find(
+          item => item.price.id === process.env.STRIPE_PRICE_MULTI ||
+                  item.price.id === process.env.STRIPE_PRICE_PRO
+        );
+        const plan    = planItem?.price?.id === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
         const status  = sub.status === 'past_due' ? 'past_due' : 'active';
         const periodEnd = sub.current_period_end
           ? new Date(sub.current_period_end * 1000).toISOString()
           : null;
         const cancelAtEnd = sub.cancel_at_period_end ? 1 : 0;
+
+        const hasAddon = sub.items.data.some(
+          item => item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_GBP ||
+                  item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
+        ) ? 1 : 0;
 
         db.prepare(`
           UPDATE subscriptions
@@ -679,9 +748,9 @@ export async function stripeWebhookHandler(req, res) {
         `).run(plan, status, periodEnd, cancelAtEnd, sub.id);
 
         db.prepare(`
-          UPDATE users SET plan = ?
+          UPDATE users SET plan = ?, has_charges_addon = ?
           WHERE id = (SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?)
-        `).run(plan, sub.id);
+        `).run(plan, hasAddon, sub.id);
         break;
       }
 
