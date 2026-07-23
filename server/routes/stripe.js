@@ -554,6 +554,11 @@ export async function stripeWebhookHandler(req, res) {
     ? process.env.STRIPE_TEST_WEBHOOK_SECRET
     : process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log('[webhook debug] sig header:', sig);
+  console.log('[webhook debug] body type:', typeof req.body, Buffer.isBuffer(req.body));
+  console.log('[webhook debug] body length:', req.body?.length);
+  console.log('[webhook debug] secret used (first 15 chars):', secret?.slice(0, 15));
+
   let event;
   try {
     // If webhook secret is not yet configured, skip signature verification
