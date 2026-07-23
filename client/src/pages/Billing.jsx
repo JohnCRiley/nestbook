@@ -456,7 +456,7 @@ function AccountSubscriptionCard() {
       </div>
 
       {/* ── Bar & Charges add-on card ────────────────────────────────────── */}
-      {user?.plan === 'pro' && user?.stripe_subscription_id && (
+      {user?.plan === 'pro' && (
         <div className="billing-card">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
             <div style={{ fontSize: '1.5rem', lineHeight: 1 }}>🍺</div>
