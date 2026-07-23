@@ -107,6 +107,9 @@ export default function Pricing() {
                 {plan.priceEur && <span className="pricing-eur"> / {plan.priceEur}</span>}
                 <span className="pricing-period">/{plan.period}</span>
               </div>
+              {plan.key === 'pro' && (
+                <div style={{ fontSize: '0.72rem', color: '#92400e', marginTop: 4 }}>{t('planProAddonLine')}</div>
+              )}
               <p className="pricing-desc">{plan.desc}</p>
 
               <ul className="pricing-features">
