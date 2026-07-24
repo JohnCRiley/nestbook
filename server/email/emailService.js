@@ -1905,7 +1905,7 @@ function welcomeEmailHTML(user, property) {
   <div class="upgrade-box">
     <div class="upgrade-box-title">${t(lang, 'onboardProTitle')}</div>
     <div class="upgrade-box-body">${t(lang, 'onboardProBody')}</div>
-    <a href="https://nestbook.io/pricing" class="upgrade-link">${t(lang, 'onboardProCTA')}</a>
+    <a href="https://nestbook.io/app/pricing" class="upgrade-link">${t(lang, 'onboardProCTA')}</a>
   </div>
 
   <div class="footer">
