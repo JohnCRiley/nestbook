@@ -869,16 +869,17 @@ function CsvImportModal({ onClose, onImported }) {
 function BulkEditModal({ selectedIds, onClose, onSaved }) {
   const [fields, setFields] = useState({
     name: false, website: false, source: false, country: false,
-    language: false, status: false, notes: false,
+    language: false, property_type: false, status: false, notes: false,
   });
-  const [name, setName]         = useState('');
-  const [website, setWebsite]   = useState('');
-  const [source, setSource]     = useState('csv');
-  const [country, setCountry]   = useState('');
-  const [language, setLanguage] = useState('');
-  const [status, setStatus]     = useState('new');
-  const [notes, setNotes]       = useState('');
-  const [notesMode, setNotesMode] = useState('replace'); // replace | append
+  const [name, setName]                 = useState('');
+  const [website, setWebsite]           = useState('');
+  const [source, setSource]             = useState('csv');
+  const [country, setCountry]           = useState('');
+  const [language, setLanguage]         = useState('');
+  const [propertyType, setPropertyType] = useState('');
+  const [status, setStatus]             = useState('new');
+  const [notes, setNotes]               = useState('');
+  const [notesMode, setNotesMode]       = useState('replace'); // replace | append
   const [saving, setSaving]     = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -892,13 +893,14 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
     if (activeFields.length === 0) return;
     setSaving(true);
     const body = {};
-    if (fields.name)     body.name     = name.trim();
-    if (fields.website)  body.website  = website.trim()  || null;
-    if (fields.source)   body.source   = source;
-    if (fields.country)  body.country  = country.trim()  || null;
-    if (fields.language) body.language = language.trim() || null;
-    if (fields.status)   body.status   = status;
-    if (fields.notes)    body.notes    = notes.trim()    || null;
+    if (fields.name)          body.name          = name.trim();
+    if (fields.website)       body.website       = website.trim()       || null;
+    if (fields.source)        body.source        = source;
+    if (fields.country)       body.country       = country.trim()       || null;
+    if (fields.language)      body.language      = language.trim()      || null;
+    if (fields.property_type) body.property_type = propertyType.trim()  || null;
+    if (fields.status)        body.status        = status;
+    if (fields.notes)         body.notes         = notes.trim()         || null;
     if (fields.notes && notesMode === 'append') body._notesAppend = true;
 
     let done = 0;
@@ -993,6 +995,15 @@ function BulkEditModal({ selectedIds, onClose, onSaved }) {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Language</div>
             <Input value={language} onChange={setLanguage} placeholder="e.g. en" style={{ width: '100%' }} />
+          </div>
+        </div>
+
+        {/* Property Type */}
+        <div style={rowStyle(fields.property_type)}>
+          <input type="checkbox" checked={fields.property_type} onChange={() => toggleField('property_type')} style={{ marginTop: 9, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>Property Type</div>
+            <Input value={propertyType} onChange={setPropertyType} placeholder="e.g. B&B, gîte, hotel" style={{ width: '100%' }} />
           </div>
         </div>
 
