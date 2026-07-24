@@ -188,7 +188,7 @@ export default function Onboarding() {
 
   if (!form) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading…</div>
       </div>
     );
@@ -196,7 +196,7 @@ export default function Onboarding() {
 
   if (done) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1a2e14', marginBottom: 8 }}>
@@ -580,7 +580,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', padding: '40px 20px 60px' }}>
+    <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: '#fff', padding: '40px 20px 60px' }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
 
         {/* Logo */}
