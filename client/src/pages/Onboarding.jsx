@@ -59,17 +59,28 @@ const WHOLE_PROPERTY_TYPES = new Set([
   'ryokan', 'minsu', 'homestay', 'resort_villa',
 ]);
 
+const TOTAL_STEPS = 8; // 0–6 = data steps, 7 = summary
+
+function getPropertyTypeLabel(value) {
+  for (const grp of PROPERTY_GROUPS) {
+    const opt = grp.options.find(o => o.value === value);
+    if (opt) return opt.label;
+  }
+  return value;
+}
+
 export default function Onboarding() {
   const { user, updateUser } = useAuth();
   const t = useT();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState(null);
+  const [form, setForm]           = useState(null);
+  const [step, setStep]           = useState(0);
+  const [savedSteps, setSavedSteps] = useState(new Set());
+  const [saving, setSaving]       = useState(false);
+  const [done, setDone]           = useState(false);
+  const [error, setError]         = useState(null);
 
-  // Redirect immediately if onboarding already completed
   useEffect(() => {
     if (user?.onboarding_completed) {
       navigate('/dashboard', { replace: true });
@@ -82,22 +93,57 @@ export default function Onboarding() {
       .then(r => r.json())
       .then(p => {
         setForm({
-          name:                p.name               ?? '',
-          type:                p.type               ?? 'bnb',
-          address:             p.address            ?? '',
-          city:                p.city               ?? '',
-          country:             p.country            ?? '',
-          check_in_time:       p.check_in_time      ?? '15:00',
-          check_out_time:      p.check_out_time     ?? '11:00',
-          currency:            p.currency           ?? 'EUR',
-          locale:              p.locale             ?? 'en',
-          rental_type:         p.rental_type        ?? (WHOLE_PROPERTY_TYPES.has(p.type) ? 'whole_property' : 'rooms'),
+          name:                 p.name                ?? '',
+          type:                 p.type                ?? 'bnb',
+          address:              p.address             ?? '',
+          city:                 p.city                ?? '',
+          country:              p.country             ?? '',
+          check_in_time:        p.check_in_time       ?? '15:00',
+          check_out_time:       p.check_out_time      ?? '11:00',
+          currency:             p.currency            ?? 'EUR',
+          locale:               p.locale              ?? 'en',
+          rental_type:          p.rental_type         ?? (WHOLE_PROPERTY_TYPES.has(p.type) ? 'whole_property' : 'rooms'),
           breakfast_start_time: p.breakfast_start_time ?? '07:00',
           breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
         });
       })
       .catch(() => {});
   }, [user?.property_id]);
+
+  function getNextStep(s) {
+    // Skip breakfast step (6) for whole-property rental types
+    if (s === 5 && form?.rental_type === 'whole_property') return 7;
+    return Math.min(s + 1, 7);
+  }
+
+  function getPrevStep(s) {
+    if (s === 7 && form?.rental_type === 'whole_property') return 5;
+    return Math.max(s - 1, 0);
+  }
+
+  async function saveStep() {
+    if (!form || !user?.property_id) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/properties/${user.property_id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Failed to save. Please try again.');
+        return;
+      }
+      setSavedSteps(prev => new Set([...prev, step]));
+      setStep(getNextStep(step));
+    } catch (_) {
+      setError('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function completeOnboarding() {
     try {
@@ -110,8 +156,7 @@ export default function Onboarding() {
     } catch (_) {}
   }
 
-  async function handleSave(e) {
-    e.preventDefault();
+  async function handleFinish() {
     if (!form || !user?.property_id) return;
     setSaving(true);
     setError(null);
@@ -143,7 +188,7 @@ export default function Onboarding() {
 
   if (!form) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading…</div>
       </div>
     );
@@ -151,7 +196,7 @@ export default function Onboarding() {
 
   if (done) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1a2e14', marginBottom: 8 }}>
@@ -165,42 +210,42 @@ export default function Onboarding() {
 
   const isWhole = form.rental_type === 'whole_property';
 
-  return (
-    <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: '#f8fafc', padding: '32px 16px' }}>
-      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+  // Step 6 (breakfast) is always index 6 in the dot row, but skipped in navigation for whole-property
+  function isDotCompleted(i) {
+    if (i === 6 && isWhole) return false; // whole-property users never do breakfast step
+    return savedSteps.has(i);
+  }
+  function isDotCurrent(i) {
+    return i === step;
+  }
 
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <img src="/icon.svg" alt="NestBook" style={{ width: 28, height: 28 }} />
-          <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#1a2e14', letterSpacing: '-0.02em' }}>NestBook</span>
-        </div>
+  function renderStepContent() {
+    switch (step) {
 
-        {/* Heading */}
-        <h1 style={{ fontSize: '1.55rem', fontWeight: 800, color: '#1a2e14', marginBottom: 4 }}>
-          {t('onboard.title')}
-        </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: 28 }}>
-          {t('onboard.subtitle')}
-        </p>
-
-        <form onSubmit={handleSave}>
-
-          {/* Property Name */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>{t('onboard.propertyName')}</label>
+      // ── Step 0: Property name ──────────────────────────────────────────
+      case 0:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizCheckName')}</div>
             <input
-              className="form-control"
+              className="wizard-input"
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
-              required
+              autoFocus
             />
-          </div>
+            <button className="btn-wiz" disabled={saving || !form.name.trim()} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+          </>
+        );
 
-          {/* Property Type */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>{t('onboard.propertyType')}</label>
+      // ── Step 1: Property type ──────────────────────────────────────────
+      case 1:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizCheckType')}</div>
             <select
-              className="form-control"
+              className="wizard-input wizard-select"
               value={form.type}
               onChange={e => {
                 const newType = e.target.value;
@@ -219,125 +264,176 @@ export default function Onboarding() {
                 </optgroup>
               ))}
             </select>
-          </div>
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
+            </div>
+          </>
+        );
 
-          {/* Address */}
-          <div style={{ marginBottom: 8 }}>
-            <label style={labelStyle}>{t('address')}</label>
+      // ── Step 2: Address ────────────────────────────────────────────────
+      case 2:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizAddress')}</div>
             <input
-              className="form-control"
+              className="wizard-input"
               value={form.address}
               onChange={e => setForm({ ...form, address: e.target.value })}
               placeholder="47 Route de Gordes"
+              style={{ marginBottom: 12 }}
+              autoFocus
             />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 4 }}>
-            <div>
-              <label style={labelStyle}>{t('cityLabel')}</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
               <input
-                className="form-control"
+                className="wizard-input"
                 value={form.city}
                 onChange={e => setForm({ ...form, city: e.target.value })}
-                placeholder="Roussillon"
+                placeholder={t('cityLabel')}
               />
-            </div>
-            <div>
-              <label style={labelStyle}>{t('countryLabel')}</label>
               <input
-                className="form-control"
+                className="wizard-input"
                 value={form.country}
                 onChange={e => setForm({ ...form, country: e.target.value })}
-                placeholder="France"
+                placeholder={t('countryLabel')}
               />
             </div>
-          </div>
-          <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: 16, marginTop: 4 }}>
-            {t('onboard.addressHint')}
-          </p>
+            <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '4px 0 0', lineHeight: 1.5 }}>
+              {t('onboard.addressHint')}
+            </p>
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
+            </div>
+          </>
+        );
 
-          {/* Check-in / Check-out */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>{t('onboard.checkin')}</label>
-              <input
-                type="time"
-                className="form-control"
-                value={form.check_in_time}
-                onChange={e => setForm({ ...form, check_in_time: e.target.value })}
-              />
+      // ── Step 3: Check-in / check-out ──────────────────────────────────
+      case 3:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizTimes')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>{t('onboard.checkin')}</label>
+                <input
+                  type="time"
+                  className="wizard-input"
+                  value={form.check_in_time}
+                  onChange={e => setForm({ ...form, check_in_time: e.target.value })}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>{t('onboard.checkout')}</label>
+                <input
+                  type="time"
+                  className="wizard-input"
+                  value={form.check_out_time}
+                  onChange={e => setForm({ ...form, check_out_time: e.target.value })}
+                />
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>{t('onboard.checkout')}</label>
-              <input
-                type="time"
-                className="form-control"
-                value={form.check_out_time}
-                onChange={e => setForm({ ...form, check_out_time: e.target.value })}
-              />
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
             </div>
-          </div>
+          </>
+        );
 
-          {/* Currency / Language */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
-            <div>
-              <label style={labelStyle}>{t('onboard.currency')}</label>
-              <select
-                className="form-control"
-                value={form.currency}
-                onChange={e => setForm({ ...form, currency: e.target.value })}
-              >
-                {CURRENCIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
+      // ── Step 4: Currency & language ────────────────────────────────────
+      case 4:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizCurrency')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>{t('onboard.currency')}</label>
+                <select
+                  className="wizard-input wizard-select"
+                  value={form.currency}
+                  onChange={e => setForm({ ...form, currency: e.target.value })}
+                >
+                  {CURRENCIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>{t('onboard.language')}</label>
+                <select
+                  className="wizard-input wizard-select"
+                  value={form.locale}
+                  onChange={e => setForm({ ...form, locale: e.target.value })}
+                >
+                  {LOCALES.map(l => (
+                    <option key={l.value} value={l.value}>{l.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>{t('onboard.language')}</label>
-              <select
-                className="form-control"
-                value={form.locale}
-                onChange={e => setForm({ ...form, locale: e.target.value })}
-              >
-                {LOCALES.map(l => (
-                  <option key={l.value} value={l.value}>{l.label}</option>
-                ))}
-              </select>
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
             </div>
-          </div>
+          </>
+        );
 
-          {/* Rental Type */}
-          <div style={{ marginBottom: 24 }}>
-            <label style={labelStyle}>{t('onboard.rentalType')}</label>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+      // ── Step 5: Rental type ────────────────────────────────────────────
+      case 5:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizRentalType')}</div>
+            <div style={{ display: 'flex', gap: 14 }}>
               <button
                 type="button"
                 onClick={() => setForm({ ...form, rental_type: 'rooms' })}
                 className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
+                style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
               >
-                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
                   <i className="ti ti-bed" /> {t('onboard.rentalTypeRooms')}
                 </div>
-                <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4, marginBottom: 8 }}>
                   {t('onboard.rentalTypeRoomsDesc')}
                 </div>
+                <span className="wiz-inn-tag">
+                  ✦ {t('onboard.rentalTypeInn')} — {t('onboard.rentalTypeInnDesc')}
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
                 className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
+                style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
               >
-                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
                   <i className="ti ti-home" /> {t('onboard.rentalTypeWhole')}
                 </div>
-                <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
                   {t('onboard.rentalTypeWholeDesc')}
                 </div>
               </button>
             </div>
             <div style={{
-              marginTop: 10, padding: '8px 12px',
+              marginTop: 14, padding: '8px 14px',
               background: '#fefce8', border: '1px solid #fbbf24',
-              borderRadius: 6, fontSize: '0.78rem', color: '#92400e',
+              borderRadius: 7, fontSize: '0.78rem', color: '#92400e',
             }}>
               <i className="ti ti-lock" style={{ marginRight: 5 }} />
               {t('onboard.rentalTypeLockNote')}{' '}
@@ -350,16 +446,28 @@ export default function Onboarding() {
                 {t('onboard.rentalTypeLockLink')}
               </a>
             </div>
-          </div>
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
+            </div>
+          </>
+        );
 
-          {/* Breakfast times — only for rooms rental type */}
-          {!isWhole && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+      // ── Step 6: Breakfast times ────────────────────────────────────────
+      case 6:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizBreakfast')}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <label style={labelStyle}>{t('onboard.breakfastStart')}</label>
                 <input
                   type="time"
-                  className="form-control"
+                  className="wizard-input"
                   value={form.breakfast_start_time}
                   onChange={e => setForm({ ...form, breakfast_start_time: e.target.value })}
                 />
@@ -368,59 +476,159 @@ export default function Onboarding() {
                 <label style={labelStyle}>{t('onboard.breakfastEnd')}</label>
                 <input
                   type="time"
-                  className="form-control"
+                  className="wizard-input"
                   value={form.breakfast_end_time}
                   onChange={e => setForm({ ...form, breakfast_end_time: e.target.value })}
                 />
               </div>
             </div>
-          )}
-
-          {/* What's next */}
-          <div style={{
-            background: '#f0fdf4', border: '1px solid #bbf7d0',
-            borderRadius: 8, padding: '14px 16px', marginBottom: 24,
-          }}>
-            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#1a2e14', marginBottom: 8 }}>
-              {t('onboard.nextSteps')}
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
             </div>
-            <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {[t('onboard.step1'), t('onboard.step2'), t('onboard.step3')].map((step, i) => (
-                <li key={i} style={{ fontSize: '0.8rem', color: '#374151' }}>{step}</li>
-              ))}
-            </ol>
-          </div>
+          </>
+        );
 
-          {error && (
-            <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, fontSize: '0.82rem', color: '#991b1b' }}>
+      // ── Step 7: Summary ────────────────────────────────────────────────
+      case 7: {
+        const currencyLabel = CURRENCIES.find(c => c.value === form.currency)?.label ?? form.currency;
+        const localeLabel   = LOCALES.find(l => l.value === form.locale)?.label ?? form.locale;
+        const rentalLabel   = form.rental_type === 'whole_property'
+          ? t('onboard.rentalTypeWhole')
+          : t('onboard.rentalTypeRooms');
+
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizSummary')}</div>
+            <div style={{ marginBottom: 28 }}>
+              <div className="wiz-summary-row">
+                <span className="wiz-summary-label">{t('onboard.summaryName')}</span>
+                <span className="wiz-summary-value">{form.name || '—'}</span>
+              </div>
+              <div className="wiz-summary-row">
+                <span className="wiz-summary-label">{t('onboard.summaryType')}</span>
+                <span className="wiz-summary-value">{getPropertyTypeLabel(form.type)}</span>
+              </div>
+              <div className="wiz-summary-row">
+                <span className="wiz-summary-label">{t('onboard.summaryAddress')}</span>
+                <span className="wiz-summary-value">
+                  {[form.address, form.city, form.country].filter(Boolean).join(', ') || '—'}
+                </span>
+              </div>
+              <div className="wiz-summary-row">
+                <span className="wiz-summary-label">{t('onboard.summaryTimes')}</span>
+                <span className="wiz-summary-value">{form.check_in_time} / {form.check_out_time}</span>
+              </div>
+              <div className="wiz-summary-row">
+                <span className="wiz-summary-label">{t('onboard.summaryCurrency')}</span>
+                <span className="wiz-summary-value">{currencyLabel} · {localeLabel}</span>
+              </div>
+              <div className="wiz-summary-row">
+                <span className="wiz-summary-label">{t('onboard.summaryRentalType')}</span>
+                <span className="wiz-summary-value">{rentalLabel}</span>
+              </div>
+              {!isWhole && (
+                <div className="wiz-summary-row">
+                  <span className="wiz-summary-label">{t('onboard.summaryBreakfast')}</span>
+                  <span className="wiz-summary-value">{form.breakfast_start_time} – {form.breakfast_end_time}</span>
+                </div>
+              )}
+            </div>
+
+            {/* What's next */}
+            <div style={{
+              background: '#f0fdf4', border: '1px solid #bbf7d0',
+              borderRadius: 8, padding: '14px 16px', marginBottom: 24,
+            }}>
+              <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#1a2e14', marginBottom: 8 }}>
+                {t('onboard.nextSteps')}
+              </div>
+              <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {[t('onboard.step1'), t('onboard.step2'), t('onboard.step3'), t('onboard.step4')].map((s, i) => (
+                  <li key={i} style={{ fontSize: '0.8rem', color: '#374151' }}>{s}</li>
+                ))}
+              </ol>
+            </div>
+
+            {error && (
+              <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, fontSize: '0.82rem', color: '#991b1b' }}>
+                {error}
+              </div>
+            )}
+
+            <button className="btn-wiz" disabled={saving} onClick={handleFinish}
+              style={{ background: '#1a4710', color: '#fff', borderColor: '#1a4710' }}
+            >
+              {saving ? '…' : t('onboard.save')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
+            </div>
+          </>
+        );
+      }
+
+      default:
+        return null;
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#fff', padding: '40px 20px 60px' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
+          <img src="/icon.svg" alt="NestBook" style={{ width: 30, height: 30 }} />
+          <span style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1a2e14', letterSpacing: '-0.02em' }}>NestBook</span>
+        </div>
+
+        {/* Heading */}
+        <h1 style={{ fontSize: '1.7rem', fontWeight: 900, color: '#1a2e14', marginBottom: 4, letterSpacing: '-0.5px' }}>
+          {t('onboard.title')}
+        </h1>
+        <p style={{ color: '#6b7280', fontSize: '0.92rem', marginBottom: 36 }}>
+          {t('onboard.subtitle')}
+        </p>
+
+        {/* Step progress */}
+        <div className="wizard-steps">
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+            <div
+              key={i}
+              className={`wizard-step-dot${isDotCompleted(i) ? ' completed' : ''}${isDotCurrent(i) ? ' current' : ''}`}
+              style={{ cursor: (isDotCompleted(i) || i < step) ? 'pointer' : 'default' }}
+              onClick={() => { if (isDotCompleted(i) || i < step) setStep(i); }}
+              title={`Step ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Step content */}
+        <div>
+          {error && step !== 7 && (
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, fontSize: '0.82rem', color: '#991b1b' }}>
               {error}
             </div>
           )}
+          {renderStepContent()}
+        </div>
 
-          {/* Actions */}
-          <button
-            type="submit"
-            disabled={saving}
-            style={{
-              width: '100%', padding: '12px 0',
-              background: '#1a4710', color: '#fff',
-              border: 'none', borderRadius: 8,
-              fontWeight: 700, fontSize: '0.95rem',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit', opacity: saving ? 0.7 : 1,
-              marginBottom: 12,
-            }}
-          >
-            {saving ? '…' : t('onboard.save')}
-          </button>
-
-          <div style={{ textAlign: 'center' }}>
+        {/* Skip link */}
+        {step < 7 && (
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
             <button
               type="button"
               onClick={handleSkip}
               style={{
                 background: 'none', border: 'none',
-                color: '#6b7280', fontSize: '0.82rem',
+                color: '#9ca3af', fontSize: '0.8rem',
                 cursor: 'pointer', fontFamily: 'inherit',
                 textDecoration: 'underline',
               }}
@@ -428,8 +636,8 @@ export default function Onboarding() {
               {t('onboard.skip')}
             </button>
           </div>
+        )}
 
-        </form>
       </div>
     </div>
   );
@@ -438,7 +646,7 @@ export default function Onboarding() {
 const labelStyle = {
   display: 'block',
   fontWeight: 600,
-  fontSize: '0.85rem',
-  marginBottom: 4,
-  color: '#374151',
+  fontSize: '0.82rem',
+  marginBottom: 6,
+  color: '#557a4a',
 };

@@ -5537,3 +5537,149 @@ a { text-decoration: none; }
 .billing-connect-how li {
   margin-bottom: 4px;
 }
+
+/* ── Onboarding wizard ──────────────────────────────────────────────────── */
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 36px;
+}
+.wizard-step-seg {
+  flex: 1;
+  height: 3px;
+  background: #e0ecdb;
+  border-radius: 2px;
+  transition: background 0.25s;
+}
+.wizard-step-seg.completed {
+  background: #2f771b;
+}
+.wizard-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid #d9f0cc;
+  background: #f8faf7;
+  transition: background 0.25s, border-color 0.25s, transform 0.15s;
+}
+.wizard-step-dot.current {
+  border-color: #2f771b;
+  background: #f0fdf4;
+  transform: scale(1.25);
+}
+.wizard-step-dot.completed {
+  background: #2f771b;
+  border-color: #2f771b;
+}
+.wizard-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1.08rem;
+  font-family: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.wizard-input:focus {
+  border-color: #2f771b;
+}
+.wizard-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23557a4a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
+}
+.btn-wiz {
+  width: 100%;
+  padding: 14px 24px;
+  background: #fff;
+  color: #1a4710;
+  border: 2px solid #d9f0cc;
+  border-radius: 9px;
+  font-size: 0.97rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+  margin-top: 28px;
+}
+.btn-wiz:hover {
+  border-color: #2f771b;
+  background: #f0fdf4;
+}
+.btn-wiz:active {
+  background: #d9f0cc;
+}
+.btn-wiz:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-wiz-back {
+  background: none;
+  border: none;
+  color: #557a4a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 6px 0;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-wiz-back:hover {
+  color: #1a4710;
+}
+.wiz-step-label {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #1a2e14;
+  letter-spacing: -0.4px;
+  line-height: 1.25;
+  margin-bottom: 28px;
+}
+.wiz-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid #e4ede2;
+  gap: 12px;
+}
+.wiz-summary-row:last-child {
+  border-bottom: none;
+}
+.wiz-summary-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #557a4a;
+  flex-shrink: 0;
+}
+.wiz-summary-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a2e14;
+  text-align: right;
+}
+.wiz-inn-tag {
+  margin-top: 8px;
+  padding: 5px 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #166534;
+  display: inline-block;
+}
