@@ -130,18 +130,19 @@ function StatsBar({ stats }) {
 
 // ── Add Prospect modal ────────────────────────────────────────────────────────
 function AddProspectModal({ onClose, onSaved }) {
-  const [name, setName]         = useState('');
-  const [company, setCompany]   = useState('');
-  const [email, setEmail]       = useState('');
-  const [phone, setPhone]       = useState('');
-  const [country, setCountry]   = useState('');
-  const [region, setRegion]     = useState('');
-  const [town, setTown]         = useState('');
-  const [language, setLanguage] = useState('');
-  const [website, setWebsite]   = useState('');
-  const [notes, setNotes]       = useState('');
-  const [saving, setSaving]     = useState(false);
-  const [err, setErr]           = useState('');
+  const [name, setName]                 = useState('');
+  const [company, setCompany]           = useState('');
+  const [email, setEmail]               = useState('');
+  const [phone, setPhone]               = useState('');
+  const [propertyType, setPropertyType] = useState('');
+  const [country, setCountry]           = useState('');
+  const [region, setRegion]             = useState('');
+  const [town, setTown]                 = useState('');
+  const [language, setLanguage]         = useState('');
+  const [website, setWebsite]           = useState('');
+  const [notes, setNotes]               = useState('');
+  const [saving, setSaving]             = useState(false);
+  const [err, setErr]                   = useState('');
 
   async function save() {
     if (!name.trim() || !email.trim()) { setErr('Name and email are required.'); return; }
@@ -149,7 +150,7 @@ function AddProspectModal({ onClose, onSaved }) {
     const res = await saApiFetch('/api/admin/outreach/prospects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, phone: phone || null, country, region, town: town || null, language, website, notes }),
+      body: JSON.stringify({ name, company, email, phone: phone || null, property_type: propertyType || null, country, region, town: town || null, language, website, notes }),
     });
     setSaving(false);
     if (res.ok) { onSaved(); onClose(); }
@@ -165,8 +166,9 @@ function AddProspectModal({ onClose, onSaved }) {
           <Input value={name}    onChange={setName}    placeholder="Full name *" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property name" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email address *" type="email" style={{ width: '100%' }} />
-          <Input value={phone}   onChange={setPhone}   placeholder="Phone (e.g. 01539 432156)" type="tel" style={{ width: '100%' }} />
-          <Input value={website} onChange={setWebsite} placeholder="Website / Facebook URL" style={{ width: '100%' }} />
+          <Input value={phone}        onChange={setPhone}        placeholder="Phone (e.g. 01539 432156)" type="tel" style={{ width: '100%' }} />
+          <Input value={propertyType} onChange={setPropertyType} placeholder="Property type (e.g. B&B, gîte, hotel)" style={{ width: '100%' }} />
+          <Input value={website}      onChange={setWebsite}      placeholder="Website / Facebook URL" style={{ width: '100%' }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <Input value={country}  onChange={setCountry}  placeholder="Country (e.g. uk)" style={{ flex: 1 }} />
             <Input value={language} onChange={setLanguage} placeholder="Language (e.g. en)" style={{ flex: 1 }} />
@@ -188,23 +190,24 @@ function AddProspectModal({ onClose, onSaved }) {
 
 // ── Edit Prospect modal ───────────────────────────────────────────────────────
 function EditProspectModal({ prospect, onClose, onSaved }) {
-  const [name, setName]             = useState(prospect.name ?? '');
-  const [company, setCompany]       = useState(prospect.company ?? '');
-  const [email, setEmail]           = useState(prospect.email);
-  const [status, setStatus]         = useState(prospect.status);
-  const [country, setCountry]       = useState(prospect.country ?? '');
-  const [language, setLanguage]     = useState(prospect.language ?? '');
-  const [website, setWebsite]       = useState(prospect.website ?? '');
-  const [notes, setNotes]           = useState(prospect.notes ?? '');
-  const [followUp, setFollowUp]     = useState(prospect.follow_up_date ?? '');
-  const [saving, setSaving]         = useState(false);
+  const [name, setName]                   = useState(prospect.name ?? '');
+  const [company, setCompany]             = useState(prospect.company ?? '');
+  const [email, setEmail]                 = useState(prospect.email);
+  const [status, setStatus]               = useState(prospect.status);
+  const [propertyType, setPropertyType]   = useState(prospect.property_type ?? '');
+  const [country, setCountry]             = useState(prospect.country ?? '');
+  const [language, setLanguage]           = useState(prospect.language ?? '');
+  const [website, setWebsite]             = useState(prospect.website ?? '');
+  const [notes, setNotes]                 = useState(prospect.notes ?? '');
+  const [followUp, setFollowUp]           = useState(prospect.follow_up_date ?? '');
+  const [saving, setSaving]               = useState(false);
 
   async function save() {
     setSaving(true);
     await saApiFetch(`/api/admin/outreach/prospects/${prospect.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, email, status, country, language, website, notes, follow_up_date: followUp || null }),
+      body: JSON.stringify({ name, company, email, status, property_type: propertyType || null, country, language, website, notes, follow_up_date: followUp || null }),
     });
     setSaving(false); onSaved(); onClose();
   }
@@ -217,7 +220,8 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
           <Input value={name}    onChange={setName}    placeholder="Full name" style={{ width: '100%' }} />
           <Input value={company} onChange={setCompany} placeholder="Company / property" style={{ width: '100%' }} />
           <Input value={email}   onChange={setEmail}   placeholder="Email" type="email" style={{ width: '100%' }} />
-          <Input value={website} onChange={setWebsite} placeholder="Website / Facebook URL" style={{ width: '100%' }} />
+          <Input value={website}      onChange={setWebsite}      placeholder="Website / Facebook URL" style={{ width: '100%' }} />
+          <Input value={propertyType} onChange={setPropertyType} placeholder="Property type (e.g. B&B, gîte, hotel)" style={{ width: '100%' }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <Input value={country}  onChange={setCountry}  placeholder="Country" style={{ flex: 1 }} />
             <Input value={language} onChange={setLanguage} placeholder="Language" style={{ flex: 1 }} />

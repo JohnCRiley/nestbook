@@ -112,13 +112,13 @@ outreachRouter.post('/prospects', (req, res) => {
 
 // ── Prospects — update ────────────────────────────────────────────────────────
 outreachRouter.put('/prospects/:id', (req, res) => {
-  const { name, company, email, status, notes, follow_up_date, country, language, website } = req.body;
+  const { name, company, email, status, property_type, notes, follow_up_date, country, language, website } = req.body;
   const p = db.prepare(`SELECT * FROM prospects WHERE id = ?`).get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
 
   db.prepare(`
     UPDATE prospects SET
-      name = ?, company = ?, email = ?, status = ?, notes = ?, follow_up_date = ?,
+      name = ?, company = ?, email = ?, status = ?, property_type = ?, notes = ?, follow_up_date = ?,
       country = ?, language = ?, website = ?
     WHERE id = ?
   `).run(
@@ -126,6 +126,7 @@ outreachRouter.put('/prospects/:id', (req, res) => {
     company ?? p.company,
     email ? email.toLowerCase().trim() : p.email,
     status ?? p.status,
+    property_type !== undefined ? (property_type?.trim() || null) : p.property_type,
     notes !== undefined ? notes : p.notes,
     follow_up_date !== undefined ? follow_up_date : p.follow_up_date,
     country !== undefined ? country : p.country,
