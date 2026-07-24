@@ -1076,10 +1076,11 @@ export default function Outreach() {
   // Filters — shared across both tabs (all client-side)
   const [search, setSearch]               = useState('');
   const [filterStatus, setFilterStatus]   = useState('actionable');
-  const [filterSource, setFilterSource]   = useState('');
-  const [filterCountry, setFilterCountry] = useState('');
-  const [filterLang, setFilterLang]       = useState('');
-  const [filterFollowUp, setFilterFollowUp] = useState('');
+  const [filterSource, setFilterSource]           = useState('');
+  const [filterCountry, setFilterCountry]         = useState('');
+  const [filterLang, setFilterLang]               = useState('');
+  const [filterFollowUp, setFilterFollowUp]       = useState('');
+  const [filterPropertyType, setFilterPropertyType] = useState('');
 
   // UI state
   const [selected, setSelected]         = useState([]);
@@ -1144,9 +1145,10 @@ export default function Outreach() {
     } else if (filterStatus) {
       if (p.status !== filterStatus) return false;
     }
-    if (filterSource  && p.source   !== filterSource)  return false;
-    if (filterCountry && p.country  !== filterCountry) return false;
-    if (filterLang    && p.language !== filterLang)    return false;
+    if (filterSource       && p.source        !== filterSource)       return false;
+    if (filterCountry      && p.country       !== filterCountry)      return false;
+    if (filterLang         && p.language      !== filterLang)         return false;
+    if (filterPropertyType && p.property_type !== filterPropertyType) return false;
     if (filterFollowUp === 'today'   && p.follow_up_date !== today)                        return false;
     if (filterFollowUp === 'overdue' && !(p.follow_up_date && p.follow_up_date < today))   return false;
     if (filterFollowUp === 'set'     && !p.follow_up_date)                                 return false;
@@ -1173,21 +1175,24 @@ export default function Outreach() {
     } else if (filterStatus) {
       if (p.status !== filterStatus) return false;
     }
-    if (filterSource  && p.source   !== filterSource)  return false;
-    if (filterCountry && p.country  !== filterCountry) return false;
-    if (filterLang    && p.language !== filterLang)    return false;
+    if (filterSource       && p.source        !== filterSource)       return false;
+    if (filterCountry      && p.country       !== filterCountry)      return false;
+    if (filterLang         && p.language      !== filterLang)         return false;
+    if (filterPropertyType && p.property_type !== filterPropertyType) return false;
     return true;
   });
 
-  const countries = [...new Set(prospects.map(p => p.country).filter(Boolean))].sort();
-  const languages = [...new Set(prospects.map(p => p.language).filter(Boolean))].sort();
-  const sources   = [...new Set(prospects.map(p => p.source).filter(Boolean))].sort();
+  const countries     = [...new Set(prospects.map(p => p.country).filter(Boolean))].sort();
+  const languages     = [...new Set(prospects.map(p => p.language).filter(Boolean))].sort();
+  const sources       = [...new Set(prospects.map(p => p.source).filter(Boolean))].sort();
+  const propertyTypes = [...new Set(prospects.map(p => p.property_type).filter(Boolean))].sort();
 
-  const anyFilter = search || filterStatus !== 'actionable' || filterSource || filterCountry || filterLang || filterFollowUp;
+  const anyFilter = search || filterStatus !== 'actionable' || filterSource || filterCountry || filterLang || filterFollowUp || filterPropertyType;
 
   function clearFilters() {
     setSearch(''); setFilterStatus('actionable'); setFilterSource('');
     setFilterCountry(''); setFilterLang(''); setFilterFollowUp('');
+    setFilterPropertyType('');
     setSelected([]);
   }
 
@@ -1366,6 +1371,13 @@ export default function Outreach() {
         >
           <option value="">All languages</option>
           {languages.map(l => <option key={l} value={l}>{l}</option>)}
+        </select>
+        <select
+          value={filterPropertyType} onChange={e => { setFilterPropertyType(e.target.value); setSelected([]); }}
+          style={{ flex: '1 1 130px', minWidth: 120, padding: '7px 8px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', fontFamily: 'inherit' }}
+        >
+          <option value="">All property types</option>
+          {propertyTypes.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
         {tab === 'prospects' && (
           <select
