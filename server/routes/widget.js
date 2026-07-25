@@ -52,7 +52,11 @@ widgetRouter.get('/rooms', (req, res) => {
       return res.status(403).json({ error: 'Widget not available for this property' });
     }
     const rows = db.prepare(`
-      SELECT r.*, p.breakfast_included AS property_breakfast_included
+      SELECT r.*,
+             p.breakfast_included AS property_breakfast_included,
+             (SELECT filename FROM room_photos
+              WHERE room_id = r.id
+              ORDER BY display_order ASC, id ASC LIMIT 1) AS first_photo
       FROM rooms r
       JOIN properties p ON p.id = r.property_id
       WHERE r.property_id = ?

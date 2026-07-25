@@ -99,6 +99,7 @@
       pendingBanner:    'You have an unfinished booking — continue where you left off?',
       pendingBannerBtn: 'Continue →',
       pendingEmailNote: "You'll receive an email as soon as the owner confirms your booking.",
+      bookRoom: 'Book this room →',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -151,6 +152,7 @@
       pendingBanner:    'Vous avez une réservation en cours — reprendre là où vous en étiez ?',
       pendingBannerBtn: 'Continuer →',
       pendingEmailNote: 'Vous recevrez un e-mail dès que le propriétaire aura confirmé votre réservation.',
+      bookRoom: 'Réserver cette chambre →',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -203,6 +205,7 @@
       pendingBanner:    'Tiene una reserva sin terminar — ¿continuar donde lo dejó?',
       pendingBannerBtn: 'Continuar →',
       pendingEmailNote: 'Recibirá un correo en cuanto el propietario confirme su reserva.',
+      bookRoom: 'Reservar esta habitación →',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -255,6 +258,7 @@
       pendingBanner:    'U heeft een onvoltooide boeking — verder gaan waar u gebleven was?',
       pendingBannerBtn: 'Doorgaan →',
       pendingEmailNote: 'U ontvangt een e-mail zodra de eigenaar uw boeking heeft bevestigd.',
+      bookRoom: 'Kamer boeken →',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -307,6 +311,7 @@
       pendingBanner:    'Sie haben eine unvollständige Buchung — dort weitermachen, wo Sie aufgehört haben?',
       pendingBannerBtn: 'Weiter →',
       pendingEmailNote: 'Sie erhalten eine E-Mail, sobald der Gastgeber Ihre Buchung bestätigt hat.',
+      bookRoom: 'Zimmer buchen →',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -782,32 +787,44 @@
 
 /* Step 2 room cards */
 .nb-room {
-  border: 2px solid #e4ede2;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: border-color 0.12s, background 0.12s;
+  border: 1.5px solid #e4ede2;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  background: #fff;
 }
 .nb-room:last-child { margin-bottom: 0; }
-.nb-room:hover      { border-color: ${BRAND}; background: #f7fbf6; }
-.nb-room.nb-selected {
-  border-color: ${BRAND};
-  background: ${BRAND_LIGHT};
+.nb-room-photo {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+.nb-room-photo-placeholder {
+  width: 100%;
+  height: 180px;
+  background: #f0f4ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b8ceb4;
+}
+.nb-room-info {
+  padding: 14px 16px 16px;
 }
 .nb-room-hd {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .nb-room-name  { font-weight: 700; font-size: 0.95rem; color: #1a2e14; }
 .nb-room-type  { font-size: 0.72rem; color: #8aab7f; text-transform: capitalize; margin-top: 2px; }
 .nb-room-price { font-size: 1rem; font-weight: 700; color: ${BRAND_DARK}; white-space: nowrap; }
 .nb-room-price span { font-size: 0.72rem; font-weight: 400; color: #8aab7f; }
 .nb-room-caps  { font-size: 0.75rem; color: #557a4a; margin-bottom: 8px; }
-.nb-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.nb-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .nb-tag {
   font-size: 0.65rem;
   padding: 2px 7px;
@@ -816,14 +833,30 @@
   border: 1px solid #d9ead3;
   color: #557a4a;
 }
-.nb-room.nb-selected .nb-tag { background: rgba(255,255,255,0.5); }
 .nb-breakfast {
   display: inline-flex; align-items: center;
   font-size: 0.65rem; font-weight: 700;
   padding: 2px 8px; border-radius: 4px;
   background: #d9f0cc; border: 1px solid #86efac; color: #1a4710;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
+.nb-btn-book-room {
+  display: block;
+  width: 100%;
+  background: ${BRAND};
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: background 0.15s;
+  margin-top: 12px;
+}
+.nb-btn-book-room:hover { background: ${BRAND_DARK}; }
 
 /* Summary (step 4) */
 .nb-summary {
@@ -1315,6 +1348,12 @@
   }
 
   // ── Step 2: Room selection ─────────────────────────────────────────────────
+  function makePlaceholder() {
+    const ph = el('div', 'nb-room-photo-placeholder');
+    ph.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v11M21 7v11M3 12h18M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2M7 12V7M17 12V7"/></svg>';
+    return ph;
+  }
+
   function renderStep2() {
     if (S.availableRooms.length === 0) {
       const wrap = el('div', 'nb-no-rooms');
@@ -1329,9 +1368,22 @@
       body.appendChild(title);
 
       S.availableRooms.forEach((room) => {
-        const card = el('div', 'nb-room' + (S.selectedRoom?.id === room.id ? ' nb-selected' : ''));
+        const card = el('div', 'nb-room');
 
-        // Header: name + price
+        // Photo or placeholder
+        if (room.first_photo) {
+          const img = el('img', 'nb-room-photo');
+          img.src     = API_BASE + '/uploads/rooms/' + room.first_photo;
+          img.alt     = room.name;
+          img.loading = 'lazy';
+          card.appendChild(img);
+        } else {
+          card.appendChild(makePlaceholder());
+        }
+
+        // Info section
+        const info = el('div', 'nb-room-info');
+
         const hd = el('div', 'nb-room-hd');
         const nameBlock = el('div', '');
         const name = el('div', 'nb-room-name'); name.appendChild(txt(room.name));
@@ -1342,57 +1394,52 @@
         const perN = el('span', ''); perN.appendChild(txt(T.perNight));
         priceEl.appendChild(perN);
         hd.appendChild(nameBlock); hd.appendChild(priceEl);
+        info.appendChild(hd);
 
-        // Capacity
         const caps = el('div', 'nb-room-caps');
         caps.appendChild(txt(T.capacity + ' ' + room.capacity + ' ' + (room.capacity === 1 ? 'guest' : 'guests')));
+        info.appendChild(caps);
 
-        // Amenities
-        const tags = el('div', 'nb-tags');
-        const amenities = (room.amenities || '').split(',').map((s) => s.trim()).filter(Boolean);
-        amenities.slice(0, 5).forEach((a) => {
-          const tag = el('span', 'nb-tag'); tag.appendChild(txt(fmtAmenity(a)));
-          tags.appendChild(tag);
-        });
-
-        card.appendChild(hd);
-        card.appendChild(caps);
-        if (amenities.length > 0) card.appendChild(tags);
-
-        // Breakfast badge — show if room or property includes breakfast
+        // Breakfast badge
         if (room.breakfast_included || room.property_breakfast_included) {
           const bfBadge = el('div', 'nb-breakfast');
           bfBadge.appendChild(txt(T.breakfastIncluded));
-          card.appendChild(bfBadge);
+          info.appendChild(bfBadge);
         }
 
-        card.addEventListener('click', () => {
-          S.selectedRoom = room;
-          // Refresh selected state on all cards without full re-render
-          body.querySelectorAll('.nb-room').forEach((c) => c.classList.remove('nb-selected'));
-          card.classList.add('nb-selected');
-          nextBtn.disabled = false;
-        });
+        // Amenity tags
+        const amenities = (room.amenities || '').split(',').map((s) => s.trim()).filter(Boolean);
+        if (amenities.length > 0) {
+          const tags = el('div', 'nb-tags');
+          amenities.slice(0, 5).forEach((a) => {
+            const tag = el('span', 'nb-tag'); tag.appendChild(txt(fmtAmenity(a)));
+            tags.appendChild(tag);
+          });
+          info.appendChild(tags);
+        }
 
+        // Per-card book button — directly advances to step 3
+        const bookBtn = el('button', 'nb-btn-book-room');
+        bookBtn.appendChild(txt(T.bookRoom));
+        bookBtn.addEventListener('click', () => {
+          S.selectedRoom = room;
+          S.step = 3;
+          render();
+        });
+        info.appendChild(bookBtn);
+
+        card.appendChild(info);
         body.appendChild(card);
       });
     }
 
-    // Footer
+    // Footer — back only; booking is triggered per-card
     const backBtn = el('button', 'nb-btn-back');
     backBtn.appendChild(txt(T.back));
     backBtn.addEventListener('click', () => { S.step = 1; S.error = null; render(); });
 
-    const nextBtn = el('button', 'nb-btn-main');
-    nextBtn.appendChild(txt(T.step3Title + ' →'));
-    nextBtn.disabled = !S.selectedRoom;
-    nextBtn.addEventListener('click', () => {
-      if (!S.selectedRoom) return;
-      S.step = 3; render();
-    });
-
     footer.appendChild(backBtn);
-    footer.appendChild(nextBtn);
+    footer.appendChild(el('div', ''));
   }
 
   // ── Step 3: Guest details ─────────────────────────────────────────────────
