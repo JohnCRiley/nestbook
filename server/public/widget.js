@@ -25,34 +25,26 @@
   const CUR_SYMBOL  = ({ EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' })[CURRENCY] || '€';
   const DEMO_MODE   = SCRIPT.getAttribute('data-demo') === 'true';
 
-  // ── Demo-mode rooms (client-side only — no API call needed) ───────────────
-  // When DEMO_MODE is true the widget uses these hardcoded rooms and generates
-  // a fake booking reference without touching the database at all.
-  // This means demo mode works even before a server restart loads the new routes.
-  const DEMO_ROOMS_DATA = DEMO_MODE ? [
-    { id: 'D1', name: 'Chambre Lavande', type: 'double', price_per_night: 95,  capacity: 2, amenities: 'wifi,ensuite,balcony',        status: 'available' },
-    { id: 'D2', name: 'Chambre Mistral', type: 'twin',   price_per_night: 85,  capacity: 2, amenities: 'wifi,ensuite',                 status: 'available' },
-    { id: 'D3', name: 'Suite Provence',  type: 'suite',  price_per_night: 145, capacity: 4, amenities: 'wifi,ensuite,terrace,minibar', status: 'available' },
-    { id: 'D4', name: 'Chambre Olivier', type: 'single', price_per_night: 65,  capacity: 1, amenities: 'wifi',                         status: 'available' },
-  ] : null;
-
   const BRAND_OVERRIDE = SCRIPT.getAttribute('data-color') || null;
 
   // Colour palettes for each theme — must stay in sync with client/src/index.css
+  // panelHdrBg/panelHdrText match the app's --header-bg/--header-text per theme exactly.
   const THEME_COLOURS = {
-    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
-    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
-    ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
-    ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
-    sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6' },
-    lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
-    aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
-    charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
+    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc', panelHdrBg: '#1a4710', panelHdrText: '#ffffff' },
+    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE', panelHdrBg: '#F6F4EE', panelHdrText: '#1F3A55' },
+    ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2', panelHdrBg: '#E9E7E2', panelHdrText: '#1A2535' },
+    ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7', panelHdrBg: '#E9E7E7', panelHdrText: '#CF514F' },
+    sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#878A8C' },
+    lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9', panelHdrBg: '#E7E7E9', panelHdrText: '#4F4582' },
+    aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8', panelHdrBg: '#F4F5F6', panelHdrText: '#1C1C1E' },
+    charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#68696A' },
   };
 
-  let BRAND       = '#2f771b';
-  let BRAND_DARK  = '#1a4710';
-  let BRAND_LIGHT = '#d9f0cc';
+  let BRAND          = '#2f771b';
+  let BRAND_DARK     = '#1a4710';
+  let BRAND_LIGHT    = '#d9f0cc';
+  let PANEL_HDR_BG   = '#1a4710';  // matches --header-bg; resolved from palette on init
+  let PANEL_HDR_TEXT = '#ffffff';  // matches --header-text
 
   // ── i18n ───────────────────────────────────────────────────────────────────
   const STRINGS = {
@@ -333,7 +325,6 @@
     bookingRef:          null,
     loading:             false,
     error:               null,
-    isDemo:              false,
     wholeProperty:       false,
     wholePropertyRate:   0,
     totalCapacity:       10,
@@ -412,68 +403,59 @@
     S.error   = null;
     render();
     try {
-      if (DEMO_MODE) {
-        // Demo: use client-side static rooms — no API call, works without server restart
-        S.allRooms       = DEMO_ROOMS_DATA;
-        S.allBookings    = [];
-        S.availableRooms = DEMO_ROOMS_DATA.filter((r) => r.capacity >= S.numGuests);
-        console.log('[NestBook widget] Demo mode: loaded', S.availableRooms.length, 'available rooms (client-side)');
-        S.step = 2;
-      } else {
-        console.log('[NestBook widget] Fetching rooms for property', PROPERTY_ID);
-        const [rooms, bookings, freshProp] = await Promise.all([
-          apiFetch('/api/widget/rooms?property_id='    + PROPERTY_ID),
-          apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
-          apiFetch('/api/widget/property?property_id=' + PROPERTY_ID).catch(() => null),
-        ]);
-        // Re-confirm WP status from a fresh property fetch — makes the check
-        // authoritative at availability time and not dependent on init() succeeding.
-        if (freshProp) {
-          S.wholeProperty         = freshProp.rental_type === 'whole_property';
-          S.wholePropertyRate     = freshProp.whole_property_rate || 0;
-          S.totalCapacity         = freshProp.total_capacity || 10;
-          S.stripeConnectActive   = freshProp.stripe_connect_active === true;
-          S.breakfastEnabled      = !S.wholeProperty && freshProp.breakfast_widget_enabled === true;
-          S.breakfastPrice        = freshProp.breakfast_price ?? 0;
-        }
-        console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length, '| WP mode:', S.wholeProperty);
-        S.allRooms    = rooms;
-        S.allBookings = bookings;
-        if (S.wholeProperty) {
-          const propertyBooked = bookings.some((b) =>
-            b.status !== 'cancelled' &&
-            b.status !== 'checked_out' &&
-            b.check_in_date < S.checkOut &&
-            b.check_out_date > S.checkIn
-          );
-          if (propertyBooked) {
-            S.error = T.propertyNotAvailable;
-            S.step  = 1;
-          } else {
-            S.selectedRoom = {
-              id:              rooms[0]?.id ?? null,
-              name:            'Whole property',
-              price_per_night: S.wholePropertyRate,
-              capacity:        S.totalCapacity,
-            };
-            // Fetch seasonal rate for the selected dates
-            try {
-              const rateData = await apiFetch(
-                `/api/widget/rate-range?propertyId=${PROPERTY_ID}&checkIn=${S.checkIn}&checkOut=${S.checkOut}`
-              );
-              S.wpTotal     = rateData.total;
-              S.wpBreakdown = rateData.breakdown;
-            } catch {
-              S.wpTotal     = null;
-              S.wpBreakdown = null;
-            }
-            S.step = 2;
-          }
+      console.log('[NestBook widget] Fetching rooms for property', PROPERTY_ID);
+      const [rooms, bookings, freshProp] = await Promise.all([
+        apiFetch('/api/widget/rooms?property_id='    + PROPERTY_ID),
+        apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
+        apiFetch('/api/widget/property?property_id=' + PROPERTY_ID).catch(() => null),
+      ]);
+      // Re-confirm WP status from a fresh property fetch — makes the check
+      // authoritative at availability time and not dependent on init() succeeding.
+      if (freshProp) {
+        S.wholeProperty         = freshProp.rental_type === 'whole_property';
+        S.wholePropertyRate     = freshProp.whole_property_rate || 0;
+        S.totalCapacity         = freshProp.total_capacity || 10;
+        S.stripeConnectActive   = freshProp.stripe_connect_active === true;
+        S.breakfastEnabled      = !S.wholeProperty && freshProp.breakfast_widget_enabled === true;
+        S.breakfastPrice        = freshProp.breakfast_price ?? 0;
+      }
+      console.log('[NestBook widget] Rooms received:', rooms.length, '| Active bookings:', bookings.length, '| WP mode:', S.wholeProperty);
+      S.allRooms    = rooms;
+      S.allBookings = bookings;
+      if (S.wholeProperty) {
+        const propertyBooked = bookings.some((b) =>
+          b.status !== 'cancelled' &&
+          b.status !== 'checked_out' &&
+          b.check_in_date < S.checkOut &&
+          b.check_out_date > S.checkIn
+        );
+        if (propertyBooked) {
+          S.error = T.propertyNotAvailable;
+          S.step  = 1;
         } else {
-          S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
-          console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
+          S.selectedRoom = {
+            id:              rooms[0]?.id ?? null,
+            name:            'Whole property',
+            price_per_night: S.wholePropertyRate,
+            capacity:        S.totalCapacity,
+          };
+          // Fetch seasonal rate for the selected dates
+          try {
+            const rateData = await apiFetch(
+              `/api/widget/rate-range?propertyId=${PROPERTY_ID}&checkIn=${S.checkIn}&checkOut=${S.checkOut}`
+            );
+            S.wpTotal     = rateData.total;
+            S.wpBreakdown = rateData.breakdown;
+          } catch {
+            S.wpTotal     = null;
+            S.wpBreakdown = null;
+          }
           S.step = 2;
         }
+      } else {
+        S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
+        console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
+        S.step = 2;
       }
     } catch (err) {
       console.error('[NestBook widget] loadAvailability failed:', err);
@@ -488,15 +470,8 @@
     S.error   = null;
     render();
     try {
-      if (DEMO_MODE) {
-        // Demo: generate a fake reference client-side — zero API calls, zero DB writes
-        S.bookingRef = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
-        S.isDemo     = true;
-        S.step       = 5;
-        console.log('[NestBook widget] Demo booking complete, ref:', S.bookingRef);
-      } else {
-        // 1. Create (or register) the guest
-        const guest = await apiFetch('/api/widget/guests', {
+      // 1. Create (or register) the guest
+      const guest = await apiFetch('/api/widget/guests', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -555,7 +530,6 @@
         S.bookingRef     = booking.id;
         S.bookingPending = booking.status === 'pending_owner_approval';
         S.step           = 5;
-      }
     } catch (err) {
       console.error('[NestBook widget] confirmBooking failed:', err);
       S.error = T.errServer;
@@ -586,7 +560,7 @@
   background: ${BRAND};
   color: #fff;
   border: none;
-  border-radius: 50px;
+  border-radius: 8px;
   padding: 13px 22px;
   font-size: 15px;
   font-weight: 600;
@@ -607,69 +581,58 @@
 }
 .nb-trigger-icon { font-size: 17px; }
 
-/* Backdrop */
-.nb-backdrop {
+/* Overlay (backdrop) */
+.nb-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10,20,8,0.5);
+  background: rgba(10,20,8,0.45);
   z-index: 999991;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
   animation: nb-fade-in 0.15s ease;
 }
 @keyframes nb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nb-slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
 
-/* Modal */
-.nb-modal {
+/* Side panel */
+.nb-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 420px;
   background: #fff;
-  border-radius: 14px;
-  width: 100%;
-  min-width: 320px;
-  max-width: 520px;
-  max-height: 90vh;
+  z-index: 999992;
+  box-shadow: -8px 0 40px rgba(10,20,8,0.22);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(10,20,8,0.25);
-  animation: nb-slide-up 0.2s ease;
+  animation: nb-slide-in-right 0.22s ease;
   overflow: hidden;
 }
-@keyframes nb-slide-up {
-  from { opacity: 0; transform: translateY(12px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
-}
 
-/* Modal header — two-row layout */
-.nb-hd {
-  display: flex;
-  flex-direction: column;
+/* Panel header — dates+guests on left, close on right */
+.nb-panel-hd {
+  background: ${PANEL_HDR_BG};
+  color: ${PANEL_HDR_TEXT};
+  padding: 18px 20px 16px;
   flex-shrink: 0;
-}
-
-/* Row 1: dark bar with logo + close */
-.nb-hd-topbar {
-  background: ${BRAND_DARK};
-  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
-.nb-hd-logo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: rgba(255,255,255,0.9);
-  font-size: 0.72rem;
+.nb-panel-hd-summary {
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
 }
-.nb-close {
-  background: rgba(255,255,255,0.12);
+.nb-panel-close {
+  background: rgba(128,128,128,0.15);
   border: none;
-  color: #fff;
-  border-radius: 7px;
-  width: 30px; height: 30px;
+  color: ${PANEL_HDR_TEXT};
+  border-radius: 6px;
+  width: 32px; height: 32px;
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
@@ -678,24 +641,16 @@
   justify-content: center;
   flex-shrink: 0;
   transition: background 0.12s;
+  font-family: inherit;
 }
-.nb-close:hover { background: rgba(255,255,255,0.22); }
-
-/* Row 2: title — full width, can wrap */
-.nb-hd-title-row {
-  background: ${BRAND_LIGHT};
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: ${BRAND_DARK};
-  line-height: 1.35;
-}
+.nb-panel-close:hover { background: rgba(128,128,128,0.28); }
 
 /* Body */
 .nb-body {
   flex: 1;
   overflow-y: auto;
   padding: 24px 24px 16px;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Footer */
@@ -1040,17 +995,6 @@
   color: #8aab7f;
   margin-top: 8px;
 }
-.nb-demo-note {
-  display: inline-block;
-  margin-top: 14px;
-  font-size: 0.72rem;
-  color: #8aab7f;
-  background: #f3f7f2;
-  border: 1px solid #d9ead3;
-  border-radius: 6px;
-  padding: 5px 12px;
-}
-
 /* Section heading inside body */
 .nb-section-title {
   font-size: 0.72rem;
@@ -1087,16 +1031,10 @@
 }
 
 /* ── Mobile responsive ── */
-@media (max-width: 540px) {
-  .nb-backdrop {
-    padding: 0;
-    align-items: flex-end;
-  }
-  .nb-modal {
-    max-width: 100%;
-    min-width: 0;
-    border-radius: 16px 16px 0 0;
-    max-height: 92vh;
+@media (max-width: 480px) {
+  .nb-panel {
+    width: 100vw;
+    left: 0;
   }
   .nb-date-grid,
   .nb-field-row {
@@ -1177,7 +1115,7 @@
   function txt(str) { return document.createTextNode(String(str || '')); }
 
   // ── Main DOM nodes ─────────────────────────────────────────────────────────
-  let root, backdrop, modal, body, footer;
+  let root, overlay, panel, body, footer;
 
   // ── Step indicator ─────────────────────────────────────────────────────────
   const STEP_LABELS = [T.step1Title, T.step2Title, T.step3Title, T.step4Title];
@@ -1636,13 +1574,7 @@
     }
 
     wrap.appendChild(icon); wrap.appendChild(title); wrap.appendChild(msg);
-    if (S.guest.email && !S.isDemo) wrap.appendChild(sub);
-
-    if (S.isDemo) {
-      const demoNote = el('p', 'nb-demo-note');
-      demoNote.appendChild(txt(T.demoNote || 'Demo mode — no real booking was made'));
-      wrap.appendChild(demoNote);
-    }
+    if (S.guest.email) wrap.appendChild(sub);
 
     body.appendChild(wrap);
 
@@ -1715,12 +1647,17 @@
     body.innerHTML   = '';
     footer.innerHTML = '';
 
-    // Update the title row
-    const titleRow = modal.querySelector('.nb-hd-title-row');
-    titleRow.textContent = S.step === 5 ? ((S.wholeProperty || S.bookingPending) ? T.wpSuccessTitle : T.successTitle)
-      : (S.step === 4 && S.wholeProperty) ? T.wpStep4Title
-      : (S.step === 2 && S.wholeProperty) ? T.wpStep2Title
-      : STEP_LABELS[S.step - 1];
+    // Update the panel header summary (dates+guests once known; step title otherwise)
+    const hdSummary = panel.querySelector('.nb-panel-hd-summary');
+    if (hdSummary) {
+      if (S.step === 5) {
+        hdSummary.textContent = (S.wholeProperty || S.bookingPending) ? T.wpSuccessTitle : T.successTitle;
+      } else if (S.step > 1 && S.checkIn && S.checkOut) {
+        hdSummary.textContent = fmtDate(S.checkIn) + ' → ' + fmtDate(S.checkOut) + '  ·  ' + S.numGuests + ' ' + T.guests.toLowerCase();
+      } else {
+        hdSummary.textContent = T.checkAvailability;
+      }
+    }
 
     if (S.steppedBack) {
       renderSteppedBack();
@@ -1750,16 +1687,16 @@
     Object.assign(S, {
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
-      bookingRef: null, loading: false, error: null, isDemo: false,
+      bookingRef: null, loading: false, error: null,
       breakfastAdded: false, redirecting: false, steppedBack: false, bookingPending: false,
     });
-    backdrop.style.display = 'flex';
+    overlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
     render();
   }
 
   function closeModal() {
-    backdrop.style.display = 'none';
+    overlay.style.display = 'none';
     document.body.style.overflow = '';
   }
 
@@ -1806,16 +1743,18 @@
     // Resolve brand colours: manual override wins, otherwise fetch from server.
     if (BRAND_OVERRIDE) {
       BRAND = BRAND_OVERRIDE;
-      // BRAND_DARK and BRAND_LIGHT stay at forest defaults when manually overridden.
+      // BRAND_DARK, BRAND_LIGHT, PANEL_HDR_* stay at forest defaults when manually overridden.
     } else if (!DEMO_MODE) {
       try {
         const r = await fetch(API_BASE + '/api/widget/property?property_id=' + PROPERTY_ID);
         if (r.ok) {
           const data = await r.json();
-          const palette = THEME_COLOURS[data.theme] ?? THEME_COLOURS.forest;
-          BRAND       = palette.brand;
-          BRAND_DARK  = palette.dark;
-          BRAND_LIGHT = palette.light;
+          const palette  = THEME_COLOURS[data.theme] ?? THEME_COLOURS.forest;
+          BRAND          = palette.brand;
+          BRAND_DARK     = palette.dark;
+          BRAND_LIGHT    = palette.light;
+          PANEL_HDR_BG   = palette.panelHdrBg;
+          PANEL_HDR_TEXT = palette.panelHdrText;
           S.wholeProperty       = data.rental_type === 'whole_property';
           S.wholePropertyRate   = data.whole_property_rate || 0;
           S.totalCapacity       = data.total_capacity || 10;
@@ -1845,67 +1784,66 @@
     icon.appendChild(houseSvg);
     trigger.appendChild(icon);
     trigger.appendChild(txt(' ' + (S.wholeProperty ? T.checkAvailabilityBook : T.bookNow)));
+
+    // ── Demo mode: redirect to real demo page instead of running fake widget flow ──
+    if (DEMO_MODE) {
+      trigger.addEventListener('click', () => {
+        window.open('https://nestbook.io/book/domaine-des-lavandes', '_blank');
+      });
+      root.appendChild(trigger);
+      document.body.appendChild(root);
+      return;
+    }
+
     trigger.addEventListener('click', openModal);
     root.appendChild(trigger);
 
-    // ── Backdrop ─────────────────────────────────────────────────────────────
-    backdrop = el('div', 'nb-backdrop');
-    backdrop.style.display = 'none';
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) closeModal();
+    // ── Overlay (backdrop) ────────────────────────────────────────────────────
+    overlay = el('div', 'nb-overlay');
+    overlay.style.display = 'none';
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
     });
 
-    // ── Modal shell ───────────────────────────────────────────────────────────
-    modal = el('div', 'nb-modal');
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
+    // ── Panel shell ───────────────────────────────────────────────────────────
+    panel = el('div', 'nb-panel');
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
 
-    // Header: two-row layout (topbar + title row)
-    const hd = el('div', 'nb-hd');
-
-    const topbar = el('div', 'nb-hd-topbar');
-    const logo = el('span', 'nb-hd-logo');
-    const logoIcon = el('img', 'nb-hd-logo-icon');
-    logoIcon.src = API_BASE + '/icon.svg';
-    logoIcon.alt = 'NestBook';
-    logoIcon.style.cssText = 'width:20px;height:20px;border-radius:4px;';
-    logo.appendChild(logoIcon); logo.appendChild(txt('NestBook'));
-    const closeBtn = el('button', 'nb-close');
+    // Header: dates+guests summary on left, close on right
+    const hd = el('div', 'nb-panel-hd');
+    const hdSummary = el('div', 'nb-panel-hd-summary');
+    // text set by render()
+    const closeBtn = el('button', 'nb-panel-close');
     closeBtn.setAttribute('aria-label', T.close);
     closeBtn.appendChild(txt('✕'));
     closeBtn.addEventListener('click', closeModal);
-    topbar.appendChild(logo);
-    topbar.appendChild(closeBtn);
-
-    const titleRow = el('div', 'nb-hd-title-row');
-    // text set by render()
-
-    hd.appendChild(topbar);
-    hd.appendChild(titleRow);
+    hd.appendChild(hdSummary);
+    hd.appendChild(closeBtn);
 
     body   = el('div', 'nb-body');
     footer = el('div', 'nb-ft');
 
-    modal.appendChild(hd);
-    modal.appendChild(body);
-    modal.appendChild(footer);
+    panel.appendChild(hd);
+    panel.appendChild(body);
+    panel.appendChild(footer);
 
-    backdrop.appendChild(modal);
-    root.appendChild(backdrop);
+    overlay.appendChild(panel);
+    root.appendChild(overlay);
     document.body.appendChild(root);
 
-    // Keyboard: Esc closes the modal
+    // Keyboard: Esc closes the panel
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && backdrop.style.display !== 'none') closeModal();
+      if (e.key === 'Escape' && overlay.style.display !== 'none') closeModal();
     });
 
     // ── bfcache: handle browser-back from Stripe Checkout ─────────────────
     // When the browser restores this page from its back-forward cache (the
-    // guest pressed back from Stripe), event.persisted is true. The modal
+    // guest pressed back from Stripe), event.persisted is true. The panel
     // will still show the frozen redirect spinner — replace it with a clear
     // "stepped back" state so the guest knows what to do next.
     window.addEventListener('pageshow', (e) => {
-      if (e.persisted && S.redirecting && backdrop.style.display !== 'none') {
+      if (e.persisted && S.redirecting && overlay.style.display !== 'none') {
         S.redirecting = false;
         S.steppedBack = true;
         render();
@@ -1917,29 +1855,27 @@
     // stored recovery token and show a non-intrusive banner offering to
     // resume. Validate with /recovery-info before showing so we never prompt
     // for a booking that's already been paid or cleaned up.
-    if (!DEMO_MODE) {
-      try {
-        const pendingKey = 'nestbook_pending_' + PROPERTY_ID;
-        const raw = localStorage.getItem(pendingKey);
-        if (raw) {
-          const pending = JSON.parse(raw);
-          const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-          if (pending?.bookingId && pending.createdAt && Date.now() - pending.createdAt < TWO_HOURS_MS) {
-            const q = '?b=' + encodeURIComponent(pending.bookingId)
-              + '&exp=' + encodeURIComponent(pending.exp || '')
-              + '&t=' + encodeURIComponent(pending.t || '');
-            fetch(API_BASE + '/api/widget/recovery-info' + q)
-              .then(r => {
-                if (!r.ok) { try { localStorage.removeItem(pendingKey); } catch (_) {} return; }
-                showRecoveryBanner(pending, pendingKey);
-              })
-              .catch(() => {});
-          } else {
-            try { localStorage.removeItem(pendingKey); } catch (_) {}
-          }
+    try {
+      const pendingKey = 'nestbook_pending_' + PROPERTY_ID;
+      const raw = localStorage.getItem(pendingKey);
+      if (raw) {
+        const pending = JSON.parse(raw);
+        const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+        if (pending?.bookingId && pending.createdAt && Date.now() - pending.createdAt < TWO_HOURS_MS) {
+          const q = '?b=' + encodeURIComponent(pending.bookingId)
+            + '&exp=' + encodeURIComponent(pending.exp || '')
+            + '&t=' + encodeURIComponent(pending.t || '');
+          fetch(API_BASE + '/api/widget/recovery-info' + q)
+            .then(r => {
+              if (!r.ok) { try { localStorage.removeItem(pendingKey); } catch (_) {} return; }
+              showRecoveryBanner(pending, pendingKey);
+            })
+            .catch(() => {});
+        } else {
+          try { localStorage.removeItem(pendingKey); } catch (_) {}
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
   }
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
