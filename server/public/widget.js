@@ -100,6 +100,7 @@
       pendingBannerBtn: 'Continue →',
       pendingEmailNote: "You'll receive an email as soon as the owner confirms your booking.",
       bookRoom: 'Book this room →',
+      clearDates: 'Clear', today: 'Today',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -153,6 +154,7 @@
       pendingBannerBtn: 'Continuer →',
       pendingEmailNote: 'Vous recevrez un e-mail dès que le propriétaire aura confirmé votre réservation.',
       bookRoom: 'Réserver cette chambre →',
+      clearDates: 'Effacer', today: "Aujourd'hui",
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -206,6 +208,7 @@
       pendingBannerBtn: 'Continuar →',
       pendingEmailNote: 'Recibirá un correo en cuanto el propietario confirme su reserva.',
       bookRoom: 'Reservar esta habitación →',
+      clearDates: 'Limpiar', today: 'Hoy',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -259,6 +262,7 @@
       pendingBannerBtn: 'Doorgaan →',
       pendingEmailNote: 'U ontvangt een e-mail zodra de eigenaar uw boeking heeft bevestigd.',
       bookRoom: 'Kamer boeken →',
+      clearDates: 'Wissen', today: 'Vandaag',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -312,6 +316,7 @@
       pendingBannerBtn: 'Weiter →',
       pendingEmailNote: 'Sie erhalten eine E-Mail, sobald der Gastgeber Ihre Buchung bestätigt hat.',
       bookRoom: 'Zimmer buchen →',
+      clearDates: 'Löschen', today: 'Heute',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -342,6 +347,17 @@
     bookingPending:      false,
   };
 
+  // ── Calendar interaction state (persists across step-1 re-renders) ─────────
+  const CAL = {
+    viewYear:     new Date().getFullYear(),
+    viewMonth:    new Date().getMonth(),
+    hoverDate:    null,
+    picking:      null,   // null | 'out' — which date we're waiting for next
+    initialized:  false,  // set to true on first renderStep1 call
+    checkInValEl:  null,
+    checkOutValEl: null,
+  };
+
   // ── Date helpers ───────────────────────────────────────────────────────────
   function todayISO() {
     const d = new Date();
@@ -361,6 +377,10 @@
     if (!iso) return '';
     const [y, m, d] = iso.split('-').map(Number);
     return new Date(y, m - 1, d).toLocaleDateString(LANG, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function calISODate(y, m, d) {
+    return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
   }
 
   // ── Amenity formatter ──────────────────────────────────────────────────────
@@ -739,13 +759,175 @@
 .nb-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23557a4a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; }
 .nb-textarea { resize: vertical; min-height: 72px; }
 
-/* Step 1 date/guests */
-.nb-date-grid {
+/* Step 1 — date display row */
+.nb-date-display {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
+.nb-date-field {
+  border: 1.5px solid #e4ede2;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #fff;
+  min-height: 52px;
+}
+.nb-date-field.nb-date-active {
+  border-color: ${BRAND};
+  box-shadow: 0 0 0 3px ${BRAND_LIGHT};
+}
+.nb-date-field-lbl {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #8aab7f;
+  margin-bottom: 3px;
+}
+.nb-date-field-val { font-size: 0.875rem; font-weight: 600; color: #1a2e14; }
+.nb-date-placeholder { color: #b8ceb4; font-weight: 400; }
+
+/* Calendar */
+.nb-cal {
+  background: #fff;
+  border: 1.5px solid #e4ede2;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.nb-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: ${BRAND_LIGHT};
+  border-bottom: 1px solid #e4ede2;
+}
+.nb-cal-nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${BRAND_DARK};
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; line-height: 1;
+  transition: background 0.12s;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.nb-cal-nav-btn:hover { background: rgba(0,0,0,0.09); }
+.nb-cal-nav-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: ${BRAND_DARK};
+  text-align: center;
+  flex: 1;
+}
+.nb-cal-dow-row,
+.nb-cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.nb-cal-dow {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #8aab7f;
+  padding: 8px 0 4px;
+}
+.nb-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  cursor: pointer;
+  position: relative;
+  color: #1a2e14;
+  transition: background 0.08s, color 0.08s;
+  -webkit-tap-highlight-color: transparent;
+}
+.nb-cal-day:hover:not(.nb-cal-past):not(.nb-cal-empty) {
+  background: ${BRAND_LIGHT};
+  color: ${BRAND_DARK};
+}
+.nb-cal-day.nb-cal-empty { cursor: default; pointer-events: none; }
+.nb-cal-day.nb-cal-past  { color: #d1d5db; cursor: default; pointer-events: none; }
+.nb-cal-day.nb-cal-today { font-weight: 700; }
+.nb-cal-day.nb-cal-today::after {
+  content: '';
+  position: absolute;
+  bottom: 4px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: ${BRAND};
+}
+/* Range — in-range band */
+.nb-cal-day.nb-cal-in-range {
+  background: ${BRAND_LIGHT};
+  color: ${BRAND_DARK};
+  border-radius: 0;
+}
+/* Range endpoints — pill ends */
+.nb-cal-day.nb-cal-start {
+  background: ${BRAND};
+  color: #fff;
+  font-weight: 700;
+  border-radius: 6px 0 0 6px;
+}
+.nb-cal-day.nb-cal-end {
+  background: ${BRAND};
+  color: #fff;
+  font-weight: 700;
+  border-radius: 0 6px 6px 0;
+}
+/* Single-day selection (no checkout yet) */
+.nb-cal-day.nb-cal-start.nb-cal-end { border-radius: 6px; }
+.nb-cal-day.nb-cal-start::after,
+.nb-cal-day.nb-cal-end::after { display: none; }
+/* Hover preview while picking check-out */
+.nb-cal-day.nb-cal-hover-range {
+  background: ${BRAND_LIGHT};
+  color: ${BRAND_DARK};
+  border-radius: 0;
+  opacity: 0.75;
+}
+.nb-cal-day.nb-cal-hover-end {
+  background: ${BRAND};
+  color: #fff;
+  border-radius: 0 6px 6px 0;
+  opacity: 0.75;
+}
+/* Calendar footer links */
+.nb-cal-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 7px 12px;
+  border-top: 1px solid #f0f4ee;
+}
+.nb-cal-link {
+  font-size: 0.78rem;
+  color: ${BRAND_DARK};
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 3px 0;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.12s;
+}
+.nb-cal-link:hover { text-decoration-color: ${BRAND_DARK}; }
+
 .nb-guests-row {
   display: flex;
   align-items: center;
@@ -1069,7 +1251,6 @@
     width: 100vw;
     left: 0;
   }
-  .nb-date-grid,
   .nb-field-row {
     grid-template-columns: 1fr;
   }
@@ -1169,9 +1350,201 @@
     return wrap;
   }
 
+  // ── Calendar helpers ───────────────────────────────────────────────────────
+  function updateCalHover(gridEl) {
+    gridEl.querySelectorAll('[data-date]').forEach((dayEl) => {
+      dayEl.classList.remove('nb-cal-hover-range', 'nb-cal-hover-end');
+      if (CAL.picking === 'out' && S.checkIn && CAL.hoverDate && CAL.hoverDate > S.checkIn) {
+        const d = dayEl.dataset.date;
+        if (d > S.checkIn && d < CAL.hoverDate) dayEl.classList.add('nb-cal-hover-range');
+        if (d === CAL.hoverDate)                dayEl.classList.add('nb-cal-hover-end');
+      }
+    });
+  }
+
+  function updateDateDisplay() {
+    if (!CAL.checkInValEl || !CAL.checkOutValEl) return;
+    if (S.checkIn) {
+      CAL.checkInValEl.textContent = fmtDate(S.checkIn);
+      CAL.checkInValEl.classList.remove('nb-date-placeholder');
+    } else {
+      CAL.checkInValEl.textContent = '—';
+      CAL.checkInValEl.classList.add('nb-date-placeholder');
+    }
+    if (S.checkOut) {
+      CAL.checkOutValEl.textContent = fmtDate(S.checkOut);
+      CAL.checkOutValEl.classList.remove('nb-date-placeholder');
+    } else {
+      CAL.checkOutValEl.textContent = CAL.picking === 'out' ? '…' : '—';
+      CAL.checkOutValEl.classList.add('nb-date-placeholder');
+    }
+  }
+
+  function renderCalendar(container) {
+    container.innerHTML = '';
+    const today = todayISO();
+
+    // Month navigation bar
+    const nav = el('div', 'nb-cal-nav');
+
+    const prevBtn = el('button', 'nb-cal-nav-btn');
+    prevBtn.innerHTML = '&#8592;';
+    prevBtn.setAttribute('aria-label', 'Previous month');
+    prevBtn.addEventListener('click', () => {
+      CAL.viewMonth--;
+      if (CAL.viewMonth < 0) { CAL.viewMonth = 11; CAL.viewYear--; }
+      CAL.hoverDate = null;
+      renderCalendar(container);
+    });
+
+    const monthTitle = el('div', 'nb-cal-nav-title');
+    monthTitle.appendChild(txt(
+      new Date(CAL.viewYear, CAL.viewMonth, 1)
+        .toLocaleDateString(LANG, { month: 'long', year: 'numeric' })
+    ));
+
+    const nextBtn = el('button', 'nb-cal-nav-btn');
+    nextBtn.innerHTML = '&#8594;';
+    nextBtn.setAttribute('aria-label', 'Next month');
+    nextBtn.addEventListener('click', () => {
+      CAL.viewMonth++;
+      if (CAL.viewMonth > 11) { CAL.viewMonth = 0; CAL.viewYear++; }
+      CAL.hoverDate = null;
+      renderCalendar(container);
+    });
+
+    nav.appendChild(prevBtn); nav.appendChild(monthTitle); nav.appendChild(nextBtn);
+    container.appendChild(nav);
+
+    // Day-of-week headers Mon → Sun (Jan 6 2025 = Monday)
+    const dowRow = el('div', 'nb-cal-dow-row');
+    for (let i = 0; i < 7; i++) {
+      const cell = el('div', 'nb-cal-dow');
+      const label = new Date(2025, 0, 6 + i).toLocaleDateString(LANG, { weekday: 'short' }).slice(0, 2);
+      cell.appendChild(txt(label));
+      dowRow.appendChild(cell);
+    }
+    container.appendChild(dowRow);
+
+    // Day grid
+    const firstDay    = new Date(CAL.viewYear, CAL.viewMonth, 1);
+    const daysInMonth = new Date(CAL.viewYear, CAL.viewMonth + 1, 0).getDate();
+    // Monday-first offset: JS getDay() → Sun=0,Mon=1…Sat=6 → Mon-offset: Sun=6,Mon=0…
+    const startOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+
+    const grid = el('div', 'nb-cal-days-grid');
+
+    for (let i = 0; i < startOffset; i++) {
+      grid.appendChild(el('div', 'nb-cal-day nb-cal-empty'));
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso     = calISODate(CAL.viewYear, CAL.viewMonth + 1, d);
+      const isPast  = iso < today;
+      const isStart = iso === S.checkIn;
+      const isEnd   = iso === S.checkOut;
+      const inRange = !!(S.checkIn && S.checkOut && iso > S.checkIn && iso < S.checkOut);
+      const isToday = iso === today;
+
+      let cls = 'nb-cal-day';
+      if (isPast)   cls += ' nb-cal-past';
+      if (isToday)  cls += ' nb-cal-today';
+      if (isStart)  cls += ' nb-cal-start';
+      if (isEnd)    cls += ' nb-cal-end';
+      if (inRange)  cls += ' nb-cal-in-range';
+
+      const cell = el('div', cls);
+      cell.appendChild(txt(d));
+      cell.dataset.date = iso;
+
+      if (!isPast) {
+        cell.addEventListener('click', () => {
+          if (CAL.picking === 'out' && S.checkIn) {
+            if (iso > S.checkIn) {
+              S.checkOut  = iso;
+              CAL.picking = null;
+            } else {
+              // Clicked on or before check-in — restart range
+              S.checkIn  = iso;
+              S.checkOut = '';
+            }
+          } else {
+            S.checkIn   = iso;
+            S.checkOut  = '';
+            CAL.picking = 'out';
+          }
+          S.error       = null;
+          CAL.hoverDate = null;
+          renderCalendar(container);
+          updateDateDisplay();
+        });
+
+        cell.addEventListener('mouseenter', () => {
+          if (CAL.picking === 'out') {
+            CAL.hoverDate = iso;
+            updateCalHover(grid);
+          }
+        });
+      }
+
+      grid.appendChild(cell);
+    }
+
+    grid.addEventListener('mouseleave', () => {
+      if (CAL.picking === 'out') {
+        CAL.hoverDate = null;
+        updateCalHover(grid);
+      }
+    });
+
+    container.appendChild(grid);
+
+    // Footer: Clear + Today links
+    const links = el('div', 'nb-cal-links');
+    if (S.checkIn || S.checkOut) {
+      const clearBtn = el('button', 'nb-cal-link');
+      clearBtn.appendChild(txt(T.clearDates));
+      clearBtn.addEventListener('click', () => {
+        S.checkIn     = '';
+        S.checkOut    = '';
+        CAL.picking   = null;
+        CAL.hoverDate = null;
+        renderCalendar(container);
+        updateDateDisplay();
+      });
+      links.appendChild(clearBtn);
+    }
+    const todayBtn = el('button', 'nb-cal-link');
+    todayBtn.appendChild(txt(T.today));
+    todayBtn.addEventListener('click', () => {
+      const now = new Date();
+      CAL.viewYear  = now.getFullYear();
+      CAL.viewMonth = now.getMonth();
+      S.checkIn     = today;
+      S.checkOut    = '';
+      CAL.picking   = 'out';
+      CAL.hoverDate = null;
+      renderCalendar(container);
+      updateDateDisplay();
+    });
+    links.appendChild(todayBtn);
+    container.appendChild(links);
+  }
+
   // ── Step 1: Dates ──────────────────────────────────────────────────────────
   function renderStep1() {
-    const today    = todayISO();
+    // First entry: align calendar view to check-in month if dates already set
+    if (!CAL.initialized) {
+      CAL.initialized = true;
+      if (S.checkIn) {
+        const [y, m] = S.checkIn.split('-').map(Number);
+        CAL.viewYear = y; CAL.viewMonth = m - 1;
+      }
+    }
+    // Keep picking in sync with current S state
+    if (!S.checkIn)       CAL.picking = null;
+    else if (!S.checkOut) CAL.picking = 'out';
+    else                  CAL.picking = null;
 
     if (S.error) {
       const err = el('div', 'nb-error');
@@ -1179,26 +1552,29 @@
       body.appendChild(err);
     }
 
-    // Date grid
-    const dateGrid = el('div', 'nb-date-grid');
+    // Date display row (read-only, updated without full re-render)
+    const displayRow = el('div', 'nb-date-display');
 
-    const inWrap = el('div', 'nb-field');
-    const inLabel = el('label', 'nb-label'); inLabel.appendChild(txt(T.checkIn));
-    const inInput = el('input', 'nb-input');
-    Object.assign(inInput, { type: 'date', min: today, value: S.checkIn });
-    inInput.addEventListener('input', () => { S.checkIn = inInput.value; S.error = null; });
-    inWrap.appendChild(inLabel); inWrap.appendChild(inInput);
+    function makeDateField(labelStr, iso, active) {
+      const field = el('div', 'nb-date-field' + (active ? ' nb-date-active' : ''));
+      const lbl   = el('div', 'nb-date-field-lbl'); lbl.appendChild(txt(labelStr));
+      const val   = el('div', iso ? 'nb-date-field-val' : 'nb-date-field-val nb-date-placeholder');
+      val.appendChild(txt(iso ? fmtDate(iso) : '—'));
+      field.appendChild(lbl); field.appendChild(val);
+      return { field, val };
+    }
 
-    const outWrap = el('div', 'nb-field');
-    const outLabel = el('label', 'nb-label'); outLabel.appendChild(txt(T.checkOut));
-    const outInput = el('input', 'nb-input');
-    Object.assign(outInput, { type: 'date', min: S.checkIn || today, value: S.checkOut });
-    outInput.addEventListener('input', () => { S.checkOut = outInput.value; S.error = null; });
-    outWrap.appendChild(outLabel); outWrap.appendChild(outInput);
+    const { field: inField,  val: inVal  } = makeDateField(T.checkIn,  S.checkIn,  CAL.picking === null && !!S.checkIn);
+    const { field: outField, val: outVal } = makeDateField(T.checkOut, S.checkOut, CAL.picking === 'out');
+    CAL.checkInValEl  = inVal;
+    CAL.checkOutValEl = outVal;
+    displayRow.appendChild(inField); displayRow.appendChild(outField);
+    body.appendChild(displayRow);
 
-    dateGrid.appendChild(inWrap);
-    dateGrid.appendChild(outWrap);
-    body.appendChild(dateGrid);
+    // Inline calendar
+    const calContainer = el('div', 'nb-cal');
+    body.appendChild(calContainer);
+    renderCalendar(calContainer);
 
     // Guests
     const guestRow = el('div', 'nb-guests-row');
