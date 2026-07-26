@@ -94,7 +94,6 @@ function roomCalendarSection(roomId) {
 <div class="room-availability">
   <h4 class="avail-title" data-i18n="page.availability">Availability</h4>
   <div class="nb-cal-container" data-room-id="${esc(String(roomId))}"></div>
-  <p class="avail-hint" data-i18n="page.availabilityHint">Check availability above, then click &quot;Book this room&quot; to choose your dates and complete your reservation.</p>
 </div>`;
 }
 
@@ -299,6 +298,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
     ${roomCalendarSection(room.id)}
+    <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${room.id})` : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
   </div>
 </div>`;
@@ -1213,6 +1213,7 @@ section h2 {
   color: #94a3b8;
   margin: 8px 0 4px;
   line-height: 1.4;
+  text-align: center;
 }
 /* Navigable calendar */
 .nb-cal-wrapper {
