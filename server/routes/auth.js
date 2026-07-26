@@ -449,3 +449,32 @@ authRouter.delete('/account', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete account: ' + err.message });
   }
 });
+
+// ── PATCH /api/auth/dev/switch-plan ──────────────────────────────────────────
+// Dev-only: instantly change the logged-in user's plan for local testing.
+// Hard 404 in production — this endpoint cannot be reached on the live site.
+authRouter.patch('/dev/switch-plan', requireAuth, (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  const VALID_PLANS = ['free', 'pro', 'multi'];
+  const { plan, has_charges_addon } = req.body;
+  if (plan !== undefined && !VALID_PLANS.includes(plan)) {
+    return res.status(400).json({ error: 'Invalid plan' });
+  }
+  const userId = req.user.userId;
+  const current = db.prepare('SELECT plan, has_charges_addon FROM users WHERE id = ?').get(userId);
+  const newPlan  = plan              !== undefined ? plan                       : current.plan;
+  const newAddon = has_charges_addon !== undefined ? (has_charges_addon ? 1 : 0) : current.has_charges_addon;
+
+  db.prepare('UPDATE users SET plan = ?, has_charges_addon = ? WHERE id = ?').run(newPlan, newAddon, userId);
+
+  // Keep subscriptions.plan in sync — non-Stripe fields only, no webhook/billing side effects
+  const sub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+  if (sub) {
+    db.prepare('UPDATE subscriptions SET plan = ? WHERE user_id = ?').run(newPlan, userId);
+  }
+
+  console.log(`[dev] Plan switched → ${newPlan}, has_charges_addon=${newAddon} for user ${userId}`);
+  return res.json({ success: true, plan: newPlan, has_charges_addon: newAddon });
+});
