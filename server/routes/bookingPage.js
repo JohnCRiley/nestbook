@@ -1982,7 +1982,7 @@ var I18N = {
     "page.guests":            "Gäste",
     "page.breakfastIncluded": "Frühstück inklusive",
     "page.bookThisRoom":      "Dieses Zimmer buchen",
-    "page.availabilityHint":  "Prüfen Sie oben die Verfügbarkeit und klicken Sie dann auf „Dieses Zimmer buchen", um Ihre Daten auszuwählen und die Buchung abzuschließen.",
+    "page.availabilityHint":  "Prüfen Sie oben die Verfügbarkeit und klicken Sie dann auf „Dieses Zimmer buchen“, um Ihre Daten auszuwählen und die Buchung abzuschließen.",
     "page.available":         "Verfügbar",
     "page.booked":            "Gebucht",
     "page.ctaHint":           "Buchen Sie direkt bei uns für die besten Preise — keine Buchungsgebühren.",
