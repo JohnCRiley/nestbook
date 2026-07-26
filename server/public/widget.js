@@ -815,6 +815,7 @@
   margin-bottom: 14px;
   user-select: none;
   -webkit-user-select: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
 .nb-cal-nav {
   display: flex;
