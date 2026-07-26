@@ -701,7 +701,12 @@
   overflow-y: auto;
   padding: 24px 24px 16px;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: ${BRAND_LIGHT} transparent;
 }
+.nb-body::-webkit-scrollbar { width: 4px; }
+.nb-body::-webkit-scrollbar-track { background: transparent; }
+.nb-body::-webkit-scrollbar-thumb { background: ${BRAND_LIGHT}; border-radius: 4px; }
 
 /* Footer */
 .nb-ft {
