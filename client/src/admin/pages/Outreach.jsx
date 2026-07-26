@@ -770,6 +770,20 @@ const KNOWN_PROPERTY_TYPES = [
 ];
 const PHONE_RE = /^[+\d][\d\s().-]{5,}$/;
 
+const VALID_SOURCES = ['manual','csv','auto_signup','website','facebook','google','booking_com','airbnb','referral','other'];
+const SOURCE_MAP = {
+  manual: 'manual', csv: 'csv', auto_signup: 'auto_signup',
+  website: 'website', facebook: 'facebook', instagram: 'facebook',
+  google: 'google', booking_com: 'booking_com',
+  airbnb: 'airbnb', tripadvisor: 'other',
+  referral: 'referral', other: 'other',
+};
+function normalizeSource(raw) {
+  if (!raw || !raw.trim()) return 'csv';
+  const key = raw.trim().toLowerCase().replace(/\./g, '_').replace(/\s+/g, '_');
+  return VALID_SOURCES.includes(SOURCE_MAP[key]) ? SOURCE_MAP[key] : 'other';
+}
+
 function parseCsv(text) {
   const cleaned = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const rows = [];
@@ -844,9 +858,20 @@ function parseRows(text) {
       town:          obj.town          || obj.city              || '',
       language:      obj.language                               || '',
       website:       obj.website                                || '',
-      source:        obj.source                                 || '',
+      source:        normalizeSource(obj.source),
       notes:         obj.notes                                  || '',
     };
+
+    // Surface source remapping as an info note (row still imports)
+    const rawSrc = obj.source?.trim() || '';
+    if (rawSrc) {
+      const rawKey = rawSrc.toLowerCase().replace(/\./g, '_').replace(/\s+/g, '_');
+      const isExactMatch = VALID_SOURCES.includes(rawKey);
+      if (!isExactMatch) {
+        errors.push({ row: rowNum, field: 'source', level: 'info',
+          reason: `"${rawSrc}" mapped to "${record.source}" — imported fine, just a heads-up.` });
+      }
+    }
 
     const rowWarnings = validateRow(record, rowNum);
     if (rowWarnings.length) errors.push(...rowWarnings);
@@ -897,9 +922,11 @@ function CsvImportModal({ onClose, onImported }) {
     }
   }
 
-  const cleanRows  = parsed?.rows   ?? [];
-  const issueRows  = parsed?.errors ?? [];
-  const hasFile    = raw.trim().length > 0;
+  const cleanRows   = parsed?.rows   ?? [];
+  const allIssues   = parsed?.errors ?? [];
+  const issueErrors = allIssues.filter(e => e.level !== 'info');
+  const issueInfos  = allIssues.filter(e => e.level === 'info');
+  const hasFile     = raw.trim().length > 0;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
@@ -936,16 +963,30 @@ function CsvImportModal({ onClose, onImported }) {
                   </div>
                 )}
 
-                {/* Issues panel */}
-                {issueRows.length > 0 && (
+                {/* Errors panel — rows NOT imported */}
+                {issueErrors.length > 0 && (
                   <div style={{ background: '#fefce8', border: '1px solid #fde047', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.8rem', maxHeight: 220, overflowY: 'auto' }}>
                     <div style={{ fontWeight: 600, color: '#854d0e', marginBottom: 6 }}>
-                      ⚠ {issueRows.length} issue{issueRows.length !== 1 ? 's' : ''} found — these rows will not be imported
+                      ⚠ {issueErrors.length} issue{issueErrors.length !== 1 ? 's' : ''} found — these rows will not be imported
                     </div>
-                    {issueRows.map((e, i) => (
+                    {issueErrors.map((e, i) => (
                       <div key={i} style={{ marginBottom: 4, color: '#713f12' }}>
                         <strong>Row {e.row}{e.field ? ` (${e.field})` : ''}:</strong> {e.reason}
                         {e.raw && <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#92400e', marginTop: 2, wordBreak: 'break-all' }}>{e.raw}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Info panel — rows imported, value was remapped */}
+                {issueInfos.length > 0 && (
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.8rem', maxHeight: 160, overflowY: 'auto' }}>
+                    <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: 6 }}>
+                      ℹ {issueInfos.length} value{issueInfos.length !== 1 ? 's' : ''} auto-adjusted — rows imported fine
+                    </div>
+                    {issueInfos.map((e, i) => (
+                      <div key={i} style={{ marginBottom: 3, color: '#1d4ed8' }}>
+                        <strong>Row {e.row}{e.field ? ` (${e.field})` : ''}:</strong> {e.reason}
                       </div>
                     ))}
                   </div>
