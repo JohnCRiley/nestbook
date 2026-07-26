@@ -285,6 +285,9 @@ authRouter.post('/register', (req, res) => {
   // Auto-convert prospect if this email was in the outreach CRM
   checkAndConvertProspect(normalEmail, userId);
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\n[DEV] Verification link for ${normalEmail}:\nhttp://localhost:5173/app/verify-email?token=${verificationToken}\n`);
+  }
   sendVerificationEmail(
     { name, email: normalEmail, language: userLang },
     verificationToken
@@ -306,6 +309,9 @@ authRouter.post('/forgot-password', async (req, res) => {
     'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?'
   ).run(token, expires, user.id);
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\n[DEV] Password reset link for ${user.email}:\nhttp://localhost:5173/app/reset-password?token=${token}\n`);
+  }
   try {
     await sendPasswordResetEmail(user.email, token);
     console.log('[forgot-password] reset email sent to:', email);
@@ -377,6 +383,9 @@ authRouter.post('/resend-verification', requireAuth, (req, res) => {
 
   const newToken = crypto.randomBytes(32).toString('hex');
   db.prepare('UPDATE users SET email_verification_token = ? WHERE id = ?').run(newToken, user.id);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\n[DEV] Verification link for ${user.email}:\nhttp://localhost:5173/app/verify-email?token=${newToken}\n`);
+  }
   sendVerificationEmail(
     { name: user.name, email: user.email, language: user.language },
     newToken
