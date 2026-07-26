@@ -94,7 +94,7 @@ function roomCalendarSection(roomId) {
 <div class="room-availability">
   <h4 class="avail-title" data-i18n="page.availability">Availability</h4>
   <div class="nb-cal-container" data-room-id="${esc(String(roomId))}"></div>
-  <p class="avail-hint" data-i18n="page.availabilityHint">Select your dates and click Book Now to check availability and complete your reservation.</p>
+  <p class="avail-hint" data-i18n="page.availabilityHint">Check availability above, then click &quot;Book this room&quot; to choose your dates and complete your reservation.</p>
 </div>`;
 }
 
@@ -1908,7 +1908,7 @@ var I18N = {
     "page.guests":            "guests",
     "page.breakfastIncluded": "Breakfast included",
     "page.bookThisRoom":      "Book this room",
-    "page.availabilityHint":  "Select your dates and click Book Now to check availability and complete your reservation.",
+    "page.availabilityHint":  "Check availability above, then click \"Book this room\" to choose your dates and complete your reservation.",
     "page.available":         "Available",
     "page.booked":            "Booked",
     "page.ctaHint":           "Book directly with us for the best rates — no booking fees, payment goes straight to us.",
@@ -1945,7 +1945,7 @@ var I18N = {
     "page.guests":            "personnes",
     "page.breakfastIncluded": "Petit-déjeuner inclus",
     "page.bookThisRoom":      "Réserver cette chambre",
-    "page.availabilityHint":  "Sélectionnez vos dates et cliquez sur Réserver pour vérifier les disponibilités.",
+    "page.availabilityHint":  "Consultez les disponibilités ci-dessus, puis cliquez sur « Réserver cette chambre » pour choisir vos dates et finaliser votre réservation.",
     "page.available":         "Disponible",
     "page.booked":            "Réservé",
     "page.ctaHint":           "Réservez directement avec nous pour les meilleurs tarifs — sans frais de réservation.",
@@ -1982,7 +1982,7 @@ var I18N = {
     "page.guests":            "Gäste",
     "page.breakfastIncluded": "Frühstück inklusive",
     "page.bookThisRoom":      "Dieses Zimmer buchen",
-    "page.availabilityHint":  "Wählen Sie Ihre Daten und klicken Sie auf Buchen, um die Verfügbarkeit zu prüfen.",
+    "page.availabilityHint":  "Prüfen Sie oben die Verfügbarkeit und klicken Sie dann auf „Dieses Zimmer buchen", um Ihre Daten auszuwählen und die Buchung abzuschließen.",
     "page.available":         "Verfügbar",
     "page.booked":            "Gebucht",
     "page.ctaHint":           "Buchen Sie direkt bei uns für die besten Preise — keine Buchungsgebühren.",
@@ -2019,7 +2019,7 @@ var I18N = {
     "page.guests":            "personas",
     "page.breakfastIncluded": "Desayuno incluido",
     "page.bookThisRoom":      "Reservar esta habitación",
-    "page.availabilityHint":  "Seleccione sus fechas y haga clic en Reservar para comprobar disponibilidad.",
+    "page.availabilityHint":  "Consulte la disponibilidad arriba y luego haga clic en «Reservar esta habitación» para elegir sus fechas y completar la reserva.",
     "page.available":         "Disponible",
     "page.booked":            "Reservado",
     "page.ctaHint":           "Reserve directamente con nosotros para las mejores tarifas — sin gastos de reserva.",
@@ -2056,7 +2056,7 @@ var I18N = {
     "page.guests":            "personen",
     "page.breakfastIncluded": "Ontbijt inbegrepen",
     "page.bookThisRoom":      "Deze kamer boeken",
-    "page.availabilityHint":  "Selecteer uw datums en klik op Boeken om beschikbaarheid te controleren.",
+    "page.availabilityHint":  "Bekijk hierboven de beschikbaarheid en klik vervolgens op \"Deze kamer boeken\" om uw datums te kiezen en de reservering af te ronden.",
     "page.available":         "Beschikbaar",
     "page.booked":            "Geboekt",
     "page.ctaHint":           "Boek rechtstreeks bij ons voor de beste tarieven — geen boekingskosten.",
