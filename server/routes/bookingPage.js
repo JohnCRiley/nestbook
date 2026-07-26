@@ -1283,8 +1283,8 @@ section h2 {
   border-radius: 3px;
   font-size: 0.68rem;
   font-weight: 500;
-  cursor: default;
 }
+.nb-cal-container .nb-cal-day { cursor: default; }
 .nb-cal-empty    { background: none; color: transparent; }
 .nb-cal-past     { background: none; color: #e2e8f0; }
 .nb-cal-available { background: ${esc(palette.light)}; color: ${esc(palette.dark)}; }
