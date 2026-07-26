@@ -1078,6 +1078,7 @@ section h2 {
   flex-direction: column;
   gap: 10px;
   flex: 1;
+  min-width: 0;
 }
 .room-photo {
   width: 100%;
@@ -1197,6 +1198,7 @@ section h2 {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #f1f5f9;
+  min-width: 0;
 }
 .avail-title {
   font-size: 0.75rem;
@@ -1218,9 +1220,15 @@ section h2 {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 4px;
+  min-width: 0;
+  max-width: 100%;
 }
+.nb-cal-month { font-size: 0.78rem; min-width: 0; overflow: hidden; }
 .availability .nb-cal-wrapper { gap: 32px; }
-.nb-cal-month { font-size: 0.78rem; }
+/* Room-card calendar — more compact to fit the narrower card width */
+.room-card .nb-cal-wrapper { gap: 8px; }
+.room-card .nb-cal-day { font-size: 0.6rem; }
+.room-card .nb-cal-month-name { font-size: 0.68rem; }
 .nb-cal-header {
   display: flex;
   align-items: center;
