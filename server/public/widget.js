@@ -637,6 +637,13 @@
   from { transform: translateX(100%); }
   to   { transform: translateX(0); }
 }
+@keyframes nb-slide-out-right {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+.nb-panel.nb-panel-closing {
+  animation: nb-slide-out-right 0.22s ease forwards;
+}
 
 /* Side panel */
 .nb-panel {
@@ -2163,8 +2170,12 @@
   }
 
   function closeModal() {
-    overlay.style.display = 'none';
-    document.body.style.overflow = '';
+    panel.classList.add('nb-panel-closing');
+    panel.addEventListener('animationend', function() {
+      panel.classList.remove('nb-panel-closing');
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }, { once: true });
   }
 
   // ── Recovery banner (shown on fresh page load if pending booking exists) ──
