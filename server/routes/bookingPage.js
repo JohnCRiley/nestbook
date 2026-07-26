@@ -1897,6 +1897,10 @@ function calNav(roomId, curMonth, curYear, dir) {
 try {
 // ── i18n ──────────────────────────────────────────────────────────────────────
 // Add zh-CN, ja, th, vi, ms, id etc. here when nestbook.asia launches.
+// NOTE: This object is emitted as literal JS inside an outer template literal.
+// Any `"` needed inside a string value MUST use typographic quotes (" " or « »),
+// NEVER \" — the outer template literal consumes the backslash, sending a bare
+// unescaped quote to the browser and breaking the entire inline <script> block.
 var I18N = {
   en: {
     "page.aboutUs":           "About us",
@@ -1908,7 +1912,7 @@ var I18N = {
     "page.guests":            "guests",
     "page.breakfastIncluded": "Breakfast included",
     "page.bookThisRoom":      "Book this room",
-    "page.availabilityHint":  "Check availability above, then click \"Book this room\" to choose your dates and complete your reservation.",
+    “page.availabilityHint”:  “”,
     "page.available":         "Available",
     "page.booked":            "Booked",
     "page.ctaHint":           "Book directly with us for the best rates — no booking fees, payment goes straight to us.",
@@ -1945,7 +1949,7 @@ var I18N = {
     "page.guests":            "personnes",
     "page.breakfastIncluded": "Petit-déjeuner inclus",
     "page.bookThisRoom":      "Réserver cette chambre",
-    "page.availabilityHint":  "Consultez les disponibilités ci-dessus, puis cliquez sur « Réserver cette chambre » pour choisir vos dates et finaliser votre réservation.",
+    "page.availabilityHint":  "",
     "page.available":         "Disponible",
     "page.booked":            "Réservé",
     "page.ctaHint":           "Réservez directement avec nous pour les meilleurs tarifs — sans frais de réservation.",
@@ -1982,7 +1986,7 @@ var I18N = {
     "page.guests":            "Gäste",
     "page.breakfastIncluded": "Frühstück inklusive",
     "page.bookThisRoom":      "Dieses Zimmer buchen",
-    "page.availabilityHint":  "Prüfen Sie oben die Verfügbarkeit und klicken Sie dann auf „Dieses Zimmer buchen“, um Ihre Daten auszuwählen und die Buchung abzuschließen.",
+    “page.availabilityHint”:  “”,
     "page.available":         "Verfügbar",
     "page.booked":            "Gebucht",
     "page.ctaHint":           "Buchen Sie direkt bei uns für die besten Preise — keine Buchungsgebühren.",
@@ -2019,7 +2023,7 @@ var I18N = {
     "page.guests":            "personas",
     "page.breakfastIncluded": "Desayuno incluido",
     "page.bookThisRoom":      "Reservar esta habitación",
-    "page.availabilityHint":  "Consulte la disponibilidad arriba y luego haga clic en «Reservar esta habitación» para elegir sus fechas y completar la reserva.",
+    "page.availabilityHint":  "",
     "page.available":         "Disponible",
     "page.booked":            "Reservado",
     "page.ctaHint":           "Reserve directamente con nosotros para las mejores tarifas — sin gastos de reserva.",
@@ -2056,7 +2060,7 @@ var I18N = {
     "page.guests":            "personen",
     "page.breakfastIncluded": "Ontbijt inbegrepen",
     "page.bookThisRoom":      "Deze kamer boeken",
-    "page.availabilityHint":  "Bekijk hierboven de beschikbaarheid en klik vervolgens op \"Deze kamer boeken\" om uw datums te kiezen en de reservering af te ronden.",
+    "page.availabilityHint":  "",
     "page.available":         "Beschikbaar",
     "page.booked":            "Geboekt",
     "page.ctaHint":           "Boek rechtstreeks bij ons voor de beste tarieven — geen boekingskosten.",
