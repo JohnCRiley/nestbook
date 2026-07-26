@@ -760,53 +760,125 @@ function CampaignManager({ campaigns, onClose, onChanged }) {
 }
 
 // ── CSV Import modal ──────────────────────────────────────────────────────────
-function CsvImportModal({ onClose, onImported }) {
-  const [raw, setRaw]       = useState('');
-  const [preview, setPreview] = useState(null);
-  const [result, setResult] = useState(null);
-  const [saving, setSaving] = useState(false);
+const KNOWN_LANGUAGES     = ['en', 'fr', 'de', 'es', 'nl'];
+const KNOWN_COUNTRIES     = ['uk', 'fr', 'de', 'es', 'nl', 'be', 'ch', 'ie', 'it', 'pt'];
+const KNOWN_PROPERTY_TYPES = [
+  'bb', 'bnb', 'guesthouse', 'inn', 'cottage', 'gite', 'glamping',
+  'villa', 'lodge', 'apartment', 'apartments', 'holiday apartment',
+  'holiday home', 'hotel', 'boutique hotel', 'hostel', 'farm stay',
+  'caravan', 'self-catering', 'other',
+];
+const PHONE_RE = /^[+\d][\d\s().-]{5,}$/;
 
-  function parseRows(text) {
-    // Strip UTF-8 BOM (added by Excel / our template) and normalise line endings
-    const cleaned = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const lines = cleaned.trim().split('\n').filter(Boolean);
-    if (lines.length === 0) return [];
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
-    return lines.slice(1).map(line => {
-      const vals = line.split(',').map(v => v.trim().replace(/"/g, ''));
-      const obj = {};
-      headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
-      return {
-        name:          obj.name          || obj['full name']   || '',
-        company:       obj.property_name || obj.company        || obj.property || '',
-        email:         obj.email                               || '',
-        phone:         obj.phone         || obj.telephone      || obj['phone number'] || '',
-        property_type: obj.property_type || obj.type           || '',
-        country:       obj.country                             || '',
-        region:        obj.region                              || '',
-        town:          obj.town          || obj.city           || '',
-        language:      obj.language                            || '',
-        website:       obj.website                             || '',
-        notes:         obj.notes                               || '',
-      };
-    }).filter(r => r.email);
+function parseCsv(text) {
+  const cleaned = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (inQuotes) {
+      if (ch === '"' && cleaned[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { field += ch; }
+    } else {
+      if      (ch === '"')  { inQuotes = true; }
+      else if (ch === ',')  { row.push(field); field = ''; }
+      else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else                  { field += ch; }
+    }
   }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || r[0]?.trim() !== '');
+}
+
+function validateRow(r, rowNum) {
+  const warnings = [];
+  if (r.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email))
+    warnings.push({ row: rowNum, field: 'email', reason: `"${r.email}" doesn't look like a valid email.` });
+  if (r.phone && !PHONE_RE.test(r.phone))
+    warnings.push({ row: rowNum, field: 'phone', reason: `"${r.phone}" doesn't look like a phone number.` });
+  if (r.language && !KNOWN_LANGUAGES.includes(r.language.toLowerCase()))
+    warnings.push({ row: rowNum, field: 'language', reason: `"${r.language}" is not one of en/fr/de/es/nl.` });
+  if (r.country && !KNOWN_COUNTRIES.includes(r.country.toLowerCase()))
+    warnings.push({ row: rowNum, field: 'country', reason: `"${r.country}" is not a recognised country code.` });
+  if (r.property_type && !KNOWN_PROPERTY_TYPES.includes(r.property_type.toLowerCase()))
+    warnings.push({ row: rowNum, field: 'property_type', reason: `"${r.property_type}" is not a recognised property type.` });
+  if (r.website && r.website.length > 3 && !/^https?:\/\/.+\..+/i.test(r.website) && !/^www\..+\..+/i.test(r.website))
+    warnings.push({ row: rowNum, field: 'website', reason: `"${r.website}" doesn't look like a URL.` });
+  ['language', 'country', 'town', 'region', 'property_type'].forEach(f => {
+    if (r[f] && /^[+\d][\d\s().-]{6,}$/.test(r[f]))
+      warnings.push({ row: rowNum, field: f, reason: `"${r[f]}" looks like a phone number, not a ${f} — check for a column shift on this row.` });
+  });
+  return warnings;
+}
+
+function parseRows(text) {
+  const allRows = parseCsv(text);
+  if (allRows.length === 0) return { rows: [], errors: [] };
+
+  const headers = allRows[0].map(h => h.trim().toLowerCase().replace(/"/g, ''));
+  const rows = [], errors = [];
+
+  allRows.slice(1).forEach((vals, idx) => {
+    const rowNum = idx + 2;
+    if (vals.length !== headers.length) {
+      errors.push({
+        row: rowNum,
+        reason: `Column count mismatch — expected ${headers.length} fields, found ${vals.length}. Likely an unescaped comma or quote.`,
+        raw: vals.join(' | '),
+      });
+      return;
+    }
+
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] ?? '').trim(); });
+
+    const record = {
+      name:          obj.name          || obj['full name']      || '',
+      company:       obj.property_name || obj.company           || obj.property || '',
+      email:         obj.email                                  || '',
+      phone:         obj.phone         || obj.telephone         || obj['phone number'] || '',
+      property_type: obj.property_type || obj.type              || '',
+      country:       obj.country                                || '',
+      region:        obj.region                                 || '',
+      town:          obj.town          || obj.city              || '',
+      language:      obj.language                               || '',
+      website:       obj.website                                || '',
+      source:        obj.source                                 || '',
+      notes:         obj.notes                                  || '',
+    };
+
+    const rowWarnings = validateRow(record, rowNum);
+    if (rowWarnings.length) errors.push(...rowWarnings);
+
+    if (record.email && record.name) rows.push(record);
+  });
+
+  return { rows, errors };
+}
+
+function CsvImportModal({ onClose, onImported }) {
+  const [raw, setRaw]         = useState('');
+  const [parsed, setParsed]   = useState(null);   // { rows, errors }
+  const [result, setResult]   = useState(null);
+  const [saving, setSaving]   = useState(false);
 
   function handleFileChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      setRaw(ev.target.result);
-      setPreview(parseRows(ev.target.result).slice(0, 5));
+      const text = ev.target.result;
+      setRaw(text);
+      setParsed(parseRows(text));
     };
     reader.readAsText(file);
   }
 
   async function doImport() {
-    const rows = parseRows(raw);
+    const { rows } = parsed || { rows: [] };
     if (rows.length === 0) {
-      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has an email column.'] });
+      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has name and email columns.'] });
       return;
     }
     setSaving(true);
@@ -825,9 +897,13 @@ function CsvImportModal({ onClose, onImported }) {
     }
   }
 
+  const cleanRows  = parsed?.rows   ?? [];
+  const issueRows  = parsed?.errors ?? [];
+  const hasFile    = raw.trim().length > 0;
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 500 }}>
+      <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '1rem' }}>Bulk Import from CSV</h3>
         <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px' }}>
           Required columns: <code>name</code>, <code>email</code>. Optional: <code>company</code>, <code>phone</code>, <code>property_type</code>, <code>region</code>, <code>town</code>, <code>country</code>, <code>language</code>, <code>website</code>, <code>source</code>, <code>notes</code>. Use ↓ CSV template for the full format.
@@ -845,18 +921,49 @@ function CsvImportModal({ onClose, onImported }) {
           <>
             <input type="file" accept=".csv" onChange={handleFileChange} style={{ marginBottom: 12 }} />
 
-            {preview && preview.length > 0 && (
-              <div style={{ background: '#f8fafc', borderRadius: 6, padding: 12, marginBottom: 12, fontSize: '0.8rem' }}>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>Preview ({preview.length} rows):</div>
-                {preview.map((r, i) => (
-                  <div key={i} style={{ marginBottom: 2 }}>{r.name} — {r.email} {r.company ? `(${r.company})` : ''}</div>
-                ))}
-              </div>
+            {hasFile && parsed && (
+              <>
+                {/* Clean rows summary */}
+                {cleanRows.length > 0 && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.82rem' }}>
+                    <div style={{ fontWeight: 600, color: '#166534', marginBottom: 4 }}>
+                      <i className="ti ti-check" /> {cleanRows.length} row{cleanRows.length !== 1 ? 's' : ''} ready to import
+                    </div>
+                    {cleanRows.slice(0, 4).map((r, i) => (
+                      <div key={i} style={{ color: '#15803d', marginBottom: 1 }}>{r.name} — {r.email}{r.company ? ` (${r.company})` : ''}</div>
+                    ))}
+                    {cleanRows.length > 4 && <div style={{ color: '#86efac', marginTop: 2 }}>…and {cleanRows.length - 4} more</div>}
+                  </div>
+                )}
+
+                {/* Issues panel */}
+                {issueRows.length > 0 && (
+                  <div style={{ background: '#fefce8', border: '1px solid #fde047', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.8rem', maxHeight: 220, overflowY: 'auto' }}>
+                    <div style={{ fontWeight: 600, color: '#854d0e', marginBottom: 6 }}>
+                      ⚠ {issueRows.length} issue{issueRows.length !== 1 ? 's' : ''} found — these rows will not be imported
+                    </div>
+                    {issueRows.map((e, i) => (
+                      <div key={i} style={{ marginBottom: 4, color: '#713f12' }}>
+                        <strong>Row {e.row}{e.field ? ` (${e.field})` : ''}:</strong> {e.reason}
+                        {e.raw && <div style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: '#92400e', marginTop: 2, wordBreak: 'break-all' }}>{e.raw}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {cleanRows.length === 0 && (
+                  <div style={{ color: '#dc2626', fontSize: '0.82rem', marginBottom: 10 }}>
+                    No valid rows to import. Fix the issues above and re-upload the file.
+                  </div>
+                )}
+              </>
             )}
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
               <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
-              <Btn onClick={doImport} disabled={saving || !raw.trim()}>{saving ? 'Importing…' : 'Import'}</Btn>
+              <Btn onClick={doImport} disabled={saving || !hasFile || cleanRows.length === 0}>
+                {saving ? 'Importing…' : `Import ${cleanRows.length > 0 ? cleanRows.length + ' rows' : ''}`}
+              </Btn>
             </div>
           </>
         )}
