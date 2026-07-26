@@ -1179,7 +1179,7 @@ section h2 {
   padding: 5px 10px;
 }
 .btn-book {
-  margin-top: auto;
+  margin-top: 0;
   background: ${esc(palette.dark)};
   color: #fff;
   border: none;
@@ -1211,7 +1211,7 @@ section h2 {
 .avail-hint {
   font-size: 0.72rem;
   color: #94a3b8;
-  margin: 8px 0 4px;
+  margin: auto 0 6px;
   line-height: 1.4;
   text-align: center;
 }
