@@ -29,8 +29,13 @@ export const stripeRouter = Router();
 // STRIPE_SECRET_KEY / STRIPE_PUBLISHABLE_KEY from server/.env on the server.
 
 if (!stripe) {
-  throw new Error(`[stripe] No secret key for STRIPE_MODE="${STRIPE_MODE}". ` +
-    `Set ${STRIPE_MODE === 'test' ? 'STRIPE_TEST_SECRET_KEY' : 'STRIPE_SECRET_KEY'} in server/.env`);
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`[stripe] No secret key configured — Stripe routes will be non-functional. ` +
+      `Set ${STRIPE_MODE === 'test' ? 'STRIPE_TEST_SECRET_KEY' : 'STRIPE_SECRET_KEY'} in server/.env to enable.`);
+  } else {
+    throw new Error(`[stripe] No secret key for STRIPE_MODE="${STRIPE_MODE}". ` +
+      `Set ${STRIPE_MODE === 'test' ? 'STRIPE_TEST_SECRET_KEY' : 'STRIPE_SECRET_KEY'} in server/.env`);
+  }
 }
 
 if (STRIPE_MODE === 'test') {
