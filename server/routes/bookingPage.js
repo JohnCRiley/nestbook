@@ -1897,10 +1897,6 @@ function calNav(roomId, curMonth, curYear, dir) {
 try {
 // ── i18n ──────────────────────────────────────────────────────────────────────
 // Add zh-CN, ja, th, vi, ms, id etc. here when nestbook.asia launches.
-// NOTE: This object is emitted as literal JS inside an outer template literal.
-// Any `"` needed inside a string value MUST use typographic quotes (" " or « »),
-// NEVER \" — the outer template literal consumes the backslash, sending a bare
-// unescaped quote to the browser and breaking the entire inline <script> block.
 var I18N = {
   en: {
     "page.aboutUs":           "About us",
