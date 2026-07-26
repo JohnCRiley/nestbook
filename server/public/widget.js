@@ -2150,6 +2150,11 @@
   }
 
   // ── Modal open / close ─────────────────────────────────────────────────────
+  function _bgScrollBlock(e) {
+    if (panel && panel.contains(e.target)) return;
+    e.preventDefault();
+  }
+
   function openModal() {
     // Consume the preselected room id set by the booking page's openWidget(roomId) call.
     // Must be read before Object.assign so it isn't wiped by the state reset.
@@ -2165,7 +2170,8 @@
       roomFallbackNotice: null,
     });
     overlay.style.display = 'block';
-    document.body.style.overflow = 'hidden';
+    window.addEventListener('wheel', _bgScrollBlock, { passive: false });
+    window.addEventListener('touchmove', _bgScrollBlock, { passive: false });
     render();
   }
 
@@ -2174,7 +2180,8 @@
     panel.addEventListener('animationend', function() {
       panel.classList.remove('nb-panel-closing');
       overlay.style.display = 'none';
-      document.body.style.overflow = '';
+      window.removeEventListener('wheel', _bgScrollBlock);
+      window.removeEventListener('touchmove', _bgScrollBlock);
     }, { once: true });
   }
 
