@@ -1283,6 +1283,7 @@ section h2 {
   border-radius: 3px;
   font-size: 0.68rem;
   font-weight: 500;
+  cursor: default;
 }
 .nb-cal-empty    { background: none; color: transparent; }
 .nb-cal-past     { background: none; color: #e2e8f0; }
