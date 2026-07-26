@@ -299,7 +299,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
     ${roomCalendarSection(room.id)}
-    <button class="btn-book" onclick="${isPaidPlan ? 'openWidget()' : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
+    <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${room.id})` : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
   </div>
 </div>`;
 }
@@ -2120,7 +2120,8 @@ document.addEventListener('DOMContentLoaded', function() {
   console.error('[NestBook] Script error:', e.message, e.stack);
 }
 
-function openWidget() {
+function openWidget(roomId) {
+  if (roomId) window.NB_PRESELECTED_ROOM_ID = roomId;
   var btn = document.querySelector('.nb-trigger');
   if (btn) btn.click();
 }

@@ -101,6 +101,7 @@
       pendingEmailNote: "You'll receive an email as soon as the owner confirms your booking.",
       bookRoom: 'Book this room →',
       clearDates: 'Clear', today: 'Today',
+      roomFallbackNotice: "Your selected room isn't available for these dates — here are the other options:",
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -155,6 +156,7 @@
       pendingEmailNote: 'Vous recevrez un e-mail dès que le propriétaire aura confirmé votre réservation.',
       bookRoom: 'Réserver cette chambre →',
       clearDates: 'Effacer', today: "Aujourd'hui",
+      roomFallbackNotice: "La chambre sélectionnée n'est pas disponible à ces dates — voici les autres options :",
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -209,6 +211,7 @@
       pendingEmailNote: 'Recibirá un correo en cuanto el propietario confirme su reserva.',
       bookRoom: 'Reservar esta habitación →',
       clearDates: 'Limpiar', today: 'Hoy',
+      roomFallbackNotice: 'La habitación seleccionada no está disponible para estas fechas — aquí tienes otras opciones:',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -263,6 +266,7 @@
       pendingEmailNote: 'U ontvangt een e-mail zodra de eigenaar uw boeking heeft bevestigd.',
       bookRoom: 'Kamer boeken →',
       clearDates: 'Wissen', today: 'Vandaag',
+      roomFallbackNotice: 'De geselecteerde kamer is niet beschikbaar voor deze data — hier zijn de andere opties:',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -317,6 +321,7 @@
       pendingEmailNote: 'Sie erhalten eine E-Mail, sobald der Gastgeber Ihre Buchung bestätigt hat.',
       bookRoom: 'Zimmer buchen →',
       clearDates: 'Löschen', today: 'Heute',
+      roomFallbackNotice: 'Das ausgewählte Zimmer ist für diese Daten nicht verfügbar — hier sind die anderen Optionen:',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -480,7 +485,20 @@
       } else {
         S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
         console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
-        S.step = 2;
+
+        if (S.preselectedRoomId) {
+          const match = S.availableRooms.find((r) => r.id === S.preselectedRoomId);
+          if (match) {
+            S.selectedRoom = match;
+            S.step = 3; // room is free for these dates — skip straight to guest details
+          } else {
+            S.roomFallbackNotice = T.roomFallbackNotice; // not free — fall back to room list with a note
+            S.step = 2;
+          }
+          S.preselectedRoomId = null; // consumed — don't re-check on step-back
+        } else {
+          S.step = 2;
+        }
       }
     } catch (err) {
       console.error('[NestBook widget] loadAvailability failed:', err);
@@ -1079,6 +1097,18 @@
   font-size: 0.875rem;
 }
 .nb-no-rooms-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+/* Fallback notice when preselected room isn't available for chosen dates */
+.nb-fallback-notice {
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  color: #854d0e;
+  margin-bottom: 14px;
+  line-height: 1.45;
+}
 
 /* Error message */
 .nb-error {
@@ -1731,6 +1761,13 @@
   }
 
   function renderStep2() {
+    if (S.roomFallbackNotice) {
+      const notice = el('div', 'nb-fallback-notice');
+      notice.appendChild(txt(S.roomFallbackNotice));
+      body.appendChild(notice);
+      S.roomFallbackNotice = null;
+    }
+
     if (S.availableRooms.length === 0) {
       const wrap = el('div', 'nb-no-rooms');
       const icon = el('div', 'nb-no-rooms-icon'); icon.appendChild(txt('🛏️'));
@@ -2106,12 +2143,18 @@
 
   // ── Modal open / close ─────────────────────────────────────────────────────
   function openModal() {
-    // Reset state for a fresh flow
+    // Consume the preselected room id set by the booking page's openWidget(roomId) call.
+    // Must be read before Object.assign so it isn't wiped by the state reset.
+    const preselected = window.NB_PRESELECTED_ROOM_ID ? Number(window.NB_PRESELECTED_ROOM_ID) : null;
+    window.NB_PRESELECTED_ROOM_ID = null; // clear immediately — floating trigger must not inherit a stale id
+
     Object.assign(S, {
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
       bookingRef: null, loading: false, error: null,
       breakfastAdded: false, redirecting: false, steppedBack: false, bookingPending: false,
+      preselectedRoomId: preselected,
+      roomFallbackNotice: null,
     });
     overlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
