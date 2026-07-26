@@ -69,3 +69,46 @@ All client API calls use relative paths — there is no hardcoded production URL
 
 This environment has no production data. Create a test account via the registration page at
 http://localhost:5173/app and add test properties/rooms manually through the UI.
+
+## Public-Facing Pages — Local Reference
+
+All pages below are served directly by Express from `server/public/` — no Vite, no build step, just live files. View them at `http://localhost:3001/...` once `npm run dev` is running (not the client's 5173/5174 port — that's only for the React /app dashboard).
+
+### Marketing site
+- `server/public/index.html` → `/`
+- `server/public/about.html` → `/about`
+- `server/public/compare.html` → `/compare`
+- `server/public/how-it-works.html` → `/how-it-works`
+- `server/public/help.html` → `/help` (⚠️ uses its own self-contained base64 i18n system — separate from the main app's translations)
+- `server/public/calculator.html` → `/calculator`
+- `server/public/contact.html` → `/contact`
+- `server/public/privacy.html`, `terms.html`, `cookies.html`
+
+### Blog
+- `server/public/blog/index.html` → `/blog/`
+- Individual posts: `server/public/blog/[slug].html` → `/blog/[slug]`
+
+### Guest payment pages
+- `server/public/pay/success.html` → `/pay/success`
+- `server/public/pay/cancelled.html` → `/pay/cancelled`
+- `server/public/pay/recover.html` → `/pay/recover`
+
+### Widget
+- Script: `server/public/widget.js`
+- Preview: `server/public/widget-test.html` → `/widget-test`
+- ⚠️ Hardcoded to `data-property-id="1"` — works fine if your first local test property is ID 1, but check this if testing a second property
+
+### Booking page (server-rendered, not static)
+- Handler: `server/routes/bookingPage.js`
+- URL: `/book/[slug]` or `/book/[numeric-id]`
+- ⚠️ Fragile file — nested template-literal i18n block, avoid straight ASCII quote issues (see earlier session notes on the curly-quote crash)
+- Needs at least one room created on the property to show meaningful availability
+
+### Print marketing templates
+- `server/public/marketing/*.html` → `/marketing/[filename]`
+- Flyers, business cards, car door magnets, feather flags — mostly EN with FR/DE/ES/NL variants where noted
+
+### Not pages (shared assets)
+- `widget.js`, `cookie-banner.js`, `navbar.js`/`navbar.css`
+- PDFs: `direct-booking-checklist.pdf`, `nestbook-getting-started-guide.pdf`
+- `sitemap.xml`, `robots.txt`, `manifest.json`
