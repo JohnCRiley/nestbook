@@ -1047,58 +1047,58 @@ export default function Settings() {
           )}
         </div>
 
-        {/* ── DEV ONLY — Plan switcher (invisible in production builds) ─── */}
-        {import.meta.env.DEV && (
-          <div className="settings-card" style={{ borderStyle: 'dashed', borderColor: '#f59e0b' }}>
-            <div className="settings-card-header" style={{ borderBottom: '1px dashed #f59e0b' }}>
-              <h2 style={{ color: '#92400e' }}>Dev Tools — Plan Switcher</h2>
-              <p style={{ color: '#92400e', opacity: 0.75 }}>Local dev only. Never shown in production.</p>
-            </div>
-            <div className="settings-card-body">
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Plan</div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {['free', 'pro', 'multi'].map((p) => (
-                    <button
-                      key={p}
-                      disabled={devBusy || plan === p}
-                      onClick={() => handleDevSwitchPlan(p, !!user?.has_charges_addon)}
-                      style={{
-                        padding: '7px 18px', borderRadius: 6, border: '2px solid',
-                        borderColor: plan === p ? '#f59e0b' : 'var(--border)',
-                        background: plan === p ? '#fef3c7' : 'var(--surface)',
-                        color: plan === p ? '#92400e' : 'var(--text)',
-                        fontWeight: 600, fontFamily: 'inherit',
-                        cursor: devBusy || plan === p ? 'default' : 'pointer',
-                        fontSize: '0.875rem',
-                        opacity: devBusy && plan !== p ? 0.5 : 1,
-                        transition: 'opacity 0.15s',
-                      }}
-                    >
-                      {p === 'free' ? 'Free' : p === 'pro' ? 'Pro' : 'Multi'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Add-ons</div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: devBusy ? 'default' : 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={!!user?.has_charges_addon}
-                    disabled={devBusy}
-                    onChange={(e) => handleDevSwitchPlan(plan, e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: '#f59e0b', cursor: 'inherit' }}
-                  />
-                  <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Charges &amp; Bar add-on</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ── RIGHT COLUMN — Features + Access ──────────────────────────── */}
         <div>
+          {/* ── DEV ONLY — Plan switcher (invisible in production builds) ─── */}
+          {import.meta.env.DEV && (
+            <div className="settings-card" style={{ borderStyle: 'dashed', borderColor: '#f59e0b', marginBottom: 20 }}>
+              <div className="settings-card-header" style={{ borderBottom: '1px dashed #f59e0b' }}>
+                <h2 style={{ color: '#92400e' }}>Dev Tools — Plan Switcher</h2>
+                <p style={{ color: '#92400e', opacity: 0.75 }}>Local dev only. Never shown in production.</p>
+              </div>
+              <div className="settings-card-body">
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Plan</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {['free', 'pro', 'multi'].map((p) => (
+                      <button
+                        key={p}
+                        disabled={devBusy || plan === p}
+                        onClick={() => handleDevSwitchPlan(p, !!user?.has_charges_addon)}
+                        style={{
+                          padding: '7px 18px', borderRadius: 6, border: '2px solid',
+                          borderColor: plan === p ? '#f59e0b' : 'var(--border)',
+                          background: plan === p ? '#fef3c7' : 'var(--surface)',
+                          color: plan === p ? '#92400e' : 'var(--text)',
+                          fontWeight: 600, fontFamily: 'inherit',
+                          cursor: devBusy || plan === p ? 'default' : 'pointer',
+                          fontSize: '0.875rem',
+                          opacity: devBusy && plan !== p ? 0.5 : 1,
+                          transition: 'opacity 0.15s',
+                        }}
+                      >
+                        {p === 'free' ? 'Free' : p === 'pro' ? 'Pro' : 'Multi'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Add-ons</div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: devBusy ? 'default' : 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!user?.has_charges_addon}
+                      disabled={devBusy}
+                      onChange={(e) => handleDevSwitchPlan(plan, e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: '#f59e0b', cursor: 'inherit' }}
+                    />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Charges &amp; Bar add-on</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Features */}
           <div className="settings-card">
             <div className="settings-card-header">
