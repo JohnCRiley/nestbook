@@ -451,6 +451,55 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   </div>
 </section>` : '';
 
+  const FACT_LABELS = {
+    pets:       { yes: 'Pets welcome', no: 'No pets', on_request: 'Pets on request' },
+    parking:    { free: 'Free parking', paid: 'Paid parking', none: 'No parking' },
+    accessible: { yes: 'Wheelchair accessible', partial: 'Partially accessible', no: 'Not accessible' },
+    children:   { yes: 'Children welcome', ask: 'Children — ask us', no: 'Adults only' },
+    smoking:    { no: 'No smoking', outside: 'Smoking outside only', yes: 'Smoking allowed' },
+  };
+  const FACT_ICONS = {
+    max_guests: 'ti-users', pets: 'ti-paw', parking: 'ti-parking',
+    accessible: 'ti-wheelchair', children: 'ti-baby-carriage',
+    smoking: 'ti-smoking', min_stay: 'ti-calendar-event', languages: 'ti-language',
+  };
+
+  let glanceFacts = [];
+  try {
+    const raw = property.at_a_glance_facts ? JSON.parse(property.at_a_glance_facts) : null;
+    if (raw && typeof raw === 'object') {
+      if (raw.max_guests) glanceFacts.push({ icon: FACT_ICONS.max_guests, text: `Sleeps up to ${esc(raw.max_guests)} guests` });
+      if (raw.pets && FACT_LABELS.pets[raw.pets]) glanceFacts.push({ icon: FACT_ICONS.pets, text: FACT_LABELS.pets[raw.pets] });
+      if (raw.parking && FACT_LABELS.parking[raw.parking]) glanceFacts.push({ icon: FACT_ICONS.parking, text: FACT_LABELS.parking[raw.parking] });
+      if (raw.accessible && FACT_LABELS.accessible[raw.accessible]) glanceFacts.push({ icon: FACT_ICONS.accessible, text: FACT_LABELS.accessible[raw.accessible] });
+      if (raw.children && FACT_LABELS.children[raw.children]) glanceFacts.push({ icon: FACT_ICONS.children, text: FACT_LABELS.children[raw.children] });
+      if (raw.smoking && FACT_LABELS.smoking[raw.smoking]) glanceFacts.push({ icon: FACT_ICONS.smoking, text: FACT_LABELS.smoking[raw.smoking] });
+      if (raw.min_stay) glanceFacts.push({ icon: FACT_ICONS.min_stay, text: `Minimum stay: ${esc(raw.min_stay)} night${raw.min_stay == 1 ? '' : 's'}` });
+      if (raw.languages?.trim()) glanceFacts.push({ icon: FACT_ICONS.languages, text: `Speaks: ${esc(raw.languages.trim())}` });
+      if (Array.isArray(raw.custom)) {
+        raw.custom.forEach(c => {
+          if (c?.label?.trim() && c?.value?.trim()) {
+            glanceFacts.push({ icon: 'ti-sparkles', text: `${esc(c.label.trim())}: ${esc(c.value.trim())}` });
+          }
+        });
+      }
+    }
+  } catch { /* malformed/legacy value — treat as no facts */ }
+
+  const atAGlanceSection = glanceFacts.length ? `
+<section class="at-a-glance">
+  <div class="section-inner">
+    <h2>${esc(name)} at a Glance</h2>
+    <div class="glance-grid">
+      ${glanceFacts.map(f => `
+      <div class="glance-item">
+        <i class="ti ${f.icon}"></i>
+        <span>${f.text}</span>
+      </div>`).join('')}
+    </div>
+  </div>
+</section>` : '';
+
   const approvedNotes = property.guest_notes_enabled
     ? db.prepare(`
         SELECT guest_name, note_text
@@ -1129,6 +1178,38 @@ section h2 {
   max-width: 720px;
 }
 
+/* ── At a Glance ───────────────────────────────────────────────────── */
+.at-a-glance { background: #fff; }
+.glance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+.glance-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: ${esc(palette.light)};
+  border: 1px solid ${esc(palette.brand)};
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.glance-item i {
+  font-size: 1.3rem;
+  color: ${esc(palette.brand)};
+  flex-shrink: 0;
+}
+.glance-item span {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: ${esc(palette.dark)};
+  line-height: 1.4;
+}
+@media (max-width: 640px) {
+  .glance-grid { grid-template-columns: 1fr; }
+}
+
 /* ── Rooms ─────────────────────────────────────────────────────────── */
 .rooms { background: #f8f9fa; }
 .rooms-grid {
@@ -1782,6 +1863,7 @@ ${isDemo ? `<div class="demo-banner">
 </div>` : ''}
 ${heroSection}
 ${aboutSection}
+${atAGlanceSection}
 ${roomsSection}
 ${notesSection}
 ${ctaSection}
