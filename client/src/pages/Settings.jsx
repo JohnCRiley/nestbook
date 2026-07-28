@@ -788,6 +788,9 @@ export default function Settings() {
                     placeholder={t('settings.aboutPropertyHint')}
                     style={{ resize: 'vertical' }}
                   />
+                  <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '4px 0 0' }}>
+                    {t('settings.aboutPropertyTruncateHint')}
+                  </p>
                 </FormField>
 
                 {property && (

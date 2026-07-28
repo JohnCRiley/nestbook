@@ -443,13 +443,24 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   <div class="specials-flyout-body">${property.special_banner_text.trim()}</div>
 </div>` : '';
 
-  const aboutSection = property.description ? `
+  const ABOUT_WORD_LIMIT = 100;
+  let aboutSection = '';
+  if (property.description?.trim()) {
+    const fullText = property.description.trim();
+    const words = fullText.split(/\s+/);
+    const isLong = words.length > ABOUT_WORD_LIMIT;
+    const truncated = isLong ? words.slice(0, ABOUT_WORD_LIMIT).join(' ') + '…' : fullText;
+
+    aboutSection = `
 <section class="about">
   <div class="section-inner">
     <h2 data-i18n="page.aboutUs">About us</h2>
-    <p>${esc(property.description)}</p>
+    <p class="about-text about-text-truncated">${esc(truncated)}</p>
+    ${isLong ? `<p class="about-text about-text-full" hidden>${esc(fullText)}</p>
+    <button type="button" class="about-toggle">Read more</button>` : ''}
   </div>
-</section>` : '';
+</section>`;
+  }
 
   const FACT_LABELS = {
     pets:       { yes: 'Pets welcome', no: 'No pets', on_request: 'Pets on request' },
@@ -1175,7 +1186,19 @@ section h2 {
   font-size: 1.05rem;
   color: #374151;
   line-height: 1.75;
-  max-width: 720px;
+  text-align: justify;
+  hyphens: auto;
+}
+.about-toggle {
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: ${esc(palette.brand)};
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
 }
 
 /* ── At a Glance ───────────────────────────────────────────────────── */
@@ -2338,6 +2361,22 @@ ${specialsBannerSection}
     el.classList.remove('show');
     sessionStorage.setItem(key, '1');
     setTimeout(function() { el.style.display = 'none'; }, 500);
+  });
+})();
+</script>
+
+<script>
+(function() {
+  var btn = document.querySelector('.about-toggle');
+  if (!btn) return;
+  var truncatedEl = document.querySelector('.about-text-truncated');
+  var fullEl = document.querySelector('.about-text-full');
+  var expanded = false;
+  btn.addEventListener('click', function() {
+    expanded = !expanded;
+    truncatedEl.hidden = expanded;
+    fullEl.hidden = !expanded;
+    btn.textContent = expanded ? 'Read less' : 'Read more';
   });
 })();
 </script>
