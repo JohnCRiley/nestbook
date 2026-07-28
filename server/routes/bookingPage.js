@@ -432,8 +432,15 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   }
 
   const specialsBannerSection = (property.special_banner_enabled && property.special_banner_text?.trim()) ? `
-<div class="specials-banner">
-  <div class="specials-banner-inner">${esc(property.special_banner_text.trim())}</div>
+<div id="specials-flyout" class="specials-flyout" role="complementary" aria-label="Special offer">
+  <button type="button" class="specials-flyout-close" id="specials-flyout-close" aria-label="Close">
+    <i class="ti ti-x"></i>
+  </button>
+  <div class="specials-flyout-header">
+    ${property.logo_url ? `<img class="specials-flyout-logo" src="/uploads/logos/${esc(property.logo_url)}" alt="">` : ''}
+    ${property.special_banner_title?.trim() ? `<div class="specials-flyout-title">${esc(property.special_banner_title.trim())}</div>` : ''}
+  </div>
+  <div class="specials-flyout-body">${property.special_banner_text.trim()}</div>
 </div>` : '';
 
   const aboutSection = property.description ? `
@@ -1031,20 +1038,86 @@ section h2 {
   margin-bottom: 24px;
 }
 
-/* ── Specials banner ────────────────────────────────────────────────── */
-.specials-banner {
+/* ── Specials flyout ────────────────────────────────────────────────── */
+.specials-flyout {
+  position: fixed;
+  top: 96px;
+  left: 24px;
+  width: 340px;
+  max-width: calc(100vw - 48px);
   background: ${esc(palette.light)};
-  border-bottom: 3px solid ${esc(palette.brand)};
-  padding: 16px 24px;
-  text-align: center;
+  border: 1px solid ${esc(palette.brand)};
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+  padding: 18px 20px;
+  z-index: 500;
+  transform: translateX(-140%);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease;
 }
-.specials-banner-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  font-size: 1rem;
-  font-weight: 600;
+.specials-flyout.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+.specials-flyout-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
   color: ${esc(palette.dark)};
-  line-height: 1.5;
+  opacity: 0.6;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px;
+}
+.specials-flyout-close:hover { opacity: 1; }
+.specials-flyout-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding-right: 20px;
+}
+.specials-flyout-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.specials-flyout-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: ${esc(palette.dark)};
+  line-height: 1.3;
+}
+.specials-flyout-body {
+  font-size: 0.9rem;
+  color: ${esc(palette.dark)};
+  line-height: 1.55;
+}
+.specials-flyout-body ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+.specials-flyout-body li { margin-bottom: 4px; }
+
+@media (max-width: 640px) {
+  .specials-flyout {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(140%);
+    padding: 18px 20px 22px;
+  }
+  .specials-flyout.show { transform: translateY(0); }
 }
 
 /* ── About ─────────────────────────────────────────────────────────── */
@@ -1708,7 +1781,6 @@ ${isDemo ? `<div class="demo-banner">
   <a href="https://nestbook.io/app/register">Create your own free page →</a>
 </div>` : ''}
 ${heroSection}
-${specialsBannerSection}
 ${aboutSection}
 ${roomsSection}
 ${notesSection}
@@ -2175,6 +2247,22 @@ ${isPaidPlan ? `<script
   data-currency="${esc(currency)}"
   async>
 </script>` : ''}
+
+${specialsBannerSection}
+<script>
+(function() {
+  var el = document.getElementById('specials-flyout');
+  if (!el) return;
+  var key = 'nb_specials_dismissed_${property.id}';
+  if (sessionStorage.getItem(key)) { el.style.display = 'none'; return; }
+  setTimeout(function() { el.classList.add('show'); }, 2800);
+  document.getElementById('specials-flyout-close').addEventListener('click', function() {
+    el.classList.remove('show');
+    sessionStorage.setItem(key, '1');
+    setTimeout(function() { el.style.display = 'none'; }, 500);
+  });
+})();
+</script>
 
 </body>
 </html>`;
