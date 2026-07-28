@@ -65,7 +65,14 @@ export default function SpecialsBannerEditor({ value, onChange, placeholder, max
       modules: { toolbar: TOOLBAR },
     });
     const toolbar = container.previousElementSibling;
-    if (value) quillRef.current.root.innerHTML = value;
+    // Set initial content through Quill's clipboard API, not a raw innerHTML
+    // write — a raw write is picked up asynchronously by Quill's own
+    // MutationObserver and reconciled as a "user" edit, which can race a
+    // near-immediate follow-up update (e.g. the draft-restore effect) and
+    // corrupt the content to empty. dangerouslyPasteHTML goes through Quill's
+    // synchronous setContents path instead, so there's no external mutation
+    // left for the observer to race against.
+    if (value) quillRef.current.clipboard.dangerouslyPasteHTML(value, 'silent');
     setCount(visibleLength(quillRef.current));
     quillRef.current.on('text-change', () => {
       const quill = quillRef.current;
@@ -86,10 +93,16 @@ export default function SpecialsBannerEditor({ value, onChange, placeholder, max
   }, []);
 
   useEffect(() => {
-    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
-      quillRef.current.root.innerHTML = value || '';
-      setCount(visibleLength(quillRef.current));
-    }
+    const quill = quillRef.current;
+    if (!quill || value === quill.root.innerHTML) return;
+    // Go through Quill's own clipboard pipeline rather than mutating
+    // root.innerHTML directly — on an already-mounted instance, a raw DOM
+    // replacement invalidates Quill's saved selection/Delta state behind its
+    // back, which can make its MutationObserver reconcile the change as an
+    // empty edit. dangerouslyPasteHTML(html) replaces the whole content
+    // through Quill's normal setContents path instead, keeping state consistent.
+    quill.clipboard.dangerouslyPasteHTML(value || '', 'silent');
+    setCount(visibleLength(quill));
   }, [value]);
 
   return (

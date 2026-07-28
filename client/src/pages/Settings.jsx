@@ -2617,6 +2617,46 @@ function SpecialsBannerSection({ property, theme, form, setForm, handleSave, sav
   const palette = THEME_COLOURS[theme] ?? THEME_COLOURS.forest;
   const logoSrc = property?.logo_url ? `/uploads/logos/${property.logo_url}` : null;
 
+  const draftKey = `nb_specials_draft_${property?.id}`;
+
+  // Restore any unsaved draft left behind by a previous mount (e.g. the user
+  // navigated away to Manage Logo before clicking Save).
+  // Depends on the `property` object itself, not just its id: the parent's
+  // fetch effect re-runs (and calls setForm with fresh DB-only data, clobbering
+  // any merge already applied) whenever usePlan()'s async subscription refresh
+  // resolves after mount — so this must re-apply the draft every time a new
+  // `property` arrives, not just once, or that second fetch silently wins the
+  // race and the draft is lost. Harmless once saved: sessionStorage is cleared
+  // on Save, so a later `property` update then finds nothing to restore.
+  useEffect(() => {
+    if (!property?.id) return;
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      setForm(p => ({
+        ...p,
+        special_banner_title: draft.title ?? p.special_banner_title,
+        special_banner_text: draft.text ?? p.special_banner_text,
+      }));
+    } catch { /* corrupt/old draft — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property]);
+
+  // Autosave the draft, debounced, so unsaved edits survive navigating away.
+  useEffect(() => {
+    if (!property?.id) return;
+    const handle = setTimeout(() => {
+      try {
+        sessionStorage.setItem(draftKey, JSON.stringify({
+          title: form.special_banner_title ?? '',
+          text: form.special_banner_text ?? '',
+        }));
+      } catch { /* sessionStorage unavailable — fail silently, not fatal */ }
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [form.special_banner_title, form.special_banner_text, property?.id]);
+
   return (
     <div className="settings-card">
       <div className="settings-card-header">
@@ -2664,7 +2704,7 @@ function SpecialsBannerSection({ property, theme, form, setForm, handleSave, sav
           </div>
 
           <div className="settings-save-row">
-            <button className="btn-primary" onClick={handleSave} disabled={saving}>
+            <button className="btn-primary" onClick={() => { handleSave(); sessionStorage.removeItem(draftKey); }} disabled={saving}>
               {saving ? t('saving') : t('saveChanges')}
             </button>
           </div>
