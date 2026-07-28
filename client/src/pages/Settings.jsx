@@ -25,6 +25,21 @@ const THEME_COLOURS = {
   charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
 };
 
+// Preset "Property at a Glance" facts. Guest-facing rendering (a separate
+// session) uses its own English-only label catalog, matching the
+// TYPE_LABELS/AMENITY_LABELS convention in server/routes/bookingPage.js —
+// this catalog is for the owner-facing Settings editor only.
+const FACT_CATALOG = [
+  { key: 'max_guests',  icon: 'ti-users',            type: 'number' },
+  { key: 'pets',        icon: 'ti-paw',              type: 'select', options: ['yes', 'no', 'on_request'] },
+  { key: 'parking',     icon: 'ti-parking',          type: 'select', options: ['free', 'paid', 'none'] },
+  { key: 'accessible',  icon: 'ti-wheelchair',       type: 'select', options: ['yes', 'partial', 'no'] },
+  { key: 'children',    icon: 'ti-baby-carriage',    type: 'select', options: ['yes', 'ask', 'no'] },
+  { key: 'smoking',     icon: 'ti-smoking',          type: 'select', options: ['no', 'outside', 'yes'] },
+  { key: 'min_stay',    icon: 'ti-calendar-event',   type: 'number' },
+  { key: 'languages',   icon: 'ti-language',         type: 'text' },
+];
+
 const THEMES = [
   { id: 'forest',   label: 'Forest',    primary: '#1a4710', bg: '#f3f7f2' },
   { id: 'royal',    label: 'Navy',      primary: '#1F3A55', bg: '#F0EDE8' },
@@ -197,6 +212,8 @@ export default function Settings() {
     ]).then(([p, u, s, cats, rms, rp]) => {
       setProperty(p);
       setTheme(p.theme ?? 'forest');
+      let parsedGlanceFacts = {};
+      try { parsedGlanceFacts = p.at_a_glance_facts ? JSON.parse(p.at_a_glance_facts) : {}; } catch { /* corrupt/old value — ignore */ }
       setForm({
         name:               p.name               ?? '',
         type:               p.type               ?? 'bnb',
@@ -237,6 +254,7 @@ export default function Settings() {
         special_banner_enabled:      p.special_banner_enabled ? 1 : 0,
         special_banner_title:        p.special_banner_title ?? '',
         special_banner_text:         p.special_banner_text ?? '',
+        at_a_glance_facts:           parsedGlanceFacts,
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -782,6 +800,8 @@ export default function Settings() {
                     }}
                   />
                 )}
+
+                {form && <AtAGlanceSection form={form} setForm={setForm} t={t} />}
 
                 <div className="settings-save-row">
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>
@@ -3462,6 +3482,157 @@ function PropertyHeroPhoto({ property, onUpdated }) {
       )}
       <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4 }}>
         {t('settings.uploadPhotoHint')}
+      </div>
+    </div>
+  );
+}
+
+// ── AtAGlanceSection ────────────────────────────────────────────────────────
+
+function AtAGlanceSection({ form, setForm, t }) {
+  const facts  = form?.at_a_glance_facts ?? {};
+  const custom = facts.custom ?? [];
+
+  function toggleFact(fact, checked) {
+    setForm(p => {
+      const next = { ...(p.at_a_glance_facts ?? {}) };
+      if (checked) {
+        next[fact.key] = fact.type === 'select' ? fact.options[0] : '';
+      } else {
+        delete next[fact.key];
+      }
+      return { ...p, at_a_glance_facts: next };
+    });
+  }
+
+  function updateFact(key, value) {
+    setForm(p => ({
+      ...p,
+      at_a_glance_facts: { ...(p.at_a_glance_facts ?? {}), [key]: value },
+    }));
+  }
+
+  function updateCustom(index, field, value) {
+    setForm(p => {
+      const list = [...(p.at_a_glance_facts?.custom ?? [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...p, at_a_glance_facts: { ...(p.at_a_glance_facts ?? {}), custom: list } };
+    });
+  }
+
+  function addCustom() {
+    setForm(p => ({
+      ...p,
+      at_a_glance_facts: {
+        ...(p.at_a_glance_facts ?? {}),
+        custom: [...(p.at_a_glance_facts?.custom ?? []), { label: '', value: '' }],
+      },
+    }));
+  }
+
+  function removeCustom(index) {
+    setForm(p => {
+      const list = [...(p.at_a_glance_facts?.custom ?? [])];
+      list.splice(index, 1);
+      return { ...p, at_a_glance_facts: { ...(p.at_a_glance_facts ?? {}), custom: list } };
+    });
+  }
+
+  return (
+    <div className="form-group">
+      <label className="form-label">{t('settings.glanceTitle')}</label>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '2px 0 10px' }}>
+        {t('settings.glanceHint')}
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '6px 16px' }}>
+        {FACT_CATALOG.map(fact => {
+          const checked = Object.prototype.hasOwnProperty.call(facts, fact.key);
+          return (
+            <div key={fact.key} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 34 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flexShrink: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={e => toggleFact(fact, e.target.checked)}
+                  style={{ width: 15, height: 15 }}
+                />
+                <i className={`ti ${fact.icon}`} style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: '0.82rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  {t(`settings.glance.${fact.key}`)}
+                </span>
+              </label>
+              {checked && (
+                fact.type === 'select' ? (
+                  <select
+                    className="form-control"
+                    value={facts[fact.key] ?? fact.options[0]}
+                    onChange={e => updateFact(fact.key, e.target.value)}
+                    style={{ flex: 1, minWidth: 0, padding: '4px 8px', fontSize: '0.82rem' }}
+                  >
+                    {fact.options.map(opt => (
+                      <option key={opt} value={opt}>{t(`settings.glance.${fact.key}.${opt}`)}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={fact.type === 'number' ? 'number' : 'text'}
+                    min={fact.type === 'number' ? 0 : undefined}
+                    className="form-control"
+                    value={facts[fact.key] ?? ''}
+                    onChange={e => updateFact(fact.key, e.target.value)}
+                    placeholder={fact.key === 'languages' ? t('settings.glanceLanguagesPlaceholder') : undefined}
+                    style={{ flex: 1, minWidth: 0, padding: '4px 8px', fontSize: '0.82rem' }}
+                  />
+                )
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {custom.map((c, i) => (
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <i className="ti ti-sparkles" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input
+              type="text"
+              className="form-control"
+              value={c.label}
+              onChange={e => updateCustom(i, 'label', e.target.value)}
+              placeholder={t('settings.glanceCustomLabelPlaceholder')}
+              style={{ flex: 1, minWidth: 0, padding: '4px 8px', fontSize: '0.82rem' }}
+            />
+            <input
+              type="text"
+              className="form-control"
+              value={c.value}
+              onChange={e => updateCustom(i, 'value', e.target.value)}
+              placeholder={t('settings.glanceCustomValuePlaceholder')}
+              style={{ flex: 1, minWidth: 0, padding: '4px 8px', fontSize: '0.82rem' }}
+            />
+            <button
+              type="button"
+              onClick={() => removeCustom(i)}
+              aria-label={t('settings.glanceRemove')}
+              style={{
+                background: 'none', border: 'none', color: '#dc2626',
+                fontSize: '0.82rem', cursor: 'pointer', padding: '4px', flexShrink: 0,
+                fontFamily: 'inherit', display: 'flex', alignItems: 'center',
+              }}
+            >
+              <i className="ti ti-trash" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={addCustom}
+          className="btn-secondary"
+          style={{ alignSelf: 'flex-start', fontSize: '0.8rem', padding: '5px 12px' }}
+        >
+          {t('settings.glanceAddCustom')}
+        </button>
       </div>
     </div>
   );

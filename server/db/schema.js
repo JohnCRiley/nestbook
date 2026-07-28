@@ -1942,6 +1942,9 @@ John`
   // Charges add-on flag — set by webhook when addon price is present on subscription
   try { db.exec(`ALTER TABLE users ADD COLUMN has_charges_addon INTEGER DEFAULT 0`); } catch(e) {}
 
+  // Property at a Glance — JSON string of preset + custom quick facts
+  try { db.exec(`ALTER TABLE properties ADD COLUMN at_a_glance_facts TEXT`); } catch(e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
