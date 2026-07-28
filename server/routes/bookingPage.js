@@ -489,7 +489,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const atAGlanceSection = glanceFacts.length ? `
 <section class="at-a-glance">
   <div class="section-inner">
-    <h2>${esc(name)} at a Glance</h2>
+    <h2>At a Glance</h2>
     <div class="glance-grid">
       ${glanceFacts.map(f => `
       <div class="glance-item">
@@ -1189,19 +1189,15 @@ section h2 {
 .glance-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: ${esc(palette.light)};
-  border: 1px solid ${esc(palette.brand)};
-  border-radius: 10px;
-  padding: 14px 16px;
+  gap: 10px;
 }
 .glance-item i {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: ${esc(palette.brand)};
   flex-shrink: 0;
 }
 .glance-item span {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: ${esc(palette.dark)};
   line-height: 1.4;
