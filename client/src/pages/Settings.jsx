@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import QRCodeStyling from 'qr-code-styling';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
+import SpecialsBannerEditor from './settings/SpecialsBannerEditor.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
@@ -11,6 +12,18 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
+
+// Must stay in sync with THEME_COLOURS in server/routes/bookingPage.js
+const THEME_COLOURS = {
+  forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+  royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
+  ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
+  ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
+  sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6' },
+  lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
+  aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
+  charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
+};
 
 const THEMES = [
   { id: 'forest',   label: 'Forest',    primary: '#1a4710', bg: '#f3f7f2' },
@@ -222,6 +235,7 @@ export default function Settings() {
         wifi_password:               p.wifi_password ?? '',
         guest_notes_enabled:         p.guest_notes_enabled ? 1 : 0,
         special_banner_enabled:      p.special_banner_enabled ? 1 : 0,
+        special_banner_title:        p.special_banner_title ?? '',
         special_banner_text:         p.special_banner_text ?? '',
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
@@ -1211,7 +1225,7 @@ export default function Settings() {
           {/* Specials Banner — all plans */}
           {form && (
             <div style={{ marginTop: 16 }}>
-              <SpecialsBannerSection form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
+              <SpecialsBannerSection property={property} theme={theme} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
             </div>
           )}
 
@@ -2596,9 +2610,12 @@ function GuestNotesSection({ form, setForm, handleSave, saving, t }) {
 
 // ── SpecialsBannerSection ─────────────────────────────────────────────────────
 
-function SpecialsBannerSection({ form, setForm, handleSave, saving, t }) {
-  const MAX = 200;
-  const text = form?.special_banner_text ?? '';
+function SpecialsBannerSection({ property, theme, form, setForm, handleSave, saving, t }) {
+  const TITLE_MAX = 50;
+  const title = form?.special_banner_title ?? '';
+  const body  = form?.special_banner_text ?? '';
+  const palette = THEME_COLOURS[theme] ?? THEME_COLOURS.forest;
+  const logoSrc = property?.logo_url ? `/uploads/logos/${property.logo_url}` : null;
 
   return (
     <div className="settings-card">
@@ -2614,25 +2631,86 @@ function SpecialsBannerSection({ form, setForm, handleSave, saving, t }) {
             onChange={() => setForm(p => ({ ...p, special_banner_enabled: p.special_banner_enabled ? 0 : 1 }))}
           />
           <div>
-            <label className="form-label">{t('settings.specialsText')}</label>
-            <textarea
+            <label className="form-label">{t('settings.specialsTitle')}</label>
+            <input
               className="form-control"
-              rows={3}
-              value={text}
-              onChange={e => setForm(p => ({ ...p, special_banner_text: e.target.value.slice(0, MAX) }))}
-              placeholder={t('settings.specialsPlaceholder')}
-              style={{ resize: 'vertical' }}
+              value={title}
+              onChange={e => setForm(p => ({ ...p, special_banner_title: e.target.value.slice(0, TITLE_MAX) }))}
+              placeholder={t('settings.specialsTitlePlaceholder')}
             />
             <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-              {text.length}/{MAX}
+              {title.length}/{TITLE_MAX}
             </div>
           </div>
+          <div>
+            <label className="form-label">{t('settings.specialsText')}</label>
+            <SpecialsBannerEditor
+              value={body}
+              onChange={html => setForm(p => ({ ...p, special_banner_text: html }))}
+              placeholder={t('settings.specialsPlaceholder')}
+              maxLength={300}
+            />
+          </div>
+
+          {/* Logo note — the flyout reuses the property's existing logo, uploaded via Guest Mailer */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: '#f8fafc', border: '1px solid var(--border)', borderRadius: 8 }}>
+            {logoSrc
+              ? <img src={logoSrc} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain', background: '#fff', border: '1px solid var(--border)' }} />
+              : null}
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              {t('settings.specialsLogoNote')}{' '}
+              <Link to="/guest-mailer" style={{ fontWeight: 600 }}>{t('settings.specialsLogoLink')}</Link>
+            </span>
+          </div>
+
           <div className="settings-save-row">
             <button className="btn-primary" onClick={handleSave} disabled={saving}>
               {saving ? t('saving') : t('saveChanges')}
             </button>
           </div>
         </div>
+
+        {/* Live preview — mirrors the guest-facing flyout's colours and typography */}
+        {!!(title || body) && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: 10 }}>
+              {t('settings.specialsPreview')}
+            </div>
+            <div style={{
+              background: palette.light,
+              border: `1px solid ${palette.brand}`,
+              borderRadius: 12,
+              padding: 20,
+              maxWidth: 420,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                {logoSrc && (
+                  <img src={logoSrc} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'contain', background: '#fff', border: '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {title && (
+                    <div style={{
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontWeight: 700,
+                      fontSize: '1.2rem',
+                      color: palette.dark,
+                      marginBottom: body ? 8 : 0,
+                    }}>
+                      {title}
+                    </div>
+                  )}
+                  {body && (
+                    <div
+                      className="specials-banner-preview-body"
+                      style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#1e293b' }}
+                      dangerouslySetInnerHTML={{ __html: body }}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

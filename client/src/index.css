@@ -5683,3 +5683,14 @@ a { text-decoration: none; }
   color: #166534;
   display: inline-block;
 }
+
+/* ─── Specials banner preview — renders Quill's saved bullet-list markup ─── */
+.specials-banner-preview-body ol,
+.specials-banner-preview-body ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 4px 0;
+}
+.specials-banner-preview-body p {
+  margin: 0 0 4px;
+}

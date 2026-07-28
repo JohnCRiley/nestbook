@@ -9,6 +9,7 @@ import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 import { seedCategories } from '../utils/categories.js';
+import { sanitizeBanner } from '../utils/sanitizeBanner.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROP_UPLOAD_DIR   = join(__dirname, '../uploads/properties');
@@ -220,7 +221,7 @@ propertiesRouter.put('/:id', (req, res) => {
       review_requests_enabled, review_delay_days, google_review_url, tripadvisor_review_url,
       wifi_network_name, wifi_password,
       guest_notes_enabled,
-      special_banner_enabled, special_banner_text,
+      special_banner_enabled, special_banner_title, special_banner_text,
       house_rules, local_tips,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
@@ -251,7 +252,7 @@ propertiesRouter.put('/:id', (req, res) => {
           google_review_url = ?, tripadvisor_review_url = ?,
           wifi_network_name = ?, wifi_password = ?,
           guest_notes_enabled = ?,
-          special_banner_enabled = ?, special_banner_text = ?,
+          special_banner_enabled = ?, special_banner_title = ?, special_banner_text = ?,
           house_rules = ?, local_tips = ?
       WHERE id = ?
     `).run(
@@ -287,7 +288,8 @@ propertiesRouter.put('/:id', (req, res) => {
       wifi_password?.trim()     || null,
       guest_notes_enabled ? 1 : 0,
       special_banner_enabled ? 1 : 0,
-      special_banner_text?.trim() || null,
+      special_banner_title?.trim().slice(0, 50) || null,
+      sanitizeBanner(special_banner_text?.trim()) || null,
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       req.params.id,

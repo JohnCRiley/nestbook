@@ -1881,6 +1881,7 @@ John`
 
   try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_enabled INTEGER NOT NULL DEFAULT 0`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_text TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_title TEXT`); } catch {}
 
   // Property Info Sheet
   try { db.exec(`ALTER TABLE properties ADD COLUMN house_rules TEXT`); } catch {}
