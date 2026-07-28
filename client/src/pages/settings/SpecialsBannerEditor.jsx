@@ -3,6 +3,7 @@ import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
 
 const SIZE_WHITELIST = ['12px', '16px', '20px', '28px'];
+const SIZE_LABELS = { '12px': 'Small', '16px': 'Normal', '20px': 'Large', '28px': 'Huge' };
 const SizeStyle = Quill.import('attributors/style/size');
 SizeStyle.whitelist = SIZE_WHITELIST;
 Quill.register(SizeStyle, true);
@@ -18,11 +19,21 @@ function injectStyles() {
   if (stylesInjected) return;
   stylesInjected = true;
   const s = document.createElement('style');
+  // Quill's snow theme only ships ::before label overrides for its default
+  // size whitelist (small/large/huge) — our custom px values all fall through
+  // to the base "Normal" rule, so every option shows the same label. Add
+  // matching overrides for our own whitelist here.
+  const sizeLabelRules = Object.entries(SIZE_LABELS).map(([value, label]) => `
+    .specials-banner-editor .ql-picker.ql-size .ql-picker-label[data-value="${value}"]::before,
+    .specials-banner-editor .ql-picker.ql-size .ql-picker-item[data-value="${value}"]::before {
+      content: '${label}';
+    }`).join('\n');
   s.textContent = `
     .specials-banner-editor .ql-toolbar.ql-snow{border:1px solid #d1d5db!important;border-bottom:none!important;border-radius:8px 8px 0 0!important;background:#f8fafc!important;padding:6px 8px!important;}
     .specials-banner-editor .ql-container.ql-snow{border:1px solid #d1d5db!important;border-radius:0 0 8px 8px!important;font-family:inherit!important;font-size:0.9rem!important;}
     .specials-banner-editor .ql-editor{min-height:120px;color:#1e293b!important;line-height:1.6!important;}
     .specials-banner-editor .ql-editor.ql-blank::before{color:#94a3b8!important;font-style:normal!important;}
+    ${sizeLabelRules}
   `;
   document.head.appendChild(s);
 }
