@@ -173,7 +173,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
         const phone   = r.phone || r.Phone || r.telephone || r.Telephone || null;
         const source  = r.source || r.Source || 'csv';
         insert.run(
-          (r.name || '').trim(),
+          r.name?.trim() || null,
           r.company?.trim() || null,
           normalEmail,
           phone?.trim() || null,
@@ -189,7 +189,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
         );
         imported++;
       } catch (err) {
-        errors.push(`Row "${r.name}" (${r.email}): ${err.message}`);
+        errors.push(`Row "${r.name || '(no name)'}" (${r.email}): ${err.message}`);
         skipped++;
       }
     }

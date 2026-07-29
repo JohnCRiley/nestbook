@@ -876,7 +876,7 @@ function parseRows(text) {
     const rowWarnings = validateRow(record, rowNum);
     if (rowWarnings.length) errors.push(...rowWarnings);
 
-    if (record.email && record.name) rows.push(record);
+    if (record.email) rows.push(record);
   });
 
   return { rows, errors };
@@ -903,7 +903,7 @@ function CsvImportModal({ onClose, onImported }) {
   async function doImport() {
     const { rows } = parsed || { rows: [] };
     if (rows.length === 0) {
-      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has name and email columns.'] });
+      setResult({ imported: 0, skipped: 0, errors: ['No valid rows found — check the file has an email column.'] });
       return;
     }
     setSaving(true);
@@ -933,13 +933,13 @@ function CsvImportModal({ onClose, onImported }) {
       <div style={{ background: '#fff', borderRadius: 10, padding: 28, width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 12px', fontSize: '1rem' }}>Bulk Import from CSV</h3>
         <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px' }}>
-          Required columns: <code>name</code>, <code>email</code>. Optional: <code>company</code>, <code>phone</code>, <code>property_type</code>, <code>region</code>, <code>town</code>, <code>country</code>, <code>language</code>, <code>website</code>, <code>source</code>, <code>notes</code>. Use ↓ CSV template for the full format.
+          Required columns: <code>email</code>. Optional: <code>name</code>, <code>company</code>, <code>phone</code>, <code>property_type</code>, <code>region</code>, <code>town</code>, <code>country</code>, <code>language</code>, <code>website</code>, <code>source</code>, <code>notes</code>. Use ↓ CSV template for the full format.
         </p>
 
         {result ? (
           <div>
             {result.imported > 0 && <div style={{ color: '#166534', marginBottom: 6 }}><i className="ti ti-check" /> {result.imported} prospect{result.imported !== 1 ? 's' : ''} imported successfully.</div>}
-            {result.skipped  > 0 && <div style={{ color: '#92400e', marginBottom: 6 }}>⚠ {result.skipped} skipped (duplicates or missing name/email).</div>}
+            {result.skipped  > 0 && <div style={{ color: '#92400e', marginBottom: 6 }}>⚠ {result.skipped} skipped (duplicates or missing email).</div>}
             {result.errors?.map((e, i) => <div key={i} style={{ color: '#dc2626', marginBottom: 6 }}>✗ {e}</div>)}
             {result.imported === 0 && !result.errors?.length && <div style={{ color: '#64748b', marginBottom: 6 }}>No new prospects added.</div>}
             <Btn onClick={onClose} style={{ marginTop: 14 }}>Close</Btn>
