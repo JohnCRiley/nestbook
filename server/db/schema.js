@@ -873,6 +873,49 @@ export function initSchema() {
     }
   }
 
+  // Migration: restore the PRIMARY KEY on prospects.id.
+  // A prior manual/ad-hoc migration rebuilt this table with a bare column list
+  // that dropped every constraint, including the PRIMARY KEY on id -- it's just
+  // an ordinary nullable INT column. Existing id values were preserved (the app
+  // never sets id explicitly, so these came from the table's original rowid
+  // history), but with no PRIMARY KEY or UNIQUE on it, any other table's FK
+  // pointing at prospects(id) is invalid, and SQLite throws "foreign key
+  // mismatch" the moment it actually enforces that constraint (e.g. on every
+  // prospect_emails insert during a send). Minimal, surgical fix: rebuild with
+  // id upgraded to INTEGER PRIMARY KEY AUTOINCREMENT, leaving every other
+  // column exactly as currently declared to avoid rejecting existing data
+  // against constraints it was never actually validated against.
+  {
+    const idCol = db.prepare(`PRAGMA table_info(prospects)`).all().find(c => c.name === 'id');
+    if (idCol && idCol.pk === 0) {
+      const { sql: liveSql } = db.prepare(
+        `SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`
+      ).get();
+      const newSql = liveSql
+        .replace(/^CREATE TABLE "?prospects"?/, 'CREATE TABLE prospects_new')
+        .replace(/(\bid\s+)INT\b/, '$1INTEGER PRIMARY KEY AUTOINCREMENT');
+      const columns = db.prepare(`PRAGMA table_info(prospects)`).all().map(c => c.name).join(',');
+
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.exec('BEGIN');
+      try {
+        db.exec(newSql);
+        db.exec(`INSERT INTO prospects_new (${columns}) SELECT ${columns} FROM prospects`);
+        db.exec(`DROP TABLE prospects`);
+        db.exec(`ALTER TABLE prospects_new RENAME TO prospects`);
+        db.exec('COMMIT');
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+        console.log('✓ Prospects.id PRIMARY KEY restored.');
+      } catch (e) {
+        db.exec('ROLLBACK');
+        console.error('[schema] prospects.id PRIMARY KEY migration failed:', e.message);
+      } finally {
+        db.exec('PRAGMA foreign_keys=ON');
+      }
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
