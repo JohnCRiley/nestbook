@@ -152,8 +152,8 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
 
   const insert = db.prepare(
     `INSERT INTO prospects
-       (name, company, email, phone, property_type, source, country, region, town, language, website, notes, unsubscribe_token, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (name, company, email, phone, property_type, source, country, region, town, language, website, notes, unsubscribe_token, created_at, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   const checkEmail = db.prepare(`SELECT id FROM prospects WHERE email = ?`);
 
@@ -172,6 +172,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
         const token   = makeUnsubToken();
         const phone   = r.phone || r.Phone || r.telephone || r.Telephone || null;
         const source  = r.source || r.Source || 'csv';
+        const status  = r.status || r.Status || 'new';
         const now     = new Date().toISOString().replace('T', ' ').slice(0, 19);
         insert.run(
           r.name?.trim() || null,
@@ -188,6 +189,7 @@ outreachRouter.post('/prospects/bulk-import', (req, res) => {
           r.notes?.trim() || null,
           token,
           now,
+          status,
         );
         imported++;
       } catch (err) {

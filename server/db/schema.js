@@ -811,6 +811,17 @@ export function initSchema() {
     } catch (e) {
       console.error('[schema] Status migration error:', e.message);
     }
+
+    // Backfill: some deployments' prospects.status column has drifted to allow NULL
+    // (missing the NOT NULL DEFAULT 'new' this schema declares), so older CSV
+    // imports that didn't set status explicitly left rows stuck with no status —
+    // invisible to every status-based filter and count. No-ops once fixed.
+    try {
+      const { changes } = db.prepare(`UPDATE prospects SET status = 'new' WHERE status IS NULL`).run();
+      if (changes > 0) console.log(`✓ Backfilled ${changes} prospects with NULL status to 'new'.`);
+    } catch (e) {
+      console.error('[schema] Null-status backfill error:', e.message);
+    }
   }
 
   // Phone outreach columns
