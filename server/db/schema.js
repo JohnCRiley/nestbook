@@ -846,8 +846,10 @@ export function initSchema() {
       const { sql: liveSql } = db.prepare(
         `SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`
       ).get();
+      // SQLite quotes the identifier in sqlite_master (CREATE TABLE "prospects")
+      // once a table has been through any prior rename — match both forms.
       const newSql = liveSql
-        .replace(/^CREATE TABLE prospects/, 'CREATE TABLE prospects_new')
+        .replace(/^CREATE TABLE "?prospects"?/, 'CREATE TABLE prospects_new')
         .replace(/name(\s+)TEXT(\s+)NOT NULL/, 'name$1TEXT');
       const columns = db.prepare(`PRAGMA table_info(prospects)`).all().map(c => c.name).join(',');
 
