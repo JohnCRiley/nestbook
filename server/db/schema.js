@@ -716,7 +716,7 @@ export function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS prospects (
       id                INTEGER PRIMARY KEY AUTOINCREMENT,
-      name              TEXT    NOT NULL,
+      name              TEXT,
       company           TEXT,
       email             TEXT    NOT NULL UNIQUE,
       source            TEXT    NOT NULL DEFAULT 'manual'
@@ -759,7 +759,7 @@ export function initSchema() {
         db.exec(`
           CREATE TABLE prospects_new (
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
-            name              TEXT    NOT NULL,
+            name              TEXT,
             company           TEXT,
             email             TEXT    NOT NULL UNIQUE,
             source            TEXT    NOT NULL DEFAULT 'manual'
@@ -823,6 +823,42 @@ export function initSchema() {
   try { db.exec(`ALTER TABLE prospects ADD COLUMN region TEXT DEFAULT NULL`); console.log('✓ region column added to prospects'); } catch(e) {}
   try { db.exec(`ALTER TABLE prospects ADD COLUMN property_type TEXT DEFAULT NULL`); console.log('✓ property_type column added to prospects'); } catch(e) {}
   try { db.exec(`ALTER TABLE prospects ADD COLUMN emails_sent_count INTEGER DEFAULT 0`); console.log('✓ emails_sent_count column added to prospects'); } catch(e) {}
+
+  // Migration: drop the NOT NULL constraint on prospects.name.
+  // Cold outreach CSVs frequently lack owner names — only email should be required.
+  // SQLite can't ALTER a column's NOT NULL in place, so rebuild the table:
+  // read the live schema text and strip "NOT NULL" from just the name column,
+  // rather than hardcoding a column list that could drift from reality.
+  {
+    const nameCol = db.prepare(`PRAGMA table_info(prospects)`).all().find(c => c.name === 'name');
+    if (nameCol && nameCol.notnull) {
+      const { sql: liveSql } = db.prepare(
+        `SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`
+      ).get();
+      const newSql = liveSql
+        .replace(/^CREATE TABLE prospects/, 'CREATE TABLE prospects_new')
+        .replace(/name(\s+)TEXT(\s+)NOT NULL/, 'name$1TEXT');
+      const columns = db.prepare(`PRAGMA table_info(prospects)`).all().map(c => c.name).join(',');
+
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.exec('BEGIN');
+      try {
+        db.exec(newSql);
+        db.exec(`INSERT INTO prospects_new (${columns}) SELECT ${columns} FROM prospects`);
+        db.exec(`DROP TABLE prospects`);
+        db.exec(`ALTER TABLE prospects_new RENAME TO prospects`);
+        db.exec('COMMIT');
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+        console.log('✓ Prospects.name NOT NULL constraint removed.');
+      } catch (e) {
+        db.exec('ROLLBACK');
+        console.error('[schema] prospects.name nullable migration failed:', e.message);
+      } finally {
+        db.exec('PRAGMA foreign_keys=ON');
+      }
+    }
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
