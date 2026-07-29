@@ -86,7 +86,7 @@ const DOWNLOADABLE_RESOURCES = [
     key: 'low-season-checklist',
     title: 'Direct Booking & Low Season Aid Checklist',
     desc: 'One-page checklist — hand out at events or email to leads',
-    url: 'https://nestbook.io/Direct-Booking-&-Low%20Season-Aid-Checklist.pdf',
+    url: 'https://nestbook.io/nestbook-checklist.pdf',
     icon: 'ti ti-checklist',
   },
 ];
