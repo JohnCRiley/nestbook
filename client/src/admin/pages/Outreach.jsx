@@ -785,7 +785,7 @@ function normalizeSource(raw) {
 }
 
 function parseCsv(text) {
-  const cleaned = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const cleaned = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const rows = [];
   let row = [], field = '', inQuotes = false;
   for (let i = 0; i < cleaned.length; i++) {
