@@ -911,6 +911,42 @@ export function initSchema() {
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_prospect_emails_prospect ON prospect_emails(prospect_id)`);
 
+  // Migration: fix a dangling FK on prospect_emails.prospect_id left pointing at
+  // "prospects_old" -- a table name that only ever existed transiently during a
+  // manual rename-based migration and no longer exists. SQLite validates FK
+  // references on every INSERT, so this broke every single outreach send with
+  // "no such table: main.prospects_old". Rebuild the table (SQLite can't ALTER
+  // a FK in place), reading the live schema text rather than hardcoding a
+  // column list that could drift from reality.
+  {
+    const peRow = db.prepare(
+      `SELECT sql FROM sqlite_master WHERE type='table' AND name='prospect_emails'`
+    ).get();
+    if (peRow?.sql && /prospects_old/.test(peRow.sql)) {
+      const columns = db.prepare(`PRAGMA table_info(prospect_emails)`).all().map(c => c.name).join(',');
+      const newSql = peRow.sql
+        .replace(/^CREATE TABLE "?prospect_emails"?/, 'CREATE TABLE prospect_emails_new')
+        .replace(/"?prospects_old"?/g, 'prospects');
+
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.exec('BEGIN');
+      try {
+        db.exec(newSql);
+        db.exec(`INSERT INTO prospect_emails_new (${columns}) SELECT ${columns} FROM prospect_emails`);
+        db.exec(`DROP TABLE prospect_emails`);
+        db.exec(`ALTER TABLE prospect_emails_new RENAME TO prospect_emails`);
+        db.exec('COMMIT');
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospect_emails_prospect ON prospect_emails(prospect_id)`);
+        console.log('✓ prospect_emails FK fixed: prospects_old → prospects');
+      } catch (e) {
+        db.exec('ROLLBACK');
+        console.error('[schema] prospect_emails FK migration failed:', e.message);
+      } finally {
+        db.exec('PRAGMA foreign_keys=ON');
+      }
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS outreach_send_log (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
