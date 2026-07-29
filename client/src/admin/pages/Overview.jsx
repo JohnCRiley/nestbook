@@ -82,6 +82,13 @@ const DOWNLOADABLE_RESOURCES = [
     url: 'https://nestbook.io/calculator.html',
     icon: 'ti ti-calculator',
   },
+  {
+    key: 'low-season-checklist',
+    title: 'Direct Booking & Low Season Aid Checklist',
+    desc: 'One-page checklist — hand out at events or email to leads',
+    url: 'https://nestbook.io/Direct-Booking-&-Low%20Season-Aid-Checklist.pdf',
+    icon: 'ti ti-checklist',
+  },
 ];
 
 export default function Overview() {
