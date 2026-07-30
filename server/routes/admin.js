@@ -129,10 +129,11 @@ adminRouter.get('/users', (req, res) => {
              u.discount_code, u.suspended, u.email_verified,
              u.subscription_status, u.past_due_since,
              p.id as property_id, p.name as property_name, p.type as property_type, p.country,
+             p.booking_slug as property_slug,
              s.stripe_customer_id, s.stripe_subscription_id,
              s.status as sub_status, s.current_period_end,
              s.notes as sub_notes, s.cancel_at_period_end,
-             (SELECT GROUP_CONCAT(CAST(p2.id AS TEXT) || ':' || p2.name, '|')
+             (SELECT GROUP_CONCAT(CAST(p2.id AS TEXT) || ':' || COALESCE(p2.booking_slug, '') || ':' || p2.name, '|')
               FROM properties p2 WHERE p2.owner_id = u.id ORDER BY p2.id) as owned_properties
       FROM users u
       LEFT JOIN properties p ON p.id = u.property_id

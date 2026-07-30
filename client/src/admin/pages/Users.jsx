@@ -6,6 +6,10 @@ import usePageSize from '../../hooks/usePageSize.js';
 // page-header + search + filter bar + padding
 const RESERVED = 200;
 
+function bookingUrl(id, slug) {
+  return `https://nestbook.io/book/${slug || id}`;
+}
+
 // ── Filter option lists ───────────────────────────────────────────────────────
 
 const PLAN_OPTIONS = [
@@ -596,20 +600,30 @@ export default function Users() {
                   <td>
                     {u.owned_properties && u.owned_properties.includes('|') ? (
                       u.owned_properties.split('|').map(entry => {
-                        const colon = entry.indexOf(':');
-                        const pid   = entry.slice(0, colon);
-                        const pname = entry.slice(colon + 1);
+                        const parts = entry.split(':');
+                        const pid   = parts[0];
+                        const pslug = parts[1];
+                        const pname = parts.slice(2).join(':');
                         return (
                           <div key={pid} style={{ lineHeight: 1.5 }}>
                             <span style={{ fontSize: '0.82rem' }}>{pname}</span>{' '}
-                            <CopyId id={pid} />
+                            <CopyId id={pid} />{' '}
+                            <a href={bookingUrl(pid, pslug)} target="_blank" rel="noopener noreferrer"
+                               title="View booking page" style={{ fontSize: '0.78rem' }}>
+                              <i className="ti ti-external-link" />
+                            </a>
                           </div>
                         );
                       })
                     ) : (
                       <div>
                         <span>{u.property_name ?? '—'}</span>
-                        {u.property_id && <>{' '}<CopyId id={u.property_id} /></>}
+                        {u.property_id && <>{' '}<CopyId id={u.property_id} />{' '}
+                          <a href={bookingUrl(u.property_id, u.property_slug)} target="_blank"
+                             rel="noopener noreferrer" title="View booking page" style={{ fontSize: '0.78rem' }}>
+                            <i className="ti ti-external-link" />
+                          </a>
+                        </>}
                       </div>
                     )}
                     {u.property_type && (
@@ -663,6 +677,12 @@ export default function Users() {
             <div className="admin-user-card-meta">
               <span>{u.property_name ?? 'No property'}</span>
               {u.property_id && <CopyId id={u.property_id} />}
+              {u.property_id && (
+                <a href={bookingUrl(u.property_id, u.property_slug)} target="_blank"
+                   rel="noopener noreferrer" title="View booking page" style={{ fontSize: '0.78rem' }}>
+                  <i className="ti ti-external-link" />
+                </a>
+              )}
               <span>·</span>
               <span>{fmtDate(u.created_at)}</span>
               {u.sub_notes === 'Complimentary' && (
@@ -698,13 +718,18 @@ export default function Users() {
                   <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: 8 }}>
                     <strong>Properties:</strong>{' '}
                     {u.owned_properties.split('|').map((entry, i) => {
-                      const colon = entry.indexOf(':');
-                      const pid   = entry.slice(0, colon);
-                      const pname = entry.slice(colon + 1);
+                      const parts = entry.split(':');
+                      const pid   = parts[0];
+                      const pslug = parts[1];
+                      const pname = parts.slice(2).join(':');
                       return (
                         <span key={pid}>
                           {i > 0 && ', '}
-                          {pname} <CopyId id={pid} />
+                          {pname} <CopyId id={pid} />{' '}
+                          <a href={bookingUrl(pid, pslug)} target="_blank" rel="noopener noreferrer"
+                             title="View booking page">
+                            <i className="ti ti-external-link" />
+                          </a>
                         </span>
                       );
                     })}
