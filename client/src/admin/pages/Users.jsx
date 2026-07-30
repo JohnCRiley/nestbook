@@ -10,6 +10,23 @@ function bookingUrl(id, slug) {
   return `https://nestbook.io/book/${slug || id}`;
 }
 
+// Inline SVG, not the "ti ti-*" webfont class — that font is never actually
+// loaded anywhere in this app (checked index.html and every stylesheet),
+// so every `<i className="ti ...">` in Super Admin renders empty.
+function ExternalLinkIcon({ size = 13, color = '#94a3b8' }) {
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: 'inline-block', verticalAlign: 'middle' }}
+    >
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  );
+}
+
 // ── Filter option lists ───────────────────────────────────────────────────────
 
 const PLAN_OPTIONS = [
@@ -609,8 +626,8 @@ export default function Users() {
                             <span style={{ fontSize: '0.82rem' }}>{pname}</span>{' '}
                             <CopyId id={pid} />{' '}
                             <a href={bookingUrl(pid, pslug)} target="_blank" rel="noopener noreferrer"
-                               title="View booking page" style={{ fontSize: '0.78rem' }}>
-                              <i className="ti ti-external-link" />
+                               title="View booking page" style={{ display: 'inline-flex' }}>
+                              <ExternalLinkIcon />
                             </a>
                           </div>
                         );
@@ -620,8 +637,8 @@ export default function Users() {
                         <span>{u.property_name ?? '—'}</span>
                         {u.property_id && <>{' '}<CopyId id={u.property_id} />{' '}
                           <a href={bookingUrl(u.property_id, u.property_slug)} target="_blank"
-                             rel="noopener noreferrer" title="View booking page" style={{ fontSize: '0.78rem' }}>
-                            <i className="ti ti-external-link" />
+                             rel="noopener noreferrer" title="View booking page" style={{ display: 'inline-flex' }}>
+                            <ExternalLinkIcon />
                           </a>
                         </>}
                       </div>
@@ -679,8 +696,8 @@ export default function Users() {
               {u.property_id && <CopyId id={u.property_id} />}
               {u.property_id && (
                 <a href={bookingUrl(u.property_id, u.property_slug)} target="_blank"
-                   rel="noopener noreferrer" title="View booking page" style={{ fontSize: '0.78rem' }}>
-                  <i className="ti ti-external-link" />
+                   rel="noopener noreferrer" title="View booking page" style={{ display: 'inline-flex' }}>
+                  <ExternalLinkIcon />
                 </a>
               )}
               <span>·</span>
@@ -727,8 +744,8 @@ export default function Users() {
                           {i > 0 && ', '}
                           {pname} <CopyId id={pid} />{' '}
                           <a href={bookingUrl(pid, pslug)} target="_blank" rel="noopener noreferrer"
-                             title="View booking page">
-                            <i className="ti ti-external-link" />
+                             title="View booking page" style={{ display: 'inline-flex' }}>
+                            <ExternalLinkIcon />
                           </a>
                         </span>
                       );
