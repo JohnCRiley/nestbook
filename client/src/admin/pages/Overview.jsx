@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+import { Icon, XIcon } from '../icons.jsx';
 
 const MARKETING_MATERIALS = [
   {
-    title: 'A4 Flyer',     icon: 'ti ti-file-text', spec: 'A4 · 170gsm gloss',
+    title: 'A4 Flyer',     icon: 'file-text', spec: 'A4 · 170gsm gloss',
     variants: [
       { lang: 'EN', name: 'flyer-a4',    href: '/marketing/flyer-a4.html' },
       { lang: 'FR', name: 'flyer-a4-fr', href: '/marketing/flyer-a4-fr.html' },
@@ -13,7 +14,7 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'A5 Handout',   icon: 'ti ti-clipboard', spec: 'A5 · 150gsm silk · double-sided',
+    title: 'A5 Handout',   icon: 'clipboard', spec: 'A5 · 150gsm silk · double-sided',
     variants: [
       { lang: 'EN', name: 'handout-a5',    href: '/marketing/handout-a5.html' },
       { lang: 'FR', name: 'handout-a5-fr', href: '/marketing/handout-a5-fr.html' },
@@ -23,7 +24,7 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'A-Frame Poster', icon: 'ti ti-layout-board', spec: 'A1 · vinyl or foam board',
+    title: 'A-Frame Poster', icon: 'layout-board', spec: 'A1 · vinyl or foam board',
     variants: [
       { lang: 'EN', name: 'aframe',    href: '/marketing/aframe.html' },
       { lang: 'FR', name: 'aframe-fr', href: '/marketing/aframe-fr.html' },
@@ -33,19 +34,19 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'Feather Flag',  icon: 'ti ti-flag', spec: 'Dye-sub fabric · 50cm × 150cm',
+    title: 'Feather Flag',  icon: 'flag', spec: 'Dye-sub fabric · 50cm × 150cm',
     variants: [
       { lang: 'EN', name: 'feather-flag', href: '/marketing/feather-flag.html' },
     ],
   },
   {
-    title: 'Business Card', icon: 'ti ti-id-badge', spec: 'A4 sheet · 85×55mm cards · 400gsm',
+    title: 'Business Card', icon: 'id-badge', spec: 'A4 sheet · 85×55mm cards · 400gsm',
     variants: [
       { lang: 'EN', name: 'business-card', href: '/marketing/business-card.html' },
     ],
   },
   {
-    title: 'Car Door Magnet', icon: 'ti ti-car', spec: 'Magnetic vinyl · 3mm bleed',
+    title: 'Car Door Magnet', icon: 'car', spec: 'Magnetic vinyl · 3mm bleed',
     variants: [
       { lang: 'EN Portrait',  name: 'car-door-portrait',    href: '/marketing/car-door-magnetic-portrait.html' },
       { lang: 'FR Portrait',  name: 'car-door-portrait-fr', href: '/marketing/car-door-magnetic-portrait-fr.html' },
@@ -53,7 +54,7 @@ const MARKETING_MATERIALS = [
     ],
   },
   {
-    title: 'Plan Comparison', icon: 'ti ti-table', spec: 'A4 · PDF-ready comparison table',
+    title: 'Plan Comparison', icon: 'table', spec: 'A4 · PDF-ready comparison table',
     variants: [
       { lang: 'EN', name: 'compare-plans', href: '/marketing/compare-plans.html' },
     ],
@@ -66,28 +67,28 @@ const DOWNLOADABLE_RESOURCES = [
     title: 'Getting Started Guide',
     desc: 'Onboarding PDF — share with new hosts after sign-up',
     url: 'https://nestbook.io/nestbook-getting-started-guide.pdf',
-    icon: 'ti ti-book',
+    icon: 'book',
   },
   {
     key: 'checklist',
     title: 'Direct Booking Checklist',
     desc: 'One-page checklist — hand out at events or email to leads',
     url: 'https://nestbook.io/direct-booking-checklist.pdf',
-    icon: 'ti ti-checklist',
+    icon: 'checklist',
   },
   {
     key: 'calculator',
     title: 'Commission Calculator',
     desc: 'Password-protected sales tool — for OTA cost comparison',
     url: 'https://nestbook.io/calculator.html',
-    icon: 'ti ti-calculator',
+    icon: 'calculator',
   },
   {
     key: 'low-season-checklist',
     title: 'Direct Booking & Low Season Aid Checklist',
     desc: 'One-page checklist — hand out at events or email to leads',
     url: 'https://nestbook.io/nestbook-checklist.pdf',
-    icon: 'ti ti-checklist',
+    icon: 'checklist',
   },
 ];
 
@@ -137,7 +138,7 @@ export default function Overview() {
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
-              <i className={mat.icon} style={{ fontSize: '0.95rem' }} />
+              <Icon name={mat.icon} size={15} />
               {mat.title}
             </button>
           ))}
@@ -164,16 +165,16 @@ export default function Overview() {
             {/* Modal header */}
             <div style={{ background: '#f0fdf4', padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a2e14' }}>
-                  <i className={activeMat.icon} /> {activeMat.title}
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a2e14', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name={activeMat.icon} size={15} /> {activeMat.title}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>{activeMat.spec}</div>
               </div>
               <button
                 onClick={() => setActiveMat(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '1.1rem', lineHeight: 1, padding: '2px 4px' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '1.1rem', lineHeight: 1, padding: '2px 4px', display: 'flex' }}
               >
-                <i className="ti ti-x" />
+                <XIcon size={16} color="#6b7280" />
               </button>
             </div>
             {/* Variants */}
@@ -265,7 +266,7 @@ export default function Overview() {
               padding: '10px 0',
               borderBottom: idx < DOWNLOADABLE_RESOURCES.length - 1 ? '1px solid #f1f5f9' : 'none',
             }}>
-              <i className={icon} style={{ fontSize: '1.1rem', color: '#6b7280', flexShrink: 0 }} />
+              <Icon name={icon} size={18} color="#6b7280" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1a2e14' }}>{title}</div>
                 <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 1 }}>{desc}</div>

@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { saApiFetch } from '../saApiFetch.js';
+import { Icon, MessageCircleIcon, ChevronUpIcon, ChevronDownIcon, ChevronRightIcon, PhoneOffIcon, MapPinIcon, ClockIcon, PhoneIcon, EditIcon, PlusIcon, NotesIcon } from '../icons.jsx';
 
 const PIPELINE = [
-  { value: 'not_called',     label: 'Not called',          color: '#64748b', bg: '#f8fafc',   icon: 'ti-phone' },
-  { value: 'no_answer',      label: 'No answer',           color: '#f59e0b', bg: '#fef3c7',   icon: 'ti-phone-off' },
-  { value: 'voicemail',      label: 'Left voicemail',      color: '#3b82f6', bg: '#dbeafe',   icon: 'ti-speakerphone' },
-  { value: 'call_back',      label: 'Call back requested', color: '#8b5cf6', bg: '#f5f3ff',   icon: 'ti-clock' },
-  { value: 'interested',     label: 'Spoke — interested',  color: '#10b981', bg: '#d1fae5',   icon: 'ti-star' },
-  { value: 'not_interested', label: 'Not interested',      color: '#94a3b8', bg: '#f1f5f9',   icon: 'ti-x' },
-  { value: 'signed_up',      label: 'Signed up',           color: '#1a4710', bg: '#d9f0cc',   icon: 'ti-circle-check' },
-  { value: 'do_not_call',    label: 'Do not call',         color: '#dc2626', bg: '#fef2f2',   icon: 'ti-ban' },
+  { value: 'not_called',     label: 'Not called',          color: '#64748b', bg: '#f8fafc',   icon: 'phone' },
+  { value: 'no_answer',      label: 'No answer',           color: '#f59e0b', bg: '#fef3c7',   icon: 'phone-off' },
+  { value: 'voicemail',      label: 'Left voicemail',      color: '#3b82f6', bg: '#dbeafe',   icon: 'speakerphone' },
+  { value: 'call_back',      label: 'Call back requested', color: '#8b5cf6', bg: '#f5f3ff',   icon: 'clock' },
+  { value: 'interested',     label: 'Spoke — interested',  color: '#10b981', bg: '#d1fae5',   icon: 'star' },
+  { value: 'not_interested', label: 'Not interested',      color: '#94a3b8', bg: '#f1f5f9',   icon: 'x' },
+  { value: 'signed_up',      label: 'Signed up',           color: '#1a4710', bg: '#d9f0cc',   icon: 'circle-check' },
+  { value: 'do_not_call',    label: 'Do not call',         color: '#dc2626', bg: '#fef2f2',   icon: 'ban' },
 ];
 
 const PROMPT_GROUPS = [
@@ -20,7 +21,7 @@ const PROMPT_GROUPS = [
     color: '#1a4710',
     bg: '#f0fdf4',
     border: '#d9f0cc',
-    icon: 'ti-thumb-up',
+    icon: 'thumb-up',
     prompts: [
       {
         trigger: '"Tell me more / That sounds interesting"',
@@ -91,7 +92,7 @@ const PROMPT_GROUPS = [
     color: '#92400e',
     bg: '#fef3c7',
     border: '#f59e0b',
-    icon: 'ti-shield',
+    icon: 'shield',
     prompts: [
       {
         trigger: '"We\'re not interested"',
@@ -328,11 +329,12 @@ export default function PhoneOutreach() {
           }}
         >
           <span style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="ti ti-message-circle" aria-hidden="true" />
+            <MessageCircleIcon size={16} color="white" />
             Call prompts — tap what they said
           </span>
-          <i className={`ti ${openPrompt === 'main' ? 'ti-chevron-up' : 'ti-chevron-down'}`}
-            style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem' }} aria-hidden="true" />
+          {openPrompt === 'main'
+            ? <ChevronUpIcon size={16} color="rgba(255,255,255,0.7)" />
+            : <ChevronDownIcon size={16} color="rgba(255,255,255,0.7)" />}
         </button>
 
         {/* Groups */}
@@ -353,14 +355,15 @@ export default function PhoneOutreach() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <i className={`ti ${group.icon}`} style={{ fontSize: '1rem', color: group.color }} aria-hidden="true" />
+                    <Icon name={group.icon} size={16} color={group.color} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.color }}>{group.label}</div>
                       <div style={{ fontSize: '0.72rem', color: group.color, opacity: 0.7, marginTop: 1 }}>{group.subtitle}</div>
                     </div>
                   </div>
-                  <i className={`ti ${groupOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`}
-                    style={{ color: group.color, fontSize: '0.9rem', opacity: 0.7, flexShrink: 0 }} aria-hidden="true" />
+                  {groupOpen
+                    ? <ChevronUpIcon size={14} color={group.color} style={{ opacity: 0.7, flexShrink: 0 }} />
+                    : <ChevronDownIcon size={14} color={group.color} style={{ opacity: 0.7, flexShrink: 0 }} />}
                 </button>
 
                 {/* Individual prompts */}
@@ -381,8 +384,9 @@ export default function PhoneOutreach() {
                         <span style={{ fontSize: '0.83rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>
                           {prompt.trigger}
                         </span>
-                        <i className={`ti ${isOpen ? 'ti-chevron-up' : 'ti-chevron-right'}`}
-                          style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flexShrink: 0 }} aria-hidden="true" />
+                        {isOpen
+                          ? <ChevronUpIcon size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                          : <ChevronRightIcon size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />}
                       </button>
 
                       {isOpen && (
@@ -432,7 +436,7 @@ export default function PhoneOutreach() {
           textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)',
           background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 10,
         }}>
-          <i className="ti ti-phone-off" style={{ fontSize: '2rem', display: 'block', marginBottom: 8 }} />
+          <PhoneOffIcon size={32} style={{ display: 'block', margin: '0 auto 8px' }} />
           No prospects with phone numbers found.
           <br />
           <span style={{ fontSize: '0.78rem', marginTop: 4, display: 'block' }}>
@@ -469,7 +473,7 @@ export default function PhoneOutreach() {
                     whiteSpace: 'nowrap', flexShrink: 0, display: 'flex',
                     alignItems: 'center', gap: 4, marginTop: 2,
                   }}>
-                    <i className={`ti ${status.icon}`} style={{ fontSize: '0.85rem' }} />
+                    <Icon name={status.icon} size={13} color={status.color} />
                     {status.label}
                   </div>
 
@@ -481,7 +485,7 @@ export default function PhoneOutreach() {
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                       {prospect.town && (
                         <span>
-                          <i className="ti ti-map-pin" style={{ fontSize: '0.75rem', marginRight: 2 }} />
+                          <MapPinIcon size={12} style={{ marginRight: 2 }} />
                           {prospect.town}
                         </span>
                       )}
@@ -495,7 +499,7 @@ export default function PhoneOutreach() {
                       )}
                       {prospect.call_back_at && prospect.phone_status === 'call_back' && (
                         <span style={{ color: '#8b5cf6', fontWeight: 600 }}>
-                          <i className="ti ti-clock" style={{ marginRight: 2 }} />
+                          <ClockIcon size={14} color="#8b5cf6" style={{ marginRight: 2 }} />
                           Call back: {new Date(prospect.call_back_at).toLocaleString('en-GB', {
                             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                           })}
@@ -537,13 +541,13 @@ export default function PhoneOutreach() {
                             color: 'var(--accent)', textDecoration: 'none', fontWeight: 600,
                             fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 5,
                           }}>
-                            <i className="ti ti-phone" style={{ fontSize: '0.9rem' }} />
+                            <PhoneIcon size={14} />
                             {prospect.phone}
                           </a>
                           <button
                             onClick={() => { setEditingPhone(prospect.id); setEditPhoneVal(prospect.phone); }}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}>
-                            <i className="ti ti-edit" style={{ fontSize: '0.85rem' }} />
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex' }}>
+                            <EditIcon size={13} color="var(--text-muted)" />
                           </button>
                         </>
                       ) : (
@@ -552,7 +556,7 @@ export default function PhoneOutreach() {
                           style={{ background: 'none', border: '1px dashed var(--border)',
                                    borderRadius: 6, padding: '3px 10px', fontSize: '0.75rem',
                                    color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                          <i className="ti ti-plus" style={{ marginRight: 4 }} />
+                          <PlusIcon size={12} color="var(--text-muted)" style={{ marginRight: 4 }} />
                           Add phone number
                         </button>
                       )}
@@ -640,7 +644,7 @@ export default function PhoneOutreach() {
                         display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
                       }}
                     >
-                      <i className={`ti ${p.icon}`} style={{ fontSize: '0.8rem' }} />
+                      <Icon name={p.icon} size={13} color={prospect.phone_status === p.value ? p.color : 'var(--text-muted)'} />
                       {p.label}
                     </button>
                   ))}
@@ -655,7 +659,7 @@ export default function PhoneOutreach() {
                         fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      <i className="ti ti-clock" style={{ fontSize: '0.8rem' }} />
+                      <ClockIcon size={13} color="#8b5cf6" />
                       Call back
                     </button>
 
@@ -671,7 +675,7 @@ export default function PhoneOutreach() {
                         cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      <i className="ti ti-notes" style={{ fontSize: '0.8rem' }} />
+                      <NotesIcon size={13} color="var(--text-secondary)" />
                       {prospect.phone_notes ? 'Edit notes' : 'Add notes'}
                     </button>
                   </div>

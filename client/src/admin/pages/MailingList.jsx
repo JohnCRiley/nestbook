@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+import { ClipboardIcon } from '../icons.jsx';
 
 const PAGE_LIMIT = 50;
 
@@ -310,7 +311,7 @@ export default function MailingList() {
                 disabled={exporting || total === 0}
                 title="Copy all matching email addresses to clipboard"
               >
-                {exporting ? '…' : <><i className="ti ti-clipboard" /> Copy emails</>}
+                {exporting ? '…' : <><ClipboardIcon size={13} /> Copy emails</>}
               </button>
               <button
                 className="ml-btn ml-btn-csv"
