@@ -916,6 +916,71 @@ export function initSchema() {
     }
   }
 
+  // Migration: harden prospects.email/status/source with the constraints they
+  // were always meant to have (UNIQUE on email, CHECK on status/source), lost
+  // along with everything else stripped by the ad-hoc migration fixed above.
+  // Each of the three is detected and applied independently so this stays
+  // idempotent regardless of which ones (if any) already exist. If existing
+  // data violates a constraint being added, the whole rebuild rolls back
+  // safely and logs -- it must never crash startup.
+  {
+    const STATUS_VALUES = "'new','1st_contact_sent','1st_followup_sent','2nd_followup_sent','3rd_followup_sent','complained','unsubscribed','converted'";
+    const SOURCE_VALUES = "'manual','facebook','instagram','google','booking_com','airbnb','referral','other','csv','website'";
+
+    const hasUniqueEmailIndex = db.prepare(`PRAGMA index_list(prospects)`).all()
+      .some(idx => idx.unique && db.prepare(`PRAGMA index_info(${idx.name})`).all().length === 1
+        && db.prepare(`PRAGMA index_info(${idx.name})`).all()[0].name === 'email');
+
+    const { sql: liveSqlCheck } = db.prepare(
+      `SELECT sql FROM sqlite_master WHERE type='table' AND name='prospects'`
+    ).get();
+    const needsEmailUnique  = !hasUniqueEmailIndex;
+    const needsStatusCheck  = !liveSqlCheck.includes('CHECK(status IN (');
+    const needsSourceCheck  = !liveSqlCheck.includes('CHECK(source IN (');
+
+    if (needsEmailUnique || needsStatusCheck || needsSourceCheck) {
+      let newSql = liveSqlCheck.replace(/^CREATE TABLE "?prospects"?/, 'CREATE TABLE prospects_new');
+      if (needsEmailUnique) {
+        newSql = newSql.replace(/(\bemail\s+TEXT)(\s+NOT\s+NULL)?(\s*,)/, '$1$2 UNIQUE$3');
+      }
+      if (needsStatusCheck) {
+        newSql = newSql.replace(
+          /(\bstatus\s+TEXT)((?:\s+NOT\s+NULL)?(?:\s+DEFAULT\s+'[^']*')?)(\s*,)/,
+          `$1$2 CHECK(status IN (${STATUS_VALUES}))$3`
+        );
+      }
+      if (needsSourceCheck) {
+        newSql = newSql.replace(
+          /(\bsource\s+TEXT)((?:\s+NOT\s+NULL)?(?:\s+DEFAULT\s+'[^']*')?)(\s*,)/,
+          `$1$2 CHECK(source IN (${SOURCE_VALUES}))$3`
+        );
+      }
+      const columns = db.prepare(`PRAGMA table_info(prospects)`).all().map(c => c.name).join(',');
+
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.exec('BEGIN');
+      try {
+        db.exec(newSql);
+        db.exec(`INSERT INTO prospects_new (${columns}) SELECT ${columns} FROM prospects`);
+        db.exec(`DROP TABLE prospects`);
+        db.exec(`ALTER TABLE prospects_new RENAME TO prospects`);
+        db.exec('COMMIT');
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_status ON prospects(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_prospects_email  ON prospects(email)`);
+        console.log('✓ Prospects hardened:', [
+          needsEmailUnique && 'email UNIQUE',
+          needsStatusCheck && 'status CHECK',
+          needsSourceCheck && 'source CHECK',
+        ].filter(Boolean).join(', '));
+      } catch (e) {
+        db.exec('ROLLBACK');
+        console.error('[schema] prospects email/status/source hardening failed:', e.message);
+      } finally {
+        db.exec('PRAGMA foreign_keys=ON');
+      }
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS email_templates (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
