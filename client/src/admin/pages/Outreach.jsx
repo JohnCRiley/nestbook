@@ -3,6 +3,7 @@ import { saApiFetch } from '../saApiFetch.js';
 import QuillEditor from '../QuillEditor.jsx';
 import TemplateManager from '../TemplateManager.jsx';
 import IconPicker from '../IconPicker.jsx';
+import { SendIcon, AlertTriangleIcon, CheckIcon, LockIcon, LockOpenIcon, MailIcon, PhoneIcon, MapPinIcon } from '../icons.jsx';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -243,7 +244,7 @@ function EditProspectModal({ prospect, onClose, onSaved }) {
             </select>
             {prospect.emails_sent_count > 0 && (
               <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>
-                <i className="ti ti-send" style={{ marginRight: 4 }} />
+                <SendIcon size={12} color="#64748b" style={{ marginRight: 4 }} />
                 {prospect.emails_sent_count} email{prospect.emails_sent_count !== 1 ? 's' : ''} sent to this prospect
               </div>
             )}
@@ -412,7 +413,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               padding: '10px 14px', fontSize: '0.82rem', color: '#92400e',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <i className="ti ti-alert-triangle" /> <strong>Resend daily limit:</strong> Sending more than 100 emails per day may trigger account suspension. Use the send limit selector below or upgrade your Resend plan.
+              <AlertTriangleIcon size={13} color="#92400e" /> <strong>Resend daily limit:</strong> Sending more than 100 emails per day may trigger account suspension. Use the send limit selector below or upgrade your Resend plan.
             </div>
           )}
 
@@ -938,7 +939,7 @@ function CsvImportModal({ onClose, onImported }) {
 
         {result ? (
           <div>
-            {result.imported > 0 && <div style={{ color: '#166534', marginBottom: 6 }}><i className="ti ti-check" /> {result.imported} prospect{result.imported !== 1 ? 's' : ''} imported successfully.</div>}
+            {result.imported > 0 && <div style={{ color: '#166534', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}><CheckIcon size={14} color="#166534" /> {result.imported} prospect{result.imported !== 1 ? 's' : ''} imported successfully.</div>}
             {result.skipped  > 0 && <div style={{ color: '#92400e', marginBottom: 6 }}>⚠ {result.skipped} skipped (duplicates or missing email).</div>}
             {result.errors?.map((e, i) => <div key={i} style={{ color: '#dc2626', marginBottom: 6 }}>✗ {e}</div>)}
             {result.imported === 0 && !result.errors?.length && <div style={{ color: '#64748b', marginBottom: 6 }}>No new prospects added.</div>}
@@ -953,8 +954,8 @@ function CsvImportModal({ onClose, onImported }) {
                 {/* Clean rows summary */}
                 {cleanRows.length > 0 && (
                   <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.82rem' }}>
-                    <div style={{ fontWeight: 600, color: '#166534', marginBottom: 4 }}>
-                      <i className="ti ti-check" /> {cleanRows.length} row{cleanRows.length !== 1 ? 's' : ''} ready to import
+                    <div style={{ fontWeight: 600, color: '#166534', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <CheckIcon size={13} color="#166534" /> {cleanRows.length} row{cleanRows.length !== 1 ? 's' : ''} ready to import
                     </div>
                     {cleanRows.slice(0, 4).map((r, i) => (
                       <div key={i} style={{ color: '#15803d', marginBottom: 1 }}>{r.name} — {r.email}{r.company ? ` (${r.company})` : ''}</div>
@@ -1451,8 +1452,9 @@ export default function Outreach() {
         borderRadius: 8,
         marginBottom: 8,
       }}>
-        <i className={`ti ${limitEnabled ? 'ti-lock' : 'ti-lock-open'}`}
-           style={{ fontSize: 16, color: limitEnabled ? '#854d0e' : '#166534' }} />
+        {limitEnabled
+          ? <LockIcon size={16} color="#854d0e" />
+          : <LockOpenIcon size={16} color="#166534" />}
         <span style={{ fontSize: 13, fontWeight: 500, color: limitEnabled ? '#854d0e' : '#166534', flex: 1 }}>
           {limitEnabled ? 'Daily limit: ON (100/day)' : 'Daily limit: OFF — unlimited sending'}
         </span>
@@ -1479,7 +1481,7 @@ export default function Outreach() {
         fontSize: '0.85rem', fontWeight: 600,
         color: (limitEnabled && dailyCount >= 100) ? '#dc2626' : (limitEnabled && dailyCount >= 80) ? '#92400e' : '#166534',
       }}>
-        <i className="ti ti-mail" /> Today: {dailyCount} emails sent
+        <MailIcon size={14} color={(dailyCount >= 100 && limitEnabled) ? '#dc2626' : (limitEnabled && dailyCount >= 80) ? '#92400e' : '#166534'} style={{ marginRight: 2 }} /> Today: {dailyCount} emails sent
         {limitEnabled
           ? (dailyCount >= 100 ? ' — Daily limit reached!' : ` — ${100 - dailyCount} remaining`)
           : ' — No daily limit'}
@@ -1716,7 +1718,7 @@ export default function Outreach() {
                         <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{p.email || '—'}</span>
                         {p.phone && (
                           <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginTop: 2 }}>
-                            <i className="ti ti-phone" style={{ fontSize: '0.75rem', marginRight: 2 }} />
+                            <PhoneIcon size={12} color="var(--accent)" style={{ marginRight: 2 }} />
                             {p.phone}
                           </div>
                         )}
@@ -1726,7 +1728,7 @@ export default function Outreach() {
                         <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{p.company || '—'}</div>
                         {p.town && (
                           <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 1 }}>
-                            <i className="ti ti-map-pin" style={{ fontSize: '0.72rem', marginRight: 2 }} />
+                            <MapPinIcon size={12} color="#94a3b8" style={{ marginRight: 2 }} />
                             {p.town}{p.region ? ` · ${p.region}` : ''}
                           </div>
                         )}

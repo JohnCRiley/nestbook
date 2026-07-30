@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+import { BugIcon } from '../icons.jsx';
 
 export default function AdminSettings() {
   const [codes,   setCodes]   = useState([]);
@@ -262,7 +263,9 @@ export default function AdminSettings() {
         <div style={{ padding: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}><i className="ti ti-bug" /> Bug Reporting</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <BugIcon size={15} /> Bug Reporting
+              </div>
               <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
                 Show the "Report an issue" section in user Settings pages.
                 Disable to hide it from all users without any code changes.
