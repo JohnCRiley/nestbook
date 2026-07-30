@@ -250,7 +250,7 @@ export default function ProspectFinder() {
       r.website || '',
       '',                // town — parsed from address manually after download
       '',                // region
-      '',                // country
+      mode === 'sweep' ? country : '', // country — known for a sweep (dropdown), not for a free-text area search
       language,
       'google_places',
       r.address || '',   // full Places address goes in notes for reference
