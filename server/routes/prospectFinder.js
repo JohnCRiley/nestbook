@@ -146,6 +146,113 @@ async function runPlacesSearch({ query, location, radius, language = 'en', minRe
   return { results, emailsFound };
 }
 
+// ── Nearby Search + email scrape — /sweep only ────────────────────────────────
+// Text Search's location+radius is only a ranking bias, not a real geographic
+// filter, so a strong keyword match can return a result from another country
+// entirely (confirmed: a UK sweep returned .ch and Lower Saxony properties).
+// Nearby Search enforces location+radius as a hard filter, so grid-point sweeps
+// use this instead. It takes one `keyword` per call (no "A" OR "B" syntax), so
+// this loops once per selected property type and dedupes by place_id, which
+// Nearby Search returns directly (Text Search results don't carry it through
+// to the final shape, so /search still dedupes on website/name+address).
+async function runNearbySearch({ lat, lng, radiusMeters, propertyTypes, language = 'en', minReviews = 0, onEvent }) {
+  const key = process.env.GOOGLE_PLACES_API_KEY;
+  if (!key) throw new Error('Google Places API key not configured. Add GOOGLE_PLACES_API_KEY to server/.env');
+
+  const types = propertyTypes.length > 0 ? propertyTypes : ['bed and breakfast'];
+  const radius = Math.min(Number(radiusMeters), 50000); // Google's hard cap
+
+  const foundByPlaceId = new Map(); // dedupe across the different type keywords at THIS point
+
+  for (const keyword of types) {
+    onEvent({ type: 'status', message: `Searching near (${lat.toFixed(2)}, ${lng.toFixed(2)}) for "${keyword}"…` });
+
+    const params = new URLSearchParams({
+      location: `${lat},${lng}`,
+      radius: String(radius),
+      keyword,
+      language,
+      key,
+    });
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params.toString()}`;
+
+    let data;
+    try {
+      data = await fetch(url, { signal: AbortSignal.timeout(10000) }).then(r => r.json());
+    } catch (err) {
+      onEvent({ type: 'status', message: `Nearby Search request failed for "${keyword}": ${err.message}` });
+      continue; // one failed keyword shouldn't abort the whole point
+    }
+
+    if (data.status === 'REQUEST_DENIED') {
+      onEvent({ type: 'error', message: `Google Places API error: ${data.error_message || data.status}` });
+      continue;
+    }
+    if (data.status === 'OVER_QUERY_LIMIT') {
+      onEvent({ type: 'error', message: 'Google Places API quota exceeded. Try again later.' });
+      continue;
+    }
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      onEvent({ type: 'status', message: `Google Places (Nearby) returned: ${data.status} for "${keyword}"` });
+      continue;
+    }
+
+    for (const p of data.results || []) {
+      if (Number(minReviews) > 0 && (p.user_ratings_total ?? 0) < Number(minReviews)) continue;
+      if (!foundByPlaceId.has(p.place_id)) {
+        foundByPlaceId.set(p.place_id, {
+          place_id: p.place_id,
+          name: p.name,
+          address: p.vicinity || '', // Nearby Search has no formatted_address, only vicinity
+          ratings: p.user_ratings_total ?? 0,
+        });
+      }
+    }
+  }
+
+  const places = Array.from(foundByPlaceId.values());
+  if (places.length === 0) return { results: [], emailsFound: 0 };
+
+  onEvent({ type: 'status', message: `Found ${places.length} properties near this point. Fetching websites…` });
+
+  // Same Details + email-scrape logic as runPlacesSearch — reuse, don't duplicate
+  const withDetails = [];
+  for (const p of places) {
+    try {
+      const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json` +
+        `?place_id=${p.place_id}&fields=name,website,formatted_address,user_ratings_total&key=${key}`;
+      const detail = await fetch(detailUrl, { signal: AbortSignal.timeout(8000) }).then(r => r.json());
+      const r = detail.result || {};
+      withDetails.push({ ...p, name: r.name || p.name, address: r.formatted_address || p.address, website: r.website || null });
+    } catch {
+      withDetails.push({ ...p, website: null });
+    }
+  }
+
+  onEvent({ type: 'progress', current: 0, total: withDetails.length, message: `Scraping emails… (0 of ${withDetails.length})` });
+
+  const results = [];
+  const BATCH = 5;
+  for (let i = 0; i < withDetails.length; i += BATCH) {
+    const batch = withDetails.slice(i, i + BATCH);
+    const emails = await Promise.all(batch.map(p => p.website ? scrapeEmailFromWebsite(p.website) : Promise.resolve(null)));
+    for (let j = 0; j < batch.length; j++) {
+      const p = batch[j];
+      const email = emails[j];
+      results.push({
+        place_id: p.place_id, // carried through this time — needed for cross-point dedupe in /sweep
+        name: p.name, address: p.address, website: p.website, email,
+        ratings: p.ratings, status: email ? 'email_found' : (p.website ? 'no_email' : 'no_website'),
+      });
+    }
+    const done = Math.min(i + BATCH, withDetails.length);
+    onEvent({ type: 'progress', current: done, total: withDetails.length, message: `Scraping emails… (${done} of ${withDetails.length})` });
+  }
+
+  const emailsFound = results.filter(r => r.email).length;
+  return { results, emailsFound };
+}
+
 // ── POST /api/admin/prospect-finder/search  (SSE streaming) ─────────────────
 prospectFinderRouter.post('/search', async (req, res) => {
   const { area, propertyTypes = [], radius = 10000, language = 'en', minReviews = 0 } = req.body;
@@ -206,10 +313,8 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
   if (maxPoints) points = points.slice(0, Number(maxPoints)); // ALWAYS use for test runs
 
   const types = propertyTypes.length > 0 ? propertyTypes : ['bed and breakfast'];
-  const query = types.join(' OR ');
 
-  const seen = new Set(); // dedupe across overlapping grid circles — no place_id survives
-                          // to the final result shape, so dedupe on website or name+address
+  const seen = new Set(); // dedupe across overlapping grid circles AND type keywords — place_id is exact
   const allResults = [];
   let totalEmails = 0;
   let totalDetailCalls = 0; // real cost driver — log this so spend is visible
@@ -219,19 +324,19 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
     sse(res, { type: 'status', message: `Grid point ${i + 1} of ${points.length} (${point.lat.toFixed(2)}, ${point.lng.toFixed(2)})…` });
 
     try {
-      const { results } = await runPlacesSearch({
-        query,
-        location: `${point.lat},${point.lng}`,
-        radius: Math.min(Number(radiusMeters), 50000), // Google caps radius at 50km
+      const { results } = await runNearbySearch({
+        lat: point.lat,
+        lng: point.lng,
+        radiusMeters: Number(radiusMeters),
+        propertyTypes: types,
         language,
         minReviews,
-        onEvent: () => {}, // suppress per-point noise, report at grid level below
+        onEvent: () => {}, // suppress per-keyword noise, grid-level progress already reported
       });
 
       for (const r of results) {
-        const dedupeKey = r.website || `${r.name}|${r.address}`;
-        if (!seen.has(dedupeKey)) {
-          seen.add(dedupeKey);
+        if (!seen.has(r.place_id)) {
+          seen.add(r.place_id);
           allResults.push(r);
           if (r.email) totalEmails++;
         }
