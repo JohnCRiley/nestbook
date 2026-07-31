@@ -20,6 +20,19 @@ export function generateGrid(bounds, spacingKm = 35) {
   return points;
 }
 
+// Fisher-Yates shuffle — returns a new array, doesn't mutate the input.
+// Used only for maxPoints test runs, so a small sample is spread across the
+// whole grid instead of always landing on the first N points (same corner
+// of the country) in generateGrid()'s fixed nested-loop order.
+export function shuffleArray(arr) {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 // Rough bounding boxes — good enough for a first-pass sweep, not survey-grade
 export const COUNTRY_BOUNDS = {
   uk: { latMin: 49.9, latMax: 58.7, lngMin: -8.2, lngMax: 1.8 },

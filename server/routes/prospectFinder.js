@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateGrid, COUNTRY_BOUNDS } from '../utils/gridSweep.js';
+import { generateGrid, COUNTRY_BOUNDS, shuffleArray } from '../utils/gridSweep.js';
 
 export const prospectFinderRouter = Router();
 
@@ -310,7 +310,12 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
   res.flushHeaders();
 
   let points = generateGrid(bounds, Number(spacingKm));
-  if (maxPoints) points = points.slice(0, Number(maxPoints)); // ALWAYS use for test runs
+  if (maxPoints) {
+    // Shuffle only for test runs — a representative spread across the whole
+    // country matters here. A full sweep covers every point regardless, so
+    // its fixed order is left alone.
+    points = shuffleArray(points).slice(0, Number(maxPoints));
+  }
 
   const types = propertyTypes.length > 0 ? propertyTypes : ['bed and breakfast'];
 
