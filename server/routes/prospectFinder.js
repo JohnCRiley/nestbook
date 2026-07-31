@@ -4,6 +4,7 @@ import { generateGrid, COUNTRY_BOUNDS, shuffleArray } from '../utils/gridSweep.j
 export const prospectFinderRouter = Router();
 
 function sse(res, data) {
+  if (res.writableEnded || res.destroyed) return; // client already gone — don't throw writing to a dead connection
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
@@ -309,6 +310,23 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
+  // VPN drops / closed tabs are common enough (long-running loop over a
+  // country's grid) that we need to stop burning Google API credit the
+  // moment nobody's left to see the results, not run the whole grid anyway.
+  //
+  // NOTE: req.on('close') is NOT a reliable disconnect signal on this Node
+  // version — it fires within ~2ms of every request, as soon as the request
+  // body is fully read, regardless of whether the client is still connected
+  // (confirmed by testing: it fired identically for both a normal completed
+  // request and an actually-destroyed one). res.on('close') also fires in
+  // both cases, but res.writableEnded reliably tells them apart: true means
+  // we already finished normally and called res.end() ourselves; false means
+  // the connection died while we were still mid-stream.
+  let clientDisconnected = false;
+  res.on('close', () => {
+    if (!res.writableEnded) clientDisconnected = true;
+  });
+
   let points = generateGrid(bounds, Number(spacingKm));
   if (maxPoints) {
     // Shuffle only for test runs — a representative spread across the whole
@@ -325,6 +343,11 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
   let totalDetailCalls = 0; // real cost driver — log this so spend is visible
 
   for (let i = 0; i < points.length; i++) {
+    if (clientDisconnected) {
+      console.log(`[prospect-finder] Sweep aborted at point ${i}/${points.length} — client disconnected.`);
+      break; // stop making API calls, don't try to res.write() to a dead connection
+    }
+
     const point = points[i];
     sse(res, { type: 'status', message: `Grid point ${i + 1} of ${points.length} (${point.lat.toFixed(2)}, ${point.lng.toFixed(2)})…` });
 
@@ -361,13 +384,15 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
     });
   }
 
-  sse(res, {
-    type: 'done',
-    results: allResults,
-    emailsFound: totalEmails,
-    gridPoints: points.length,
-    detailCallsUsed: totalDetailCalls, // so real spend is visible, not just guessed at
-    message: `Sweep complete. ${totalEmails} email${totalEmails !== 1 ? 's' : ''} found out of ${allResults.length} unique properties across ${points.length} grid points (${totalDetailCalls} detail lookups).`,
-  });
-  res.end();
+  if (!clientDisconnected) {
+    sse(res, {
+      type: 'done',
+      results: allResults,
+      emailsFound: totalEmails,
+      gridPoints: points.length,
+      detailCallsUsed: totalDetailCalls, // so real spend is visible, not just guessed at
+      message: `Sweep complete. ${totalEmails} email${totalEmails !== 1 ? 's' : ''} found out of ${allResults.length} unique properties across ${points.length} grid points (${totalDetailCalls} detail lookups).`,
+    });
+    res.end();
+  }
 });
