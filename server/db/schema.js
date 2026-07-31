@@ -1900,12 +1900,14 @@ John`
         name       TEXT NOT NULL,
         subject    TEXT NOT NULL,
         html       TEXT NOT NULL,
+        body_bg    TEXT NOT NULL DEFAULT 'white',
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
     console.log('✓ user_email_templates table ready');
   } catch(e) { console.error('user_email_templates table error:', e.message); }
+  try { db.exec(`ALTER TABLE user_email_templates ADD COLUMN body_bg TEXT NOT NULL DEFAULT 'white'`); } catch(e) {}
 
   // New columns for user_broadcasts added in v2 (targeting mode, language, ad-hoc count)
   for (const sql of [
@@ -1921,6 +1923,7 @@ John`
         id               INTEGER PRIMARY KEY AUTOINCREMENT,
         subject          TEXT NOT NULL,
         html             TEXT NOT NULL,
+        body_bg          TEXT NOT NULL DEFAULT 'white',
         filter_plan      TEXT    DEFAULT NULL,
         filter_verified  INTEGER DEFAULT NULL,
         recipient_count  INTEGER NOT NULL DEFAULT 0,
@@ -1934,6 +1937,7 @@ John`
     `);
     console.log('✓ user_broadcasts table ready');
   } catch(e) { console.error('user_broadcasts table error:', e.message); }
+  try { db.exec(`ALTER TABLE user_broadcasts ADD COLUMN body_bg TEXT NOT NULL DEFAULT 'white'`); } catch(e) {}
 
   // One-time backfill: populate stripe_payment_amount from total_price for paid bookings
   // where the widget payment path left the column NULL.
