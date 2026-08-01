@@ -109,8 +109,8 @@ function PreviewModal({ body, subject, footerNote, bodyBg, onClose }) {
 //   bodyField  – 'body' (Outreach) or 'html' (UserMailer)  [default: 'body']
 //   onClose    – called when the modal is closed
 //   onChanged  – called after any CRUD operation so parent can refresh dropdown
-//   onLoad     – optional (subject, body) → void; if provided, each template row
-//                shows a "Load" button that populates the composer and closes
+//   onLoad     – optional (subject, body, bodyBg) → void; if provided, each template
+//                row shows a "Load" button that populates the composer and closes
 //   footerNote – optional; passed to preview modal's email wrapper
 
 export default function TemplateManager({ apiBase, bodyField = 'body', onClose, onChanged, onLoad, footerNote }) {
@@ -191,7 +191,7 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
   }
 
   function handleLoad(t) {
-    onLoad?.(t.subject, t[bodyField] ?? '');
+    onLoad?.(t.subject, t[bodyField] ?? '', t.body_bg ?? 'white');
     onClose();
   }
 

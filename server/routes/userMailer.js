@@ -43,20 +43,20 @@ userMailerRouter.get('/templates', (req, res) => {
 });
 
 userMailerRouter.post('/templates', (req, res) => {
-  const { name, subject, html } = req.body;
+  const { name, subject, html, body_bg = 'white' } = req.body;
   if (!name?.trim())    return res.status(400).json({ error: 'name is required' });
   if (!subject?.trim()) return res.status(400).json({ error: 'subject is required' });
   if (!html?.trim())    return res.status(400).json({ error: 'html is required' });
 
   const result = db.prepare(
-    'INSERT INTO user_email_templates (name, subject, html) VALUES (?, ?, ?)'
-  ).run(name.trim(), subject.trim(), html);
+    'INSERT INTO user_email_templates (name, subject, html, body_bg) VALUES (?, ?, ?, ?)'
+  ).run(name.trim(), subject.trim(), html, body_bg);
 
   res.status(201).json(db.prepare('SELECT * FROM user_email_templates WHERE id = ?').get(result.lastInsertRowid));
 });
 
 userMailerRouter.put('/templates/:id', (req, res) => {
-  const { name, subject, html } = req.body;
+  const { name, subject, html, body_bg } = req.body;
   if (!db.prepare('SELECT id FROM user_email_templates WHERE id = ?').get(req.params.id)) {
     return res.status(404).json({ error: 'Template not found' });
   }
@@ -66,6 +66,7 @@ userMailerRouter.put('/templates/:id', (req, res) => {
   if (name    !== undefined) { updates.push('name = ?');    params.push(name.trim()); }
   if (subject !== undefined) { updates.push('subject = ?'); params.push(subject.trim()); }
   if (html    !== undefined) { updates.push('html = ?');    params.push(html); }
+  if (body_bg !== undefined) { updates.push('body_bg = ?'); params.push(body_bg); }
   if (updates.length === 0)  return res.json({ success: true });
 
   updates.push("updated_at = datetime('now')");
@@ -124,14 +125,14 @@ userMailerRouter.get('/preview-count', (req, res) => {
 // ── Send test email to SA's own address ──────────────────────────────────────
 
 userMailerRouter.post('/send-test', async (req, res) => {
-  const { subject, html } = req.body;
+  const { subject, html, body_bg = 'white' } = req.body;
   if (!subject?.trim()) return res.status(400).json({ error: 'subject is required' });
   if (!html?.trim())    return res.status(400).json({ error: 'html is required' });
 
   const saUser = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.userId);
   if (!saUser) return res.status(404).json({ error: 'Super admin user not found' });
 
-  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER });
+  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER, body_bg });
   console.log('[user-mailer/send-test] Sending to', saUser.email);
   try {
     await sendOutreachEmail({ to: saUser.email, subject: `[TEST] ${subject}`, html: wrappedHtml });
@@ -149,6 +150,7 @@ userMailerRouter.post('/send-test', async (req, res) => {
 userMailerRouter.post('/send', async (req, res) => {
   const {
     subject, html,
+    body_bg = 'white',
     mode = 'all',
     plans = [],
     langs = [],
@@ -208,12 +210,13 @@ userMailerRouter.post('/send', async (req, res) => {
   // Save broadcast record
   const broadcastResult = db.prepare(`
     INSERT INTO user_broadcasts
-      (subject, html, filter_mode, filter_plan, filter_plans, filter_langs,
+      (subject, html, body_bg, filter_mode, filter_plan, filter_plans, filter_langs,
        filter_verified, recipient_count, adhoc_count, status, sent_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sending', ?)
   `).run(
     subject.trim(),
     html,
+    body_bg,
     mode,
     mode === 'plan' && plans.length === 1 ? plans[0] : (mode === 'all' ? null : null),
     mode === 'plan'     ? JSON.stringify(plans) : null,
@@ -234,7 +237,7 @@ userMailerRouter.post('/send', async (req, res) => {
   });
 
   // Async send loop — wrap HTML once, reuse for all recipients
-  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER });
+  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER, body_bg });
   const trimmedSubject = subject.trim();
 
   (async () => {

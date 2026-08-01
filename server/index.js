@@ -71,7 +71,11 @@ app.post('/api/stripe/webhook',
 );
 
 // ── JSON body parser for all other routes ─────────────────────────────────────
-app.use(express.json());
+// limit matches nginx's client_max_body_size (15M) — without it Express
+// silently defaults to 100kb, which a modest CSV can exceed once JSON-escaped
+// (and further inflated ~33% if the frontend base64-encodes it). Raise both
+// together if client_max_body_size is ever increased again.
+app.use(express.json({ limit: '15mb' }));
 
 // ── Static files ──────────────────────────────────────────────────────────────
 // Uploaded images — must be before the React SPA catch-all

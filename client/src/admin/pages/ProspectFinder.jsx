@@ -33,6 +33,16 @@ const MIN_REVIEWS_OPTIONS = [
   { label: '10+', value: 10 },
 ];
 
+const COUNTRY_OPTIONS = [
+  { value: 'uk', label: 'United Kingdom' },
+  { value: 'fr', label: 'France' },
+  { value: 'es', label: 'Spain' },
+  { value: 'de', label: 'Germany' },
+  { value: 'nl', label: 'Netherlands' },
+  { value: 'be', label: 'Belgium' },
+  { value: 'ch', label: 'Switzerland' },
+];
+
 const CHAIN_KEYWORDS = [
   'premierinn', 'travelodge', 'hilton', 'marriott', 'ihg',
   'bestwestern', 'holidayinn', 'accor', 'radisson', 'novotel',
@@ -76,11 +86,19 @@ function DownloadIcon() {
 }
 
 export default function ProspectFinder() {
+  const [mode, setMode]             = useState('search'); // search | sweep
+
   const [area, setArea]             = useState('');
   const [types, setTypes]           = useState(new Set(PROPERTY_TYPES));
   const [radius, setRadius]         = useState(10000);
   const [language, setLanguage]     = useState('en');
   const [minReviews, setMinReviews] = useState(0);
+
+  // Sweep-only fields
+  const [country, setCountry]           = useState('uk');
+  const [spacingKm, setSpacingKm]       = useState(35);
+  const [radiusMeters, setRadiusMeters] = useState(20000);
+  const [maxPoints, setMaxPoints]       = useState('50'); // string so blank = full sweep
 
   const [phase, setPhase]           = useState('idle'); // idle | searching | done
   const [statusMsg, setStatusMsg]   = useState('');
@@ -88,6 +106,8 @@ export default function ProspectFinder() {
   const [results, setResults]       = useState([]);
   const [selected, setSelected]     = useState(new Set());
   const [error, setError]           = useState(null);
+  const [gridPoints, setGridPoints]         = useState(null);
+  const [detailCallsUsed, setDetailCallsUsed] = useState(null);
 
   function toggleType(t) {
     setTypes(prev => {
@@ -119,20 +139,38 @@ export default function ProspectFinder() {
   }
 
   async function runSearch() {
-    if (!area.trim() || types.size === 0) return;
+    if (mode === 'search') {
+      if (!area.trim() || types.size === 0) return;
+    } else if (types.size === 0) {
+      return;
+    }
 
     setPhase('searching');
     setError(null);
     setResults([]);
     setSelected(new Set());
     setProgress(null);
+    setGridPoints(null);
+    setDetailCallsUsed(null);
     setStatusMsg('Starting search…');
 
+    const endpoint = mode === 'search'
+      ? '/api/admin/prospect-finder/search'
+      : '/api/admin/prospect-finder/sweep';
+
+    const body = mode === 'search'
+      ? { area: area.trim(), propertyTypes: [...types], radius, language, minReviews }
+      : {
+          country, propertyTypes: [...types], spacingKm: Number(spacingKm), radiusMeters: Number(radiusMeters),
+          language, minReviews,
+          ...(maxPoints.trim() !== '' ? { maxPoints: Number(maxPoints) } : {}),
+        };
+
     try {
-      const res = await saApiFetch('/api/admin/prospect-finder/search', {
+      const res = await saApiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ area: area.trim(), propertyTypes: [...types], radius, language, minReviews }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -167,13 +205,16 @@ export default function ProspectFinder() {
             if (event.type === 'status') {
               setStatusMsg(event.message);
             } else if (event.type === 'progress') {
-              setStatusMsg(event.message);
+              // Sweep progress events report grid points, not a message string
+              setStatusMsg(event.message || `Grid point ${event.current} of ${event.total} — ${event.foundSoFar ?? 0} found so far, ${event.emailsSoFar ?? 0} emails`);
               setProgress({ current: event.current, total: event.total });
             } else if (event.type === 'done') {
               const r = event.results || [];
               setResults(r);
               setStatusMsg(event.message || 'Done.');
               setProgress({ current: r.length, total: r.length });
+              if (event.gridPoints != null) setGridPoints(event.gridPoints);
+              if (event.detailCallsUsed != null) setDetailCallsUsed(event.detailCallsUsed);
               // Auto-select all rows that aren't flagged as chains
               setSelected(new Set(
                 r.map((item, i) => !isChain(item.website) ? i : -1)
@@ -209,7 +250,7 @@ export default function ProspectFinder() {
       r.website || '',
       '',                // town — parsed from address manually after download
       '',                // region
-      '',                // country
+      mode === 'sweep' ? country : '', // country — known for a sweep (dropdown), not for a free-text area search
       language,
       'google_places',
       r.address || '',   // full Places address goes in notes for reference
@@ -223,7 +264,8 @@ export default function ProspectFinder() {
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = `prospects-${area.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+    const label = mode === 'search' ? area : COUNTRY_OPTIONS.find(c => c.value === country)?.label || country;
+    link.download = `prospects-${label.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(blobUrl);
   }
@@ -241,41 +283,122 @@ export default function ProspectFinder() {
         </p>
       </div>
 
+      {/* ── Mode tabs ────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#f1f5f9', borderRadius: 9, padding: 4, width: 'fit-content' }}>
+        {[
+          { key: 'search', label: 'Single Area' },
+          { key: 'sweep',  label: 'Country Sweep' },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => !isSearching && setMode(t.key)}
+            disabled={isSearching}
+            style={{
+              padding: '7px 18px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '0.85rem',
+              cursor: isSearching ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              background: mode === t.key ? '#fff' : 'transparent',
+              color: mode === t.key ? '#1a4710' : '#64748b',
+              boxShadow: mode === t.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Search form ──────────────────────────────────────────────────────── */}
       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 24, marginBottom: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={labelStyle}>Area</label>
-            <input
-              value={area}
-              onChange={e => setArea(e.target.value)}
-              placeholder="e.g. Cornwall, UK"
-              disabled={isSearching}
-              style={inputStyle}
-              onKeyDown={e => e.key === 'Enter' && runSearch()}
-            />
+        {mode === 'search' ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={labelStyle}>Area</label>
+              <input
+                value={area}
+                onChange={e => setArea(e.target.value)}
+                placeholder="e.g. Cornwall, UK"
+                disabled={isSearching}
+                style={inputStyle}
+                onKeyDown={e => e.key === 'Enter' && runSearch()}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Radius</label>
+                <select value={radius} onChange={e => setRadius(Number(e.target.value))} disabled={isSearching} style={selectStyle}>
+                  {RADIUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Language</label>
+                <select value={language} onChange={e => setLanguage(e.target.value)} disabled={isSearching} style={selectStyle}>
+                  {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Min reviews</label>
+                <select value={minReviews} onChange={e => setMinReviews(Number(e.target.value))} disabled={isSearching} style={selectStyle}>
+                  {MIN_REVIEWS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div>
-              <label style={labelStyle}>Radius</label>
-              <select value={radius} onChange={e => setRadius(Number(e.target.value))} disabled={isSearching} style={selectStyle}>
-                {RADIUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              <label style={labelStyle}>Country</label>
+              <select value={country} onChange={e => setCountry(e.target.value)} disabled={isSearching} style={selectStyle}>
+                {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            <div>
-              <label style={labelStyle}>Language</label>
-              <select value={language} onChange={e => setLanguage(e.target.value)} disabled={isSearching} style={selectStyle}>
-                {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' , gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Language</label>
+                <select value={language} onChange={e => setLanguage(e.target.value)} disabled={isSearching} style={selectStyle}>
+                  {LANGUAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Min reviews</label>
+                <select value={minReviews} onChange={e => setMinReviews(Number(e.target.value))} disabled={isSearching} style={selectStyle}>
+                  {MIN_REVIEWS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </div>
             <div>
-              <label style={labelStyle}>Min reviews</label>
-              <select value={minReviews} onChange={e => setMinReviews(Number(e.target.value))} disabled={isSearching} style={selectStyle}>
-                {MIN_REVIEWS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              <label style={labelStyle}>Grid spacing (km)</label>
+              <input
+                type="number" min="5" step="5"
+                value={spacingKm}
+                onChange={e => setSpacingKm(e.target.value)}
+                disabled={isSearching}
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Radius per point (m)</label>
+                <input
+                  type="number" min="1000" max="50000" step="1000"
+                  value={radiusMeters}
+                  onChange={e => setRadiusMeters(e.target.value)}
+                  disabled={isSearching}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Test run (max grid points) — leave blank for full sweep</label>
+                <input
+                  type="number" min="1" step="1"
+                  value={maxPoints}
+                  onChange={e => setMaxPoints(e.target.value)}
+                  placeholder="Full sweep"
+                  disabled={isSearching}
+                  style={inputStyle}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div style={{ marginBottom: 20 }}>
           <label style={labelStyle}>Property types</label>
@@ -297,17 +420,17 @@ export default function ProspectFinder() {
 
         <button
           onClick={runSearch}
-          disabled={isSearching || !area.trim() || types.size === 0}
+          disabled={isSearching || (mode === 'search' && !area.trim()) || types.size === 0}
           style={{
             width: '100%', padding: '11px 0', borderRadius: 8, border: 'none', fontWeight: 700,
             fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: (isSearching || !area.trim() || types.size === 0) ? '#a3bfa3' : '#1a4710',
+            background: (isSearching || (mode === 'search' && !area.trim()) || types.size === 0) ? '#a3bfa3' : '#1a4710',
             color: '#fff',
-            cursor: (isSearching || !area.trim() || types.size === 0) ? 'not-allowed' : 'pointer',
+            cursor: (isSearching || (mode === 'search' && !area.trim()) || types.size === 0) ? 'not-allowed' : 'pointer',
           }}
         >
           <SearchIcon />
-          {isSearching ? 'Searching…' : 'Find Properties'}
+          {isSearching ? (mode === 'search' ? 'Searching…' : 'Sweeping…') : (mode === 'search' ? 'Find Properties' : 'Run Sweep')}
         </button>
       </div>
 
@@ -343,6 +466,12 @@ export default function ProspectFinder() {
               <span style={{ color: '#15803d', fontWeight: 700 }}> · {emailsFound} emails found</span>
               {chainCount > 0 && <span style={{ color: '#b45309' }}> · {chainCount} possible chain{chainCount !== 1 ? 's' : ''} flagged</span>}
               {selected.size > 0 && <span style={{ color: '#1a4710' }}> · {selected.size} selected</span>}
+              {gridPoints != null && <span style={{ color: '#64748b' }}> · {gridPoints} grid points</span>}
+              {detailCallsUsed != null && (
+                <span style={{ color: '#64748b' }} title="Places Details API calls used by this sweep — check spend in Google Cloud Console">
+                  {' '}· {detailCallsUsed} detail lookups used
+                </span>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <button
