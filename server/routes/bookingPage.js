@@ -220,6 +220,74 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
 </div>`;
 }
 
+// Unit mode — reuses WP's full-width showcase section layout (the same
+// ws-room markup and CSS as wpAlternatingShowcase above), with IR's
+// per-unit availability calendar and a Book this unit button added into
+// each section, since a unit — unlike a WP room-type — is independently
+// bookable. Callers must already filter the passed-in units to rows
+// where parent_unit_id is null; internal rooms never get their own
+// section here.
+function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan) {
+  if (!units || units.length === 0) return '';
+
+  const rows = units.map((unit, index) => {
+    const photos    = photosByRoom?.[unit.id] ?? [];
+    const isEven    = index % 2 === 1;
+    const primary   = photos[0] ?? null;
+    const amenities = (unit.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
+    const typeLabel = unit.type && unit.type !== 'other'
+      ? unit.type.charAt(0).toUpperCase() + unit.type.slice(1)
+      : '';
+    const cid   = 'unit-' + unit.id;
+    const price = Number(unit.price_per_night ?? 0).toFixed(0);
+
+    const mainImgHtml = primary
+      ? `<img src="/uploads/rooms/${esc(primary.filename)}" alt="${esc(unit.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
+      : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
+
+    const thumbsHtml = photos.length > 1
+      ? `<div class="ws-thumbs">${
+          photos.map((photo, i) =>
+            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(photo.filename)}',this)"><img src="/uploads/rooms/${esc(photo.thumb_filename || photo.filename)}" alt="${esc(unit.name)} ${i + 1}" loading="lazy" /></div>`
+          ).join('')
+        }</div>`
+      : '';
+
+    const capacityHtml = unit.capacity
+      ? `<span class="ws-amenity"><i class="ti ti-users"></i> <span data-i18n="page.upTo">Up to</span> ${esc(String(unit.capacity))} <span data-i18n="page.guests">guests</span></span>`
+      : '';
+    const amenityChips = amenities.map(a => `<span class="ws-amenity">${esc(fmtAmenity(a))}</span>`).join('');
+    const descHtml      = unit.description ? `<p class="ws-desc">${esc(unit.description)}</p>` : '';
+
+    return `
+<div class="ws-room">
+  <h3 class="ws-room-title">${esc(unit.name)}</h3>
+  ${typeLabel ? `<div class="ws-room-type">${esc(typeLabel)}</div>` : ''}
+  <div class="ws-photo-area${isEven ? ' ws-reverse' : ''}">
+    <div class="ws-main-photo" id="${esc(cid)}">
+      ${mainImgHtml}
+    </div>
+    ${photos.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
+  </div>
+  <div class="ws-details">
+    <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
+    ${capacityHtml || amenityChips ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}</div>` : ''}
+    ${descHtml}
+    ${roomCalendarSection(unit.id)}
+    <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
+    <button class="btn-book" onclick="${isPaidPlan ? 'openWidget(' + unit.id + ')' : 'scrollToEnquiry()'}">Book this unit</button>
+  </div>
+  <div class="ws-divider"></div>
+</div>`;
+  }).join('');
+
+  return `
+<div class="ws-rooms">
+  <div class="ws-section-title">Our Units</div>
+  ${rows}
+</div>`;
+}
+
 function showcaseRoomCard(room, palette, photos) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const typeLabel = room.type
@@ -328,6 +396,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
   const isWholeProperty = property.rental_type === 'whole_property';
+  const isUnitsMode     = property.rental_type === 'units';
   const isDemo = property.is_demo === 1;
 
   const availMapsByRoom = {};
@@ -545,6 +614,11 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     ${propertyCalendarSection()}
   </div>
 </section>`;
+  } else if (isUnitsMode) {
+    // Each unit carries its own calendar inline (see generateUnitsPage),
+    // so unlike WP mode there is no separate top-level availability
+    // section here.
+    roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan);
   } else {
     roomsSection = rooms.length > 0 ? `
 <section class="rooms">
@@ -2411,8 +2485,11 @@ bookingPageRouter.get('/:identifier', (req, res) => {
 <p style="color:#6b7280">This booking link may have expired or the URL is incorrect.</p></div></body></html>`);
     }
 
+    // parent_unit_id IS NULL is a no-op for IR/WP rows (never set) and
+    // excludes a unit's internal rooms from the public booking page —
+    // only the unit itself is independently bookable.
     const rooms = db.prepare(
-      `SELECT * FROM rooms WHERE property_id = ? AND status != 'maintenance' ORDER BY price_per_night ASC`
+      `SELECT * FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL ORDER BY price_per_night ASC`
     ).all(property.id);
 
     const bookings = db.prepare(`
