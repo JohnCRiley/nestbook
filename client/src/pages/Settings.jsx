@@ -3693,126 +3693,133 @@ function DepositSection({ form, onChange, onToggle, t, currencySymbol }) {
   const balancePreview = Math.round((exampleTotal - depositPreview) * 100) / 100;
 
   return (
-    <div className="settings-section">
-      <h3 className="settings-section-title">{t('settings.depositManagement')}</h3>
-      <p className="settings-section-desc">{t('settings.depositHint')}</p>
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.depositManagement')}</h2>
+        <p>{t('settings.depositHint')}</p>
+      </div>
+      <div className="settings-card-body">
+        <div className="settings-form">
 
-      <FormField label={t('settings.depositEnabled')} hint={t('settings.depositEnabledHint')}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={e => onToggle('deposit_enabled', e.target.checked ? 1 : 0)}
-          />
-          <span style={{ fontSize: '0.875rem' }}>{t('settings.depositEnabled')}</span>
-        </label>
-      </FormField>
-
-      {enabled && (
-        <>
-          <FormField label={t('settings.depositType')}>
-            <select name="deposit_type" className="form-control" value={type} onChange={onChange}>
-              <option value="fixed">Fixed amount</option>
-              <option value="percentage">Percentage of total</option>
-              <option value="full">Full payment upfront</option>
-            </select>
-          </FormField>
-
-          {type === 'percentage' && (
-            <FormField label={t('settings.depositPercentage')}>
-              <input
-                type="number"
-                name="deposit_percentage"
-                className="form-control"
-                min="1" max="99" step="1"
-                value={form.deposit_percentage ?? 30}
-                onChange={onChange}
-                style={{ width: 100 }}
-              />
-            </FormField>
-          )}
-
-          {type === 'fixed' && (
-            <FormField label={`${t('settings.depositFixedAmount')} (${currencySymbol})`}>
-              <input
-                type="number"
-                name="deposit_fixed_amount"
-                className="form-control"
-                min="0" step="0.01"
-                value={form.deposit_fixed_amount ?? 0}
-                onChange={onChange}
-                style={{ width: 140 }}
-              />
-            </FormField>
-          )}
-
-          {type !== 'full' && (
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-              Example for a {currencySymbol}{exampleTotal} booking: deposit {currencySymbol}{depositPreview.toFixed(2)} · balance {currencySymbol}{balancePreview.toFixed(2)}
-            </div>
-          )}
-
-          {type === 'full' && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: 12 }}>
-              The full booking amount is required before arrival.
-              Once marked received, the booking will show as paid in full.
-            </p>
-          )}
-
-          <FormField label={t('settings.balanceDue')}>
-            <select name="deposit_balance_due" className="form-control" value={form.deposit_balance_due ?? 'checkin'} onChange={onChange}>
-              <option value="checkin">On check-in day</option>
-              <option value="days_before">Days before check-in</option>
-            </select>
-          </FormField>
-
-          {form.deposit_balance_due === 'days_before' && (
-            <FormField label={t('settings.balanceDueDays')}>
-              <input
-                type="number"
-                name="deposit_balance_days"
-                className="form-control"
-                min="1" max="180"
-                value={form.deposit_balance_days ?? 7}
-                onChange={onChange}
-                style={{ width: 100 }}
-              />
-            </FormField>
-          )}
-
-          <FormField label={t('settings.depositRefundPolicy')}>
+          <FormField label={t('settings.depositEnabled')} hint={t('settings.depositEnabledHint')}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
               <input
                 type="checkbox"
-                checked={!!form.deposit_refundable}
-                onChange={e => onToggle('deposit_refundable', e.target.checked ? 1 : 0)}
+                checked={enabled}
+                onChange={e => onToggle('deposit_enabled', e.target.checked ? 1 : 0)}
               />
-              <span style={{ fontSize: '0.875rem' }}>Deposit is refundable on cancellation</span>
+              <span style={{ fontSize: '0.875rem' }}>{t('settings.depositEnabled')}</span>
             </label>
           </FormField>
 
-          <FormField label={t('settings.depositEmails')}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: '0.875rem' }}>
-                <input
-                  type="checkbox"
-                  checked={!!form.deposit_auto_email}
-                  onChange={e => onToggle('deposit_auto_email', e.target.checked ? 1 : 0)}
-                />
-                Send deposit request email automatically when booking is approved
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: '0.875rem' }}>
-                <input
-                  type="checkbox"
-                  checked={!!form.deposit_balance_auto_email}
-                  onChange={e => onToggle('deposit_balance_auto_email', e.target.checked ? 1 : 0)}
-                />
-                Send balance due reminder email automatically
-              </label>
-            </div>
-          </FormField>
-        </>
-      )}
+          {enabled && (
+            <>
+              <FormField label={t('settings.depositType')}>
+                <select name="deposit_type" className="form-control" value={type} onChange={onChange}>
+                  <option value="fixed">Fixed amount</option>
+                  <option value="percentage">Percentage of total</option>
+                  <option value="full">Full payment upfront</option>
+                </select>
+              </FormField>
+
+              {type === 'percentage' && (
+                <FormField label={t('settings.depositPercentage')}>
+                  <input
+                    type="number"
+                    name="deposit_percentage"
+                    className="form-control"
+                    min="1" max="99" step="1"
+                    value={form.deposit_percentage ?? 30}
+                    onChange={onChange}
+                    style={{ width: 100 }}
+                  />
+                </FormField>
+              )}
+
+              {type === 'fixed' && (
+                <FormField label={`${t('settings.depositFixedAmount')} (${currencySymbol})`}>
+                  <input
+                    type="number"
+                    name="deposit_fixed_amount"
+                    className="form-control"
+                    min="0" step="0.01"
+                    value={form.deposit_fixed_amount ?? 0}
+                    onChange={onChange}
+                    style={{ width: 140 }}
+                  />
+                </FormField>
+              )}
+
+              {type !== 'full' && (
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                  Example for a {currencySymbol}{exampleTotal} booking: deposit {currencySymbol}{depositPreview.toFixed(2)} · balance {currencySymbol}{balancePreview.toFixed(2)}
+                </div>
+              )}
+
+              {type === 'full' && (
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 0, marginBottom: 12 }}>
+                  The full booking amount is required before arrival.
+                  Once marked received, the booking will show as paid in full.
+                </p>
+              )}
+
+              <FormField label={t('settings.balanceDue')}>
+                <select name="deposit_balance_due" className="form-control" value={form.deposit_balance_due ?? 'checkin'} onChange={onChange}>
+                  <option value="checkin">On check-in day</option>
+                  <option value="days_before">Days before check-in</option>
+                </select>
+              </FormField>
+
+              {form.deposit_balance_due === 'days_before' && (
+                <FormField label={t('settings.balanceDueDays')}>
+                  <input
+                    type="number"
+                    name="deposit_balance_days"
+                    className="form-control"
+                    min="1" max="180"
+                    value={form.deposit_balance_days ?? 7}
+                    onChange={onChange}
+                    style={{ width: 100 }}
+                  />
+                </FormField>
+              )}
+
+              <FormField label={t('settings.depositRefundPolicy')}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!form.deposit_refundable}
+                    onChange={e => onToggle('deposit_refundable', e.target.checked ? 1 : 0)}
+                  />
+                  <span style={{ fontSize: '0.875rem' }}>Deposit is refundable on cancellation</span>
+                </label>
+              </FormField>
+
+              <FormField label={t('settings.depositEmails')}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: '0.875rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!form.deposit_auto_email}
+                      onChange={e => onToggle('deposit_auto_email', e.target.checked ? 1 : 0)}
+                    />
+                    Send deposit request email automatically when booking is approved
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: '0.875rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!form.deposit_balance_auto_email}
+                      onChange={e => onToggle('deposit_balance_auto_email', e.target.checked ? 1 : 0)}
+                    />
+                    Send balance due reminder email automatically
+                  </label>
+                </div>
+              </FormField>
+            </>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 }
