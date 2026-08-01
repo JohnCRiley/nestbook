@@ -249,7 +249,10 @@ propertiesRouter.put('/:id', (req, res) => {
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal'];
-    const VALID_RENTAL_TYPES = ['rooms', 'whole_property'];
+    // 'units' isn't exposed as a Settings UI option yet — this is a safety
+    // net so the endpoint preserves it correctly if it's ever sent, rather
+    // than silently discarding it to a default.
+    const VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     // Lock rental_type once the user has completed onboarding.
     // Preserve the existing value if the field is absent from the body.

@@ -435,12 +435,16 @@ export default function Settings() {
 
   const handlePropertyTypeChange = (type) => {
     const suggestWhole = WHOLE_PROPERTY_TYPES.has(type);
+    // Unit mode isn't one of this dropdown's two options — leave
+    // rental_type alone when it's already 'units' rather than silently
+    // downgrading it to 'rooms'/'whole_property' on an unrelated field change.
+    const isUnits = form.rental_type === 'units';
     setForm((f) => ({
       ...f,
       type,
-      rental_type: suggestWhole ? 'whole_property' : 'rooms',
+      rental_type: isUnits ? f.rental_type : (suggestWhole ? 'whole_property' : 'rooms'),
     }));
-    if (suggestWhole) {
+    if (!isUnits && suggestWhole) {
       setRentalTypeHint('We\'ve set this to "Whole property" for this property type. Change it if needed.');
     } else {
       setRentalTypeHint(null);
