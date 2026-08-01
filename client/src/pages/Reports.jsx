@@ -168,6 +168,14 @@ function ReportsContent() {
   }
 
   function fieldLabel(f) {
+    // Same rule as the guest CSV export below: only relabel Room name to
+    // Unit name when scoped to a single units-mode property — this report
+    // can span every property at once, where a static label can't be
+    // correct for every row.
+    if (f === 'room') {
+      const filteredProperty = propFilter !== 'all' ? properties.find(p => String(p.id) === String(propFilter)) : null;
+      if (filteredProperty?.rental_type === 'units') return 'Unit name';
+    }
     return t(`reportField_${f}`);
   }
 
@@ -887,7 +895,12 @@ ${plSection}
 
   function downloadGuestCSV() {
     if (!guestResults) return;
-    const headers = ['Name', 'Email', 'Check-in', 'Check-out', 'Room'];
+    // Only relabel when scoped to a single units-mode property — this export
+    // can span every property at once, where a single static header can't
+    // be correct for every row.
+    const filteredProperty = propFilter !== 'all' ? properties.find(p => String(p.id) === String(propFilter)) : null;
+    const roomHeader = filteredProperty?.rental_type === 'units' ? 'Unit' : 'Room';
+    const headers = ['Name', 'Email', 'Check-in', 'Check-out', roomHeader];
     const rows = guestResults.map(g =>
       [`"${g.first_name || ''} ${g.last_name || ''}"`, `"${g.email || ''}"`,
        `"${g.check_in_date}"`, `"${g.check_out_date}"`, `"${g.room_name || ''}"`].join(',')

@@ -83,7 +83,7 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
               {t(`roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`)}
             </span>
           </div>
-          <div className="panel-booking-ref" style={{ marginTop: 8 }}>{t('roomRef')}{room.id}</div>
+          <div className="panel-booking-ref" style={{ marginTop: 8 }}>{property?.rental_type === 'units' ? 'Unit #' : t('roomRef')}{room.id}</div>
         </div>
 
         {/* Scrollable body */}
@@ -92,11 +92,11 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
             {mode === 'view'
               ? <ViewMode room={room} bookings={bookings} today={today}
                   onEdit={() => setMode('edit')} onBook={onBook} t={t} locale={locale}
-                  effectiveStatus={effectiveStatus} />
+                  effectiveStatus={effectiveStatus} property={property} />
               : <EditMode room={room}
                   onCancel={() => setMode('view')}
                   onSaved={(updated) => { onRoomUpdated(updated); setMode('view'); }}
-                  onDeleted={() => onRoomDeleted(room.id)} t={t} locale={locale} />
+                  onDeleted={() => onRoomDeleted(room.id)} t={t} locale={locale} property={property} />
             }
           </div>
         </div>
@@ -181,7 +181,7 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
 
           <div className="panel-section">
             <div className="panel-section-title" style={{ marginBottom: 10 }}>{t('rooms.photos')}</div>
-            <RoomPhotosSection room={room} plan={plan} />
+            <RoomPhotosSection room={room} plan={plan} isUnit={false} />
           </div>
 
           <div className="panel-section">
@@ -259,11 +259,14 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
 
 // ── View mode ─────────────────────────────────────────────────────────────────
 
-function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveStatus }) {
+function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveStatus, property }) {
   const { currencySymbol } = useLocale();
   const amenities = parseAmenities(room.amenities);
   const upcoming  = upcomingBookings(bookings, today);
   const roomTypeKey = `roomType${room.type.charAt(0).toUpperCase() + room.type.slice(1)}`;
+  // Unit mode — hardcoded (not yet in the i18n catalogue), matching the
+  // plain-English precedent already set elsewhere for Un mode.
+  const isUnit = property?.rental_type === 'units';
 
   const activeBooking = bookings.find((b) =>
     b.status !== 'cancelled' &&
@@ -276,7 +279,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
     <>
       {/* Details */}
       <div className="panel-section">
-        <div className="panel-section-title">{t('roomDetailsTitle')}</div>
+        <div className="panel-section-title">{isUnit ? 'Unit Details' : t('roomDetailsTitle')}</div>
         <PanelRow label={t('typeLabel')}    value={t(roomTypeKey)} />
         <PanelRow label={t('capacity')}     value={t('guestWord')(room.capacity)} />
         <PanelRow label={t('priceLabel')}   value={`${currencySymbol}${room.price_per_night}${t('perNight')}`} />
@@ -338,7 +341,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
       <div className="panel-actions">
         {!activeBooking && room.status === 'available' && (
           <button className="btn-panel-primary" onClick={onBook}>
-            {t('bookThisRoom')}
+            {isUnit ? 'Book this unit' : t('bookThisRoom')}
           </button>
         )}
         <button
@@ -346,7 +349,7 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
           onClick={onEdit}
           style={{ border: '1.5px solid var(--border)' }}
         >
-          {t('editRoom')}
+          {isUnit ? 'Edit Unit' : t('editRoom')}
         </button>
       </div>
     </>
@@ -355,9 +358,12 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
 
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
-function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
+function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
   const { currencySymbol } = useLocale();
   const plan = usePlan();
+  // Unit mode — hardcoded (not yet in the i18n catalogue), matching the
+  // plain-English precedent already set elsewhere for Un mode.
+  const isUnit = property?.rental_type === 'units';
   const [form, setForm] = useState({
     name:               room.name               ?? '',
     type:               room.type               ?? 'double',
@@ -379,7 +385,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSave = async () => {
-    if (!form.name.trim()) { setError(t('roomNameLabel') + ' is required.'); return; }
+    if (!form.name.trim()) { setError((isUnit ? 'Unit Name' : t('roomNameLabel')) + ' is required.'); return; }
     if (!form.price_per_night || isNaN(Number(form.price_per_night))) {
       setError(t('pricePerNightLabel') + ' is required.');
       return;
@@ -451,12 +457,12 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
   return (
     <>
       <div className="panel-section">
-        <div className="panel-section-title">{t('editRoom')}</div>
+        <div className="panel-section-title">{isUnit ? 'Edit Unit' : t('editRoom')}</div>
 
         {error && <div className="form-error" style={{ marginBottom: 14 }}>{error}</div>}
 
         <div className="panel-edit-form">
-          <Field label={t('roomNameLabel')} name="name" value={form.name} onChange={handleChange} />
+          <Field label={isUnit ? 'Unit Name' : t('roomNameLabel')} name="name" value={form.name} onChange={handleChange} />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div className="panel-field">
@@ -493,14 +499,18 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
               />
               <span className="panel-field-label" style={{ marginBottom: 0 }}>{t('breakfastIncludedLabel')}</span>
             </label>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>{t('roomBreakfastSubtitle')}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>
+              {isUnit ? 'Advertise breakfast as included in the unit rate' : t('roomBreakfastSubtitle')}
+            </div>
             {!!form.breakfast_included && (
               <div style={{
                 marginTop: 6, padding: '6px 10px', borderRadius: 5,
                 background: '#fef3c7', border: '1px solid #fbbf24',
                 fontSize: '0.75rem', color: '#92400e',
               }}>
-                {t('roomBreakfastWarn')}
+                {isUnit
+                  ? 'Breakfast will appear as included for all guests in this unit. This can be overridden per booking.'
+                  : t('roomBreakfastWarn')}
               </div>
             )}
           </div>
@@ -524,21 +534,23 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
           </div>
 
           <div className="panel-field">
-            <label className="panel-field-label">Room description (optional)</label>
+            <label className="panel-field-label">{isUnit ? 'Unit description (optional)' : 'Room description (optional)'}</label>
             <textarea
               name="description"
               className="panel-field-input"
               rows={2}
               value={form.description}
               onChange={handleChange}
-              placeholder="Describe this room — the view, the bed, what makes it special..."
+              placeholder={isUnit
+                ? 'Describe this unit — the space, the view, what makes it special...'
+                : 'Describe this room — the view, the bed, what makes it special...'}
               style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 'inherit' }}
             />
           </div>
         </div>
       </div>
 
-      <RoomPhotosSection room={room} plan={plan} />
+      <RoomPhotosSection room={room} plan={plan} isUnit={isUnit} />
 
       <div className="panel-actions">
         <button className="btn-panel-primary" onClick={handleSave} disabled={saving || deleting}>
@@ -568,16 +580,18 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
               fontFamily: 'inherit',
             }}
           >
-            {t('deleteThisRoom')}
+            {isUnit ? 'Delete this unit' : t('deleteThisRoom')}
           </button>
         )}
       </div>
 
       <ConfirmModal
         isOpen={showPreDeleteModal}
-        title={t('deleteRoomTitle')}
-        message={t('deleteRoomConfirm')(room.name)}
-        confirmLabel={t('deleteRoomBtn')}
+        title={isUnit ? 'Delete unit?' : t('deleteRoomTitle')}
+        message={isUnit
+          ? `Are you sure you want to delete ${room.name}? This cannot be undone.`
+          : t('deleteRoomConfirm')(room.name)}
+        confirmLabel={isUnit ? 'Delete unit' : t('deleteRoomBtn')}
         cancelLabel={t('cancel')}
         variant="danger"
         onConfirm={handleDeleteConfirmed}
@@ -586,9 +600,11 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t }) {
 
       <ConfirmModal
         isOpen={showDeleteModal}
-        title={t('deleteRoomTitle')}
-        message={t('deleteRoomWithBookings')(deleteBookingCount)}
-        confirmLabel={deleting ? t('deleting') : t('deleteRoomBtn')}
+        title={isUnit ? 'Delete unit?' : t('deleteRoomTitle')}
+        message={isUnit
+          ? `This unit has ${deleteBookingCount} past ${deleteBookingCount === 1 ? 'booking' : 'bookings'}. Deleting it will keep the booking records but remove the unit. This cannot be undone.`
+          : t('deleteRoomWithBookings')(deleteBookingCount)}
+        confirmLabel={deleting ? t('deleting') : (isUnit ? 'Delete unit' : t('deleteRoomBtn'))}
         cancelLabel={t('cancel')}
         variant="danger"
         busy={deleting}
@@ -626,7 +642,7 @@ function ScheduleRow({ booking: b, t, locale }) {
 
 // ── RoomPhotosSection ─────────────────────────────────────────────────────────
 
-function RoomPhotosSection({ room, plan }) {
+function RoomPhotosSection({ room, plan, isUnit = false }) {
   const [photos,    setPhotos]    = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error,     setError]     = useState(null);
@@ -674,7 +690,7 @@ function RoomPhotosSection({ room, plan }) {
   return (
     <div className="panel-section">
       <div className="panel-section-title" style={{ marginBottom: 10 }}>
-        Room photos
+        {isUnit ? 'Unit photos' : 'Room photos'}
         <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 8 }}>
           {photos.length} of {limit} used — {plan} plan
         </span>
@@ -687,7 +703,7 @@ function RoomPhotosSection({ room, plan }) {
           <div key={photo.id} style={{ position: 'relative', width: 80, height: 80 }}>
             <img
               src={photo.url}
-              alt="Room photo"
+              alt={isUnit ? 'Unit photo' : 'Room photo'}
               style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }}
             />
             <button
@@ -735,8 +751,8 @@ function RoomPhotosSection({ room, plan }) {
       {photos.length >= limit && plan !== 'multi' && (
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
           {plan === 'free'
-            ? 'Upgrade to Pro for up to 5 photos per room'
-            : 'Upgrade to Multi for up to 10 photos per room'}
+            ? `Upgrade to Pro for up to 5 photos per ${isUnit ? 'unit' : 'room'}`
+            : `Upgrade to Multi for up to 10 photos per ${isUnit ? 'unit' : 'room'}`}
         </p>
       )}
       <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '4px 0 0' }}>

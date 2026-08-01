@@ -962,7 +962,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
       <div className="panel-section">
         <div className="panel-section-title">{t('sectionBooking')}</div>
-        <PanelRow label={t('labelRoom')}     value={b.room_name ? `${b.room_name} (${b.room_type ?? ''})` : t('roomDeleted')} />
+        <PanelRow label={property?.rental_type === 'units' ? 'Unit' : t('labelRoom')}     value={b.room_name ? `${b.room_name} (${b.room_type ?? ''})` : t('roomDeleted')} />
         <PanelRow label={t('moCinLbl')}      value={formatDateMedium(b.check_in_date, locale)} />
         <PanelRow label={t('moCoutLbl')}     value={formatDateMedium(b.check_out_date, locale)} />
         <PanelRow label={t('labelDuration')} value={t('nightWord')(nights)} />
@@ -1624,9 +1624,9 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
 
           {rooms.length > 0 && (
             <div className="panel-field">
-              <label className="panel-field-label">{t('moRoomLbl')}</label>
+              <label className="panel-field-label">{property?.rental_type === 'units' ? 'Unit' : t('moRoomLbl')}</label>
               <select name="room_id" className="panel-field-input" value={form.room_id} onChange={handleChange}>
-                <option value="">{t('selectRoom')}</option>
+                <option value="">{property?.rental_type === 'units' ? 'Select a unit…' : t('selectRoom')}</option>
                 {rooms.filter((r) => r.status !== 'maintenance').map((r) => (
                   <option key={r.id} value={r.id}>{r.name} ({r.type})</option>
                 ))}

@@ -30,6 +30,11 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const { currencySymbol, property, fmtCurrency } = useLocale();
   const t = useT();
   const isWP = property?.rental_type === 'whole_property';
+  // Unit mode — hardcoded (not yet in the i18n catalogue), matching the
+  // plain-English precedent already set elsewhere for Un mode.
+  const isUnitsProp = property?.rental_type === 'units';
+  const priceBreakdownLabel = (nights, rate) =>
+    isUnitsProp ? `Unit (${nights} × ${rate})` : t('nbPriceBreakdownRoom')(nights, rate);
 
   const [form, setForm] = useState({
     ...EMPTY,
@@ -461,7 +466,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
 
             {/* ── Section 3: Room / Property ──────────────────────────────── */}
             <div className="nbm-section">
-              <div className="nbm-section-title">{isWP ? t('booking.wholeProperty') : t('nbSectionRoom')}</div>
+              <div className="nbm-section-title">{isWP ? t('booking.wholeProperty') : (property?.rental_type === 'units' ? 'Unit' : t('nbSectionRoom'))}</div>
               <div className="form-grid">
                 <div className="form-group span-2">
                   {isWP ? (
@@ -499,7 +504,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                         value={form.roomId}
                         onChange={set('roomId')}
                       >
-                        <option value="">{t('selectRoom')}</option>
+                        <option value="">{property?.rental_type === 'units' ? 'Select a unit…' : t('selectRoom')}</option>
                         {availableRooms.map(r => (
                           <option key={r.id} value={r.id}>
                             {r.name} ({r.type}) · {t('guestWord')(r.capacity)} · {currencySymbol}{r.price_per_night}{t('perNight')}
@@ -731,7 +736,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                             padding: '7px 12px', borderBottom: '1px solid var(--border)',
                           }}>
                             <span style={{ color: 'var(--text-secondary)' }}>
-                              {t('nbPriceBreakdownRoom')(t('nightWord')(seg.nights), `${currencySymbol}${seg.ratePerNight.toFixed(2)}`)}
+                              {priceBreakdownLabel(t('nightWord')(seg.nights), `${currencySymbol}${seg.ratePerNight.toFixed(2)}`)}
                               {seg.periodName && (
                                 <span style={{
                                   marginLeft: 7, fontSize: '0.75rem', fontWeight: 600,
@@ -751,7 +756,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                           padding: '7px 12px', borderBottom: '1px solid var(--border)',
                         }}>
                           <span style={{ color: 'var(--text-secondary)' }}>
-                            {t('nbPriceBreakdownRoom')(t('nightWord')(nightsCount), `${currencySymbol}${(selectedRoom?.price_per_night ?? 0).toFixed(2)}`)}
+                            {priceBreakdownLabel(t('nightWord')(nightsCount), `${currencySymbol}${(selectedRoom?.price_per_night ?? 0).toFixed(2)}`)}
                           </span>
                           <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>{fmtCurrency(roomSubtotal)}</span>
                         </div>

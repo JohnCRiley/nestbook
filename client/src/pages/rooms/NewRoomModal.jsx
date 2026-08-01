@@ -38,7 +38,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError(t('roomNameRequired')); return; }
+    if (!form.name.trim()) { setError(isUnitTopLevel ? 'Unit name is required.' : t('roomNameRequired')); return; }
     if (!isWP && (!form.price_per_night || isNaN(Number(form.price_per_night)))) {
       setError(t('priceRequired'));
       return;
@@ -95,7 +95,8 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
   // Unit mode top-level create (a unit itself, not an internal room) gets its
   // own plain-English label — not yet in the i18n catalogue (UI isn't
   // customer-facing at this stage; flagged here for translation later).
-  const modalTitle = (property?.rental_type === 'units' && !parentUnitId)
+  const isUnitTopLevel = property?.rental_type === 'units' && !parentUnitId;
+  const modalTitle = isUnitTopLevel
     ? 'Add Unit'
     : (isWP ? t('rooms.addRoom') : t('moRoomTitle'));
 
@@ -115,7 +116,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
             <div className="form-grid">
               <div className="form-group span-2">
                 <label className="form-label">
-                  {isWP ? 'Room name' : t('roomNameLabel')} *
+                  {isWP ? 'Room name' : (isUnitTopLevel ? 'Unit Name' : t('roomNameLabel'))} *
                 </label>
                 <input name="name" className="form-control" value={form.name}
                   onChange={handleChange} required autoFocus
@@ -217,7 +218,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                     />
                     <span className="form-label" style={{ marginBottom: 0 }}>{t('breakfastIncludedLabel')}</span>
                   </label>
-                  <span className="form-hint">{t('roomBreakfastSubtitle')}</span>
+                  <span className="form-hint">{isUnitTopLevel ? 'Advertise breakfast as included in the unit rate' : t('roomBreakfastSubtitle')}</span>
                 </div>
               )}
 
@@ -244,7 +245,9 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                   value={form.description} onChange={handleChange}
                   placeholder={isWP
                     ? 'Describe this bedroom — the bed size, the view, en-suite…'
-                    : 'Describe this room — the view, the bed, what makes it special...'}
+                    : (isUnitTopLevel
+                        ? 'Describe this unit — the space, the view, what makes it special...'
+                        : 'Describe this room — the view, the bed, what makes it special...')}
                   style={{ resize: 'vertical' }} />
               </div>
             </div>

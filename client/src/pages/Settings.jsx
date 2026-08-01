@@ -1885,6 +1885,7 @@ export default function Settings() {
           currencySymbol={currencySymbol}
           period={editingRatePeriod}
           propertyId={activeProperty?.id}
+          property={activeProperty}
           rooms={rooms}
           onClose={() => setShowRatePeriodModal(false)}
           onSave={(saved) => {
@@ -3168,7 +3169,7 @@ function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit,
 
 // ── RatePeriodModal ───────────────────────────────────────────────────────────
 
-function RatePeriodModal({ t, currencySymbol, period, propertyId, rooms, onClose, onSave }) {
+function RatePeriodModal({ t, currencySymbol, period, propertyId, property, rooms, onClose, onSave }) {
   const initialRoomRates = {};
   for (const rr of (period?.roomRates ?? [])) {
     initialRoomRates[rr.room_id] = String(rr.amount);
@@ -3305,7 +3306,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, rooms, onClose
                   marginBottom: 8, paddingBottom: 6,
                   borderBottom: '2px solid var(--border)',
                 }}>
-                  Room Pricing
+                  {property?.rental_type === 'units' ? 'Unit Pricing' : 'Room Pricing'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   {/* Header row */}
@@ -3313,7 +3314,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, rooms, onClose
                     display: 'grid', gridTemplateColumns: '1fr 90px 130px',
                     padding: '4px 6px', fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8',
                   }}>
-                    <span>Room</span>
+                    <span>{property?.rental_type === 'units' ? 'Unit' : 'Room'}</span>
                     <span>Default</span>
                     <span>Seasonal rate</span>
                   </div>
