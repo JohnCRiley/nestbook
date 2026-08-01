@@ -11,8 +11,8 @@ export const ROOM_UPLOAD_DIR = join(__dirname, '../uploads/rooms');
 
 fs.mkdirSync(ROOM_UPLOAD_DIR, { recursive: true });
 
-// Free: 1, Pro: 5, Multi: 10
-const PHOTO_LIMITS = { free: 1, pro: 5, multi: 10 };
+// Free: 3, Pro: 5, Multi: 10
+const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
 
 function getOwnerPlan(userId) {
   const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(userId);

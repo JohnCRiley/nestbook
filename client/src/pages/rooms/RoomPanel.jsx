@@ -6,7 +6,7 @@ import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 
-const PHOTO_LIMITS = { free: 1, pro: 5, multi: 10 };
+const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
 
 const ROOM_TYPES    = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const STATUS_OPTIONS = ['available', 'occupied', 'maintenance'];

@@ -210,13 +210,13 @@ roomsRouter.post('/', (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    // Free plan: max 3 rooms per property
+    // Free plan: max 5 rooms per property
     const currentUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
     if (currentUser?.plan === 'free') {
       const roomCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
-      if (roomCount >= 3) {
+      if (roomCount >= 5) {
         return res.status(403).json({
-          error: "You've reached the free plan limit of 3 rooms. Upgrade to Pro for unlimited rooms.",
+          error: "You've reached the free plan limit of 5 rooms. Upgrade to Pro for unlimited rooms.",
         });
       }
     }
