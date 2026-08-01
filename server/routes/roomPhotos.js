@@ -82,12 +82,20 @@ roomPhotosRouter.post('/:roomId/photos', upload.single('photo'), async (req, res
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
     const plan  = getOwnerPlan(req.user.userId);
-    const limit = PHOTO_LIMITS[plan] ?? 1;
+    const roomRow = db.prepare('SELECT property_id FROM rooms WHERE id = ?').get(roomId);
+    const isUnitsModeRoom = roomRow
+      ? db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(roomRow.property_id)?.rental_type === 'units'
+      : false;
+    // Units and their internal rooms are capped at exactly 1 photo regardless
+    // of plan tier -- the per-plan limit only applies to IR/WP rooms.
+    const limit = isUnitsModeRoom ? 1 : (PHOTO_LIMITS[plan] ?? 1);
     const count = db.prepare('SELECT COUNT(*) as n FROM room_photos WHERE room_id = ?').get(roomId).n;
     if (count >= limit) {
       fs.unlinkSync(req.file.path);
       return res.status(403).json({
-        error: `Photo limit reached for ${plan} plan (${limit} per room). Upgrade to add more photos.`,
+        error: isUnitsModeRoom
+          ? 'Photo limit reached (1 per room).'
+          : `Photo limit reached for ${plan} plan (${limit} per room). Upgrade to add more photos.`,
       });
     }
 

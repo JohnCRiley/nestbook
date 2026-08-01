@@ -230,9 +230,10 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
 //
 // internalRoomsByUnit — map of unit id to that unit's internal rooms
 // (parent_unit_id = unit id), used only for thumbnail photos: the main
-// hero image is still the unit's own primary photo, but the thumbnail
-// strip pulls one photo each from the unit's internal rooms (bedroom,
-// kitchen, etc.) instead of the unit's own extra photos.
+// hero image is the unit's own primary photo, and the thumbnail strip
+// starts with that same photo (so it stays reachable after swapping),
+// followed by one photo each from the unit's internal rooms (bedroom,
+// kitchen, etc.).
 function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit) {
   if (!units || units.length === 0) return '';
 
@@ -250,13 +251,20 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
       .map(r => ({ room: r, photo: photosByRoom?.[r.id]?.[0] }))
       .filter(x => x.photo);
 
+    // The unit's own primary photo is thumbnail #1, same as wpAlternatingShowcase
+    // treats photos[0] as the first thumb — otherwise swapping to an internal
+    // room thumb leaves no way back to the unit's own photo.
+    const allThumbs = primary
+      ? [{ room: unit, photo: primary }, ...internalThumbs]
+      : internalThumbs;
+
     const mainImgHtml = primary
       ? `<img src="/uploads/rooms/${esc(primary.filename)}" alt="${esc(unit.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
       : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
 
-    const thumbsHtml = internalThumbs.length > 0
+    const thumbsHtml = allThumbs.length > 1
       ? `<div class="ws-thumbs">${
-          internalThumbs.map((x, i) =>
+          allThumbs.map((x, i) =>
             `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(x.photo.filename)}',this)"><img src="/uploads/rooms/${esc(x.photo.thumb_filename || x.photo.filename)}" alt="${esc(x.room.name)}" loading="lazy" /></div>`
           ).join('')
         }</div>`
@@ -276,7 +284,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     <div class="ws-main-photo" id="${esc(cid)}">
       ${mainImgHtml}
     </div>
-    ${internalThumbs.length > 0 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
+    ${allThumbs.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
   </div>
   <div class="ws-details">
     <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>

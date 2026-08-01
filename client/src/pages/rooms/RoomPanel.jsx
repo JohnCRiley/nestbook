@@ -181,7 +181,7 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
 
           <div className="panel-section">
             <div className="panel-section-title" style={{ marginBottom: 10 }}>{t('rooms.photos')}</div>
-            <RoomPhotosSection room={room} plan={plan} isUnit={false} />
+            <RoomPhotosSection room={room} plan={plan} isUnit={false} forceCapOne={!!room.parent_unit_id} />
           </div>
 
           <div className="panel-section">
@@ -550,7 +550,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
         </div>
       </div>
 
-      <RoomPhotosSection room={room} plan={plan} isUnit={isUnit} />
+      <RoomPhotosSection room={room} plan={plan} isUnit={isUnit} forceCapOne={isUnit} />
 
       <div className="panel-actions">
         <button className="btn-panel-primary" onClick={handleSave} disabled={saving || deleting}>
@@ -642,12 +642,14 @@ function ScheduleRow({ booking: b, t, locale }) {
 
 // ── RoomPhotosSection ─────────────────────────────────────────────────────────
 
-function RoomPhotosSection({ room, plan, isUnit = false }) {
+function RoomPhotosSection({ room, plan, isUnit = false, forceCapOne = false }) {
   const [photos,    setPhotos]    = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error,     setError]     = useState(null);
 
-  const limit = PHOTO_LIMITS[plan] ?? 1;
+  // Units and their internal rooms always cap at 1 photo regardless of plan —
+  // the per-plan limit only applies to IR/WP rooms.
+  const limit = forceCapOne ? 1 : (PHOTO_LIMITS[plan] ?? 1);
 
   useEffect(() => {
     apiFetch(`/api/rooms/${room.id}/photos`)
@@ -692,7 +694,7 @@ function RoomPhotosSection({ room, plan, isUnit = false }) {
       <div className="panel-section-title" style={{ marginBottom: 10 }}>
         {isUnit ? 'Unit photos' : 'Room photos'}
         <span style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 8 }}>
-          {photos.length} of {limit} used — {plan} plan
+          {photos.length} of {limit} used{forceCapOne ? '' : ` — ${plan} plan`}
         </span>
       </div>
 
@@ -748,7 +750,7 @@ function RoomPhotosSection({ room, plan, isUnit = false }) {
         )}
       </div>
 
-      {photos.length >= limit && plan !== 'multi' && (
+      {photos.length >= limit && plan !== 'multi' && !forceCapOne && (
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
           {plan === 'free'
             ? `Upgrade to Pro for up to 5 photos per ${isUnit ? 'unit' : 'room'}`
