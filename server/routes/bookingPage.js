@@ -280,9 +280,13 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
   </div>
   <div class="ws-details">
     <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    ${capacityHtml || amenityChips ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}</div>` : ''}
-    ${descHtml}
-    <div class="unit-avail-wrap">${roomCalendarSection(unit.id)}</div>
+    <div class="ws-details-row">
+      <div class="ws-details-text">
+        ${capacityHtml || amenityChips ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}</div>` : ''}
+        ${descHtml}
+      </div>
+      <div class="unit-avail-wrap">${roomCalendarSection(unit.id)}</div>
+    </div>
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? 'openWidget(' + unit.id + ')' : 'scrollToEnquiry()'}">Book this unit</button>
   </div>
@@ -1489,11 +1493,30 @@ section h2 {
 /* Unit-mode calendar — ws-details has no grid/card width of its own to
    inherit, unlike room-card, so this wrapper gets an explicit width
    matching room-card's actual calendar-grid width (card width minus its
-   own body padding), plus the same compacting rules. */
-.unit-avail-wrap { max-width: 290px; }
+   own body padding), plus the same compacting rules. A flex item's
+   max-width alone does not force it to fill that space the way a block
+   element does, so this needs an explicit width, not just max-width. */
+.unit-avail-wrap { width: 290px; max-width: 100%; flex-shrink: 0; }
 .unit-avail-wrap .nb-cal-wrapper { gap: 8px; }
 .unit-avail-wrap .nb-cal-day { font-size: 0.6rem; }
 .unit-avail-wrap .nb-cal-month-name { font-size: 0.68rem; }
+/* Unit-mode description + calendar, side by side. Text takes remaining
+   space; the calendar keeps the fixed width set above. */
+.ws-details-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+.ws-details-text { flex: 1; min-width: 0; }
+.ws-details-text .ws-desc { margin: 0; }
+/* Stack description above calendar on narrower widths rather than
+   squeezing both columns too narrow. Placed after the base rules above
+   so it wins the cascade at this breakpoint. */
+@media (max-width: 640px) {
+  .ws-details-row { flex-direction: column; }
+  .unit-avail-wrap { width: 100%; }
+}
 .nb-cal-header {
   display: flex;
   align-items: center;
