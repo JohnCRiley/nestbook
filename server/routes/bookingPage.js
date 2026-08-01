@@ -2054,11 +2054,6 @@ ${isPaidPlan ? '' : `
         <p><i class="ti ti-circle-check"></i> <span data-i18n="page.enquirySuccess">Your enquiry has been sent! The property owner will be in touch shortly.</span></p>
       </div>
     </div>
-    <p style="text-align:center;font-size:0.78rem;color:#94a3b8;margin-top:20px;">
-      Are you the owner of this property?
-      <a href="https://nestbook.io/app/pricing" style="color:#1a4710;">Upgrade to Pro</a>
-      to accept direct online bookings.
-    </p>
   </div>
 </section>
 
