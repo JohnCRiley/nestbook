@@ -194,7 +194,9 @@
   "planStarterDesc": "Everything you need to get started.",
   "planStarterCta": "Your current plan",
   "planStarterFeatures": [
-    "1 property, up to 3 rooms",
+    "1 property, up to 5 rooms",
+    "Up to 3 photos per room",
+    "Guest import wizard",
     "Booking calendar & management",
     "Guest records",
     "All 5 languages",
