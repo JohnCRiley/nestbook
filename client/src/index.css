@@ -3709,59 +3709,6 @@ a { text-decoration: none; }
 .plan-gate-btn-primary:hover { background: var(--accent-dark); }
 .plan-gate-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ── Upgrade banner (free plan users) ───────────────────────────────────── */
-.upgrade-banner {
-  background: var(--tint-bg);
-  border-bottom: 1px solid var(--tint-border);
-  color: var(--tint-text);
-  font-size: 0.82rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 40px;
-  margin: -36px -40px 24px;
-}
-
-.upgrade-banner-text {
-  flex: 1;
-  font-weight: 500;
-}
-
-.upgrade-banner-cta {
-  background: none;
-  border: 1.5px solid var(--tint-border);
-  border-radius: 6px;
-  color: var(--tint-text);
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 3px 10px;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.upgrade-banner-cta:hover { background: var(--tint-border); opacity: 0.7; }
-
-.upgrade-banner-dismiss {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--tint-border);
-  font-size: 12px;
-  padding: 2px 4px;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.upgrade-banner-dismiss:hover { color: var(--tint-text); }
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .upgrade-banner { margin: -36px -24px 24px; padding: 8px 24px; }
-}
-@media (max-width: 767px) {
-  .upgrade-banner { margin: -24px -20px 20px; padding: 8px 20px; }
-  .upgrade-banner-text { font-size: 0.78rem; }
-}
-
 /* ── Sidebar plan badge ──────────────────────────────────────────────────── */
 .footer-property-row {
   display: flex;
