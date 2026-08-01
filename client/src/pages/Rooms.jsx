@@ -29,6 +29,10 @@ export default function Rooms() {
   const [bookingValues, setBookingValues] = useState(null);   // pre-fill for booking modal
   const [page,          setPage]          = useState(1);
 
+  // Unit mode: which unit (if any) a "+ Room"/"+ Add Unit" click is scoped to.
+  // null = creating a unit itself; a unit id = creating an internal room inside it.
+  const [newRoomParentUnitId, setNewRoomParentUnitId] = useState(null);
+
   const prevPageSizeRef = useRef(pageSize);
   useEffect(() => {
     if (prevPageSizeRef.current !== pageSize) {
@@ -96,6 +100,17 @@ export default function Rooms() {
   const totalRoomPages = Math.ceil(rooms.length / pageSize) || 1;
   const pagedRooms = rooms.slice((page - 1) * pageSize, page * pageSize);
 
+  // ── Unit mode: split the flat rooms array into units + their internal rooms ─
+  const units = useMemo(() => rooms.filter((r) => !r.parent_unit_id), [rooms]);
+  const roomsByUnit = useMemo(() => {
+    const map = {};
+    for (const r of rooms) {
+      if (!r.parent_unit_id) continue;
+      (map[r.parent_unit_id] ??= []).push(r);
+    }
+    return map;
+  }, [rooms]);
+
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCardClick = (room) =>
     setSelectedRoom((prev) => (prev?.id === room.id ? null : room));
@@ -142,6 +157,18 @@ export default function Rooms() {
   };
 
   const isWholeProp = property?.rental_type === 'whole_property';
+  const isUnitsMode = property?.rental_type === 'units';
+
+  // ── Unit mode handlers ───────────────────────────────────────────────────
+  const handleAddUnit = () => {
+    setNewRoomParentUnitId(null);
+    setShowNewRoom(true);
+  };
+  const handleAddRoomToUnit = (unit) => {
+    setNewRoomParentUnitId(unit.id);
+    setShowNewRoom(true);
+  };
+  const handleEditUnit = (unit) => setSelectedRoom(unit);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -159,6 +186,20 @@ export default function Rooms() {
           stats={stats}
           t={t}
           locale={locale}
+        />
+      ) : isUnitsMode ? (
+        /* ── Unit-mode accordion view ──────────────────────────────────── */
+        <UnitsPage
+          units={units}
+          roomsByUnit={roomsByUnit}
+          loading={loading}
+          selectedRoom={selectedRoom}
+          onCardClick={handleCardClick}
+          onAddUnit={handleAddUnit}
+          onAddRoomToUnit={handleAddRoomToUnit}
+          onEditUnit={handleEditUnit}
+          t={t}
+          currencySymbol={currencySymbol}
         />
       ) : (
         /* ── B&B rooms view ────────────────────────────────────────────── */
@@ -231,7 +272,8 @@ export default function Rooms() {
       {/* ── Add room modal ────────────────────────────────────────────────── */}
       {showNewRoom && (
         <NewRoomModal
-          onClose={() => setShowNewRoom(false)}
+          parentUnitId={newRoomParentUnitId}
+          onClose={() => { setShowNewRoom(false); setNewRoomParentUnitId(null); }}
           onSuccess={handleNewRoomSuccess}
         />
       )}
@@ -472,8 +514,6 @@ function BedroomCard({ room, isSelected, onClick, t }) {
 }
 
 function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, onCardClick, onAddBedroom, stats, t, locale }) {
-  const totalCapacity = rooms.reduce((sum, r) => sum + (r.capacity || 0), 0);
-
   return (
     <>
       <div className="page-toolbar">
@@ -487,6 +527,18 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
         </button>
       </div>
 
+      <RoomGridSection rooms={rooms} loading={loading} selectedRoom={selectedRoom} onCardClick={onCardClick} t={t} />
+    </>
+  );
+}
+
+// Stats + room-tile grid, shared by the WP property page and each expanded
+// unit panel in Unit mode (scoped to that unit's internal rooms instead).
+function RoomGridSection({ rooms, loading, selectedRoom, onCardClick, t, emptyMessage }) {
+  const totalCapacity = rooms.reduce((sum, r) => sum + (r.capacity || 0), 0);
+
+  return (
+    <>
       <div className="stat-bar">
         <StatBarItem value={rooms.length}  label={t('totalRooms')} />
         <StatBarItem value={totalCapacity} label={t('guestWord')(totalCapacity)} />
@@ -494,6 +546,8 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
 
       {loading ? (
         <div className="loading-screen">{t('loadingRooms')}</div>
+      ) : (rooms.length === 0 && emptyMessage) ? (
+        <div className="loading-screen">{emptyMessage}</div>
       ) : (
         <div className="room-grid">
           {rooms.map((room) => (
@@ -508,5 +562,122 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
         </div>
       )}
     </>
+  );
+}
+
+// ── UnitsPage (Unit mode) ───────────────────────────────────────────────────
+// Un mode — hardcoded English strings below are not yet in the i18n catalogue;
+// this UI isn't customer-facing yet (see plan-gating note in the task).
+
+function UnitsPage({ units, roomsByUnit, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, t, currencySymbol }) {
+  const [expandedUnitId, setExpandedUnitId] = useState(null);
+
+  return (
+    <>
+      <div className="page-toolbar">
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <h1>Units</h1>
+          <div className="page-date">{units.length} unit{units.length !== 1 ? 's' : ''}</div>
+        </div>
+        <button className="btn-primary" onClick={onAddUnit}>
+          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+          Add Unit
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="loading-screen">{t('loadingRooms')}</div>
+      ) : (
+        <div className="unit-accordion">
+          {units.map((unit) => (
+            <UnitAccordionPanel
+              key={unit.id}
+              unit={unit}
+              rooms={roomsByUnit[unit.id] ?? []}
+              isExpanded={expandedUnitId === unit.id}
+              onToggle={() => setExpandedUnitId((prev) => (prev === unit.id ? null : unit.id))}
+              onEdit={() => onEditUnit(unit)}
+              onAddRoom={() => onAddRoomToUnit(unit)}
+              selectedRoom={selectedRoom}
+              onCardClick={onCardClick}
+              t={t}
+              currencySymbol={currencySymbol}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function UnitAccordionPanel({ unit, rooms, isExpanded, onToggle, onEdit, onAddRoom, selectedRoom, onCardClick, t, currencySymbol }) {
+  return (
+    <div className={`unit-panel${isExpanded ? ' is-expanded' : ''}`}>
+      <div className="unit-panel-header" onClick={onToggle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+          <ChevronIcon expanded={isExpanded} />
+          {(unit.primary_thumb || unit.primary_photo) ? (
+            <img
+              src={`/uploads/rooms/${unit.primary_thumb || unit.primary_photo}`}
+              alt=""
+              onError={(e) => { e.target.style.display = 'none'; }}
+              style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)', flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{ width: 40, height: 40, borderRadius: 6, background: 'var(--page-bg)', flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 600, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {unit.name}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              {currencySymbol}{unit.price_per_night} {t('perNight')}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <StatusPill status={unit.status} />
+          <button
+            className="btn-secondary"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            style={{ border: '1.5px solid var(--border)', padding: '5px 12px', fontSize: '0.8rem' }}
+          >
+            Edit
+          </button>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="unit-panel-body" style={{ padding: '16px 18px' }}>
+          <div className="page-toolbar" style={{ marginBottom: 12 }}>
+            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Rooms in this unit</div>
+            <button className="btn-primary" onClick={onAddRoom}>
+              <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+              {t('rooms.addRoom')}
+            </button>
+          </div>
+          <RoomGridSection
+            rooms={rooms}
+            loading={false}
+            selectedRoom={selectedRoom}
+            onCardClick={onCardClick}
+            t={t}
+            emptyMessage="No rooms added yet — click + Room to add the first one."
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChevronIcon({ expanded }) {
+  return (
+    <svg
+      width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      className={`unit-chevron${expanded ? ' is-expanded' : ''}`}
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
   );
 }

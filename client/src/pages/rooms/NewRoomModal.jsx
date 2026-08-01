@@ -20,10 +20,14 @@ const parseAmenities = (str) =>
 /** Capitalise first letter. */
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export default function NewRoomModal({ onClose, onSuccess }) {
+export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }) {
   const { currencySymbol, property } = useLocale();
   const t = useT();
-  const isWP = property?.rental_type === 'whole_property';
+  // Unit mode: creating an internal room inside a unit (parentUnitId set)
+  // reuses the same WP-lite create form as WP room-types. Creating a unit
+  // itself (parentUnitId null) falls through to the existing form below,
+  // unaffected.
+  const isWP = property?.rental_type === 'whole_property' || !!parentUnitId;
   const [form,       setForm]       = useState(EMPTY);
   const isBedroom = BEDROOM_TYPES.includes(form.type);
   const [submitting, setSubmitting] = useState(false);
@@ -55,6 +59,7 @@ export default function NewRoomModal({ onClose, onSuccess }) {
           status:             isWP ? 'available' : form.status,
           breakfast_included: isWP ? 0 : (form.breakfast_included ? 1 : 0),
           description:        form.description.trim() || null,
+          parent_unit_id:     parentUnitId ?? null,
         }),
       });
       if (!res.ok) {
@@ -87,7 +92,12 @@ export default function NewRoomModal({ onClose, onSuccess }) {
     onClose();
   }
 
-  const modalTitle = isWP ? t('rooms.addRoom') : t('moRoomTitle');
+  // Unit mode top-level create (a unit itself, not an internal room) gets its
+  // own plain-English label — not yet in the i18n catalogue (UI isn't
+  // customer-facing at this stage; flagged here for translation later).
+  const modalTitle = (property?.rental_type === 'units' && !parentUnitId)
+    ? 'Add Unit'
+    : (isWP ? t('rooms.addRoom') : t('moRoomTitle'));
 
   return (
     <div className="modal-overlay" onClick={handleBackdropClick}>

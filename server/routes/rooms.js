@@ -57,7 +57,7 @@ function getUserPropertyIds(userId, role) {
 //                  when absent returns plain array (backward compat)
 roomsRouter.get('/', (req, res) => {
   try {
-    const { property_id, status, page, limit } = req.query;
+    const { property_id, status, page, limit, parent_unit_id } = req.query;
     const conditions = [];
     const params     = [];
 
@@ -78,6 +78,18 @@ roomsRouter.get('/', (req, res) => {
     }
 
     if (status) { conditions.push('status = ?'); params.push(status); }
+
+    // Unit mode — optional scope to a unit's internal rooms (?parent_unit_id=<id>)
+    // or explicitly to top-level rows only (?parent_unit_id=null). Omitted entirely
+    // (the default for every existing caller) leaves this filter out, unchanged.
+    if (parent_unit_id !== undefined) {
+      if (parent_unit_id === 'null' || parent_unit_id === '') {
+        conditions.push('parent_unit_id IS NULL');
+      } else {
+        conditions.push('parent_unit_id = ?');
+        params.push(parent_unit_id);
+      }
+    }
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
@@ -189,7 +201,7 @@ roomsRouter.get('/:id', (req, res) => {
 // ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
@@ -211,8 +223,8 @@ roomsRouter.post('/', (req, res) => {
 
     const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
@@ -221,7 +233,8 @@ roomsRouter.post('/', (req, res) => {
       status    ?? 'available',
       breakfast_included ? 1 : 0,
       description || null,
-      ical_token
+      ical_token,
+      parent_unit_id ?? null
     );
 
     const created = db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid);

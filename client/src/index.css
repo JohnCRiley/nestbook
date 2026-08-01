@@ -2585,6 +2585,39 @@ a { text-decoration: none; }
 .dot-occupied    { background: #f59e0b; }
 .dot-maintenance { background: #94a3b8; }
 
+/* Unit-mode accordion (self-catering units) */
+.unit-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.unit-panel {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid transparent;
+  overflow: hidden;
+}
+.unit-panel.is-expanded { border-color: var(--accent); }
+.unit-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+}
+.unit-panel-header:hover { background: var(--page-bg); }
+.unit-panel-body {
+  border-top: 1px solid var(--border);
+  background: var(--page-bg);
+}
+.unit-chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s;
+  color: var(--text-muted);
+}
+.unit-chevron.is-expanded { transform: rotate(90deg); }
+
 /* Room facts row */
 .room-facts {
   display: flex;

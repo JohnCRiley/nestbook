@@ -38,7 +38,11 @@ export default function RoomPanel({ room, bookings, today, onClose, onRoomUpdate
   const [mode, setMode] = useState('view');
   const t = useT();
   const { locale, property } = useLocale();
-  const isWP = property?.rental_type === 'whole_property';
+  // Unit mode: a room with parent_unit_id set is a display-only internal room
+  // of a unit (bedroom/kitchen/etc.) — reuse the same WP-lite edit panel as
+  // WP room-types. Units themselves (parent_unit_id null) fall through to the
+  // existing IR-style panel below, unaffected.
+  const isWP = property?.rental_type === 'whole_property' || !!room.parent_unit_id;
 
   if (isWP) {
     return (
