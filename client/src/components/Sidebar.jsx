@@ -174,6 +174,10 @@ export default function Sidebar() {
           {navItems.map(({ to, key, Icon }) => {
             const label = key === 'rooms' && property?.rental_type === 'whole_property'
               ? t('nav.property')
+              // Unit mode — hardcoded (not yet in the i18n catalogue), matching
+              // the plain-English precedent already set elsewhere for Un mode.
+              : key === 'rooms' && property?.rental_type === 'units'
+              ? 'Units'
               : key === 'charges' && property?.rental_type === 'whole_property'
               ? t('nav.propertyCharges')
               : t(key);

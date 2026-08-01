@@ -227,13 +227,18 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
 // bookable. Callers must already filter the passed-in units to rows
 // where parent_unit_id is null; internal rooms never get their own
 // section here.
-function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan) {
+//
+// internalRoomsByUnit — map of unit id to that unit's internal rooms
+// (parent_unit_id = unit id), used only for thumbnail photos: the main
+// hero image is still the unit's own primary photo, but the thumbnail
+// strip pulls one photo each from the unit's internal rooms (bedroom,
+// kitchen, etc.) instead of the unit's own extra photos.
+function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit) {
   if (!units || units.length === 0) return '';
 
   const rows = units.map((unit, index) => {
-    const photos    = photosByRoom?.[unit.id] ?? [];
+    const primary   = photosByRoom?.[unit.id]?.[0] ?? null;
     const isEven    = index % 2 === 1;
-    const primary   = photos[0] ?? null;
     const amenities = (unit.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
     const typeLabel = unit.type && unit.type !== 'other'
       ? unit.type.charAt(0).toUpperCase() + unit.type.slice(1)
@@ -241,14 +246,18 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan) {
     const cid   = 'unit-' + unit.id;
     const price = Number(unit.price_per_night ?? 0).toFixed(0);
 
+    const internalThumbs = (internalRoomsByUnit?.[unit.id] ?? [])
+      .map(r => ({ room: r, photo: photosByRoom?.[r.id]?.[0] }))
+      .filter(x => x.photo);
+
     const mainImgHtml = primary
       ? `<img src="/uploads/rooms/${esc(primary.filename)}" alt="${esc(unit.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
       : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
 
-    const thumbsHtml = photos.length > 1
+    const thumbsHtml = internalThumbs.length > 0
       ? `<div class="ws-thumbs">${
-          photos.map((photo, i) =>
-            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(photo.filename)}',this)"><img src="/uploads/rooms/${esc(photo.thumb_filename || photo.filename)}" alt="${esc(unit.name)} ${i + 1}" loading="lazy" /></div>`
+          internalThumbs.map((x, i) =>
+            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(x.photo.filename)}',this)"><img src="/uploads/rooms/${esc(x.photo.thumb_filename || x.photo.filename)}" alt="${esc(x.room.name)}" loading="lazy" /></div>`
           ).join('')
         }</div>`
       : '';
@@ -267,7 +276,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan) {
     <div class="ws-main-photo" id="${esc(cid)}">
       ${mainImgHtml}
     </div>
-    ${photos.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
+    ${internalThumbs.length > 0 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
   </div>
   <div class="ws-details">
     <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
@@ -381,7 +390,7 @@ const LANG_MAP = {
   'nl': 'nl', 'nl-NL': 'nl',
 };
 
-function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = []) {
+function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -618,7 +627,7 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // Each unit carries its own calendar inline (see generateUnitsPage),
     // so unlike WP mode there is no separate top-level availability
     // section here.
-    roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan);
+    roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit);
   } else {
     roomsSection = rooms.length > 0 ? `
 <section class="rooms">
@@ -2514,6 +2523,18 @@ bookingPageRouter.get('/:identifier', (req, res) => {
       photosByRoom[p.room_id].push({ filename: p.filename, thumb_filename: p.thumb_filename });
     }
 
+    // Unit mode — internal rooms grouped by their parent unit, used only to
+    // source thumbnail photos for that unit's showcase section. Always empty
+    // for IR/WP, which never have parent_unit_id set.
+    const internalRoomRows = db.prepare(
+      `SELECT * FROM rooms WHERE property_id = ? AND parent_unit_id IS NOT NULL ORDER BY id ASC`
+    ).all(property.id);
+    const internalRoomsByUnit = {};
+    for (const r of internalRoomRows) {
+      if (!internalRoomsByUnit[r.parent_unit_id]) internalRoomsByUnit[r.parent_unit_id] = [];
+      internalRoomsByUnit[r.parent_unit_id].push(r);
+    }
+
     const isPaidPlan = ['pro', 'multi'].includes(property.plan);
 
     const partnerLinks = isPaidPlan
@@ -2522,7 +2543,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
         ).all(property.id)
       : [];
 
-    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks));
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');
