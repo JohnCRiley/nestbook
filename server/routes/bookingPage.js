@@ -282,7 +282,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
     ${capacityHtml || amenityChips ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}</div>` : ''}
     ${descHtml}
-    ${roomCalendarSection(unit.id)}
+    <div class="unit-avail-wrap">${roomCalendarSection(unit.id)}</div>
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? 'openWidget(' + unit.id + ')' : 'scrollToEnquiry()'}">Book this unit</button>
   </div>
@@ -1486,6 +1486,14 @@ section h2 {
 .room-card .nb-cal-wrapper { gap: 8px; }
 .room-card .nb-cal-day { font-size: 0.6rem; }
 .room-card .nb-cal-month-name { font-size: 0.68rem; }
+/* Unit-mode calendar — ws-details has no grid/card width of its own to
+   inherit, unlike room-card, so this wrapper gets an explicit width
+   matching room-card's actual calendar-grid width (card width minus its
+   own body padding), plus the same compacting rules. */
+.unit-avail-wrap { max-width: 290px; }
+.unit-avail-wrap .nb-cal-wrapper { gap: 8px; }
+.unit-avail-wrap .nb-cal-day { font-size: 0.6rem; }
+.unit-avail-wrap .nb-cal-month-name { font-size: 0.68rem; }
 .nb-cal-header {
   display: flex;
   align-items: center;
