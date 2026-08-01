@@ -188,7 +188,9 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   const nightsCount       = datesValid ? nightsBetween(form.checkIn, form.checkOut) : null;
   const selectedRoom      = rooms.find(r => r.id === Number(form.roomId));
   const availableRooms    = datesValid
-    ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
+    // Unit mode: exclude internal rooms (parent_unit_id set) — only their
+    // parent unit is bookable. No-op for IR/WP rows, which never have it set.
+    ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id) && !r.parent_unit_id)
     : [];
   const wpRate            = parseFloat(property?.whole_property_rate) || 0;
   const wpPropertyBooked  = isWP && datesValid && bookedRoomIds.has(Number(rooms[0]?.id));
