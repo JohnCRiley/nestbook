@@ -7,7 +7,6 @@ import ImportGuestsModal  from './guests/ImportGuestsModal.jsx';
 import Pagination         from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
-import { usePlan } from '../hooks/usePlan.js';
 import usePageSize from '../hooks/usePageSize.js';
 
 // toolbar + stat-bar + search + padding
@@ -15,7 +14,6 @@ const RESERVED = 120;
 
 export default function Guests() {
   const t = useT();
-  const plan = usePlan();
   const { property } = useLocale();
   const pageSize = usePageSize(56, RESERVED);
   const [searchParams] = useSearchParams();
@@ -132,11 +130,9 @@ export default function Guests() {
             <h1>{t('guests')}</h1>
             <div className="page-date">{counts.total} {t('guestRecords')}</div>
           </div>
-          {(plan === 'pro' || plan === 'multi') && (
-            <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
-              {t('importGuestsBtn')}
-            </button>
-          )}
+          <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
+            {t('importGuestsBtn')}
+          </button>
           <button className="btn-primary" onClick={() => setShowNewModal(true)}>
             <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
             {t('newGuest').replace('+ ', '')}

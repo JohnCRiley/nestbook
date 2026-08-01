@@ -115,20 +115,12 @@ guestsRouter.get('/:id', (req, res) => {
 });
 
 // ── POST /api/guests/import ───────────────────────────────────────────────
-// Bulk-import guests from a pre-parsed JSON array. Pro/Multi plan required.
+// Bulk-import guests from a pre-parsed JSON array.
 // Body: { rows: [{ first_name, last_name, email?, phone?, notes? }, …] }
 // Returns: { imported, skipped, errors }
 guestsRouter.post('/import', (req, res) => {
   try {
     console.log('[guests/import] Request from userId:', req.user?.userId);
-
-    const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
-    console.log('[guests/import] User plan:', user?.plan);
-
-    if (!user || (user.plan !== 'pro' && user.plan !== 'multi')) {
-      console.log('[guests/import] Plan gate rejected — plan is:', user?.plan);
-      return res.status(403).json({ error: 'Pro or Multi plan required to import guests.' });
-    }
 
     const propertyId = getPropertyId(req);
     if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
