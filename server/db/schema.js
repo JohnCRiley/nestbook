@@ -218,30 +218,46 @@ export function initSchema() {
     }
   } catch {
     // Constraint blocks 'nl' — rebuild the table with FK checks disabled.
+    // The type CHECK here must match the full accommodation type list (see the
+    // properties.type expansion migration below) rather than the original
+    // narrow set — otherwise this rebuild's own INSERT fails on any row whose
+    // type is already one of the newer values, taking the whole server down.
     db.exec(`PRAGMA foreign_keys = OFF`);
-    db.exec(`
-      BEGIN;
-      CREATE TABLE properties_new (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        name            TEXT    NOT NULL,
-        type            TEXT    NOT NULL CHECK(type IN ('bnb','gite','guesthouse','hotel','other')),
-        address         TEXT,
-        city            TEXT,
-        country         TEXT,
-        check_in_time   TEXT    NOT NULL DEFAULT '15:00',
-        check_out_time  TEXT    NOT NULL DEFAULT '11:00',
-        currency        TEXT    NOT NULL DEFAULT 'EUR',
-        locale          TEXT    NOT NULL DEFAULT 'en' CHECK(locale IN ('en','fr','es','de','nl')),
-        owner_id        INTEGER REFERENCES users(id),
-        created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
-      );
-      INSERT INTO properties_new SELECT id, name, type, address, city, country, check_in_time, check_out_time, currency, locale, owner_id, created_at FROM properties;
-      DROP TABLE properties;
-      ALTER TABLE properties_new RENAME TO properties;
-      COMMIT;
-    `);
+    db.exec(`BEGIN`);
+    try {
+      db.exec(`
+        CREATE TABLE properties_new (
+          id              INTEGER PRIMARY KEY AUTOINCREMENT,
+          name            TEXT    NOT NULL,
+          type            TEXT    NOT NULL DEFAULT 'other'
+                          CHECK(type IN (
+                            'bnb','bb','guesthouse','inn','hotel','hostel',
+                            'gite','cottage','villa','apartment','lodge',
+                            'caravan','glamping','shepherds_hut','treehouse',
+                            'narrowboat','farmhouse','chateau',
+                            'ryokan','minsu','homestay','resort_villa','other'
+                          )),
+          address         TEXT,
+          city            TEXT,
+          country         TEXT,
+          check_in_time   TEXT    NOT NULL DEFAULT '15:00',
+          check_out_time  TEXT    NOT NULL DEFAULT '11:00',
+          currency        TEXT    NOT NULL DEFAULT 'EUR',
+          locale          TEXT    NOT NULL DEFAULT 'en' CHECK(locale IN ('en','fr','es','de','nl')),
+          owner_id        INTEGER REFERENCES users(id),
+          created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+        )
+      `);
+      db.exec(`INSERT INTO properties_new SELECT id, name, type, address, city, country, check_in_time, check_out_time, currency, locale, owner_id, created_at FROM properties`);
+      db.exec(`DROP TABLE properties`);
+      db.exec(`ALTER TABLE properties_new RENAME TO properties`);
+      db.exec(`COMMIT`);
+      console.log('✓ properties.locale constraint updated to include nl.');
+    } catch (e) {
+      try { db.exec(`ROLLBACK`); } catch {}
+      console.log(`[schema] properties locale migration skipped: ${e.message}`);
+    }
     db.exec(`PRAGMA foreign_keys = ON`);
-    console.log('✓ properties.locale constraint updated to include nl.');
   }
 
   // Migration: make bookings.room_id nullable so rooms can be deleted while preserving history
