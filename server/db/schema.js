@@ -2138,6 +2138,15 @@ John`
   // Property at a Glance — JSON string of preset + custom quick facts
   try { db.exec(`ALTER TABLE properties ADD COLUMN at_a_glance_facts TEXT`); } catch(e) {}
 
+  // Unit mode — self-catering apartment clusters / glamping pods / aparthotels.
+  // A `rooms` row with parent_unit_id NULL is a bookable unit (same as a room today).
+  // A `rooms` row with parent_unit_id set is a display-only internal room of that unit.
+  try {
+    db.exec(`ALTER TABLE rooms ADD COLUMN parent_unit_id INTEGER REFERENCES rooms(id) ON DELETE CASCADE`);
+    console.log('✓ rooms.parent_unit_id added');
+  } catch (e) {}
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_rooms_parent_unit ON rooms(parent_unit_id)`);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
