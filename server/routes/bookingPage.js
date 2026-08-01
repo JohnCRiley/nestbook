@@ -1989,9 +1989,9 @@ ${isPaidPlan ? '' : `
           <label data-i18n="page.guests">Number of guests</label>
           <input type="number" id="guestCount" min="1" value="2" required />
         </div>
-        ${property.rental_type === 'rooms' && rooms.length > 0 ? `
+        ${(property.rental_type === 'rooms' || isUnitsMode) && rooms.length > 0 ? `
         <div class="form-group">
-          <label data-i18n="page.selectRoom">Room</label>
+          <label${isUnitsMode ? '' : ' data-i18n="page.selectRoom"'}>${isUnitsMode ? 'Unit' : 'Room'}</label>
           <select id="roomSelect" required>
             ${rooms.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}
           </select>
