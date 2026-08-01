@@ -341,6 +341,7 @@
     loading:             false,
     error:               null,
     wholeProperty:       false,
+    unitsMode:           false,
     wholePropertyRate:   0,
     totalCapacity:       10,
     stripeConnectActive: false,
@@ -434,15 +435,23 @@
     render();
     try {
       console.log('[NestBook widget] Fetching rooms for property', PROPERTY_ID);
+      // Unit mode is already known from init()'s property fetch by the time the
+      // guest reaches this step, so the rooms URL can be scoped up front —
+      // excludes a unit's internal rooms, which are never independently
+      // bookable. No-op query param for IR/WP, which never send it.
+      const roomsPath = '/api/widget/rooms?property_id=' + PROPERTY_ID +
+        (S.unitsMode ? '&parent_unit_id=null' : '');
       const [rooms, bookings, freshProp] = await Promise.all([
-        apiFetch('/api/widget/rooms?property_id='    + PROPERTY_ID),
+        apiFetch(roomsPath),
         apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID),
         apiFetch('/api/widget/property?property_id=' + PROPERTY_ID).catch(() => null),
       ]);
-      // Re-confirm WP status from a fresh property fetch — makes the check
-      // authoritative at availability time and not dependent on init() succeeding.
+      // Re-confirm WP/units status from a fresh property fetch — makes the
+      // check authoritative at availability time and not dependent on
+      // init() succeeding.
       if (freshProp) {
         S.wholeProperty         = freshProp.rental_type === 'whole_property';
+        S.unitsMode             = freshProp.rental_type === 'units';
         S.wholePropertyRate     = freshProp.whole_property_rate || 0;
         S.totalCapacity         = freshProp.total_capacity || 10;
         S.stripeConnectActive   = freshProp.stripe_connect_active === true;
@@ -1789,8 +1798,12 @@
       body.appendChild(wrap);
     } else {
       const title = el('div', 'nb-section-title');
-      title.appendChild(txt(S.availableRooms.length + ' ' +
-        (S.availableRooms.length === 1 ? 'room' : 'rooms') + ' available'));
+      // Unit mode label is hardcoded (not yet in the STRINGS catalogue —
+      // matches the plain-English precedent set elsewhere for Unit mode).
+      const noun = S.unitsMode
+        ? (S.availableRooms.length === 1 ? 'unit' : 'units')
+        : (S.availableRooms.length === 1 ? 'room' : 'rooms');
+      title.appendChild(txt(S.availableRooms.length + ' ' + noun + ' available'));
       body.appendChild(title);
 
       S.availableRooms.forEach((room) => {
@@ -1846,7 +1859,7 @@
 
         // Per-card book button — directly advances to step 3
         const bookBtn = el('button', 'nb-btn-book-room');
-        bookBtn.appendChild(txt(T.bookRoom));
+        bookBtn.appendChild(txt(S.unitsMode ? 'Book this unit →' : T.bookRoom));
         bookBtn.addEventListener('click', () => {
           S.selectedRoom = room;
           S.step = 3;
@@ -2246,6 +2259,7 @@
           PANEL_HDR_BG   = palette.panelHdrBg;
           PANEL_HDR_TEXT = palette.panelHdrText;
           S.wholeProperty       = data.rental_type === 'whole_property';
+          S.unitsMode           = data.rental_type === 'units';
           S.wholePropertyRate   = data.whole_property_rate || 0;
           S.totalCapacity       = data.total_capacity || 10;
           S.stripeConnectActive = data.stripe_connect_active === true;

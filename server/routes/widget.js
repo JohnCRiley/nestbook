@@ -46,10 +46,23 @@ function widgetPropertyGuard(property_id) {
 // Returns rooms for a property (no guest PII).
 widgetRouter.get('/rooms', (req, res) => {
   try {
-    const { property_id } = req.query;
+    const { property_id, parent_unit_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id is required' });
     if (!widgetPropertyGuard(property_id)) {
       return res.status(403).json({ error: 'Widget not available for this property' });
+    }
+    const conditions = ['r.property_id = ?'];
+    const params = [property_id];
+    // Unit mode — optional scope to top-level rows only (?parent_unit_id=null),
+    // same param pattern as the admin rooms endpoint. Omitted entirely (the
+    // default for every existing caller) leaves this filter out, unchanged.
+    if (parent_unit_id !== undefined) {
+      if (parent_unit_id === 'null' || parent_unit_id === '') {
+        conditions.push('r.parent_unit_id IS NULL');
+      } else {
+        conditions.push('r.parent_unit_id = ?');
+        params.push(parent_unit_id);
+      }
     }
     const rows = db.prepare(`
       SELECT r.*,
@@ -59,9 +72,9 @@ widgetRouter.get('/rooms', (req, res) => {
               ORDER BY display_order ASC, id ASC LIMIT 1) AS first_photo
       FROM rooms r
       JOIN properties p ON p.id = r.property_id
-      WHERE r.property_id = ?
+      WHERE ${conditions.join(' AND ')}
       ORDER BY r.id
-    `).all(property_id);
+    `).all(...params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
