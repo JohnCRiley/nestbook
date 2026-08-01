@@ -261,9 +261,15 @@ export default function Dashboard() {
       )
       .map((b) => b.room_id)
   );
-  const maintenanceRooms  = rooms.filter((r) => r.status === 'maintenance');
-  const availableRooms    = rooms.filter((r) => r.status !== 'maintenance' && !occupiedRoomIds.has(r.id));
-  const activeRooms       = rooms.filter((r) => r.status !== 'maintenance');
+  // Unit mode: internal rooms are display-only, never independently
+  // bookable, so they're excluded from every stat/list below — including
+  // the Available Tonight popover's per-room Book buttons, which would
+  // otherwise let a booking be created against one. No-op for IR/WP,
+  // which never have parent_unit_id set.
+  const bookableRooms     = rooms.filter((r) => !r.parent_unit_id);
+  const maintenanceRooms  = bookableRooms.filter((r) => r.status === 'maintenance');
+  const availableRooms    = bookableRooms.filter((r) => r.status !== 'maintenance' && !occupiedRoomIds.has(r.id));
+  const activeRooms       = bookableRooms.filter((r) => r.status !== 'maintenance');
   const occupancyRate     = activeRooms.length > 0
     ? Math.round((occupiedRoomIds.size / activeRooms.length) * 100)
     : 0;
@@ -719,7 +725,7 @@ export default function Dashboard() {
           </div>
           {/* Total rooms */}
           <div className="stat-bar-item" style={{ flex: 1 }}>
-            <div className="sb-value" style={{ color: 'var(--accent-dark)' }}>{rooms.length}</div>
+            <div className="sb-value" style={{ color: 'var(--accent-dark)' }}>{bookableRooms.length}</div>
             <div className="sb-label">{t('totalRooms')}</div>
           </div>
         </div>

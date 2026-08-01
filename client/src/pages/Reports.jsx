@@ -288,7 +288,10 @@ function ReportsContent() {
     const netRevenue   = totalRevenue - totalTax;
     const avgBookingValue = totalBookings ? totalRevenue / totalBookings : 0;
     const daysInRange  = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000));
-    const activeRooms  = rooms.filter(r => r.status !== 'maintenance').length || 1;
+    // Unit mode: internal rooms can never be booked, so excluding them
+    // keeps the occupancy denominator from being artificially inflated.
+    // No-op for IR/WP, which never have parent_unit_id set.
+    const activeRooms  = rooms.filter(r => r.status !== 'maintenance' && !r.parent_unit_id).length || 1;
     const occupancy    = Math.min(100, Math.round((totalNights / (activeRooms * daysInRange)) * 100));
     const totalRefunds = results.reduce((s, b) => s + (b.refund_amount || 0), 0);
     return { totalBookings, totalNights, totalRevenue, totalTax, netRevenue, avgBookingValue, occupancy, totalRefunds };

@@ -1363,7 +1363,7 @@ export default function Settings() {
                         {t('settings.calendarSyncInstructions')}
                       </p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {rooms.map((room) => {
+                        {rooms.filter((r) => !r.parent_unit_id).map((room) => {
                           const icalUrl = room.ical_token
                             ? `${window.location.origin}/api/ical/${room.property_id}/${room.id}/${room.ical_token}`
                             : null;
@@ -3170,6 +3170,9 @@ function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit,
 // ── RatePeriodModal ───────────────────────────────────────────────────────────
 
 function RatePeriodModal({ t, currencySymbol, period, propertyId, property, rooms, onClose, onSave }) {
+  // Unit mode: internal rooms aren't independently priceable — only their
+  // parent unit is. No-op for IR/WP, which never have parent_unit_id set.
+  const pricingRooms = (rooms ?? []).filter((r) => !r.parent_unit_id);
   const initialRoomRates = {};
   for (const rr of (period?.roomRates ?? [])) {
     initialRoomRates[rr.room_id] = String(rr.amount);
@@ -3224,7 +3227,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
     setSaving(true);
     setError(null);
     try {
-      const roomRatesPayload = (rooms ?? [])
+      const roomRatesPayload = pricingRooms
         .filter(r => parseFloat(form.roomRates[r.id]) > 0)
         .map(r => ({ roomId: r.id, amount: parseFloat(form.roomRates[r.id]) }));
 
@@ -3298,7 +3301,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
             </div>
 
             {/* Per-room pricing table */}
-            {(rooms ?? []).length > 0 && (
+            {pricingRooms.length > 0 && (
               <div>
                 <div style={{
                   fontSize: '0.78rem', fontWeight: 700, color: '#64748b',
@@ -3318,7 +3321,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
                     <span>Default</span>
                     <span>Seasonal rate</span>
                   </div>
-                  {(rooms ?? []).map(room => (
+                  {pricingRooms.map(room => (
                     <div key={room.id} style={{
                       display: 'grid', gridTemplateColumns: '1fr 90px 130px',
                       alignItems: 'center', padding: '5px 6px',

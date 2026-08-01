@@ -349,7 +349,10 @@ export default function Calendar() {
             })}
 
             {/* ── Room rows ────────────────────────────────────────────── */}
-            {rooms.map((room) => (
+            {/* Unit mode: internal rooms never get their own calendar row —
+                only their parent unit is independently bookable. No-op for
+                IR/WP, which never have parent_unit_id set. */}
+            {rooms.filter((r) => !r.parent_unit_id).map((room) => (
               <RoomRow
                 key={room.id}
                 room={room}

@@ -93,7 +93,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
   // Fetch rooms only needed for IP mode step 3
   useEffect(() => {
     if (isWP || step !== 3 || rooms.length > 0) return;
-    apiFetch(`/api/rooms?property_id=${propertyId}`)
+    apiFetch(`/api/rooms?property_id=${propertyId}&parent_unit_id=null`)
       .then(r => r.json())
       .then(data => setRooms(Array.isArray(data) ? data : (data.rooms ?? [])))
       .catch(() => {});

@@ -143,6 +143,7 @@ chargesRouter.get('/rooms-today', requireChargesAccess, (req, res) => {
       AND b.status IN ('arriving', 'in_house', 'confirmed', 'checked_in')
       AND b.check_in_date <= date('now')
       AND b.check_out_date >= date('now')
+      AND r.parent_unit_id IS NULL
     ORDER BY r.name
   `).all(propertyId);
   res.json(rows);

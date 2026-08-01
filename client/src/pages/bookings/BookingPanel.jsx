@@ -1627,7 +1627,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
               <label className="panel-field-label">{property?.rental_type === 'units' ? 'Unit' : t('moRoomLbl')}</label>
               <select name="room_id" className="panel-field-input" value={form.room_id} onChange={handleChange}>
                 <option value="">{property?.rental_type === 'units' ? 'Select a unit…' : t('selectRoom')}</option>
-                {rooms.filter((r) => r.status !== 'maintenance').map((r) => (
+                {rooms.filter((r) => r.status !== 'maintenance' && !r.parent_unit_id).map((r) => (
                   <option key={r.id} value={r.id}>{r.name} ({r.type})</option>
                 ))}
               </select>
