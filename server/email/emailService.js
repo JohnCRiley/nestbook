@@ -1323,7 +1323,10 @@ export async function sendBugReportAlert({ userName, userEmail, plan, category, 
 
 // ── WP booking approval request (to property owner) ─────────────────────────
 export async function sendApprovalRequestEmail(booking, property, approveUrl, declineUrl) {
-  if (!resend) return;
+  if (!resend) {
+    console.log(`[email] Approval request email skipped (Resend not configured) — booking #${booking.id}`);
+    return;
+  }
   const ownerEmail = property?.owner_email;
   if (!ownerEmail) return;
 
