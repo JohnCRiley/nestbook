@@ -103,9 +103,8 @@ const T = {
     proWelcomeBody:     'Your promotional code has been applied — here\'s everything that\'s now unlocked:',
     onboardSubject:     "Welcome to NestBook! Here's how to get started 🌿",
     onboardHeroTag:     'Welcome aboard 🌿',
-    onboardHeading:     "It's great to have you, there!",
-    onboardIntro:       'Your property management account is set up and ready to go.',
-    onboardPlanTitle:   "✦ What's included in your Free plan",
+    onboardHeading:     "Welcome, it's great to have you onboard, {name}!",
+    onboardIntro:       "{property} is live on NestBook. Here's how to get your app up and running.",
     onboardStepsTitle:  'So, what do you do now?',
     onboardStepsSub:    'Follow these steps and your property page will be live in about 20 minutes.',
     onboardStep1Title:  'Complete your property details',
@@ -125,12 +124,26 @@ const T = {
     onboardStep6Body:   'In Settings, find Calendar Sync — copy your iCal URL and add it to your Booking.com and Airbnb accounts. This keeps all your calendars in sync automatically so you never get a double booking.',
     onboardStep7Title:  'Share your booking page link everywhere',
     onboardStep7Body:   'Copy your nestbook.io/book/your-property link and add it to your Instagram bio, your email signature, your WhatsApp status, your TripAdvisor replies — anywhere your guests might find you. Every link is a direct booking opportunity.',
+    onboardSectionAppTitle:  'Get your app ready and your booking page live',
+    onboardStepRoomsTitle:   '1. Add your rooms.',
+    onboardStepRoomsBody:    'Depending on your rental type, these might be called Rooms, Property, or Units — different names for the same thing: where your guests stay. Open [Rooms/Units/Property] in the sidebar, click + Add, fill in the form, save.',
+    onboardStepPhotosTitle:  '2. Add photos.',
+    onboardStepPhotosBody:   "Click any room tile, then Edit — you'll find the photo upload there. These are the images guests see on your booking page.",
+    onboardStepCalendarTitle: '3. Check your calendar.',
+    onboardStepCalendarBody:  'Once your rooms are added, open Calendar to see them all laid out and ready.',
+    onboardShineTitle:       'Make it shine',
+    onboardShinePhotoTitle:  'Add a property photo.',
+    onboardShinePhotoBody:   "In Settings — this is the hero image at the top of your booking page, and it's the first thing a guest sees.",
+    onboardShineAboutTitle:  'Write your About text and At a Glance details.',
+    onboardShineAboutBody:   'Also in Settings — this is what tells a visitor who you are and what you offer, at a glance, before they even scroll.',
+    onboardShineThemeTitle:  'Choose your theme.',
+    onboardShineThemeBody:   'Pick a colour scheme in Settings — it carries through to your booking page and widget too, so it genuinely feels like yours.',
+    onboardShineOutro:       "These aren't optional extras — they're what turns your booking page from bare into genuinely inviting.",
+    onboardGuestsTitle:      'Already have guests?',
+    onboardGuestsBody:       'Guests → Import guests will bring your existing list in. No existing list? No problem — every new booking saves the guest automatically.',
     onboardCTA:         'Go to my NestBook dashboard →',
     onboardPrintBtn:    '💡 Want to keep this as a reference? Most email apps let you print via File → Print or your browser\'s print option.',
-    onboardProTitle:    'Thinking about more?',
-    onboardProBody:     'When you\'re ready — NestBook Pro is £19/month and unlocks unlimited rooms, 5 photos per room, a direct booking widget for your own website, seasonal pricing, revenue reports and a 30-day free trial. No pressure — your Free plan is yours to keep for as long as you like.',
-    onboardProCTA:      'See what Pro includes →',
-    onboardGuideIntro:  "You've already worked through the basics during setup — rooms, rates, and your first few settings. If you'd like a complete reference to come back to any time, we've put together a full Getting Started guide covering everything from seasonal pricing to your booking widget.",
+    onboardGuideIntro:  'Want the full picture? Our Getting Started Guide covers everything from seasonal pricing to your booking widget. (EN version only for now — more languages coming soon.)',
     onboardGuideLink:   'Read the Getting Started Guide →',
   },
   fr: {
@@ -206,9 +219,8 @@ const T = {
     proWelcomeBody:     'Votre code promotionnel a été appliqué — voici tout ce qui est maintenant disponible :',
     onboardSubject:     'Bienvenue sur NestBook ! Voici comment commencer 🌿',
     onboardHeroTag:     'Bienvenue à bord 🌿',
-    onboardHeading:     'Ravi de vous accueillir, there !',
-    onboardIntro:       "Votre compte de gestion de propriété est configuré et prêt à l'emploi.",
-    onboardPlanTitle:   '✦ Ce qui est inclus dans votre plan Gratuit',
+    onboardHeading:     'Bienvenue, ravis de vous compter parmi nous, {name} !',
+    onboardIntro:       '{property} est maintenant en ligne sur NestBook. Voici comment configurer votre application.',
     onboardStepsTitle:  'Alors, que faire maintenant ?',
     onboardStepsSub:    'Suivez ces étapes et votre page de réservation sera en ligne en environ 20 minutes.',
     onboardStep1Title:  'Complétez les détails de votre propriété',
@@ -228,12 +240,26 @@ const T = {
     onboardStep6Body:   "Dans Paramètres, trouvez Synchronisation calendrier — copiez votre URL iCal et ajoutez-la à vos comptes Booking.com et Airbnb.",
     onboardStep7Title:  'Partagez votre lien de réservation partout',
     onboardStep7Body:   "Copiez votre lien nestbook.io/book/votre-propriété et ajoutez-le à votre bio Instagram, signature e-mail, statut WhatsApp, réponses TripAdvisor — partout où vos clients peuvent vous trouver.",
-    onboardCTA:         'Accéder à mon tableau de bord →',
-    onboardPrintBtn:    '💡 Vous voulez le conserver ? La plupart des applications e-mail permettent d\'imprimer via Fichier → Imprimer.',
-    onboardProTitle:    'Vous voulez aller plus loin ?',
-    onboardProBody:     "Quand vous êtes prêt — NestBook Pro est à 19£/mois et débloque des chambres illimitées, 5 photos par chambre, un widget de réservation pour votre site, la tarification saisonnière et des rapports de revenus. Sans pression — votre plan Gratuit est le vôtre pour aussi longtemps que vous le souhaitez.",
-    onboardProCTA:      'Voir ce qu\'inclut Pro →',
-    onboardGuideIntro:  "Vous avez déjà parcouru les bases pendant la configuration — chambres, tarifs et premiers paramètres. Si vous souhaitez une référence complète à consulter à tout moment, nous avons préparé un guide de démarrage complet couvrant tout : des tarifs saisonniers à votre widget de réservation.",
+    onboardSectionAppTitle:  'Préparez votre application et mettez votre page de réservation en ligne',
+    onboardStepRoomsTitle:   '1. Ajoutez vos chambres.',
+    onboardStepRoomsBody:    "Selon votre type de location, celles-ci peuvent s'appeler Chambres, Propriété ou Unités — différents noms pour la même chose : l'endroit où logent vos clients. Ouvrez [Chambres/Unités/Propriété] dans le menu, cliquez sur + Ajouter, remplissez le formulaire, enregistrez.",
+    onboardStepPhotosTitle:  '2. Ajoutez des photos.',
+    onboardStepPhotosBody:   "Cliquez sur une chambre, puis sur Modifier — vous y trouverez l'ajout de photos. Ce sont les images que les clients voient sur votre page de réservation.",
+    onboardStepCalendarTitle: '3. Vérifiez votre calendrier.',
+    onboardStepCalendarBody:  'Une fois vos chambres ajoutées, ouvrez Calendrier pour les voir toutes organisées et prêtes.',
+    onboardShineTitle:       'Sublimez votre page',
+    onboardShinePhotoTitle:  'Ajoutez une photo de votre propriété.',
+    onboardShinePhotoBody:   "Dans Paramètres — c'est l'image principale en haut de votre page de réservation, la première chose qu'un client voit.",
+    onboardShineAboutTitle:  "Rédigez votre texte « À propos » et vos informations « En un coup d'œil ».",
+    onboardShineAboutBody:   "Toujours dans Paramètres — cela indique à un visiteur qui vous êtes et ce que vous proposez, en un coup d'œil, avant même qu'il ne fasse défiler la page.",
+    onboardShineThemeTitle:  'Choisissez votre thème.',
+    onboardShineThemeBody:   "Sélectionnez une palette de couleurs dans Paramètres — elle s'applique aussi à votre page de réservation et à votre widget, pour que tout vous ressemble vraiment.",
+    onboardShineOutro:       "Ce ne sont pas de simples options facultatives — elles transforment votre page de réservation, d'une page vide à une page réellement accueillante.",
+    onboardGuestsTitle:      'Vous avez déjà des clients ?',
+    onboardGuestsBody:       'Rendez-vous dans Clients → Importer des clients pour intégrer votre liste existante. Pas encore de liste ? Aucun souci — chaque nouvelle réservation enregistre automatiquement le client.',
+    onboardCTA:         'Accéder à mon tableau de bord NestBook →',
+    onboardPrintBtn:    "💡 Envie de conserver cet e-mail comme référence ? La plupart des messageries permettent d'imprimer via Fichier → Imprimer, ou l'option d'impression de votre navigateur.",
+    onboardGuideIntro:  "Envie d'en savoir plus ? Notre guide de démarrage couvre tout, de la tarification saisonnière à votre widget de réservation. (Version anglaise uniquement pour le moment — d'autres langues arrivent bientôt.)",
     onboardGuideLink:   'Lire le guide de démarrage →',
   },
   es: {
@@ -309,9 +335,8 @@ const T = {
     proWelcomeBody:     'Su código promocional ha sido aplicado — esto es lo que está ahora disponible:',
     onboardSubject:     '¡Bienvenido a NestBook! Cómo empezar 🌿',
     onboardHeroTag:     'Bienvenido a bordo 🌿',
-    onboardHeading:     '¡Nos alegra tenerle con nosotros, there!',
-    onboardIntro:       'Su cuenta de gestión de alojamiento está configurada y lista para usar.',
-    onboardPlanTitle:   '✦ Qué incluye su plan Gratuito',
+    onboardHeading:     '¡Bienvenido, nos alegra tenerte con nosotros, {name}!',
+    onboardIntro:       '{property} ya está activo en NestBook. Así puedes poner en marcha tu aplicación.',
     onboardStepsTitle:  '¿Y ahora qué?',
     onboardStepsSub:    'Siga estos pasos y su página de reservas estará en línea en unos 20 minutos.',
     onboardStep1Title:  'Complete los detalles de su propiedad',
@@ -331,13 +356,27 @@ const T = {
     onboardStep6Body:   'En Configuración, encuentre Sincronización de calendario — copie su URL iCal y añádala a sus cuentas de Booking.com y Airbnb.',
     onboardStep7Title:  'Comparta su enlace de reservas en todas partes',
     onboardStep7Body:   'Copie su enlace nestbook.io/book/su-propiedad y añádalo a su bio de Instagram, firma de correo, estado de WhatsApp, respuestas de TripAdvisor — donde sus huéspedes puedan encontrarle.',
-    onboardCTA:         'Ir a mi panel →',
-    onboardPrintBtn:    '💡 ¿Quiere conservarlo? La mayoría de aplicaciones de correo permiten imprimir mediante Archivo → Imprimir.',
-    onboardProTitle:    '¿Quiere ir más lejos?',
-    onboardProBody:     'NestBook Pro es £19/mes y desbloquea habitaciones ilimitadas, 5 fotos por habitación, un widget de reservas para su web, precios de temporada e informes de ingresos. Sin presión — su plan Gratuito es suyo el tiempo que quiera.',
-    onboardProCTA:      'Ver qué incluye Pro →',
-    onboardGuideIntro:  'Ya ha trabajado con los aspectos básicos durante la configuración: habitaciones, tarifas y sus primeros ajustes. Si desea una referencia completa a la que volver en cualquier momento, hemos preparado una guía de inicio completa que cubre todo, desde los precios de temporada hasta su widget de reservas.',
-    onboardGuideLink:   'Leer la guía de inicio →',
+    onboardSectionAppTitle:  'Prepara tu aplicación y publica tu página de reservas',
+    onboardStepRoomsTitle:   '1. Añade tus habitaciones.',
+    onboardStepRoomsBody:    'Según tu tipo de alquiler, pueden llamarse Habitaciones, Propiedad o Unidades — distintos nombres para lo mismo: el lugar donde se alojan tus huéspedes. Abre [Habitaciones/Unidades/Propiedad] en el menú lateral, haz clic en + Añadir, completa el formulario y guarda.',
+    onboardStepPhotosTitle:  '2. Añade fotos.',
+    onboardStepPhotosBody:   'Haz clic en cualquier habitación y luego en Editar — ahí encontrarás la opción para subir fotos. Estas son las imágenes que los huéspedes ven en tu página de reservas.',
+    onboardStepCalendarTitle: '3. Revisa tu calendario.',
+    onboardStepCalendarBody:  'Una vez añadidas tus habitaciones, abre Calendario para verlas todas organizadas y listas.',
+    onboardShineTitle:       'Haz que brille',
+    onboardShinePhotoTitle:  'Añade una foto de tu propiedad.',
+    onboardShinePhotoBody:   'En Ajustes — es la imagen principal en la parte superior de tu página de reservas, lo primero que ve un huésped.',
+    onboardShineAboutTitle:  'Escribe tu texto "Sobre nosotros" y los datos "De un vistazo".',
+    onboardShineAboutBody:   'También en Ajustes — esto le muestra a un visitante quién eres y qué ofreces, de un vistazo, antes incluso de desplazarse por la página.',
+    onboardShineThemeTitle:  'Elige tu tema.',
+    onboardShineThemeBody:   'Selecciona una combinación de colores en Ajustes — se aplica también a tu página de reservas y a tu widget, para que todo tenga realmente tu sello.',
+    onboardShineOutro:       'No son extras opcionales — son lo que convierte tu página de reservas de algo vacío en algo verdaderamente atractivo.',
+    onboardGuestsTitle:      '¿Ya tienes huéspedes?',
+    onboardGuestsBody:       'En Huéspedes → Importar huéspedes puedes traer tu lista existente. ¿No tienes ninguna lista todavía? No te preocupes — cada nueva reserva guarda al huésped automáticamente.',
+    onboardCTA:         'Ir a mi panel de NestBook →',
+    onboardPrintBtn:    '💡 ¿Quieres guardar este correo como referencia? La mayoría de las aplicaciones de correo permiten imprimir desde Archivo → Imprimir, o mediante la opción de impresión de tu navegador.',
+    onboardGuideIntro:  '¿Quieres ver el panorama completo? Nuestra guía de primeros pasos cubre todo, desde precios estacionales hasta tu widget de reservas. (Solo disponible en inglés por ahora — próximamente en más idiomas.)',
+    onboardGuideLink:   'Leer la guía de primeros pasos →',
   },
   de: {
     proUpgradeSubject:    'Willkommen bei NestBook Pro — alles ist bereit!',
@@ -412,9 +451,8 @@ const T = {
     proWelcomeBody:     'Ihr Aktionscode wurde angewendet — folgendes ist jetzt freigeschaltet:',
     onboardSubject:     'Willkommen bei NestBook! So fangen Sie an 🌿',
     onboardHeroTag:     'Herzlich willkommen 🌿',
-    onboardHeading:     'Schön, dass Sie dabei sind, there!',
-    onboardIntro:       'Ihr Unterkunftsverwaltungskonto ist eingerichtet und einsatzbereit.',
-    onboardPlanTitle:   '✦ Was in Ihrem Free-Plan enthalten ist',
+    onboardHeading:     'Willkommen, wir freuen uns, dass Sie dabei sind, {name}!',
+    onboardIntro:       '{property} ist jetzt live auf NestBook. So richten Sie Ihre App ein.',
     onboardStepsTitle:  'Was tun Sie jetzt?',
     onboardStepsSub:    'Folgen Sie diesen Schritten — Ihre Buchungsseite ist in etwa 20 Minuten live.',
     onboardStep1Title:  'Unterkunftsdetails vervollständigen',
@@ -434,13 +472,27 @@ const T = {
     onboardStep6Body:   'Finden Sie in den Einstellungen Kalender-Sync — kopieren Sie Ihre iCal-URL und fügen Sie sie zu Ihren Booking.com- und Airbnb-Konten hinzu.',
     onboardStep7Title:  'Buchungsseiten-Link überall teilen',
     onboardStep7Body:   'Kopieren Sie Ihren nestbook.io/book/ihre-unterkunft Link und fügen Sie ihn zu Ihrer Instagram-Bio, E-Mail-Signatur, WhatsApp-Status und TripAdvisor-Antworten hinzu.',
-    onboardCTA:         'Zum Dashboard →',
-    onboardPrintBtn:    '💡 Behalten möchten? Die meisten E-Mail-Apps ermöglichen das Drucken über Datei → Drucken.',
-    onboardProTitle:    'Möchten Sie mehr?',
-    onboardProBody:     'NestBook Pro ist für 19£/Monat verfügbar und schaltet unbegrenzte Zimmer, 5 Fotos pro Zimmer, ein Buchungs-Widget für Ihre Website, saisonale Preisgestaltung und Umsatzberichte frei. Kein Druck — Ihr Free-Plan gehört Ihnen, so lange Sie möchten.',
-    onboardProCTA:      'Sehen, was Pro beinhaltet →',
-    onboardGuideIntro:  'Sie haben während der Einrichtung bereits die Grundlagen durchgearbeitet — Zimmer, Preise und erste Einstellungen. Wenn Sie jederzeit eine vollständige Referenz zur Hand haben möchten, haben wir einen umfassenden Leitfaden für den Einstieg zusammengestellt, der alles von Saisonpreisen bis zum Buchungs-Widget abdeckt.',
-    onboardGuideLink:   'Leitfaden für den Einstieg lesen →',
+    onboardSectionAppTitle:  'Bereiten Sie Ihre App vor und bringen Sie Ihre Buchungsseite online',
+    onboardStepRoomsTitle:   '1. Fügen Sie Ihre Zimmer hinzu.',
+    onboardStepRoomsBody:    'Je nach Vermietungsart heißen diese Zimmer, Unterkunft oder Einheiten — unterschiedliche Namen für dasselbe: den Ort, an dem Ihre Gäste übernachten. Öffnen Sie [Zimmer/Einheiten/Unterkunft] in der Seitenleiste, klicken Sie auf + Hinzufügen, füllen Sie das Formular aus und speichern Sie.',
+    onboardStepPhotosTitle:  '2. Fotos hinzufügen.',
+    onboardStepPhotosBody:   'Klicken Sie auf eine Zimmerkachel, dann auf Bearbeiten — dort finden Sie den Foto-Upload. Diese Bilder sehen Gäste auf Ihrer Buchungsseite.',
+    onboardStepCalendarTitle: '3. Prüfen Sie Ihren Kalender.',
+    onboardStepCalendarBody:  'Sobald Ihre Zimmer hinzugefügt sind, öffnen Sie den Kalender, um sie übersichtlich dargestellt zu sehen.',
+    onboardShineTitle:       'Machen Sie sie richtig ansprechend',
+    onboardShinePhotoTitle:  'Fügen Sie ein Unterkunftsfoto hinzu.',
+    onboardShinePhotoBody:   'In den Einstellungen — dies ist das Titelbild oben auf Ihrer Buchungsseite und das Erste, was ein Gast sieht.',
+    onboardShineAboutTitle:  'Schreiben Sie Ihren „Über uns"-Text und die „Auf einen Blick"-Angaben.',
+    onboardShineAboutBody:   'Ebenfalls in den Einstellungen — das zeigt Besuchern auf einen Blick, wer Sie sind und was Sie bieten, noch bevor sie scrollen.',
+    onboardShineThemeTitle:  'Wählen Sie Ihr Design.',
+    onboardShineThemeBody:   'Wählen Sie ein Farbschema in den Einstellungen — es überträgt sich auch auf Ihre Buchungsseite und Ihr Widget, damit alles wirklich zu Ihnen passt.',
+    onboardShineOutro:       'Das sind keine optionalen Extras — sie machen den Unterschied zwischen einer kargen und einer wirklich einladenden Buchungsseite.',
+    onboardGuestsTitle:      'Haben Sie bereits Gäste?',
+    onboardGuestsBody:       'Unter Gäste → Gäste importieren können Sie Ihre bestehende Liste übernehmen. Noch keine Liste? Kein Problem — jede neue Buchung speichert den Gast automatisch.',
+    onboardCTA:         'Zu meinem NestBook-Dashboard →',
+    onboardPrintBtn:    '💡 Möchten Sie diese E-Mail als Referenz aufbewahren? Die meisten E-Mail-Programme ermöglichen den Druck über Datei → Drucken oder die Druckfunktion Ihres Browsers.',
+    onboardGuideIntro:  'Möchten Sie mehr erfahren? Unser Erste-Schritte-Leitfaden deckt alles ab, von saisonalen Preisen bis zu Ihrem Buchungs-Widget. (Vorerst nur auf Englisch — weitere Sprachen folgen in Kürze.)',
+    onboardGuideLink:   'Erste-Schritte-Leitfaden lesen →',
   },
   nl: {
     proUpgradeSubject:    'Welkom bij NestBook Pro — alles is klaar!',
@@ -515,9 +567,8 @@ const T = {
     proWelcomeBody:     'Uw actiecode is toegepast — dit is nu beschikbaar:',
     onboardSubject:     'Welkom bij NestBook! Zo begint u 🌿',
     onboardHeroTag:     'Welkom aan boord 🌿',
-    onboardHeading:     'Fijn dat u erbij bent, there!',
-    onboardIntro:       'Uw accommodatiebeheeraccount is ingesteld en klaar voor gebruik.',
-    onboardPlanTitle:   '✦ Wat inbegrepen is in uw Gratis plan',
+    onboardHeading:     'Welkom, wat fijn dat je erbij bent, {name}!',
+    onboardIntro:       '{property} staat nu live op NestBook. Zo richt je je app in.',
     onboardStepsTitle:  'Wat doet u nu?',
     onboardStepsSub:    'Volg deze stappen en uw boekingspagina staat in ongeveer 20 minuten live.',
     onboardStep1Title:  'Vul uw accommodatiegegevens in',
@@ -537,13 +588,27 @@ const T = {
     onboardStep6Body:   'Vind in Instellingen Kalendersynchronisatie — kopieer uw iCal-URL en voeg deze toe aan uw Booking.com- en Airbnb-accounts.',
     onboardStep7Title:  'Deel uw boekingspaginalink overal',
     onboardStep7Body:   'Kopieer uw nestbook.io/book/uw-accommodatie link en voeg hem toe aan uw Instagram-bio, e-mailhandtekening, WhatsApp-status en TripAdvisor-reacties.',
-    onboardCTA:         'Naar mijn dashboard →',
-    onboardPrintBtn:    '💡 Bewaren? De meeste e-mailapps laten u afdrukken via Bestand → Afdrukken.',
-    onboardProTitle:    'Wilt u meer?',
-    onboardProBody:     "NestBook Pro is £19/maand en ontgrendelt onbeperkte kamers, 5 foto's per kamer, een boekingswidget voor uw website, seizoensprijzen en omzetrapporten. Geen druk — uw Gratis plan is van u zolang u wilt.",
-    onboardProCTA:      'Zie wat Pro inhoudt →',
-    onboardGuideIntro:  'U hebt de basisinstellingen al doorlopen tijdens het instellen — kamers, tarieven en uw eerste instellingen. Als u altijd een volledige referentie bij de hand wilt hebben, hebben we een uitgebreide startgids samengesteld die alles behandelt van seizoensprijzen tot uw boekingswidget.',
-    onboardGuideLink:   'Lees de startgids →',
+    onboardSectionAppTitle:  'Maak je app klaar en zet je boekingspagina live',
+    onboardStepRoomsTitle:   '1. Voeg je kamers toe.',
+    onboardStepRoomsBody:    'Afhankelijk van je type verhuur kunnen deze Kamers, Accommodatie of Units heten — verschillende namen voor hetzelfde: de plek waar je gasten verblijven. Open [Kamers/Units/Accommodatie] in het menu, klik op + Toevoegen, vul het formulier in en sla op.',
+    onboardStepPhotosTitle:  "2. Voeg foto's toe.",
+    onboardStepPhotosBody:   "Klik op een kamertegel en daarna op Bewerken — daar vind je de foto-upload. Dit zijn de afbeeldingen die gasten op je boekingspagina zien.",
+    onboardStepCalendarTitle: '3. Bekijk je kalender.',
+    onboardStepCalendarBody:  'Zodra je kamers zijn toegevoegd, open je de Kalender om ze overzichtelijk en klaar te zien staan.',
+    onboardShineTitle:       'Laat het stralen',
+    onboardShinePhotoTitle:  'Voeg een foto van je accommodatie toe.',
+    onboardShinePhotoBody:   'In Instellingen — dit is de hoofdafbeelding bovenaan je boekingspagina, het eerste wat een gast ziet.',
+    onboardShineAboutTitle:  'Schrijf je "Over ons"-tekst en "In één oogopslag"-gegevens.',
+    onboardShineAboutBody:   'Ook in Instellingen — dit laat een bezoeker in één oogopslag zien wie je bent en wat je te bieden hebt, nog voordat er wordt gescrold.',
+    onboardShineThemeTitle:  'Kies je thema.',
+    onboardShineThemeBody:   'Kies een kleurenschema in Instellingen — dit werkt ook door op je boekingspagina en widget, zodat alles echt van jou voelt.',
+    onboardShineOutro:       "Dit zijn geen optionele extra's — ze maken het verschil tussen een kale boekingspagina en een echt uitnodigende.",
+    onboardGuestsTitle:      'Heb je al gasten?',
+    onboardGuestsBody:       'Ga naar Gasten → Gasten importeren om je bestaande lijst toe te voegen. Nog geen lijst? Geen probleem — elke nieuwe boeking slaat de gast automatisch op.',
+    onboardCTA:         'Ga naar mijn NestBook-dashboard →',
+    onboardPrintBtn:    "💡 Wil je deze e-mail als naslagwerk bewaren? De meeste e-mailprogramma's laten je afdrukken via Bestand → Afdrukken, of via de afdrukoptie van je browser.",
+    onboardGuideIntro:  'Wil je het hele plaatje zien? Onze Aan de slag-gids behandelt alles, van seizoensprijzen tot je boekingswidget. (Voorlopig alleen in het Engels — meer talen volgen binnenkort.)',
+    onboardGuideLink:   'Lees de Aan de slag-gids →',
   },
 };
 
@@ -1812,28 +1877,14 @@ function welcomeEmailHTML(user, property) {
     .hero h1 { font-size: 26px; font-weight: 700; color: #1a2e14; margin-bottom: 10px; line-height: 1.25; }
     .hero p { font-size: 15px; color: #475569; max-width: 480px; line-height: 1.7; }
     .body { padding: 32px 32px 0; }
-    .plan-box { background: #f0fdf4; border: 1.5px solid #d9f0cc; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
-    .plan-box-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1a4710; margin-bottom: 14px; }
-    .plan-feature { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; font-size: 14px; color: #475569; }
-    .plan-feature-tick { color: #1a4710; font-weight: 700; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
-    .plan-feature strong { color: #1a2e14; }
-    .steps-title { font-size: 18px; font-weight: 700; color: #1a2e14; margin-bottom: 6px; }
-    .steps-sub { font-size: 14px; color: #64748b; margin-bottom: 24px; }
-    .step { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
-    .step-num { width: 30px; height: 30px; background: #1a4710; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1a4710; margin: 28px 0 16px; }
+    .step { margin-bottom: 18px; }
     .step-title { font-size: 15px; font-weight: 700; color: #1a2e14; margin-bottom: 4px; }
     .step-desc { font-size: 14px; color: #475569; line-height: 1.65; }
-    .step-hint { display: inline-block; background: #fef3c7; border-left: 3px solid #f59e0b; padding: 6px 10px; margin-top: 8px; font-size: 13px; color: #78350f; border-radius: 0 4px 4px 0; line-height: 1.5; }
-    .step-tip { display: inline-block; background: #f0fdf4; border-left: 3px solid #1a4710; padding: 6px 10px; margin-top: 8px; font-size: 13px; color: #1a4710; border-radius: 0 4px 4px 0; line-height: 1.5; }
     .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
     .cta-wrap { text-align: center; padding: 28px 32px; }
     .cta-btn { display: inline-block; background: #1a4710; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
     .cta-sub { font-size: 12px; color: #94a3b8; margin-top: 10px; }
-
-    .upgrade-box { background: #1a4710; margin: 0 32px 32px; border-radius: 10px; padding: 20px 24px; }
-    .upgrade-box-title { font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
-    .upgrade-box-body { font-size: 13px; color: #d9f0cc; margin-bottom: 14px; line-height: 1.6; }
-    .upgrade-link { display: inline-block; background: white; color: #1a4710 !important; text-decoration: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; }
     .footer { background: #f8fbf6; border-top: 1px solid #e2e8f0; padding: 24px 32px; text-align: center; }
     .footer p { font-size: 12px; color: #94a3b8; line-height: 1.7; }
     .footer a { color: #1a4710; text-decoration: none; }
@@ -1841,13 +1892,11 @@ function welcomeEmailHTML(user, property) {
       body { background: white; }
       .header { background: #1a4710 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .print-wrap, .cta-wrap, .footer { display: none; }
-      .upgrade-box { background: #1a4710 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
     @media (max-width: 480px) {
       .body { padding: 24px 20px 0; }
       .hero { padding: 24px 20px; }
       .hero h1 { font-size: 22px; }
-      .upgrade-box { margin: 0 20px 24px; }
       .print-wrap { padding: 0 20px 16px; }
       .footer { padding: 20px; }
     }
@@ -1862,22 +1911,47 @@ function welcomeEmailHTML(user, property) {
 
   <div class="hero">
     <div class="hero-tag">${t(lang, 'onboardHeroTag')}</div>
-    <h1>${t(lang, 'onboardHeading').replace('there', firstName)}</h1>
-    <p>${property?.name ? `<strong>${property.name}</strong> is live on NestBook. ` : ''}${t(lang, 'onboardIntro')}</p>
+    <h1>${t(lang, 'onboardHeading').replace('{name}', firstName)}</h1>
+    <p>${t(lang, 'onboardIntro').replace('{property}', `<strong>${property?.name || 'Your property'}</strong>`)}</p>
   </div>
 
   <div class="body">
 
-    <div class="plan-box">
-      <div class="plan-box-title">${t(lang, 'onboardPlanTitle')}</div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Up to 3 rooms</strong> — add your rooms or spaces and manage availability</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Your own property webpage</strong> — a beautiful booking page at nestbook.io/book/your-property</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>1 photo per room</strong> — shown on your booking page for guests to see</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Guest enquiry form</strong> — guests on your page can send you a direct enquiry</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>Facebook Booking Button</strong> — link your Facebook page directly to your NestBook page</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>iCal sync</strong> — keep your calendar synced with Booking.com and Airbnb</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>5 languages</strong> — your dashboard works in English, French, German, Spanish and Dutch</span></div>
-      <div class="plan-feature"><span class="plan-feature-tick">✓</span><span><strong>7 colour themes</strong> — make NestBook feel like yours</span></div>
+    <div class="section-title">${t(lang, 'onboardSectionAppTitle')}</div>
+
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardStepRoomsTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardStepRoomsBody')}</div>
+    </div>
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardStepPhotosTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardStepPhotosBody')}</div>
+    </div>
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardStepCalendarTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardStepCalendarBody')}</div>
+    </div>
+
+    <div class="section-title">${t(lang, 'onboardShineTitle')}</div>
+
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardShinePhotoTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardShinePhotoBody')}</div>
+    </div>
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardShineAboutTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardShineAboutBody')}</div>
+    </div>
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardShineThemeTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardShineThemeBody')}</div>
+    </div>
+
+    <p style="font-size:14px;color:#475569;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardShineOutro')}</p>
+
+    <div class="step">
+      <div class="step-title">${t(lang, 'onboardGuestsTitle')}</div>
+      <div class="step-desc">${t(lang, 'onboardGuestsBody')}</div>
     </div>
 
     <p style="font-size:15px;color:#475569;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardGuideIntro')}</p>
@@ -1902,18 +1976,11 @@ function welcomeEmailHTML(user, property) {
     ${t(lang, 'onboardPrintBtn')}
   </p>
 
-  <div class="upgrade-box">
-    <div class="upgrade-box-title">${t(lang, 'onboardProTitle')}</div>
-    <div class="upgrade-box-body">${t(lang, 'onboardProBody')}</div>
-    <a href="https://nestbook.io/app/pricing" class="upgrade-link">${t(lang, 'onboardProCTA')}</a>
-  </div>
-
   <div class="footer">
     <p>
       You're receiving this because you signed up to NestBook.<br>
       <a href="https://nestbook.io">nestbook.io</a> &nbsp;·&nbsp;
       <a href="mailto:hello@nestbook.io">hello@nestbook.io</a> &nbsp;·&nbsp;
-      NestBook.IO Ltd, 1 Hoburne Lane, Christchurch, Dorset BH23 4HP<br><br>
       <a href="https://nestbook.io/app/settings">Manage your account</a> &nbsp;·&nbsp;
       <a href="https://nestbook.io/help">Help centre</a>
     </p>
