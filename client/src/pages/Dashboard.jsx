@@ -681,13 +681,13 @@ export default function Dashboard() {
             className="stat-bar-item db-available-btn"
             onClick={() => setShowAvailablePopover((v) => !v)}
             style={{ position: 'relative', cursor: 'pointer', textAlign: 'left', border: 'none', fontFamily: 'inherit' }}
-            title="Click to see available room names"
+            title={property.rental_type === 'units' ? 'Click to see available unit names' : 'Click to see available room names'}
           >
             <div className="sb-value" style={{ color: 'var(--accent-dark)' }}>{availableRooms.length}</div>
             <div className="sb-label">{t('availableTonight')}</div>
             {showAvailablePopover && availableRooms.length > 0 && (
               <div className="db-room-popover" onClick={(e) => e.stopPropagation()}>
-                <div className="db-room-popover-title">{t('availableRoomsTonight')}</div>
+                <div className="db-room-popover-title">{property.rental_type === 'units' ? 'Available units tonight' : t('availableRoomsTonight')}</div>
                 {availableRooms.map((r) => (
                   <div key={r.id} className="db-room-popover-item">
                     <div className="db-room-popover-info">
@@ -726,7 +726,7 @@ export default function Dashboard() {
           {/* Total rooms */}
           <div className="stat-bar-item" style={{ flex: 1 }}>
             <div className="sb-value" style={{ color: 'var(--accent-dark)' }}>{bookableRooms.length}</div>
-            <div className="sb-label">{t('totalRooms')}</div>
+            <div className="sb-label">{property.rental_type === 'units' ? 'Total Units' : t('totalRooms')}</div>
           </div>
         </div>
       )}

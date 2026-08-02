@@ -180,6 +180,10 @@ export default function Sidebar() {
               ? 'Units'
               : key === 'charges' && property?.rental_type === 'whole_property'
               ? t('nav.propertyCharges')
+              // Unit mode — hardcoded (not yet in the i18n catalogue), matching
+              // the plain-English precedent already set elsewhere for Un mode.
+              : key === 'charges' && property?.rental_type === 'units'
+              ? 'Unit Charges'
               : t(key);
             return (
               <NavLink

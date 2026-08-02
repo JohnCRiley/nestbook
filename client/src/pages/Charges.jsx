@@ -132,6 +132,7 @@ export default function Charges() {
   const [wpChargesKey, setWpChargesKey] = useState(0);
 
   const isWP = property?.rental_type === 'whole_property';
+  const isUnitsMode = property?.rental_type === 'units';
   const isChargesStaff = user?.role === 'charges_staff';
   const canAdd = user?.role === 'charges_staff' || user?.role === 'reception' || user?.role === 'owner';
   const canAddFromDetail = user?.role === 'owner' || user?.role === 'reception';
@@ -205,7 +206,7 @@ export default function Charges() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 className="page-title">
-            {isWP ? t('charges.propertyCharges') : t('charges')}
+            {isWP ? t('charges.propertyCharges') : isUnitsMode ? 'Unit Charges' : t('charges')}
           </h1>
           <div style={{ color: '#64748b', fontSize: '0.88rem', marginTop: 4 }}>{t('chargesSubtitle')}</div>
         </div>
@@ -403,6 +404,7 @@ export default function Charges() {
         <AddChargeModal
           booking={addChargeFor}
           categories={categories}
+          unitsMode={property?.rental_type === 'units'}
           onSaved={handleChargeSaved}
           onClose={() => setAddChargeFor(null)}
         />

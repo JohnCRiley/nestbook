@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
 
-export default function AddChargeModal({ booking, categories, onSaved, onClose }) {
+export default function AddChargeModal({ booking, categories, onSaved, onClose, unitsMode = false }) {
   const t = useT();
   const { currencySymbol } = useLocale();
   const today = new Date().toISOString().slice(0, 10);
@@ -85,7 +85,7 @@ export default function AddChargeModal({ booking, categories, onSaved, onClose }
         boxShadow: '0 8px 40px rgba(0,0,0,0.22)', overflow: 'hidden',
       }}>
         <div style={{ background: 'var(--header-bg)', color: 'var(--header-text)', padding: '16px 24px' }}>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{t('addChargeTitle')}</div>
+          <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{unitsMode ? 'Add Unit Charge' : t('addChargeTitle')}</div>
           <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', marginTop: 3 }}>
             {booking.guest_first_name} {booking.guest_last_name} — {booking.room_name}
           </div>

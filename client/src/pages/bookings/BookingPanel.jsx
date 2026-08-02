@@ -1510,6 +1510,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         <AddChargeModal
           booking={addChargeFor}
           categories={categories}
+          unitsMode={property?.rental_type === 'units'}
           onSaved={(charge) => {
             setAddChargeFor(null);
             setCharges((prev) => (prev ? [charge, ...prev] : [charge]));
