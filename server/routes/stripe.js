@@ -955,7 +955,7 @@ export async function stripeWebhookHandler(req, res) {
           if (prior.n >= 1) {
             const property = db.prepare(`
               SELECT p.*, u.email AS owner_email FROM properties p
-              LEFT JOIN users u ON u.id = p.user_id WHERE p.id = ?
+              LEFT JOIN users u ON u.id = p.owner_id WHERE p.id = ?
             `).get(expiredBooking.property_id);
             sendPaymentAssistanceEmail(expiredBooking, property)
               .catch(err => console.error(`[stripe] Assistance email failed (booking #${expiredBooking.id}):`, err.message));

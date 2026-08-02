@@ -2689,7 +2689,10 @@ export async function sendVerificationReminderEmail(user) {
 // Sent to the guest on their second consecutive failed/expired payment attempt
 // for the same room + dates. reply-to = property owner so replies land with them.
 export async function sendPaymentAssistanceEmail(booking, property) {
-  if (!resend) return;
+  if (!resend) {
+    console.log(`[email] Payment assistance email skipped (Resend not configured) — booking #${booking.id}`);
+    return;
+  }
   const guestEmail = booking.guest_email;
   if (!guestEmail) return;
 
