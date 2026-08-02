@@ -213,12 +213,21 @@ widgetRouter.post('/bookings', async (req, res) => {
     console.log(`[widget-booking] started — property=${property_id} room=${room_id} guest=${guest_id} status=${status ?? 'none'}`);
 
     // Demo properties: return fake confirmation, never write to DB
-    const propCheck = db.prepare('SELECT is_demo FROM properties WHERE id = ?').get(property_id);
+    const propCheck = db.prepare('SELECT is_demo, rental_type, booking_flow FROM properties WHERE id = ?').get(property_id);
     if (propCheck?.is_demo === 1) {
       const ref = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
       console.log('[widget] Demo property booking blocked:', property_id);
       return res.status(201).json({ id: ref, demo: true, status: 'cancelled' });
     }
+
+    // Units mode, request-flow booking — routes through the exact same
+    // pending_owner_approval / approval_token / sendApprovalRequestEmail
+    // mechanism WP's own isWpRequest already uses below, just from a new,
+    // independent condition. Every existing units-mode property defaults to
+    // booking_flow='instant' (isUnitsRequestFlow stays false), so this is a
+    // no-op for them; IR and WP never have rental_type === 'units', so it's
+    // always false there regardless of their own booking_flow value.
+    const isUnitsRequestFlow = propCheck?.rental_type === 'units' && propCheck?.booking_flow === 'request';
 
     if (check_out_date <= check_in_date) {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
@@ -261,8 +270,8 @@ widgetRouter.post('/bookings', async (req, res) => {
     // would otherwise bypass this check entirely).
     const isWpRequest = (status === 'pending_owner_approval');
     let isBlockProtected = false;
-    console.log(`[widget-booking] isWpRequest=${isWpRequest}, guestEmail=${guestData?.email ?? 'null'}`);
-    if (!isWpRequest && guestData?.email) {
+    console.log(`[widget-booking] isWpRequest=${isWpRequest}, isUnitsRequestFlow=${isUnitsRequestFlow}, guestEmail=${guestData?.email ?? 'null'}`);
+    if (!isWpRequest && !isUnitsRequestFlow && guestData?.email) {
       const protProp = db.prepare(
         'SELECT block_booking_protection, block_booking_threshold FROM properties WHERE id = ?'
       ).get(property_id);
@@ -289,7 +298,8 @@ widgetRouter.post('/bookings', async (req, res) => {
     // Rooms-mode, non-WP bookings on properties with an active Connect account
     // are held as pending_payment. Block-booking protection takes priority:
     // if triggered the booking goes to pending_owner_approval, bypassing Stripe.
-    if (!isWpRequest && !isBlockProtected) {
+    // Units-mode request-flow bookings bypass Stripe entirely too, for the same reason.
+    if (!isWpRequest && !isBlockProtected && !isUnitsRequestFlow) {
       const ownerRow = db.prepare(`
         SELECT u.stripe_connect_account_id, u.stripe_connect_status,
                p.currency, p.name AS property_name
@@ -375,7 +385,7 @@ widgetRouter.post('/bookings', async (req, res) => {
     }
     // ── End Stripe Connect branch ─────────────────────────────────────────────
 
-    const needsApproval = isWpRequest || isBlockProtected;
+    const needsApproval = isWpRequest || isBlockProtected || isUnitsRequestFlow;
     const approvalToken = needsApproval ? crypto.randomBytes(32).toString('hex') : null;
 
     const result = db.prepare(`
