@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { localToday, LOCALE_MAP } from '../utils/format.js';
-import { StatusPill, formatAmenity } from './rooms/RoomPanel.jsx';
+import { StatusPill, formatAmenity, fmtDate, upcomingBookings } from './rooms/RoomPanel.jsx';
 import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
@@ -8,6 +9,10 @@ import Pagination from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import usePageSize from '../hooks/usePageSize.js';
+import { usePlan } from '../hooks/usePlan.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+import { BADGE_CLASS } from '../utils/bookingConstants.js';
+import { calcDue } from './Dashboard.jsx';
 
 // toolbar + stat-bar + padding
 const RESERVED = 120;
@@ -17,8 +22,11 @@ const RESERVED = 120;
 export default function Rooms() {
   const today = localToday();
   const t = useT();
-  const { currencySymbol, property, locale } = useLocale();
+  const { currencySymbol, fmtCurrency, property, locale } = useLocale();
   const pageSize = usePageSize(140, RESERVED);
+  const plan = usePlan();
+  const { user } = useAuth();
+  const hasChargesAddon = plan === 'multi' || !!user?.has_charges_addon;
 
   const [rooms,         setRooms]         = useState([]);
   const [bookings,      setBookings]      = useState([]);
@@ -192,6 +200,12 @@ export default function Rooms() {
         <UnitsPage
           units={units}
           roomsByUnit={roomsByUnit}
+          bookingsByRoom={bookingsByRoom}
+          today={today}
+          property={property}
+          fmtCurrency={fmtCurrency}
+          locale={locale}
+          hasChargesAddon={hasChargesAddon}
           loading={loading}
           selectedRoom={selectedRoom}
           onCardClick={handleCardClick}
@@ -569,7 +583,7 @@ function RoomGridSection({ rooms, loading, selectedRoom, onCardClick, t, emptyMe
 // Un mode — hardcoded English strings below are not yet in the i18n catalogue;
 // this UI isn't customer-facing yet (see plan-gating note in the task).
 
-function UnitsPage({ units, roomsByUnit, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, t, currencySymbol }) {
+function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCurrency, locale, hasChargesAddon, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, t, currencySymbol }) {
   const [expandedUnitId, setExpandedUnitId] = useState(null);
 
   return (
@@ -594,6 +608,12 @@ function UnitsPage({ units, roomsByUnit, loading, selectedRoom, onCardClick, onA
               key={unit.id}
               unit={unit}
               rooms={roomsByUnit[unit.id] ?? []}
+              bookings={bookingsByRoom[unit.id] ?? []}
+              today={today}
+              property={property}
+              fmtCurrency={fmtCurrency}
+              locale={locale}
+              hasChargesAddon={hasChargesAddon}
               isExpanded={expandedUnitId === unit.id}
               onToggle={() => setExpandedUnitId((prev) => (prev === unit.id ? null : unit.id))}
               onEdit={() => onEditUnit(unit)}
@@ -610,7 +630,29 @@ function UnitsPage({ units, roomsByUnit, loading, selectedRoom, onCardClick, onA
   );
 }
 
-function UnitAccordionPanel({ unit, rooms, isExpanded, onToggle, onEdit, onAddRoom, selectedRoom, onCardClick, t, currencySymbol }) {
+function UnitAccordionPanel({
+  unit, rooms, bookings = [], today, property, fmtCurrency, locale, hasChargesAddon,
+  isExpanded, onToggle, onEdit, onAddRoom, selectedRoom, onCardClick, t, currencySymbol,
+}) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Same active-booking window used everywhere else (Rooms.jsx activeByRoom, RoomPanel).
+  const activeBooking = bookings.find((b) =>
+    b.status !== 'cancelled' &&
+    b.status !== 'checked_out' &&
+    b.check_in_date <= today &&
+    b.check_out_date > today
+  );
+  // Current stay if occupied today, otherwise the soonest upcoming booking — reuses
+  // RoomPanel's upcomingBookings() so "current or next" falls out for free.
+  const current = activeBooking ?? upcomingBookings(bookings, today)[0] ?? null;
+  const isDepartingToday = activeBooking?.check_out_date === today;
+  // Same status→label map already used in RoomPanel's ScheduleRow / GuestPanel.
+  const currentStatusLabel = current
+    ? ({ arriving: t('calLegendInHouse'), in_house: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[current.status] ?? current.status)
+    : null;
+  const due = current ? calcDue(current, property) : null;
+
   return (
     <div className={`unit-panel${isExpanded ? ' is-expanded' : ''}`}>
       <div className="unit-panel-header" onClick={onToggle}>
@@ -649,6 +691,76 @@ function UnitAccordionPanel({ unit, rooms, isExpanded, onToggle, onEdit, onAddRo
 
       {isExpanded && (
         <div className="unit-panel-body" style={{ padding: '16px 18px' }}>
+
+          {/* ── Unit Details — current guest/booking, kept separate from the rooms grid below ── */}
+          <div style={{ marginBottom: 16, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            <div
+              onClick={() => setShowDetails((v) => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                background: 'var(--page-bg)',
+              }}
+            >
+              <span>Unit Details</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{showDetails ? '▴' : '▾'}</span>
+            </div>
+
+            {showDetails && (
+              <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)' }}>
+                {!current ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.83rem' }}>
+                    <StatusPill status="available" t={t} />
+                    <span>{t('noUpcomingBookings')}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                        {current.guest_first_name} {current.guest_last_name}
+                      </span>
+                      <span className={BADGE_CLASS[current.status] ?? 'badge'} style={{ fontSize: '0.68rem', padding: '2px 7px' }}>
+                        {currentStatusLabel}
+                      </span>
+                      {isDepartingToday && (
+                        <span style={{
+                          fontSize: '0.68rem', padding: '2px 7px', borderRadius: 4,
+                          background: '#fef3c7', color: '#92400e', border: '1px solid #fbbf24', fontWeight: 700,
+                        }}>
+                          Departing today
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      {fmtDate(current.check_in_date, locale)} → {fmtDate(current.check_out_date, locale)}
+                    </div>
+                    {due != null && (
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-dark)' }}>
+                        {t('coTotalDue')}: {fmtCurrency(due)}
+                      </div>
+                    )}
+
+                    {/* Charges & Bar add-on gate — same condition used in Charges.jsx / Settings' Dev Tools Plan Switcher */}
+                    {activeBooking && (
+                      hasChargesAddon ? (
+                        <Link
+                          to="/app/charges"
+                          style={{ marginTop: 2, fontSize: '0.83rem', fontWeight: 600, color: 'var(--accent-dark)', textDecoration: 'none' }}
+                        >
+                          View/Add Charges →
+                        </Link>
+                      ) : (
+                        <div style={{ marginTop: 2, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          🔒 Requires the Charges & Bar add-on
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="page-toolbar" style={{ marginBottom: 12 }}>
             <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Rooms in this unit</div>
             <button className="btn-primary" onClick={onAddRoom}>

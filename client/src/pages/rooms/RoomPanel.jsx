@@ -16,7 +16,7 @@ const parseAmenities = (str) =>
   (str ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
 /** Format a YYYY-MM-DD string as "30 Mar 2026". */
-function fmtDate(dateStr, locale = 'en') {
+export function fmtDate(dateStr, locale = 'en') {
   if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString(LOCALE_MAP[locale] ?? 'en-GB', {
@@ -25,7 +25,7 @@ function fmtDate(dateStr, locale = 'en') {
 }
 
 /** Upcoming bookings: non-cancelled, check-out in the future, sorted by check-in, limit 5. */
-function upcomingBookings(bookings, today) {
+export function upcomingBookings(bookings, today) {
   return bookings
     .filter((b) => b.status !== 'cancelled' && b.check_out_date >= today)
     .sort((a, b) => (a.check_in_date > b.check_in_date ? 1 : -1))

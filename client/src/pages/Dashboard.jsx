@@ -1124,7 +1124,7 @@ function StatCard({ value, label }) {
   );
 }
 
-function calcDue(b, property) {
+export function calcDue(b, property) {
   const room       = parseFloat(b.total_price) || 0;
   const bfFree     = !!(property?.breakfast_included || b.room_breakfast_included);
   const bfCharged  = !!b.breakfast_added && !bfFree;
