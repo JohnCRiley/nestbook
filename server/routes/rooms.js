@@ -210,14 +210,38 @@ roomsRouter.post('/', (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    // Free plan: max 5 rooms per property
     const currentUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
-    if (currentUser?.plan === 'free') {
-      const roomCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
-      if (roomCount >= 5) {
-        return res.status(403).json({
-          error: "You've reached the free plan limit of 5 rooms. Upgrade to Pro for unlimited rooms.",
-        });
+    const currentProperty = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(property_id);
+
+    if (currentProperty?.rental_type === 'units') {
+      if (!parent_unit_id) {
+        // Creating a top-level unit — Free plan: max 5 units per property. Pro/Multi: unlimited.
+        if (currentUser?.plan === 'free') {
+          const unitCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ? AND parent_unit_id IS NULL').get(property_id).n;
+          if (unitCount >= 5) {
+            return res.status(403).json({
+              error: "You've reached the free plan limit of 5 units. Upgrade to Pro for unlimited units.",
+            });
+          }
+        }
+      } else {
+        // Creating an internal room within a unit — structural limit of 5 per unit, all plans.
+        const roomInUnitCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ? AND parent_unit_id = ?').get(property_id, parent_unit_id).n;
+        if (roomInUnitCount >= 5) {
+          return res.status(403).json({
+            error: "This unit has reached the limit of 5 rooms.",
+          });
+        }
+      }
+    } else {
+      // IR / WP: Free plan: max 5 rooms per property
+      if (currentUser?.plan === 'free') {
+        const roomCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
+        if (roomCount >= 5) {
+          return res.status(403).json({
+            error: "You've reached the free plan limit of 5 rooms. Upgrade to Pro for unlimited rooms.",
+          });
+        }
       }
     }
 
