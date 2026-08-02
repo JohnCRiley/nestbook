@@ -2167,6 +2167,44 @@ John`
   } catch (e) {}
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rooms_parent_unit ON rooms(parent_unit_id)`);
 
+  // ── Add confirmed_conflict to bookings.status CHECK constraint ───────────────
+  // A Stripe-webhook payment confirmation that clashes with another already-
+  // confirmed booking is flagged confirmed_conflict rather than silently
+  // confirmed — the payment went through, but availability needs manual review.
+  // Uses the live table SQL + a regex swap (not a hand-copied column list) so
+  // no column ever added since is at risk of being silently dropped on rebuild.
+  {
+    const bookingSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
+    if (!bookingSql.includes('confirmed_conflict')) {
+      const newSql = bookingSql
+        .replace(/^CREATE TABLE "?bookings"?/, 'CREATE TABLE bookings_conflict')
+        .replace(
+          /CHECK\(status IN \([^)]*\)\)/,
+          `CHECK(status IN ('confirmed','arriving','in_house','checked_out','cancelled','pending_owner_approval','declined','pending_payment','cancelled_unpaid','confirmed_conflict'))`
+        );
+      const columns = db.prepare(`PRAGMA table_info(bookings)`).all().map(c => c.name).join(', ');
+
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(newSql);
+        db.exec(`INSERT INTO bookings_conflict (${columns}) SELECT ${columns} FROM bookings`);
+        db.exec(`DROP TABLE bookings`);
+        db.exec(`ALTER TABLE bookings_conflict RENAME TO bookings`);
+        db.exec(`COMMIT`);
+        console.log('✓ bookings status CHECK expanded to include confirmed_conflict.');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] confirmed_conflict migration skipped: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_property ON bookings(property_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_checkin  ON bookings(check_in_date)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_status   ON bookings(status)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_room     ON bookings(room_id)`);
+    }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

@@ -2791,6 +2791,189 @@ export async function sendPaymentAssistanceEmail(booking, property) {
   }
 }
 
+// ── Booking conflict alert (owner) ─────────────────────────────────────────────
+// Sent when a Stripe-confirmed widget payment is found, at confirmation time, to
+// clash with another already-confirmed booking for the same room/dates. This is
+// a flag only — NestBook never auto-refunds, auto-cancels, or otherwise resolves
+// the conflict; it's always the owner's decision.
+export async function sendBookingConflictAlert(booking, property, clashingBookingId) {
+  if (!resend) {
+    console.log(`[email] Booking conflict alert skipped (Resend not configured) — booking #${booking.id} vs #${clashingBookingId}`);
+    return;
+  }
+  const ownerEmail = property?.owner_email;
+  if (!ownerEmail) return;
+
+  const guestName = [booking.guest_first_name, booking.guest_last_name].filter(Boolean).join(' ') || 'Guest';
+  const isWP       = property?.rental_type === 'whole_property';
+  const isUnits    = property?.rental_type === 'units';
+  const subject    = `Urgent: booking conflict needs your review — ${property?.name ?? 'NestBook'}`;
+  const paidAmount = booking.stripe_payment_amount != null ? booking.stripe_payment_amount : (booking.total_price ?? '—');
+
+  const body = `
+    <p style="margin:0 0 4px;font-size:1.1rem;font-weight:700;color:#b91c1c;">⚠ Booking conflict — payment already taken</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+      A guest has paid for dates at <strong>${property?.name ?? ''}</strong> that clash with another booking.
+      No automatic action has been taken — this needs your review.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#fef2f2;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #fecaca;">
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;width:40%;vertical-align:top;">Guest</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${guestName}</td>
+      </tr>
+      ${booking.room_name ? `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">${isUnits ? 'Unit' : 'Room'}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${booking.room_name}</td>
+      </tr>` : ''}
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Check-in</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Check-out</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Amount paid</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${paidAmount}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Clashes with booking</td>
+        <td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">#${clashingBookingId}</td>
+      </tr>
+    </table>
+    <p style="margin:0 0 16px;font-size:0.9rem;color:#374151;line-height:1.6;">
+      The guest's payment has gone through and is recorded, but this booking has been held back rather than
+      confirmed automatically. Please review both bookings in your dashboard and decide how to proceed —
+      for example, contact the guest directly, offer alternative dates${isWP ? '' : ' or a different room'} if available,
+      or issue a refund yourself using your existing Stripe tools if the booking can't go ahead.
+      NestBook will not refund, cancel, or otherwise resolve this automatically.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+      <tr>
+        <td>
+          <a href="https://nestbook.io/app/bookings" style="display:block;text-align:center;padding:14px 0;background:#1a4710;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
+            Review in dashboard →
+          </a>
+        </td>
+      </tr>
+    </table>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to: ownerEmail, subject, html: shell(body) });
+    console.log(`[email] Booking conflict alert sent → ${ownerEmail} (booking #${booking.id} vs #${clashingBookingId})`);
+  } catch (err) {
+    console.error('[email] Failed to send booking conflict alert:', err.message);
+  }
+}
+
+// ── Booking conflict holding email (guest) ─────────────────────────────────────
+// Sent instead of the normal confirmation when a payment is found, at
+// confirmation time, to clash with another booking. Deliberately calm — no
+// mention of a "clash" or "double-booking" to the guest.
+export async function sendBookingConflictHoldingEmail(booking, property) {
+  if (!resend) {
+    console.log(`[email] Booking conflict holding email skipped (Resend not configured) — booking #${booking.id}`);
+    return;
+  }
+  const guestEmail = booking.guest_email;
+  if (!guestEmail) return;
+
+  const locale = property?.locale ?? 'en';
+  const lang = ['en','fr','de','es','nl'].includes(locale) ? locale : 'en';
+  const ownerEmail = property?.owner_email;
+  const guestName = [booking.guest_first_name, booking.guest_last_name].filter(Boolean).join(' ') || 'Guest';
+  const propertyName = property?.name ?? 'the property';
+
+  const locales = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE', es: 'es-ES', nl: 'nl-NL' };
+  const fmtDate = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString(locales[lang] || 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const T = {
+    en: {
+      subject:     `Your booking at ${propertyName} — just confirming a few details`,
+      heading:     `Thanks for your payment!`,
+      intro:       `Hi ${guestName}, we've received your payment for your upcoming stay at ${propertyName}.`,
+      details:     `Your booking details:`,
+      checkin:     `Check-in`,
+      checkout:    `Check-out`,
+      reassurance: `Before we finalise everything, the team at ${propertyName} is just confirming a few details on their end. There's nothing you need to do — they'll be in touch shortly to confirm your stay.`,
+      closing:     `Thank you for your patience — we look forward to welcoming you soon!`,
+    },
+    fr: {
+      subject:     `Votre réservation à ${propertyName} — nous vérifions quelques détails`,
+      heading:     `Merci pour votre paiement !`,
+      intro:       `Bonjour ${guestName}, nous avons bien reçu votre paiement pour votre prochain séjour à ${propertyName}.`,
+      details:     `Détails de votre réservation :`,
+      checkin:     `Arrivée`,
+      checkout:    `Départ`,
+      reassurance: `Avant de finaliser, l'équipe de ${propertyName} vérifie simplement quelques détails de son côté. Vous n'avez rien à faire — elle vous contactera très prochainement pour confirmer votre séjour.`,
+      closing:     `Merci de votre patience — nous avons hâte de vous accueillir !`,
+    },
+    de: {
+      subject:     `Ihre Buchung bei ${propertyName} — wir prüfen noch ein paar Details`,
+      heading:     `Danke für Ihre Zahlung!`,
+      intro:       `Hallo ${guestName}, wir haben Ihre Zahlung für Ihren bevorstehenden Aufenthalt bei ${propertyName} erhalten.`,
+      details:     `Ihre Buchungsdetails:`,
+      checkin:     `Anreise`,
+      checkout:    `Abreise`,
+      reassurance: `Bevor wir alles abschließen, prüft das Team von ${propertyName} noch ein paar Details. Sie müssen nichts weiter unternehmen — man wird sich in Kürze bei Ihnen melden, um Ihren Aufenthalt zu bestätigen.`,
+      closing:     `Vielen Dank für Ihre Geduld — wir freuen uns, Sie bald willkommen zu heißen!`,
+    },
+    es: {
+      subject:     `Su reserva en ${propertyName} — estamos confirmando algunos detalles`,
+      heading:     `¡Gracias por su pago!`,
+      intro:       `Hola ${guestName}, hemos recibido su pago para su próxima estancia en ${propertyName}.`,
+      details:     `Detalles de su reserva:`,
+      checkin:     `Llegada`,
+      checkout:    `Salida`,
+      reassurance: `Antes de finalizarlo todo, el equipo de ${propertyName} está confirmando algunos detalles por su parte. No tiene que hacer nada — se pondrán en contacto con usted en breve para confirmar su estancia.`,
+      closing:     `Gracias por su paciencia — ¡esperamos darle la bienvenida pronto!`,
+    },
+    nl: {
+      subject:     `Uw boeking bij ${propertyName} — we controleren nog enkele details`,
+      heading:     `Bedankt voor uw betaling!`,
+      intro:       `Hallo ${guestName}, we hebben uw betaling ontvangen voor uw aankomende verblijf bij ${propertyName}.`,
+      details:     `Uw boekingsgegevens:`,
+      checkin:     `Inchecken`,
+      checkout:    `Uitchecken`,
+      reassurance: `Voordat alles wordt afgerond, controleert het team van ${propertyName} nog enkele details. U hoeft niets te doen — ze nemen binnenkort contact met u op om uw verblijf te bevestigen.`,
+      closing:     `Bedankt voor uw geduld — we kijken ernaar uit u binnenkort te verwelkomen!`,
+    },
+  };
+
+  const tr = T[lang] || T.en;
+
+  const body = `
+    <p style="margin:0 0 16px;font-size:1rem;font-weight:700;color:#1a4710;">${tr.heading}</p>
+    <p style="margin:0 0 16px;color:#374151;">${tr.intro}</p>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin:0 0 16px;">
+      <p style="margin:0 0 8px;font-size:0.8rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">${tr.details}</p>
+      <p style="margin:0 0 4px;color:#1a2e14;"><strong>${tr.checkin}:</strong> ${fmtDate(booking.check_in_date)}</p>
+      <p style="margin:0;color:#1a2e14;"><strong>${tr.checkout}:</strong> ${fmtDate(booking.check_out_date)}</p>
+    </div>
+
+    <p style="margin:0 0 16px;color:#374151;">${tr.reassurance}</p>
+    <p style="margin:0;color:#6b7280;">${tr.closing}</p>
+  `;
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      guestEmail,
+      replyTo: ownerEmail || undefined,
+      subject: tr.subject,
+      html:    guestMailerHtml(body, property),
+    });
+    console.log(`[email] Booking conflict holding email sent → ${guestEmail} (booking #${booking.id})`);
+  } catch (err) {
+    console.error('[email] Failed to send booking conflict holding email:', err.message);
+  }
+}
+
 export async function sendOutreachEmail({ to, subject, html, from: fromOverride }) {
   if (!resend) {
     console.log('[email] SKIPPED outreach email to', to, '(no Resend key)');

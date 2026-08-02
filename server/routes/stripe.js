@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { createHash } from 'node:crypto';
 import db from '../db/database.js';
 import { stripe, STRIPE_MODE } from '../lib/stripeClient.js';
-import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail } from '../email/emailService.js';
+import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail, sendBookingConflictAlert, sendBookingConflictHoldingEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
@@ -590,6 +590,62 @@ export async function stripeWebhookHandler(req, res) {
           const bookingId    = session.metadata?.booking_id;
           const paidAmount   = session.amount_total != null ? session.amount_total / 100 : null;
           if (session.metadata?.source === 'widget_payment' && bookingId) {
+            // Re-check for a clash before confirming. The creation-time check
+            // (widget.js) stops two guests racing for the same room/dates, but
+            // can't protect against a pending_payment booking that clashes with
+            // something confirmed later — e.g. a stale/abandoned checkout
+            // session that outlives the booking it was originally held for.
+            const pendingBooking = db.prepare(`
+              SELECT room_id, check_in_date, check_out_date FROM bookings WHERE id = ?
+            `).get(bookingId);
+
+            // Excludes pending_payment in addition to the creation-time check's
+            // usual exclusions — a sibling still mid-checkout hasn't paid and
+            // may simply expire, so it must not flag THIS payment as a conflict.
+            // Only things already confirmed (or otherwise locked in) count here.
+            const clash = pendingBooking && db.prepare(`
+              SELECT id FROM bookings
+              WHERE room_id = ?
+                AND id != ?
+                AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'pending_payment')
+                AND check_in_date < ?
+                AND check_out_date > ?
+            `).get(pendingBooking.room_id, bookingId, pendingBooking.check_out_date, pendingBooking.check_in_date);
+
+            if (clash) {
+              // Payment already went through — that fact must not be lost.
+              // Flag for manual owner review. Do NOT auto-confirm, auto-cancel,
+              // or auto-refund; resolution stays a human decision.
+              db.prepare(`
+                UPDATE bookings
+                SET status = 'confirmed_conflict', stripe_payment_status = 'paid', stripe_payment_amount = ?
+                WHERE id = ?
+              `).run(paidAmount, bookingId);
+              console.error(`[stripe] CONFLICT: booking #${bookingId} confirmed-payment clashed with existing booking #${clash.id} — flagged as confirmed_conflict, NOT auto-resolved`);
+
+              const conflictBooking = db.prepare(`
+                SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
+                       g.email AS guest_email, g.phone AS guest_phone,
+                       r.name AS room_name, r.type AS room_type, r.price_per_night
+                FROM bookings b
+                LEFT JOIN guests g ON b.guest_id = g.id
+                LEFT JOIN rooms  r ON b.room_id  = r.id
+                WHERE b.id = ?
+              `).get(bookingId);
+              if (conflictBooking) {
+                const property = db.prepare(
+                  `SELECT p.*, u.email AS owner_email FROM properties p
+                   LEFT JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
+                   WHERE p.id = ?`
+                ).get(conflictBooking.property_id);
+                sendBookingConflictAlert(conflictBooking, property, clash.id)
+                  .catch(err => console.error(`[stripe] Conflict alert email failed (booking #${bookingId}):`, err.message));
+                sendBookingConflictHoldingEmail(conflictBooking, property)
+                  .catch(err => console.error(`[stripe] Conflict holding email failed (booking #${bookingId}):`, err.message));
+              }
+              break;
+            }
+
             // Widget booking — advance from pending_payment to confirmed
             db.prepare(`
               UPDATE bookings
