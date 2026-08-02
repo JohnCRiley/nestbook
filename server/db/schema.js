@@ -2205,6 +2205,30 @@ John`
     }
   }
 
+  // Un mode sub-types — aparthotel / glamping / serviced_apartment — plus the
+  // booking-flow, servicing and access fields each sub-type will configure.
+  // Additive schema only: every column is nullable or defaults so every
+  // existing IR, WP and Units-mode property is completely unaffected. Nothing
+  // reads these columns yet — same "invisible foundation first" sequencing as
+  // the rooms.parent_unit_id foundation above.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN un_sub_type TEXT`); } catch (e) {}
+  // values: 'aparthotel' | 'glamping' | 'serviced_apartment' | NULL (NULL = generic Un mode, no sub-type chosen)
+
+  // 0/1 boolean. Only meaningful when un_sub_type is set.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN walk_in_enabled INTEGER DEFAULT 0`); } catch (e) {}
+
+  // values: 'instant' | 'request'. Only meaningful when un_sub_type is set.
+  // NOTE: application-level constraint, NOT enforced by the schema — walk_in_enabled = 1
+  // must always imply booking_flow = 'instant'. Any future UI/API that lets these be set
+  // independently must enforce this pairing itself; the DB will happily store a mismatch.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN booking_flow TEXT DEFAULT 'instant'`); } catch (e) {}
+
+  // values: 'daily' | 'post_stay_optional' | 'post_stay' | NULL
+  try { db.exec(`ALTER TABLE properties ADD COLUMN servicing_type TEXT DEFAULT NULL`); } catch (e) {}
+
+  // Free text, descriptive only — no functional gating (e.g. "Keycard", "Key box code 4471")
+  try { db.exec(`ALTER TABLE properties ADD COLUMN entry_method TEXT DEFAULT NULL`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
