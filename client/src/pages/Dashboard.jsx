@@ -244,9 +244,16 @@ export default function Dashboard() {
     .filter((b) => b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
     .reduce((sum, b) => sum + (b.total_price || 0), 0);
 
-  const in7Days = addDays(today, 7);
+  // Serviced Apartment — reuses WP's own simplified-dashboard *pattern* (fewer
+  // stat tiles, a longer calm upcoming window) without touching WP's actual
+  // wpSummary/WPBookingCard code path, since these are independently-bookable
+  // units rather than a single whole-property stay.
+  const isServicedApartment = property?.rental_type === 'units' && property?.un_sub_type === 'serviced_apartment';
+
+  const upcomingWindowDays = isServicedApartment ? 14 : 7;
+  const upcomingEnd = addDays(today, upcomingWindowDays);
   const upcoming = bookings.filter(
-    (b) => b.status === 'confirmed' && norm(b.check_in_date) > today && norm(b.check_in_date) <= in7Days
+    (b) => b.status === 'confirmed' && norm(b.check_in_date) > today && norm(b.check_in_date) <= upcomingEnd
   );
 
   // Room stats — only confirmed/arriving bookings occupy a room
@@ -466,8 +473,9 @@ export default function Dashboard() {
         );
       })()}
 
-      {/* ── Stat cards — hidden in WP mode (info shown in booking cards below) */}
-      {property?.rental_type !== 'whole_property' && (
+      {/* ── Stat cards — hidden in WP mode (info shown in booking cards below), */}
+      {/* and for Serviced Apartment units-mode for the same reason (see isServicedApartment above) */}
+      {property?.rental_type !== 'whole_property' && !isServicedApartment && (
         <div className="stats-grid">
           <StatCard value={occupiedTonight.length}   label={t('occupied')} />
           <StatCard value={arrivalsToday.length}      label={t('arrivals')} />
@@ -673,8 +681,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Room availability bar ───────────────────────────────────────── */}
-      {rooms.length > 0 && property.rental_type !== 'whole_property' && (
+      {/* ── Room availability bar — also hidden for Serviced Apartment units-mode ── */}
+      {rooms.length > 0 && property.rental_type !== 'whole_property' && !isServicedApartment && (
         <div className="stat-bar" style={{ marginBottom: 24 }}>
           {/* Available Tonight — clickable */}
           <button
@@ -846,14 +854,18 @@ export default function Dashboard() {
       )}
 
       {/* ── Upcoming (B&B only — WP shows 14-day cards above) ─────────── */}
+      {/* Serviced Apartment units-mode reuses this same section, just extended to a
+          14-day window (see upcomingWindowDays above) — hardcoded English label
+          override below, not yet in the i18n catalogue, matching the Un-mode precedent
+          set elsewhere for this kind of dev-only relabel. */}
       {property.rental_type !== 'whole_property' && (
         <div className="section-card" style={{ marginTop: 20 }}>
           <div className="section-head">
-            <h2>{t('upcomingTitle')}</h2>
+            <h2>{isServicedApartment ? 'Upcoming — Next 14 Days' : t('upcomingTitle')}</h2>
             <span className="count-pill">{upcoming.length}</span>
           </div>
           {upcoming.length === 0 ? (
-            <div className="empty-state">{t('noUpcoming7Days')}</div>
+            <div className="empty-state">{isServicedApartment ? 'No confirmed arrivals in the next 14 days' : t('noUpcoming7Days')}</div>
           ) : (
             upcoming.map((b) => (
               <BookingRow
