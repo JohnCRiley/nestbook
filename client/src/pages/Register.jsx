@@ -3,37 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
-
-const PROPERTY_GROUPS = [
-  { group: 'Hospitality', options: [
-    { value: 'bnb',         label: 'B&B (Bed & Breakfast)' },
-    { value: 'guesthouse',  label: 'Guest House' },
-    { value: 'inn',         label: 'Inn / Pub with rooms' },
-    { value: 'hotel',       label: 'Small Hotel' },
-    { value: 'hostel',      label: 'Hostel' },
-  ]},
-  { group: 'Self-catering', options: [
-    { value: 'gite',          label: 'Gîte' },
-    { value: 'cottage',       label: 'Holiday Cottage' },
-    { value: 'villa',         label: 'Villa' },
-    { value: 'apartment',     label: 'Holiday Apartment' },
-    { value: 'lodge',         label: 'Lodge' },
-    { value: 'caravan',       label: 'Static Caravan / Chalet' },
-    { value: 'glamping',      label: 'Glamping (Pod / Bell Tent / Yurt)' },
-    { value: 'shepherds_hut', label: "Shepherd's Hut" },
-    { value: 'treehouse',     label: 'Treehouse' },
-    { value: 'narrowboat',    label: 'Narrowboat / Houseboat' },
-    { value: 'farmhouse',     label: 'Farmhouse' },
-    { value: 'chateau',       label: 'Château / Manor House' },
-  ]},
-  { group: 'Asian accommodation', options: [
-    { value: 'ryokan',      label: 'Ryokan (Japan)' },
-    { value: 'minsu',       label: '民宿 Minsu (China/Taiwan)' },
-    { value: 'homestay',    label: 'Homestay' },
-    { value: 'resort_villa', label: 'Resort Villa' },
-  ]},
-  { group: 'Other', options: [{ value: 'other', label: 'Other' }] },
-];
+import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
 
 const SUPPORTED_LANGS = ['en', 'fr', 'de', 'es', 'nl'];
 

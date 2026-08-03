@@ -3,39 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-
-const PROPERTY_GROUPS = [
-  { group: 'Hospitality', options: [
-    { value: 'bnb',        label: 'B&B (Bed & Breakfast)' },
-    { value: 'guesthouse', label: 'Guest House' },
-    { value: 'inn',        label: 'Inn / Pub with rooms' },
-    { value: 'hotel',      label: 'Small Hotel' },
-    { value: 'hostel',     label: 'Hostel' },
-  ]},
-  { group: 'Self-catering', options: [
-    { value: 'gite',          label: 'Gîte' },
-    { value: 'cottage',       label: 'Holiday Cottage' },
-    { value: 'villa',         label: 'Villa' },
-    { value: 'apartment',     label: 'Holiday Apartment' },
-    { value: 'lodge',         label: 'Lodge' },
-    { value: 'caravan',       label: 'Static Caravan / Chalet' },
-    { value: 'glamping',      label: 'Glamping (Pod / Bell Tent / Yurt)' },
-    { value: 'shepherds_hut', label: "Shepherd's Hut" },
-    { value: 'treehouse',     label: 'Treehouse' },
-    { value: 'narrowboat',    label: 'Narrowboat / Houseboat' },
-    { value: 'farmhouse',     label: 'Farmhouse' },
-    { value: 'chateau',       label: 'Château / Manor House' },
-  ]},
-  { group: 'Asian accommodation', options: [
-    { value: 'ryokan',       label: 'Ryokan (Japan)' },
-    { value: 'minsu',        label: '民宿 Minsu (China/Taiwan)' },
-    { value: 'homestay',     label: 'Homestay' },
-    { value: 'resort_villa', label: 'Resort Villa' },
-  ]},
-  { group: 'Other', options: [
-    { value: 'other', label: 'Other' },
-  ]},
-];
+import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
+import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
 
 const CURRENCIES = [
   { value: 'EUR', label: '€ EUR — Euro' },
@@ -59,7 +28,14 @@ const WHOLE_PROPERTY_TYPES = new Set([
   'ryokan', 'minsu', 'homestay', 'resort_villa',
 ]);
 
-const TOTAL_STEPS = 8; // 0–6 = data steps, 7 = summary
+const TOTAL_STEPS = 9; // 0–7 = data steps (6 = units sub-type, 7 = breakfast), 8 = summary
+
+function shouldSkipBreakfast(form) {
+  if (!form) return false;
+  if (form.rental_type === 'whole_property') return true;
+  if (form.rental_type === 'units') return form.un_sub_type !== 'aparthotel';
+  return false;
+}
 
 function getPropertyTypeLabel(value) {
   for (const grp of PROPERTY_GROUPS) {
@@ -105,19 +81,35 @@ export default function Onboarding() {
           rental_type:          p.rental_type         ?? (WHOLE_PROPERTY_TYPES.has(p.type) ? 'whole_property' : 'rooms'),
           breakfast_start_time: p.breakfast_start_time ?? '07:00',
           breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
+          un_sub_type:          p.un_sub_type          ?? null,
         });
       })
       .catch(() => {});
   }, [user?.property_id]);
 
   function getNextStep(s) {
-    // Skip breakfast step (6) for whole-property rental types
-    if (s === 5 && form?.rental_type === 'whole_property') return 7;
-    return Math.min(s + 1, 7);
+    // Step 5 (rental type) → 6 (units sub-type, units only) or straight to
+    // 7 (breakfast) / 8 (summary) depending on whether breakfast applies.
+    if (s === 5) {
+      if (form?.rental_type === 'units') return 6;
+      return shouldSkipBreakfast(form) ? 8 : 7;
+    }
+    // Step 6 (units sub-type) → 7 (breakfast) or 8 (summary)
+    if (s === 6) {
+      return shouldSkipBreakfast(form) ? 8 : 7;
+    }
+    return Math.min(s + 1, 8);
   }
 
   function getPrevStep(s) {
-    if (s === 7 && form?.rental_type === 'whole_property') return 5;
+    if (s === 8) {
+      if (form?.rental_type === 'units') return shouldSkipBreakfast(form) ? 6 : 7;
+      return form?.rental_type === 'whole_property' ? 5 : 7;
+    }
+    if (s === 7) {
+      return form?.rental_type === 'units' ? 6 : 5;
+    }
+    if (s === 6) return 5;
     return Math.max(s - 1, 0);
   }
 
@@ -181,9 +173,8 @@ export default function Onboarding() {
     }
   }
 
-  async function handleSkip() {
-    await completeOnboarding();
-    window.location.href = '/app/dashboard';
+  function handleSkip() {
+    setStep(getNextStep(step));
   }
 
   if (!form) {
@@ -208,11 +199,16 @@ export default function Onboarding() {
     );
   }
 
-  const isWhole = form.rental_type === 'whole_property';
-
-  // Step 6 (breakfast) is always index 6 in the dot row, but skipped in navigation for whole-property
+  // Step 6 (units sub-type) is only reachable for units mode; step 7
+  // (breakfast) is skipped for whole-property, and for units unless the
+  // sub-type is Aparthotel. Both stay non-clickable in the dot row when skipped.
+  function isDotSkipped(i) {
+    if (i === 6) return form.rental_type !== 'units';
+    if (i === 7) return shouldSkipBreakfast(form);
+    return false;
+  }
   function isDotCompleted(i) {
-    if (i === 6 && isWhole) return false; // whole-property users never do breakfast step
+    if (isDotSkipped(i)) return false;
     return savedSteps.has(i);
   }
   function isDotCurrent(i) {
@@ -470,8 +466,67 @@ export default function Onboarding() {
           </>
         );
 
-      // ── Step 6: Breakfast times ────────────────────────────────────────
-      case 6:
+      // ── Step 6: Units sub-type (units rental type only) ────────────────
+      case 6: {
+        const subType = form.un_sub_type ?? null;
+        function chooseSubType(value) {
+          setForm(f => ({ ...f, un_sub_type: value, ...UN_SUB_TYPE_DEFAULTS[value] }));
+        }
+        function chooseDecideLater() {
+          setForm(f => ({
+            ...f,
+            un_sub_type: null,
+            walk_in_enabled: 0,
+            booking_flow: 'instant',
+            servicing_type: null,
+            breakfast_included: 0,
+          }));
+        }
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizUnSubType')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+              {UN_SUB_TYPES.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => chooseSubType(opt.value)}
+                  className={`rental-type-btn${subType === opt.value ? ' active' : ''}`}
+                  style={{ padding: '14px 16px', textAlign: 'left' }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>
+                    {t(`onboard.unSubType.${opt.value}`)}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
+                    {t(`onboard.unSubType.${opt.value}Desc`)}
+                  </div>
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={chooseDecideLater}
+                className={`rental-type-btn${subType === null ? ' active' : ''}`}
+                style={{ padding: '14px 16px', textAlign: 'left' }}
+              >
+                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                  {t('onboard.unSubType.decideLater')}
+                </div>
+              </button>
+            </div>
+            <button className="btn-wiz" disabled={saving} onClick={saveStep}>
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
+            </div>
+          </>
+        );
+      }
+
+      // ── Step 7: Breakfast times ────────────────────────────────────────
+      case 7:
         return (
           <>
             <div className="wiz-step-label">{t('onboard.wizBreakfast')}</div>
@@ -506,8 +561,8 @@ export default function Onboarding() {
           </>
         );
 
-      // ── Step 7: Summary ────────────────────────────────────────────────
-      case 7: {
+      // ── Step 8: Summary ────────────────────────────────────────────────
+      case 8: {
         const currencyLabel = CURRENCIES.find(c => c.value === form.currency)?.label ?? form.currency;
         const localeLabel   = LOCALES.find(l => l.value === form.locale)?.label ?? form.locale;
         const rentalLabel   = form.rental_type === 'whole_property'
@@ -546,7 +601,7 @@ export default function Onboarding() {
                 <span className="wiz-summary-label">{t('onboard.summaryRentalType')}</span>
                 <span className="wiz-summary-value">{rentalLabel}</span>
               </div>
-              {!isWhole && (
+              {!shouldSkipBreakfast(form) && (
                 <div className="wiz-summary-row">
                   <span className="wiz-summary-label">{t('onboard.summaryBreakfast')}</span>
                   <span className="wiz-summary-value">{form.breakfast_start_time} – {form.breakfast_end_time}</span>
@@ -614,20 +669,23 @@ export default function Onboarding() {
 
         {/* Step progress */}
         <div className="wizard-steps">
-          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-            <div
-              key={i}
-              className={`wizard-step-dot${isDotCompleted(i) ? ' completed' : ''}${isDotCurrent(i) ? ' current' : ''}`}
-              style={{ cursor: (isDotCompleted(i) || i < step) ? 'pointer' : 'default' }}
-              onClick={() => { if (isDotCompleted(i) || i < step) setStep(i); }}
-              title={`Step ${i + 1}`}
-            />
-          ))}
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+            const clickable = !isDotSkipped(i) && (isDotCompleted(i) || i < step);
+            return (
+              <div
+                key={i}
+                className={`wizard-step-dot${isDotCompleted(i) ? ' completed' : ''}${isDotCurrent(i) ? ' current' : ''}`}
+                style={{ cursor: clickable ? 'pointer' : 'default' }}
+                onClick={() => { if (clickable) setStep(i); }}
+                title={`Step ${i + 1}`}
+              />
+            );
+          })}
         </div>
 
         {/* Step content */}
         <div>
-          {error && step !== 7 && (
+          {error && step !== 8 && (
             <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, fontSize: '0.82rem', color: '#991b1b' }}>
               {error}
             </div>
@@ -636,7 +694,7 @@ export default function Onboarding() {
         </div>
 
         {/* Skip link */}
-        {step < 7 && (
+        {step < 8 && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <button
               type="button"

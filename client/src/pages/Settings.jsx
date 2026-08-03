@@ -10,6 +10,8 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
+import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
+import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 
@@ -52,39 +54,6 @@ const THEMES = [
 ];
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const PROPERTY_GROUPS = [
-  { group: 'Hospitality', options: [
-    { value: 'bnb',        label: 'B&B (Bed & Breakfast)' },
-    { value: 'guesthouse', label: 'Guest House' },
-    { value: 'inn',        label: 'Inn / Pub with rooms' },
-    { value: 'hotel',      label: 'Small Hotel' },
-    { value: 'hostel',     label: 'Hostel' },
-  ]},
-  { group: 'Self-catering', options: [
-    { value: 'gite',         label: 'Gîte' },
-    { value: 'cottage',      label: 'Holiday Cottage' },
-    { value: 'villa',        label: 'Villa' },
-    { value: 'apartment',    label: 'Holiday Apartment' },
-    { value: 'lodge',        label: 'Lodge' },
-    { value: 'caravan',      label: 'Static Caravan / Chalet' },
-    { value: 'glamping',     label: 'Glamping (Pod / Bell Tent / Yurt)' },
-    { value: 'shepherds_hut',label: "Shepherd's Hut" },
-    { value: 'treehouse',    label: 'Treehouse' },
-    { value: 'narrowboat',   label: 'Narrowboat / Houseboat' },
-    { value: 'farmhouse',    label: 'Farmhouse' },
-    { value: 'chateau',      label: 'Château / Manor House' },
-  ]},
-  { group: 'Asian accommodation', options: [
-    { value: 'ryokan',      label: 'Ryokan (Japan)' },
-    { value: 'minsu',       label: '民宿 Minsu (China/Taiwan)' },
-    { value: 'homestay',    label: 'Homestay' },
-    { value: 'resort_villa',label: 'Resort Villa' },
-  ]},
-  { group: 'Other', options: [
-    { value: 'other', label: 'Other' },
-  ]},
-];
 
 const WHOLE_PROPERTY_TYPES = new Set([
   'gite', 'cottage', 'villa', 'apartment', 'lodge',
@@ -3851,33 +3820,6 @@ function DepositSection({ form, onChange, onToggle, t, currencySymbol }) {
 // ── UnSubTypeSection (Units mode only) ────────────────────────────────────────
 // Un mode — hardcoded English strings below, not yet in the i18n catalogue;
 // this UI isn't customer-facing yet (same precedent as the rest of Un mode).
-
-const UN_SUB_TYPES = [
-  {
-    value: 'aparthotel',
-    label: 'Aparthotel',
-    desc: 'Apartments run like a small hotel — reception, bar and restaurant on-site. Self-catering optional.',
-  },
-  {
-    value: 'glamping',
-    label: 'Glamping',
-    desc: 'Self-contained pods, tents and caravans, with a central office for check-in and support. Self-catering.',
-  },
-  {
-    value: 'serviced_apartment',
-    label: 'Serviced Apartment',
-    desc: 'Self-catering holiday apartments, managed without on-site staff.',
-  },
-];
-
-// Defaults applied in one go when a sub-type is chosen — the owner can still
-// edit every field individually afterwards (hybrid: presets set defaults,
-// everything stays editable).
-const UN_SUB_TYPE_DEFAULTS = {
-  aparthotel:          { walk_in_enabled: 1, booking_flow: 'instant', servicing_type: 'daily',               breakfast_included: 1 },
-  glamping:            { walk_in_enabled: 1, booking_flow: 'instant', servicing_type: 'post_stay_optional',   breakfast_included: 0 },
-  serviced_apartment:  { walk_in_enabled: 0, booking_flow: 'request', servicing_type: 'post_stay',            breakfast_included: 0 },
-};
 
 function UnSubTypeSection({ form, setForm, handleSave, saving, t }) {
   const subType      = form.un_sub_type ?? null;
