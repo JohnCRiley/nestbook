@@ -719,6 +719,41 @@ export function initSchema() {
     }
   }
 
+  // Expand properties.type CHECK constraint to include 'aparthotel' (Un-mode
+  // property type, added alongside the units sub-type onboarding step).
+  // Rebuilds from the table's OWN current CREATE TABLE sql (via sqlite_master)
+  // and copies its OWN current column list (via PRAGMA table_info), rather
+  // than a hardcoded list — so this can never silently drop a column added
+  // by a later migration, unlike the v3 rebuild above.
+  {
+    const propRow = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='properties'`).get();
+    const propSql = propRow?.sql ?? '';
+    if (propSql && !propSql.includes("'aparthotel'")) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        const newSql = propSql
+          .replace(/CREATE TABLE "?properties"?/, 'CREATE TABLE properties_v4')
+          .replace("'apartment','lodge'", "'apartment','aparthotel','lodge'");
+        if (!newSql.includes("'aparthotel'") || !newSql.includes('properties_v4')) {
+          throw new Error('aparthotel CHECK-list replace did not match expected sql — aborting to avoid a broken migration');
+        }
+        const cols = db.prepare(`PRAGMA table_info(properties)`).all().map(c => c.name);
+        db.exec(newSql);
+        db.exec(`INSERT INTO properties_v4 (${cols.join(', ')}) SELECT ${cols.join(', ')} FROM properties`);
+        db.exec(`DROP TABLE properties`);
+        db.exec(`ALTER TABLE properties_v4 RENAME TO properties`);
+        db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_properties_booking_slug ON properties(booking_slug)`);
+        db.exec(`COMMIT`);
+        console.log('✓ properties.type constraint expanded to include aparthotel.');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] aparthotel CHECK migration skipped/failed: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+    }
+  }
+
   // iCal sync token per room — unguessable URL for calendar feed export
   try { db.exec(`ALTER TABLE rooms ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
   db.prepare(`UPDATE rooms SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
