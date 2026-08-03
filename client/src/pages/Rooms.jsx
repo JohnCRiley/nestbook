@@ -788,7 +788,7 @@ function UnitAccordionPanel({
             </div>
 
             {showAccess && (
-              <UnitAccessSection unit={unit} onUnitUpdated={onUnitFieldsUpdated} />
+              <UnitAccessSection unit={unit} property={property} onUnitUpdated={onUnitFieldsUpdated} />
             )}
           </div>
           </div>
@@ -834,12 +834,13 @@ const UNIT_SEND_ACCESS_OPTIONS = [
   { value: '12', label: '12 hours before arrival' },
 ];
 
-function UnitAccessSection({ unit, onUnitUpdated }) {
+function UnitAccessSection({ unit, property, onUnitUpdated }) {
   const [form, setForm] = useState({
     access_method:        unit.access_method ?? 'none',
     access_code:          unit.access_code ?? '',
     arrival_instructions: unit.arrival_instructions ?? '',
     send_access_hours:    String(unit.send_access_hours ?? '48'),
+    staffed_checkin_available: unit.staffed_checkin_available ? 1 : 0,
   });
   const [accessPhoto,     setAccessPhoto]     = useState(unit.access_photo ?? null);
   const [uploadingPhoto,  setUploadingPhoto]  = useState(false);
@@ -871,6 +872,7 @@ function UnitAccessSection({ unit, onUnitUpdated }) {
           access_code:          form.access_code.trim() || null,
           arrival_instructions: form.arrival_instructions.trim() || null,
           send_access_hours:    form.send_access_hours,
+          staffed_checkin_available: form.staffed_checkin_available ? 1 : 0,
         }),
       });
       if (res.ok) {
@@ -955,6 +957,23 @@ function UnitAccessSection({ unit, onUnitUpdated }) {
           ))}
         </select>
       </div>
+
+      {/* Only relevant when walk-in is enabled (Aparthotel/Glamping) — Serviced
+          Apartment always has walk_in_enabled locked off, so this stays hidden there. */}
+      {!!property?.walk_in_enabled && (
+        <div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={!!form.staffed_checkin_available}
+              onChange={(e) => setForm((p) => ({ ...p, staffed_checkin_available: e.target.checked ? 1 : 0 }))}
+            />
+            <span style={{ fontSize: '0.875rem' }}>
+              Offer staffed check-in (a person meets the guest, e.g. at your office/reception)
+            </span>
+          </label>
+        </div>
+      )}
 
       <div>
         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>

@@ -301,7 +301,7 @@ roomsRouter.put('/:id', (req, res) => {
 
     const {
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
-      access_method, access_code, arrival_instructions, send_access_hours,
+      access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available,
     } = req.body;
 
     // Per-unit Access & Arrival — same validation pattern as WP's property-level
@@ -321,16 +321,22 @@ roomsRouter.put('/:id', (req, res) => {
     const newSendAccessHours = send_access_hours !== undefined
       ? (send_access_hours != null && send_access_hours !== '' ? String(Math.max(1, parseInt(send_access_hours, 10) || 48)) : '48')
       : existing.send_access_hours;
+    // Same defensive-fallback reasoning as the Access & Arrival fields above.
+    const newStaffedCheckin = staffed_checkin_available !== undefined
+      ? (staffed_checkin_available ? 1 : 0)
+      : existing.staffed_checkin_available;
 
     db.prepare(`
       UPDATE rooms
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
           capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?,
-          access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?
+          access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
+          staffed_checkin_available = ?
       WHERE id = ?
     `).run(
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null,
       newAccessMethod, newAccessCode, newArrivalInstructions, newSendAccessHours,
+      newStaffedCheckin,
       req.params.id,
     );
 

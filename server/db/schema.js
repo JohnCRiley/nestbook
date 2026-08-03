@@ -2240,6 +2240,13 @@ John`
   try { db.exec(`ALTER TABLE rooms ADD COLUMN access_photo TEXT DEFAULT NULL`); } catch (e) {}
   try { db.exec(`ALTER TABLE rooms ADD COLUMN send_access_hours TEXT DEFAULT '48'`); } catch (e) {}
 
+  // Per-unit staffed check-in flag — only relevant when the unit's property has
+  // walk_in_enabled = 1 (Aparthotel/Glamping). OFF (default) means the unit is
+  // self-service only, per its own Access & Arrival fields above. ON reuses
+  // IR's existing Check-In button/flow as the staffed-handover mechanism — no
+  // new check-in logic, this is purely a declarative per-unit flag.
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN staffed_checkin_available INTEGER DEFAULT 0`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
