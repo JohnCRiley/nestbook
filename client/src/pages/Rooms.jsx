@@ -702,9 +702,11 @@ function UnitAccordionPanel({
       {isExpanded && (
         <div className="unit-panel-body" style={{ padding: '16px 18px' }}>
 
-          {/* ── Unit Details + Access & Arrival — side by side, 50% width each ── */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ flex: '1 1 50%', minWidth: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {/* ── Unit Details + Access & Arrival — side by side, 50% width each; ── */}
+          {/* stacks full-width on mobile (see .unit-subsections-row, matches the */}
+          {/* app's existing 767px breakpoint used by .dashboard-grid/.settings-layout) */}
+          <div className="unit-subsections-row">
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
             <div
               onClick={() => setShowDetails((v) => !v)}
               style={{
@@ -772,7 +774,7 @@ function UnitAccordionPanel({
             )}
           </div>
 
-          <div style={{ flex: '1 1 50%', minWidth: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
             <div
               onClick={() => setShowAccess((v) => !v)}
               style={{

@@ -2591,6 +2591,25 @@ a { text-decoration: none; }
   flex-direction: column;
   gap: 10px;
 }
+/* Unit Details + Access & Arrival — side by side (50/50), stack full-width on mobile */
+.unit-subsections-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.unit-subsections-row > div {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  /* align-items: flex-start (above) keeps the two side-by-side blocks at
+     independent heights on desktop, but in column mode it also shrinks each
+     child to its content width instead of the full row — override back to
+     stretch here so each stacked block spans the full width. */
+  .unit-subsections-row { flex-direction: column; align-items: stretch; }
+  .unit-subsections-row > div { flex: 1 1 100%; }
+}
 .unit-panel {
   background: white;
   border-radius: var(--radius);
