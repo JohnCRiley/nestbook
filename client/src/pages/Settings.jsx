@@ -3850,17 +3850,17 @@ const UN_SUB_TYPES = [
   {
     value: 'aparthotel',
     label: 'Aparthotel',
-    desc: 'Apartments run like a small hotel — reception, bar and restaurant on-site.',
+    desc: 'Apartments run like a small hotel — reception, bar and restaurant on-site. Self-catering optional.',
   },
   {
     value: 'glamping',
     label: 'Glamping',
-    desc: 'Self-contained pods or tents, with a central office for check-in and support.',
+    desc: 'Self-contained pods, tents and caravans, with a central office for check-in and support. Self-catering.',
   },
   {
     value: 'serviced_apartment',
     label: 'Serviced Apartment',
-    desc: 'Individually-owned remote units, managed without on-site staff.',
+    desc: 'Self-catering holiday apartments, managed without on-site staff.',
   },
 ];
 
