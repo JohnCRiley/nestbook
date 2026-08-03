@@ -1477,10 +1477,15 @@ export async function sendBookingDeclinedEmail(booking, property) {
 }
 
 // ── WP access code / arrival instructions (to guest before check-in) ─────────
-export async function sendAccessEmail(booking, property) {
+// accessInfo carries the access_method/access_code/arrival_instructions/access_photo
+// fields to use — defaults to `property` so every existing WP call site (which
+// passes just booking + property) behaves identically to before. Units-mode
+// callers pass the booking's own unit (a rooms row) as accessInfo instead,
+// since each unit carries its own access fields rather than the property's.
+export async function sendAccessEmail(booking, property, accessInfo = property) {
   if (!resend) return;
   if (!booking?.guest_email) return;
-  if (!property?.arrival_instructions && !property?.access_code) return;
+  if (!accessInfo?.arrival_instructions && !accessInfo?.access_code) return;
 
   const ACCESS_METHOD_LABELS = {
     code:   'Keypad / door code',
@@ -1489,34 +1494,34 @@ export async function sendAccessEmail(booking, property) {
     app:    'Smart lock app',
     other:  'Access details',
   };
-  const methodLabel = ACCESS_METHOD_LABELS[property.access_method] ?? 'Access details';
+  const methodLabel = ACCESS_METHOD_LABELS[accessInfo.access_method] ?? 'Access details';
   const guestName   = `${booking.guest_first_name} ${booking.guest_last_name}`;
   const subject     = `Your access details for ${property.name} — ${booking.check_in_date}`;
 
-  const accessBlock = property.access_code ? `
+  const accessBlock = accessInfo.access_code ? `
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;">${methodLabel}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:1.1rem;color:#1a4710;font-weight:800;letter-spacing:2px;">${property.access_code}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:1.1rem;color:#1a4710;font-weight:800;letter-spacing:2px;">${accessInfo.access_code}</td>
       </tr>
       ${property.check_in_time ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#6b7280;">Check-in from</td><td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">${property.check_in_time}</td></tr>` : ''}
     </table>` : '';
 
-  const instructionsBlock = property.arrival_instructions ? `
+  const instructionsBlock = accessInfo.arrival_instructions ? `
     <div style="background:#fffbf0;border:1px solid #fcd34d;border-radius:8px;padding:18px 20px;margin-bottom:24px;">
       <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b45309;margin-bottom:8px;">Arrival Instructions</div>
-      <div style="font-size:0.9rem;color:#374151;line-height:1.7;white-space:pre-line;">${property.arrival_instructions}</div>
+      <div style="font-size:0.9rem;color:#374151;line-height:1.7;white-space:pre-line;">${accessInfo.arrival_instructions}</div>
     </div>` : '';
 
   const appBase = (process.env.APP_URL ?? 'https://nestbook.io').replace(/\/$/, '');
-  const photoPath = property.access_photo
-    ? path.join(__dirname, '../uploads/access', property.access_photo)
+  const photoPath = accessInfo.access_photo
+    ? path.join(__dirname, '../uploads/access', accessInfo.access_photo)
     : null;
   const photoBlock = photoPath && fs.existsSync(photoPath) ? `
     <div style="margin-bottom:24px;">
       <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#374151;margin-bottom:10px;">📍 Key location photo</div>
-      <img src="${appBase}/uploads/access/${property.access_photo}"
+      <img src="${appBase}/uploads/access/${accessInfo.access_photo}"
            alt="Key location"
            style="width:100%;max-width:500px;border-radius:8px;border:1px solid #e2e8f0;display:block;" />
       <p style="font-size:0.75rem;color:#9ca3af;margin:6px 0 0;">Photo of the key location provided by ${property.name}</p>

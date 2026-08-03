@@ -128,6 +128,13 @@ export default function Rooms() {
     setSelectedRoom(updated);
   };
 
+  // Unit accordion's own inline sub-sections (Unit Details, Access & Arrival)
+  // save without opening the RoomPanel side panel — update the rooms list only,
+  // unlike handleRoomUpdated above which also opens/refreshes that panel.
+  const handleUnitFieldsUpdated = (updated) => {
+    setRooms((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+  };
+
   const handleNewRoomSuccess = (created) => {
     setRooms((prev) => [...prev, created]);
     setShowNewRoom(false);
@@ -212,6 +219,7 @@ export default function Rooms() {
           onAddUnit={handleAddUnit}
           onAddRoomToUnit={handleAddRoomToUnit}
           onEditUnit={handleEditUnit}
+          onUnitFieldsUpdated={handleUnitFieldsUpdated}
           t={t}
           currencySymbol={currencySymbol}
         />
@@ -583,7 +591,7 @@ function RoomGridSection({ rooms, loading, selectedRoom, onCardClick, t, emptyMe
 // Un mode — hardcoded English strings below are not yet in the i18n catalogue;
 // this UI isn't customer-facing yet (see plan-gating note in the task).
 
-function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCurrency, locale, hasChargesAddon, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, t, currencySymbol }) {
+function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCurrency, locale, hasChargesAddon, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, onUnitFieldsUpdated, t, currencySymbol }) {
   const [expandedUnitId, setExpandedUnitId] = useState(null);
 
   return (
@@ -618,6 +626,7 @@ function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCur
               onToggle={() => setExpandedUnitId((prev) => (prev === unit.id ? null : unit.id))}
               onEdit={() => onEditUnit(unit)}
               onAddRoom={() => onAddRoomToUnit(unit)}
+              onUnitFieldsUpdated={onUnitFieldsUpdated}
               selectedRoom={selectedRoom}
               onCardClick={onCardClick}
               t={t}
@@ -632,9 +641,10 @@ function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCur
 
 function UnitAccordionPanel({
   unit, rooms, bookings = [], today, property, fmtCurrency, locale, hasChargesAddon,
-  isExpanded, onToggle, onEdit, onAddRoom, selectedRoom, onCardClick, t, currencySymbol,
+  isExpanded, onToggle, onEdit, onAddRoom, onUnitFieldsUpdated, selectedRoom, onCardClick, t, currencySymbol,
 }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showAccess, setShowAccess] = useState(false);
 
   // Same active-booking window used everywhere else (Rooms.jsx activeByRoom, RoomPanel).
   const activeBooking = bookings.find((b) =>
@@ -692,8 +702,9 @@ function UnitAccordionPanel({
       {isExpanded && (
         <div className="unit-panel-body" style={{ padding: '16px 18px' }}>
 
-          {/* ── Unit Details — current guest/booking, kept separate from the rooms grid below ── */}
-          <div style={{ marginBottom: 16, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          {/* ── Unit Details + Access & Arrival — side by side, 50% width each ── */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 16 }}>
+          <div style={{ flex: '1 1 50%', minWidth: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
             <div
               onClick={() => setShowDetails((v) => !v)}
               style={{
@@ -761,6 +772,25 @@ function UnitAccordionPanel({
             )}
           </div>
 
+          <div style={{ flex: '1 1 50%', minWidth: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            <div
+              onClick={() => setShowAccess((v) => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                background: 'var(--page-bg)',
+              }}
+            >
+              <span>Access & Arrival</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{showAccess ? '▴' : '▾'}</span>
+            </div>
+
+            {showAccess && (
+              <UnitAccessSection unit={unit} onUnitUpdated={onUnitFieldsUpdated} />
+            )}
+          </div>
+          </div>
+
           <div className="page-toolbar" style={{ marginBottom: 12 }}>
             <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Rooms in this unit</div>
             <button className="btn-primary" onClick={onAddRoom}>
@@ -778,6 +808,197 @@ function UnitAccordionPanel({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ── UnitAccessSection — per-unit Access & Arrival ─────────────────────────────
+// Reuses WP's Settings AccessCodeSection as the reference pattern (same fields,
+// same photo-upload flow), scoped to this unit's own rooms row instead of the
+// property. WP's own Settings section/endpoints are untouched.
+const UNIT_ACCESS_METHOD_OPTIONS = [
+  { value: 'none',   label: '— Not specified —' },
+  { value: 'code',   label: 'Keypad / door code' },
+  { value: 'keybox', label: 'Key lockbox' },
+  { value: 'keyed',  label: 'Physical key (collect at office)' },
+  { value: 'app',    label: 'Smart lock app' },
+  { value: 'other',  label: 'Other — see arrival instructions' },
+];
+
+const UNIT_SEND_ACCESS_OPTIONS = [
+  { value: '72', label: '72 hours before arrival' },
+  { value: '48', label: '48 hours before arrival' },
+  { value: '24', label: '24 hours before arrival' },
+  { value: '12', label: '12 hours before arrival' },
+];
+
+function UnitAccessSection({ unit, onUnitUpdated }) {
+  const [form, setForm] = useState({
+    access_method:        unit.access_method ?? 'none',
+    access_code:          unit.access_code ?? '',
+    arrival_instructions: unit.arrival_instructions ?? '',
+    send_access_hours:    String(unit.send_access_hours ?? '48'),
+  });
+  const [accessPhoto,     setAccessPhoto]     = useState(unit.access_photo ?? null);
+  const [uploadingPhoto,  setUploadingPhoto]  = useState(false);
+  const [saving,          setSaving]          = useState(false);
+  const photoInputRef = useRef(null);
+
+  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await apiFetch(`/api/rooms/${unit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // Unrelated room fields — sent as-is since PUT /:id isn't defensive
+          // about these; only the 4 new access fields fall back to the room's
+          // existing value when a caller (like RoomPanel) omits them.
+          property_id:        unit.property_id,
+          name:                unit.name,
+          type:                unit.type,
+          price_per_night:     unit.price_per_night,
+          capacity:            unit.capacity,
+          amenities:           unit.amenities,
+          status:              unit.status,
+          breakfast_included:  unit.breakfast_included,
+          description:         unit.description,
+          access_method:        form.access_method,
+          access_code:          form.access_code.trim() || null,
+          arrival_instructions: form.arrival_instructions.trim() || null,
+          send_access_hours:    form.send_access_hours,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        onUnitUpdated?.(updated);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append('photo', file);
+      const res = await apiFetch(`/api/rooms/${unit.id}/access-photo`, { method: 'POST', body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        setAccessPhoto(data.filename);
+        onUnitUpdated?.({ ...unit, access_photo: data.filename });
+      }
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
+  const handlePhotoDelete = async () => {
+    const res = await apiFetch(`/api/rooms/${unit.id}/access-photo`, { method: 'DELETE' });
+    if (res.ok) {
+      setAccessPhoto(null);
+      onUnitUpdated?.({ ...unit, access_photo: null });
+    }
+  };
+
+  return (
+    <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+          Access method
+        </label>
+        <select name="access_method" className="form-control" value={form.access_method} onChange={handleChange}>
+          {UNIT_ACCESS_METHOD_OPTIONS.map((m) => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+          Access code
+        </label>
+        <input
+          type="text" name="access_code" className="form-control"
+          value={form.access_code} onChange={handleChange}
+          placeholder="e.g. 1234 or A-2468"
+        />
+      </div>
+
+      <div>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+          Arrival instructions
+        </label>
+        <textarea
+          name="arrival_instructions" className="form-control" rows={4}
+          value={form.arrival_instructions} onChange={handleChange}
+          placeholder="e.g. The key safe is to the right of the front door. Code is 1234. Parking available on-site..."
+          style={{ resize: 'vertical', width: '100%' }}
+        />
+      </div>
+
+      <div>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+          Send access details
+        </label>
+        <select name="send_access_hours" className="form-control" value={String(form.send_access_hours)} onChange={handleChange}>
+          {UNIT_SEND_ACCESS_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+          Key location photo
+        </label>
+        <input
+          ref={photoInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+          style={{ display: 'none' }} onChange={handlePhotoUpload}
+        />
+        {accessPhoto ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <img
+              src={`/uploads/access/${accessPhoto}`}
+              alt="Key location"
+              style={{ maxWidth: 240, maxHeight: 180, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)' }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button" className="btn-secondary" style={{ fontSize: '0.8rem', padding: '5px 12px' }}
+                onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+              >
+                {uploadingPhoto ? 'Uploading…' : 'Replace photo'}
+              </button>
+              <button
+                type="button" className="btn-secondary" style={{ fontSize: '0.8rem', padding: '5px 12px', color: '#dc2626' }}
+                onClick={handlePhotoDelete} disabled={uploadingPhoto}
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button" className="btn-secondary" style={{ fontSize: '0.8rem', padding: '5px 12px' }}
+            onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+          >
+            {uploadingPhoto ? 'Uploading…' : 'Upload photo'}
+          </button>
+        )}
+      </div>
+
+      <div>
+        <button className="btn-primary" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
     </div>
   );
 }

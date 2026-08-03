@@ -1,9 +1,23 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import multer from 'multer';
+import sharp from 'sharp';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import { requireVerified } from '../middleware/requireVerified.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// Same physical folder WP's property-level access photos already use
+// (server/uploads/access) — reused as a shared directory, filenames are
+// namespaced per-caller ("access-" for properties, "access-room-" here) so
+// the two never collide. WP's own upload/delete endpoints in properties.js
+// are untouched.
+const ACCESS_PHOTO_DIR = join(__dirname, '../uploads/access');
+fs.mkdirSync(ACCESS_PHOTO_DIR, { recursive: true });
 
 export const roomsRouter = Router();
 
@@ -285,14 +299,40 @@ roomsRouter.put('/:id', (req, res) => {
     const existing = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Room not found' });
 
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description } = req.body;
+    const {
+      property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
+      access_method, access_code, arrival_instructions, send_access_hours,
+    } = req.body;
+
+    // Per-unit Access & Arrival — same validation pattern as WP's property-level
+    // fields (properties.js PUT /:id), relocated here. RoomPanel's existing
+    // save calls (IR/WP bedroom edit, unit edit) never send these fields at
+    // all, so each one falls back to the room's current value rather than a
+    // hardcoded default — otherwise every unrelated room save would silently
+    // wipe whatever the new Access & Arrival sub-section had set.
+    const VALID_ACCESS_METHODS = ['none', 'code', 'keybox', 'keyed', 'app', 'other'];
+    const newAccessMethod = access_method !== undefined
+      ? (VALID_ACCESS_METHODS.includes(access_method) ? access_method : 'none')
+      : existing.access_method;
+    const newAccessCode = access_code !== undefined ? (access_code?.trim() || null) : existing.access_code;
+    const newArrivalInstructions = arrival_instructions !== undefined
+      ? (arrival_instructions?.trim() || null)
+      : existing.arrival_instructions;
+    const newSendAccessHours = send_access_hours !== undefined
+      ? (send_access_hours != null && send_access_hours !== '' ? String(Math.max(1, parseInt(send_access_hours, 10) || 48)) : '48')
+      : existing.send_access_hours;
 
     db.prepare(`
       UPDATE rooms
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
-          capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?
+          capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?,
+          access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?
       WHERE id = ?
-    `).run(property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null, req.params.id);
+    `).run(
+      property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null,
+      newAccessMethod, newAccessCode, newArrivalInstructions, newSendAccessHours,
+      req.params.id,
+    );
 
     if (description && description !== existing.description) {
       db.prepare(`INSERT INTO content_flags (property_id, room_id, content_type, preview_text) VALUES (?, ?, 'room_description', ?)`)
@@ -314,6 +354,94 @@ roomsRouter.put('/:id', (req, res) => {
       afterValue:  { status: updated.status,  price_per_night: updated.price_per_night },
       ipAddress: getIp(req),
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/rooms/:id/access-photo ──────────────────────────────────────
+// Per-unit equivalent of WP's POST /api/properties/:id/access-photo — same
+// multer → sharp (resize 1200px, JPEG 85%) → save pattern, scoped to a room.
+// Only valid for a top-level unit (parent_unit_id IS NULL) on a units-mode
+// property, since access info is meaningless for internal display-only rooms
+// or for IR/WP rooms that use the property-level fields instead.
+const accessPhotoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, ACCESS_PHOTO_DIR),
+    filename: (req, file, cb) => cb(null, `access-room-${req.params.id}-${Date.now()}.tmp`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) cb(null, true);
+    else cb(new Error('JPEG, PNG or WebP only'));
+  },
+});
+
+function unitAccessEligibility(roomId) {
+  const room = db.prepare(`
+    SELECT r.id, r.property_id, r.parent_unit_id, p.rental_type
+    FROM rooms r JOIN properties p ON p.id = r.property_id
+    WHERE r.id = ?
+  `).get(roomId);
+  if (!room) return { ok: false, status: 404, error: 'Room not found.' };
+  if (room.parent_unit_id !== null || room.rental_type !== 'units') {
+    return { ok: false, status: 400, error: 'Access & Arrival is only available for a top-level unit on a units-mode property.' };
+  }
+  return { ok: true, room };
+}
+
+roomsRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), async (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    const eligibility = unitAccessEligibility(roomId);
+    if (!eligibility.ok) {
+      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      return res.status(eligibility.status).json({ error: eligibility.error });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, eligibility.room.property_id)) {
+      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No photo uploaded' });
+
+    const existing = db.prepare('SELECT access_photo FROM rooms WHERE id = ?').get(roomId);
+    const filename = `access-room-${roomId}-${Date.now()}.jpg`;
+    const outputPath = join(ACCESS_PHOTO_DIR, filename);
+
+    await sharp(req.file.path)
+      .resize(1200, null, { withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toFile(outputPath);
+
+    try { fs.unlinkSync(req.file.path); } catch {}
+
+    if (existing?.access_photo) {
+      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, existing.access_photo)); } catch {}
+    }
+
+    db.prepare('UPDATE rooms SET access_photo = ? WHERE id = ?').run(filename, roomId);
+    console.log(`[access-photo] Uploaded for room ${roomId}: ${filename}`);
+    res.json({ success: true, filename });
+  } catch (err) {
+    if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+    console.error('[access-photo]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/rooms/:id/access-photo ────────────────────────────────────
+roomsRouter.delete('/:id/access-photo', (req, res) => {
+  try {
+    const roomId = Number(req.params.id);
+    const roomRow = db.prepare('SELECT property_id, access_photo FROM rooms WHERE id = ?').get(roomId);
+    if (!roomRow || !canAccessProperty(req.user.userId, req.user.role, roomRow.property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (roomRow.access_photo) {
+      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, roomRow.access_photo)); } catch {}
+      db.prepare('UPDATE rooms SET access_photo = NULL WHERE id = ?').run(roomId);
+    }
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

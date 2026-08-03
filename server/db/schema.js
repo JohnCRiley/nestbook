@@ -2229,6 +2229,17 @@ John`
   // Free text, descriptive only — no functional gating (e.g. "Keycard", "Key box code 4471")
   try { db.exec(`ALTER TABLE properties ADD COLUMN entry_method TEXT DEFAULT NULL`); } catch (e) {}
 
+  // Per-unit Access & Arrival — same fields as WP's properties.access_method/
+  // access_code/arrival_instructions/access_photo/send_access_hours, relocated
+  // to rooms so each unit on a units-mode property can carry its own entry
+  // code (only meaningful for a top-level unit, parent_unit_id IS NULL). WP's
+  // own property-level columns and code path are untouched by this.
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN access_method TEXT DEFAULT 'none'`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN access_code TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN arrival_instructions TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN access_photo TEXT DEFAULT NULL`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN send_access_hours TEXT DEFAULT '48'`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

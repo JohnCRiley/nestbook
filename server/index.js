@@ -180,6 +180,59 @@ async function sendPendingAccessEmails() {
   }
 }
 
+// ── Units mode access code auto-send ──────────────────────────────────────────
+// Parallel to sendPendingAccessEmails above — same hours-ahead logic and same
+// access_email_sent tracking on the booking — but scoped to each unit's own
+// access_method/access_code/arrival_instructions/access_photo/send_access_hours
+// (a top-level rooms row) rather than the property's. Does not read from or
+// write to WP's own query/columns above.
+async function sendPendingUnitAccessEmails() {
+  try {
+    const units = db.prepare(`
+      SELECT r.*
+      FROM rooms r
+      JOIN properties p ON p.id = r.property_id
+      WHERE p.rental_type = 'units'
+        AND r.parent_unit_id IS NULL
+        AND r.access_method IS NOT NULL AND r.access_method != '' AND r.access_method != 'none'
+        AND (r.arrival_instructions IS NOT NULL OR r.access_code IS NOT NULL)
+    `).all();
+
+    for (const unit of units) {
+      const property = db.prepare(`
+        SELECT p.*, u.email AS owner_email
+        FROM properties p
+        JOIN users u ON u.id = p.owner_id AND u.role = 'owner'
+        WHERE p.id = ?
+      `).get(unit.property_id);
+      if (!property) continue;
+
+      const hoursAhead = Math.max(1, parseInt(unit.send_access_hours, 10) || 48);
+      const cutoff = new Date();
+      cutoff.setHours(cutoff.getHours() + hoursAhead);
+      const cutoffDate = cutoff.toISOString().slice(0, 10);
+
+      const bookings = db.prepare(`
+        SELECT b.*, g.email AS guest_email, g.first_name AS guest_first_name, g.last_name AS guest_last_name
+        FROM bookings b
+        JOIN guests g ON g.id = b.guest_id
+        WHERE b.room_id = ?
+          AND b.status = 'confirmed'
+          AND b.check_in_date <= ?
+          AND b.check_in_date >= date('now')
+          AND (b.access_email_sent IS NULL OR b.access_email_sent = 0)
+      `).all(unit.id, cutoffDate);
+
+      for (const booking of bookings) {
+        await sendAccessEmail(booking, property, unit);
+        db.prepare(`UPDATE bookings SET access_email_sent = 1 WHERE id = ?`).run(booking.id);
+      }
+    }
+  } catch (err) {
+    console.error('[access-email] Units scheduler error:', err.message);
+  }
+}
+
 // ── WP balance due reminders ──────────────────────────────────────────────────
 async function sendPendingBalanceReminders() {
   try {
@@ -390,6 +443,10 @@ app.listen(PORT, () => {
   // Run access email check on startup and every 6 hours
   sendPendingAccessEmails();
   setInterval(sendPendingAccessEmails, 6 * 60 * 60 * 1000);
+
+  // Units mode access email check — parallel schedule, same cadence
+  sendPendingUnitAccessEmails();
+  setInterval(sendPendingUnitAccessEmails, 6 * 60 * 60 * 1000);
 
   // Balance due reminders — check on startup and every 6 hours
   sendPendingBalanceReminders();
