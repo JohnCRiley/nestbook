@@ -246,6 +246,7 @@ propertiesRouter.put('/:id', (req, res) => {
       special_banner_enabled, special_banner_title, special_banner_text,
       house_rules, local_tips,
       at_a_glance_facts,
+      un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal'];
@@ -254,6 +255,23 @@ propertiesRouter.put('/:id', (req, res) => {
     // than silently discarding it to a default.
     const VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
+    // Un-mode sub-types — only meaningful for rental_type === 'units', but
+    // stored regardless (same as e.g. whole_property_rate for non-WP rows).
+    const VALID_UN_SUB_TYPES = ['aparthotel', 'glamping', 'serviced_apartment'];
+    const VALID_SERVICING_TYPES = ['daily', 'post_stay_optional', 'post_stay'];
+    const VALID_BOOKING_FLOWS = ['instant', 'request'];
+    const newUnSubType = VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null;
+    // Serviced Apartment locks walk-in off regardless of what's submitted — a
+    // server-side mirror of the Settings UI's disabled toggle, since remote,
+    // unstaffed units can never offer walk-in bookings.
+    const newWalkIn = (newUnSubType === 'serviced_apartment') ? 0 : (walk_in_enabled ? 1 : 0);
+    const requestedBookingFlow = VALID_BOOKING_FLOWS.includes(booking_flow) ? booking_flow : 'instant';
+    // Linked-pair rule enforced independently of the client: walk_in_enabled = 1
+    // must never coexist with booking_flow = 'request'. Never trust the client
+    // to have already applied this — correct it here too.
+    const newBookingFlow = (newWalkIn && requestedBookingFlow === 'request') ? 'instant' : requestedBookingFlow;
+    const newServicingType = VALID_SERVICING_TYPES.includes(servicing_type) ? servicing_type : null;
+    const newEntryMethod = entry_method?.trim() || null;
     // Lock rental_type once the user has completed onboarding.
     // Preserve the existing value if the field is absent from the body.
     const requestingUser = db.prepare('SELECT onboarding_completed FROM users WHERE id = ?').get(req.user.userId);
@@ -280,7 +298,9 @@ propertiesRouter.put('/:id', (req, res) => {
           guest_notes_enabled = ?,
           special_banner_enabled = ?, special_banner_title = ?, special_banner_text = ?,
           house_rules = ?, local_tips = ?,
-          at_a_glance_facts = ?
+          at_a_glance_facts = ?,
+          un_sub_type = ?, walk_in_enabled = ?, booking_flow = ?,
+          servicing_type = ?, entry_method = ?
       WHERE id = ?
     `).run(
       name ?? null, type ?? null, address ?? null, city ?? null, country ?? null,
@@ -320,6 +340,7 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       normalizeAtAGlanceFacts(at_a_glance_facts),
+      newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod,
       req.params.id,
     );
     if (existing && newRentalType !== existing.rental_type) {

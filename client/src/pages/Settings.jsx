@@ -264,6 +264,11 @@ export default function Settings() {
         deposit_refundable:          p.deposit_refundable !== 0 ? 1 : 0,
         deposit_auto_email:          p.deposit_auto_email !== 0 ? 1 : 0,
         deposit_balance_auto_email:  p.deposit_balance_auto_email !== 0 ? 1 : 0,
+        un_sub_type:          p.un_sub_type          ?? null,
+        walk_in_enabled:      p.walk_in_enabled      ? 1 : 0,
+        booking_flow:         p.booking_flow         ?? 'instant',
+        servicing_type:       p.servicing_type       ?? null,
+        entry_method:         p.entry_method         ?? '',
       });
       setUsers(u);
       if (s && !s.error) setSub(s);
@@ -1280,6 +1285,19 @@ export default function Settings() {
                 onToggle={(name, val) => setForm(prev => ({ ...prev, [name]: val }))}
                 t={t}
                 currencySymbol={currencySymbol}
+              />
+            </div>
+          )}
+
+          {/* Unit Sub-Type — Units mode only, dev-reachable, not exposed in onboarding */}
+          {form && activeProperty?.rental_type === 'units' && (
+            <div style={{ marginTop: 16 }}>
+              <UnSubTypeSection
+                form={form}
+                setForm={setForm}
+                handleSave={handleSave}
+                saving={saving}
+                t={t}
               />
             </div>
           )}
@@ -3817,6 +3835,174 @@ function DepositSection({ form, onChange, onToggle, t, currencySymbol }) {
               </FormField>
             </>
           )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── UnSubTypeSection (Units mode only) ────────────────────────────────────────
+// Un mode — hardcoded English strings below, not yet in the i18n catalogue;
+// this UI isn't customer-facing yet (same precedent as the rest of Un mode).
+
+const UN_SUB_TYPES = [
+  {
+    value: 'aparthotel',
+    label: 'Aparthotel',
+    desc: 'Apartments run like a small hotel — reception, bar and restaurant on-site.',
+  },
+  {
+    value: 'glamping',
+    label: 'Glamping',
+    desc: 'Self-contained pods or tents, with a central office for check-in and support.',
+  },
+  {
+    value: 'serviced_apartment',
+    label: 'Serviced Apartment',
+    desc: 'Individually-owned remote units, managed without on-site staff.',
+  },
+];
+
+// Defaults applied in one go when a sub-type is chosen — the owner can still
+// edit every field individually afterwards (hybrid: presets set defaults,
+// everything stays editable).
+const UN_SUB_TYPE_DEFAULTS = {
+  aparthotel:          { walk_in_enabled: 1, booking_flow: 'instant', servicing_type: 'daily',               breakfast_included: 1 },
+  glamping:            { walk_in_enabled: 1, booking_flow: 'instant', servicing_type: 'post_stay_optional',   breakfast_included: 0 },
+  serviced_apartment:  { walk_in_enabled: 0, booking_flow: 'request', servicing_type: 'post_stay',            breakfast_included: 0 },
+};
+
+function UnSubTypeSection({ form, setForm, handleSave, saving, t }) {
+  const subType      = form.un_sub_type ?? null;
+  const walkInLocked = subType === 'serviced_apartment';
+
+  function applySubType(value) {
+    setForm((prev) => ({ ...prev, un_sub_type: value, ...UN_SUB_TYPE_DEFAULTS[value] }));
+  }
+
+  // Linked pair: walk_in_enabled = 1 must never coexist with booking_flow =
+  // 'request'. Auto-switch the other field rather than blocking the toggle —
+  // reads more natural than refusing the click outright.
+  function handleWalkInToggle(checked) {
+    setForm((prev) => ({
+      ...prev,
+      walk_in_enabled: checked ? 1 : 0,
+      booking_flow: (checked && prev.booking_flow === 'request') ? 'instant' : prev.booking_flow,
+    }));
+  }
+
+  function handleBookingFlowChange(value) {
+    setForm((prev) => ({
+      ...prev,
+      booking_flow: value,
+      walk_in_enabled: (value === 'request' && prev.walk_in_enabled) ? 0 : prev.walk_in_enabled,
+    }));
+  }
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>Unit Sub-Type</h2>
+        <p>Choose the operating pattern for your units — sets sensible defaults for check-in, servicing and breakfast, all editable below.</p>
+      </div>
+      <div className="settings-card-body">
+        <div className="settings-form">
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+            {UN_SUB_TYPES.map((opt) => (
+              <label
+                key={opt.value}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                  padding: '12px 14px', borderRadius: 8, cursor: 'pointer',
+                  border: subType === opt.value ? '2px solid var(--accent)' : '1.5px solid var(--border)',
+                  background: subType === opt.value ? 'var(--light-green)' : 'var(--card-bg)',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="un_sub_type"
+                  checked={subType === opt.value}
+                  onChange={() => applySubType(opt.value)}
+                  style={{ marginTop: 3 }}
+                />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{opt.label}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>{opt.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          <FormField label="Breakfast">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!form.breakfast_included}
+                onChange={(e) => setForm((p) => ({ ...p, breakfast_included: e.target.checked ? 1 : 0 }))}
+              />
+              <span style={{ fontSize: '0.875rem' }}>Offer breakfast to all guests</span>
+            </label>
+          </FormField>
+
+          <FormField label="Servicing">
+            <select
+              className="form-control"
+              value={form.servicing_type ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, servicing_type: e.target.value || null }))}
+            >
+              <option value="">Not set</option>
+              <option value="daily">Daily housekeeping</option>
+              <option value="post_stay_optional">Post-stay clean, optional mid-stay</option>
+              <option value="post_stay">Post-stay clean only</option>
+            </select>
+          </FormField>
+
+          <FormField
+            label="Walk-in bookings"
+            hint={walkInLocked ? 'Not available for remote, unstaffed units' : 'Requires instant confirmation — enabling this switches booking confirmation to instant if it\'s currently set to request approval.'}
+          >
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: walkInLocked ? 'not-allowed' : 'pointer', opacity: walkInLocked ? 0.5 : 1 }}>
+              <input
+                type="checkbox"
+                checked={!!form.walk_in_enabled}
+                disabled={walkInLocked}
+                onChange={(e) => handleWalkInToggle(e.target.checked)}
+              />
+              <span style={{ fontSize: '0.875rem' }}>Allow guests to book on arrival without booking ahead</span>
+            </label>
+          </FormField>
+
+          <FormField
+            label="Booking confirmation"
+            hint={form.walk_in_enabled ? 'Walk-in bookings require instant confirmation — switching to "Owner approval required" will turn walk-in off.' : undefined}
+          >
+            <select
+              className="form-control"
+              value={form.booking_flow ?? 'instant'}
+              onChange={(e) => handleBookingFlowChange(e.target.value)}
+            >
+              <option value="instant">Instant confirmation</option>
+              <option value="request">Owner approval required</option>
+            </select>
+          </FormField>
+
+          <FormField label="Entry method" hint="Free text, descriptive only — e.g. &quot;Keycard&quot; or &quot;Key box code 4471&quot;.">
+            <input
+              type="text"
+              className="form-control"
+              value={form.entry_method ?? ''}
+              onChange={(e) => setForm((p) => ({ ...p, entry_method: e.target.value }))}
+              placeholder="e.g. Keycard, Key box code 4471"
+            />
+          </FormField>
+
+          <div className="settings-save-row">
+            <button className="btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? t('saving') : t('saveChanges')}
+            </button>
+          </div>
 
         </div>
       </div>
