@@ -825,6 +825,21 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Unit Sub-Type — Units mode only, dev-reachable, not exposed in onboarding.
+              Left column, property-setup section — belongs with Property Details, not
+              the right column's feature toggles. */}
+          {form && activeProperty?.rental_type === 'units' && (
+            <div style={{ marginTop: 16 }}>
+              <UnSubTypeSection
+                form={form}
+                setForm={setForm}
+                handleSave={handleSave}
+                saving={saving}
+                t={t}
+              />
+            </div>
+          )}
+
           {/* Partnership Links — Pro/Multi only */}
           <div style={{ marginTop: 16 }}>
             <PlanGate requiredPlan="pro" title={t('settings.partnerLinks')} detail={t('settings.partnerLinksHint')}>
@@ -1285,19 +1300,6 @@ export default function Settings() {
                 onToggle={(name, val) => setForm(prev => ({ ...prev, [name]: val }))}
                 t={t}
                 currencySymbol={currencySymbol}
-              />
-            </div>
-          )}
-
-          {/* Unit Sub-Type — Units mode only, dev-reachable, not exposed in onboarding */}
-          {form && activeProperty?.rental_type === 'units' && (
-            <div style={{ marginTop: 16 }}>
-              <UnSubTypeSection
-                form={form}
-                setForm={setForm}
-                handleSave={handleSave}
-                saving={saving}
-                t={t}
               />
             </div>
           )}
