@@ -629,12 +629,16 @@ export default function Settings() {
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
                           {form.rental_type === 'whole_property'
                             ? <><i className="ti ti-home" /> {t('settings.rentalTypeWhole')}</>
+                            : form.rental_type === 'units'
+                            ? <><i className="ti ti-building" /> {t('settings.rentalTypeUnits')}</>
                             : <><i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}</>
                           }
                         </div>
                         <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
                           {form.rental_type === 'whole_property'
                             ? t('settings.rentalTypeWholeHint')
+                            : form.rental_type === 'units'
+                            ? t('settings.rentalTypeUnitsHint')
                             : t('settings.rentalTypeRoomsHint')
                           }
                         </div>

@@ -429,6 +429,19 @@ export default function Onboarding() {
                   {t('onboard.rentalTypeWholeDesc')}
                 </div>
               </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, rental_type: 'units' })}
+                className={`rental-type-btn${form.rental_type === 'units' ? ' active' : ''}`}
+                style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
+              >
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
+                  <i className="ti ti-building" /> {t('onboard.rentalTypeUnits')}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
+                  {t('onboard.rentalTypeUnitsDesc')}
+                </div>
+              </button>
             </div>
             <div style={{
               marginTop: 14, padding: '8px 14px',
@@ -499,6 +512,8 @@ export default function Onboarding() {
         const localeLabel   = LOCALES.find(l => l.value === form.locale)?.label ?? form.locale;
         const rentalLabel   = form.rental_type === 'whole_property'
           ? t('onboard.rentalTypeWhole')
+          : form.rental_type === 'units'
+          ? t('onboard.rentalTypeUnits')
           : t('onboard.rentalTypeRooms');
 
         return (
