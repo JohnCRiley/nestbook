@@ -34,3 +34,12 @@ export const PROPERTY_GROUPS = [
     { value: 'other', label: 'Other' },
   ]},
 ];
+
+// Property types that default to Whole Property rental mode when chosen —
+// shared between Onboarding (property-type step) and the Add Property flow.
+export const WHOLE_PROPERTY_TYPES = new Set([
+  'gite', 'cottage', 'villa', 'apartment', 'lodge',
+  'caravan', 'glamping', 'shepherds_hut', 'treehouse',
+  'narrowboat', 'farmhouse', 'chateau',
+  'ryokan', 'minsu', 'homestay', 'resort_villa',
+]);

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
-import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
+import { PROPERTY_GROUPS, WHOLE_PROPERTY_TYPES } from '../utils/propertyTypes.js';
+import { RentalTypeSelector, UnSubTypeSelector } from '../components/RentalTypeStep.jsx';
 
 const CURRENCIES = [
   { value: 'EUR', label: '€ EUR — Euro' },
@@ -20,13 +20,6 @@ const LOCALES = [
   { value: 'de', label: '🇩🇪 Deutsch' },
   { value: 'nl', label: '🇳🇱 Nederlands' },
 ];
-
-const WHOLE_PROPERTY_TYPES = new Set([
-  'gite', 'cottage', 'villa', 'apartment', 'lodge',
-  'caravan', 'glamping', 'shepherds_hut', 'treehouse',
-  'narrowboat', 'farmhouse', 'chateau',
-  'ryokan', 'minsu', 'homestay', 'resort_villa',
-]);
 
 const TOTAL_STEPS = 9; // 0–7 = data steps (6 = units sub-type, 7 = breakfast), 8 = summary
 
@@ -395,66 +388,7 @@ export default function Onboarding() {
         return (
           <>
             <div className="wiz-step-label">{t('onboard.wizRentalType')}</div>
-            <div style={{ display: 'flex', gap: 14 }}>
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, rental_type: 'rooms' })}
-                className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
-                style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
-              >
-                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
-                  <i className="ti ti-bed" /> {t('onboard.rentalTypeRooms')}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4, marginBottom: 8 }}>
-                  {t('onboard.rentalTypeRoomsDesc')}
-                </div>
-                <span className="wiz-inn-tag">
-                  ✦ {t('onboard.rentalTypeInn')} — {t('onboard.rentalTypeInnDesc')}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
-                className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
-                style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
-              >
-                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
-                  <i className="ti ti-home" /> {t('onboard.rentalTypeWhole')}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
-                  {t('onboard.rentalTypeWholeDesc')}
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm({ ...form, rental_type: 'units' })}
-                className={`rental-type-btn${form.rental_type === 'units' ? ' active' : ''}`}
-                style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
-              >
-                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
-                  <i className="ti ti-building" /> {t('onboard.rentalTypeUnits')}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
-                  {t('onboard.rentalTypeUnitsDesc')}
-                </div>
-              </button>
-            </div>
-            <div style={{
-              marginTop: 14, padding: '8px 14px',
-              background: '#fefce8', border: '1px solid #fbbf24',
-              borderRadius: 7, fontSize: '0.78rem', color: '#92400e',
-            }}>
-              <i className="ti ti-lock" style={{ marginRight: 5 }} />
-              {t('onboard.rentalTypeLockNote')}{' '}
-              <a
-                href="https://nestbook.io/help.html#getting-started"
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: '#92400e', textDecoration: 'underline' }}
-              >
-                {t('onboard.rentalTypeLockLink')}
-              </a>
-            </div>
+            <RentalTypeSelector form={form} setForm={setForm} t={t} />
             <button className="btn-wiz" disabled={saving} onClick={saveStep}>
               {saving ? '…' : t('onboard.saveAndContinue')}
             </button>
@@ -467,52 +401,11 @@ export default function Onboarding() {
         );
 
       // ── Step 6: Units sub-type (units rental type only) ────────────────
-      case 6: {
-        const subType = form.un_sub_type ?? null;
-        function chooseSubType(value) {
-          setForm(f => ({ ...f, un_sub_type: value, ...UN_SUB_TYPE_DEFAULTS[value] }));
-        }
-        function chooseDecideLater() {
-          setForm(f => ({
-            ...f,
-            un_sub_type: null,
-            walk_in_enabled: 0,
-            booking_flow: 'instant',
-            servicing_type: null,
-            breakfast_included: 0,
-          }));
-        }
+      case 6:
         return (
           <>
             <div className="wiz-step-label">{t('onboard.wizUnSubType')}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
-              {UN_SUB_TYPES.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => chooseSubType(opt.value)}
-                  className={`rental-type-btn${subType === opt.value ? ' active' : ''}`}
-                  style={{ padding: '14px 16px', textAlign: 'left' }}
-                >
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>
-                    {t(`onboard.unSubType.${opt.value}`)}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
-                    {t(`onboard.unSubType.${opt.value}Desc`)}
-                  </div>
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={chooseDecideLater}
-                className={`rental-type-btn${subType === null ? ' active' : ''}`}
-                style={{ padding: '14px 16px', textAlign: 'left' }}
-              >
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                  {t('onboard.unSubType.decideLater')}
-                </div>
-              </button>
-            </div>
+            <UnSubTypeSelector form={form} setForm={setForm} t={t} />
             <button className="btn-wiz" disabled={saving} onClick={saveStep}>
               {saving ? '…' : t('onboard.saveAndContinue')}
             </button>
@@ -523,7 +416,6 @@ export default function Onboarding() {
             </div>
           </>
         );
-      }
 
       // ── Step 7: Breakfast times ────────────────────────────────────────
       case 7:

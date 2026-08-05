@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import QRCodeStyling from 'qr-code-styling';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
+import AddPropertyModal from './settings/AddPropertyModal.jsx';
 import SpecialsBannerEditor from './settings/SpecialsBannerEditor.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
@@ -498,24 +499,10 @@ export default function Settings() {
     showToast(t('staffAddedToast')(newUser.name, newUser.role));
   };
 
-  const handleAddProperty = async (formData) => {
-    try {
-      const res = await apiFetch('/api/properties', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        addPropertyToList(data);
-        setShowAddProperty(false);
-        showToast(t('propAddedToast')(data.name));
-      } else {
-        showToast(data.error || t('propAddError'), 'error');
-      }
-    } catch {
-      showToast(t('networkError'), 'error');
-    }
+  const handleAddPropertySuccess = (newProp) => {
+    addPropertyToList(newProp);
+    setShowAddProperty(false);
+    showToast(t('propAddedToast')(newProp.name));
   };
 
   // ── Embed snippet ──────────────────────────────────────────────────────────
@@ -870,20 +857,13 @@ export default function Settings() {
                 </div>
 
                 {properties.length < 5 && (
-                  showAddProperty ? (
-                    <AddPropertyForm
-                      onSave={handleAddProperty}
-                      onCancel={() => setShowAddProperty(false)}
-                    />
-                  ) : (
-                    <button
-                      className="btn-secondary"
-                      style={{ marginTop: 14 }}
-                      onClick={() => setShowAddProperty(true)}
-                    >
-                      {t('addAnotherProperty')}
-                    </button>
-                  )
+                  <button
+                    className="btn-secondary"
+                    style={{ marginTop: 14 }}
+                    onClick={() => setShowAddProperty(true)}
+                  >
+                    {t('addAnotherProperty')}
+                  </button>
                 )}
               </div>
             </div>
@@ -1863,6 +1843,14 @@ export default function Settings() {
         <div className={`toast toast-${toast.type}`}>{toast.msg}</div>
       )}
 
+      {showAddProperty && (
+        <AddPropertyModal
+          t={t}
+          onClose={() => setShowAddProperty(false)}
+          onSuccess={handleAddPropertySuccess}
+        />
+      )}
+
       {removePropertyTarget && (
         <RemovePropertyModal
           property={removePropertyTarget}
@@ -2364,59 +2352,6 @@ function FacebookBookingSection({ property, onSaved }) {
 
       </div>
     </div>
-  );
-}
-
-// ── AddPropertyForm ───────────────────────────────────────────────────────────
-
-// Reuse the same groups defined at top of file
-
-function AddPropertyForm({ onSave, onCancel }) {
-  const t = useT();
-  const [form, setForm] = useState({ name: '', type: 'bnb' });
-  const [saving, setSaving] = useState(false);
-  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.name.trim()) return;
-    setSaving(true);
-    await onSave(form);
-    setSaving(false);
-  }
-
-  return (
-    <form onSubmit={handleSubmit} style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('propNameLabel')} *</label>
-        <input
-          name="name" className="form-control" autoFocus required
-          value={form.name} onChange={handleChange}
-          placeholder="e.g. La Maison du Soleil"
-          style={{ marginTop: 4 }}
-        />
-      </div>
-      <div className="form-group" style={{ marginBottom: 0 }}>
-        <label className="form-label" style={{ fontSize: '0.82rem' }}>{t('typeLabel')}</label>
-        <select name="type" className="form-control" value={form.type} onChange={handleChange} style={{ marginTop: 4 }}>
-          {PROPERTY_GROUPS.map((grp) => (
-            <optgroup key={grp.group} label={grp.group}>
-              {grp.options.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button type="submit" className="btn-primary" disabled={saving} style={{ fontSize: '0.85rem' }}>
-          {saving ? t('saving') : t('saveProperty')}
-        </button>
-        <button type="button" className="btn-secondary" onClick={onCancel} style={{ fontSize: '0.85rem' }}>
-          {t('cancel')}
-        </button>
-      </div>
-    </form>
   );
 }
 
