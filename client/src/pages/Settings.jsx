@@ -260,6 +260,13 @@ export default function Settings() {
     }
   }, [form?.name]); // fires once when form is first loaded // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Open the Add Property flow directly from ?addProperty=1 (set by the
+  // sidebar's "+ Add property" link) instead of landing on the page and
+  // requiring a second click.
+  useEffect(() => {
+    if (searchParams.get('addProperty') === '1') setShowAddProperty(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     apiFetch('/api/error-reports/enabled')
       .then((r) => r.ok ? r.json() : { enabled: false })

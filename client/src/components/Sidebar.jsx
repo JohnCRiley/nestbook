@@ -278,7 +278,7 @@ export default function Sidebar() {
                     </button>
                   ))}
                   {properties.length < 5 && (
-                    <NavLink to="/settings" className="property-add-link">
+                    <NavLink to="/settings?addProperty=1" className="property-add-link">
                       {t('addProperty')}
                     </NavLink>
                   )}
