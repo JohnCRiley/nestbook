@@ -2282,6 +2282,31 @@ John`
   // new check-in logic, this is purely a declarative per-unit flag.
   try { db.exec(`ALTER TABLE rooms ADD COLUMN staffed_checkin_available INTEGER DEFAULT 0`); } catch (e) {}
 
+  // Per-property rental_type lock — replaces the old user-level
+  // onboarding_completed lock (which incorrectly locked every property a
+  // Multi owner ever adds, since onboarding is already complete by then).
+  // One-time migration, gated on the column not existing yet: every property
+  // that already exists has real rental_type data configured, so it must
+  // start locked; only properties created after this migration (via POST,
+  // which inserts rental_type_locked = 0) default unlocked.
+  {
+    const hasLockCol = db.prepare(`PRAGMA table_info(properties)`).all().some(c => c.name === 'rental_type_locked');
+    if (!hasLockCol) {
+      db.exec('BEGIN');
+      try {
+        db.exec(`ALTER TABLE properties ADD COLUMN rental_type_locked INTEGER DEFAULT 0`);
+        const { changes } = db.prepare(
+          `UPDATE properties SET rental_type_locked = 1 WHERE rental_type_locked = 0`
+        ).run();
+        db.exec('COMMIT');
+        console.log(`✓ Added rental_type_locked column and locked ${changes} existing propert${changes === 1 ? 'y' : 'ies'}.`);
+      } catch (e) {
+        db.exec('ROLLBACK');
+        console.error('[schema] rental_type_locked migration failed:', e.message);
+      }
+    }
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

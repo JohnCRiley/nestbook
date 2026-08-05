@@ -13,6 +13,16 @@ import { sanitizeBanner } from '../utils/sanitizeBanner.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
+// 'units' isn't exposed as a Settings UI option yet — this is a safety
+// net so the endpoint preserves it correctly if it's ever sent, rather
+// than silently discarding it to a default.
+const VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
+// Un-mode sub-types — only meaningful for rental_type === 'units', but
+// stored regardless (same as e.g. whole_property_rate for non-WP rows).
+const VALID_UN_SUB_TYPES = ['aparthotel', 'glamping', 'serviced_apartment'];
+const VALID_SERVICING_TYPES = ['daily', 'post_stay_optional', 'post_stay'];
+const VALID_BOOKING_FLOWS = ['instant', 'request'];
+
 // Drops unfilled preset facts and blank custom rows, returning null when
 // nothing meaningful remains rather than storing an empty/malformed string.
 function normalizeAtAGlanceFacts(facts) {
@@ -179,13 +189,29 @@ propertiesRouter.post('/', (req, res) => {
       return res.status(400).json({ error: 'Maximum of 5 properties reached.' });
     }
 
-    const { name, type, address, city, country, check_in_time, check_out_time, currency, locale } = req.body;
+    const {
+      name, type, address, city, country, check_in_time, check_out_time, currency, locale,
+      rental_type, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
+    } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'name and type are required.' });
+
+    const newRentalType = VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : 'rooms';
+    const newUnSubType = VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null;
+    // Serviced Apartment locks walk-in off regardless of what's submitted — a
+    // server-side mirror of the Settings UI's disabled toggle, since remote,
+    // unstaffed units can never offer walk-in bookings.
+    const newWalkIn = (newUnSubType === 'serviced_apartment') ? 0 : (walk_in_enabled ? 1 : 0);
+    const requestedBookingFlow = VALID_BOOKING_FLOWS.includes(booking_flow) ? booking_flow : 'instant';
+    // Linked-pair rule: walk_in_enabled = 1 must never coexist with booking_flow = 'request'.
+    const newBookingFlow = (newWalkIn && requestedBookingFlow === 'request') ? 'instant' : requestedBookingFlow;
+    const newServicingType = VALID_SERVICING_TYPES.includes(servicing_type) ? servicing_type : null;
+    const newEntryMethod = entry_method?.trim() || null;
 
     const result = db.prepare(`
       INSERT INTO properties
-        (name, type, address, city, country, check_in_time, check_out_time, currency, locale, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (name, type, address, city, country, check_in_time, check_out_time, currency, locale, owner_id,
+         rental_type, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method, rental_type_locked)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).run(
       name, type,
       address        ?? null,
@@ -195,7 +221,8 @@ propertiesRouter.post('/', (req, res) => {
       check_out_time ?? '11:00',
       currency       ?? 'EUR',
       locale         ?? 'en',
-      req.user.userId
+      req.user.userId,
+      newRentalType, newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod,
     );
 
     // Auto-generate booking slug and iCal token for the new property
@@ -204,7 +231,7 @@ propertiesRouter.post('/', (req, res) => {
     const icalToken = randomBytes(16).toString('hex');
     db.prepare('UPDATE properties SET booking_slug = ?, ical_token = ? WHERE id = ?').run(newSlug, icalToken, newId);
 
-    seedCategories(db, Number(newId), 'rooms');
+    seedCategories(db, Number(newId), newRentalType);
 
     const created = db.prepare('SELECT * FROM properties WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(created);
@@ -247,19 +274,11 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules, local_tips,
       at_a_glance_facts,
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
+      lock_rental_type,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, rental_type_locked FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal'];
-    // 'units' isn't exposed as a Settings UI option yet — this is a safety
-    // net so the endpoint preserves it correctly if it's ever sent, rather
-    // than silently discarding it to a default.
-    const VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
-    // Un-mode sub-types — only meaningful for rental_type === 'units', but
-    // stored regardless (same as e.g. whole_property_rate for non-WP rows).
-    const VALID_UN_SUB_TYPES = ['aparthotel', 'glamping', 'serviced_apartment'];
-    const VALID_SERVICING_TYPES = ['daily', 'post_stay_optional', 'post_stay'];
-    const VALID_BOOKING_FLOWS = ['instant', 'request'];
     const newUnSubType = VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null;
     // Serviced Apartment locks walk-in off regardless of what's submitted — a
     // server-side mirror of the Settings UI's disabled toggle, since remote,
@@ -272,13 +291,15 @@ propertiesRouter.put('/:id', (req, res) => {
     const newBookingFlow = (newWalkIn && requestedBookingFlow === 'request') ? 'instant' : requestedBookingFlow;
     const newServicingType = VALID_SERVICING_TYPES.includes(servicing_type) ? servicing_type : null;
     const newEntryMethod = entry_method?.trim() || null;
-    // Lock rental_type once the user has completed onboarding.
-    // Preserve the existing value if the field is absent from the body.
-    const requestingUser = db.prepare('SELECT onboarding_completed FROM users WHERE id = ?').get(req.user.userId);
-    const rentalTypeLocked = !!requestingUser?.onboarding_completed;
+    // Lock is per-property (rental_type_locked), not per-user. Once locked,
+    // rental_type in the body is ignored and the existing value is preserved.
+    // A caller can explicitly lock a still-unlocked property by sending
+    // lock_rental_type: true (used by the onboarding mini-wizard's final step).
+    const rentalTypeLocked = !!existing?.rental_type_locked;
     const newRentalType = rentalTypeLocked
       ? (existing?.rental_type ?? 'rooms')
       : (VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : (existing?.rental_type ?? 'rooms'));
+    const newRentalTypeLocked = rentalTypeLocked || lock_rental_type === true ? 1 : 0;
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
@@ -300,7 +321,7 @@ propertiesRouter.put('/:id', (req, res) => {
           house_rules = ?, local_tips = ?,
           at_a_glance_facts = ?,
           un_sub_type = ?, walk_in_enabled = ?, booking_flow = ?,
-          servicing_type = ?, entry_method = ?
+          servicing_type = ?, entry_method = ?, rental_type_locked = ?
       WHERE id = ?
     `).run(
       name ?? null, type ?? null, address ?? null, city ?? null, country ?? null,
@@ -340,7 +361,7 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       normalizeAtAGlanceFacts(at_a_glance_facts),
-      newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod,
+      newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod, newRentalTypeLocked,
       req.params.id,
     );
     if (existing && newRentalType !== existing.rental_type) {
