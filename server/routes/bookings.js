@@ -151,8 +151,17 @@ bookingsRouter.get('/missed-actions', (req, res) => {
   try {
     const today     = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const { property_id } = req.query;
 
-    const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+    let propIds;
+    if (property_id) {
+      if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+      propIds = [Number(property_id)];
+    } else {
+      propIds = getUserPropertyIds(req.user.userId, req.user.role);
+    }
     if (!propIds.length) return res.json({ missedArrival: null, missedDeparture: null });
 
     const ph = propIds.map(() => '?').join(',');
@@ -443,16 +452,29 @@ bookingsRouter.get('/wp-summary', (req, res) => {
   try {
     const userId = req.user.userId;
     const today = new Date().toISOString().split('T')[0];
-    const propIds = getUserPropertyIds(userId, req.user.role);
-    if (!propIds.length) return res.json({ active: null, next: null, pending: [], stats: null });
+    const { property_id } = req.query;
 
-    const placeholders = propIds.map(() => '?').join(',');
-    const prop = db.prepare(
-      `SELECT id FROM properties WHERE id IN (${placeholders}) AND rental_type = 'whole_property'`
-    ).get(...propIds);
-    if (!prop) return res.json({ active: null, next: null, pending: [], stats: null });
+    let propId;
+    if (property_id) {
+      if (!canAccessProperty(userId, req.user.role, property_id)) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+      const prop = db.prepare(
+        `SELECT id FROM properties WHERE id = ? AND rental_type = 'whole_property'`
+      ).get(property_id);
+      if (!prop) return res.json({ active: null, next: null, pending: [], stats: null });
+      propId = prop.id;
+    } else {
+      const propIds = getUserPropertyIds(userId, req.user.role);
+      if (!propIds.length) return res.json({ active: null, next: null, pending: [], stats: null });
 
-    const propId = prop.id;
+      const placeholders = propIds.map(() => '?').join(',');
+      const prop = db.prepare(
+        `SELECT id FROM properties WHERE id IN (${placeholders}) AND rental_type = 'whole_property'`
+      ).get(...propIds);
+      if (!prop) return res.json({ active: null, next: null, pending: [], stats: null });
+      propId = prop.id;
+    }
 
     const active = db.prepare(`
       SELECT b.id, b.check_in_date, b.check_out_date, b.num_guests, b.status, b.total_price, b.notes,

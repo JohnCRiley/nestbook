@@ -161,7 +161,8 @@ export default function Dashboard() {
 
   // ── WP summary fetch (whole_property only, refreshes every 5 min) ─────────
   function fetchWpSummary() {
-    apiFetch('/api/bookings/wp-summary')
+    if (!property?.id) return;
+    apiFetch(`/api/bookings/wp-summary?property_id=${property.id}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { if (data) setWpSummary(data); })
       .catch(() => {});
@@ -177,7 +178,7 @@ export default function Dashboard() {
   // ── Missed-action check ───────────────────────────────────────────────────
   function checkMissedActions() {
     if (!property?.id || property.rental_type !== 'whole_property') return;
-    apiFetch('/api/bookings/missed-actions')
+    apiFetch(`/api/bookings/missed-actions?property_id=${property.id}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
