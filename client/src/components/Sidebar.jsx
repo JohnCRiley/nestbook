@@ -45,6 +45,20 @@ const ALL_NAV_ITEMS = [
 
 const RECEPTION_NAV_KEYS = new Set(['dashboard', 'calendar', 'bookings', 'guests', 'rooms', 'charges']);
 
+// Short label for the property switcher — lets a Multi owner tell a mixed
+// portfolio apart (IR hotel vs WP cottage vs Un/Aparthotel) without having
+// to click into each property.
+const UN_SUB_TYPE_BADGES = {
+  aparthotel:         'Aparthotel',
+  glamping:           'Glamping',
+  serviced_apartment: 'Apartments',
+};
+function rentalTypeBadge(p) {
+  if (p.rental_type === 'whole_property') return 'WP';
+  if (p.rental_type === 'units') return UN_SUB_TYPE_BADGES[p.un_sub_type] ?? 'Units';
+  return 'IR';
+}
+
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate  = useNavigate();
@@ -259,6 +273,7 @@ export default function Sidebar() {
                       onClick={() => { switchProperty(p); setTabletExpanded(false); }}
                     >
                       <span className="property-switch-name">{p.name}</span>
+                      <span className="property-switch-badge">{rentalTypeBadge(p)}</span>
                       {p.id === property.id && <span className="property-switch-check">✓</span>}
                     </button>
                   ))}

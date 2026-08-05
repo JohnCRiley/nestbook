@@ -4425,6 +4425,21 @@ a { text-decoration: none; }
   white-space: nowrap;
 }
 
+.property-switch-badge {
+  flex-shrink: 0;
+  margin-left: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  color: var(--sidebar-text);
+  opacity: 0.55;
+}
+
+.property-switch-item.active .property-switch-badge {
+  opacity: 0.8;
+}
+
 .property-switch-check {
   font-size: 0.70rem;
   color: var(--accent);
