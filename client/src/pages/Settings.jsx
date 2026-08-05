@@ -579,7 +579,7 @@ export default function Settings() {
                   <label style={{ fontWeight: 600, fontSize: '0.85rem' }}>
                     {t('settings.rentalType')}
                   </label>
-                  {user?.onboarding_completed ? (
+                  {activeProperty?.rental_type_locked ? (
                     <div style={{ marginTop: 8 }}>
                       <div className={`rental-type-btn active`} style={{ display: 'inline-flex', flexDirection: 'column', cursor: 'default', opacity: 0.85 }}>
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
@@ -633,7 +633,7 @@ export default function Settings() {
                     </div>
                   )}
 
-                  {!user?.onboarding_completed && rentalTypeHint && (
+                  {!activeProperty?.rental_type_locked && rentalTypeHint && (
                     <div style={{ marginTop: 8, fontSize: '0.82rem', color: 'var(--text-secondary)', padding: '6px 10px', background: 'var(--tint-bg)', borderRadius: 6 }}>
                       {rentalTypeHint}
                     </div>
