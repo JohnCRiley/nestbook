@@ -95,7 +95,7 @@ export default function Register() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f3f7f2', color: '#1a2e14', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#f3f7f2', color: '#1a2e14', display: 'flex', flexDirection: 'column' }}>
       <PublicNavbar />
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px 60px' }}>
