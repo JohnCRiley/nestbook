@@ -49,8 +49,8 @@ export default function Register() {
   function advanceStep() {
     setError('');
     if (step === 0) {
-      if (!form.name.trim()) { setError('Please enter your name.'); return; }
-      if (!form.email.trim() || !form.email.includes('@')) { setError('Please enter a valid email address.'); return; }
+      if (!form.name.trim()) { setError(t('register.errorNameRequired')); return; }
+      if (!form.email.trim() || !form.email.includes('@')) { setError(t('register.errorEmailInvalid')); return; }
       setStep(1);
     } else if (step === 1) {
       if (form.password.length < 8) { setError(t('register.passwordLength')); return; }
@@ -142,7 +142,7 @@ export default function Register() {
             {step === 0 && (
               <>
                 <p style={{ fontSize: '0.88rem', color: '#557a4a', lineHeight: 1.7, marginBottom: 24, textAlign: 'center' }}>
-                  For family-run B&Bs, guesthouses and homes that have welcomed guests for generations. We built NestBook to ease the load — not to change what you've spent years building — making the work a little lighter, and a little fairer.
+                  {t('register.reassuranceIntro')}
                 </p>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a2e14', marginBottom: 24, textAlign: 'center', letterSpacing: '-0.3px' }}>
                   {t('auth.createAccount')}
@@ -171,7 +171,7 @@ export default function Register() {
                   onKeyDown={e => e.key === 'Enter' && advanceStep()}
                 />
 
-                <button className="btn-wiz" onClick={advanceStep}>Continue →</button>
+                <button className="btn-wiz" onClick={advanceStep}>{t('register.continueBtn')}</button>
               </>
             )}
 
@@ -179,7 +179,7 @@ export default function Register() {
             {step === 1 && (
               <>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a2e14', marginBottom: 24, textAlign: 'center', letterSpacing: '-0.3px' }}>
-                  Choose a password
+                  {t('register.step1Heading')}
                 </h2>
 
                 <label style={labelStyle} htmlFor="reg-password">{t('register.password')}</label>
@@ -204,9 +204,9 @@ export default function Register() {
                   onKeyDown={e => e.key === 'Enter' && advanceStep()}
                 />
 
-                <button className="btn-wiz" onClick={advanceStep}>Continue →</button>
+                <button className="btn-wiz" onClick={advanceStep}>{t('register.continueBtn')}</button>
                 <div style={{ textAlign: 'center', marginTop: 12 }}>
-                  <button type="button" className="btn-wiz-back" onClick={goBack}>← Back</button>
+                  <button type="button" className="btn-wiz-back" onClick={goBack}>← {t('onboard.backBtn')}</button>
                 </div>
               </>
             )}
@@ -215,7 +215,7 @@ export default function Register() {
             {step === 2 && (
               <form onSubmit={handleSubmit}>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1a2e14', marginBottom: 24, textAlign: 'center', letterSpacing: '-0.3px' }}>
-                  Your property
+                  {t('register.step2Heading')}
                 </h2>
 
                 <label style={labelStyle} htmlFor="propName">{t('register.propertyName')}</label>
@@ -249,9 +249,9 @@ export default function Register() {
                 </select>
 
                 <p style={{ fontSize: '0.83rem', marginTop: 8, marginBottom: 20, color: '#557a4a' }}>
-                  Not sure yet?{' '}
+                  {t('register.notSureYet')}{' '}
                   <a href="/compare.html" style={{ color: '#2f771b', fontWeight: 600, textDecoration: 'underline' }}>
-                    See exactly what's included →
+                    {t('register.seeWhatsIncluded')}
                   </a>
                 </p>
 
@@ -266,14 +266,14 @@ export default function Register() {
                 />
 
                 <p style={{ fontSize: '0.85rem', color: '#2f771b', fontWeight: 600, textAlign: 'center', marginTop: 20, marginBottom: 0 }}>
-                  Free plan — free for as long as you want!
+                  {t('register.freePlanForever')}
                 </p>
 
                 <button type="submit" className="btn-wiz" disabled={loading}>
                   {loading ? t('register.creating') : t('register.createFree')}
                 </button>
                 <div style={{ textAlign: 'center', marginTop: 12 }}>
-                  <button type="button" className="btn-wiz-back" onClick={goBack}>← Back</button>
+                  <button type="button" className="btn-wiz-back" onClick={goBack}>← {t('onboard.backBtn')}</button>
                 </div>
               </form>
             )}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../i18n/LocaleContext.jsx';
 import '../../../server/public/navbar.css';
 
 const LANGS = [
@@ -12,6 +13,7 @@ const LANGS = [
 const LANG_LABEL = { en: '🌐 EN ▾', fr: '🌐 FR ▾', es: '🌐 ES ▾', de: '🌐 DE ▾', nl: '🌐 NL ▾' };
 
 export default function PublicNavbar() {
+  const t = useT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
 
@@ -91,7 +93,7 @@ export default function PublicNavbar() {
               <span>🌿 Start free trial</span>
               <span>No credit card needed</span>
             </a>
-            <a href="/app/login">Sign in</a>
+            <a href="/app/login">{t('auth.signIn')}</a>
           </div>
           <div className="mega-col">
             <div className="mega-label">Language</div>
