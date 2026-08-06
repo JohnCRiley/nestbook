@@ -1121,6 +1121,7 @@ export default function Settings() {
                     desc={f.desc}
                     checked={features[f.key]}
                     onChange={() => handleFeatureToggle(f.key)}
+                    disabled={f.key === 'widget' && plan === 'free'}
                   />
                 ))}
                 {form && activeProperty?.rental_type !== 'whole_property' && (
@@ -1137,27 +1138,31 @@ export default function Settings() {
                     }}>
                       <i className="ti ti-alert-triangle" /> {t('bfPropertyToggleWarn')}
                     </div>
-                    <ToggleRow
-                      label={t('bfWidgetToggleLabel')}
-                      desc={t('bfWidgetToggleDesc')}
-                      checked={!!form.breakfast_widget_enabled}
-                      onChange={() => setForm((p) => ({ ...p, breakfast_widget_enabled: p.breakfast_widget_enabled ? 0 : 1 }))}
-                    />
-                    {!!form.breakfast_widget_enabled && (
-                      <div style={{ padding: '4px 0 14px 0' }}>
-                        <label className="form-label" style={{ fontSize: '0.82rem' }}>
-                          {t('breakfastPriceLabel')} ({currencySymbol})
-                        </label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          min="0"
-                          step="0.01"
-                          value={form.breakfast_price}
-                          onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
-                          style={{ marginTop: 4, maxWidth: 160 }}
+                    {plan !== 'free' && (
+                      <>
+                        <ToggleRow
+                          label={t('bfWidgetToggleLabel')}
+                          desc={t('bfWidgetToggleDesc')}
+                          checked={!!form.breakfast_widget_enabled}
+                          onChange={() => setForm((p) => ({ ...p, breakfast_widget_enabled: p.breakfast_widget_enabled ? 0 : 1 }))}
                         />
-                      </div>
+                        {!!form.breakfast_widget_enabled && (
+                          <div style={{ padding: '4px 0 14px 0' }}>
+                            <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                              {t('breakfastPriceLabel')} ({currencySymbol})
+                            </label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              min="0"
+                              step="0.01"
+                              value={form.breakfast_price}
+                              onChange={(e) => setForm((p) => ({ ...p, breakfast_price: e.target.value }))}
+                              style={{ marginTop: 4, maxWidth: 160 }}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                     <ToggleRow
                       label={t('fDeposit')}
@@ -2997,15 +3002,15 @@ function FormField({ label, hint, children }) {
   );
 }
 
-function ToggleRow({ label, desc, checked, onChange }) {
+function ToggleRow({ label, desc, checked, onChange, disabled = false }) {
   return (
-    <div className="toggle-row">
+    <div className="toggle-row" style={disabled ? { opacity: 0.45, pointerEvents: 'none' } : undefined}>
       <div className="toggle-info">
         <div className="toggle-label">{label}</div>
         {desc && <div className="toggle-desc">{desc}</div>}
       </div>
       <label className="toggle-switch" aria-label={label}>
-        <input type="checkbox" checked={checked} onChange={onChange} />
+        <input type="checkbox" checked={checked} onChange={onChange} disabled={disabled} />
         <span className="toggle-track" />
       </label>
     </div>
