@@ -69,7 +69,7 @@ export default function PublicNavbar() {
               </div>
             </div>
             <button className="menu-toggle" onClick={toggleMenu}>
-              {menuOpen ? 'Close ✕' : 'Menu ▾'}
+              {menuOpen ? t('nav.menuClose') : t('nav.menuOpen')}
             </button>
           </div>
         </div>
@@ -79,24 +79,24 @@ export default function PublicNavbar() {
         <div className="mega-inner">
           <div className="mega-col">
             <div className="mega-label">NestBook</div>
-            <a href="https://nestbook.io/">Home</a>
-            <a href="/how-it-works">How it works</a>
-            <a href="/#features">Features</a>
-            <a href="/#pricing">Pricing</a>
-            <a href="/compare.html">Compare plans</a>
-            <a href="/blog/">Blog</a>
-            <a href="/book/domaine-des-lavandes">Live demo</a>
+            <a href="https://nestbook.io/">{t('nav.home')}</a>
+            <a href="/how-it-works">{t('nav.hiw')}</a>
+            <a href="/#features">{t('nav.features')}</a>
+            <a href="/#pricing">{t('nav.pricing')}</a>
+            <a href="/compare.html">{t('nav.compare')}</a>
+            <a href="/blog/">{t('nav.blog')}</a>
+            <a href="/book/domaine-des-lavandes">{t('nav.demo')}</a>
           </div>
           <div className="mega-col">
-            <div className="mega-label">Get started</div>
+            <div className="mega-label">{t('nav.getStarted')}</div>
             <a href="/app/register" className="mega-cta" onClick={closeAll}>
-              <span>🌿 Start free trial</span>
-              <span>No credit card needed</span>
+              <span>{t('nav.startTrial')}</span>
+              <span>{t('nav.noCard')}</span>
             </a>
             <a href="/app/login">{t('auth.signIn')}</a>
           </div>
           <div className="mega-col">
-            <div className="mega-label">Language</div>
+            <div className="mega-label">{t('nav.language')}</div>
             {LANGS.map(l => (
               <button
                 key={l.code}
