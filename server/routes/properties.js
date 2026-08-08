@@ -10,6 +10,7 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 import { seedCategories } from '../utils/categories.js';
 import { sanitizeBanner } from '../utils/sanitizeBanner.js';
+import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -22,6 +23,15 @@ const VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
 const VALID_UN_SUB_TYPES = ['aparthotel', 'glamping', 'serviced_apartment'];
 const VALID_SERVICING_TYPES = ['daily', 'post_stay_optional', 'post_stay'];
 const VALID_BOOKING_FLOWS = ['instant', 'request'];
+
+// Augments a property row with a computed has_sample_data boolean.
+function _withSampleFlag(row) {
+  if (!row) return row;
+  const hit = db.prepare(
+    'SELECT 1 FROM rooms WHERE property_id = ? AND is_sample_data = 1 LIMIT 1'
+  ).get(row.id);
+  return { ...row, has_sample_data: hit ? 1 : 0 };
+}
 
 // Drops unfilled preset facts and blank custom rows, returning null when
 // nothing meaningful remains rather than storing an empty/malformed string.
@@ -131,13 +141,13 @@ propertiesRouter.get('/', (req, res) => {
         }
       }
 
-      return res.json(rows);
+      return res.json(rows.map(r => _withSampleFlag(r)));
     }
     // Reception staff — return their single assigned property
     const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(req.user.userId);
     if (!u?.property_id) return res.json([]);
     const prop = db.prepare('SELECT * FROM properties WHERE id = ?').get(u.property_id);
-    return res.json(prop ? [prop] : []);
+    return res.json(prop ? [_withSampleFlag(prop)] : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -150,7 +160,7 @@ propertiesRouter.get('/:id', (req, res) => {
       return res.status(404).json({ error: 'Property not found.' });
     }
     const row = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
-    res.json(row);
+    res.json(_withSampleFlag(row));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -457,6 +467,49 @@ propertiesRouter.delete('/:id', (req, res) => {
       targetId: pid,
       ipAddress: getIp(req),
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/properties/:id/sample-data ────────────────────────────────────
+// Removes all rows flagged is_sample_data=1 for this property, and their photos.
+propertiesRouter.delete('/:id/sample-data', (req, res) => {
+  try {
+    const pid = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, pid)) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+    if (req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'Only account owners can delete sample data.' });
+    }
+
+    // Collect photo files before deletion
+    const photos = db.prepare(
+      'SELECT filename, thumb_filename FROM room_photos WHERE property_id = ? AND is_sample_data = 1'
+    ).all(pid);
+
+    db.exec('BEGIN');
+    try {
+      db.prepare('DELETE FROM bookings    WHERE property_id = ? AND is_sample_data = 1').run(pid);
+      db.prepare('DELETE FROM guests      WHERE property_id = ? AND is_sample_data = 1').run(pid);
+      db.prepare('DELETE FROM room_photos WHERE property_id = ? AND is_sample_data = 1').run(pid);
+      db.prepare('DELETE FROM rooms       WHERE property_id = ? AND is_sample_data = 1').run(pid);
+      db.exec('COMMIT');
+    } catch (e) {
+      try { db.exec('ROLLBACK'); } catch {}
+      throw e;
+    }
+
+    // Delete photo files after successful DB commit
+    for (const p of photos) {
+      try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, p.filename)); } catch {}
+      if (p.thumb_filename) {
+        try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, p.thumb_filename)); } catch {}
+      }
+    }
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -2307,6 +2307,12 @@ John`
     }
   }
 
+  // Migration: is_sample_data flag — marks seeded demo content for bulk deletion
+  try { db.exec(`ALTER TABLE rooms        ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE room_photos  ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE guests       ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+  try { db.exec(`ALTER TABLE bookings     ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

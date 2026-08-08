@@ -10,6 +10,7 @@ import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
 import { deleteUserAccount } from '../utils/deleteUserAccount.js';
+import { seedSampleData } from '../utils/seedSampleData.js';
 
 export const authRouter = Router();
 
@@ -360,6 +361,17 @@ authRouter.patch('/complete-onboarding', requireAuth, (req, res) => {
   const wasAlreadyCompleted = !!before?.onboarding_completed;
 
   db.prepare('UPDATE users SET onboarding_completed = 1 WHERE id = ?').run(userId);
+
+  // Seed sample data once for first-time completions
+  if (!wasAlreadyCompleted) {
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    if (u?.property_id) {
+      const p = db.prepare('SELECT rental_type, un_sub_type FROM properties WHERE id = ?').get(u.property_id);
+      if (p) {
+        seedSampleData(userId, u.property_id, p.rental_type, p.un_sub_type).catch(() => {});
+      }
+    }
+  }
 
   // Send the free welcome email exactly once, on the first completion
   if (!wasAlreadyCompleted && before?.plan === 'free') {

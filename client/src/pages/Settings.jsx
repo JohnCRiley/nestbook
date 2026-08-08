@@ -148,6 +148,7 @@ export default function Settings() {
 
   const [rentalTypeHint, setRentalTypeHint] = useState(null);
   const [billingMessage, setBillingMessage] = useState(null); // { type, text }
+  const [deletingSampleData, setDeletingSampleData] = useState(false);
 
   // Bug report form
   const [bugReportingEnabled, setBugReportingEnabled] = useState(false);
@@ -555,6 +556,37 @@ export default function Settings() {
 
         {/* ── LEFT COLUMN — Property details ────────────────────────────── */}
         <div>
+
+          {/* ── Sample data banner ───────────────────────────────────────── */}
+          {property?.has_sample_data === 1 && (
+            <div className="settings-card" style={{ borderLeft: '3px solid #f59e0b', marginBottom: 20 }}>
+              <div className="settings-card-header">
+                <h2>{t('settings.sampleDataHeading')}</h2>
+                <p>{t('settings.sampleDataExplain')}</p>
+              </div>
+              <div className="settings-card-body">
+                <button
+                  className="btn-danger-outline"
+                  disabled={deletingSampleData}
+                  onClick={async () => {
+                    setDeletingSampleData(true);
+                    try {
+                      const res = await apiFetch(`/api/properties/${property.id}/sample-data`, { method: 'DELETE' });
+                      if (res.ok) {
+                        const fresh = await apiFetch(`/api/properties/${property.id}`).then(r => r.json());
+                        setProperty(fresh);
+                        setToast({ msg: t('settings.sampleDataDeleted'), type: 'success' });
+                      }
+                    } catch {}
+                    setDeletingSampleData(false);
+                  }}
+                >
+                  {deletingSampleData ? t('settings.deletingSampleData') : t('settings.deleteSampleData')}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="settings-card">
             <div className="settings-card-header">
               <h2>{t('propDetails')}</h2>
@@ -2338,6 +2370,20 @@ function FacebookBookingSection({ property, onSaved }) {
           >
             {urlCopied ? t('settings.slugCopied') : t('settings.slugCopy')}
           </button>
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '8px 14px', borderRadius: 7, border: '1px solid #e2e8f0',
+              background: '#fff', color: '#64748b',
+              fontWeight: 600, fontSize: '0.82rem',
+              textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+              display: 'inline-flex', alignItems: 'center',
+            }}
+          >
+            {t('settings.viewMyWebpage')}
+          </a>
         </div>
 
         {property?.plan === 'free' && (
