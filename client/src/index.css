@@ -287,6 +287,39 @@ html[data-theme="charcoal"] {
   --text-muted:         #94a3b8;
 }
 
+html[data-theme="grey"] {
+  --sidebar-bg:         #4C524E;
+  --sidebar-hover:      #5B625E;
+  --sidebar-active:     #424843;
+  --sidebar-text:       #A0B0A3;
+  --accent:             #95A397;
+  --accent-dark:        #25503E;
+  --accent-bar:         #8C8C8C;
+  --tint-bg:            #95A397;
+  --tint-border:        #022C0A;
+  --tint-text:          #022C0A;
+  --light-green:        #E3E3E3;
+  --page-bg:            #E6E6E6;
+  --card-bg:            #F2F3F2;
+  --panel-bg:           #EDEDED;
+  --border:             #C3C6C4;
+  --header-bg:          #F5F5F5;
+  --header-text:        #1C1C1E;
+  --heading-text:       #153318;
+  --section-bg:         #EFF0F0;
+  --section-text:       #1C1C1E;
+  --btn-secondary-bg:   #E6EBE7;
+  --btn-secondary-text: #1C1C1E;
+  --toggle-on:          #1F4D2F;
+  --toggle-off:         #E6EBE7;
+  --text-primary:       #313A34;
+  --text-secondary:     #6A716D;
+  --text-muted:         #555E58;
+  --shadow-sm:          0 2px 8px rgba(28,28,30,0.08);
+  --shadow-md:          0 16px 48px rgba(28,28,30,0.18);
+  --radius:             10px;
+}
+
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root      { height: 100%; overflow: hidden; }

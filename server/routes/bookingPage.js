@@ -13,6 +13,7 @@ const THEME_COLOURS = {
   lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
   aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
   charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
+  grey:     { brand: '#95A397', dark: '#25503E', light: '#EFF0F0' },
 };
 
 const TYPE_LABELS = {
