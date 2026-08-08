@@ -111,34 +111,67 @@ async function _seedWP(propertyId) {
   await Promise.all(photoTasks);
 }
 
-// ── Un: 2 top-level units (3 photos each) + 1 internal child room (1 photo) ─
+// ── Un: 2 top-level units (1 photo each) + 3 internal rooms per unit (1 photo each) ─
+// Capped at 1 photo per room/unit to match the enforced Free-plan Un-mode limit.
 
 async function _seedUn(propertyId, unSubType) {
   const unitType = unSubType === 'glamping' ? 'other' : 'apartment';
 
+  // ── Unit A ────────────────────────────────────────────────────────────────
   const { lastInsertRowid: unitAId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
     VALUES (?, 'Unit A', ?, 110, 4, 1)
   `).run(propertyId, unitType);
 
-  const { lastInsertRowid: childId } = db.prepare(`
+  const { lastInsertRowid: aDoubleId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
     VALUES (?, 'Double Room', 'double', 0, 2, ?, 1)
   `).run(propertyId, unitAId);
 
+  const { lastInsertRowid: aKitchenId } = db.prepare(`
+    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
+    VALUES (?, 'Kitchen', 'kitchen', 0, 0, ?, 1)
+  `).run(propertyId, unitAId);
+
+  const { lastInsertRowid: aLivingId } = db.prepare(`
+    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
+    VALUES (?, 'Living Area', 'living_room', 0, 0, ?, 1)
+  `).run(propertyId, unitAId);
+
+  // ── Unit B ────────────────────────────────────────────────────────────────
   const { lastInsertRowid: unitBId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
     VALUES (?, 'Unit B', ?, 110, 4, 1)
   `).run(propertyId, unitType);
 
+  const { lastInsertRowid: bDoubleId } = db.prepare(`
+    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
+    VALUES (?, 'Double Room', 'double', 0, 2, ?, 1)
+  `).run(propertyId, unitBId);
+
+  const { lastInsertRowid: bKitchenId } = db.prepare(`
+    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
+    VALUES (?, 'Kitchen', 'kitchen', 0, 0, ?, 1)
+  `).run(propertyId, unitBId);
+
+  const { lastInsertRowid: bBathroomId } = db.prepare(`
+    INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
+    VALUES (?, 'Bathroom', 'bathroom', 0, 0, ?, 1)
+  `).run(propertyId, unitBId);
+
   await Promise.all([
-    _seedPhoto(unitAId, propertyId, 'https://images.pexels.com/photos/29252605/pexels-photo-29252605.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
-    _seedPhoto(unitAId, propertyId, 'https://images.pexels.com/photos/29252612/pexels-photo-29252612.jpeg?auto=compress&cs=tinysrgb&w=1260', 1),
-    _seedPhoto(unitAId, propertyId, 'https://images.pexels.com/photos/33312430/pexels-photo-33312430.jpeg?auto=compress&cs=tinysrgb&w=1260', 2),
-    _seedPhoto(childId, propertyId, 'https://images.pexels.com/photos/7031881/pexels-photo-7031881.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
-    _seedPhoto(unitBId, propertyId, 'https://images.pexels.com/photos/8583594/pexels-photo-8583594.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
-    _seedPhoto(unitBId, propertyId, 'https://images.pexels.com/photos/5178039/pexels-photo-5178039.jpeg?auto=compress&cs=tinysrgb&w=1260', 1),
-    _seedPhoto(unitBId, propertyId, 'https://images.pexels.com/photos/5002326/pexels-photo-5002326.jpeg?auto=compress&cs=tinysrgb&w=1260', 2),
+    // Unit A — 1 photo on the unit itself
+    _seedPhoto(unitAId,    propertyId, 'https://images.pexels.com/photos/29252605/pexels-photo-29252605.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
+    // Unit A internal rooms — 1 photo each
+    _seedPhoto(aDoubleId,  propertyId, 'https://images.pexels.com/photos/7031881/pexels-photo-7031881.jpeg?auto=compress&cs=tinysrgb&w=1260',  0),
+    _seedPhoto(aKitchenId, propertyId, 'https://images.pexels.com/photos/29252612/pexels-photo-29252612.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
+    _seedPhoto(aLivingId,  propertyId, 'https://images.pexels.com/photos/33312430/pexels-photo-33312430.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
+    // Unit B — 1 photo on the unit itself
+    _seedPhoto(unitBId,    propertyId, 'https://images.pexels.com/photos/8583594/pexels-photo-8583594.jpeg?auto=compress&cs=tinysrgb&w=1260',  0),
+    // Unit B internal rooms — 1 photo each
+    _seedPhoto(bDoubleId,  propertyId, 'https://images.pexels.com/photos/5178039/pexels-photo-5178039.jpeg?auto=compress&cs=tinysrgb&w=1260',  0),
+    _seedPhoto(bKitchenId, propertyId, 'https://images.pexels.com/photos/5002326/pexels-photo-5002326.jpeg?auto=compress&cs=tinysrgb&w=1260',  0),
+    _seedPhoto(bBathroomId,propertyId, 'https://images.pexels.com/photos/7031840/pexels-photo-7031840.jpeg?auto=compress&cs=tinysrgb&w=1260',  0),
   ]);
 }
 
