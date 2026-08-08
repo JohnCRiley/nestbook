@@ -484,10 +484,12 @@ propertiesRouter.delete('/:id/sample-data', (req, res) => {
       return res.status(403).json({ error: 'Only account owners can delete sample data.' });
     }
 
-    // Collect photo files before deletion
+    // Collect room photo files and hero photo state before deletion
     const photos = db.prepare(
       'SELECT filename, thumb_filename FROM room_photos WHERE property_id = ? AND is_sample_data = 1'
     ).all(pid);
+    const propRow = db.prepare('SELECT hero_photo, hero_photo_is_sample FROM properties WHERE id = ?').get(pid);
+    const heroToDelete = propRow?.hero_photo_is_sample === 1 ? propRow.hero_photo : null;
 
     db.exec('BEGIN');
     try {
@@ -495,6 +497,9 @@ propertiesRouter.delete('/:id/sample-data', (req, res) => {
       db.prepare('DELETE FROM guests      WHERE property_id = ? AND is_sample_data = 1').run(pid);
       db.prepare('DELETE FROM room_photos WHERE property_id = ? AND is_sample_data = 1').run(pid);
       db.prepare('DELETE FROM rooms       WHERE property_id = ? AND is_sample_data = 1').run(pid);
+      if (heroToDelete) {
+        db.prepare('UPDATE properties SET hero_photo = NULL, hero_photo_is_sample = 0 WHERE id = ?').run(pid);
+      }
       db.exec('COMMIT');
     } catch (e) {
       try { db.exec('ROLLBACK'); } catch {}
@@ -507,6 +512,9 @@ propertiesRouter.delete('/:id/sample-data', (req, res) => {
       if (p.thumb_filename) {
         try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, p.thumb_filename)); } catch {}
       }
+    }
+    if (heroToDelete) {
+      try { fs.unlinkSync(join(PROP_UPLOAD_DIR, heroToDelete)); } catch {}
     }
 
     res.json({ success: true });
@@ -577,7 +585,7 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
       try { fs.unlinkSync(join(PROP_UPLOAD_DIR, existing.hero_photo)); } catch {}
     }
 
-    db.prepare('UPDATE properties SET hero_photo = ? WHERE id = ?').run(req.file.filename, propId);
+    db.prepare('UPDATE properties SET hero_photo = ?, hero_photo_is_sample = 0 WHERE id = ?').run(req.file.filename, propId);
     db.prepare(`INSERT INTO content_flags (property_id, content_type, content_ref) VALUES (?, 'hero_photo', ?)`)
       .run(propId, req.file.filename);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);

@@ -2307,6 +2307,9 @@ John`
     }
   }
 
+  // Migration: hero_photo_is_sample — 1 when set by seeding, 0 after owner uploads their own
+  try { db.exec(`ALTER TABLE properties ADD COLUMN hero_photo_is_sample INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
+
   // Migration: is_sample_data flag — marks seeded demo content for bulk deletion
   try { db.exec(`ALTER TABLE rooms        ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE room_photos  ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }

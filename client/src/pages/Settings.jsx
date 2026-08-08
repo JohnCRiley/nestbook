@@ -567,6 +567,7 @@ export default function Settings() {
               <div className="settings-card-body">
                 <button
                   className="btn-danger-outline"
+                  style={{ width: '100%' }}
                   disabled={deletingSampleData}
                   onClick={async () => {
                     setDeletingSampleData(true);

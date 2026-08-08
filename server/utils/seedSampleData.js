@@ -158,7 +158,7 @@ async function _seedHeroPhoto(propertyId, url) {
     const fileName = `prop-${propertyId}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
     await sharp(buffer).resize(1920, null, { withoutEnlargement: true }).jpeg({ quality: 85 }).toFile(join(PROP_UPLOAD_DIR, fileName));
 
-    db.prepare('UPDATE properties SET hero_photo = ? WHERE id = ?').run(fileName, propertyId);
+    db.prepare('UPDATE properties SET hero_photo = ?, hero_photo_is_sample = 1 WHERE id = ?').run(fileName, propertyId);
   } catch (e) {
     console.error(`[seedSampleData] Hero photo failed (property ${propertyId}):`, e.message);
   }

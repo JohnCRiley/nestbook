@@ -516,6 +516,10 @@ export default function Onboarding() {
               </ol>
             </div>
 
+            <p style={{ fontSize: '0.8rem', color: '#557a4a', fontStyle: 'italic', marginBottom: 20, lineHeight: 1.55 }}>
+              {t('onboard.sampleDataNote')}
+            </p>
+
             {error && (
               <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, fontSize: '0.82rem', color: '#991b1b' }}>
                 {error}
