@@ -61,25 +61,46 @@ async function _seedIR(propertyId) {
   ]);
 }
 
-// ── WP: 6 showcase rows, 1 photo each ────────────────────────────────────────
+// ── WP: 3 consolidated showcase rows ─────────────────────────────────────────
 
 const WP_ROWS = [
-  { name: 'Bedroom',        type: 'double',      url: 'https://images.pexels.com/photos/7745932/pexels-photo-7745932.jpeg?auto=compress&cs=tinysrgb&w=1260' },
-  { name: 'Kitchen',        type: 'kitchen',     url: 'https://images.pexels.com/photos/8186477/pexels-photo-8186477.jpeg?auto=compress&cs=tinysrgb&w=1260' },
-  { name: 'Guest Bedroom',  type: 'double',      url: 'https://images.pexels.com/photos/7746571/pexels-photo-7746571.jpeg?auto=compress&cs=tinysrgb&w=1260' },
-  { name: 'Living Room',    type: 'living_room', url: 'https://images.pexels.com/photos/8583743/pexels-photo-8583743.jpeg?auto=compress&cs=tinysrgb&w=1260' },
-  { name: "Kid's Bedroom",  type: 'kids',        url: 'https://images.pexels.com/photos/10099276/pexels-photo-10099276.jpeg?auto=compress&cs=tinysrgb&w=1260' },
-  { name: 'Bathroom',       type: 'bathroom',    url: 'https://images.pexels.com/photos/7031840/pexels-photo-7031840.jpeg?auto=compress&cs=tinysrgb&w=1260' },
+  {
+    name: 'Bedrooms',
+    type: 'double',
+    description: 'Comfortable bedrooms with plenty of natural light, ready to welcome your guests.',
+    urls: [
+      'https://images.pexels.com/photos/7745932/pexels-photo-7745932.jpeg?auto=compress&cs=tinysrgb&w=1260',   // main bedroom
+      'https://images.pexels.com/photos/7746571/pexels-photo-7746571.jpeg?auto=compress&cs=tinysrgb&w=1260',   // guest bedroom
+      'https://images.pexels.com/photos/10099276/pexels-photo-10099276.jpeg?auto=compress&cs=tinysrgb&w=1260', // kid's bedroom
+    ],
+  },
+  {
+    name: 'Living Spaces',
+    type: 'living_room',
+    description: 'A warm kitchen and living area where guests can relax and feel at home.',
+    urls: [
+      'https://images.pexels.com/photos/8186477/pexels-photo-8186477.jpeg?auto=compress&cs=tinysrgb&w=1260',  // kitchen
+      'https://images.pexels.com/photos/8583743/pexels-photo-8583743.jpeg?auto=compress&cs=tinysrgb&w=1260',  // living room
+    ],
+  },
+  {
+    name: 'Bathroom',
+    type: 'bathroom',
+    description: "A clean, well-appointed bathroom for your guests' stay.",
+    urls: [
+      'https://images.pexels.com/photos/7031840/pexels-photo-7031840.jpeg?auto=compress&cs=tinysrgb&w=1260',  // bathroom
+    ],
+  },
 ];
 
 async function _seedWP(propertyId) {
   const photoTasks = [];
   for (const row of WP_ROWS) {
     const { lastInsertRowid: rid } = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
-      VALUES (?, ?, ?, 0, 0, 1)
-    `).run(propertyId, row.name, row.type);
-    photoTasks.push(_seedPhoto(rid, propertyId, row.url, 0));
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, description, is_sample_data)
+      VALUES (?, ?, ?, 0, 0, ?, 1)
+    `).run(propertyId, row.name, row.type, row.description);
+    row.urls.forEach((url, i) => photoTasks.push(_seedPhoto(rid, propertyId, url, i)));
   }
 
   const prop = db.prepare('SELECT whole_property_rate FROM properties WHERE id = ?').get(propertyId);
