@@ -5653,6 +5653,15 @@ a { text-decoration: none; }
 .btn-wiz-back:hover {
   color: #1a4710;
 }
+.wiz-pw-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 600px) {
+  .wiz-pw-row { grid-template-columns: 1fr; }
+}
 .wiz-step-label {
   font-size: 1.45rem;
   font-weight: 800;
