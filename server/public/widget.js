@@ -38,7 +38,7 @@
     lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9', panelHdrBg: '#E7E7E9', panelHdrText: '#4F4582' },
     aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8', panelHdrBg: '#F4F5F6', panelHdrText: '#1C1C1E' },
     charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#68696A' },
-    grey:     { brand: '#95A397', dark: '#25503E', light: '#EFF0F0', panelHdrBg: '#F5F5F5', panelHdrText: '#1C1C1E' },
+    slate:    { brand: '#95A397', dark: '#25503E', light: '#EFF0F0', panelHdrBg: '#F5F5F5', panelHdrText: '#1C1C1E' },
   };
 
   let BRAND          = '#2f771b';
