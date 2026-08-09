@@ -27,6 +27,7 @@ const THEME_COLOURS = {
   aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
   charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
   slate:    { brand: '#95A397', dark: '#25503E', light: '#EFF0F0' },
+  storm:    { brand: '#A4B1B7', dark: '#546369', light: '#F5F2EC' },
 };
 
 // Preset "Property at a Glance" facts. Guest-facing rendering (a separate
@@ -54,6 +55,7 @@ const THEMES = [
   { id: 'aero',     label: 'Aero',      primary: '#5395B2', bg: '#F4F5F6' },
   { id: 'charcoal', label: 'Charcoal',  primary: '#292929', bg: '#FCFCFC', accent: '#8A0505' },
   { id: 'slate',    label: 'Slate',     primary: '#4C524E', bg: '#E6E6E6', accent: '#95A397' },
+  { id: 'storm',   label: 'Storm',     primary: '#5D6D74', bg: '#D1D1D1', accent: '#A4B1B7' },
 ];
 
 // ── Constants ─────────────────────────────────────────────────────────────────

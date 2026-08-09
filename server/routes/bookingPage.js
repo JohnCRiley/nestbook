@@ -14,6 +14,7 @@ const THEME_COLOURS = {
   aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
   charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
   slate:    { brand: '#95A397', dark: '#25503E', light: '#EFF0F0' },
+  storm:    { brand: '#A4B1B7', dark: '#546369', light: '#F5F2EC' },
 };
 
 const TYPE_LABELS = {

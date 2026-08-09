@@ -320,6 +320,39 @@ html[data-theme="slate"] {
   --radius:             10px;
 }
 
+html[data-theme="storm"] {
+  --sidebar-bg:         #5D6D74;
+  --sidebar-hover:      #546369;
+  --sidebar-active:     #D1D1D1;
+  --sidebar-text:       #2A343C;
+  --accent:             #A4B1B7;
+  --accent-dark:        #546369;
+  --accent-bar:         #606B7B;
+  --tint-bg:            #F2F2F2;
+  --tint-border:        #546369;
+  --tint-text:          #3B454E;
+  --light-green:        #F2F2F2;
+  --page-bg:            #D1D1D1;
+  --card-bg:            #FFFFFF;
+  --panel-bg:           #FAFAF8;
+  --border:             #546369;
+  --header-bg:          #FFFFFF;
+  --header-text:        #3B454E;
+  --heading-text:       #1C1C1E;
+  --section-bg:         #F5F2EC;
+  --section-text:       #3B454E;
+  --btn-secondary-bg:   #E8E3DC;
+  --btn-secondary-text: #3B454E;
+  --toggle-on:          #5F6B77;
+  --toggle-off:         #C8C3BB;
+  --text-primary:       #1C1C1E;
+  --text-secondary:     #6B6A66;
+  --text-muted:         #9B9A96;
+  --shadow-sm:          0 2px 8px rgba(28,28,30,0.08);
+  --shadow-md:          0 16px 48px rgba(28,28,30,0.18);
+  --radius:             10px;
+}
+
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root      { height: 100%; overflow: hidden; }
