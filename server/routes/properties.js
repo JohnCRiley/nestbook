@@ -554,7 +554,7 @@ propertiesRouter.patch('/:id/slug', (req, res) => {
 
     db.prepare('UPDATE properties SET booking_slug = ? WHERE id = ?').run(booking_slug, pid);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(pid);
-    res.json(updated);
+    res.json(_withSampleFlag(updated));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -589,7 +589,7 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
     db.prepare(`INSERT INTO content_flags (property_id, content_type, content_ref) VALUES (?, 'hero_photo', ?)`)
       .run(propId, req.file.filename);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
-    res.json(updated);
+    res.json(_withSampleFlag(updated));
   } catch (err) {
     if (req.file?.path) {
       try { fs.unlinkSync(req.file.path); } catch {}
@@ -612,7 +612,7 @@ propertiesRouter.delete('/:id/hero-photo', (req, res) => {
     }
     db.prepare('UPDATE properties SET hero_photo = NULL WHERE id = ?').run(propId);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
-    res.json(updated);
+    res.json(_withSampleFlag(updated));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
