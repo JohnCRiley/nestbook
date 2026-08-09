@@ -383,7 +383,7 @@ propertiesRouter.put('/:id', (req, res) => {
     }
 
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);
-    res.json(updated);
+    res.json(_withSampleFlag(updated));
 
     logAction(db, {
       ...actorFromReq(req),
