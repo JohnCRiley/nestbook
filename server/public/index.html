@@ -906,7 +906,7 @@ img { display: block; max-width: 100%; }
 .cta-section p  { font-size: 1.05rem; color: rgba(255,255,255,0.65); max-width: 500px; margin: 0 auto 36px; }
 .cta-buttons    { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 .cta-note { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-top: 16px; }
-.cta-section--light { background: #fff; }
+.cta-section--light { background: #fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 64px 0; }
 .cta-section--light::before { display: none; }
 .cta-section--light h2 { color: var(--dark); }
 .cta-section--light p  { color: #4a6040; }
@@ -974,6 +974,9 @@ img { display: block; max-width: 100%; }
   .lang-cards    { grid-template-columns: 1fr 1fr; }
   .footer-inner  { grid-template-columns: 1fr; }
   .section { padding: 60px 0; }
+  .cta-section--light { padding: 44px 0; }
+  .cta-section--light .btn { width: 100%; justify-content: center; }
+  .hero-trust { flex-wrap: wrap; gap: 6px; }
 }
 
 /* ── Property types SEO section ───────────────────────────────────────────── */
@@ -1486,7 +1489,7 @@ img { display: block; max-width: 100%; }
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  BAR & CHARGES CALLOUT                                                     -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<section class="cta-section cta-section--light" style="padding:64px 0">
+<section class="cta-section cta-section--light">
   <div class="container" style="position:relative; z-index:1">
     <h2 data-i18n="bc.title">Inn owners — want more than Pro, without paying for Multi?</h2>
     <p data-i18n="bc.body">You've got bedrooms and a bar tab. Bar &amp; Charges adds room-charge tracking to your Pro plan for £6/month — no need to pay for multi-property tools you'll never use.</p>
