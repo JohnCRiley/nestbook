@@ -353,6 +353,39 @@ html[data-theme="storm"] {
   --radius:             10px;
 }
 
+html[data-theme="hessian"] {
+  --sidebar-bg:         #425B3D;
+  --sidebar-hover:      #375032;
+  --sidebar-active:     #0D3010;
+  --sidebar-text:       #E5E0D8;
+  --accent:             #CCCFBB;
+  --accent-dark:        #ADAC98;
+  --accent-bar:         #A3A891;
+  --tint-bg:            #CCCFBB;
+  --tint-border:        #324D2E;
+  --tint-text:          #354E31;
+  --light-green:        #E7E2CF;
+  --page-bg:            #F3EFE4;
+  --card-bg:            #F6F3EC;
+  --panel-bg:           #F6F3EC;
+  --border:             #D8D3CB;
+  --header-bg:          #F6F3EC;
+  --header-text:        #0C310F;
+  --heading-text:       #1C1C1E;
+  --section-bg:         #F5F2EC;
+  --section-text:       #1C1C1E;
+  --btn-secondary-bg:   #E8E3DC;
+  --btn-secondary-text: #1C1C1E;
+  --toggle-on:          #5E7451;
+  --toggle-off:         #E7E2CF;
+  --text-primary:       #1C1C1E;
+  --text-secondary:     #032203;
+  --text-muted:         #9B9A96;
+  --shadow-sm:          0 2px 8px rgba(28,28,30,0.08);
+  --shadow-md:          0 16px 48px rgba(28,28,30,0.18);
+  --radius:             10px;
+}
+
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root      { height: 100%; overflow: hidden; }

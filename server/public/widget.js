@@ -40,6 +40,7 @@
     charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#68696A' },
     slate:    { brand: '#95A397', dark: '#25503E', light: '#EFF0F0', panelHdrBg: '#F5F5F5', panelHdrText: '#1C1C1E' },
     storm:    { brand: '#A4B1B7', dark: '#546369', light: '#F5F2EC', panelHdrBg: '#FFFFFF',  panelHdrText: '#3B454E' },
+    hessian:  { brand: '#CCCFBB', dark: '#425B3D', light: '#F5F2EC', panelHdrBg: '#F6F3EC', panelHdrText: '#0C310F' },
   };
 
   let BRAND          = '#2f771b';

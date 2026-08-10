@@ -287,7 +287,7 @@ propertiesRouter.put('/:id', (req, res) => {
       lock_rental_type,
     } = req.body;
     const existing = db.prepare('SELECT rental_type, description, rental_type_locked FROM properties WHERE id = ?').get(req.params.id);
-    const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm'];
+    const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     const newUnSubType = VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null;
     // Serviced Apartment locks walk-in off regardless of what's submitted — a
