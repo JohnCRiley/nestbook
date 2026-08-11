@@ -126,6 +126,7 @@
   left: 0;
   right: 0;
   max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: #fff;
