@@ -58,9 +58,11 @@
   font-weight: 500;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   white-space: nowrap;
   transition: background 0.12s;
+  min-height: 44px;
 }
 .lang-toggle:hover { background: rgba(255,255,255,0.25); }
 
@@ -116,6 +118,7 @@
   gap: 6px;
   white-space: nowrap;
   transition: background 0.12s;
+  min-height: 44px;
 }
 .menu-toggle:hover { background: rgba(255,255,255,0.25); }
 
@@ -235,7 +238,7 @@
 /* ── Mobile ─────────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .navbar-inner { padding: 0 16px; }
-  .lang-toggle  { font-size: 0.78rem; padding: 12px 9px; }
+  .lang-toggle  { font-size: 0.78rem; padding: 5px 9px; }
   .menu-toggle  { font-size: 0.78rem; padding: 5px 12px; }
   .mega-inner   { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
   .mega-col     { border-bottom: 1px solid #f0fdf4; padding-bottom: 16px; }
