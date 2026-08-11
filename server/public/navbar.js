@@ -93,4 +93,14 @@
       updateLangToggle(btn.getAttribute('data-lang') || 'en');
     });
   });
+
+  /* ── signup_click tracking — delegated, covers all /app/register links ── */
+  /* Skip links with an inline onclick to avoid double-firing on pages that
+     already have the attribute (index.html, compare.html, how-it-works.html). */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('a[href="/app/register"], a[href="https://nestbook.io/app/register"]');
+    if (!el || el.hasAttribute('onclick') || !window.gtag) return;
+    var label = el.classList.contains('mega-cta') ? 'mega_menu_cta' : 'try_free_button';
+    gtag('event', 'signup_click', { event_category: 'conversion', event_label: label });
+  });
 })();
