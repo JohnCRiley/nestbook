@@ -166,7 +166,7 @@
   text-decoration: none;
   font-size: 0.92rem;
   font-weight: 500;
-  padding: 7px 8px;
+  padding: 11px 8px;
   border-radius: 6px;
   transition: all 0.12s;
   display: block;
@@ -234,7 +234,7 @@
 /* ── Mobile ─────────────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .navbar-inner { padding: 0 16px; }
-  .lang-toggle  { font-size: 0.78rem; padding: 5px 9px; }
+  .lang-toggle  { font-size: 0.78rem; padding: 12px 9px; }
   .menu-toggle  { font-size: 0.78rem; padding: 5px 12px; }
   .mega-inner   { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
   .mega-col     { border-bottom: 1px solid #f0fdf4; padding-bottom: 16px; }
