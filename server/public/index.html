@@ -279,7 +279,7 @@ header.navbar.wave-navbar {
 .hero-headline {
   font-size: clamp(2.2rem, 4.8vw, 3.3rem);
   font-weight: 900;
-  color: var(--dark);
+  color: #405440;
   letter-spacing: -1px;
   line-height: 1.1;
   margin-bottom: 20px;
@@ -308,6 +308,12 @@ header.navbar.wave-navbar {
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 32px;
+}
+/* Hero primary CTA only — scoped so the shared .btn-primary rule (used by
+   pricing/CTA-section buttons elsewhere on this page) is untouched. */
+.hero-btns .btn-primary {
+  background: #405440;
+  border-color: #405440;
 }
 .hero-trust {
   display: flex;
