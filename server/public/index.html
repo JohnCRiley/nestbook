@@ -533,9 +533,40 @@ header.navbar.wave-navbar {
 
 /* ── Features icon-grid (wave design — index.html only) ───────────────────── */
 .hiw-features {
-  background: #ffffff;
-  padding: 56px 0 72px;
+  position: relative;
+  overflow: hidden;
+  padding: 0 0 72px;
   margin: 0 0 64px;
+}
+/* Background layer continuing the hero's exact white -> wave -> gradient
+   treatment (same gradient-on-outer-wrapper technique as .hero-bg). The
+   section above (#preview) is already flat white, so no white-top spacer
+   is needed here — the wave sits at the very top of this layer. */
+.hf-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.hf-wave {
+  flex: 0 0 50px;
+  width: 100%;
+  line-height: 0;
+}
+.hf-wave svg {
+  display: block;
+  width: 100%;
+  height: 50px;
+}
+.hf-bg-bottom {
+  flex: 1 1 0;
+}
+.hiw-features > .container {
+  position: relative;
+  z-index: 1;
+  padding-top: 40px;
 }
 .hiw-features-title {
   text-align: center;
@@ -554,8 +585,9 @@ header.navbar.wave-navbar {
 .ig-grid {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, 84px);
+  justify-content: center;
+  gap: 18px;
 }
 .ig-tile {
   aspect-ratio: 1;
@@ -573,7 +605,7 @@ header.navbar.wave-navbar {
   -webkit-tap-highlight-color: transparent;
 }
 .ig-tile .ig-icon {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: #405440;
   pointer-events: none;
 }
@@ -599,10 +631,9 @@ header.navbar.wave-navbar {
   left: 50%;
   width: min(280px, calc(100% - 32px));
   padding: 20px 22px;
-  background: #ffffff;
-  border: 1px solid #e0ecdb;
+  background: #405440;
   border-radius: 16px;
-  box-shadow: 0 20px 48px rgba(64,84,64,0.22);
+  box-shadow: 0 20px 48px rgba(64,84,64,0.32);
   text-align: center;
   pointer-events: none;
   opacity: 0;
@@ -617,19 +648,19 @@ header.navbar.wave-navbar {
 .ig-overlay-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #405440;
+  color: #ffffff;
   margin-bottom: 6px;
 }
 .ig-overlay-desc {
   font-size: 0.85rem;
   line-height: 1.5;
-  color: #557a4a;
+  color: #ffffff;
 }
 @media (max-width: 900px) {
-  .ig-grid { grid-template-columns: repeat(4, 1fr); }
+  .ig-grid { grid-template-columns: repeat(4, 1fr); justify-content: initial; }
 }
 @media (max-width: 640px) {
-  .ig-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .ig-grid { grid-template-columns: repeat(3, 1fr); justify-content: initial; gap: 14px; }
   .ig-tile { border-radius: 16px; }
   .ig-tile .ig-icon { font-size: 1.5rem; }
 }
@@ -1285,6 +1316,14 @@ header.navbar.wave-navbar {
 <!--  FEATURES                                                                  -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div class="hiw-features" id="features">
+  <div class="hf-bg" aria-hidden="true">
+    <div class="hf-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="hf-bg-bottom"></div>
+  </div>
   <div class="container">
     <h2 class="hiw-features-title" data-i18n="features.title">Everything included</h2>
     <p class="hiw-features-sub" data-i18n="features.sub">No add-ons. No hidden fees. Everything in one place.</p>
@@ -1385,14 +1424,14 @@ header.navbar.wave-navbar {
         </span>
       </button>
       <button type="button" class="ig-tile" aria-label="Partner With Local Businesses">
-        <i class="ig-icon ti ti-handshake" aria-hidden="true"></i>
+        <i class="ig-icon ti ti-users" aria-hidden="true"></i>
         <span class="ig-src" hidden>
           <span class="ig-t" data-i18n="features.b15h">Partner With Local Businesses</span>
           <span class="ig-d" data-i18n="features.b15d">Team up with nearby restaurants, spas, and event venues for themed off-season offers — foodie weekends, spa getaways, sports breaks. Add their link to your booking page and help each other thrive.</span>
         </span>
       </button>
       <button type="button" class="ig-tile" aria-label="Guests, calendar, photos — all in one place">
-        <i class="ig-icon ti ti-users" aria-hidden="true"></i>
+        <i class="ig-icon ti ti-calendar" aria-hidden="true"></i>
         <span class="ig-src" hidden>
           <span class="ig-t" data-i18n="features.b14">Guests, calendar, photos — all in one place</span>
           <span class="ig-d" data-i18n="features.b14d">One dashboard to run your entire property from first enquiry to checkout.</span>
