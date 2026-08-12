@@ -290,7 +290,7 @@ header.navbar.wave-navbar {
 }
 .hero-sub {
   font-size: 1rem;
-  color: var(--mid);
+  color: #405440;
   font-weight: 600;
   letter-spacing: 0.01em;
   margin-bottom: 12px;
@@ -298,7 +298,7 @@ header.navbar.wave-navbar {
 }
 .hero-description {
   font-size: 1.05rem;
-  color: var(--muted);
+  color: #405440;
   line-height: 1.75;
   margin-bottom: 32px;
   max-width: 440px;
@@ -313,6 +313,16 @@ header.navbar.wave-navbar {
    pricing/CTA-section buttons elsewhere on this page) is untouched. */
 .hero-btns .btn-primary {
   background: #405440;
+  border-color: #405440;
+}
+.hero-btns .btn-primary:hover {
+  background: #334333;
+  border-color: #334333;
+  box-shadow: 0 6px 20px rgba(64,84,64,0.3);
+}
+/* Hero secondary CTA only — .btn-outline is shared with pricing buttons elsewhere on this page. */
+.hero-btns .btn-outline {
+  color: #405440;
   border-color: #405440;
 }
 .hero-trust {
