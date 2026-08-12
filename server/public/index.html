@@ -521,7 +521,11 @@ header.navbar.wave-navbar {
 .preview-booking-bar.past { background: #e2e8f0; }
 
 /* ── Preview section heading ──────────────────────────────────────────────── */
-#preview { background: var(--soft); }
+#preview { background: #ffffff; }
+#preview .section-heading,
+#preview .section-sub {
+  color: #405440;
+}
 .preview-section-wrap {
   max-width: 900px;
   margin: 0 auto;
@@ -1300,9 +1304,8 @@ header.navbar.wave-navbar {
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  APP PREVIEW (anchor for "See it in action")                              -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<section class="section-sm text-center" id="preview" style="background:var(--soft)">
+<section class="section-sm text-center" id="preview">
   <div class="container preview-section-wrap">
-    <div class="badge" data-i18n="preview.badge">The dashboard</div>
     <h2 class="section-heading" data-i18n="preview.heading">Everything in one place</h2>
     <p class="section-sub" data-i18n="preview.sub">
       A single screen tells you who's arriving today, who's in-house, what's coming up, and how the month is going.
