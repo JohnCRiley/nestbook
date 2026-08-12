@@ -585,11 +585,11 @@ header.navbar.wave-navbar {
 .ig-grid {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(5, 84px);
+  grid-template-columns: repeat(5, 92px);
   justify-content: center;
-  max-width: 560px;
+  max-width: 600px;
   margin: 0 auto;
-  gap: clamp(16px, 2vw, 32px);
+  gap: clamp(18px, 2.2vw, 35px);
 }
 .ig-tile {
   aspect-ratio: 1;
@@ -607,7 +607,7 @@ header.navbar.wave-navbar {
   -webkit-tap-highlight-color: transparent;
 }
 .ig-tile .ig-icon {
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   color: #405440;
   pointer-events: none;
 }
@@ -658,19 +658,13 @@ header.navbar.wave-navbar {
   line-height: 1.5;
   color: #ffffff;
 }
-@media (max-width: 900px) {
-  .ig-grid {
-    grid-template-columns: repeat(5, 64px);
-    max-width: none;
-    margin: 0;
-    gap: clamp(10px, 3vw, 28px);
-  }
-  .ig-tile .ig-icon { font-size: 1.4rem; }
-}
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .ig-grid {
     grid-template-columns: repeat(5, 44px);
-    gap: clamp(6px, 3vw, 16px);
+    justify-content: space-between;
+    max-width: none;
+    margin: 0;
+    gap: 8px;
   }
   .ig-tile .ig-icon { font-size: 1.15rem; }
 }
