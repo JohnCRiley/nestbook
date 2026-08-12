@@ -208,20 +208,30 @@ img { display: block; max-width: 100%; }
 .btn-lg { padding: 15px 30px; font-size: 1rem; border-radius: 10px; }
 
 
-/* ── Hero ─────────────────────────────────────────────────────────────────── */
+/* ── Hero (wave design — index.html only) ────────────────────────────────── */
 .hero {
-  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
-  padding: 100px 0 80px;
   overflow: hidden;
-  position: relative;
 }
-.hero::before {
-  content: '';
-  position: absolute;
-  top: -80px; right: -80px;
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(217,240,204,0.5) 0%, transparent 70%);
-  pointer-events: none;
+.hero-top {
+  background: #ffffff;
+  padding: 100px 0 40px;
+}
+.hero-wave {
+  width: 100%;
+  line-height: 0;
+}
+.hero-wave svg {
+  display: block;
+  width: 100%;
+  height: 50px;
+}
+.hero-bottom {
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+  padding: 40px 0;
+}
+/* Navbar override scoped to index.html only — navbar.css's shared .navbar default is untouched */
+header.navbar.wave-navbar {
+  background: #405440;
 }
 .hero-inner {
   display: grid;
@@ -977,7 +987,8 @@ img { display: block; max-width: 100%; }
   .cta-section--light { padding: 44px 0; }
   .cta-section--light .btn { width: 100%; justify-content: center; }
   .hero-trust { flex-wrap: wrap; gap: 6px; }
-  .hero { padding: 40px 0 40px; }
+  .hero-top { padding: 40px 0 20px; }
+  .hero-bottom { padding: 20px 0; }
 }
 
 /* ── Property types SEO section ───────────────────────────────────────────── */
@@ -1024,7 +1035,7 @@ img { display: block; max-width: 100%; }
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  NAVBAR                                                                   -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<header class="navbar">
+<header class="navbar wave-navbar">
   <div class="navbar-inner">
     <a href="/" class="nb-logo">
       <img src="/icon.svg" class="nb-logo-img" alt="NestBook">
@@ -1082,6 +1093,7 @@ img { display: block; max-width: 100%; }
 <!--  HERO                                                                     -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <section class="hero">
+  <div class="hero-top">
   <div class="container">
     <div class="hero-inner">
 
@@ -1226,6 +1238,15 @@ img { display: block; max-width: 100%; }
 
     </div>
   </div>
+  </div>
+
+  <div class="hero-wave" aria-hidden="true">
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+      <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+    </svg>
+  </div>
+
+  <div class="hero-bottom"></div>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
