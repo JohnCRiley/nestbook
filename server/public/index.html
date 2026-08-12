@@ -531,9 +531,9 @@ header.navbar.wave-navbar {
   margin: 0 auto;
 }
 
-/* ── Bento Features Grid ──────────────────────────────────────────────────── */
+/* ── Features icon-grid (wave design — index.html only) ───────────────────── */
 .hiw-features {
-  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  background: #ffffff;
   padding: 56px 0 72px;
   margin: 0 0 64px;
 }
@@ -551,196 +551,87 @@ header.navbar.wave-navbar {
   color: #2b5f08;
   margin-bottom: 40px;
 }
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: minmax(88px, auto);
-  gap: 12px;
-}
-.bt {
-  border-radius: 14px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 6px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+.ig-grid {
   position: relative;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
 }
-.bt:hover {
-  transform: scale(1.025);
-  box-shadow: 0 10px 36px rgba(26,71,16,0.16);
+.ig-tile {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ig-tile .ig-icon {
+  font-size: 1.8rem;
+  color: #405440;
+  pointer-events: none;
+}
+.ig-tile:hover,
+.ig-tile:focus-visible,
+.ig-tile.is-active {
+  background: #f0ede8;
+  border-color: #405440;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(64,84,64,0.16);
   z-index: 2;
 }
-.bt-hero {
-  background: #1a4710;
-  color: #fff;
-  padding: 32px 28px;
+.ig-tile:focus-visible {
+  outline: 2px solid #405440;
+  outline-offset: 3px;
 }
-.bt-hero .bt-icon {
-  font-size: 1.8rem;
-  color: rgba(255,255,255,0.45);
+/* Single shared overlay, centered within the grid — reveals whichever tile is active.
+   Kept off the tile's own box (rather than per-tile anchored) so it can never overflow
+   the viewport at any column count (3 mobile / 4 tablet / 5 desktop). */
+.ig-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(280px, calc(100% - 32px));
+  padding: 20px 22px;
+  background: #ffffff;
+  border: 1px solid #e0ecdb;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(64,84,64,0.22);
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.85);
+  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease-out;
+  z-index: 10;
 }
-.bt-hero .bt-headline {
-  font-size: clamp(1.9rem, 3.2vw, 2.25rem);
-  font-weight: 800;
-  line-height: 1.15;
-  color: #fff;
-  letter-spacing: -0.02em;
+.ig-overlay.is-open {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
-.bt-hero .bt-sub {
-  font-size: 0.95rem;
-  color: rgba(255,255,255,0.6);
-  font-weight: 500;
-  margin-top: 4px;
-}
-.bt-medium {
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: blur(6px);
-  border: 1px solid var(--border);
-}
-.bt-medium .bt-icon {
-  font-size: 1.35rem;
-  color: var(--mid);
-  margin-bottom: 4px;
-}
-.bt-medium .bt-headline {
-  font-size: 1.2rem;
+.ig-overlay-title {
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--text);
-  line-height: 1.25;
+  color: #405440;
+  margin-bottom: 6px;
 }
-.bt-medium .bt-sub {
+.ig-overlay-desc {
   font-size: 0.85rem;
-  color: var(--muted);
-  margin-top: 2px;
+  line-height: 1.5;
+  color: #557a4a;
 }
-.bt-italic .bt-headline { font-style: italic; }
-.bt-soft {
-  background: var(--soft);
-  border: 1px solid var(--border);
+@media (max-width: 900px) {
+  .ig-grid { grid-template-columns: repeat(4, 1fr); }
 }
-.bt-soft .bt-icon {
-  font-size: 1.2rem;
-  color: var(--mid);
-  margin-bottom: 4px;
-}
-.bt-soft .bt-headline {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.35;
-}
-.bt-outline {
-  background: transparent;
-  border: 2px solid var(--dark);
-}
-.bt-outline .bt-icon {
-  font-size: 1.2rem;
-  color: var(--dark);
-  margin-bottom: 4px;
-}
-.bt-outline .bt-headline {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--dark);
-  line-height: 1.35;
-}
-.bt-wide {
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: blur(6px);
-  border: 1px solid var(--border);
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-}
-.bt-wide .bt-icon {
-  font-size: 1.5rem;
-  color: var(--mid);
-  flex-shrink: 0;
-}
-.bt-wide-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.bt-wide .bt-headline {
-  font-style: italic;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.25;
-}
-.bt-desc {
-  font-size: 0.8rem;
-  line-height: 1.45;
-  opacity: 0.75;
-  margin-top: 2px;
-}
-.bt-hero .bt-desc { color: rgba(255,255,255,0.7); opacity: 1; font-size: 0.85rem; }
-.bt-outline .bt-desc { color: var(--dark); }
-.bt-wide .bt-desc { font-size: 0.8rem; color: var(--muted); }
-/* Layout A */
-.bento-variant-a .bt1  { grid-column: 1 / 3; grid-row: 1 / 3; }
-.bento-variant-a .bt3  { grid-column: 3 / 5; grid-row: 1;     }
-.bento-variant-a .bt7  { grid-column: 3;     grid-row: 2;     }
-.bento-variant-a .bt8  { grid-column: 4;     grid-row: 2;     }
-.bento-variant-a .bt9  { grid-column: 1;     grid-row: 3;     }
-.bento-variant-a .bt4  { grid-column: 2 / 4; grid-row: 3;     }
-.bento-variant-a .bt11 { grid-column: 4;     grid-row: 3;     }
-.bento-variant-a .bt5  { grid-column: 1 / 3; grid-row: 4;     }
-.bento-variant-a .bt2  { grid-column: 3 / 5; grid-row: 4 / 6; }
-.bento-variant-a .bt12 { grid-column: 1;     grid-row: 5;     }
-.bento-variant-a .bt10 { grid-column: 2;     grid-row: 5;     }
-.bento-variant-a .bt6  { grid-column: 1 / 3; grid-row: 6;     }
-.bento-variant-a .bt13 { grid-column: 3;     grid-row: 6;     }
-.bento-variant-a .bt15 { grid-column: 4;     grid-row: 6;     }
-.bento-variant-a .bt14 { grid-column: 1 / 5; grid-row: 7;     }
-/* Layout B */
-.bento-variant-b .bt3  { grid-column: 1 / 3; grid-row: 1;     }
-.bento-variant-b .bt1  { grid-column: 3 / 5; grid-row: 1 / 3; }
-.bento-variant-b .bt7  { grid-column: 1;     grid-row: 2;     }
-.bento-variant-b .bt8  { grid-column: 2;     grid-row: 2;     }
-.bento-variant-b .bt2  { grid-column: 1 / 3; grid-row: 3 / 5; }
-.bento-variant-b .bt4  { grid-column: 3 / 5; grid-row: 3;     }
-.bento-variant-b .bt11 { grid-column: 3;     grid-row: 4;     }
-.bento-variant-b .bt9  { grid-column: 4;     grid-row: 4;     }
-.bento-variant-b .bt14 { grid-column: 1 / 5; grid-row: 5;     }
-.bento-variant-b .bt5  { grid-column: 1 / 3; grid-row: 6;     }
-.bento-variant-b .bt12 { grid-column: 3;     grid-row: 6;     }
-.bento-variant-b .bt10 { grid-column: 4;     grid-row: 6;     }
-.bento-variant-b .bt6  { grid-column: 1 / 3; grid-row: 7;     }
-.bento-variant-b .bt13 { grid-column: 3;     grid-row: 7;     }
-.bento-variant-b .bt15 { grid-column: 4;     grid-row: 7;     }
-/* Layout C */
-.bento-variant-c .bt11 { grid-column: 1;     grid-row: 1;     }
-.bento-variant-c .bt3  { grid-column: 2 / 4; grid-row: 1;     }
-.bento-variant-c .bt7  { grid-column: 4;     grid-row: 1;     }
-.bento-variant-c .bt4  { grid-column: 1 / 3; grid-row: 2;     }
-.bento-variant-c .bt1  { grid-column: 3 / 5; grid-row: 2 / 4; }
-.bento-variant-c .bt8  { grid-column: 1;     grid-row: 3;     }
-.bento-variant-c .bt9  { grid-column: 2;     grid-row: 3;     }
-.bento-variant-c .bt2  { grid-column: 1 / 3; grid-row: 4 / 6; }
-.bento-variant-c .bt5  { grid-column: 3 / 5; grid-row: 4;     }
-.bento-variant-c .bt12 { grid-column: 3;     grid-row: 5;     }
-.bento-variant-c .bt10 { grid-column: 4;     grid-row: 5;     }
-.bento-variant-c .bt13 { grid-column: 1;     grid-row: 6;     }
-.bento-variant-c .bt6  { grid-column: 2 / 4; grid-row: 6;     }
-.bento-variant-c .bt15 { grid-column: 4;     grid-row: 6;     }
-.bento-variant-c .bt14 { grid-column: 1 / 5; grid-row: 7;     }
 @media (max-width: 640px) {
-  .bento-grid {
-    grid-template-columns: 1fr;
-    grid-auto-rows: auto;
-  }
-  .bento-grid .bt {
-    grid-column: 1 !important;
-    grid-row: auto !important;
-  }
-  .bt-hero { min-height: 180px; }
-  .bt-hero .bt-headline { font-size: 2rem; }
-  .bt-wide { flex-direction: column; }
+  .ig-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .ig-tile { border-radius: 16px; }
+  .ig-tile .ig-icon { font-size: 1.5rem; }
 }
 .ti {
   vertical-align: middle;
@@ -1398,107 +1289,210 @@ header.navbar.wave-navbar {
     <h2 class="hiw-features-title" data-i18n="features.title">Everything included</h2>
     <p class="hiw-features-sub" data-i18n="features.sub">No add-ons. No hidden fees. Everything in one place.</p>
 
-    <div class="bento-grid">
-      <!-- bt1: Hero 1 -->
-      <div class="bt bt-hero bt1">
-        <i class="bt-icon ti ti-world" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b1h">Your own booking website</div>
-        <div class="bt-sub" data-i18n="features.b1s">Free, on every plan</div>
-        <div class="bt-desc" data-i18n="features.b1d">A fully branded page guests book through directly — no third-party fees or commissions.</div>
-      </div>
-      <!-- bt2: Hero 2 -->
-      <div class="bt bt-hero bt2">
-        <i class="bt-icon ti ti-credit-card" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b2h">Direct card payments</div>
-        <div class="bt-sub" data-i18n="features.b2s">Secure checkout, built in</div>
-        <div class="bt-desc" data-i18n="features.b2d">Let guests pay by card with Stripe Connect — funds go straight to your own bank account, safely and simply.</div>
-      </div>
-      <!-- bt3: Medium – Facebook -->
-      <div class="bt bt-medium bt3">
-        <i class="bt-icon ti ti-brand-facebook" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b3">Facebook booking button</div>
-        <div class="bt-desc" data-i18n="features.b3d">Add a Book Now button to your Facebook page in minutes — guests stay on your brand.</div>
-      </div>
-      <!-- bt4: Medium italic – synced -->
-      <div class="bt bt-medium bt-italic bt4">
-        <i class="bt-icon ti ti-refresh" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b4">Never double-booked — synced everywhere</div>
-        <div class="bt-desc" data-i18n="features.b4d">Two-way iCal sync with Airbnb, Booking.com, and any other calendar you use.</div>
-      </div>
-      <!-- bt5: Medium – mailer -->
-      <div class="bt bt-medium bt5">
-        <i class="bt-icon ti ti-mail" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b5h">Email your guests direct</div>
-        <div class="bt-sub" data-i18n="features.b5s">Branded guest mailer</div>
-        <div class="bt-desc" data-i18n="features.b5d">Send arrival info, WiFi codes, and local tips to every guest automatically.</div>
-      </div>
-      <!-- bt6: Medium – social -->
-      <div class="bt bt-medium bt6">
-        <i class="bt-icon ti ti-camera" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b6">Ready-made social posts</div>
-        <div class="bt-desc" data-i18n="features.b6d">Generate eye-catching posts for Instagram and Facebook with one click.</div>
-      </div>
-      <!-- bt7: Small soft – migration -->
-      <div class="bt bt-soft bt7">
-        <i class="bt-icon ti ti-transfer" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b7">Free booking migration</div>
-        <div class="bt-desc" data-i18n="features.b7d">We import your existing reservations at no charge — no manual data entry needed.</div>
-      </div>
-      <!-- bt8: Small soft – reports -->
-      <div class="bt bt-soft bt8">
-        <i class="bt-icon ti ti-chart-bar" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b8">Revenue reports</div>
-        <div class="bt-desc" data-i18n="features.b8d">See your earnings by month, property, or season at a glance.</div>
-      </div>
-      <!-- bt9: Small soft – seasonal -->
-      <div class="bt bt-soft bt9">
-        <i class="bt-icon ti ti-calendar-dollar" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b9">Seasonal pricing</div>
-        <div class="bt-desc" data-i18n="features.b9d">Set different rates for high season, school holidays, or any custom period.</div>
-      </div>
-      <!-- bt10: Small soft – reviews -->
-      <div class="bt bt-soft bt10">
-        <i class="bt-icon ti ti-message-heart" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b10">Automatic guest reviews</div>
-        <div class="bt-desc" data-i18n="features.b10d">Ask guests for a review automatically after checkout — more reviews, less effort.</div>
-      </div>
-      <!-- bt11: Outline – languages -->
-      <div class="bt bt-outline bt11">
-        <i class="bt-icon ti ti-language" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b11">Speaks 5 languages</div>
-        <div class="bt-desc" data-i18n="features.b11d">English, French, German, Spanish, Dutch — guests see their language automatically.</div>
-      </div>
-      <!-- bt12: Outline – QR -->
-      <div class="bt bt-outline bt12">
-        <i class="bt-icon ti ti-qrcode" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b12">QR codes</div>
-        <div class="bt-desc" data-i18n="features.b12d">Print a code for your door, WiFi, or booking page — guests scan and go.</div>
-      </div>
-      <!-- bt13: Outline – device -->
-      <div class="bt bt-outline bt13">
-        <i class="bt-icon ti ti-device-mobile" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b13">Any device</div>
-        <div class="bt-desc" data-i18n="features.b13d">Works beautifully on phone, tablet, and desktop — no app download required.</div>
-      </div>
-      <!-- bt15: Small soft – partnership links -->
-      <a class="bt bt-soft bt15" href="/blog/partner-with-local-businesses.html" style="text-decoration:none;color:inherit">
-        <i class="bt-icon ti ti-handshake" aria-hidden="true"></i>
-        <div class="bt-headline" data-i18n="features.b15h">Partner With Local Businesses</div>
-        <div class="bt-desc" data-i18n="features.b15d">Team up with nearby restaurants, spas, and event venues for themed off-season offers — foodie weekends, spa getaways, sports breaks. Add their link to your booking page and help each other thrive.</div>
-      </a>
-      <!-- bt14: Wide lifestyle -->
-      <div class="bt bt-wide bt14">
-        <i class="bt-icon ti ti-users" aria-hidden="true"></i>
-        <div class="bt-wide-body">
-          <div class="bt-headline" data-i18n="features.b14">Guests, calendar, photos — all in one place</div>
-          <div class="bt-desc" data-i18n="features.b14d">One dashboard to run your entire property from first enquiry to checkout.</div>
-        </div>
+    <div class="ig-grid">
+      <button type="button" class="ig-tile" aria-label="Your own booking website">
+        <i class="ig-icon ti ti-world" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b1h">Your own booking website</span>
+          <span class="ig-d" data-i18n="features.b1s">Free, on every plan</span>
+          <span class="ig-d" data-i18n="features.b1d">A fully branded page guests book through directly — no third-party fees or commissions.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Direct card payments">
+        <i class="ig-icon ti ti-credit-card" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b2h">Direct card payments</span>
+          <span class="ig-d" data-i18n="features.b2s">Secure checkout, built in</span>
+          <span class="ig-d" data-i18n="features.b2d">Let guests pay by card with Stripe Connect — funds go straight to your own bank account, safely and simply.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Facebook booking button">
+        <i class="ig-icon ti ti-brand-facebook" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b3">Facebook booking button</span>
+          <span class="ig-d" data-i18n="features.b3d">Add a Book Now button to your Facebook page in minutes — guests stay on your brand.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Never double-booked — synced everywhere">
+        <i class="ig-icon ti ti-refresh" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b4">Never double-booked — synced everywhere</span>
+          <span class="ig-d" data-i18n="features.b4d">Two-way iCal sync with Airbnb, Booking.com, and any other calendar you use.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Email your guests direct">
+        <i class="ig-icon ti ti-mail" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b5h">Email your guests direct</span>
+          <span class="ig-d" data-i18n="features.b5s">Branded guest mailer</span>
+          <span class="ig-d" data-i18n="features.b5d">Send arrival info, WiFi codes, and local tips to every guest automatically.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Ready-made social posts">
+        <i class="ig-icon ti ti-camera" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b6">Ready-made social posts</span>
+          <span class="ig-d" data-i18n="features.b6d">Generate eye-catching posts for Instagram and Facebook with one click.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Free booking migration">
+        <i class="ig-icon ti ti-transfer" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b7">Free booking migration</span>
+          <span class="ig-d" data-i18n="features.b7d">We import your existing reservations at no charge — no manual data entry needed.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Revenue reports">
+        <i class="ig-icon ti ti-chart-bar" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b8">Revenue reports</span>
+          <span class="ig-d" data-i18n="features.b8d">See your earnings by month, property, or season at a glance.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Seasonal pricing">
+        <i class="ig-icon ti ti-calendar-dollar" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b9">Seasonal pricing</span>
+          <span class="ig-d" data-i18n="features.b9d">Set different rates for high season, school holidays, or any custom period.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Automatic guest reviews">
+        <i class="ig-icon ti ti-message-heart" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b10">Automatic guest reviews</span>
+          <span class="ig-d" data-i18n="features.b10d">Ask guests for a review automatically after checkout — more reviews, less effort.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Speaks 5 languages">
+        <i class="ig-icon ti ti-language" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b11">Speaks 5 languages</span>
+          <span class="ig-d" data-i18n="features.b11d">English, French, German, Spanish, Dutch — guests see their language automatically.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="QR codes">
+        <i class="ig-icon ti ti-qrcode" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b12">QR codes</span>
+          <span class="ig-d" data-i18n="features.b12d">Print a code for your door, WiFi, or booking page — guests scan and go.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Any device">
+        <i class="ig-icon ti ti-device-mobile" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b13">Any device</span>
+          <span class="ig-d" data-i18n="features.b13d">Works beautifully on phone, tablet, and desktop — no app download required.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Partner With Local Businesses">
+        <i class="ig-icon ti ti-handshake" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b15h">Partner With Local Businesses</span>
+          <span class="ig-d" data-i18n="features.b15d">Team up with nearby restaurants, spas, and event venues for themed off-season offers — foodie weekends, spa getaways, sports breaks. Add their link to your booking page and help each other thrive.</span>
+        </span>
+      </button>
+      <button type="button" class="ig-tile" aria-label="Guests, calendar, photos — all in one place">
+        <i class="ig-icon ti ti-users" aria-hidden="true"></i>
+        <span class="ig-src" hidden>
+          <span class="ig-t" data-i18n="features.b14">Guests, calendar, photos — all in one place</span>
+          <span class="ig-d" data-i18n="features.b14d">One dashboard to run your entire property from first enquiry to checkout.</span>
+        </span>
+      </button>
+      <div class="ig-overlay" aria-hidden="true">
+        <div class="ig-overlay-title"></div>
+        <div class="ig-overlay-desc"></div>
       </div>
     </div>
   </div>
 </div>
 <script>
-(function(){var v=['bento-variant-a','bento-variant-b','bento-variant-c'];var g=document.querySelector('.bento-grid');if(g)g.classList.add(v[Math.floor(Math.random()*3)]);})();
+(function(){
+  var grid = document.querySelector('.ig-grid');
+  if (!grid) return;
+  var tiles = grid.querySelectorAll('.ig-tile');
+  var overlay = grid.querySelector('.ig-overlay');
+  var overlayTitle = overlay.querySelector('.ig-overlay-title');
+  var overlayDesc = overlay.querySelector('.ig-overlay-desc');
+  var activeTile = null;
+  var lockOpen = false;
+
+  function showOverlay(tile) {
+    var titleEl = tile.querySelector('.ig-t');
+    var descEls = tile.querySelectorAll('.ig-d');
+    overlayTitle.textContent = titleEl ? titleEl.textContent.trim() : '';
+    overlayDesc.textContent = Array.prototype.map.call(descEls, function(el){ return el.textContent.trim(); }).join(' ');
+    tiles.forEach(function(t){ t.classList.toggle('is-active', t === tile); });
+    overlay.classList.add('is-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    activeTile = tile;
+  }
+  function hideOverlay() {
+    tiles.forEach(function(t){ t.classList.remove('is-active'); });
+    overlay.classList.remove('is-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    activeTile = null;
+    lockOpen = false;
+  }
+
+  tiles.forEach(function(tile) {
+    // Desktop hover — closes automatically on mouse-away unless locked open by a click.
+    tile.addEventListener('mouseenter', function() {
+      if (lockOpen) return;
+      showOverlay(tile);
+    });
+    tile.addEventListener('mouseleave', function() {
+      if (lockOpen) return;
+      hideOverlay();
+    });
+    // Keyboard focus mirrors hover so keyboard users can perceive the overlay content.
+    tile.addEventListener('focus', function() {
+      if (lockOpen) return;
+      showOverlay(tile);
+    });
+    tile.addEventListener('blur', function() {
+      if (lockOpen) return;
+      hideOverlay();
+    });
+    // Click / keyboard activation toggles a "stays open" lock.
+    tile.addEventListener('click', function() {
+      if (activeTile === tile && lockOpen) {
+        hideOverlay();
+        return;
+      }
+      showOverlay(tile);
+      lockOpen = true;
+    });
+    // Mobile press-and-hold — same pointerdown/pointerup/pointerleave/pointercancel
+    // mechanic as wave.html's hold-to-reveal icons, scoped to touch input only (a
+    // mouse pointerdown+pointerup pair fires back-to-back on every click and would
+    // otherwise just flash the overlay instead of letting the click-lock behavior above work).
+    tile.addEventListener('pointerdown', function(e) {
+      if (e.pointerType !== 'touch') return;
+      e.preventDefault();
+      showOverlay(tile);
+    });
+    tile.addEventListener('pointerup', function(e) {
+      if (e.pointerType !== 'touch') return;
+      if (!lockOpen) hideOverlay();
+    });
+    tile.addEventListener('pointerleave', function(e) {
+      if (e.pointerType !== 'touch') return;
+      if (!lockOpen) hideOverlay();
+    });
+    tile.addEventListener('pointercancel', function(e) {
+      if (e.pointerType !== 'touch') return;
+      if (!lockOpen) hideOverlay();
+    });
+  });
+
+  // Clicking anywhere outside the active tile/overlay closes a click-locked overlay.
+  document.addEventListener('click', function(e) {
+    if (!lockOpen) return;
+    if (activeTile && !activeTile.contains(e.target) && !overlay.contains(e.target)) {
+      hideOverlay();
+    }
+  });
+})();
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
