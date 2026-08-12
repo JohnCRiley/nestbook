@@ -680,38 +680,61 @@ header.navbar.wave-navbar {
 }
 
 /* ── Languages ────────────────────────────────────────────────────────────── */
-#languages { background: var(--dark); color: #fff; }
-#languages .section-heading { color: #fff; }
-#languages .section-sub { color: rgba(255,255,255,0.65); }
+#languages { background: #ffffff; color: #405440; }
+#languages .section-heading { color: #405440; }
+#languages .section-sub { color: #405440; }
 .lang-cards {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-top: 48px;
 }
+/* Each tile reuses wave.html's exact structure (opaque white top, wave
+   divider, cream-to-white gradient bottom) at a compact, per-tile scale —
+   independent from the hero's own .hero-wave/.hero-bg instance. */
 .lang-card {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px 20px;
   text-align: center;
-  transition: background 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.lang-card:hover { background: rgba(255,255,255,0.13); }
-.lang-flag { font-size: 2.5rem; margin-bottom: 10px; }
+.lang-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(64,84,64,0.16);
+}
+.lc-top {
+  background: #ffffff;
+  padding: 24px 16px 10px;
+}
+.lang-flag { font-size: 2.5rem; }
+.lc-wave {
+  width: 100%;
+  line-height: 0;
+}
+.lc-wave svg {
+  display: block;
+  width: 100%;
+  height: 22px;
+}
+.lc-bottom {
+  padding: 10px 16px 22px;
+}
 .lang-name {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--light);
+  color: #405440;
   margin-bottom: 12px;
 }
 .lang-phrase {
   font-size: 0.78rem;
   font-style: italic;
-  color: rgba(255,255,255,0.55);
+  color: #405440;
   line-height: 1.6;
 }
-.lang-phrase strong { display: block; color: rgba(255,255,255,0.8); font-style: normal; font-size: 0.85rem; margin-bottom: 4px; }
+.lang-phrase strong { display: block; color: #405440; font-style: normal; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
 
 /* ── Testimonials ─────────────────────────────────────────────────────────── */
 #testimonials { background: var(--soft); }
@@ -1544,48 +1567,83 @@ header.navbar.wave-navbar {
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <section class="section text-center" id="languages">
   <div class="container">
-    <div class="badge" style="background:rgba(255,255,255,0.15); color:var(--light)" data-i18n="langs.badge">Made for Europe</div>
+    <div class="badge" style="background:#f0ede8; color:#405440" data-i18n="langs.badge">Made for Europe</div>
     <h2 class="section-heading" data-i18n="langs.heading">One app, five languages</h2>
     <p class="section-sub" data-i18n="langs.sub">Whether your guests book in English, your staff prefer French, and your accountant wants German — NestBook switches instantly.</p>
     <div class="lang-cards">
       <div class="lang-card">
-        <div class="lang-flag">🇬🇧</div>
-        <div class="lang-name">English</div>
-        <div class="lang-phrase">
-          <strong data-i18n="langs.en.phrase">"Check-in: 3pm. Checkout: 11am."</strong>
-          <span data-i18n="langs.en.sub">For B&Bs from Cornwall to Edinburgh</span>
+        <div class="lc-top"><div class="lang-flag">🇬🇧</div></div>
+        <div class="lc-wave" aria-hidden="true">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+          </svg>
+        </div>
+        <div class="lc-bottom">
+          <div class="lang-name">English</div>
+          <div class="lang-phrase">
+            <strong data-i18n="langs.en.phrase">"Check-in: 3pm. Checkout: 11am."</strong>
+            <span data-i18n="langs.en.sub">For B&Bs from Cornwall to Edinburgh</span>
+          </div>
         </div>
       </div>
       <div class="lang-card">
-        <div class="lang-flag">🇫🇷</div>
-        <div class="lang-name">Français</div>
-        <div class="lang-phrase">
-          <strong>"Arrivée : 15h. Départ : 11h."</strong>
-          <span data-i18n="langs.fr.sub">Pour les gîtes de Provence à la Bretagne</span>
+        <div class="lc-top"><div class="lang-flag">🇫🇷</div></div>
+        <div class="lc-wave" aria-hidden="true">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+          </svg>
+        </div>
+        <div class="lc-bottom">
+          <div class="lang-name">Français</div>
+          <div class="lang-phrase">
+            <strong>"Arrivée : 15h. Départ : 11h."</strong>
+            <span data-i18n="langs.fr.sub">Pour les gîtes de Provence à la Bretagne</span>
+          </div>
         </div>
       </div>
       <div class="lang-card">
-        <div class="lang-flag">🇪🇸</div>
-        <div class="lang-name">Español</div>
-        <div class="lang-phrase">
-          <strong>"Entrada: 15h. Salida: 11h."</strong>
-          <span data-i18n="langs.es.sub">Para casas rurales de Andalucía a Cataluña</span>
+        <div class="lc-top"><div class="lang-flag">🇪🇸</div></div>
+        <div class="lc-wave" aria-hidden="true">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+          </svg>
+        </div>
+        <div class="lc-bottom">
+          <div class="lang-name">Español</div>
+          <div class="lang-phrase">
+            <strong>"Entrada: 15h. Salida: 11h."</strong>
+            <span data-i18n="langs.es.sub">Para casas rurales de Andalucía a Cataluña</span>
+          </div>
         </div>
       </div>
       <div class="lang-card">
-        <div class="lang-flag">🇩🇪</div>
-        <div class="lang-name">Deutsch</div>
-        <div class="lang-phrase">
-          <strong>"Anreise: 15 Uhr. Abreise: 11 Uhr."</strong>
-          <span data-i18n="langs.de.sub">Für Gästehäuser von Bayern bis zur Nordsee</span>
+        <div class="lc-top"><div class="lang-flag">🇩🇪</div></div>
+        <div class="lc-wave" aria-hidden="true">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+          </svg>
+        </div>
+        <div class="lc-bottom">
+          <div class="lang-name">Deutsch</div>
+          <div class="lang-phrase">
+            <strong>"Anreise: 15 Uhr. Abreise: 11 Uhr."</strong>
+            <span data-i18n="langs.de.sub">Für Gästehäuser von Bayern bis zur Nordsee</span>
+          </div>
         </div>
       </div>
       <div class="lang-card">
-        <div class="lang-flag">🇳🇱</div>
-        <div class="lang-name">Nederlands</div>
-        <div class="lang-phrase">
-          <strong data-i18n="langs.nl.phrase">"Inchecken: 15:00. Uitchecken: 11:00."</strong>
-          <span data-i18n="langs.nl.sub">Voor B&amp;Bs van Zeeland tot Groningen</span>
+        <div class="lc-top"><div class="lang-flag">🇳🇱</div></div>
+        <div class="lc-wave" aria-hidden="true">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+          </svg>
+        </div>
+        <div class="lc-bottom">
+          <div class="lang-name">Nederlands</div>
+          <div class="lang-phrase">
+            <strong data-i18n="langs.nl.phrase">"Inchecken: 15:00. Uitchecken: 11:00."</strong>
+            <span data-i18n="langs.nl.sub">Voor B&amp;Bs van Zeeland tot Groningen</span>
+          </div>
         </div>
       </div>
     </div>
