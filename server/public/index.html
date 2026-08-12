@@ -250,6 +250,17 @@ img { display: block; max-width: 100%; }
 header.navbar.wave-navbar {
   background: #405440;
 }
+/* Mega-menu CTA override scoped to index.html only — navbar.css's shared .mega-cta
+   default (and its !important rules) is untouched on every other public page. */
+.mega-cta.wave-mega-cta {
+  background: #405440 !important;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.mega-cta.wave-mega-cta:hover {
+  background: #405440 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(64,84,64,0.3);
+}
 .hero-inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -324,6 +335,11 @@ header.navbar.wave-navbar {
 .hero-btns .btn-outline {
   color: #405440;
   border-color: #405440;
+}
+.hero-btns .btn-outline:hover {
+  background: #f8f7f4;
+  border-color: #405440;
+  color: #405440;
 }
 .hero-trust {
   display: flex;
@@ -1103,7 +1119,7 @@ header.navbar.wave-navbar {
     </div>
     <div class="mega-col">
       <div class="mega-label" data-i18n="nav.getStarted">Get started</div>
-      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mega-cta">
+      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mega-cta wave-mega-cta">
         <span data-i18n="nav.startTrial">🌿 Start free trial</span>
         <span data-i18n="nav.noCard">No credit card needed</span>
       </a>
