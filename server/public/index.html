@@ -210,13 +210,27 @@ img { display: block; max-width: 100%; }
 
 /* ── Hero (wave design — index.html only) ────────────────────────────────── */
 .hero {
+  position: relative;
   overflow: hidden;
-}
-.hero-top {
-  background: #ffffff;
   padding: 100px 0 40px;
 }
+/* Decorative background layer, behind hero-inner content: white top half,
+   wave through the center, cream-to-white gradient bottom half — same
+   gradient-on-outer-wrapper technique as wave.html's .waved-panel. */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.hero-bg-top {
+  flex: 1 1 0;
+  background: #ffffff;
+}
 .hero-wave {
+  flex: 0 0 50px;
   width: 100%;
   line-height: 0;
 }
@@ -225,9 +239,12 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 50px;
 }
-.hero-bottom {
-  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
-  padding: 40px 0;
+.hero-bg-bottom {
+  flex: 1 1 0;
+}
+.hero .container {
+  position: relative;
+  z-index: 1;
 }
 /* Navbar override scoped to index.html only — navbar.css's shared .navbar default is untouched */
 header.navbar.wave-navbar {
@@ -987,8 +1004,7 @@ header.navbar.wave-navbar {
   .cta-section--light { padding: 44px 0; }
   .cta-section--light .btn { width: 100%; justify-content: center; }
   .hero-trust { flex-wrap: wrap; gap: 6px; }
-  .hero-top { padding: 40px 0 20px; }
-  .hero-bottom { padding: 20px 0; }
+  .hero { padding: 40px 0 40px; }
 }
 
 /* ── Property types SEO section ───────────────────────────────────────────── */
@@ -1093,7 +1109,15 @@ header.navbar.wave-navbar {
 <!--  HERO                                                                     -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <section class="hero">
-  <div class="hero-top">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-bg-top"></div>
+    <div class="hero-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="hero-bg-bottom"></div>
+  </div>
   <div class="container">
     <div class="hero-inner">
 
@@ -1238,15 +1262,6 @@ header.navbar.wave-navbar {
 
     </div>
   </div>
-  </div>
-
-  <div class="hero-wave" aria-hidden="true">
-    <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-      <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
-    </svg>
-  </div>
-
-  <div class="hero-bottom"></div>
 </section>
 
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
