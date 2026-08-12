@@ -828,26 +828,23 @@ header.navbar.wave-navbar {
   align-items: start;
 }
 .pricing-card {
-  background: var(--soft);
-  border: 2px solid var(--border);
+  background: #ffffff;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 32px 28px;
   position: relative;
-  transition: box-shadow 0.15s;
+  box-shadow: 0 10px 28px rgba(64,84,64,0.16);
 }
-.pricing-card:hover { box-shadow: var(--shadow); }
 .pricing-card.highlight {
-  background: var(--dark);
-  border-color: var(--dark);
+  background: #405440;
   color: #fff;
-  box-shadow: 0 12px 40px rgba(26,71,16,0.28);
   transform: scale(1.03);
 }
 .pricing-popular {
   position: absolute;
   top: -13px; left: 50%;
   transform: translateX(-50%);
-  background: var(--mid);
+  background: #405440;
   color: #fff;
   font-size: 0.68rem;
   font-weight: 700;
@@ -857,21 +854,21 @@ header.navbar.wave-navbar {
   border-radius: 20px;
   white-space: nowrap;
 }
-.pricing-tier  { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 8px; }
+.pricing-tier  { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #405440; margin-bottom: 8px; }
 .pricing-card.highlight .pricing-tier { color: var(--light); }
-.pricing-price { font-size: 2.4rem; font-weight: 900; color: var(--dark); letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+.pricing-price { font-size: 2.4rem; font-weight: 900; color: #405440; letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
 .pricing-card.highlight .pricing-price { color: #fff; }
 .pricing-eur { font-size: 1.3rem; font-weight: 500; opacity: 0.7; }
 .pricing-card.highlight .pricing-eur { opacity: 0.75; }
 .pricing-adaptive-note { text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 14px; }
-.pricing-period { font-size: 0.78rem; color: var(--muted); margin-bottom: 24px; }
+.pricing-period { font-size: 0.78rem; color: #405440; margin-bottom: 24px; }
 .pricing-card.highlight .pricing-period { color: rgba(255,255,255,0.55); }
 .pricing-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
-.pricing-features li { font-size: 0.85rem; display: flex; align-items: flex-start; gap: 9px; text-align: left; }
+.pricing-features li { font-size: 0.85rem; display: flex; align-items: flex-start; gap: 9px; text-align: left; color: #405440; }
 .pricing-features li::before {
   content: '✓';
   font-weight: 700;
-  color: var(--mid);
+  color: #405440;
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -1699,9 +1696,8 @@ header.navbar.wave-navbar {
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  PRICING                                                                   -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<section class="section text-center" id="pricing" style="background:var(--soft)">
+<section class="section text-center" id="pricing" style="background:#ffffff">
   <div class="container">
-    <div class="badge" data-i18n="pricing.badge">Pricing</div>
     <h2 class="section-heading" data-i18n="pricing.heading">Simple, honest pricing</h2>
     <p class="section-sub" data-i18n="pricing.sub">No commission, no booking fees, no surprises. Just a flat monthly rate.</p>
 
