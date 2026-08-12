@@ -736,8 +736,44 @@ header.navbar.wave-navbar {
 }
 .lang-phrase strong { display: block; color: #405440; font-style: normal; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
 
-/* ── Testimonials ─────────────────────────────────────────────────────────── */
-#testimonials { background: var(--soft); }
+/* ── Testimonials (wave background — index.html only) ────────────────────── */
+#testimonials {
+  position: relative;
+  overflow: hidden;
+}
+/* Same gradient-on-outer-wrapper technique as .hf-bg (features section): the
+   section above (cta-section--light) is already white, so the wave sits at
+   the very top of this layer with no separate white-top spacer needed. */
+.tm-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.tm-wave {
+  flex: 0 0 50px;
+  width: 100%;
+  line-height: 0;
+}
+.tm-wave svg {
+  display: block;
+  width: 100%;
+  height: 50px;
+}
+.tm-bg-bottom {
+  flex: 1 1 0;
+}
+#testimonials > .container {
+  position: relative;
+  z-index: 1;
+  padding-top: 40px;
+}
+#testimonials .section-heading,
+#testimonials .badge {
+  color: #405440;
+}
 .testimonials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -749,7 +785,7 @@ header.navbar.wave-navbar {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 28px rgba(64,84,64,0.16);
 }
 .testimonial-stars {
   color: #f59e0b;
@@ -759,7 +795,7 @@ header.navbar.wave-navbar {
 }
 .testimonial-quote {
   font-size: 0.9rem;
-  color: var(--text);
+  color: #405440;
   line-height: 1.75;
   margin-bottom: 20px;
   font-style: italic;
@@ -773,7 +809,7 @@ header.navbar.wave-navbar {
   width: 42px; height: 42px;
   border-radius: 50%;
   background: var(--light);
-  color: var(--dark);
+  color: #405440;
   font-size: 0.9rem;
   font-weight: 700;
   display: flex;
@@ -781,65 +817,8 @@ header.navbar.wave-navbar {
   justify-content: center;
   flex-shrink: 0;
 }
-.testimonial-name  { font-size: 0.875rem; font-weight: 700; color: var(--dark); }
-.testimonial-place { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
-
-/* ── Coming Soon ─────────────────────────────────────────────────────────── */
-.coming-soon {
-  background: linear-gradient(160deg, var(--soft) 0%, var(--light) 50%, var(--soft) 100%);
-  padding: 72px 24px;
-}
-.coming-soon-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  text-align: center;
-}
-.coming-soon-eyebrow {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--mid);
-  margin-bottom: 12px;
-}
-.coming-soon-title {
-  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
-  font-weight: 800;
-  color: var(--dark);
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-  margin-bottom: 48px;
-}
-.coming-soon-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  max-width: 580px;
-  margin: 0 auto;
-  gap: 24px;
-  text-align: left;
-}
-.coming-soon-card {
-  background: var(--dark);
-  border: none;
-  border-radius: var(--radius);
-  padding: 36px 32px;
-}
-.coming-soon-card-title {
-  font-size: 19px;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 14px;
-}
-.coming-soon-card-text {
-  font-size: 14px;
-  color: rgba(255,255,255,0.8);
-  line-height: 1.7;
-}
-@media (max-width: 600px) {
-  .coming-soon-grid {
-    grid-template-columns: 1fr;
-  }
-}
+.testimonial-name  { font-size: 0.875rem; font-weight: 700; color: #405440; }
+.testimonial-place { font-size: 0.75rem; color: #405440; margin-top: 1px; }
 
 /* ── Pricing ──────────────────────────────────────────────────────────────── */
 .pricing-grid {
@@ -1667,6 +1646,14 @@ header.navbar.wave-navbar {
 <!--  TESTIMONIALS                                                              -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <section class="section text-center" id="testimonials">
+  <div class="tm-bg" aria-hidden="true">
+    <div class="tm-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="tm-bg-bottom"></div>
+  </div>
   <div class="container">
     <div class="badge" data-i18n="testimonials.badge">From our customers</div>
     <h2 class="section-heading" data-i18n="testimonials.heading">Loved by small property owners</h2>
@@ -1707,25 +1694,6 @@ header.navbar.wave-navbar {
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<!--  COMING SOON                                                               -->
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<section class="coming-soon">
-  <div class="coming-soon-inner">
-    <p class="coming-soon-eyebrow" data-i18n="coming.eyebrow">On the horizon</p>
-    <h2 class="coming-soon-title" data-i18n="coming.title">What's Coming to NestBook</h2>
-
-    <div class="coming-soon-grid">
-
-      <div class="coming-soon-card">
-        <h3 class="coming-soon-card-title" data-i18n="coming.card2.title">The NestBook Global Hospitality Directory</h3>
-        <p class="coming-soon-card-text" data-i18n="coming.card2.text">A global platform where independent hosts list unique spaces for guests to discover, book, and stay. Your property. Your price. Your guest relationship — commission free.</p>
-      </div>
-
     </div>
   </div>
 </section>
