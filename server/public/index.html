@@ -969,6 +969,10 @@ header.navbar.wave-navbar {
 @media (max-width: 900px) {
   .hero-inner         { grid-template-columns: 1fr; }
   .preview-wrap       { display: none; }
+  .hero-copy          { text-align: center; }
+  .hero-sub, .hero-description { margin-left: auto; margin-right: auto; }
+  .hero-btns          { justify-content: center; }
+  .hero-trust         { justify-content: center; }
   .lang-cards         { grid-template-columns: repeat(2, 1fr); }
   .testimonials-grid  { grid-template-columns: 1fr; }
   .pricing-grid       { grid-template-columns: 1fr; }
@@ -1143,7 +1147,7 @@ header.navbar.wave-navbar {
     <div class="hero-inner">
 
       <!-- Left: copy -->
-      <div>
+      <div class="hero-copy">
         <h1 class="hero-headline" data-i18n-html="hero.headline">
           Take Control of Your Property, Your Bookings, and Your Revenue.
         </h1>
