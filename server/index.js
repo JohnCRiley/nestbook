@@ -81,7 +81,7 @@ app.use(express.json({ limit: '15mb' }));
 // Uploaded images — must be before the React SPA catch-all
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
-// Landing page, widget.js, widget-test.html
+// Landing page, widget.js
 // extensions:['html'] lets /about, /compare, /how-it-works etc. serve without the .html suffix
 app.use(express.static(join(__dirname, 'public'), { extensions: ['html'] }));
 

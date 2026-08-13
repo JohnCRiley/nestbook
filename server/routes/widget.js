@@ -17,8 +17,10 @@ import {
 
 
 // ── Demo mode rooms (static, never blocked, no DB dependency) ─────────────────
-// These match the Domaine des Lavandes demo property rooms shown on widget-test.html.
-// The demo booking endpoint returns a fake ref and never writes to the DB.
+// Was used by widget-test.html (removed) for a fake-booking demo; nothing in
+// the live site sets data-demo="true" on widget.js anymore, so this endpoint
+// is currently unreachable. Left in place rather than removed as part of an
+// unrelated change — safe to delete alongside DEMO_MODE in widget.js.
 const DEMO_ROOMS = [
   { id: 'D1', property_id: 0, name: 'Chambre Lavande',  type: 'double', price_per_night: 95,  capacity: 2, amenities: 'wifi,ensuite,balcony',        status: 'available' },
   { id: 'D2', property_id: 0, name: 'Chambre Mistral',  type: 'twin',   price_per_night: 85,  capacity: 2, amenities: 'wifi,ensuite',                 status: 'available' },
@@ -671,7 +673,7 @@ widgetRouter.post('/retry-payment', async (req, res) => {
 
 // ── GET /api/widget/demo/rooms ────────────────────────────────────────────────
 // Always returns all 4 demo rooms as available — no auth, no DB query.
-// Used by widget-test.html in demo mode so visitor bookings never block rooms.
+// Currently unreachable — see DEMO_ROOMS comment above.
 widgetRouter.get('/demo/rooms', (_req, res) => {
   res.json(DEMO_ROOMS);
 });
