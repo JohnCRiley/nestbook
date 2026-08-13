@@ -5700,11 +5700,11 @@ a { text-decoration: none; }
   box-sizing: border-box;
 }
 .wizard-input:focus {
-  border-color: #2f771b;
+  border-color: #405440;
 }
 .wizard-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23557a4a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23405440' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 40px;
@@ -5714,8 +5714,8 @@ a { text-decoration: none; }
   width: 100%;
   padding: 14px 24px;
   background: #fff;
-  color: #1a4710;
-  border: 2px solid #d9f0cc;
+  color: #405440;
+  border: 2px solid #e0ecdb;
   border-radius: 9px;
   font-size: 0.97rem;
   font-weight: 700;
@@ -5725,11 +5725,11 @@ a { text-decoration: none; }
   margin-top: 28px;
 }
 .btn-wiz:hover {
-  border-color: #2f771b;
-  background: #f0fdf4;
+  border-color: #405440;
+  background: #f0ede8;
 }
 .btn-wiz:active {
-  background: #d9f0cc;
+  background: #f0ede8;
 }
 .btn-wiz:disabled {
   opacity: 0.55;
@@ -5738,7 +5738,7 @@ a { text-decoration: none; }
 .btn-wiz-back {
   background: none;
   border: none;
-  color: #557a4a;
+  color: #405440;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -5750,7 +5750,7 @@ a { text-decoration: none; }
   gap: 5px;
 }
 .btn-wiz-back:hover {
-  color: #1a4710;
+  color: #334333;
 }
 .wiz-pw-row {
   display: grid;

@@ -13,12 +13,12 @@ const labelStyle = {
   fontWeight: 600,
   fontSize: '0.82rem',
   marginBottom: 6,
-  color: '#557a4a',
+  color: '#405440',
 };
 
 const taglineStyle = {
   fontSize: '0.9rem',
-  color: '#557a4a',
+  color: '#405440',
   fontStyle: 'italic',
   textAlign: 'center',
   lineHeight: 1.6,
@@ -27,7 +27,7 @@ const taglineStyle = {
 
 const subNoteStyle = {
   fontSize: '0.8rem',
-  color: '#557a4a',
+  color: '#405440',
   fontStyle: 'italic',
   marginTop: 6,
   marginBottom: 20,
@@ -35,7 +35,7 @@ const subNoteStyle = {
 
 const badgesStyle = {
   fontSize: '0.78rem',
-  color: '#557a4a',
+  color: '#405440',
   textAlign: 'center',
   marginTop: 14,
   marginBottom: 0,
@@ -113,23 +113,43 @@ export default function Register() {
   const logo = (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
       <img src="/icon.svg" alt="NestBook" style={{ width: 40, height: 40, marginBottom: 8 }} />
-      <span style={{ fontWeight: 700, fontSize: '1.35rem', color: '#1a4710', letterSpacing: '-0.4px' }}>NestBook</span>
+      <span style={{ fontWeight: 700, fontSize: '1.35rem', color: '#405440', letterSpacing: '-0.4px' }}>NestBook</span>
     </div>
   );
 
   const alreadyHave = (
-    <p style={{ textAlign: 'center', marginTop: 24, fontSize: '0.875rem', color: '#557a4a' }}>
+    <p style={{ textAlign: 'center', marginTop: 24, fontSize: '0.875rem', color: '#405440' }}>
       {t('register.alreadyAccount')}{' '}
-      <Link to="/login" style={{ color: '#2f771b', fontWeight: 600 }}>{t('auth.signIn')}</Link>
+      <Link to="/login" style={{ color: '#405440', fontWeight: 600 }}>{t('auth.signIn')}</Link>
     </p>
   );
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: '#f3f7f2', color: '#1a2e14', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', overflowY: 'auto', background: '#ffffff', color: '#405440', display: 'flex', flexDirection: 'column' }}>
       <PublicNavbar />
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px 60px' }}>
-        <div style={{ width: '100%', maxWidth: 680 }}>
+      <div style={{ position: 'relative', overflow: 'hidden', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px 60px' }}>
+        {/* Wave background: white -> wave -> cream gradient, same pattern/values
+            as index.html's .hero-bg (gradient on this shared wrapper, not on a
+            sub-child, which is what made earlier attempts elsewhere render flat) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0, zIndex: 0,
+            display: 'flex', flexDirection: 'column',
+            background: 'linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%)',
+          }}
+        >
+          <div style={{ flex: '1 1 0', background: '#ffffff' }} />
+          <div style={{ flex: '0 0 50px', width: '100%', lineHeight: 0 }}>
+            <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 50 }}>
+              <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff" />
+            </svg>
+          </div>
+          <div style={{ flex: '1 1 0' }} />
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 680 }}>
 
           {error && (
             <div style={{
@@ -238,9 +258,9 @@ export default function Register() {
               </select>
               <p style={subNoteStyle}>{t('register.propertyTypeNote')}</p>
 
-              <p style={{ fontSize: '0.83rem', marginBottom: 20, color: '#557a4a' }}>
+              <p style={{ fontSize: '0.83rem', marginBottom: 20, color: '#405440' }}>
                 {t('register.notSureYet')}{' '}
-                <a href="/compare.html" style={{ color: '#2f771b', fontWeight: 600, textDecoration: 'underline' }}>
+                <a href="/compare.html" style={{ color: '#405440', fontWeight: 600, textDecoration: 'underline' }}>
                   {t('register.seeWhatsIncluded')}
                 </a>
               </p>
