@@ -8,7 +8,7 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 :root {
-  --green: #1a4710; --green-mid: #2f771b; --green-lite: #d9f0cc; --green-tint: #f0fdf4;
+  --green: #405440; --green-mid: #334333; --green-lite: #f0ede8; --green-tint: #f0ede8;
   --amber: #f59e0b; --amber-lite: #fef3c7; --amber-dark: #92400e;
   --red: #dc2626; --red-lite: #fef2f2; --purple: #7c3aed; --purple-lt: #f5f3ff;
   --grey: #475569; --grey-lt: #f8fafc; --border: #e2e8f0; --white: #ffffff; --text: #1a2e14;
@@ -67,7 +67,7 @@ input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none;
                       height: 6px; border-radius: 3px; background: var(--green-lite);
                       outline: none; cursor: pointer; }
 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px;
-  border-radius: 50%; background: var(--green); cursor: pointer; box-shadow: 0 2px 6px rgba(26,71,16,0.3); }
+  border-radius: 50%; background: var(--green); cursor: pointer; box-shadow: 0 2px 6px rgba(64,84,64,0.3); }
 input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%;
   background: var(--green); cursor: pointer; border: none; }
 .range-labels { display: flex; justify-content: space-between; font-size: 11px;
@@ -274,7 +274,7 @@ function checkPw() {
       <div class="alloc-bar-seg" id="bar-bc"  style="background:#003087;width:40%"></div>
       <div class="alloc-bar-seg" id="bar-ab"  style="background:#ff385c;width:30%"></div>
       <div class="alloc-bar-seg" id="bar-vr"  style="background:#7c3aed;width:0%"></div>
-      <div class="alloc-bar-seg" id="bar-dir" style="background:#1a4710;width:30%"></div>
+      <div class="alloc-bar-seg" id="bar-dir" style="background:#405440;width:30%"></div>
     </div>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
@@ -291,8 +291,8 @@ function checkPw() {
         <span style="color:#7c3aed;font-weight:700;">VRBO</span>
       </span>
       <span style="font-size:11px;display:flex;align-items:center;gap:4px;">
-        <span style="width:10px;height:10px;border-radius:50%;background:#1a4710;display:inline-block;"></span>
-        <span style="color:#1a4710;font-weight:700;">Direct</span>
+        <span style="width:10px;height:10px;border-radius:50%;background:#405440;display:inline-block;"></span>
+        <span style="color:#405440;font-weight:700;">Direct</span>
       </span>
     </div>
 
@@ -332,7 +332,7 @@ function checkPw() {
     <!-- Direct -->
     <div class="platform-row">
       <div class="platform-label">
-        <span class="platform-dot" style="background:#1a4710;"></span>
+        <span class="platform-dot" style="background:#405440;"></span>
         <span class="platform-name dir">Direct</span>
       </div>
       <input type="range" class="dir" id="dir-pct" min="0" max="100" value="30" step="5"
