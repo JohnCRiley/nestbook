@@ -19,15 +19,15 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff;
-  --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a;
+  --dark:#334333; --mid:#405440; --light:#f0ede8; --page:#ffffff;
+  --soft:#f0ede8; --border:#e0ecdb; --text:#405440; --muted:#6B6A66;
   --radius:12px;
 }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
-code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: 'Menlo', 'Consolas', monospace; color: #1a4710; }
+code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: 'Menlo', 'Consolas', monospace; color: #405440; }
 
 /* Buttons */
 .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; text-decoration: none; }
@@ -37,9 +37,33 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 .btn-white:hover { background: var(--light); border-color: var(--light); }
 
 /* Hero */
-.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 56px; border-bottom: 1px solid var(--border); }
-.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
-.page-hero p { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; margin-bottom: 28px; }
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 72px 0 56px;
+}
+
+/* Wave background: white -> wave -> cream gradient, same pattern/values
+   used site-wide (gradient on this shared wrapper, not a sub-child). */
+.page-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.page-hero-bg-top { flex: 1 1 0; background: #ffffff; }
+.page-hero-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.page-hero-wave svg { display: block; width: 100%; height: 50px; }
+.page-hero-bg-bottom { flex: 1 1 0; }
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: #405440; letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p { font-size: 1.1rem; color: #405440; max-width: 560px; line-height: 1.75; margin-bottom: 28px; }
 .hero-links { display: flex; gap: 12px; flex-wrap: wrap; }
 .hero-link { font-size: 0.875rem; color: var(--mid); font-weight: 600; text-decoration: underline; }
 .hero-link:hover { color: var(--dark); }
@@ -118,11 +142,11 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 }
 .help-subsection h3 .ti { font-size: 1rem; color: var(--mid); }
 
-.help-subsection p { font-size: 0.88rem; color: #2a3d22; line-height: 1.8; margin-bottom: 10px; }
+.help-subsection p { font-size: 0.88rem; color: #405440; line-height: 1.8; margin-bottom: 10px; }
 .help-subsection p:last-child { margin-bottom: 0; }
 
 .help-steps { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; counter-reset: hstep; }
-.help-steps li { display: flex; gap: 12px; font-size: 0.88rem; color: #2a3d22; line-height: 1.7; counter-increment: hstep; }
+.help-steps li { display: flex; gap: 12px; font-size: 0.88rem; color: #405440; line-height: 1.7; counter-increment: hstep; }
 .help-steps li::before {
   content: counter(hstep);
   width: 22px; height: 22px; border-radius: 50%;
@@ -133,17 +157,17 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 }
 
 .help-bullets { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.help-bullets li { display: flex; gap: 10px; font-size: 0.88rem; color: #2a3d22; line-height: 1.7; }
+.help-bullets li { display: flex; gap: 10px; font-size: 0.88rem; color: #405440; line-height: 1.7; }
 .help-bullets li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mid); margin-top: 8px; flex-shrink: 0; }
 
 .help-tip {
   display: flex; align-items: flex-start; gap: 10px;
-  background: #f0fdf4; border-left: 3px solid var(--mid);
+  background: #f0ede8; border-left: 3px solid var(--mid);
   padding: 10px 14px; border-radius: 0 8px 8px 0;
   margin-top: 10px;
 }
 .help-tip .ti { color: var(--mid); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-.help-tip p { font-size: 0.82rem; color: #1a4710; margin: 0; }
+.help-tip p { font-size: 0.82rem; color: #405440; margin: 0; }
 
 .help-note {
   background: #fffbeb; border-left: 3px solid #f59e0b;
@@ -163,15 +187,33 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 .help-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 
 /* CTA band */
-.cta-band { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); padding: 72px 0; text-align: center; }
-.cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 12px; }
-.cta-band p { color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
+.cta-band {
+  position: relative;
+  overflow: hidden;
+  padding: 72px 0;
+  text-align: center;
+}
+.cta-band-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.cta-band-bg-top { flex: 1 1 0; background: #ffffff; }
+.cta-band-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.cta-band-wave svg { display: block; width: 100%; height: 50px; }
+.cta-band-bg-bottom { flex: 1 1 0; }
+.cta-band .container { position: relative; z-index: 1; }
+.cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #405440; letter-spacing: -0.5px; margin-bottom: 12px; }
+.cta-band p { color: #405440; font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
 .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.btn-outline-white { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,0.5); padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
-.btn-outline-white:hover { border-color: #fff; }
+.btn-outline-white { background: transparent; color: #405440; border: 2px solid #405440; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+.btn-outline-white:hover { background: #405440; color: #fff; border-color: #405440; }
 
 /* Footer */
-.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer { background: #2e3c2e; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
 .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
 .footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
@@ -276,6 +318,15 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 
 <!-- HERO -->
 <section class="page-hero">
+  <div class="page-hero-bg" aria-hidden="true">
+    <div class="page-hero-bg-top"></div>
+    <div class="page-hero-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="page-hero-bg-bottom"></div>
+  </div>
   <div class="container">
     <h1 data-i18n="help.hero.title">NestBook Help Centre</h1>
     <p data-i18n="help.hero.sub">Everything you need to get set up, take bookings, and manage your property.</p>
@@ -973,6 +1024,15 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 
 <!-- CTA BAND -->
 <div class="cta-band">
+  <div class="cta-band-bg" aria-hidden="true">
+    <div class="cta-band-bg-top"></div>
+    <div class="cta-band-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="cta-band-bg-bottom"></div>
+  </div>
   <div class="container">
     <h2 data-i18n="help.cta.title">Ready to get started?</h2>
     <p data-i18n="help.cta.sub">Free plan available. Your booking page live in 20 minutes.</p>

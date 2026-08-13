@@ -22,16 +22,16 @@
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --dark:   #1a4710;
-  --mid:    #2f771b;
-  --light:  #d9f0cc;
+  --dark:   #334333;
+  --mid:    #405440;
+  --light:  #f0ede8;
   --page:   #ffffff;
-  --soft:   #f3f7f2;
+  --soft:   #f0ede8;
   --border: #e0ecdb;
-  --text:   #1a2e14;
-  --muted:  #557a4a;
+  --text:   #405440;
+  --muted:  #6B6A66;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(26,71,16,0.10);
+  --shadow: 0 4px 24px rgba(64,84,64,0.10);
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -62,12 +62,32 @@ img { display: block; max-width: 100%; }
 
 /* ── Page hero ────────────────────────────────────────────────────────────── */
 .page-hero {
-  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  position: relative;
+  overflow: hidden;
   padding: 72px 0 60px;
-  border-bottom: 1px solid var(--border);
 }
-.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
-.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+
+/* Wave background: white -> wave -> cream gradient, same pattern/values
+   used site-wide (gradient on this shared wrapper, not a sub-child). */
+.page-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.page-hero-bg-top { flex: 1 1 0; background: #ffffff; }
+.page-hero-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.page-hero-wave svg { display: block; width: 100%; height: 50px; }
+.page-hero-bg-bottom { flex: 1 1 0; }
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: #405440; letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p  { font-size: 1.1rem; color: #405440; max-width: 560px; line-height: 1.75; }
 
 /* ── About content ────────────────────────────────────────────────────────── */
 .about-body { padding: 72px 0 88px; }
@@ -96,20 +116,33 @@ img { display: block; max-width: 100%; }
 .value-card p  { font-size: 0.9rem; color: var(--muted); line-height: 1.65; margin: 0; }
 
 .cta-band {
-  background: var(--dark);
-  color: rgba(255,255,255,0.85);
+  position: relative;
+  overflow: hidden;
   border-radius: var(--radius);
   padding: 40px 40px;
   text-align: center;
   margin-top: 64px;
 }
-.cta-band h2 { color: #fff; font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; }
-.cta-band p  { color: rgba(255,255,255,0.7); margin-bottom: 24px; max-width: none; }
-.btn-white { background: #fff; color: var(--dark); border: 2px solid rgba(255,255,255,0.3); padding: 12px 28px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; font-family: inherit; }
-.btn-white:hover { background: var(--light); }
+.cta-band-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.cta-band-bg-top { flex: 1 1 0; background: #ffffff; }
+.cta-band-wave { flex: 0 0 30px; width: 100%; line-height: 0; }
+.cta-band-wave svg { display: block; width: 100%; height: 30px; }
+.cta-band-bg-bottom { flex: 1 1 0; }
+.cta-band-content { position: relative; z-index: 1; }
+.cta-band h2 { color: #405440; font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; }
+.cta-band p  { color: #405440; margin-bottom: 24px; max-width: none; }
+.btn-white { background: #405440; color: #fff; border: 2px solid #405440; padding: 12px 28px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; font-family: inherit; }
+.btn-white:hover { background: #334333; border-color: #334333; }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
-.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer { background: #2e3c2e; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
 .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
 .footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
@@ -200,6 +233,15 @@ img { display: block; max-width: 100%; }
 <div class="mega-backdrop"></div>
 
 <section class="page-hero">
+  <div class="page-hero-bg" aria-hidden="true">
+    <div class="page-hero-bg-top"></div>
+    <div class="page-hero-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="page-hero-bg-bottom"></div>
+  </div>
   <div class="container">
     <h1 data-i18n="about.title">About NestBook</h1>
     <p data-i18n="about.subtitle">We're a small, passionate team building the simplest, most affordable booking software for small European properties.</p>
@@ -249,9 +291,20 @@ img { display: block; max-width: 100%; }
     </div>
 
     <div class="cta-band">
-      <h2 data-i18n="about.cta.heading">Ready to try NestBook?</h2>
-      <p data-i18n="about.cta.sub">Free to start, no credit card needed. Set up your property in minutes.</p>
-      <a href="/app/register" class="btn-white" data-i18n="about.cta.btn">Start for free →</a>
+      <div class="cta-band-bg" aria-hidden="true">
+        <div class="cta-band-bg-top"></div>
+        <div class="cta-band-wave">
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+          </svg>
+        </div>
+        <div class="cta-band-bg-bottom"></div>
+      </div>
+      <div class="cta-band-content">
+        <h2 data-i18n="about.cta.heading">Ready to try NestBook?</h2>
+        <p data-i18n="about.cta.sub">Free to start, no credit card needed. Set up your property in minutes.</p>
+        <a href="/app/register" class="btn-white" data-i18n="about.cta.btn">Start for free →</a>
+      </div>
     </div>
 
   </div>
@@ -340,7 +393,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
 
 const navbar = document.querySelector('.navbar');
 window.addEventListener('scroll', () => {
-  navbar.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(26,71,16,0.10)' : '';
+  navbar.style.boxShadow = window.scrollY > 10 ? '0 2px 16px rgba(64,84,64,0.10)' : '';
 }, { passive: true });
 </script>
 
