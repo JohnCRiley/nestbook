@@ -1,7 +1,7 @@
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 :root {
   /* Brand — Forest default; overridden per theme below */
-  --sidebar-bg:         #1a4710;
+  --sidebar-bg:         #405440;
   --sidebar-hover:      rgba(255,255,255,0.08);
   --sidebar-active:     #2f771b;
   --sidebar-text:       rgba(255,255,255,0.65);
@@ -13,8 +13,8 @@
   --light-green:        #d9f0cc;
   --card-bg:            #ffffff;
   --panel-bg:           #ffffff;
-  --header-bg:          #1a4710;
-  --header-text:        #ffffff;
+  --header-bg:          #F0EDE8;
+  --header-text:        #405440;
   --heading-text:       #1a4710;
   --accent-bar:         #2f771b;
   --section-bg:         #d9f0cc;
@@ -24,7 +24,7 @@
   --toggle-on:          #2f771b;
   --toggle-off:         #bbf7d0;
   /* Neutral */
-  --page-bg:       #f3f7f2;
+  --page-bg:       #ffffff;
   --border:        #e4ede2;
   --text-primary:  #1a2e14;
   --text-secondary:#557a4a;
@@ -2952,6 +2952,16 @@ a { text-decoration: none; }
 .onboard-rental-step .rental-type-btn[data-rt="units"].active {
   background: #405440;
   color: #ffffff;
+  border-color: #405440;
+}
+
+/* Onboarding wizard only: hover is always a consistent cream across all
+   three cards, regardless of selected state — overrides both the shared
+   theme hover above and this file's own active-state override above. */
+.onboard-rental-step .rental-type-btn:hover,
+.onboard-rental-step .rental-type-btn.active:hover {
+  background: #f0ede8;
+  color: #405440;
   border-color: #405440;
 }
 
