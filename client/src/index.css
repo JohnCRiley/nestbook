@@ -558,6 +558,25 @@ a { text-decoration: none; }
   -webkit-overflow-scrolling: touch;
 }
 
+/* Forest theme only: wave/gradient background behind the main content area,
+   echoing the marketing-page wave motif. This is a CSS background on
+   .main-content itself (the fixed-height scroll container), not an
+   absolutely-positioned child pinned via inset:0 — so it can never be cut
+   off by tall scrollable content the way an inset:0 child would (the bug
+   fixed elsewhere in Onboarding.jsx). Because .main-content's own box never
+   moves (only its content scrolls internally), the default background
+   attachment keeps this static on screen, peeking through the gaps between
+   cards/panels as the page scrolls. */
+html[data-theme="forest"] .main-content {
+  background-color: var(--page-bg);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0 V60 Q300,120 600,60 T1200,60 V0 Z' fill='%23ffffff'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, rgba(240,237,232,1) 15%, rgba(255,255,255,1) 100%);
+  background-repeat: no-repeat, no-repeat;
+  background-position: top, top;
+  background-size: 100% 100px, 100% 100%;
+}
+
 /* ─── Mobile top bar (hidden on tablet + desktop) ───────────────────────── */
 .mobile-topbar    { display: none; }
 .sidebar-overlay  { display: none; }
