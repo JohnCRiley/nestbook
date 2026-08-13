@@ -3,7 +3,7 @@ import db from '../db/database.js';
 import { sendOutreachEmail } from '../email/emailService.js';
 import { wrapEmailBody } from '../utils/emailWrapper.js';
 
-const USER_MAILER_FOOTER = 'You received this email as a NestBook user. Questions? <a href="mailto:hello@nestbook.io" style="color:#5a7a52;">hello@nestbook.io</a>';
+const USER_MAILER_FOOTER = 'You received this email as a NestBook user. Questions? <a href="mailto:hello@nestbook.io" style="color:#405440;">hello@nestbook.io</a>';
 
 export const userMailerRouter = Router();
 

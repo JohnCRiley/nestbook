@@ -648,17 +648,17 @@ function shell(bodyHtml) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NestBook</title>
 </head>
-<body style="margin:0;padding:0;background:#f0faf0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0faf0;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:32px 16px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
       <!-- Header -->
       <tr>
-        <td style="background:#1a4710;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+        <td style="background:#405440;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
           <table cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:middle;margin-right:10px;">
             <tr>
-              <td style="background:#1a4710;border-radius:9px;width:40px;height:40px;text-align:center;">
+              <td style="background:#405440;border-radius:9px;width:40px;height:40px;text-align:center;">
                 <img src="https://nestbook.io/icon-192.png" width="40" height="40"
                      style="display:block;border-radius:9px;" alt="NestBook">
               </td>
@@ -678,7 +678,7 @@ function shell(bodyHtml) {
       <!-- Footer -->
       <tr>
         <td style="padding:20px 32px;text-align:center;">
-          <p style="margin:0;font-size:0.75rem;color:#6b7280;">nestbook.io · hello@nestbook.io</p>
+          <p style="margin:0;font-size:0.75rem;color:#405440;">nestbook.io · hello@nestbook.io</p>
         </td>
       </tr>
 
@@ -722,22 +722,22 @@ function bookingConfirmationHtml(booking, property) {
   const row = (label, value) => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;
-                 color:#6b7280;width:40%;vertical-align:top;">${label}</td>
+                 color:#405440;width:40%;vertical-align:top;">${label}</td>
       <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;
-                 color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+                 color:#405440;font-weight:600;vertical-align:top;">${value}</td>
     </tr>`;
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(locale, 'bookingConfirmed')} ✓
     </h1>
-    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#405440;">
       ${t(locale, 'dear')} ${booking.guest_first_name},<br>
       ${t(locale, 'yourBookingAt')} <strong>${property.name}</strong> ${t(locale, 'isConfirmed')}
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+           style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
       <tr>
         ${!isWP ? row(t(locale, 'room'), booking.room_name ?? '—') : ''}
         ${row(t(locale, 'checkIn'),   `${checkInDate}${property.check_in_time  ? ' &mdash; ' + t(locale, 'from') + ' ' + property.check_in_time  : ''}`)}
@@ -745,12 +745,12 @@ function bookingConfirmationHtml(booking, property) {
         ${row(t(locale, 'guests'),    String(booking.num_guests ?? 1))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
         ${addressParts ? row(t(locale, 'address'), addressParts) : ''}
-        ${property.breakfast_included ? row('', `<span style="color:#166534;font-weight:700;">🍳 ${t(locale,'breakfastIncluded')}</span>`) : ''}
+        ${property.breakfast_included ? row('', `<span style="color:#405440;font-weight:700;">🍳 ${t(locale,'breakfastIncluded')}</span>`) : ''}
         ${property.require_deposit && property.deposit_amount ? row(t(locale,'depositRequired'), `<span style="color:#92400e;font-weight:700;">${fmtDepositAmount(property.deposit_amount, property.currency)}</span>`) : ''}
       </tr>
     </table>
 
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       ${t(locale, 'questions')}
     </p>`;
 
@@ -764,8 +764,8 @@ function proUpgradeHtml(user, property, periodEnd) {
 
   const featureItem = (text) => `
     <tr>
-      <td style="padding:6px 0;font-size:0.875rem;color:#374151;border-bottom:1px solid #e5e7eb;">
-        <span style="color:#1a4710;font-weight:700;margin-right:8px;">✓</span>${text}
+      <td style="padding:6px 0;font-size:0.875rem;color:#405440;border-bottom:1px solid #e5e7eb;">
+        <span style="color:#405440;font-weight:700;margin-right:8px;">✓</span>${text}
       </td>
     </tr>`;
 
@@ -784,14 +784,14 @@ function proUpgradeHtml(user, property, periodEnd) {
   }
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(locale, 'proUpgradeHeading')}
     </h1>
-    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">Hi ${user.name},</p>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">${t(locale, 'proUpgradeIntro')}</p>
+    <p style="margin:0 0 6px;font-size:1rem;color:#405440;">Hi ${user.name},</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">${t(locale, 'proUpgradeIntro')}</p>
 
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+           style="background:#f0ede8;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       ${featureItem(t(locale, 'proFeature1'))}
       ${featureItem(t(locale, 'proFeature2'))}
       ${featureItem(t(locale, 'proFeature3'))}
@@ -803,27 +803,27 @@ function proUpgradeHtml(user, property, periodEnd) {
     ${trialHtml}
 
     <p style="margin:0 0 8px;font-size:0.82rem;font-weight:700;text-transform:uppercase;
-              letter-spacing:0.5px;color:#1a4710;">${t(locale, 'proWidgetTitle')}</p>
-    <p style="margin:0 0 8px;font-size:0.82rem;color:#6b7280;">${t(locale, 'proWidgetDesc')}</p>
+              letter-spacing:0.5px;color:#405440;">${t(locale, 'proWidgetTitle')}</p>
+    <p style="margin:0 0 8px;font-size:0.82rem;color:#405440;">${t(locale, 'proWidgetDesc')}</p>
     <div style="background:#1e293b;border-radius:6px;padding:12px 16px;margin-bottom:24px;overflow-x:auto;">
       <code style="color:#86efac;font-family:monospace;font-size:0.78rem;word-break:break-all;">${widgetCode}</code>
     </div>
 
     <div style="text-align:center;margin-bottom:20px;">
       <a href="https://nestbook.io/app/dashboard"
-         style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
+         style="display:inline-block;background:#405440;color:#fff;text-decoration:none;
                 padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;margin-right:8px;">
         ${t(locale, 'upgradeDashboard')} →
       </a>
       <a href="https://nestbook.io/help"
-         style="display:inline-block;background:#f0faf0;color:#1a4710;text-decoration:none;
+         style="display:inline-block;background:#f0ede8;color:#405440;text-decoration:none;
                 padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
         ${t(locale, 'proHelpLink')}
       </a>
     </div>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
-    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+    <p style="margin:0;font-size:0.78rem;color:#405440;text-align:center;line-height:1.5;">
       ${t(locale, 'upgradeSupport')}
     </p>`;
 
@@ -837,20 +837,20 @@ function multiUpgradeHtml(user, property) {
 
   const featureItem = (text) => `
     <tr>
-      <td style="padding:6px 0;font-size:0.875rem;color:#374151;border-bottom:1px solid #e5e7eb;">
-        <span style="color:#1a4710;font-weight:700;margin-right:8px;">✓</span>${text}
+      <td style="padding:6px 0;font-size:0.875rem;color:#405440;border-bottom:1px solid #e5e7eb;">
+        <span style="color:#405440;font-weight:700;margin-right:8px;">✓</span>${text}
       </td>
     </tr>`;
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(locale, 'multiUpgradeHeading')}
     </h1>
-    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">Hi ${user.name},</p>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">${t(locale, 'multiUpgradeIntro')}</p>
+    <p style="margin:0 0 6px;font-size:1rem;color:#405440;">Hi ${user.name},</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">${t(locale, 'multiUpgradeIntro')}</p>
 
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+           style="background:#f0ede8;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       ${featureItem(t(locale, 'multiFeature1'))}
       ${featureItem(t(locale, 'multiFeature2'))}
       ${featureItem(t(locale, 'multiFeature3'))}
@@ -859,27 +859,27 @@ function multiUpgradeHtml(user, property) {
       ${featureItem(t(locale, 'multiFeature6'))}
     </table>
 
-    <div style="background:#f0faf0;border-radius:8px;padding:14px 18px;margin-bottom:24px;
-                border-left:3px solid #1a4710;">
-      <p style="margin:0 0 6px;font-size:0.83rem;color:#374151;">💡 ${t(locale, 'multiAddPropHint')}</p>
-      <p style="margin:0;font-size:0.83rem;color:#374151;">💡 ${t(locale, 'multiChargesHint')}</p>
+    <div style="background:#f0ede8;border-radius:8px;padding:14px 18px;margin-bottom:24px;
+                border-left:3px solid #405440;">
+      <p style="margin:0 0 6px;font-size:0.83rem;color:#405440;">💡 ${t(locale, 'multiAddPropHint')}</p>
+      <p style="margin:0;font-size:0.83rem;color:#405440;">💡 ${t(locale, 'multiChargesHint')}</p>
     </div>
 
     <div style="text-align:center;margin-bottom:20px;">
       <a href="https://nestbook.io/app/dashboard"
-         style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
+         style="display:inline-block;background:#405440;color:#fff;text-decoration:none;
                 padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;margin-right:8px;">
         ${t(locale, 'upgradeDashboard')} →
       </a>
       <a href="https://nestbook.io/help"
-         style="display:inline-block;background:#f0faf0;color:#1a4710;text-decoration:none;
+         style="display:inline-block;background:#f0ede8;color:#405440;text-decoration:none;
                 padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
         ${t(locale, 'upgradeHelp')}
       </a>
     </div>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
-    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+    <p style="margin:0;font-size:0.78rem;color:#405440;text-align:center;line-height:1.5;">
       ${t(locale, 'upgradeSupport')}
     </p>`;
 
@@ -933,15 +933,15 @@ export async function sendDepositRequest(booking, property) {
   const addressParts = [property?.address, property?.city, property?.country].filter(Boolean).join(', ');
   const row = (label, value) => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">${label}</td>
-      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;vertical-align:top;">${value}</td>
     </tr>`;
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(locale, 'depositRequestHeading')}
     </h1>
-    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#405440;">
       ${t(locale, 'dear')} ${booking.guest_first_name},<br>
       ${t(locale, 'depositRequestBody')}
     </p>
@@ -954,12 +954,12 @@ export async function sendDepositRequest(booking, property) {
         ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
         ${(booking.deposit_amount ?? property?.deposit_amount) ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#92400e;font-weight:700;">${fmtDepositAmount(booking.deposit_amount ?? property.deposit_amount, property.currency)}</span>`) : ''}
-        ${booking.balance_amount > 0 ? row('Balance due', `<span style="color:#374151;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
+        ${booking.balance_amount > 0 ? row('Balance due', `<span style="color:#405440;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
         ${addressParts ? row(t(locale, 'address'), addressParts) : ''}
       </tr>
     </table>
 
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       ${t(locale, 'depositPaymentInstr')}
     </p>`;
 
@@ -984,28 +984,28 @@ export async function sendDepositConfirmation(booking, property) {
 
   const row = (label, value) => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">${label}</td>
-      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;vertical-align:top;">${value}</td>
     </tr>`;
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(locale, 'depositConfirmHeading')} ✓
     </h1>
-    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#405440;">
       ${t(locale, 'dear')} ${booking.guest_first_name},<br>
       ${t(locale, 'depositConfirmBody')}
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+           style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
       <tr>
         ${!isWP ? row(t(locale, 'room'), booking.room_name ?? '—') : ''}
         ${row(t(locale, 'checkIn'),    fmtDate(booking.check_in_date,  locale))}
         ${row(t(locale, 'checkOut'),   fmtDate(booking.check_out_date, locale))}
         ${row(t(locale, 'bookingRef'), `#${booking.id}`)}
-        ${(booking.deposit_amount ?? property?.deposit_amount) ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#166534;font-weight:700;">${fmtDepositAmount(booking.deposit_amount ?? property.deposit_amount, property.currency)}</span>`) : ''}
-        ${booking.balance_amount > 0 ? row('Balance remaining', `<span style="color:#374151;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
+        ${(booking.deposit_amount ?? property?.deposit_amount) ? row(t(locale, 'depositConfirmDetails'), `<span style="color:#405440;font-weight:700;">${fmtDepositAmount(booking.deposit_amount ?? property.deposit_amount, property.currency)}</span>`) : ''}
+        ${booking.balance_amount > 0 ? row('Balance remaining', `<span style="color:#405440;">${fmtDepositAmount(booking.balance_amount, property.currency)}</span>`) : ''}
       </tr>
     </table>`;
 
@@ -1029,15 +1029,15 @@ export async function sendBalanceDueEmail(booking, property) {
 
   const row = (label, value) => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">${label}</td>
-      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;vertical-align:top;">${value}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;vertical-align:top;">${value}</td>
     </tr>`;
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
       Balance due reminder
     </h1>
-    <p style="margin:0 0 24px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#405440;">
       ${t(locale, 'dear')} ${booking.guest_first_name},<br>
       This is a friendly reminder that the balance payment for your stay at <strong>${property?.name}</strong> is now due.
     </p>
@@ -1052,7 +1052,7 @@ export async function sendBalanceDueEmail(booking, property) {
       </tr>
     </table>
 
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#6b7280;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       Please arrange payment at your earliest convenience. Contact us if you have any questions.
     </p>`;
 
@@ -1071,17 +1071,17 @@ export async function sendBalanceDueEmail(booking, property) {
 export async function sendContactEmail({ name, email, message }) {
   if (!resend) return;
   const html = shell(`
-    <h2 style="margin:0 0 16px;font-size:1.1rem;color:#1a4710;">New contact message</h2>
+    <h2 style="margin:0 0 16px;font-size:1.1rem;color:#405440;">New contact message</h2>
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
-      <tr><td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:30%;">Name</td>
-          <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${name}</td></tr>
-      <tr><td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Email</td>
-          <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${email}</td></tr>
+           style="background:#f0ede8;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+      <tr><td style="padding:6px 0;font-size:0.82rem;color:#405440;width:30%;">Name</td>
+          <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${name}</td></tr>
+      <tr><td style="padding:6px 0;font-size:0.82rem;color:#405440;">Email</td>
+          <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${email}</td></tr>
     </table>
-    <p style="font-size:0.875rem;color:#374151;line-height:1.7;white-space:pre-wrap;">${message}</p>
+    <p style="font-size:0.875rem;color:#405440;line-height:1.7;white-space:pre-wrap;">${message}</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0 12px;">
-    <p style="font-size:0.75rem;color:#9ca3af;">Reply directly to this email to respond to ${name}.</p>`);
+    <p style="font-size:0.75rem;color:#405440;">Reply directly to this email to respond to ${name}.</p>`);
   await resend.emails.send({
     from:     FROM,
     to:       'hello@nestbook.io',
@@ -1104,31 +1104,31 @@ export async function sendVerificationEmail(user, token) {
   const link = `https://nestbook.io/app/verify-email?token=${token}`;
 
   const html = shell(`
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(lang, 'verifyHeading')}
     </h1>
-    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">
+    <p style="margin:0 0 6px;font-size:1rem;color:#405440;">
       Hi ${user.name},
     </p>
-    <p style="margin:0 0 28px;font-size:0.95rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 28px;font-size:0.95rem;color:#405440;line-height:1.6;">
       ${t(lang, 'verifyBody')}
     </p>
 
     <div style="text-align:center;margin-bottom:28px;">
       <a href="${link}"
-         style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
+         style="display:inline-block;background:#405440;color:#fff;text-decoration:none;
                 padding:13px 32px;border-radius:8px;font-size:0.9rem;font-weight:600;">
         ${t(lang, 'verifyButton')}
       </a>
     </div>
 
-    <p style="margin:0 0 16px;font-size:0.82rem;color:#6b7280;line-height:1.6;">
+    <p style="margin:0 0 16px;font-size:0.82rem;color:#405440;line-height:1.6;">
       ${t(lang, 'verifyExpiry')}<br>
-      <a href="${link}" style="color:#1a4710;word-break:break-all;">${link}</a>
+      <a href="${link}" style="color:#405440;word-break:break-all;">${link}</a>
     </p>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 16px;">
-    <p style="margin:0;font-size:0.75rem;color:#9ca3af;text-align:center;">
+    <p style="margin:0;font-size:0.75rem;color:#405440;text-align:center;">
       If you didn't create a NestBook account, you can safely ignore this email.
     </p>`);
 
@@ -1221,15 +1221,15 @@ export async function sendPasswordResetEmail(email, token) {
     subject: 'Reset your NestBook password',
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-        <div style="background:#1a4710;padding:24px;border-radius:8px 8px 0 0;">
+        <div style="background:#405440;padding:24px;border-radius:8px 8px 0 0;">
           <img src="https://nestbook.io/icon-192.png" style="width:36px;height:36px;border-radius:8px;vertical-align:middle;" alt="">
           <span style="color:#fff;font-size:20px;font-weight:700;margin-left:12px;vertical-align:middle;">NestBook</span>
         </div>
         <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;">
-          <h2 style="color:#1a4710;margin:0 0 12px;">Reset your password</h2>
-          <p style="color:#374151;margin:0 0 20px;">We received a request to reset your NestBook password. Click the button below to choose a new one.</p>
-          <a href="${resetUrl}" style="display:inline-block;background:#1a4710;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;margin-bottom:20px;">Reset my password</a>
-          <p style="color:#64748b;font-size:0.85rem;margin:0;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+          <h2 style="color:#405440;margin:0 0 12px;">Reset your password</h2>
+          <p style="color:#405440;margin:0 0 20px;">We received a request to reset your NestBook password. Click the button below to choose a new one.</p>
+          <a href="${resetUrl}" style="display:inline-block;background:#405440;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;margin-bottom:20px;">Reset my password</a>
+          <p style="color:#405440;font-size:0.85rem;margin:0;">This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
         </div>
       </div>
     `,
@@ -1249,18 +1249,18 @@ export async function sendPaymentFailedEmail(email, invoiceUrl) {
     to:   email,
     subject: 'Action required — your NestBook payment failed',
     html: `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a2e14">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#405440">
         <div style="margin-bottom:24px">
-          <span style="background:#1a4710;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
+          <span style="background:#405440;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
         </div>
         <h2 style="font-size:1.4rem;font-weight:800;margin:0 0 12px">We couldn't process your payment</h2>
-        <p style="color:#374151;line-height:1.6;margin:0 0 16px">Your recent NestBook subscription payment was unsuccessful.</p>
-        <p style="color:#374151;line-height:1.6;margin:0 0 24px">To keep your Pro access, please update your payment details:</p>
-        ${invoiceUrl ? `<a href="${invoiceUrl}" style="display:inline-block;background:#1a4710;color:#fff;padding:12px 24px;border-radius:7px;text-decoration:none;font-weight:700;margin-bottom:24px">Update payment details →</a>` : ''}
-        <p style="color:#374151;line-height:1.6;margin:0 0 16px">If your payment isn't resolved within 7 days, your account will be moved to the Free plan. Your data will be kept safe.</p>
-        <p style="color:#6b7280;font-size:0.875rem">Questions? Reply to this email or contact <a href="mailto:hello@nestbook.io" style="color:#1a4710">hello@nestbook.io</a></p>
+        <p style="color:#405440;line-height:1.6;margin:0 0 16px">Your recent NestBook subscription payment was unsuccessful.</p>
+        <p style="color:#405440;line-height:1.6;margin:0 0 24px">To keep your Pro access, please update your payment details:</p>
+        ${invoiceUrl ? `<a href="${invoiceUrl}" style="display:inline-block;background:#405440;color:#fff;padding:12px 24px;border-radius:7px;text-decoration:none;font-weight:700;margin-bottom:24px">Update payment details →</a>` : ''}
+        <p style="color:#405440;line-height:1.6;margin:0 0 16px">If your payment isn't resolved within 7 days, your account will be moved to the Free plan. Your data will be kept safe.</p>
+        <p style="color:#405440;font-size:0.875rem">Questions? Reply to this email or contact <a href="mailto:hello@nestbook.io" style="color:#405440">hello@nestbook.io</a></p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-        <p style="color:#9ca3af;font-size:0.78rem;margin:0">NestBook — Property Management Software</p>
+        <p style="color:#405440;font-size:0.78rem;margin:0">NestBook — Property Management Software</p>
       </div>
     `,
   });
@@ -1277,18 +1277,18 @@ export async function sendDowngradeEmail(email) {
     to:   email,
     subject: 'Your NestBook account has been moved to the Free plan',
     html: `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#1a2e14">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#405440">
         <div style="margin-bottom:24px">
-          <span style="background:#1a4710;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
+          <span style="background:#405440;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
         </div>
         <h2 style="font-size:1.4rem;font-weight:800;margin:0 0 12px">Your account has been moved to the Free plan</h2>
-        <p style="color:#374151;line-height:1.6;margin:0 0 16px">Because we were unable to process your payment, your NestBook account has been moved to the Free plan.</p>
-        <p style="color:#374151;line-height:1.6;margin:0 0 16px">Your data is safe — all your bookings, guests and rooms are still there.</p>
-        <p style="color:#374151;line-height:1.6;margin:0 0 24px">To restore Pro access, simply update your payment details and resubscribe:</p>
-        <a href="https://nestbook.io/app/pricing" style="display:inline-block;background:#1a4710;color:#fff;padding:12px 24px;border-radius:7px;text-decoration:none;font-weight:700;margin-bottom:24px">Resubscribe to Pro →</a>
-        <p style="color:#6b7280;font-size:0.875rem">Questions? We're here at <a href="mailto:hello@nestbook.io" style="color:#1a4710">hello@nestbook.io</a></p>
+        <p style="color:#405440;line-height:1.6;margin:0 0 16px">Because we were unable to process your payment, your NestBook account has been moved to the Free plan.</p>
+        <p style="color:#405440;line-height:1.6;margin:0 0 16px">Your data is safe — all your bookings, guests and rooms are still there.</p>
+        <p style="color:#405440;line-height:1.6;margin:0 0 24px">To restore Pro access, simply update your payment details and resubscribe:</p>
+        <a href="https://nestbook.io/app/pricing" style="display:inline-block;background:#405440;color:#fff;padding:12px 24px;border-radius:7px;text-decoration:none;font-weight:700;margin-bottom:24px">Resubscribe to Pro →</a>
+        <p style="color:#405440;font-size:0.875rem">Questions? We're here at <a href="mailto:hello@nestbook.io" style="color:#405440">hello@nestbook.io</a></p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-        <p style="color:#9ca3af;font-size:0.78rem;margin:0">NestBook — Property Management Software</p>
+        <p style="color:#405440;font-size:0.78rem;margin:0">NestBook — Property Management Software</p>
       </div>
     `,
   });
@@ -1309,7 +1309,7 @@ export async function sendBugReportAlert({ userName, userEmail, plan, category, 
         <p><strong>Plan:</strong> ${plan}</p>
         <p><strong>Category:</strong> ${category}</p>
         <p><strong>Description:</strong></p>
-        <blockquote style="border-left:3px solid #e2e8f0;margin:8px 0;padding:8px 16px;color:#475569">
+        <blockquote style="border-left:3px solid #e2e8f0;margin:8px 0;padding:8px 16px;color:#405440">
           ${description.replace(/\n/g, '<br>')}
         </blockquote>
         <p><a href="https://nestbook.io/app/super-admin/error-reports">View in Super Admin →</a></p>
@@ -1334,47 +1334,47 @@ export async function sendApprovalRequestEmail(booking, property, approveUrl, de
   const subject    = `New booking request — ${guestName} · ${property?.name ?? 'NestBook'}`;
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">New Booking Request</h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">New Booking Request</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       A guest has submitted a booking request for <strong>${property?.name ?? ''}</strong>.
       Please review the details below and approve or decline.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
+           style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #405440;">
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">Guest</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${guestName}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">Guest</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${guestName}</td>
       </tr>
       ${booking.room_name ? `<tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">${property?.rental_type === 'units' ? 'Unit' : 'Room'}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.room_name}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">${property?.rental_type === 'units' ? 'Unit' : 'Room'}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.room_name}</td>
       </tr>` : ''}
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Email</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.guest_email ?? '—'}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Email</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.guest_email ?? '—'}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Phone</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.guest_phone ?? '—'}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Phone</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.guest_phone ?? '—'}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-in</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Check-in</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_in_date}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-out</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Check-out</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_out_date}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Guests</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.num_guests ?? 1}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Guests</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.num_guests ?? 1}</td>
       </tr>
-      ${booking.notes ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#6b7280;vertical-align:top;">Notes</td><td style="padding:10px 0;font-size:0.875rem;color:#111827;">${booking.notes}</td></tr>` : ''}
+      ${booking.notes ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#405440;vertical-align:top;">Notes</td><td style="padding:10px 0;font-size:0.875rem;color:#405440;">${booking.notes}</td></tr>` : ''}
     </table>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       <tr>
         <td style="padding-right:8px;">
-          <a href="${approveUrl}" style="display:block;text-align:center;padding:14px 0;background:#1a4710;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
+          <a href="${approveUrl}" style="display:block;text-align:center;padding:14px 0;background:#405440;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
             ✓ Approve Booking
           </a>
         </td>
@@ -1385,11 +1385,11 @@ export async function sendApprovalRequestEmail(booking, property, approveUrl, de
         </td>
       </tr>
     </table>
-    <p style="margin:0;font-size:0.82rem;color:#6b7280;line-height:1.6;">
-      You can also manage this booking from your <a href="https://nestbook.io/app" style="color:#1a4710;">NestBook dashboard</a>.
+    <p style="margin:0;font-size:0.82rem;color:#405440;line-height:1.6;">
+      You can also manage this booking from your <a href="https://nestbook.io/app" style="color:#405440;">NestBook dashboard</a>.
     </p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    <p style="margin:0;font-size:0.72rem;color:#405440;text-align:center;">Powered by NestBook</p>`;
 
   try {
     await resend.emails.send({ from: FROM, to: ownerEmail, subject, html: shell(body) });
@@ -1408,38 +1408,38 @@ export async function sendBookingApprovedEmail(booking, property) {
   const nights  = Math.round((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000);
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">Your booking is confirmed!</h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">Your booking is confirmed!</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       Great news, ${booking.guest_first_name}! Your booking at <strong>${property?.name ?? ''}</strong> has been approved.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
+           style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #405440;">
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;vertical-align:top;">Property</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${property?.name ?? '—'}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">Property</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${property?.name ?? '—'}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-in</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Check-in</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_in_date}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Check-out</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Check-out</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_out_date}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Duration</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${nights} night${nights !== 1 ? 's' : ''}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Duration</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${nights} night${nights !== 1 ? 's' : ''}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;vertical-align:top;">Guests</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#111827;font-weight:600;">${booking.num_guests ?? 1}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Guests</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.num_guests ?? 1}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;font-size:0.82rem;color:#6b7280;vertical-align:top;">Booking ref</td>
-        <td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">#${booking.id}</td>
+        <td style="padding:10px 0;font-size:0.82rem;color:#405440;vertical-align:top;">Booking ref</td>
+        <td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">#${booking.id}</td>
       </tr>
     </table>
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       Questions? Reply to this email and we'll get back to you.
     </p>`;
 
@@ -1459,12 +1459,12 @@ export async function sendBookingDeclinedEmail(booking, property) {
   const subject = `Booking request update — ${property?.name ?? 'NestBook'}`;
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#111827;">Booking request update</h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">Booking request update</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       Dear ${booking.guest_first_name}, unfortunately your booking request at <strong>${property?.name ?? ''}</strong>
       for ${booking.check_in_date} – ${booking.check_out_date} could not be accommodated at this time.
     </p>
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       We're sorry for any inconvenience. If you'd like to try alternative dates, please visit our booking page or contact us directly.
     </p>`;
 
@@ -1500,18 +1500,18 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
 
   const accessBlock = accessInfo.access_code ? `
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #d9f0cc;">
+           style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #405440;">
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;width:40%;">${methodLabel}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:1.1rem;color:#1a4710;font-weight:800;letter-spacing:2px;">${accessInfo.access_code}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;">${methodLabel}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:1.1rem;color:#405440;font-weight:800;letter-spacing:2px;">${accessInfo.access_code}</td>
       </tr>
-      ${property.check_in_time ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#6b7280;">Check-in from</td><td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">${property.check_in_time}</td></tr>` : ''}
+      ${property.check_in_time ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#405440;">Check-in from</td><td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">${property.check_in_time}</td></tr>` : ''}
     </table>` : '';
 
   const instructionsBlock = accessInfo.arrival_instructions ? `
     <div style="background:#fffbf0;border:1px solid #fcd34d;border-radius:8px;padding:18px 20px;margin-bottom:24px;">
       <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b45309;margin-bottom:8px;">Arrival Instructions</div>
-      <div style="font-size:0.9rem;color:#374151;line-height:1.7;white-space:pre-line;">${accessInfo.arrival_instructions}</div>
+      <div style="font-size:0.9rem;color:#405440;line-height:1.7;white-space:pre-line;">${accessInfo.arrival_instructions}</div>
     </div>` : '';
 
   const appBase = (process.env.APP_URL ?? 'https://nestbook.io').replace(/\/$/, '');
@@ -1520,16 +1520,16 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
     : null;
   const photoBlock = photoPath && fs.existsSync(photoPath) ? `
     <div style="margin-bottom:24px;">
-      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#374151;margin-bottom:10px;">📍 Key location photo</div>
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#405440;margin-bottom:10px;">📍 Key location photo</div>
       <img src="${appBase}/uploads/access/${accessInfo.access_photo}"
            alt="Key location"
            style="width:100%;max-width:500px;border-radius:8px;border:1px solid #e2e8f0;display:block;" />
-      <p style="font-size:0.75rem;color:#9ca3af;margin:6px 0 0;">Photo of the key location provided by ${property.name}</p>
+      <p style="font-size:0.75rem;color:#405440;margin:6px 0 0;">Photo of the key location provided by ${property.name}</p>
     </div>` : '';
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">Your access details are ready</h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">Your access details are ready</h1>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       Hi ${guestName}, your stay at <strong>${property.name}</strong> starts on <strong>${booking.check_in_date}</strong>.
       Here is everything you need to access the property.
     </p>
@@ -1539,19 +1539,19 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:40%;">Check-in date</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:40%;">Check-in date</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_in_date}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-out date</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-out date</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_out_date}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Guests</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#111827;font-weight:600;">${booking.num_guests ?? 1}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Guests</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${booking.num_guests ?? 1}</td>
       </tr>
     </table>
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       If you have any questions, please reply to this email to contact the owner directly.
     </p>`;
 
@@ -1581,72 +1581,72 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
 
   const chargeRows = outstanding.map((c) => `
     <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#6b7280;">
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;">
         ${c.category_name ?? '—'}
       </td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#374151;">
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;">
         ${c.description ?? '—'}
       </td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:0.875rem;
-                 color:#111827;font-weight:600;text-align:right;">
+                 color:#405440;font-weight:600;text-align:right;">
         ${fmtDepositAmount(c.amount, currency)}
       </td>
     </tr>`).join('');
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
       Thank you for staying at ${property.name}
     </h1>
-    <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
       Dear ${guestName}, we hope you had a wonderful stay.
       Here is a summary of your booking and any additional charges incurred during your visit.
     </p>
 
     <!-- Booking summary -->
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+           style="background:#f0ede8;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:140px;">Property</td>
-        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#111827;">${property.name}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:140px;">Property</td>
+        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#405440;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-in</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">${fmtDate(booking.check_in_date, 'en')}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-in</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${fmtDate(booking.check_in_date, 'en')}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-out</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">${fmtDate(booking.check_out_date, 'en')}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-out</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${fmtDate(booking.check_out_date, 'en')}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Booking total</td>
-        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#111827;">
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Booking total</td>
+        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#405440;">
           ${fmtDepositAmount(bookingTotal, currency)}
         </td>
       </tr>
     </table>
 
     <!-- Additional charges -->
-    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#1a2e14;">Additional charges</h3>
+    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#405440;">Additional charges</h3>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px;">
       <thead>
-        <tr style="background:#f0faf0;">
+        <tr style="background:#f0ede8;">
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Category</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">Category</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Description</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">Description</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#1a4710;text-align:right;">Amount</th>
+                     letter-spacing:0.05em;color:#405440;text-align:right;">Amount</th>
         </tr>
       </thead>
       <tbody>${chargeRows}</tbody>
       <tfoot>
-        <tr style="background:#f0faf0;">
-          <td colspan="2" style="padding:10px 12px;font-weight:700;font-size:0.875rem;color:#1a2e14;">
+        <tr style="background:#f0ede8;">
+          <td colspan="2" style="padding:10px 12px;font-weight:700;font-size:0.875rem;color:#405440;">
             Charges total
           </td>
           <td style="padding:10px 12px;font-weight:700;font-size:0.875rem;
-                     color:#1a4710;text-align:right;">
+                     color:#405440;text-align:right;">
             ${fmtDepositAmount(chargesTotal, currency)}
           </td>
         </tr>
@@ -1655,7 +1655,7 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
 
     <!-- Grand total -->
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#1a4710;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+           style="background:#405440;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
         <td style="color:white;font-weight:700;font-size:1rem;">Grand total</td>
         <td style="color:white;font-weight:800;font-size:1.25rem;text-align:right;">
@@ -1675,7 +1675,7 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
       </p>
     </div>
 
-    <p style="margin:0 0 24px;font-size:0.82rem;color:#9ca3af;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.82rem;color:#405440;line-height:1.6;">
       Once payment is confirmed you will receive a full receipt by email.
       Thank you for choosing ${property.name} — we hope to welcome you back soon.
     </p>`;
@@ -1722,15 +1722,15 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     ? outstanding.map((c) => `
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.82rem;color:#6b7280;">${c.category_name ?? '—'}</td>
+                     font-size:0.82rem;color:#405440;">${c.category_name ?? '—'}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.82rem;color:#374151;">${c.description ?? '—'}</td>
+                     font-size:0.82rem;color:#405440;">${c.description ?? '—'}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.875rem;color:#111827;font-weight:600;text-align:right;">
+                     font-size:0.875rem;color:#405440;font-weight:600;text-align:right;">
             ${fmtDepositAmount(c.amount, currency)}
           </td>
         </tr>`).join('')
-    : `<tr><td colspan="3" style="padding:12px;font-size:0.82rem;color:#9ca3af;
+    : `<tr><td colspan="3" style="padding:12px;font-size:0.82rem;color:#405440;
                text-align:center;">No additional charges</td></tr>`;
 
   const body = `
@@ -1738,15 +1738,15 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       <tr>
         <td>
-          <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+          <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
             Payment receipt
           </h1>
-          <p style="margin:0;font-size:0.78rem;color:#9ca3af;">Ref: ${receiptRef}</p>
+          <p style="margin:0;font-size:0.78rem;color:#405440;">Ref: ${receiptRef}</p>
         </td>
         <td style="text-align:right;vertical-align:top;">
           <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                      letter-spacing:0.05em;color:#9ca3af;margin-bottom:3px;">Date paid</div>
-          <div style="font-size:0.875rem;font-weight:600;color:#111827;">
+                      letter-spacing:0.05em;color:#405440;margin-bottom:3px;">Date paid</div>
+          <div style="font-size:0.875rem;font-weight:600;color:#405440;">
             ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
           </div>
         </td>
@@ -1755,13 +1755,13 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
 
     <!-- Paid badge -->
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0faf0;border:1.5px solid #d1fae5;border-radius:8px;
+           style="background:#f0ede8;border:1.5px solid #405440;border-radius:8px;
                   padding:12px 16px;margin-bottom:24px;">
       <tr>
-        <td style="color:#1a4710;font-size:1.1rem;width:28px;">✓</td>
+        <td style="color:#405440;font-size:1.1rem;width:28px;">✓</td>
         <td>
-          <div style="font-weight:700;color:#166534;font-size:0.875rem;">Payment confirmed</div>
-          <div style="font-size:0.78rem;color:#166534;margin-top:2px;">
+          <div style="font-weight:700;color:#405440;font-size:0.875rem;">Payment confirmed</div>
+          <div style="font-size:0.78rem;color:#405440;margin-top:2px;">
             Thank you — your payment has been received
           </div>
         </td>
@@ -1772,65 +1772,65 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;width:140px;">Property</td>
-        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#111827;">${property.name}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:140px;">Property</td>
+        <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#405440;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Guest</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Guest</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">
           ${booking.guest_first_name} ${booking.guest_last_name}
         </td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-in</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-in</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">
           ${fmtDate(booking.check_in_date, 'en')}
         </td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Check-out</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-out</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">
           ${fmtDate(booking.check_out_date, 'en')}
         </td>
       </tr>
       ${pmLabel ? `<tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#6b7280;">Payment method</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#374151;">${pmLabel}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Payment method</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${pmLabel}</td>
       </tr>` : ''}
     </table>
 
     <!-- Itemised breakdown -->
-    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#1a2e14;">
+    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#405440;">
       Itemised breakdown
     </h3>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;">
       <thead>
-        <tr style="background:#f0faf0;">
+        <tr style="background:#f0ede8;">
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Category</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">Category</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#1a4710;text-align:left;">Description</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">Description</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#1a4710;text-align:right;">Amount</th>
+                     letter-spacing:0.05em;color:#405440;text-align:right;">Amount</th>
         </tr>
       </thead>
       <tbody>
         <!-- Accommodation row -->
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.82rem;color:#6b7280;">Accommodation</td>
+                     font-size:0.82rem;color:#405440;">Accommodation</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.82rem;color:#374151;">${nights} night${nights !== 1 ? 's' : ''}</td>
+                     font-size:0.82rem;color:#405440;">${nights} night${nights !== 1 ? 's' : ''}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.875rem;color:#111827;font-weight:600;text-align:right;">
+                     font-size:0.875rem;color:#405440;font-weight:600;text-align:right;">
             ${fmtDepositAmount(bookingTotal, currency)}
           </td>
         </tr>
         ${chargeRows}
       </tbody>
       <tfoot>
-        <tr style="background:#1a4710;">
+        <tr style="background:#405440;">
           <td colspan="2" style="padding:14px 12px;font-weight:700;
                                   font-size:0.95rem;color:white;">Total paid</td>
           <td style="padding:14px 12px;font-weight:800;font-size:1.1rem;
@@ -1841,7 +1841,7 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
       </tfoot>
     </table>
 
-    <p style="margin:0 0 24px;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.6;">
+    <p style="margin:0 0 24px;font-size:0.78rem;color:#405440;text-align:center;line-height:1.6;">
       This receipt was issued by ${property.name} via NestBook.<br>
       Ref: ${receiptRef} · Issued: ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
     </p>`;
@@ -1875,30 +1875,30 @@ function welcomeEmailHTML(user, property) {
   <title>${t(lang, 'onboardSubject')}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f8fbf6; color: #1a2e14; line-height: 1.6; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #405440; line-height: 1.6; }
     .wrapper { max-width: 620px; margin: 0 auto; background: white; }
-    .header { background: #1a4710; padding: 28px 32px; text-align: left; }
+    .header { background: #405440; padding: 28px 32px; text-align: left; }
     .header-logo { font-size: 22px; font-weight: 700; color: white; letter-spacing: -0.02em; }
-    .header-logo span { color: #d9f0cc; font-weight: 400; }
-    .hero { background: #f0fdf4; border-bottom: 3px solid #d9f0cc; padding: 36px 32px 28px; }
-    .hero-tag { display: inline-block; background: #d9f0cc; color: #1a4710; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; }
-    .hero h1 { font-size: 26px; font-weight: 700; color: #1a2e14; margin-bottom: 10px; line-height: 1.25; }
-    .hero p { font-size: 15px; color: #475569; max-width: 480px; line-height: 1.7; }
+    .header-logo span { color: #f0ede8; font-weight: 400; }
+    .hero { background: #f0ede8; border-bottom: 3px solid #405440; padding: 36px 32px 28px; }
+    .hero-tag { display: inline-block; background: #f0ede8; color: #405440; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 10px; border-radius: 20px; margin-bottom: 14px; }
+    .hero h1 { font-size: 26px; font-weight: 700; color: #405440; margin-bottom: 10px; line-height: 1.25; }
+    .hero p { font-size: 15px; color: #405440; max-width: 480px; line-height: 1.7; }
     .body { padding: 32px 32px 0; }
-    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #1a4710; margin: 28px 0 16px; }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #405440; margin: 28px 0 16px; }
     .step { margin-bottom: 18px; }
-    .step-title { font-size: 15px; font-weight: 700; color: #1a2e14; margin-bottom: 4px; }
-    .step-desc { font-size: 14px; color: #475569; line-height: 1.65; }
+    .step-title { font-size: 15px; font-weight: 700; color: #405440; margin-bottom: 4px; }
+    .step-desc { font-size: 14px; color: #405440; line-height: 1.65; }
     .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
     .cta-wrap { text-align: center; padding: 28px 32px; }
-    .cta-btn { display: inline-block; background: #1a4710; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
-    .cta-sub { font-size: 12px; color: #94a3b8; margin-top: 10px; }
-    .footer { background: #f8fbf6; border-top: 1px solid #e2e8f0; padding: 24px 32px; text-align: center; }
-    .footer p { font-size: 12px; color: #94a3b8; line-height: 1.7; }
-    .footer a { color: #1a4710; text-decoration: none; }
+    .cta-btn { display: inline-block; background: #405440; color: white !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .cta-sub { font-size: 12px; color: #405440; margin-top: 10px; }
+    .footer { background: #ffffff; border-top: 1px solid #e2e8f0; padding: 24px 32px; text-align: center; }
+    .footer p { font-size: 12px; color: #405440; line-height: 1.7; }
+    .footer a { color: #405440; text-decoration: none; }
     @media print {
       body { background: white; }
-      .header { background: #1a4710 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .header { background: #405440 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .print-wrap, .cta-wrap, .footer { display: none; }
     }
     @media (max-width: 480px) {
@@ -1955,18 +1955,18 @@ function welcomeEmailHTML(user, property) {
       <div class="step-desc">${t(lang, 'onboardShineThemeBody')}</div>
     </div>
 
-    <p style="font-size:14px;color:#475569;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardShineOutro')}</p>
+    <p style="font-size:14px;color:#405440;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardShineOutro')}</p>
 
     <div class="step">
       <div class="step-title">${t(lang, 'onboardGuestsTitle')}</div>
       <div class="step-desc">${t(lang, 'onboardGuestsBody')}</div>
     </div>
 
-    <p style="font-size:15px;color:#475569;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardGuideIntro')}</p>
+    <p style="font-size:15px;color:#405440;line-height:1.7;margin-bottom:20px;">${t(lang, 'onboardGuideIntro')}</p>
 
     <div style="text-align:center;margin-bottom:28px;">
       <a href="https://nestbook.io/nestbook-getting-started-guide.pdf"
-         style="display:inline-block;background:#f0fdf4;color:#1a4710;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:700;border:1.5px solid #d9f0cc;">
+         style="display:inline-block;background:#f0ede8;color:#405440;text-decoration:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:700;border:1.5px solid #405440;">
         ${t(lang, 'onboardGuideLink')}
       </a>
     </div>
@@ -1980,7 +1980,7 @@ function welcomeEmailHTML(user, property) {
     <p class="cta-sub">nestbook.io/app</p>
   </div>
 
-  <p style="text-align:center;font-size:12px;color:#94a3b8;margin:0 0 20px;line-height:1.6;">
+  <p style="text-align:center;font-size:12px;color:#405440;margin:0 0 20px;line-height:1.6;">
     ${t(lang, 'onboardPrintBtn')}
   </p>
 
@@ -2031,10 +2031,10 @@ export async function sendMissedArrivalReminder(booking) {
 
   const subject = `Did ${booking.guest_first_name} arrive? — ${booking.property_name}`;
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.3rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.3rem;font-weight:700;color:#405440;">
       Action may be needed
     </h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       <strong>${booking.guest_first_name} ${booking.guest_last_name}</strong> was due to check in
       on <strong>${fmtDate(booking.check_in_date, 'en')}</strong> at ${booking.property_name}.
     </p>
@@ -2048,13 +2048,13 @@ export async function sendMissedArrivalReminder(booking) {
     </div>
 
     <a href="https://nestbook.io/app/bookings"
-       style="display:inline-block;background:#1a4710;color:white;padding:12px 24px;
+       style="display:inline-block;background:#405440;color:white;padding:12px 24px;
               border-radius:8px;text-decoration:none;font-weight:700;font-size:0.875rem;">
       View booking →
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">NestBook · Powered by nestbook.io</p>`;
+    <p style="margin:0;font-size:0.72rem;color:#405440;text-align:center;">NestBook · Powered by nestbook.io</p>`;
 
   try {
     await resend.emails.send({ from: FROM, to: booking.owner_email, subject, html: shell(body) });
@@ -2072,10 +2072,10 @@ export async function sendMissedDepartureReminder(booking) {
 
   const subject = `Have your guests departed? — ${booking.property_name}`;
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.3rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 4px;font-size:1.3rem;font-weight:700;color:#405440;">
       Departure day
     </h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       <strong>${booking.guest_first_name} ${booking.guest_last_name}</strong> is due to check out
       today (<strong>${fmtDate(booking.check_out_date, 'en')}</strong>) from ${booking.property_name}.
     </p>
@@ -2089,13 +2089,13 @@ export async function sendMissedDepartureReminder(booking) {
     </div>
 
     <a href="https://nestbook.io/app/bookings"
-       style="display:inline-block;background:#1a4710;color:white;padding:12px 24px;
+       style="display:inline-block;background:#405440;color:white;padding:12px 24px;
               border-radius:8px;text-decoration:none;font-weight:700;font-size:0.875rem;">
       Confirm departure →
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">NestBook · Powered by nestbook.io</p>`;
+    <p style="margin:0;font-size:0.72rem;color:#405440;text-align:center;">NestBook · Powered by nestbook.io</p>`;
 
   try {
     await resend.emails.send({ from: FROM, to: booking.owner_email, subject, html: shell(body) });
@@ -2116,35 +2116,35 @@ export async function sendStayExtendedEmail(booking, property, newCheckOut, newT
   const currency = property.currency || 'GBP';
 
   const body = `
-    <h2 style="color:#1a4710;font-size:20px;margin:0 0 8px;">Great news — your stay has been extended!</h2>
-    <p style="color:#475569;font-size:14px;margin:0 0 24px;line-height:1.6;">
+    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">Great news — your stay has been extended!</h2>
+    <p style="color:#405440;font-size:14px;margin:0 0 24px;line-height:1.6;">
       Your booking at <strong>${property.name}</strong> has been updated with new dates.
     </p>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
       <tr>
-        <td style="padding:8px 0;color:#64748b;font-size:14px;width:160px;">Property</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">Property</td>
         <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#64748b;font-size:14px;">Check-in</td>
-        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#94a3b8;">(unchanged)</span></td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">Check-in</td>
+        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#405440;">(unchanged)</span></td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#64748b;font-size:14px;">Previous check-out</td>
-        <td style="padding:8px 0;font-size:14px;color:#94a3b8;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">Previous check-out</td>
+        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
       </tr>
-      <tr style="background:#f0fdf4;">
-        <td style="padding:10px 12px;color:#1a4710;font-size:14px;font-weight:700;">New check-out</td>
-        <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#1a4710;">
+      <tr style="background:#f0ede8;">
+        <td style="padding:10px 12px;color:#405440;font-size:14px;font-weight:700;">New check-out</td>
+        <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#405440;">
           ${fmtDate(newCheckOut, 'en')}
-          <span style="background:#d9f0cc;color:#1a4710;font-size:11px;padding:2px 7px;border-radius:4px;margin-left:6px;">
+          <span style="background:#f0ede8;color:#405440;font-size:11px;padding:2px 7px;border-radius:4px;margin-left:6px;">
             +${extraNights} night${extraNights !== 1 ? 's' : ''}
           </span>
         </td>
       </tr>
       <tr style="border-top:2px solid #e2e8f0;">
-        <td style="padding:12px 0;color:#64748b;font-size:14px;font-weight:700;">New total</td>
-        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#1a4710;">${fmtDepositAmount(newTotal, currency)}</td>
+        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">New total</td>
+        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#405440;">${fmtDepositAmount(newTotal, currency)}</td>
       </tr>
     </table>
     <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:0 8px 8px 0;">
@@ -2180,22 +2180,22 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
   const currency = property.currency || 'GBP';
 
   const body = `
-    <h2 style="color:#1a2e14;font-size:20px;margin:0 0 8px;">Your booking has been updated</h2>
-    <p style="color:#475569;font-size:14px;margin:0 0 24px;line-height:1.6;">
+    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">Your booking has been updated</h2>
+    <p style="color:#405440;font-size:14px;margin:0 0 24px;line-height:1.6;">
       Your stay at <strong>${property.name}</strong> has been shortened.
     </p>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
       <tr>
-        <td style="padding:8px 0;color:#64748b;font-size:14px;width:160px;">Property</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">Property</td>
         <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#64748b;font-size:14px;">Check-in</td>
-        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#94a3b8;">(unchanged)</span></td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">Check-in</td>
+        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#405440;">(unchanged)</span></td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#64748b;font-size:14px;">Previous check-out</td>
-        <td style="padding:8px 0;font-size:14px;color:#94a3b8;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">Previous check-out</td>
+        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
       </tr>
       <tr style="background:#fef2f2;">
         <td style="padding:10px 12px;color:#dc2626;font-size:14px;font-weight:700;">New check-out</td>
@@ -2207,11 +2207,11 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
         </td>
       </tr>
       <tr style="border-top:2px solid #e2e8f0;">
-        <td style="padding:12px 0;color:#64748b;font-size:14px;font-weight:700;">Updated total</td>
-        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#1a2e14;">${fmtDepositAmount(newTotal, currency)}</td>
+        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">Updated total</td>
+        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#405440;">${fmtDepositAmount(newTotal, currency)}</td>
       </tr>
     </table>
-    <p style="color:#475569;font-size:14px;line-height:1.6;">
+    <p style="color:#405440;font-size:14px;line-height:1.6;">
       If you have any questions about your updated booking, please reply to this email to contact
       the property directly.
     </p>`;
@@ -2244,9 +2244,9 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd, discount
   const featureItem = (title, desc) => `
     <tr>
       <td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">
-        <span style="color:#1a4710;font-weight:700;margin-right:8px;">✓</span>
-        <strong style="font-size:0.875rem;color:#1a2e14;">${title}</strong>
-        <div style="font-size:0.8rem;color:#64748b;margin-top:2px;padding-left:20px;">${desc}</div>
+        <span style="color:#405440;font-weight:700;margin-right:8px;">✓</span>
+        <strong style="font-size:0.875rem;color:#405440;">${title}</strong>
+        <div style="font-size:0.8rem;color:#405440;margin-top:2px;padding-left:20px;">${desc}</div>
       </td>
     </tr>`;
 
@@ -2296,9 +2296,9 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd, discount
     : (BILLING_NOTE[lang] ?? BILLING_NOTE.en);
 
   const billingSection = (!isPartialDiscount && !hasDuration) ? `
-    <div style="background:#f0fdf4;border-left:4px solid #1a4710;
+    <div style="background:#f0ede8;border-left:4px solid #405440;
                 padding:14px 18px;border-radius:0 8px 8px 0;margin:0 0 24px;">
-      <p style="color:#166534;font-size:0.875rem;margin:0;line-height:1.6;">
+      <p style="color:#405440;font-size:0.875rem;margin:0;line-height:1.6;">
         ${activeNote}
       </p>
     </div>` : `
@@ -2321,29 +2321,29 @@ export async function sendProWelcomeEmail(user, discountCode, trialEnd, discount
   const CTА_LABEL = { en: 'Go to my dashboard →', fr: 'Accéder à mon tableau de bord →', de: 'Zum Dashboard →', es: 'Ir a mi panel →', nl: 'Naar mijn dashboard →' };
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${t(lang, 'proWelcomeHeading')}
     </h1>
-    <p style="margin:0 0 6px;font-size:1rem;color:#374151;">Hi ${firstName},</p>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 6px;font-size:1rem;color:#405440;">Hi ${firstName},</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;line-height:1.6;">
       ${t(lang, 'proWelcomeBody')}
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0"
-           style="background:#f0fdf4;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+           style="background:#f0ede8;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       ${features.map(f => featureItem(f, '')).join('')}
     </table>
 
     ${billingSection}
 
     <a href="https://nestbook.io/app"
-       style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
+       style="display:inline-block;background:#405440;color:white;text-decoration:none;
               padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
       ${CTА_LABEL[lang] ?? CTА_LABEL.en}
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
-    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+    <p style="margin:0;font-size:0.78rem;color:#405440;text-align:center;line-height:1.5;">
       Questions? Email us at hello@nestbook.io — we're here to help.
     </p>`;
 
@@ -2370,10 +2370,10 @@ export async function sendPromoExpiryReminderEmail(user, daysLeft) {
   const isUrgent = daysLeft <= 7;
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       ${isUrgent ? 'Action needed — Pro access expiring soon' : 'Your NestBook Pro promotional period is ending'}
     </h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">Hi ${firstName},</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;line-height:1.6;">Hi ${firstName},</p>
 
     <div style="background:${isUrgent ? '#fef2f2' : '#fef3c7'};
                 border:1.5px solid ${isUrgent ? '#fca5a5' : '#f59e0b'};
@@ -2386,26 +2386,26 @@ export async function sendPromoExpiryReminderEmail(user, daysLeft) {
       </div>
     </div>
 
-    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:20px;">
+    <p style="color:#405440;font-size:0.875rem;line-height:1.6;margin-bottom:20px;">
       Just a reminder that your promotional Pro access ends on <strong>${expiryDate}</strong>.
       ${isUrgent
         ? ' Please add your payment details today to avoid any interruption to your service.'
         : ' Add your payment details before that date to continue uninterrupted.'}
     </p>
 
-    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+    <p style="color:#405440;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
       Your card will <strong>not be charged</strong> until ${expiryDate}.
       Cancel anytime before ${expiryDate} to stay on the free plan — no questions asked.
     </p>
 
     <a href="https://nestbook.io/app/settings"
-       style="display:inline-block;background:${isUrgent ? '#dc2626' : '#1a4710'};color:white;
+       style="display:inline-block;background:${isUrgent ? '#dc2626' : '#405440'};color:white;
               text-decoration:none;padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
       Add payment details →
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
-    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+    <p style="margin:0;font-size:0.78rem;color:#405440;text-align:center;line-height:1.5;">
       Questions? Email us at hello@nestbook.io — we're here to help.
     </p>`;
 
@@ -2430,40 +2430,40 @@ export async function sendPromoExpiredEmail(user) {
   const firstName = user.name?.split(' ')[0] || 'there';
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       Your promotional period has ended
     </h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">Hi ${firstName},</p>
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;line-height:1.6;">Hi ${firstName},</p>
 
-    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:16px;">
+    <p style="color:#405440;font-size:0.875rem;line-height:1.6;margin-bottom:16px;">
       Your NestBook Pro promotional access has now ended and your account has moved
       to the free plan.
     </p>
 
-    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+    <p style="color:#405440;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
       Your property page, bookings and all your data are safe —
       you just have access to the free plan features now.
     </p>
 
-    <div style="background:#f0fdf4;border:1.5px solid #d9f0cc;border-radius:8px;
+    <div style="background:#f0ede8;border:1.5px solid #405440;border-radius:8px;
                 padding:16px 20px;margin-bottom:24px;">
-      <div style="font-weight:700;color:#1a4710;font-size:0.9rem;margin-bottom:8px;">
+      <div style="font-weight:700;color:#405440;font-size:0.9rem;margin-bottom:8px;">
         Want to continue with Pro?
       </div>
-      <p style="color:#374151;font-size:0.875rem;margin:0;line-height:1.6;">
+      <p style="color:#405440;font-size:0.875rem;margin:0;line-height:1.6;">
         NestBook Pro includes unlimited rooms, 5 photos per room,
         booking widget, seasonal pricing and revenue reports. No commission ever.
       </p>
     </div>
 
     <a href="https://nestbook.io/app/settings"
-       style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
+       style="display:inline-block;background:#405440;color:white;text-decoration:none;
               padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
       Upgrade to Pro →
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0 16px;">
-    <p style="margin:0;font-size:0.78rem;color:#9ca3af;text-align:center;line-height:1.5;">
+    <p style="margin:0;font-size:0.78rem;color:#405440;text-align:center;line-height:1.5;">
       Thank you for trying NestBook Pro — any questions, just reply to this email.
     </p>`;
 
@@ -2489,51 +2489,51 @@ export async function sendPromoPaymentConfirmedEmail(user) {
   });
 
   const body = `
-    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#1a4710;">
+    <h1 style="margin:0 0 8px;font-size:1.4rem;font-weight:700;color:#405440;">
       Payment details saved! 🌿
     </h1>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;line-height:1.6;">
       Hi ${firstName} — you're all set! Here's what happens next:
     </p>
 
-    <div style="background:#f0fdf4;border:1.5px solid #d9f0cc;border-radius:8px;
+    <div style="background:#f0ede8;border:1.5px solid #405440;border-radius:8px;
                 padding:16px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px;">
       <span style="font-size:22px;line-height:1;">✓</span>
       <div>
-        <div style="font-weight:700;color:#166534;font-size:1rem;">Payment details saved successfully</div>
-        <div style="font-size:0.85rem;color:#166534;margin-top:2px;">Your Pro subscription will continue automatically</div>
+        <div style="font-weight:700;color:#405440;font-size:1rem;">Payment details saved successfully</div>
+        <div style="font-size:0.85rem;color:#405440;margin-top:2px;">Your Pro subscription will continue automatically</div>
       </div>
     </div>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       <tr>
-        <td style="padding:10px 0;color:#64748b;font-size:0.875rem;
+        <td style="padding:10px 0;color:#405440;font-size:0.875rem;
                    border-bottom:1px solid #e2e8f0;width:160px;">Until ${expiryDate}</td>
         <td style="padding:10px 0;font-size:0.875rem;border-bottom:1px solid #e2e8f0;
-                   color:#166534;font-weight:600;">✓ NestBook Pro — no charge</td>
+                   color:#405440;font-weight:600;">✓ NestBook Pro — no charge</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;color:#64748b;font-size:0.875rem;">From ${expiryDate}</td>
-        <td style="padding:10px 0;font-size:0.875rem;color:#1a2e14;font-weight:600;">
+        <td style="padding:10px 0;color:#405440;font-size:0.875rem;">From ${expiryDate}</td>
+        <td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">
           NestBook Pro continues uninterrupted</td>
       </tr>
     </table>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;
                 padding:14px 18px;margin-bottom:24px;">
-      <p style="color:#475569;font-size:0.85rem;margin:0;line-height:1.6;">
+      <p style="color:#405440;font-size:0.85rem;margin:0;line-height:1.6;">
         You can cancel anytime before ${expiryDate} from
         <strong>Settings → Billing</strong> in your NestBook dashboard,
         and your account will return to the free plan. No questions asked.
       </p>
     </div>
 
-    <p style="color:#374151;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
+    <p style="color:#405440;font-size:0.875rem;line-height:1.6;margin-bottom:24px;">
       Thank you for being part of NestBook — if you ever need anything just reply to this email.
     </p>
 
     <a href="https://nestbook.io/app"
-       style="display:inline-block;background:#1a4710;color:white;text-decoration:none;
+       style="display:inline-block;background:#405440;color:white;text-decoration:none;
               padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
       Go to my dashboard →
     </a>`;
@@ -2598,10 +2598,10 @@ export async function sendContentRemovedEmail(ownerEmail, ownerName, propertyNam
   const name = ownerName || ownerEmail;
 
   const html = shell(`
-    <p style="margin:0 0 16px;font-size:0.95rem;color:#374151;">${ct.greeting(name)}</p>
-    <p style="margin:0 0 16px;font-size:0.95rem;color:#374151;line-height:1.6;">${ct.body(propertyName)}</p>
-    ${reason ? `<p style="margin:0 0 16px;font-size:0.95rem;color:#374151;"><strong>${ct.reasonLabel}</strong> ${reason}</p>` : ''}
-    <p style="margin:0;font-size:0.95rem;color:#374151;line-height:1.6;">${ct.closing}</p>
+    <p style="margin:0 0 16px;font-size:0.95rem;color:#405440;">${ct.greeting(name)}</p>
+    <p style="margin:0 0 16px;font-size:0.95rem;color:#405440;line-height:1.6;">${ct.body(propertyName)}</p>
+    ${reason ? `<p style="margin:0 0 16px;font-size:0.95rem;color:#405440;"><strong>${ct.reasonLabel}</strong> ${reason}</p>` : ''}
+    <p style="margin:0;font-size:0.95rem;color:#405440;line-height:1.6;">${ct.closing}</p>
   `);
 
   try {
@@ -2660,8 +2660,8 @@ export async function sendVerificationReminderEmail(user) {
   const tr   = VERIFY_REMINDER_T[lang];
 
   const html = shell(`
-    <h1 style="margin:0 0 16px;font-size:1.3rem;font-weight:700;color:#1a4710;">${tr.heading}</h1>
-    <p style="margin:0 0 16px;font-size:0.95rem;color:#374151;line-height:1.6;">${tr.body}</p>
+    <h1 style="margin:0 0 16px;font-size:1.3rem;font-weight:700;color:#405440;">${tr.heading}</h1>
+    <p style="margin:0 0 16px;font-size:0.95rem;color:#405440;line-height:1.6;">${tr.body}</p>
 
     <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 18px;
                 border-radius:0 8px 8px 0;margin:0 0 24px;">
@@ -2669,13 +2669,13 @@ export async function sendVerificationReminderEmail(user) {
     </div>
 
     <a href="${verifyLink}"
-       style="display:inline-block;background:#1a4710;color:#fff;text-decoration:none;
+       style="display:inline-block;background:#405440;color:#fff;text-decoration:none;
               padding:13px 28px;border-radius:8px;font-size:0.9rem;font-weight:600;">
       ${tr.cta}
     </a>
 
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:28px 0 16px;">
-    <p style="margin:0;font-size:0.75rem;color:#9ca3af;text-align:center;line-height:1.5;">
+    <p style="margin:0;font-size:0.75rem;color:#405440;text-align:center;line-height:1.5;">
       If you didn't create a NestBook account, you can safely ignore this email.
     </p>
   `);
@@ -2774,18 +2774,18 @@ export async function sendPaymentAssistanceEmail(booking, property) {
   const tr = T[lang] || T.en;
 
   const body = `
-    <p style="margin:0 0 16px;font-size:1rem;font-weight:700;color:#1a4710;">${tr.heading}</p>
-    <p style="margin:0 0 16px;color:#374151;">${tr.intro}</p>
+    <p style="margin:0 0 16px;font-size:1rem;font-weight:700;color:#405440;">${tr.heading}</p>
+    <p style="margin:0 0 16px;color:#405440;">${tr.intro}</p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin:0 0 16px;">
-      <p style="margin:0 0 8px;font-size:0.8rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">${tr.details}</p>
-      <p style="margin:0 0 4px;color:#1a2e14;"><strong>${tr.checkin}:</strong> ${fmtDate(booking.check_in_date)}</p>
-      <p style="margin:0;color:#1a2e14;"><strong>${tr.checkout}:</strong> ${fmtDate(booking.check_out_date)}</p>
+      <p style="margin:0 0 8px;font-size:0.8rem;font-weight:600;color:#405440;text-transform:uppercase;letter-spacing:0.05em;">${tr.details}</p>
+      <p style="margin:0 0 4px;color:#405440;"><strong>${tr.checkin}:</strong> ${fmtDate(booking.check_in_date)}</p>
+      <p style="margin:0;color:#405440;"><strong>${tr.checkout}:</strong> ${fmtDate(booking.check_out_date)}</p>
     </div>
 
-    <p style="margin:0 0 16px;color:#374151;">${tr.reassurance}</p>
-    <p style="margin:0 0 24px;color:#374151;font-weight:600;">${tr.cta}</p>
-    <p style="margin:0;color:#6b7280;">${tr.closing}</p>
+    <p style="margin:0 0 16px;color:#405440;">${tr.reassurance}</p>
+    <p style="margin:0 0 24px;color:#405440;font-weight:600;">${tr.cta}</p>
+    <p style="margin:0;color:#405440;">${tr.closing}</p>
   `;
 
   try {
@@ -2823,7 +2823,7 @@ export async function sendBookingConflictAlert(booking, property, clashingBookin
 
   const body = `
     <p style="margin:0 0 4px;font-size:1.1rem;font-weight:700;color:#b91c1c;">⚠ Booking conflict — payment already taken</p>
-    <p style="margin:0 0 20px;font-size:0.95rem;color:#374151;">
+    <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
       A guest has paid for dates at <strong>${property?.name ?? ''}</strong> that clash with another booking.
       No automatic action has been taken — this needs your review.
     </p>
@@ -2831,30 +2831,30 @@ export async function sendBookingConflictAlert(booking, property, clashingBookin
            style="background:#fef2f2;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #fecaca;">
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;width:40%;vertical-align:top;">Guest</td>
-        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${guestName}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#405440;font-weight:600;">${guestName}</td>
       </tr>
       ${booking.room_name ? `<tr>
         <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">${isUnits ? 'Unit' : 'Room'}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${booking.room_name}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#405440;font-weight:600;">${booking.room_name}</td>
       </tr>` : ''}
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Check-in</td>
-        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_in_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_in_date}</td>
       </tr>
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Check-out</td>
-        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${booking.check_out_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_out_date}</td>
       </tr>
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Amount paid</td>
-        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#111827;font-weight:600;">${paidAmount}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #fecaca;font-size:0.875rem;color:#405440;font-weight:600;">${paidAmount}</td>
       </tr>
       <tr>
         <td style="padding:10px 0;font-size:0.82rem;color:#7f1d1d;vertical-align:top;">Clashes with booking</td>
-        <td style="padding:10px 0;font-size:0.875rem;color:#111827;font-weight:600;">#${clashingBookingId}</td>
+        <td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">#${clashingBookingId}</td>
       </tr>
     </table>
-    <p style="margin:0 0 16px;font-size:0.9rem;color:#374151;line-height:1.6;">
+    <p style="margin:0 0 16px;font-size:0.9rem;color:#405440;line-height:1.6;">
       The guest's payment has gone through and is recorded, but this booking has been held back rather than
       confirmed automatically. Please review both bookings in your dashboard and decide how to proceed —
       for example, contact the guest directly, offer alternative dates${isWP ? '' : ' or a different room'} if available,
@@ -2864,14 +2864,14 @@ export async function sendBookingConflictAlert(booking, property, clashingBookin
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
       <tr>
         <td>
-          <a href="https://nestbook.io/app/bookings" style="display:block;text-align:center;padding:14px 0;background:#1a4710;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
+          <a href="https://nestbook.io/app/bookings" style="display:block;text-align:center;padding:14px 0;background:#405440;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:1rem;">
             Review in dashboard →
           </a>
         </td>
       </tr>
     </table>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
-    <p style="margin:0;font-size:0.72rem;color:#9ca3af;text-align:center;">Powered by NestBook</p>`;
+    <p style="margin:0;font-size:0.72rem;color:#405440;text-align:center;">Powered by NestBook</p>`;
 
   try {
     await resend.emails.send({ from: FROM, to: ownerEmail, subject, html: shell(body) });
@@ -2958,17 +2958,17 @@ export async function sendBookingConflictHoldingEmail(booking, property) {
   const tr = T[lang] || T.en;
 
   const body = `
-    <p style="margin:0 0 16px;font-size:1rem;font-weight:700;color:#1a4710;">${tr.heading}</p>
-    <p style="margin:0 0 16px;color:#374151;">${tr.intro}</p>
+    <p style="margin:0 0 16px;font-size:1rem;font-weight:700;color:#405440;">${tr.heading}</p>
+    <p style="margin:0 0 16px;color:#405440;">${tr.intro}</p>
 
     <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px;margin:0 0 16px;">
-      <p style="margin:0 0 8px;font-size:0.8rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">${tr.details}</p>
-      <p style="margin:0 0 4px;color:#1a2e14;"><strong>${tr.checkin}:</strong> ${fmtDate(booking.check_in_date)}</p>
-      <p style="margin:0;color:#1a2e14;"><strong>${tr.checkout}:</strong> ${fmtDate(booking.check_out_date)}</p>
+      <p style="margin:0 0 8px;font-size:0.8rem;font-weight:600;color:#405440;text-transform:uppercase;letter-spacing:0.05em;">${tr.details}</p>
+      <p style="margin:0 0 4px;color:#405440;"><strong>${tr.checkin}:</strong> ${fmtDate(booking.check_in_date)}</p>
+      <p style="margin:0;color:#405440;"><strong>${tr.checkout}:</strong> ${fmtDate(booking.check_out_date)}</p>
     </div>
 
-    <p style="margin:0 0 16px;color:#374151;">${tr.reassurance}</p>
-    <p style="margin:0;color:#6b7280;">${tr.closing}</p>
+    <p style="margin:0 0 16px;color:#405440;">${tr.reassurance}</p>
+    <p style="margin:0;color:#405440;">${tr.closing}</p>
   `;
 
   try {
@@ -3057,10 +3057,10 @@ const REVIEW_TX = {
   },
 };
 
-const BTN_STYLE = 'display:inline-block;padding:12px 22px;background:#1a4710;color:#ffffff;' +
+const BTN_STYLE = 'display:inline-block;padding:12px 22px;background:#405440;color:#ffffff;' +
   'border-radius:6px;text-decoration:none;font-weight:bold;font-size:15px;margin:6px 4px;';
-const BTN_SECONDARY = 'display:inline-block;padding:10px 20px;background:transparent;color:#1a4710;' +
-  'border:2px solid #1a4710;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;margin:6px 4px;';
+const BTN_SECONDARY = 'display:inline-block;padding:10px 20px;background:transparent;color:#405440;' +
+  'border:2px solid #405440;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;margin:6px 4px;';
 
 export async function sendReviewRequestEmail({ booking, property, noteUrl }) {
   if (!resend) return;
@@ -3083,7 +3083,7 @@ export async function sendReviewRequestEmail({ booking, property, noteUrl }) {
     ? `<div style="text-align:center;margin:28px 0 20px;">${googleBtn}${taBtn}</div>`
     : '';
   const secondaryBtns = noteBtn
-    ? `<p style="margin:0 0 12px;line-height:1.7;color:#555">${tx.p3}</p>` +
+    ? `<p style="margin:0 0 12px;line-height:1.7;color:#405440">${tx.p3}</p>` +
       `<div style="text-align:center;margin:0 0 28px;">${noteBtn}</div>`
     : '';
 

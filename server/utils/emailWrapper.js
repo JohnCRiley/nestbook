@@ -23,14 +23,14 @@ export function wrapGuestMailerEmail(bodyHtml, {
   const headerImg = logoAbsUrl
     ? `<img src="${logoAbsUrl}" width="52" height="52" alt="${propertyName}"
            style="border-radius:8px;display:block;margin:0 auto 10px;object-fit:contain;">`
-    : `<div style="width:52px;height:52px;background:#1a4710;border-radius:8px;
+    : `<div style="width:52px;height:52px;background:#405440;border-radius:8px;
            display:inline-block;line-height:52px;text-align:center;
            font-size:24px;color:#fff;font-weight:bold;margin:0 auto 10px;">${initial}</div>`;
 
   const ctaHtml = ctaEnabled && ctaLabel && ctaUrl
     ? `<div style="text-align:center;margin:28px 0;">
          <a href="${ctaUrl}"
-            style="background:#1a4710;color:#ffffff;padding:12px 28px;border-radius:6px;
+            style="background:#405440;color:#ffffff;padding:12px 28px;border-radius:6px;
                    text-decoration:none;font-weight:bold;font-size:15px;display:inline-block;">
            ${ctaLabel}
          </a>
@@ -39,7 +39,7 @@ export function wrapGuestMailerEmail(bodyHtml, {
 
   const sigHtml = mailerSignature
     ? `<div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;
-           font-size:14px;color:#374151;line-height:1.7;">${
+           font-size:14px;color:#405440;line-height:1.7;">${
              mailerSignature.replace(/\n/g, '<br>')
            }</div>`
     : '';
@@ -60,16 +60,16 @@ export function wrapGuestMailerEmail(bodyHtml, {
   </td></tr>
 
   <!-- Body -->
-  <tr><td style="padding:32px;color:#1f2937;font-size:15px;line-height:1.6;">
-    <div style="color:#1f2937;">${htmlContent}</div>
+  <tr><td style="padding:32px;color:#405440;font-size:15px;line-height:1.6;">
+    <div style="color:#405440;">${htmlContent}</div>
     ${ctaHtml}
     ${sigHtml}
   </td></tr>
 
   <!-- Footer -->
   <tr><td style="background:#f9fafb;padding:14px 32px;border-top:1px solid #e5e7eb;">
-    <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;line-height:1.6;">
-      Sent via <a href="https://nestbook.io" style="color:#6b7280;text-decoration:none;">NestBook</a>
+    <p style="margin:0;font-size:11px;color:#405440;text-align:center;line-height:1.6;">
+      Sent via <a href="https://nestbook.io" style="color:#405440;text-decoration:none;">NestBook</a>
     </p>
   </td></tr>
 
@@ -101,13 +101,13 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white
     'You received this email because you manage a hospitality property and we thought NestBook might be useful to you.';
 
   const unsubLine = unsubUrl
-    ? `<br><a href="${unsubUrl}" style="color:#5a7a52;text-decoration:underline;">Unsubscribe</a>`
+    ? `<br><a href="${unsubUrl}" style="color:#405440;text-decoration:underline;">Unsubscribe</a>`
     : '';
 
   const isGreen    = body_bg === 'green';
-  const outerBg    = isGreen ? '#1a4710' : '#ffffff';
-  const bodyBorder = isGreen ? 'border-top:1px solid #d9f0cc;' : '';
-  const sigColor   = isGreen ? '#ffffff' : '#1a4710';
+  const outerBg    = isGreen ? '#405440' : '#ffffff';
+  const bodyBorder = isGreen ? 'border-top:1px solid #e0ecdb;' : '';
+  const sigColor   = isGreen ? '#ffffff' : '#405440';
 
   return `<!DOCTYPE html>
 <html>
@@ -117,25 +117,25 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white
 <table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;">
 
   <!-- Header -->
-  <tr><td style="background:#1a4710;padding:28px 32px;">
+  <tr><td style="background:#405440;padding:28px 32px;">
     <img src="https://nestbook.io/icon-192.png" width="36" height="36"
          style="border-radius:8px;vertical-align:middle;display:inline-block;">
     <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
-    <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Management platform for independent holiday rentals</div>
+    <div style="color:#f0ede8;font-size:13px;margin-top:6px;">Management platform for independent holiday rentals</div>
   </td></tr>
 
   <!-- Body -->
-  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#1a2e14;font-size:15px;line-height:1.6;">
-    <div style="color:#1a2e14;">
+  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#405440;font-size:15px;line-height:1.6;">
+    <div style="color:#405440;">
       ${htmlContent}
     </div>
 
     <!-- Signature -->
-    <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
+    <div style="margin-top:32px;padding:24px;border-top:1px solid #e0ecdb;">
       <img src="https://nestbook.io/icon-192.png" width="28" height="28"
            style="border-radius:6px;vertical-align:middle;display:inline-block;">
       <strong style="color:${sigColor};margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
-      <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
+      <span style="color:#405440;font-size:13px;line-height:1.8;">
         <a href="mailto:hello@nestbook.io" style="color:${sigColor};text-decoration:none;">hello@nestbook.io</a>
         &nbsp;&middot;&nbsp;
         <a href="https://nestbook.io" style="color:${sigColor};text-decoration:none;">nestbook.io</a>
@@ -144,12 +144,12 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white
   </td></tr>
 
   <!-- Footer -->
-  <tr><td style="background:#f0f7ed;padding:20px 32px;border-top:1px solid #d9f0cc;">
-    <p style="margin:0;font-size:12px;color:#5a7a52;text-align:center;line-height:1.6;">
+  <tr><td style="background:#f0ede8;padding:20px 32px;border-top:1px solid #e0ecdb;">
+    <p style="margin:0;font-size:12px;color:#405440;text-align:center;line-height:1.6;">
       ${footer}${unsubLine}
     </p>
-    <p style="margin:12px 0 0;font-size:11px;color:#8ab885;text-align:center;">
-      Sent via <a href="https://nestbook.io" style="color:#5a7a52;text-decoration:none;">NestBook</a> — management platform for independent holiday rentals
+    <p style="margin:12px 0 0;font-size:11px;color:#405440;text-align:center;">
+      Sent via <a href="https://nestbook.io" style="color:#405440;text-decoration:none;">NestBook</a> — management platform for independent holiday rentals
     </p>
   </td></tr>
 
