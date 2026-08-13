@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="/navbar.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --dark:#1a4710; --mid:#2f771b; --light:#d9f0cc; --page:#ffffff; --soft:#f3f7f2; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
+:root { --dark:#334333; --mid:#405440; --light:#f0ede8; --page:#ffffff; --soft:#f0ede8; --border:#e0ecdb; --text:#1a2e14; --muted:#557a4a; --radius:12px; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: var(--text); background: var(--page); line-height: 1.6; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
@@ -57,7 +57,7 @@ img { display: block; max-width: 100%; }
 
 /* Post card */
 .post-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow 0.15s, transform 0.15s; }
-.post-card:hover { box-shadow: 0 8px 32px rgba(26,71,16,0.10); transform: translateY(-2px); }
+.post-card:hover { box-shadow: 0 8px 32px rgba(64,84,64,0.10); transform: translateY(-2px); }
 .post-card-img { height: 180px; background: var(--soft); overflow: hidden; flex-shrink: 0; }
 .post-card-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.3s ease; }
 .post-card:hover .post-card-img img { transform: scale(1.03); }
@@ -666,7 +666,7 @@ function applyLang(lang) {
 document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
 (function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
 const nb = document.querySelector('.navbar');
-window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(26,71,16,0.10)':''; }, {passive:true});
+window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10?'0 2px 16px rgba(64,84,64,0.10)':''; }, {passive:true});
 </script>
 
 <script>
