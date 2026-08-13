@@ -17,9 +17,9 @@
       margin: 0 auto;
       padding: 40px 24px;
     }
-    h1 { color: #1a4710; }
+    h1 { color: #405440; }
     .hero {
-      background: linear-gradient(135deg, #1a4710, #2f771b);
+      background: linear-gradient(135deg, #405440, #334333);
       color: white;
       border-radius: 12px;
       padding: 40px;
@@ -29,17 +29,17 @@
     .hero h2 { font-size: 2rem; margin-bottom: 8px; }
     .hero p  { opacity: 0.8; }
     .info {
-      background: #d9f0cc;
+      background: #F4F3F0;
       border-radius: 8px;
       padding: 16px 20px;
       font-size: 0.875rem;
-      color: #1a4710;
+      color: #405440;
       margin-bottom: 24px;
     }
     .demo-badge {
       display: inline-block;
-      background: #1a4710;
-      color: #d9f0cc;
+      background: #405440;
+      color: #F4F3F0;
       font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.5px;
@@ -61,7 +61,7 @@
       border-radius: 8px;
       padding: 16px;
     }
-    .room-card h3 { color: #1a4710; margin-bottom: 4px; }
+    .room-card h3 { color: #405440; margin-bottom: 4px; }
     .room-card p { color: #888; font-size: 0.875rem; }
     .lang-bar {
       display: flex;
@@ -70,21 +70,21 @@
       flex-wrap: wrap;
     }
     .lang-bar button {
-      background: #d9f0cc;
+      background: #F4F3F0;
       border: 1.5px solid transparent;
       border-radius: 6px;
       padding: 4px 12px;
       font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
-      color: #1a4710;
+      color: #405440;
       font-family: inherit;
     }
     .lang-bar button.active {
-      background: #1a4710;
+      background: #405440;
       color: #fff;
     }
-    .lang-bar button:hover:not(.active) { border-color: #1a4710; }
+    .lang-bar button:hover:not(.active) { border-color: #405440; }
     @media (max-width: 600px) {
       .rooms-grid { grid-template-columns: 1fr; }
     }
@@ -202,7 +202,7 @@
   <!-- Theme preview switcher -->
   <div style="margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
     <span style="font-size: 0.9rem; color: #555;">Preview theme:</span>
-    <button onclick="setWidgetTheme('forest')"   style="background:#1a4710; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">🌿 Forest</button>
+    <button onclick="setWidgetTheme('forest')"   style="background:#405440; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">🌿 Forest</button>
     <button onclick="setWidgetTheme('royal')"    style="background:#1F3A55; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">⚓ Navy</button>
     <button onclick="setWidgetTheme('ember')"    style="background:#1A2535; color:#E8A838; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">✨ Warm Gold</button>
     <button onclick="setWidgetTheme('ruby')"     style="background:#490403; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer;">💎 Ruby</button>
@@ -332,7 +332,7 @@
 
   // ── Theme preview switcher ─────────────────────────────────────────────────
   const DEMO_THEMES = {
-    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+    forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0' },
     royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
     ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
     ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },

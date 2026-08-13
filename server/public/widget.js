@@ -30,7 +30,7 @@
   // Colour palettes for each theme — must stay in sync with client/src/index.css
   // panelHdrBg/panelHdrText match the app's --header-bg/--header-text per theme exactly.
   const THEME_COLOURS = {
-    forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc', panelHdrBg: '#1a4710', panelHdrText: '#ffffff' },
+    forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0', panelHdrBg: '#F0EDE8', panelHdrText: '#405440' },
     royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE', panelHdrBg: '#F6F4EE', panelHdrText: '#1F3A55' },
     ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2', panelHdrBg: '#E9E7E2', panelHdrText: '#1A2535' },
     ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7', panelHdrBg: '#E9E7E7', panelHdrText: '#CF514F' },
@@ -43,11 +43,11 @@
     hessian:  { brand: '#CCCFBB', dark: '#425B3D', light: '#F5F2EC', panelHdrBg: '#F6F3EC', panelHdrText: '#0C310F' },
   };
 
-  let BRAND          = '#2f771b';
-  let BRAND_DARK     = '#1a4710';
-  let BRAND_LIGHT    = '#d9f0cc';
-  let PANEL_HDR_BG   = '#1a4710';  // matches --header-bg; resolved from palette on init
-  let PANEL_HDR_TEXT = '#ffffff';  // matches --header-text
+  let BRAND          = '#405440';
+  let BRAND_DARK     = '#405440';
+  let BRAND_LIGHT    = '#F4F3F0';
+  let PANEL_HDR_BG   = '#F0EDE8';  // matches --header-bg; resolved from palette on init
+  let PANEL_HDR_TEXT = '#405440';  // matches --header-text
 
   // ── i18n ───────────────────────────────────────────────────────────────────
   const STRINGS = {
@@ -604,7 +604,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 15px;
   line-height: 1.5;
-  color: #1a2e14;
+  color: #1C1C1E;
 }
 
 /* Floating trigger button */
@@ -723,13 +723,13 @@
 /* Footer */
 .nb-ft {
   padding: 14px 24px;
-  border-top: 1px solid #e4ede2;
+  border-top: 1px solid #D8D3CB;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
-  background: #f9fbf8;
+  background: #F4F3F0;
 }
 
 /* Buttons */
@@ -748,7 +748,7 @@
   white-space: nowrap;
 }
 .nb-btn-main:hover    { background: ${BRAND_DARK}; }
-.nb-btn-main:disabled { background: #9ec99a; cursor: not-allowed; }
+.nb-btn-main:disabled { background: #9B9A96; cursor: not-allowed; }
 .nb-btn-back {
   background: none;
   border: 1.5px solid #d1d5db;
@@ -756,7 +756,7 @@
   padding: 9px 16px;
   min-height: 44px;
   font-size: 0.875rem;
-  color: #557a4a;
+  color: #6B6A66;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -779,16 +779,16 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  color: #557a4a;
+  color: #6B6A66;
   margin-bottom: 5px;
 }
 .nb-input, .nb-select, .nb-textarea {
   width: 100%;
   padding: 9px 11px;
-  border: 1.5px solid #e4ede2;
+  border: 1.5px solid #D8D3CB;
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #1a2e14;
+  color: #1C1C1E;
   background: #fff;
   outline: none;
   font-family: inherit;
@@ -809,7 +809,7 @@
   margin-bottom: 12px;
 }
 .nb-date-field {
-  border: 1.5px solid #e4ede2;
+  border: 1.5px solid #D8D3CB;
   border-radius: 8px;
   padding: 9px 12px;
   background: #fff;
@@ -824,16 +824,16 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  color: #8aab7f;
+  color: #9B9A96;
   margin-bottom: 3px;
 }
-.nb-date-field-val { font-size: 0.875rem; font-weight: 600; color: #1a2e14; }
-.nb-date-placeholder { color: #b8ceb4; font-weight: 400; }
+.nb-date-field-val { font-size: 0.875rem; font-weight: 600; color: #1C1C1E; }
+.nb-date-placeholder { color: #9B9A96; font-weight: 400; }
 
 /* Calendar */
 .nb-cal {
   background: #fff;
-  border: 1.5px solid #e4ede2;
+  border: 1.5px solid #D8D3CB;
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 14px;
@@ -847,7 +847,7 @@
   justify-content: space-between;
   padding: 10px 12px;
   background: ${BRAND_LIGHT};
-  border-bottom: 1px solid #e4ede2;
+  border-bottom: 1px solid #D8D3CB;
 }
 .nb-cal-nav-btn {
   background: none;
@@ -881,7 +881,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  color: #8aab7f;
+  color: #9B9A96;
   padding: 8px 0 4px;
 }
 .nb-cal-day {
@@ -892,7 +892,7 @@
   font-size: 0.82rem;
   cursor: pointer;
   position: relative;
-  color: #1a2e14;
+  color: #1C1C1E;
   transition: background 0.08s, color 0.08s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -954,7 +954,7 @@
   justify-content: flex-end;
   gap: 14px;
   padding: 7px 12px;
-  border-top: 1px solid #f0f4ee;
+  border-top: 1px solid #F4F3F0;
 }
 .nb-cal-link {
   font-size: 0.78rem;
@@ -981,17 +981,17 @@
   display: flex;
   align-items: center;
   gap: 0;
-  border: 1.5px solid #e4ede2;
+  border: 1.5px solid #D8D3CB;
   border-radius: 8px;
   overflow: hidden;
 }
 .nb-guests-btn {
-  background: #f3f7f2;
+  background: #F4F3F0;
   border: none;
   width: 36px; height: 38px;
   font-size: 1.1rem;
   cursor: pointer;
-  color: #557a4a;
+  color: #6B6A66;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1004,15 +1004,15 @@
   text-align: center;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #1a2e14;
-  border-left: 1px solid #e4ede2;
-  border-right: 1px solid #e4ede2;
+  color: #1C1C1E;
+  border-left: 1px solid #D8D3CB;
+  border-right: 1px solid #D8D3CB;
   line-height: 38px;
 }
 
 /* Step 2 room cards */
 .nb-room {
-  border: 1.5px solid #e4ede2;
+  border: 1.5px solid #D8D3CB;
   border-radius: 12px;
   margin-bottom: 16px;
   overflow: hidden;
@@ -1028,11 +1028,11 @@
 .nb-room-photo-placeholder {
   width: 100%;
   height: 180px;
-  background: #f0f4ee;
+  background: #F4F3F0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #b8ceb4;
+  color: #9B9A96;
 }
 .nb-room-info {
   padding: 14px 16px 16px;
@@ -1044,25 +1044,25 @@
   gap: 8px;
   margin-bottom: 4px;
 }
-.nb-room-name  { font-weight: 700; font-size: 0.95rem; color: #1a2e14; }
-.nb-room-type  { font-size: 0.72rem; color: #8aab7f; text-transform: capitalize; margin-top: 2px; }
+.nb-room-name  { font-weight: 700; font-size: 0.95rem; color: #1C1C1E; }
+.nb-room-type  { font-size: 0.72rem; color: #9B9A96; text-transform: capitalize; margin-top: 2px; }
 .nb-room-price { font-size: 1rem; font-weight: 700; color: ${BRAND_DARK}; white-space: nowrap; }
-.nb-room-price span { font-size: 0.72rem; font-weight: 400; color: #8aab7f; }
-.nb-room-caps  { font-size: 0.75rem; color: #557a4a; margin-bottom: 8px; }
+.nb-room-price span { font-size: 0.72rem; font-weight: 400; color: #9B9A96; }
+.nb-room-caps  { font-size: 0.75rem; color: #6B6A66; margin-bottom: 8px; }
 .nb-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .nb-tag {
   font-size: 0.65rem;
   padding: 2px 7px;
   border-radius: 4px;
-  background: #f3f7f2;
-  border: 1px solid #d9ead3;
-  color: #557a4a;
+  background: #F4F3F0;
+  border: 1px solid #D8D3CB;
+  color: #6B6A66;
 }
 .nb-breakfast {
   display: inline-flex; align-items: center;
   font-size: 0.65rem; font-weight: 700;
   padding: 2px 8px; border-radius: 4px;
-  background: #d9f0cc; border: 1px solid #86efac; color: #1a4710;
+  background: #F4F3F0; border: 1px solid #405440; color: #405440;
   margin-bottom: 10px;
 }
 .nb-btn-book-room {
@@ -1085,7 +1085,7 @@
 
 /* Summary (step 4) */
 .nb-summary {
-  background: #f7fbf6;
+  background: #F4F3F0;
   border-radius: 10px;
   padding: 16px 18px;
   margin-bottom: 16px;
@@ -1096,12 +1096,12 @@
   align-items: flex-start;
   gap: 12px;
   padding: 7px 0;
-  border-bottom: 1px solid #e4ede2;
+  border-bottom: 1px solid #D8D3CB;
   font-size: 0.875rem;
 }
 .nb-summary-row:last-child { border-bottom: none; }
-.nb-summary-lbl { color: #557a4a; font-weight: 500; flex-shrink: 0; }
-.nb-summary-val { color: #1a2e14; font-weight: 600; text-align: right; }
+.nb-summary-lbl { color: #6B6A66; font-weight: 500; flex-shrink: 0; }
+.nb-summary-val { color: #1C1C1E; font-weight: 600; text-align: right; }
 .nb-price-callout {
   background: ${BRAND_DARK};
   color: #fff;
@@ -1118,7 +1118,7 @@
 .nb-no-rooms {
   text-align: center;
   padding: 32px 16px;
-  color: #557a4a;
+  color: #6B6A66;
   font-size: 0.875rem;
 }
 .nb-no-rooms-icon { font-size: 2.5rem; margin-bottom: 10px; }
@@ -1154,7 +1154,7 @@
   justify-content: center;
   padding: 40px 20px;
   gap: 14px;
-  color: #557a4a;
+  color: #6B6A66;
   font-size: 0.875rem;
 }
 .nb-spinner {
@@ -1169,8 +1169,8 @@
 /* WP step 2 — availability confirmed */
 .nb-avail-badge {
   display: flex; align-items: center; gap: 8px;
-  background: #f0fdf4; color: #166534;
-  border: 1px solid #bbf7d0;
+  background: #F4F3F0; color: #405440;
+  border: 1px solid #405440;
   border-radius: 8px; padding: 10px 14px;
   font-weight: 600; font-size: 0.88rem;
   margin-bottom: 14px;
@@ -1178,7 +1178,7 @@
 .nb-avail-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; border-radius: 50%;
-  background: #16a34a; color: #fff;
+  background: #405440; color: #fff;
   font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
 }
 .nb-wp-summary {
@@ -1245,7 +1245,7 @@
   margin-bottom: 8px;
 }
 .nb-success-msg {
-  color: #557a4a;
+  color: #6B6A66;
   font-size: 0.875rem;
   margin-bottom: 18px;
 }
@@ -1262,7 +1262,7 @@
 }
 .nb-success-sub {
   font-size: 0.78rem;
-  color: #8aab7f;
+  color: #9B9A96;
   margin-top: 8px;
 }
 /* Section heading inside body */
@@ -1271,7 +1271,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #8aab7f;
+  color: #9B9A96;
   margin-bottom: 12px;
 }
 
@@ -1282,8 +1282,8 @@
   gap: 10px;
   margin-bottom: 14px;
   padding: 12px 14px;
-  background: #f7fbf6;
-  border: 1.5px solid #d9ead3;
+  background: #F4F3F0;
+  border: 1.5px solid #D8D3CB;
   border-radius: 10px;
   cursor: pointer;
 }
@@ -1295,7 +1295,7 @@
 }
 .nb-bf-label {
   font-size: 0.875rem;
-  color: #1a2e14;
+  color: #1C1C1E;
   cursor: pointer;
   line-height: 1.4;
 }
