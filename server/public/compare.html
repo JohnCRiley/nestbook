@@ -52,17 +52,17 @@
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --dark:   #1a4710;
-  --mid:    #2f771b;
-  --light:  #d9f0cc;
+  --dark:   #334333;
+  --mid:    #405440;
+  --light:  #f0ede8;
   --page:   #ffffff;
-  --soft:   #f3f7f2;
-  --pale:   #f0fdf4;
+  --soft:   #f0ede8;
+  --pale:   #f0ede8;
   --border: #e0ecdb;
-  --text:   #1a2e14;
-  --muted:  #557a4a;
+  --text:   #405440;
+  --muted:  #6B6A66;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(26,71,16,0.10);
+  --shadow: 0 4px 24px rgba(64,84,64,0.10);
 }
 html { scroll-behavior: smooth; }
 body {
@@ -84,7 +84,7 @@ img { display: block; max-width: 100%; }
   border: 2px solid transparent; font-family: inherit; white-space: nowrap;
 }
 .btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
-.btn-primary:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(47,119,27,0.3); }
+.btn-primary:hover { background: var(--dark); border-color: var(--dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(64,84,64,0.3); }
 .btn-outline { background: transparent; color: var(--dark); border-color: var(--border); }
 .btn-outline:hover { border-color: var(--mid); color: var(--mid); background: var(--soft); }
 .btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
@@ -94,21 +94,43 @@ img { display: block; max-width: 100%; }
 
 /* ── Page hero ────────────────────────────────────────────────────────────── */
 .page-hero {
-  background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%);
+  position: relative;
+  overflow: hidden;
   padding: 72px 0 60px;
   text-align: center;
-  border-bottom: 1px solid var(--border);
 }
+
+/* Wave background: white -> wave -> cream gradient, same pattern/values as
+   index.html's .hero-bg / how-it-works.html's .hiw-hero-bg (gradient on
+   this shared wrapper, not a sub-child). */
+.page-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.page-hero-bg-top { flex: 1 1 0; background: #ffffff; }
+.page-hero-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.page-hero-wave svg { display: block; width: 100%; height: 50px; }
+.page-hero-bg-bottom { flex: 1 1 0; }
+
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
 .page-hero .badge {
   display: inline-block; background: var(--light); color: var(--dark);
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.8px; padding: 5px 13px; border-radius: 20px; margin-bottom: 18px;
 }
 .page-hero h1 {
-  font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark);
+  font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: #405440;
   letter-spacing: -0.8px; margin-bottom: 14px; line-height: 1.15;
 }
-.page-hero p { font-size: 1.05rem; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.75; }
+.page-hero p { font-size: 1.05rem; color: #405440; max-width: 520px; margin: 0 auto; line-height: 1.75; }
 
 /* ── Comparison table ─────────────────────────────────────────────────────── */
 .compare-section { padding: 72px 0 88px; }
@@ -181,7 +203,7 @@ img { display: block; max-width: 100%; }
 .th-plan-cta.cta-pro   { background: var(--mid); color: #fff; border-color: var(--mid); }
 .th-plan-cta.cta-pro:hover   { background: var(--dark); border-color: var(--dark); }
 .th-plan-cta.cta-multi { background: var(--dark); color: #fff; border-color: var(--dark); }
-.th-plan-cta.cta-multi:hover { background: #0f2909; border-color: #0f2909; }
+.th-plan-cta.cta-multi:hover { background: #2e3c2e; border-color: #2e3c2e; }
 
 /* Group header rows */
 .compare-table .group-row td {
@@ -193,7 +215,7 @@ img { display: block; max-width: 100%; }
   letter-spacing: 0.7px;
   padding: 9px 20px;
 }
-.compare-table .group-row td.col-pro-group { background: #143a0c; }
+.compare-table .group-row td.col-pro-group { background: #2e3c2e; }
 
 /* Feature rows */
 .compare-table .feat-row td {
@@ -220,9 +242,9 @@ img { display: block; max-width: 100%; }
 
 /* Hover highlight */
 .feat-row:hover td.col-feature { background: var(--soft); }
-.feat-row:hover td.col-free    { background: #f9fafb; }
-.feat-row:hover td.col-pro     { background: #e8faf0; }
-.feat-row:hover td.col-multi   { background: #f9fafb; }
+.feat-row:hover td.col-free    { background: #f0ede8; }
+.feat-row:hover td.col-pro     { background: #f0ede8; }
+.feat-row:hover td.col-multi   { background: #f0ede8; }
 
 /* Click-to-expand rows */
 .feat-row[data-detail] { cursor: pointer; }
@@ -258,17 +280,37 @@ img { display: block; max-width: 100%; }
 
 /* ── CTA strip ────────────────────────────────────────────────────────────── */
 .cta-strip {
-  background: var(--dark);
-  color: rgba(255,255,255,0.85);
+  position: relative;
+  overflow: hidden;
   padding: 72px 0;
   text-align: center;
 }
-.cta-strip h2 { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 900; color: #fff; margin-bottom: 12px; letter-spacing: -0.4px; }
-.cta-strip p  { font-size: 1rem; color: rgba(255,255,255,0.65); margin-bottom: 32px; }
-.cta-strip .note { font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 16px; }
+
+/* Wave background, same pattern as .page-hero-bg above. */
+.cta-strip-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%);
+}
+.cta-strip-bg-top { flex: 1 1 0; background: #ffffff; }
+.cta-strip-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.cta-strip-wave svg { display: block; width: 100%; height: 50px; }
+.cta-strip-bg-bottom { flex: 1 1 0; }
+
+.cta-strip .container {
+  position: relative;
+  z-index: 1;
+}
+
+.cta-strip h2 { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 900; color: #405440; margin-bottom: 12px; letter-spacing: -0.4px; }
+.cta-strip p  { font-size: 1rem; color: #405440; margin-bottom: 32px; }
+.cta-strip .note { font-size: 0.82rem; color: #405440; margin-top: 16px; }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
-.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer { background: #2e3c2e; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
 .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
 .footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
@@ -283,11 +325,11 @@ img { display: block; max-width: 100%; }
 .print-btn {
   display: inline-flex; align-items: center; gap: 6px;
   margin-top: 20px; padding: 9px 20px; border-radius: 8px; border: none;
-  background: rgba(255,255,255,0.18); color: var(--dark); font-family: inherit;
+  background: #ffffff; color: var(--dark); font-family: inherit;
   font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
   border: 1.5px solid var(--border);
 }
-.print-btn:hover { background: #fff; box-shadow: 0 2px 10px rgba(26,71,16,0.12); }
+.print-btn:hover { background: #fff; box-shadow: 0 2px 10px rgba(64,84,64,0.12); }
 
 /* ── Mobile plan cards (shown ≤ 767px, hidden on desktop/tablet) ──────────── */
 .mobile-plan-cards { display: none; }
@@ -344,7 +386,7 @@ img { display: block; max-width: 100%; }
 .mpc-feat-row:last-child { border-bottom: none; }
 .mpc-feat-icon { flex-shrink: 0; width: 16px; height: 16px; }
 .mpc-feat-icon.check-icon {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='2,7 5.5,11 12,3' stroke='%231a4710' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='2,7 5.5,11 12,3' stroke='%23334333' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-size: contain; background-repeat: no-repeat; background-position: center;
 }
 .mpc-feat-icon.cross-icon {
@@ -455,6 +497,15 @@ img { display: block; max-width: 100%; }
 <!--  PAGE HERO                                                                 -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <section class="page-hero">
+  <div class="page-hero-bg" aria-hidden="true">
+    <div class="page-hero-bg-top"></div>
+    <div class="page-hero-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="page-hero-bg-bottom"></div>
+  </div>
   <div class="container">
     <div class="badge" data-i18n="hero.badge">Pricing</div>
     <h1 data-i18n="hero.h1">Compare plans</h1>
@@ -941,10 +992,19 @@ img { display: block; max-width: 100%; }
 <!--  CTA STRIP                                                                 -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <section class="cta-strip">
+  <div class="cta-strip-bg" aria-hidden="true">
+    <div class="cta-strip-bg-top"></div>
+    <div class="cta-strip-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="cta-strip-bg-bottom"></div>
+  </div>
   <div class="container">
     <h2 data-i18n="cta.h2">Start your free 30-day trial</h2>
     <p data-i18n="cta.p">No credit card required. No setup fee. Cancel any time.</p>
-    <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-primary btn-lg" style="background:#fff; color:var(--dark); border-color:rgba(255,255,255,0.3);" data-i18n="cta.btn">
+    <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="btn btn-primary btn-lg" style="background:#405440; color:#fff; border-color:#405440;" data-i18n="cta.btn">
       Get started free →
     </a>
     <p class="note" data-i18n="cta.note">No contract. No hidden fees. Cancel any time.</p>
@@ -1706,7 +1766,7 @@ document.querySelectorAll('.feat-row[data-detail]').forEach(function(row) {
   };
   var banner = document.createElement('div');
   banner.style.cssText = [
-    'background:#1a4710', 'color:white', 'padding:8px 16px', 'font-size:13px',
+    'background:#334333', 'color:white', 'padding:8px 16px', 'font-size:13px',
     'display:flex', 'align-items:center', 'justify-content:center', 'gap:16px',
     'position:relative', 'z-index:1000', 'font-family:inherit',
   ].join(';');
