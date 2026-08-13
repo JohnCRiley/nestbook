@@ -54,19 +54,45 @@ export default function VerifyEmail() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-
-        <div className="auth-logo">
-          <img src="/icon.svg" alt="NestBook" className="auth-leaf-icon" />
-          <span className="auth-logo-name">NestBook</span>
+    <div style={{
+      position: 'relative', overflow: 'hidden',
+      height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'center', padding: '32px 16px',
+    }}>
+      {/* Wave background: white -> wave -> cream gradient, same pattern/values
+          as Register.jsx / CheckEmail.jsx (gradient on this shared wrapper,
+          not a sub-child) */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          display: 'flex', flexDirection: 'column',
+          background: 'linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%)',
+        }}
+      >
+        <div style={{ flex: '1 1 0', background: '#ffffff' }} />
+        <div style={{ flex: '0 0 50px', width: '100%', lineHeight: 0 }}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 50 }}>
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff" />
+          </svg>
         </div>
-        <p className="auth-tagline">Property Management</p>
+        <div style={{ flex: '1 1 0' }} />
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 480, width: '100%', textAlign: 'center' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 40 }}>
+          <img src="/icon.svg" alt="NestBook" style={{ width: 28, height: 28 }} />
+          <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#405440', letterSpacing: '-0.02em' }}>NestBook</span>
+        </div>
 
         {status === 'verifying' && (
           <>
-            <h1 className="auth-heading">Verifying your email…</h1>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <h1 style={{ fontSize: '1.55rem', fontWeight: 800, color: '#405440', marginBottom: 12 }}>
+              Verifying your email…
+            </h1>
+            <p style={{ textAlign: 'center', color: '#405440', fontSize: '0.9rem' }}>
               Please wait a moment.
             </p>
           </>
@@ -74,8 +100,10 @@ export default function VerifyEmail() {
 
         {status === 'success' && (
           <>
-            <h1 className="auth-heading" style={{ color: 'var(--accent)' }}>Email verified!</h1>
-            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24 }}>
+            <h1 style={{ fontSize: '1.55rem', fontWeight: 800, color: '#405440', marginBottom: 12 }}>
+              Email verified!
+            </h1>
+            <p style={{ textAlign: 'center', color: '#405440', fontSize: '0.9rem', marginBottom: 24 }}>
               Your email address has been verified. Taking you to your account…
             </p>
           </>
@@ -83,11 +111,18 @@ export default function VerifyEmail() {
 
         {status === 'error' && (
           <>
-            <h1 className="auth-heading">Verification failed</h1>
-            <div className="auth-error">{errorMsg}</div>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 16 }}>
+            <h1 style={{ fontSize: '1.55rem', fontWeight: 800, color: '#405440', marginBottom: 12 }}>
+              Verification failed
+            </h1>
+            <div style={{
+              background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8,
+              padding: '10px 14px', fontSize: '0.875rem', color: '#991b1b', marginBottom: 16,
+            }}>
+              {errorMsg}
+            </div>
+            <p style={{ textAlign: 'center', color: '#405440', fontSize: '0.875rem', marginTop: 16 }}>
               The link may have already been used or expired.{' '}
-              <Link to="/dashboard">Go to dashboard</Link>
+              <Link to="/dashboard" style={{ color: '#405440', fontWeight: 700 }}>Go to dashboard</Link>
             </p>
           </>
         )}

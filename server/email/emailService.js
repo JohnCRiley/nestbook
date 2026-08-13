@@ -670,7 +670,7 @@ function shell(bodyHtml) {
 
       <!-- Body -->
       <tr>
-        <td style="background:#fff;padding:32px;border-radius:0 0 12px 12px;">
+        <td style="background:#fff;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e0ddd6;border-top:none;">
           ${bodyHtml}
         </td>
       </tr>
@@ -1225,7 +1225,7 @@ export async function sendPasswordResetEmail(email, token) {
           <img src="https://nestbook.io/icon-192.png" style="width:36px;height:36px;border-radius:8px;vertical-align:middle;" alt="">
           <span style="color:#fff;font-size:20px;font-weight:700;margin-left:12px;vertical-align:middle;">NestBook</span>
         </div>
-        <div style="background:#fff;padding:32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;">
+        <div style="background:#fff;padding:32px;border:1px solid #e0ddd6;border-top:none;border-radius:0 0 8px 8px;">
           <h2 style="color:#405440;margin:0 0 12px;">Reset your password</h2>
           <p style="color:#405440;margin:0 0 20px;">We received a request to reset your NestBook password. Click the button below to choose a new one.</p>
           <a href="${resetUrl}" style="display:inline-block;background:#405440;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;margin-bottom:20px;">Reset my password</a>
@@ -1249,7 +1249,7 @@ export async function sendPaymentFailedEmail(email, invoiceUrl) {
     to:   email,
     subject: 'Action required — your NestBook payment failed',
     html: `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#405440">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#405440;background:#fff;border:1px solid #e0ddd6;border-radius:8px;">
         <div style="margin-bottom:24px">
           <span style="background:#405440;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
         </div>
@@ -1277,7 +1277,7 @@ export async function sendDowngradeEmail(email) {
     to:   email,
     subject: 'Your NestBook account has been moved to the Free plan',
     html: `
-      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#405440">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#405440;background:#fff;border:1px solid #e0ddd6;border-radius:8px;">
         <div style="margin-bottom:24px">
           <span style="background:#405440;color:#fff;padding:6px 14px;border-radius:6px;font-weight:700;font-size:1rem">NestBook</span>
         </div>
@@ -1876,7 +1876,7 @@ function welcomeEmailHTML(user, property) {
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #ffffff; color: #405440; line-height: 1.6; }
-    .wrapper { max-width: 620px; margin: 0 auto; background: white; }
+    .wrapper { max-width: 620px; margin: 0 auto; background: white; border: 1px solid #e0ddd6; border-radius: 8px; overflow: hidden; }
     .header { background: #405440; padding: 28px 32px; text-align: left; }
     .header-logo { font-size: 22px; font-weight: 700; color: white; letter-spacing: -0.02em; }
     .header-logo span { color: #f0ede8; font-weight: 400; }

@@ -49,7 +49,7 @@ export function wrapGuestMailerEmail(bodyHtml, {
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e0ddd6;">
 
   <!-- Header -->
   <tr><td style="padding:28px 32px 18px;text-align:center;border-bottom:1px solid #e5e7eb;">
@@ -114,7 +114,7 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
-<table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;">
+<table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;border:1px solid #e0ddd6;">
 
   <!-- Header -->
   <tr><td style="background:#405440;padding:28px 32px;">

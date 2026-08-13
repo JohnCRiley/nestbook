@@ -14,6 +14,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
           type="button"
           onClick={() => setForm({ ...form, rental_type: 'rooms' })}
           className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
+          data-rt="rooms"
           style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
         >
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
@@ -30,6 +31,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
           type="button"
           onClick={() => setForm({ ...form, rental_type: 'whole_property' })}
           className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
+          data-rt="whole_property"
           style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
         >
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
@@ -43,6 +45,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
           type="button"
           onClick={() => setForm({ ...form, rental_type: 'units' })}
           className={`rental-type-btn${form.rental_type === 'units' ? ' active' : ''}`}
+          data-rt="units"
           style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
         >
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>

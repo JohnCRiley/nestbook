@@ -388,7 +388,9 @@ export default function Onboarding() {
         return (
           <>
             <div className="wiz-step-label">{t('onboard.wizRentalType')}</div>
-            <RentalTypeSelector form={form} setForm={setForm} t={t} />
+            <div className="onboard-rental-step">
+              <RentalTypeSelector form={form} setForm={setForm} t={t} />
+            </div>
             <button className="btn-wiz" disabled={saving} onClick={saveStep}>
               {saving ? '…' : t('onboard.saveAndContinue')}
             </button>
@@ -546,7 +548,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '40px 20px 60px' }}>
+    <div style={{ position: 'relative', overflow: 'hidden', height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '40px 20px 60px', background: '#ffffff' }}>
       {/* Wave background: white -> wave -> cream gradient, same pattern/values
           as Register.jsx / index.html's .hero-bg (gradient on this shared
           wrapper, not a sub-child) */}

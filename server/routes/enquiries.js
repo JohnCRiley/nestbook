@@ -135,7 +135,7 @@ enquiriesRouter.post('/', async (req, res) => {
       style="width:32px;height:32px;border-radius:6px;vertical-align:middle;">
     <span style="color:#fff;font-size:18px;font-weight:700;margin-left:10px;vertical-align:middle;">NestBook</span>
   </div>
-  <div style="background:#fff;padding:24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;">
+  <div style="background:#fff;padding:24px;border:1px solid #e0ddd6;border-top:none;border-radius:0 0 8px 8px;">
     <h2 style="color:#405440;margin-bottom:16px;">New booking enquiry for ${esc(property.name)}</h2>
     <table style="width:100%;border-collapse:collapse;">
       <tr>

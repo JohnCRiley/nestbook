@@ -2945,6 +2945,16 @@ a { text-decoration: none; }
   border-color: var(--accent);
 }
 
+/* Onboarding wizard only: Individual rooms / Units selected state uses the
+   fixed brand sage rather than the theme-adaptive header color (Whole
+   property and the Add Property flow are unaffected). */
+.onboard-rental-step .rental-type-btn[data-rt="rooms"].active,
+.onboard-rental-step .rental-type-btn[data-rt="units"].active {
+  background: #405440;
+  color: #ffffff;
+  border-color: #405440;
+}
+
 /* Whole-property inputs container */
 .wp-inputs-container {
   margin-top: 16px;
