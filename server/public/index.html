@@ -298,6 +298,13 @@ header.navbar.wave-navbar .lang-panel .lang-btn.active {
   gap: 60px;
   align-items: center;
 }
+/* Grid tracks default to min-width:auto (an implicit min-content floor) -
+   without this, a long unbreakable word in a translation (DE/NL) forces
+   the track wider than its 1fr share, and .hero's own overflow:hidden
+   silently clips the excess instead of wrapping it. */
+.hero-copy {
+  min-width: 0;
+}
 .hero-kicker {
   display: inline-flex;
   align-items: center;
@@ -325,6 +332,8 @@ header.navbar.wave-navbar .lang-panel .lang-btn.active {
   letter-spacing: -1px;
   line-height: 1.1;
   margin-bottom: 20px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .hero-headline em {
   font-style: normal;
@@ -337,6 +346,8 @@ header.navbar.wave-navbar .lang-panel .lang-btn.active {
   letter-spacing: 0.01em;
   margin-bottom: 12px;
   max-width: 480px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .hero-description {
   font-size: 1.05rem;
@@ -344,6 +355,8 @@ header.navbar.wave-navbar .lang-panel .lang-btn.active {
   line-height: 1.75;
   margin-bottom: 32px;
   max-width: 440px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .hero-btns {
   display: flex;
