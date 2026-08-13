@@ -5666,25 +5666,25 @@ a { text-decoration: none; }
   transition: background 0.25s;
 }
 .wizard-step-seg.completed {
-  background: #2f771b;
+  background: #405440;
 }
 .wizard-step-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 2px solid #d9f0cc;
+  border: 2px solid #e0ecdb;
   background: #f8faf7;
   transition: background 0.25s, border-color 0.25s, transform 0.15s;
 }
 .wizard-step-dot.current {
-  border-color: #2f771b;
-  background: #f0fdf4;
+  border-color: #405440;
+  background: #f0ede8;
   transform: scale(1.25);
 }
 .wizard-step-dot.completed {
-  background: #2f771b;
-  border-color: #2f771b;
+  background: #405440;
+  border-color: #405440;
 }
 .wizard-input {
   width: 100%;
@@ -5764,7 +5764,7 @@ a { text-decoration: none; }
 .wiz-step-label {
   font-size: 1.45rem;
   font-weight: 800;
-  color: #1a2e14;
+  color: #405440;
   letter-spacing: -0.4px;
   line-height: 1.25;
   margin-bottom: 28px;
@@ -5785,24 +5785,24 @@ a { text-decoration: none; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  color: #557a4a;
+  color: #405440;
   flex-shrink: 0;
 }
 .wiz-summary-value {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #1a2e14;
+  color: #405440;
   text-align: right;
 }
 .wiz-inn-tag {
   margin-top: 8px;
   padding: 5px 10px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: #f0ede8;
+  border: 1px solid #405440;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #166534;
+  color: #405440;
   display: inline-block;
 }
 

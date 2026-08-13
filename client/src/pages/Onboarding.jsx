@@ -173,7 +173,7 @@ export default function Onboarding() {
   if (!form) {
     return (
       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
-        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading…</div>
+        <div style={{ color: '#405440', fontSize: '0.9rem' }}>Loading…</div>
       </div>
     );
   }
@@ -183,10 +183,10 @@ export default function Onboarding() {
       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: '3rem', marginBottom: 16 }}>🎉</div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1a2e14', marginBottom: 8 }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#405440', marginBottom: 8 }}>
             {t('onboard.successTitle')}
           </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>{t('onboard.successBody')}</p>
+          <p style={{ color: '#405440', fontSize: '0.9rem' }}>{t('onboard.successBody')}</p>
         </div>
       </div>
     );
@@ -291,7 +291,7 @@ export default function Onboarding() {
                 placeholder={t('countryLabel')}
               />
             </div>
-            <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: '4px 0 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '0.78rem', color: '#405440', margin: '4px 0 0', lineHeight: 1.5 }}>
               {t('onboard.addressHint')}
             </p>
             <button className="btn-wiz" disabled={saving} onClick={saveStep}>
@@ -503,20 +503,20 @@ export default function Onboarding() {
 
             {/* What's next */}
             <div style={{
-              background: '#f0fdf4', border: '1px solid #bbf7d0',
+              background: '#f0ede8', border: '1px solid #405440',
               borderRadius: 8, padding: '14px 16px', marginBottom: 24,
             }}>
-              <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#1a2e14', marginBottom: 8 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#405440', marginBottom: 8 }}>
                 {t('onboard.nextSteps')}
               </div>
               <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {[t('onboard.step1'), t('onboard.step2'), t('onboard.step3'), t('onboard.step4')].map((s, i) => (
-                  <li key={i} style={{ fontSize: '0.8rem', color: '#374151' }}>{s}</li>
+                  <li key={i} style={{ fontSize: '0.8rem', color: '#405440' }}>{s}</li>
                 ))}
               </ol>
             </div>
 
-            <p style={{ fontSize: '0.8rem', color: '#557a4a', fontStyle: 'italic', marginBottom: 20, lineHeight: 1.55 }}>
+            <p style={{ fontSize: '0.8rem', color: '#405440', fontStyle: 'italic', marginBottom: 20, lineHeight: 1.55 }}>
               {t('onboard.sampleDataNote')}
             </p>
 
@@ -527,7 +527,7 @@ export default function Onboarding() {
             )}
 
             <button className="btn-wiz" disabled={saving} onClick={handleFinish}
-              style={{ background: '#1a4710', color: '#fff', borderColor: '#1a4710' }}
+              style={{ background: '#405440', color: '#fff', borderColor: '#405440' }}
             >
               {saving ? '…' : t('onboard.save')}
             </button>
@@ -546,20 +546,40 @@ export default function Onboarding() {
   }
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', background: '#fff', padding: '40px 20px 60px' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+    <div style={{ position: 'relative', overflow: 'hidden', height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '40px 20px 60px' }}>
+      {/* Wave background: white -> wave -> cream gradient, same pattern/values
+          as Register.jsx / index.html's .hero-bg (gradient on this shared
+          wrapper, not a sub-child) */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          display: 'flex', flexDirection: 'column',
+          background: 'linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%)',
+        }}
+      >
+        <div style={{ flex: '1 1 0', background: '#ffffff' }} />
+        <div style={{ flex: '0 0 50px', width: '100%', lineHeight: 0 }}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 50 }}>
+            <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff" />
+          </svg>
+        </div>
+        <div style={{ flex: '1 1 0' }} />
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 680, margin: '0 auto' }}>
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
           <img src="/icon.svg" alt="NestBook" style={{ width: 30, height: 30 }} />
-          <span style={{ fontWeight: 800, fontSize: '1.15rem', color: '#1a2e14', letterSpacing: '-0.02em' }}>NestBook</span>
+          <span style={{ fontWeight: 800, fontSize: '1.15rem', color: '#405440', letterSpacing: '-0.02em' }}>NestBook</span>
         </div>
 
         {/* Heading */}
-        <h1 style={{ fontSize: '1.7rem', fontWeight: 900, color: '#1a2e14', marginBottom: 4, letterSpacing: '-0.5px' }}>
+        <h1 style={{ fontSize: '1.7rem', fontWeight: 900, color: '#405440', marginBottom: 4, letterSpacing: '-0.5px' }}>
           {t('onboard.title')}
         </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.92rem', marginBottom: 36 }}>
+        <p style={{ color: '#405440', fontSize: '0.92rem', marginBottom: 36 }}>
           {t('onboard.subtitle')}
         </p>
 
@@ -597,7 +617,7 @@ export default function Onboarding() {
               onClick={handleSkip}
               style={{
                 background: 'none', border: 'none',
-                color: '#9ca3af', fontSize: '0.8rem',
+                color: '#405440', fontSize: '0.8rem',
                 cursor: 'pointer', fontFamily: 'inherit',
                 textDecoration: 'underline',
               }}
@@ -617,5 +637,5 @@ const labelStyle = {
   fontWeight: 600,
   fontSize: '0.82rem',
   marginBottom: 6,
-  color: '#557a4a',
+  color: '#405440',
 };
