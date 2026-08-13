@@ -246,52 +246,9 @@ img { display: block; max-width: 100%; }
   position: relative;
   z-index: 1;
 }
-/* Navbar override scoped to index.html only — navbar.css's shared .navbar default is untouched */
-header.navbar.wave-navbar {
-  background: #405440;
-}
-/* Mega-menu + language-selector overrides scoped to index.html only, via the
-   general sibling selector (.mega-menu is a sibling of the header, not a
-   descendant) — navbar.css's shared defaults are untouched on every other
-   public page. */
-header.navbar.wave-navbar ~ .mega-menu {
-  border-top: 3px solid var(--border);
-}
-header.navbar.wave-navbar ~ .mega-menu .mega-col a:hover {
-  color: #405440;
-  background: #f0ede8;
-}
-header.navbar.wave-navbar ~ .mega-menu .mega-lang:hover {
-  background: #f7f5f1;
-}
-header.navbar.wave-navbar ~ .mega-menu .mega-lang.active {
-  background: #f0ede8;
-  border-color: #405440;
-  color: #405440;
-}
-header.navbar.wave-navbar .lang-panel .lang-btn:hover {
-  background: #f7f5f1;
-}
-header.navbar.wave-navbar .lang-panel .lang-btn.active {
-  background: #f0ede8;
-  color: #405440;
-}
-@media (max-width: 600px) {
-  header.navbar.wave-navbar ~ .mega-menu .mega-col {
-    border-bottom: 1px solid var(--border);
-  }
-}
-/* Mega-menu CTA override scoped to index.html only — navbar.css's shared .mega-cta
-   default (and its !important rules) is untouched on every other public page. */
-.mega-cta.wave-mega-cta {
-  background: #405440 !important;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-.mega-cta.wave-mega-cta:hover {
-  background: #405440 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(64,84,64,0.3);
-}
+/* Navbar/mega-menu/language-selector/mega-cta colors are now navbar.css's
+   real default (promoted site-wide) — no index.html-specific override
+   needed here anymore. */
 .hero-inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1120,7 +1077,7 @@ header.navbar.wave-navbar .lang-panel .lang-btn.active {
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!--  NAVBAR                                                                   -->
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
-<header class="navbar wave-navbar">
+<header class="navbar">
   <div class="navbar-inner">
     <a href="/" class="nb-logo">
       <img src="/icon.svg" class="nb-logo-img" alt="NestBook">
@@ -1156,7 +1113,7 @@ header.navbar.wave-navbar .lang-panel .lang-btn.active {
     </div>
     <div class="mega-col">
       <div class="mega-label" data-i18n="nav.getStarted">Get started</div>
-      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mega-cta wave-mega-cta">
+      <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mega-cta">
         <span data-i18n="nav.startTrial">🌿 Start free trial</span>
         <span data-i18n="nav.noCard">No credit card needed</span>
       </a>
@@ -2245,20 +2202,6 @@ document.querySelectorAll('.landing-preview-img').forEach(function(img) {
 });
 </script>
 <script src="/cookie-banner.js"></script>
-<script>
-// Cookie bar palette override, scoped to index.html only — cookie-banner.js
-// is shared across every public page, so its own #1a4710 background / white
-// text defaults are left untouched there. Runs after cookie-banner.js's own
-// DOMContentLoaded listener (registered earlier in document order), so the
-// banner already exists by the time this fires.
-document.addEventListener('DOMContentLoaded', function () {
-  var cookieBanner = document.getElementById('nb-cookie-banner');
-  if (!cookieBanner) return;
-  cookieBanner.style.background = '#405440';
-  var gotItBtn = cookieBanner.querySelector('button');
-  if (gotItBtn) gotItBtn.style.color = '#405440';
-});
-</script>
 <script src="/navbar.js"></script>
 </body>
 </html>

@@ -24,22 +24,32 @@ img { display: block; max-width: 100%; }
 .container { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
 
 .btn { display: inline-flex; align-items: center; padding: 12px 24px; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 2px solid transparent; font-family: inherit; white-space: nowrap; }
-.btn-primary { background: var(--mid); color: #fff; border-color: var(--mid); }
-.btn-primary:hover { background: var(--dark); border-color: var(--dark); }
+.btn-primary { background: #405440; color: #fff; border-color: #405440; }
+.btn-primary:hover { background: #334333; border-color: #334333; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(64,84,64,0.3); }
 .btn-ghost { background: transparent; color: var(--muted); border: none; padding: 10px 16px; font-size: 0.875rem; }
 .btn-ghost:hover { color: var(--dark); }
 .btn-outline { background: transparent; color: var(--dark); border-color: var(--border); }
 .btn-outline:hover { border-color: var(--mid); color: var(--mid); background: var(--soft); }
 
 
-/* Hero */
-.page-hero { background: linear-gradient(160deg, #f8fdf6 0%, #edf7e6 50%, #f3f7f2 100%); padding: 72px 0 60px; border-bottom: 1px solid var(--border); }
-.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: var(--dark); letter-spacing: -0.8px; margin-bottom: 14px; }
-.page-hero p  { font-size: 1.1rem; color: var(--muted); max-width: 560px; line-height: 1.75; }
+/* Hero — same white -> wave -> cream gradient treatment as index.html's
+   hero. Nothing white precedes .page-hero (navbar is dark), so this needs
+   its own white-top zone: same 50/50 flex-split technique as .hero-bg,
+   which keeps the wave safely under the gradient's 57% cream threshold
+   regardless of content height. */
+.page-hero { position: relative; overflow: hidden; padding: 72px 0 60px; }
+.ph-bg { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%); }
+.ph-bg-top { flex: 1 1 0; background: #ffffff; }
+.ph-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.ph-wave svg { display: block; width: 100%; height: 50px; }
+.ph-bg-bottom { flex: 1 1 0; }
+.page-hero > .container { position: relative; z-index: 1; }
+.page-hero h1 { font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 900; color: #405440; letter-spacing: -0.8px; margin-bottom: 14px; }
+.page-hero p  { font-size: 1.1rem; color: #405440; max-width: 560px; line-height: 1.75; }
 
 /* Topic filter bar */
 .topic-bar { padding: 24px 0 0; display: flex; gap: 8px; flex-wrap: wrap; }
-.topic-tag { background: var(--light); color: var(--dark); font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; cursor: default; }
+.topic-tag { background: #f0ede8; color: #405440; font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; cursor: default; }
 
 /* Post grid */
 .posts-section { flex: 1; padding: 56px 0 80px; }
@@ -53,33 +63,40 @@ img { display: block; max-width: 100%; }
 .post-card:hover .post-card-img img { transform: scale(1.03); }
 .post-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
 .post-card-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.post-card-category { background: var(--light); color: var(--dark); font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+.post-card-category { background: #f0ede8; color: #405440; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
 .post-card-date { font-size: 0.78rem; color: var(--muted); }
 .post-card-read { font-size: 0.78rem; color: var(--muted); }
 .post-card-read::before { content: '·'; margin-right: 12px; }
-.post-card h2 { font-size: 1.1rem; font-weight: 800; color: var(--dark); letter-spacing: -0.3px; line-height: 1.35; margin-bottom: 10px; }
+.post-card h2 { font-size: 1.1rem; font-weight: 800; color: #405440; letter-spacing: -0.3px; line-height: 1.35; margin-bottom: 10px; }
 .post-card-excerpt { font-size: 0.875rem; color: #557a4a; line-height: 1.7; flex: 1; margin-bottom: 20px; }
 .post-card-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--mid); transition: color 0.12s; }
 .post-card-link:hover { color: var(--dark); }
 .post-card-link svg { transition: transform 0.12s; }
 .post-card:hover .post-card-link svg { transform: translateX(3px); }
 
-/* CTA band */
-.cta-band { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); padding: 64px 0; text-align: center; }
-.cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 12px; }
-.cta-band p  { color: rgba(255,255,255,0.75); font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; }
-.btn-white { background: #fff; color: var(--dark); border-color: #fff; }
-.btn-white:hover { background: var(--light); border-color: var(--light); }
+/* CTA band — same wave treatment as index.html's hero. The post grid
+   above is white, so (like #features/#testimonials on index.html) no
+   white-top spacer is needed - the wave sits right at the top. */
+.cta-band { position: relative; overflow: hidden; padding: 0 0 64px; text-align: center; }
+.cb-bg { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(240,237,232,1) 57%, rgba(255,255,255,1) 100%); }
+.cb-wave { flex: 0 0 50px; width: 100%; line-height: 0; }
+.cb-wave svg { display: block; width: 100%; height: 50px; }
+.cb-bg-bottom { flex: 1 1 0; }
+.cta-band > .container { position: relative; z-index: 1; padding-top: 40px; }
+.cta-band h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; color: #405440; letter-spacing: -0.5px; margin-bottom: 12px; }
+.cta-band p  { color: #405440; font-size: 1.05rem; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; }
+/* CTA button reuses .btn-primary (updated at the top of this file) -
+   solid #405440, matching index.html's hero primary CTA exactly */
 
 /* Footer */
-.footer { background: #0f2909; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
+.footer { background: #2e3c2e; color: rgba(255,255,255,0.55); padding: 48px 0 28px; }
 .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
 .footer-brand-name { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 1.05rem; color: #fff; margin-bottom: 10px; }
 .footer-tagline { font-size: 0.83rem; line-height: 1.65; max-width: 240px; }
 .footer-col h4 { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: rgba(255,255,255,0.4); margin-bottom: 14px; }
 .footer-links  { display: flex; flex-direction: column; gap: 8px; }
 .footer-link   { font-size: 0.83rem; color: rgba(255,255,255,0.55); transition: color 0.12s; }
-.footer-link:hover { color: var(--light); }
+.footer-link:hover { color: #f0ede8; }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.75rem; }
 .footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
@@ -154,6 +171,15 @@ img { display: block; max-width: 100%; }
 <div class="mega-backdrop"></div>
 
 <section class="page-hero">
+  <div class="ph-bg" aria-hidden="true">
+    <div class="ph-bg-top"></div>
+    <div class="ph-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="ph-bg-bottom"></div>
+  </div>
   <div class="container">
     <h1 data-i18n="blog.title">Blog</h1>
     <p data-i18n="blog.subtitle">Tips, updates, and insights for small hospitality businesses across Europe.</p>
@@ -567,10 +593,18 @@ img { display: block; max-width: 100%; }
 </section>
 
 <section class="cta-band">
+  <div class="cb-bg" aria-hidden="true">
+    <div class="cb-wave">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 V60 Q300,120 600,60 T1200,60 V0 Z" fill="#ffffff"></path>
+      </svg>
+    </div>
+    <div class="cb-bg-bottom"></div>
+  </div>
   <div class="container">
     <h2 data-i18n="blog.cta.heading">Ready to ditch the paper diary?</h2>
     <p data-i18n="blog.cta.sub">Join property owners across Europe who've made the switch to NestBook.</p>
-    <a href="/app/register" class="btn btn-white" data-i18n="blog.cta.btn">Try NestBook free</a>
+    <a href="/app/register" class="btn btn-primary" data-i18n="blog.cta.btn">Try NestBook free</a>
   </div>
 </section>
 
@@ -717,7 +751,7 @@ window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10
   };
   var banner = document.createElement('div');
   banner.style.cssText = [
-    'background:#1a4710', 'color:white', 'padding:8px 16px', 'font-size:13px',
+    'background:#405440', 'color:white', 'padding:8px 16px', 'font-size:13px',
     'display:flex', 'align-items:center', 'justify-content:center', 'gap:16px',
     'position:relative', 'z-index:1000', 'font-family:inherit',
   ].join(';');

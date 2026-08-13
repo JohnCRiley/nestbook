@@ -2,7 +2,7 @@
 
 /* ── Navbar bar ──────────────────────────────────────────────────────────── */
 .navbar {
-  background: var(--dark, #1a4710);
+  background: #405440;
   width: 100%;
   position: sticky;
   top: 0;
@@ -95,10 +95,10 @@
   font-weight: 500;
   transition: background 0.1s;
 }
-.lang-panel .lang-btn:hover { background: var(--soft, #f3f7f2); }
+.lang-panel .lang-btn:hover { background: #f7f5f1; }
 .lang-panel .lang-btn.active {
-  background: var(--light, #d9f0cc);
-  color: var(--dark, #1a4710);
+  background: #f0ede8;
+  color: #405440;
   font-weight: 700;
 }
 
@@ -134,7 +134,7 @@
   -webkit-overflow-scrolling: touch;
   background: #fff;
   box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-  border-top: 3px solid var(--light, #d9f0cc);
+  border-top: 3px solid #e0ecdb;
   z-index: 99;
   transform: translateY(-10px);
   opacity: 0;
@@ -175,11 +175,11 @@
   transition: all 0.12s;
   display: block;
 }
-.mega-col a:hover { color: var(--dark, #1a4710); background: var(--soft, #f3f7f2); }
+.mega-col a:hover { color: #405440; background: #f0ede8; }
 
 /* CTA link in mega menu */
 .mega-cta {
-  background: var(--dark, #1a4710) !important;
+  background: #405440 !important;
   color: #fff !important;
   padding: 12px 14px !important;
   border-radius: 8px !important;
@@ -191,8 +191,14 @@
   font-size: 0.95rem !important;
   text-align: center !important;
   text-decoration: none !important;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
-.mega-cta:hover { background: var(--mid, #2f771b) !important; color: #fff !important; }
+.mega-cta:hover {
+  background: #405440 !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(64,84,64,0.3);
+}
 /* Only the sub-label ("No credit card needed") gets the small/faint style.
    Using :last-child avoids touching index.html's first <span data-i18n> wrapper. */
 .mega-cta span:last-child {
@@ -218,11 +224,11 @@
   transition: all 0.12s;
   width: 100%;
 }
-.mega-lang:hover { background: var(--soft, #f3f7f2); border-color: var(--light, #d9f0cc); }
+.mega-lang:hover { background: #f7f5f1; }
 .mega-lang.active {
-  background: var(--light, #d9f0cc);
-  border-color: var(--mid, #2f771b);
-  color: var(--dark, #1a4710);
+  background: #f0ede8;
+  border-color: #405440;
+  color: #405440;
   font-weight: 700;
 }
 
@@ -241,14 +247,14 @@
   .lang-toggle  { font-size: 0.78rem; padding: 5px 9px; }
   .menu-toggle  { font-size: 0.78rem; padding: 5px 12px; }
   .mega-inner   { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-  .mega-col     { border-bottom: 1px solid #f0fdf4; padding-bottom: 16px; }
+  .mega-col     { border-bottom: 1px solid #e0ecdb; padding-bottom: 16px; }
   .mega-col:last-child { border-bottom: none; }
 }
 
 /* ── Blog language notice ────────────────────────────────────────────────── */
 .blog-lang-notice {
-  background: #f8fbf6;
-  border-left: 3px solid #d9f0cc;
+  background: #f0ede8;
+  border-left: 3px solid #405440;
   padding: 10px 16px;
   margin: 0 auto 32px;
   font-size: 0.82rem;
@@ -260,7 +266,7 @@
   max-width: 860px;
 }
 .blog-lang-notice .ti {
-  color: #1a4710;
+  color: #405440;
   font-size: 1rem;
   flex-shrink: 0;
   margin-top: 1px;
