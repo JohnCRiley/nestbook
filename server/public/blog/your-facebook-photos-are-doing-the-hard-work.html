@@ -121,18 +121,7 @@ img { display: block; max-width: 100%; }
 .blog-callout { background: var(--soft); border-left: 4px solid var(--mid); border-radius: 0 10px 10px 0; padding: 18px 22px; margin: 2em 0; }
 .blog-callout p { margin-bottom: 0.4em; }
 .blog-callout p:last-child { margin-bottom: 0; }
-.blog-callout-green { background: #f0faf0; border-left-color: var(--mid); }
-
-/* Blog CTA */
-.blog-cta { background: linear-gradient(135deg, var(--dark) 0%, var(--mid) 100%); border-radius: 16px; padding: 36px 40px; margin: 2.5em 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-.blog-cta h3 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
-.blog-cta p  { color: rgba(255,255,255,0.78); font-size: 0.92rem; line-height: 1.6; margin-bottom: 0; }
-.blog-cta-text { flex: 1; min-width: 220px; }
-.blog-cta-text h3 { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
-.blog-cta-text p  { color: rgba(255,255,255,0.78); font-size: 0.92rem; line-height: 1.6; margin-bottom: 0; }
-.blog-cta .btn-primary { background: #fff; color: var(--dark); border-color: #fff; flex-shrink: 0; }
-.blog-cta .btn-primary:hover { background: var(--light); border-color: var(--light); }
-.blog-cta-btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
+.blog-callout-green { background: #f0ede8; border-left-color: var(--mid); }
 
 /* Blog examples */
 .blog-examples {
@@ -207,7 +196,7 @@ img { display: block; max-width: 100%; }
 .footer-leaf-img { width: 22px; height: 22px; border-radius: 5px; transform: rotate(-45deg); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 @media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .related-grid { grid-template-columns: 1fr; } }
-@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .article-layout { padding: 0 20px; } .article-cta { padding: 28px 20px; } .blog-cta { padding: 24px 20px; } }
+@media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .article-layout { padding: 0 20px; } .article-cta { padding: 28px 20px; } }
 </style>
 
 <!-- Google Analytics -->
@@ -552,21 +541,6 @@ img { display: block; max-width: 100%; }
       <p>
         The only question is whether you are ready to catch them when they do.
       </p>
-
-      <div class="blog-cta">
-        <div class="blog-cta-text">
-          <h3>Give your photos somewhere to go</h3>
-          <p>
-            Every NestBook property gets a free booking page — your rooms, your photos,
-            your availability calendar, your direct booking button. Share it anywhere.
-            Zero commission. Takes about 20 minutes to set up.
-          </p>
-        </div>
-        <div class="blog-cta-btns">
-          <a href="/app/register" class="btn btn-primary">Start free — no card needed →</a>
-          <a href="/how-it-works" class="btn btn-secondary">See how it works →</a>
-        </div>
-      </div>
 
     </div><!-- /.article-body -->
 
