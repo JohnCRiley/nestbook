@@ -25,6 +25,8 @@ log "Dependencies installed."
 
 log "Syncing shared assets from server/public/ (source of truth) to client/public/..."
 cp /opt/nestbook/server/public/icon.svg     /opt/nestbook/client/public/icon.svg
+cp /opt/nestbook/server/public/icon-192.png /opt/nestbook/client/public/icon-192.png
+cp /opt/nestbook/server/public/icon-512.png /opt/nestbook/client/public/icon-512.png
 cp /opt/nestbook/server/public/manifest.json /opt/nestbook/client/public/manifest.json
 log "Shared assets synced."
 
