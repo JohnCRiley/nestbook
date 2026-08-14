@@ -23,14 +23,14 @@ log "Installing dependencies..."
 npm install
 log "Dependencies installed."
 
+log "Syncing shared assets from server/public/ (source of truth) to client/public/..."
+cp /opt/nestbook/server/public/icon.svg     /opt/nestbook/client/public/icon.svg
+cp /opt/nestbook/server/public/manifest.json /opt/nestbook/client/public/manifest.json
+log "Shared assets synced."
+
 log "Building React frontend..."
 cd /opt/nestbook/client && npm run build
 log "Frontend built to client/dist/."
-
-log "Syncing shared assets to server/public/..."
-cp /opt/nestbook/client/public/icon.svg     /opt/nestbook/server/public/icon.svg
-cp /opt/nestbook/client/public/manifest.json /opt/nestbook/server/public/manifest.json
-log "Shared assets synced."
 
 log "Syncing nginx configuration..."
 if ! diff -q /opt/nestbook/server/nginx.conf /etc/nginx/sites-available/nestbook > /dev/null 2>&1; then
