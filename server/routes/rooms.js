@@ -301,8 +301,24 @@ roomsRouter.put('/:id', (req, res) => {
 
     const {
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
-      access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available,
+      access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available, category_id,
     } = req.body;
+
+    // Room Categories (Phase 3 migration) — same not-sent-vs-cleared pattern
+    // as the Access & Arrival fields below. Cross-property assignment is
+    // rejected rather than silently ignored, since a mismatched category_id
+    // would otherwise point a room at another property's category.
+    let newCategoryId = existing.category_id;
+    if (category_id !== undefined) {
+      if (category_id === null || category_id === '') {
+        newCategoryId = null;
+      } else {
+        const cat = db.prepare('SELECT id FROM room_categories WHERE id = ? AND property_id = ?')
+          .get(category_id, property_id);
+        if (!cat) return res.status(400).json({ error: 'category_id does not belong to this property.' });
+        newCategoryId = cat.id;
+      }
+    }
 
     // Per-unit Access & Arrival — same validation pattern as WP's property-level
     // fields (properties.js PUT /:id), relocated here. RoomPanel's existing
@@ -331,12 +347,12 @@ roomsRouter.put('/:id', (req, res) => {
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
           capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?,
           access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
-          staffed_checkin_available = ?
+          staffed_checkin_available = ?, category_id = ?
       WHERE id = ?
     `).run(
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null,
       newAccessMethod, newAccessCode, newArrivalInstructions, newSendAccessHours,
-      newStaffedCheckin,
+      newStaffedCheckin, newCategoryId,
       req.params.id,
     );
 

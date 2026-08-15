@@ -154,6 +154,9 @@ export default function Settings() {
   const [roomCategoryDeleteTarget, setRoomCategoryDeleteTarget] = useState(null);
   const [roomCategoryDeleteError,  setRoomCategoryDeleteError]  = useState(null);
 
+  const [showRoomOrgWarning, setShowRoomOrgWarning] = useState(false);
+  const [showRoomOrgModal,   setShowRoomOrgModal]   = useState(false);
+
   const [partnerLinks, setPartnerLinks] = useState([]);
   const [linkSaving,   setLinkSaving]   = useState(false);
   const [linkError,    setLinkError]    = useState(null);
@@ -489,6 +492,26 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Room Organization migration finished (ir_room_mode flipped to
+  // 'categories', every room assigned, buffers saved) — sync local state so
+  // the Room Categories management section appears immediately and this
+  // switch card disappears, without a full page reload.
+  const handleRoomOrgMigrated = async (updatedProperty) => {
+    setProperty(updatedProperty);
+    setContextProperty(updatedProperty);
+    updatePropertyInList(updatedProperty);
+    setShowRoomOrgModal(false);
+    try {
+      const [rms, cats] = await Promise.all([
+        apiFetch(`/api/rooms?property_id=${updatedProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => []),
+        apiFetch(`/api/properties/${updatedProperty.id}/room-categories`).then((r) => r.ok ? r.json() : []).catch(() => []),
+      ]);
+      setRooms(Array.isArray(rms) ? rms : (rms?.rooms ?? []));
+      setRoomCategories(Array.isArray(cats) ? cats : []);
+    } catch { /* Settings' own effect will re-sync on next property switch/reload */ }
+    showToast(t('saved'));
   };
 
   const handleFeatureToggle = (key) =>
@@ -1333,9 +1356,21 @@ export default function Settings() {
             </PlanGate>
           </div>
 
-          {/* Room Categories — IR-mode "categories" sub-type (Phase 1: no toggle
-              sets ir_room_mode to 'categories' yet, so this section is built but
-              not currently reachable — later phase adds the actual switch). */}
+          {/* Room Organization — Phase 3 migration switch, IR "named" mode only.
+              Only eligible accounts (individual rooms, not yet switched) see
+              this; switching back is deliberately not offered here. */}
+          {activeProperty?.rental_type === 'rooms' && activeProperty?.ir_room_mode === 'named' && (
+            <div style={{ marginTop: 16 }}>
+              <RoomOrganizationCard
+                t={t}
+                onSwitchClick={() => setShowRoomOrgWarning(true)}
+              />
+            </div>
+          )}
+
+          {/* Room Categories — IR-mode "categories" sub-type management,
+              visible once a property has switched via the migration above
+              (or a new signup chose it during onboarding). */}
           {activeProperty?.ir_room_mode === 'categories' && (
             <div style={{ marginTop: 16 }}>
               <RoomCategoriesSection
@@ -2014,6 +2049,30 @@ export default function Settings() {
         }}
         onCancel={() => setRoomCategoryDeleteTarget(null)}
       />
+
+      <ConfirmModal
+        isOpen={showRoomOrgWarning}
+        title={t('settings.roomOrganization')}
+        message={t('settings.roomOrgWarning')}
+        confirmLabel={t('settings.switchToCategories')}
+        cancelLabel={t('cancel')}
+        variant="warning"
+        onConfirm={() => { setShowRoomOrgWarning(false); setShowRoomOrgModal(true); }}
+        onCancel={() => setShowRoomOrgWarning(false)}
+      />
+
+      {showRoomOrgModal && (
+        <RoomOrganizationMigrationModal
+          t={t}
+          rooms={rooms.filter((r) => !r.parent_unit_id)}
+          roomCategories={roomCategories}
+          propertyId={activeProperty?.id}
+          form={form}
+          theme={theme}
+          onClose={() => setShowRoomOrgModal(false)}
+          onMigrated={handleRoomOrgMigrated}
+        />
+      )}
 
       <ConfirmModal
         isOpen={!!catDeleteTarget}
@@ -3606,6 +3665,348 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// ── RoomOrganizationCard ──────────────────────────────────────────────────────
+// Phase 3: the switch entry point for existing IR "named" accounts. Explains
+// both modes with the exact same copy as the Phase 2 onboarding step — this
+// is a one-way-easy migration, so no equivalent card exists for switching back.
+
+function RoomOrganizationCard({ t, onSwitchClick }) {
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.roomOrganization')}</h2>
+      </div>
+      <div className="settings-card-body">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          <div style={{ padding: '12px 14px', borderRadius: 8, background: '#f8fafc', border: '1px solid var(--border)' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', marginBottom: 4 }}>
+              {t('onboard.irRoomMode.named')}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
+              {t('onboard.irRoomMode.namedDesc')}
+            </div>
+          </div>
+          <div style={{ padding: '12px 14px', borderRadius: 8, background: '#f8fafc', border: '1px solid var(--border)' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', marginBottom: 4 }}>
+              {t('onboard.irRoomMode.categories')}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
+              {t('onboard.irRoomMode.categoriesDesc')}
+            </div>
+          </div>
+        </div>
+        <button className="btn-secondary" onClick={onSwitchClick}>
+          {t('settings.switchToCategories')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── RoomOrganizationMigrationModal ────────────────────────────────────────────
+// Two-step migration: (1) assign every existing room to a category — pre-filled
+// with a capacity-based suggestion via the Phase 1 create endpoint, always
+// editable/reassignable, with an inline "+ Create new category" escape hatch —
+// then (2) optional per-category buffers. Confirm saves each room's
+// category_id via the Phase 3 rooms.js PUT change, any buffer edits via the
+// Phase 1 category PUT, and finally flips ir_room_mode on the property.
+
+function suggestCategoryName(capacity) {
+  const n = Number(capacity) || 0;
+  if (n <= 1) return 'Single';
+  if (n === 2) return 'Double';
+  if (n === 3) return 'Triple';
+  return 'Family';
+}
+
+function RoomOrganizationMigrationModal({ t, rooms, roomCategories, propertyId, form, theme, onClose, onMigrated }) {
+  const [step, setStep] = useState(1); // 1 | 2 | 'success'
+  const [categories, setCategories] = useState(roomCategories);
+  const [assignments, setAssignments] = useState({}); // roomId -> categoryId (string)
+  const [buffers, setBuffers] = useState({}); // categoryId -> string
+  const [initializing, setInitializing] = useState(true);
+  const [showCreateInput, setShowCreateInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [pendingResult, setPendingResult] = useState(null); // updated property, held for the success step's Done button
+  const initStarted = useRef(false); // guards against StrictMode's dev-mode double-invoke re-firing the POST calls below
+
+  // One-time init: pre-fill each room with a capacity-based suggestion,
+  // reusing an existing category of that name if one already exists rather
+  // than creating a duplicate (e.g. on a second attempt after an earlier
+  // migration was abandoned).
+  useEffect(() => {
+    if (initStarted.current) return;
+    initStarted.current = true;
+    let cancelled = false;
+    (async () => {
+      const cats = [...roomCategories];
+      const nameToId = new Map(cats.map(c => [c.name.trim().toLowerCase(), c.id]));
+      const nextAssignments = {};
+      for (const room of rooms) {
+        const suggested = suggestCategoryName(room.capacity);
+        let catId = nameToId.get(suggested.toLowerCase());
+        if (!catId) {
+          try {
+            const res = await apiFetch(`/api/properties/${propertyId}/room-categories`, {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({ name: suggested }),
+            });
+            if (res.ok) {
+              const created = await res.json();
+              cats.push(created);
+              nameToId.set(suggested.toLowerCase(), created.id);
+              catId = created.id;
+            }
+          } catch { /* leave this room unassigned — still editable below */ }
+        }
+        if (catId) nextAssignments[room.id] = String(catId);
+      }
+      if (!cancelled) {
+        setCategories(cats);
+        setAssignments(nextAssignments);
+        setInitializing(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const allAssigned = rooms.every(r => !!assignments[r.id]);
+
+  async function handleCreateCategory() {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    setCreatingCategory(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/api/properties/${propertyId}/room-categories`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Failed to create category.'); return; }
+      setCategories(prev => [...prev, data]);
+      setNewCategoryName('');
+      setShowCreateInput(false);
+    } catch (err) {
+      setError(err.message || 'Failed to create category.');
+    } finally {
+      setCreatingCategory(false);
+    }
+  }
+
+  function handleContinue() {
+    const usedIds = new Set(Object.values(assignments));
+    const initialBuffers = {};
+    for (const id of usedIds) {
+      const cat = categories.find(c => String(c.id) === String(id));
+      initialBuffers[id] = String(cat?.buffer ?? 0);
+    }
+    setBuffers(initialBuffers);
+    setStep(2);
+  }
+
+  async function handleConfirm() {
+    setSaving(true);
+    setError(null);
+    try {
+      for (const room of rooms) {
+        const res = await apiFetch(`/api/rooms/${room.id}`, {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ ...room, category_id: Number(assignments[room.id]) }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to assign a room to its category.');
+        }
+      }
+      for (const [catId, val] of Object.entries(buffers)) {
+        const cat = categories.find(c => String(c.id) === String(catId));
+        const numVal = Number(val) || 0;
+        if (cat && numVal !== (cat.buffer ?? 0)) {
+          const res = await apiFetch(`/api/room-categories/${catId}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ buffer: numVal }),
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to save buffer.');
+          }
+        }
+      }
+      const propRes = await apiFetch(`/api/properties/${propertyId}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ...form, theme, ir_room_mode: 'categories' }),
+      });
+      if (!propRes.ok) {
+        const data = await propRes.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to complete the switch.');
+      }
+      const updatedProperty = await propRes.json();
+      setSaving(false);
+      setStep('success');
+      // Stash for the Done button — avoids re-fetching just to close.
+      setPendingResult(updatedProperty);
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+      setSaving(false);
+    }
+  }
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (saving) return;
+    onClose();
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={handleBackdropClick}>
+      <div className="modal-box" style={{ maxWidth: 640 }}>
+        <div className="modal-header">
+          <h2>
+            {step === 1 ? t('settings.roomOrgAssignTitle')
+              : step === 2 ? t('settings.roomOrgBuffersTitle')
+              : t('saved')}
+          </h2>
+          <button className="modal-close" onClick={onClose} disabled={saving}>✕</button>
+        </div>
+
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {error && <div className="form-error">{error}</div>}
+
+          {step === 1 && (
+            initializing ? (
+              <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>…</div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {rooms.map(room => (
+                    <div key={room.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 0', borderBottom: '1px solid var(--border)',
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{room.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('guestWord')(room.capacity)}</div>
+                      </div>
+                      <select
+                        className="form-control"
+                        style={{ maxWidth: 200 }}
+                        value={assignments[room.id] ?? ''}
+                        onChange={e => setAssignments(prev => ({ ...prev, [room.id]: e.target.value }))}
+                      >
+                        <option value="">—</option>
+                        {categories.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                {showCreateInput ? (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      className="form-control"
+                      value={newCategoryName}
+                      onChange={e => setNewCategoryName(e.target.value)}
+                      placeholder={t('onboard.roomCategoryPlaceholder')}
+                      autoFocus
+                    />
+                    <button
+                      type="button" className="btn-secondary"
+                      disabled={creatingCategory || !newCategoryName.trim()}
+                      onClick={handleCreateCategory}
+                    >
+                      {creatingCategory ? '…' : '✓'}
+                    </button>
+                    <button
+                      type="button" className="btn-ghost-sm"
+                      onClick={() => { setShowCreateInput(false); setNewCategoryName(''); }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className="btn-secondary" style={{ fontSize: '0.85rem', alignSelf: 'flex-start' }} onClick={() => setShowCreateInput(true)}>
+                    + {t('settings.createNewCategory')}
+                  </button>
+                )}
+
+                {!allAssigned && (
+                  <div style={{ fontSize: '0.78rem', color: '#92400e' }}>
+                    {t('settings.roomOrgAllAssigned')}
+                  </div>
+                )}
+              </>
+            )
+          )}
+
+          {step === 2 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {Object.keys(buffers).map(catId => {
+                const cat = categories.find(c => String(c.id) === String(catId));
+                return (
+                  <div key={catId} className="form-group">
+                    <label className="form-label">{cat?.name}</label>
+                    <input
+                      className="form-control" type="number" min="0"
+                      value={buffers[catId]}
+                      onChange={e => setBuffers(prev => ({ ...prev, [catId]: e.target.value }))}
+                    />
+                    <span className="form-hint">{t('settings.roomCategoryBufferHint')}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {step === 'success' && (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>✓</div>
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>{t('saved')}</div>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          {step === 1 && (
+            <>
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>{t('cancel')}</button>
+              <button type="button" className="btn-primary" disabled={!allAssigned || initializing} onClick={handleContinue}>
+                {t('settings.continue')}
+              </button>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setStep(1)} disabled={saving}>
+                ← {t('onboard.backBtn')}
+              </button>
+              <button type="button" className="btn-primary" disabled={saving} onClick={handleConfirm}>
+                {saving ? t('saving') : t('settings.roomOrgConfirm')}
+              </button>
+            </>
+          )}
+          {step === 'success' && (
+            <button type="button" className="btn-primary" onClick={() => onMigrated(pendingResult)}>
+              {t('done')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
