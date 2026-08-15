@@ -120,6 +120,29 @@ function propertyCalendarSection() {
 </div>`;
 }
 
+// Room Categories mode — pooled, buffer-respecting availability for one
+// category, built in-memory from availMapsByRoom (itself already derived
+// from the route's bookings query via getRoomAvailMap, so no extra DB
+// query is needed here). Mirrors getAvailableRoomsInCategory's own logic
+// in categoryAvailability.js: rooms sorted ascending by id, the LAST
+// `buffer` rooms held back from the guest-facing pool, a date is
+// available if at least one non-buffered room in the category is free.
+function getCategoryAvailMap(catRooms, availMapsByRoom, buffer) {
+  const idsAsc = catRooms.map(r => r.id).slice().sort((a, b) => a - b);
+  const assignableIds = buffer > 0
+    ? (buffer >= idsAsc.length ? [] : idsAsc.slice(0, idsAsc.length - buffer))
+    : idsAsc;
+  const map = {};
+  const base = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
+    const s = localDateStr(d);
+    map[s] = assignableIds.some(id => (availMapsByRoom[id] || {})[s] === 'available') ? 'available' : 'booked';
+  }
+  return map;
+}
+
 // heroPhoto   — filename stored in uploads/properties/ (property cover photo, may be null)
 // roomPhotos  — array of {filename, thumb_filename, room_name} from room_photos
 // propertyName — used for alt text
@@ -400,6 +423,63 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
 </div>`;
 }
 
+// Room Categories mode — one card per category instead of one per room.
+// Same visual style/CSS classes as roomCard above, but the header shows the
+// category name, price is a min-max range across the category's rooms, and
+// "Sleeps up to X" uses the highest capacity among them. The calendar uses
+// a synthetic "cat_{id}" key — renderCalendar() below already handles any
+// string key generically (the "property" key for WP mode proves this), so
+// no client-side changes are needed to pick it up.
+// The book button is intentionally NOT wired to openWidget/NB_PRESELECTED_ROOM_ID
+// (widget.js is out of scope this phase) — it just pre-selects the category
+// in the enquiry form and scrolls to it.
+function categoryCard(category, catRooms, currSym, photosByRoom) {
+  const prices = catRooms.map(r => Number(r.price_per_night ?? 0)).filter(p => p > 0);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const maxPrice = prices.length ? Math.max(...prices) : 0;
+  const priceHtml = minPrice === maxPrice
+    ? `${esc(currSym)}${esc(minPrice.toFixed(0))}`
+    : `${esc(currSym)}${esc(minPrice.toFixed(0))}–${esc(currSym)}${esc(maxPrice.toFixed(0))}`;
+
+  const capacities = catRooms.map(r => Number(r.capacity ?? 0)).filter(c => c > 0);
+  const maxCapacity = capacities.length ? Math.max(...capacities) : 0;
+  const occBadge = maxCapacity
+    ? `<div class="room-occupancy"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(maxCapacity))}">Sleeps up to ${esc(String(maxCapacity))}</span></div>`
+    : '';
+
+  // catRooms preserves the outer rooms query's price_per_night ASC order,
+  // so the cheapest room in the category is a reasonable default photo —
+  // but prefer the first room that actually has a photo.
+  const repRoom = catRooms.find(r => (photosByRoom?.[r.id]?.length ?? 0) > 0) ?? catRooms[0];
+  const photos = repRoom ? photosByRoom?.[repRoom.id] : null;
+
+  const photoHtml = photos && photos.length > 0 ? `
+  <div class="room-photo">
+    <img src="/uploads/rooms/${esc(photos[0].filename)}" alt="${esc(category.name)}" loading="lazy" />
+  </div>
+  ${photos.length > 1 ? `
+  <div class="photo-strip">
+    ${photos.map((p, i) => `<img src="/uploads/rooms/${esc(p.filename)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
+  </div>` : ''}` : '';
+
+  const catKey = `cat_${category.id}`;
+
+  return `
+<div class="room-card">
+  ${photoHtml}
+  <div class="room-card-body">
+    <div class="room-header">
+      <h3>${esc(category.name)}</h3>
+    </div>
+    <div class="room-price">${priceHtml}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
+    ${occBadge}
+    ${roomCalendarSection(catKey)}
+    <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
+    <button class="btn-book" onclick="selectCategoryForEnquiry(${category.id})" data-i18n="page.bookThisCategory">Book this category</button>
+  </div>
+</div>`;
+}
+
 // Map property locale to 2-letter page language code
 const LANG_MAP = {
   'en': 'en', 'en-GB': 'en', 'en-US': 'en',
@@ -409,7 +489,7 @@ const LANG_MAP = {
   'nl': 'nl', 'nl-NL': 'nl',
 };
 
-function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}) {
+function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}, categories = []) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -423,8 +503,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const currSym  = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
   const typeLabel = TYPE_LABELS[property.type] ?? '';
   const slug     = property.booking_slug ?? String(propId);
-  const isWholeProperty = property.rental_type === 'whole_property';
-  const isUnitsMode     = property.rental_type === 'units';
+  const isWholeProperty  = property.rental_type === 'whole_property';
+  const isUnitsMode      = property.rental_type === 'units';
+  const isCategoriesMode = property.ir_room_mode === 'categories';
   const isDemo = property.is_demo === 1;
 
   const availMapsByRoom = {};
@@ -432,12 +513,34 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
 
   const propAvailMap = isWholeProperty ? getPropertyAvailMap(bookings) : null;
 
+  // Room Categories mode — group the already-fetched rooms by category_id
+  // (rooms.category_id is present since the route selects r.* directly).
+  // catsWithRooms drives both the category cards below and the enquiry-form
+  // category dropdown further down this function.
+  const categoriesById = {};
+  if (isCategoriesMode) {
+    for (const cat of categories) categoriesById[cat.id] = { ...cat, rooms: [] };
+    for (const r of rooms) {
+      if (r.category_id != null && categoriesById[r.category_id]) {
+        categoriesById[r.category_id].rooms.push(r);
+      }
+    }
+  }
+  const catsWithRooms = isCategoriesMode
+    ? categories.filter(c => (categoriesById[c.id]?.rooms.length ?? 0) > 0)
+    : [];
+
   // Build availability JSON for client-side navigable calendars
   const availJson = {};
   if (isWholeProperty) {
     availJson['property'] = propAvailMap;
   } else {
     for (const r of rooms) availJson[String(r.id)] = availMapsByRoom[r.id];
+  }
+  if (isCategoriesMode) {
+    for (const cat of catsWithRooms) {
+      availJson['cat_' + cat.id] = getCategoryAvailMap(categoriesById[cat.id].rooms, availMapsByRoom, Number(cat.buffer ?? 0));
+    }
   }
 
   const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan)).join('\n');
@@ -647,6 +750,19 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // so unlike WP mode there is no separate top-level availability
     // section here.
     roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit);
+  } else if (isCategoriesMode) {
+    // One card per category (categoryCard), pooled availability, instead
+    // of one card per room — see categoriesById/catsWithRooms above.
+    const catCards = catsWithRooms.map(c => categoryCard(c, categoriesById[c.id].rooms, currSym, photosByRoom)).join('\n');
+    roomsSection = catsWithRooms.length > 0 ? `
+<section class="rooms">
+  <div class="section-inner">
+    <h2 data-i18n="page.ourRooms">Our Rooms</h2>
+    <div class="rooms-grid">
+      ${catCards}
+    </div>
+  </div>
+</section>` : '';
   } else {
     roomsSection = rooms.length > 0 ? `
 <section class="rooms">
@@ -2047,13 +2163,19 @@ ${isPaidPlan ? '' : `
           <label data-i18n="page.guests">Number of guests</label>
           <input type="number" id="guestCount" min="1" value="2" required />
         </div>
-        ${(property.rental_type === 'rooms' || isUnitsMode) && rooms.length > 0 ? `
+        ${isCategoriesMode && catsWithRooms.length > 0 ? `
+        <div class="form-group">
+          <label data-i18n="page.selectCategory">Category</label>
+          <select id="categorySelect" required>
+            ${catsWithRooms.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+          </select>
+        </div>` : (!isCategoriesMode && (property.rental_type === 'rooms' || isUnitsMode) && rooms.length > 0 ? `
         <div class="form-group">
           <label${isUnitsMode ? '' : ' data-i18n="page.selectRoom"'}>${isUnitsMode ? 'Unit' : 'Room'}</label>
           <select id="roomSelect" required>
             ${rooms.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join('')}
           </select>
-        </div>` : ''}
+        </div>` : '')}
         <div class="form-group">
           <label data-i18n="page.message">Message (optional)</label>
           <textarea id="message" rows="3" data-i18n-placeholder="page.message"></textarea>
@@ -2073,9 +2195,11 @@ document.getElementById('enquiryForm').addEventListener('submit', async function
   var btn = this.querySelector('[type="submit"]');
   btn.disabled = true;
   var roomEl = document.getElementById('roomSelect');
+  var categoryEl = document.getElementById('categorySelect');
   var data = {
     propertyId: ${propId},
     roomId:     roomEl ? Number(roomEl.value) : null,
+    categoryId: categoryEl ? Number(categoryEl.value) : null,
     guestName:  document.getElementById('guestName').value,
     guestEmail: document.getElementById('guestEmail').value,
     checkIn:    document.getElementById('checkIn').value,
@@ -2233,6 +2357,8 @@ var I18N = {
     "page.yourEmail":                 "Email address",
     "page.message":                   "Message (optional)",
     "page.selectRoom":                "Room",
+    "page.selectCategory":            "Category",
+    "page.bookThisCategory":          "Book this category",
     "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly.",
     "page.whatGuestsSay":             "What Our Guests Say",
     "page.ourPartners":               "Our Partners",
@@ -2271,6 +2397,8 @@ var I18N = {
     "page.yourEmail":                 "Adresse e-mail",
     "page.message":                   "Message (optionnel)",
     "page.selectRoom":                "Chambre",
+    "page.selectCategory":            "Catégorie",
+    "page.bookThisCategory":          "Réserver cette catégorie",
     "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement.",
     "page.whatGuestsSay":             "Ce que disent nos clients",
     "page.ourPartners":               "Nos partenaires",
@@ -2309,6 +2437,8 @@ var I18N = {
     "page.yourEmail":                 "E-Mail-Adresse",
     "page.message":                   "Nachricht (optional)",
     "page.selectRoom":                "Zimmer",
+    "page.selectCategory":            "Kategorie",
+    "page.bookThisCategory":          "Diese Kategorie buchen",
     "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden.",
     "page.whatGuestsSay":             "Was unsere Gäste sagen",
     "page.ourPartners":               "Unsere Partner",
@@ -2347,6 +2477,8 @@ var I18N = {
     "page.yourEmail":                 "Correo electrónico",
     "page.message":                   "Mensaje (opcional)",
     "page.selectRoom":                "Habitación",
+    "page.selectCategory":            "Categoría",
+    "page.bookThisCategory":          "Reservar esta categoría",
     "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto.",
     "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes",
     "page.ourPartners":               "Nuestros socios",
@@ -2385,6 +2517,8 @@ var I18N = {
     "page.yourEmail":                 "E-mailadres",
     "page.message":                   "Bericht (optioneel)",
     "page.selectRoom":                "Kamer",
+    "page.selectCategory":            "Categorie",
+    "page.bookThisCategory":          "Deze categorie boeken",
     "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op.",
     "page.whatGuestsSay":             "Wat onze gasten zeggen",
     "page.ourPartners":               "Onze partners",
@@ -2449,6 +2583,15 @@ function openWidget(roomId) {
 function scrollToEnquiry() {
   var el = document.getElementById('booking-enquiry');
   if (el) el.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Room Categories mode — deliberately not wired to openWidget/NB_PRESELECTED_ROOM_ID
+// (widget.js is out of scope this phase). On paid-plan properties the
+// enquiry form/categorySelect doesn't exist at all, so this just no-ops.
+function selectCategoryForEnquiry(categoryId) {
+  var sel = document.getElementById('categorySelect');
+  if (sel) sel.value = String(categoryId);
+  scrollToEnquiry();
 }
 
 document.querySelectorAll('.photo-strip-thumb').forEach(function(thumb) {
@@ -2597,7 +2740,15 @@ bookingPageRouter.get('/:identifier', (req, res) => {
         ).all(property.id)
       : [];
 
-    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit));
+    // Room Categories mode — categories are not on the rooms rows themselves
+    // (only rooms.category_id is), so a separate fetch is needed here.
+    const categories = property.ir_room_mode === 'categories'
+      ? db.prepare(
+          `SELECT * FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC`
+        ).all(property.id)
+      : [];
+
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit, categories));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');
