@@ -7,6 +7,7 @@ import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../uti
 import { calculateDeposit } from '../utils/deposits.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { recoveryUrl } from '../lib/recoveryToken.js';
+import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 
 export const bookingsRouter = Router();
 
@@ -801,10 +802,36 @@ bookingsRouter.post('/', (req, res) => {
 
     // For whole_property rentals, auto-assign to the first room if room_id not provided
     let room_id = req.body.room_id;
-    const prop = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(property_id);
+    const category_id = req.body.category_id;
+    const prop = db.prepare('SELECT rental_type, whole_property_rate, ir_room_mode FROM properties WHERE id = ?').get(property_id);
     if (prop?.rental_type === 'whole_property' && !room_id) {
       const firstRoom = db.prepare('SELECT id FROM rooms WHERE property_id = ? ORDER BY id LIMIT 1').get(property_id);
       room_id = firstRoom?.id;
+    }
+
+    // Room Categories mode — category_id sent instead of room_id. Assigns a
+    // specific room synchronously, immediately before the INSERT below, with
+    // no await in between (see categoryAvailability.js for why that matters
+    // — it's what makes this race-free without needing an explicit lock).
+    // respectBuffer: false — owner-created bookings can draw from any room in
+    // the category, including buffered ones; the buffer only restricts
+    // automatic/online assignment, not manual owner action.
+    if (!room_id && category_id) {
+      if (prop?.rental_type !== 'rooms' || prop?.ir_room_mode !== 'categories') {
+        return res.status(400).json({ error: 'category_id is only valid for Room Categories-mode properties.' });
+      }
+      if (!check_in_date || !check_out_date || check_out_date <= check_in_date) {
+        return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
+      }
+      const category = db.prepare('SELECT id FROM room_categories WHERE id = ? AND property_id = ?').get(category_id, property_id);
+      if (!category) {
+        return res.status(400).json({ error: 'category_id does not belong to this property.' });
+      }
+      const assignedRoomId = assignRoomForCategoryBooking(db, category_id, check_in_date, check_out_date, { respectBuffer: false });
+      if (!assignedRoomId) {
+        return res.status(409).json({ error: 'No rooms available in this category for those dates' });
+      }
+      room_id = assignedRoomId;
     }
 
     if (!room_id) {

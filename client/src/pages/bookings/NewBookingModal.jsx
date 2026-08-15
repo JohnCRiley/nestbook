@@ -18,7 +18,7 @@ const SOURCE_OPTIONS = [
 const EMPTY = {
   firstName: '', lastName: '', email: '', phone: '',
   checkIn: '', checkOut: '',
-  roomId: '',
+  roomId: '', categoryId: '',
   numGuests: 1, source: 'direct', notes: '',
   breakfastType: 'none',   // 'none' | 'free' | 'paid'
   bfMorning: '',            // YYYY-MM-DD first morning served
@@ -33,15 +33,32 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   // Unit mode — hardcoded (not yet in the i18n catalogue), matching the
   // plain-English precedent already set elsewhere for Un mode.
   const isUnitsProp = property?.rental_type === 'units';
+  // Room Categories mode (Phase 5) — category dropdown + auto-assign replaces
+  // the room dropdown. Named mode (this condition false) is untouched below.
+  const isCategoriesMode = property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
   const priceBreakdownLabel = (nights, rate) =>
     isUnitsProp ? `Unit (${nights} × ${rate})` : t('nbPriceBreakdownRoom')(nights, rate);
 
   const [form, setForm] = useState({
     ...EMPTY,
-    checkIn:  initialValues?.check_in_date  ?? '',
-    checkOut: initialValues?.check_out_date ?? '',
-    roomId:   initialValues?.room_id ? String(initialValues.room_id) : '',
+    checkIn:    initialValues?.check_in_date  ?? '',
+    checkOut:   initialValues?.check_out_date ?? '',
+    roomId:     initialValues?.room_id ? String(initialValues.room_id) : '',
+    categoryId: initialValues?.category_id ? String(initialValues.category_id) : '',
   });
+
+  // ── Room Categories ────────────────────────────────────────────────────────
+  const [categories,       setCategories]       = useState([]);
+  const [showManualPick,   setShowManualPick]   = useState(false);
+  const [assignedBooking,  setAssignedBooking]  = useState(null); // set only for auto-assign, shows which room was picked before closing
+
+  useEffect(() => {
+    if (!isCategoriesMode || !property?.id) return;
+    apiFetch(`/api/properties/${property.id}/room-categories`)
+      .then(r => r.ok ? r.json() : [])
+      .then(setCategories)
+      .catch(() => {});
+  }, [isCategoriesMode, property?.id]);
 
   // ── Guest search ───────────────────────────────────────────────────────────
   const [guestId,           setGuestId]           = useState(null);
@@ -104,13 +121,16 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     const handler = (e) => {
       if (e.key !== 'Escape') return;
       if (showSuggestions) { setShowSuggestions(false); return; }
-      const hasData = form.firstName || form.lastName || form.email || form.checkIn || form.roomId || form.notes;
+      // Booking already succeeded (auto-assign success screen) — just close,
+      // there's nothing left to discard.
+      if (assignedBooking) { onSuccess(assignedBooking); return; }
+      const hasData = form.firstName || form.lastName || form.email || form.checkIn || form.roomId || form.categoryId || form.notes;
       if (hasData) setShowDiscard(true);
       else onClose();
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [form, showSuggestions, onClose]);
+  }, [form, showSuggestions, onClose, assignedBooking, onSuccess]);
 
   // ── Booked room IDs — refreshed when dates change ─────────────────────────
   useEffect(() => {
@@ -140,15 +160,30 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   }, [form.roomId, form.checkIn, form.checkOut, t]);
 
   // ── Rate breakdown — fetched when room + both dates are set ──────────────
+  // Category auto-assign has no chosen room yet, so this previews using the
+  // same "lowest id, first available" room the backend would actually pick —
+  // the real total is still recomputed server-side against whichever room
+  // ends up assigned at submit time, so a preview mismatch (e.g. a race with
+  // another booking) never desyncs the charged amount.
   useEffect(() => {
     setRateBreakdown(null);
-    const effectiveRoomId = isWP ? rooms[0]?.id : (form.roomId ? Number(form.roomId) : null);
+    let effectiveRoomId = null;
+    if (isWP) {
+      effectiveRoomId = rooms[0]?.id;
+    } else if (form.roomId) {
+      effectiveRoomId = Number(form.roomId);
+    } else if (isCategoriesMode && form.categoryId) {
+      const candidates = rooms
+        .filter(r => r.category_id === Number(form.categoryId) && r.status !== 'maintenance' && !bookedRoomIds.has(r.id))
+        .sort((a, b) => a.id - b.id);
+      effectiveRoomId = candidates[0]?.id ?? null;
+    }
     if (!effectiveRoomId || !form.checkIn || !form.checkOut || form.checkOut <= form.checkIn) return;
     apiFetch(`/api/rooms/${effectiveRoomId}/rate-range?check_in=${form.checkIn}&check_out=${form.checkOut}`)
       .then(r => r.ok ? r.json() : null)
       .then(setRateBreakdown)
       .catch(() => {});
-  }, [isWP, rooms, form.roomId, form.checkIn, form.checkOut]);
+  }, [isWP, isCategoriesMode, rooms, form.roomId, form.categoryId, form.checkIn, form.checkOut, bookedRoomIds]);
 
   // ── Keep bfMorning inside valid range when dates or type change ────────────
   useEffect(() => {
@@ -174,6 +209,14 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     };
   }
 
+  // Category change clears any manual room pick made for the previous
+  // category — a room id from category A is meaningless once B is selected.
+  function handleCategoryChange(e) {
+    const val = e.target.value;
+    setForm(prev => ({ ...prev, categoryId: val, roomId: '' }));
+    setShowManualPick(false);
+  }
+
   function selectGuest(g) {
     setForm(prev => ({
       ...prev,
@@ -197,11 +240,27 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     // parent unit is bookable. No-op for IR/WP rows, which never have it set.
     ? rooms.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id) && !r.parent_unit_id)
     : [];
+  // Room Categories mode — rooms in the selected category, and which of
+  // those are actually free for the chosen dates. Not buffer-restricted:
+  // this is the manual-pick list for an owner override, and the same pool
+  // auto-assign draws from (the backend also uses respectBuffer: false for
+  // owner-created bookings — see categoryAvailability.js).
+  const categoryRoomsAll       = isCategoriesMode && form.categoryId
+    ? rooms.filter(r => r.category_id === Number(form.categoryId))
+    : [];
+  const availableCategoryRooms = datesValid
+    ? categoryRoomsAll.filter(r => r.status !== 'maintenance' && !bookedRoomIds.has(r.id)).sort((a, b) => a.id - b.id)
+    : [];
+  const usingCategoryAssign = isCategoriesMode && !form.roomId;
+  // Preview room for capacity/breakfast/price display while auto-assigning —
+  // purely informational; the backend picks the actual room independently.
+  const previewRoom = usingCategoryAssign ? (availableCategoryRooms[0] ?? null) : selectedRoom;
   const wpRate            = parseFloat(property?.whole_property_rate) || 0;
   const wpPropertyBooked  = isWP && datesValid && bookedRoomIds.has(Number(rooms[0]?.id));
+  const categoryHasNoRooms = isCategoriesMode && datesValid && !!form.categoryId && availableCategoryRooms.length === 0;
   const roomSubtotal      = isWP
     ? (rateBreakdown?.total ?? (nightsCount ? nightsCount * wpRate : 0))
-    : (rateBreakdown?.total ?? (nightsCount && selectedRoom ? nightsCount * selectedRoom.price_per_night : 0));
+    : (rateBreakdown?.total ?? (nightsCount && previewRoom ? nightsCount * previewRoom.price_per_night : 0));
   const bfMinMorning      = form.checkIn  ? addDays(form.checkIn, 1) : '';
   const bfMaxMorning      = form.checkOut || '';
   const bfMorningOk       = form.breakfastType === 'paid' && !!form.bfMorning
@@ -228,7 +287,11 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
       setError(t('checkoutAfterCheckin'));
       return;
     }
-    if (!isWP && !form.roomId) {
+    if (!isWP && !isCategoriesMode && !form.roomId) {
+      setError(t('requiredFields'));
+      return;
+    }
+    if (isCategoriesMode && !form.roomId && !form.categoryId) {
       setError(t('requiredFields'));
       return;
     }
@@ -281,14 +344,20 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
         signal:  controller.signal,
         body: JSON.stringify({
           property_id:          property?.id ?? 1,
-          room_id:              isWP ? (rooms[0]?.id ?? null) : Number(form.roomId),
+          // Category auto-assign sends category_id instead of room_id — the
+          // backend picks the room synchronously (categoryAvailability.js)
+          // and total_price is left null so it's computed server-side
+          // against whichever room actually ends up assigned, never a
+          // client-side guess that could drift from the real pick.
+          room_id:              isWP ? (rooms[0]?.id ?? null) : (usingCategoryAssign ? undefined : Number(form.roomId)),
+          category_id:          usingCategoryAssign ? Number(form.categoryId) : undefined,
           guest_id:             resolvedGuestId,
           check_in_date:        form.checkIn,
           check_out_date:       form.checkOut,
           num_guests:           Number(form.numGuests),
           source:               form.source,
           notes:                form.notes || null,
-          total_price:                totalPrice > 0 ? totalPrice : null,
+          total_price:                usingCategoryAssign ? null : (totalPrice > 0 ? totalPrice : null),
           status:                     'confirmed',
           breakfast_added:            form.breakfastType !== 'none' ? 1 : 0,
           breakfast_start_date:       bfStartDate,
@@ -302,7 +371,14 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
         throw new Error(apiError(body, t));
       }
       const newBooking = await res.json();
-      onSuccess(newBooking);
+      if (usingCategoryAssign) {
+        // Auto-assign picked the room server-side — show the host which one
+        // before closing, rather than silently vanishing into the list.
+        setSubmitting(false);
+        setAssignedBooking(newBooking);
+      } else {
+        onSuccess(newBooking);
+      }
     } catch (err) {
       clearTimeout(timeoutId);
       setError(err.name === 'AbortError' ? 'Request timed out. Please try again.' : err.message);
@@ -313,7 +389,8 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
   // ── Render ─────────────────────────────────────────────────────────────────
   function handleBackdropClick(e) {
     if (e.target !== e.currentTarget) return;
-    const hasData = form.firstName || form.lastName || form.email || form.checkIn || form.roomId || form.notes;
+    if (assignedBooking) { onSuccess(assignedBooking); return; }
+    const hasData = form.firstName || form.lastName || form.email || form.checkIn || form.roomId || form.categoryId || form.notes;
     if (hasData) setShowDiscard(true);
     else onClose();
   }
@@ -325,9 +402,32 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
         {/* Header */}
         <div className="modal-header">
           <h2>{t('moNewTitle')}</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">✕</button>
+          <button
+            className="modal-close-btn"
+            onClick={() => (assignedBooking ? onSuccess(assignedBooking) : onClose())}
+            aria-label="Close"
+          >✕</button>
         </div>
 
+        {assignedBooking ? (
+          // Auto-assign only — the host didn't choose a room upfront, so
+          // confirm which physical room to prepare before closing. Manual
+          // pick / Named / WP / Units modes skip this and close immediately
+          // via onSuccess above, unchanged from today.
+          <div className="modal-body--sections" style={{ textAlign: 'center', padding: '48px 24px' }}>
+            <div style={{ fontSize: '2.2rem', marginBottom: 12 }}>✓</div>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', marginBottom: 6 }}>Booking created</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              Assigned to <strong>{assignedBooking.room_name}</strong>
+            </div>
+            <button
+              type="button" className="btn-primary" style={{ marginTop: 22 }}
+              onClick={() => onSuccess(assignedBooking)}
+            >
+              {t('done')}
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
           <div className="modal-body--sections">
 
@@ -466,7 +566,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
 
             {/* ── Section 3: Room / Property ──────────────────────────────── */}
             <div className="nbm-section">
-              <div className="nbm-section-title">{isWP ? t('booking.wholeProperty') : (property?.rental_type === 'units' ? 'Unit' : t('nbSectionRoom'))}</div>
+              <div className="nbm-section-title">{isWP ? t('booking.wholeProperty') : (property?.rental_type === 'units' ? 'Unit' : (isCategoriesMode ? 'Category' : t('nbSectionRoom')))}</div>
               <div className="form-grid">
                 <div className="form-group span-2">
                   {isWP ? (
@@ -488,6 +588,72 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                           </span>
                         )}
                       </div>
+                    )
+                  ) : isCategoriesMode ? (
+                    !datesValid ? (
+                      <select className="form-control" disabled>
+                        <option>{t('nbSelectDatesFirst')}</option>
+                      </select>
+                    ) : (
+                      <>
+                        <select
+                          className="form-control"
+                          value={form.categoryId}
+                          onChange={handleCategoryChange}
+                        >
+                          <option value="">Select a category…</option>
+                          {categories.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+
+                        {form.categoryId && (
+                          categoryHasNoRooms ? (
+                            <div className="form-error" style={{ display: 'inline-block', marginTop: 8 }}>
+                              No rooms available in this category for those dates
+                            </div>
+                          ) : (
+                            <>
+                              <div style={{ marginTop: 8, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                {usingCategoryAssign
+                                  ? `Auto-assign — ${availableCategoryRooms.length} room${availableCategoryRooms.length !== 1 ? 's' : ''} available`
+                                  : `Manually assigned to ${selectedRoom?.name ?? ''}`}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setShowManualPick(v => !v)}
+                                style={{
+                                  background: 'none', border: 'none', color: 'var(--accent-dark)',
+                                  fontSize: '0.82rem', cursor: 'pointer', padding: '4px 0',
+                                  textDecoration: 'underline', fontFamily: 'inherit',
+                                }}
+                              >
+                                {showManualPick ? 'Hide room list' : 'Choose a specific room instead'}
+                              </button>
+                              {showManualPick && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem' }}>
+                                    <input
+                                      type="radio" name="manualRoomPick" checked={!form.roomId}
+                                      onChange={() => setForm(prev => ({ ...prev, roomId: '' }))}
+                                    />
+                                    Auto-assign (recommended)
+                                  </label>
+                                  {availableCategoryRooms.map(r => (
+                                    <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.85rem' }}>
+                                      <input
+                                        type="radio" name="manualRoomPick" checked={form.roomId === String(r.id)}
+                                        onChange={() => setForm(prev => ({ ...prev, roomId: String(r.id) }))}
+                                      />
+                                      {r.name} ({r.type}) · {t('guestWord')(r.capacity)} · {currencySymbol}{r.price_per_night}{t('perNight')}
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )
+                        )}
+                      </>
                     )
                   ) : (
                     !datesValid ? (
@@ -516,7 +682,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                 </div>
 
                 {/* ── Breakfast options ──────────────────────────────────── */}
-                {property?.rental_type !== 'whole_property' && (selectedRoom?.breakfast_included ? (
+                {property?.rental_type !== 'whole_property' && (previewRoom?.breakfast_included ? (
                   <div className="form-group span-2" style={{ marginTop: 8 }}>
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
@@ -527,7 +693,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                       {t('breakfastIncludedNote')}
                     </span>
                   </div>
-                ) : selectedRoom ? (
+                ) : previewRoom ? (
                   <div className="form-group span-2" style={{ marginTop: 6 }}>
 
                     {/* Option A: Complimentary */}
@@ -659,15 +825,15 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                     className="form-control"
                     value={form.numGuests}
                     min="1"
-                    max={isWP ? (property?.total_capacity ?? 20) : (selectedRoom?.capacity ?? 20)}
+                    max={isWP ? (property?.total_capacity ?? 20) : (previewRoom?.capacity ?? 20)}
                     onChange={set('numGuests')}
                   />
                   {isWP
                     ? property?.total_capacity
                       ? <span className="form-hint">{t('booking.maxGuests')}: {property.total_capacity}</span>
                       : null
-                    : selectedRoom
-                      ? <span className="form-hint">{t('capacity')}: {selectedRoom.capacity}</span>
+                    : previewRoom
+                      ? <span className="form-hint">{t('capacity')}: {previewRoom.capacity}</span>
                       : null
                   }
                 </div>
@@ -689,7 +855,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                 </div>
 
                 {/* Price breakdown — shown once room/property + dates are set */}
-                {((isWP && nightsCount && wpRate > 0) || (!isWP && selectedRoom && nightsCount)) && (
+                {((isWP && nightsCount && wpRate > 0) || (!isWP && previewRoom && nightsCount)) && (
                   <div className="form-group span-2">
                     <div style={{
                       background: 'var(--card-bg)', border: '1px solid var(--border)',
@@ -756,7 +922,7 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
                           padding: '7px 12px', borderBottom: '1px solid var(--border)',
                         }}>
                           <span style={{ color: 'var(--text-secondary)' }}>
-                            {priceBreakdownLabel(t('nightWord')(nightsCount), `${currencySymbol}${(selectedRoom?.price_per_night ?? 0).toFixed(2)}`)}
+                            {priceBreakdownLabel(t('nightWord')(nightsCount), `${currencySymbol}${(previewRoom?.price_per_night ?? 0).toFixed(2)}`)}
                           </span>
                           <span style={{ fontWeight: 600, color: 'var(--accent-dark)' }}>{fmtCurrency(roomSubtotal)}</span>
                         </div>
@@ -810,12 +976,15 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
             <button
               type="submit"
               className="btn-primary"
-              disabled={submitting || !!availabilityError || wpPropertyBooked || (!isWP && datesValid && availableRooms.length === 0)}
+              disabled={submitting || !!availabilityError || wpPropertyBooked
+                || (!isWP && !isCategoriesMode && datesValid && availableRooms.length === 0)
+                || categoryHasNoRooms}
             >
               {submitting ? t('creating') : t('createBooking')}
             </button>
           </div>
         </form>
+        )}
       </div>
 
       {/* Discard confirmation (shown on Escape) */}
