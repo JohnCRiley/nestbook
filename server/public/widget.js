@@ -61,6 +61,7 @@
       checkIn: 'Check-in', checkOut: 'Check-out', guests: 'Guests',
       checkAvailability: 'Check Availability',
       noRooms: 'No rooms are available for those dates. Please try different dates.',
+      noRoomsCapacity: (n) => `No rooms available for ${n} guests. Please try fewer guests or a different room.`,
       capacity: 'Up to', perNight: '/night',
       firstName: 'First Name *', lastName: 'Last Name *',
       email: 'Email Address *', phone: 'Phone Number',
@@ -116,6 +117,7 @@
       checkIn: 'Arrivée', checkOut: 'Départ', guests: 'Voyageurs',
       checkAvailability: 'Vérifier la disponibilité',
       noRooms: 'Aucune chambre disponible pour ces dates. Veuillez essayer d\'autres dates.',
+      noRoomsCapacity: (n) => `Aucune chambre disponible pour ${n} personnes. Essayez avec moins de personnes ou une autre chambre.`,
       capacity: "Jusqu'à", perNight: '/nuit',
       firstName: 'Prénom *', lastName: 'Nom *',
       email: 'Adresse e-mail *', phone: 'Téléphone',
@@ -171,6 +173,7 @@
       checkIn: 'Llegada', checkOut: 'Salida', guests: 'Huéspedes',
       checkAvailability: 'Comprobar disponibilidad',
       noRooms: 'No hay habitaciones disponibles para esas fechas. Pruebe otras fechas.',
+      noRoomsCapacity: (n) => `No hay habitaciones disponibles para ${n} huéspedes. Pruebe con menos huéspedes o con otra habitación.`,
       capacity: 'Hasta', perNight: '/noche',
       firstName: 'Nombre *', lastName: 'Apellido *',
       email: 'Correo electrónico *', phone: 'Teléfono',
@@ -226,6 +229,7 @@
       checkIn: 'Aankomst', checkOut: 'Vertrek', guests: 'Personen',
       checkAvailability: 'Beschikbaarheid controleren',
       noRooms: 'Geen kamers beschikbaar voor deze datums. Kies andere datums.',
+      noRoomsCapacity: (n) => `Geen kamers beschikbaar voor ${n} gasten. Probeer minder gasten of een andere kamer.`,
       capacity: 'Maximaal', perNight: '/nacht',
       firstName: 'Voornaam *', lastName: 'Achternaam *',
       email: 'E-mailadres *', phone: 'Telefoonnummer',
@@ -281,6 +285,7 @@
       checkIn: 'Anreise', checkOut: 'Abreise', guests: 'Gäste',
       checkAvailability: 'Verfügbarkeit prüfen',
       noRooms: 'Keine Zimmer verfügbar für diese Daten. Bitte andere Daten wählen.',
+      noRoomsCapacity: (n) => `Keine Zimmer für ${n} Gäste verfügbar. Bitte versuchen Sie es mit weniger Gästen oder einem anderen Zimmer.`,
       capacity: 'Bis zu', perNight: '/Nacht',
       firstName: 'Vorname *', lastName: 'Nachname *',
       email: 'E-Mail-Adresse *', phone: 'Telefon',
@@ -408,6 +413,25 @@
       if (room.status === 'maintenance') return false;
       if (room.capacity < numGuests) return false;
       // Overlap: booking covers any part of [checkIn, checkOut)
+      const blocked = bookings.some((b) =>
+        b.room_id === room.id &&
+        b.status !== 'cancelled' &&
+        b.status !== 'checked_out' &&
+        b.check_in_date < checkOut &&
+        b.check_out_date > checkIn
+      );
+      return !blocked;
+    });
+  }
+
+  // True when at least one non-maintenance room would be free for the
+  // requested dates but was excluded purely because its capacity is below
+  // numGuests — lets the empty-results message distinguish "too many guests"
+  // from "genuinely fully booked".
+  function hasCapacityRejectedRoom(rooms, bookings, checkIn, checkOut, numGuests) {
+    return rooms.some((room) => {
+      if (room.status === 'maintenance') return false;
+      if (room.capacity >= numGuests) return false;
       const blocked = bookings.some((b) =>
         b.room_id === room.id &&
         b.status !== 'cancelled' &&
@@ -1794,9 +1818,10 @@
     }
 
     if (S.availableRooms.length === 0) {
+      const capacityIssue = hasCapacityRejectedRoom(S.allRooms, S.allBookings, S.checkIn, S.checkOut, S.numGuests);
       const wrap = el('div', 'nb-no-rooms');
       const icon = el('div', 'nb-no-rooms-icon'); icon.appendChild(txt('🛏️'));
-      const msg  = el('div', ''); msg.appendChild(txt(T.noRooms));
+      const msg  = el('div', ''); msg.appendChild(txt(capacityIssue ? T.noRoomsCapacity(S.numGuests) : T.noRooms));
       wrap.appendChild(icon); wrap.appendChild(msg);
       body.appendChild(wrap);
     } else {

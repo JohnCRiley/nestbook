@@ -215,7 +215,7 @@ roomsRouter.get('/:id', (req, res) => {
 // ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id, max_occupancy } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
@@ -261,8 +261,8 @@ roomsRouter.post('/', (req, res) => {
 
     const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id, max_occupancy)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
@@ -272,8 +272,7 @@ roomsRouter.post('/', (req, res) => {
       breakfast_included ? 1 : 0,
       description || null,
       ical_token,
-      parent_unit_id ?? null,
-      max_occupancy || null
+      parent_unit_id ?? null
     );
 
     const created = db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid);
@@ -302,10 +301,8 @@ roomsRouter.put('/:id', (req, res) => {
 
     const {
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
-      access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available, max_occupancy,
+      access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available,
     } = req.body;
-
-    const newMaxOccupancy = max_occupancy !== undefined ? (max_occupancy || null) : existing.max_occupancy;
 
     // Per-unit Access & Arrival — same validation pattern as WP's property-level
     // fields (properties.js PUT /:id), relocated here. RoomPanel's existing
@@ -334,12 +331,12 @@ roomsRouter.put('/:id', (req, res) => {
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
           capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?,
           access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
-          staffed_checkin_available = ?, max_occupancy = ?
+          staffed_checkin_available = ?
       WHERE id = ?
     `).run(
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null,
       newAccessMethod, newAccessCode, newArrivalInstructions, newSendAccessHours,
-      newStaffedCheckin, newMaxOccupancy,
+      newStaffedCheckin,
       req.params.id,
     );
 

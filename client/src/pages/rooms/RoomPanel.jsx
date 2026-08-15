@@ -373,7 +373,6 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
     status:             room.status             ?? 'available',
     breakfast_included: room.breakfast_included ?? 0,
     description:        room.description        ?? '',
-    max_occupancy:      room.max_occupancy       ?? '',
   });
   const [saving,             setSaving]             = useState(false);
   const [deleting,           setDeleting]           = useState(false);
@@ -407,7 +406,6 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
           status:             form.status,
           breakfast_included: form.breakfast_included ? 1 : 0,
           description:        form.description.trim() || null,
-          max_occupancy:      form.max_occupancy === '' ? null : Number(form.max_occupancy),
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -491,17 +489,9 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
             <Field label={t('capacityGuestsLabel')} name="capacity" value={form.capacity}
               onChange={handleChange} type="number" min="1" max="20" />
           </div>
-
           {!isUnit && (
-            <div className="panel-field">
-              <label className="panel-field-label">{t('maxOccupancyLabel')}</label>
-              <input
-                type="number" name="max_occupancy" className="panel-field-input"
-                value={form.max_occupancy} onChange={handleChange} min="1"
-              />
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>
-                {t('maxOccupancyHint')}
-              </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: -6, marginBottom: 10 }}>
+              {t('capacityGuestsHint')}
             </div>
           )}
 

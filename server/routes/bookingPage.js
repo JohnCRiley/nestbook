@@ -363,8 +363,8 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ? `<div class="room-breakfast"><i class="ti ti-coffee"></i> <span data-i18n="page.breakfastIncluded">Breakfast included</span></div>`
     : '';
 
-  const occBadge = room.max_occupancy
-    ? `<div class="room-occupancy"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(room.max_occupancy))}">Sleeps up to ${esc(String(room.max_occupancy))}</span></div>`
+  const occBadge = room.capacity
+    ? `<div class="room-occupancy"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(room.capacity))}">Sleeps up to ${esc(String(room.capacity))}</span></div>`
     : '';
 
   const descHtml = room.description
