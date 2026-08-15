@@ -102,11 +102,11 @@
 /* ── Reset & tokens ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --dark:   #1a4710;
-  --mid:    #2f771b;
-  --light:  #d9f0cc;
+  --dark:   #334333;
+  --mid:    #405440;
+  --light:  #f0ede8;
   --page:   #ffffff;
-  --soft:   #f3f7f2;
+  --soft:   #f0ede8;
   --border: #e0ecdb;
   --text:   #1a2e14;
   --muted:  #557a4a;
@@ -430,7 +430,7 @@ img { display: block; max-width: 100%; }
   border-left: 2px solid transparent;
 }
 .psb-item.active {
-  background: rgba(47,119,27,0.35);
+  background: rgba(64,84,64,0.35);
   border-left-color: var(--light);
   color: #fff;
   font-weight: 600;
@@ -455,7 +455,7 @@ img { display: block; max-width: 100%; }
 /* Dashboard content inside preview */
 .preview-content {
   flex: 1;
-  background: #f3f7f2;
+  background: #f0ede8;
   padding: 14px;
   overflow: hidden;
 }
@@ -517,7 +517,7 @@ img { display: block; max-width: 100%; }
   background: var(--mid);
   flex-shrink: 0;
 }
-.preview-booking-bar.arriving { background: #86efac; }
+.preview-booking-bar.arriving { background: #405440; }
 .preview-booking-bar.confirmed { background: var(--mid); }
 .preview-booking-bar.past { background: #e2e8f0; }
 
@@ -1318,7 +1318,7 @@ img { display: block; max-width: 100%; }
           onerror="this.style.display='none'"
         />
         <!-- Calendar grid mockup -->
-        <div style="display:flex; height:260px; background:#f3f7f2; overflow:hidden">
+        <div style="display:flex; height:260px; background:#f0ede8; overflow:hidden">
           <!-- Sidebar (same as above but inline) -->
           <div class="preview-sidebar" style="width:110px">
             <div class="psb-brand">
@@ -1336,16 +1336,16 @@ img { display: block; max-width: 100%; }
             <!-- Calendar grid -->
             <div style="display:grid; grid-template-columns:90px repeat(7,1fr); border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#fff; font-size:0.55rem">
               <!-- Header row -->
-              <div style="background:var(--light); padding:6px 8px; border-right:2px solid rgba(47,119,27,0.2); font-weight:700; color:var(--dark)">Room</div>
-              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Mon<br>28</div>
-              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Tue<br>29</div>
-              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Wed<br>30</div>
-              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:#fff; border-right:1px solid rgba(47,119,27,0.12)"><span style="background:var(--mid);border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center">31</span></div>
-              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Thu<br>1</div>
-              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(47,119,27,0.12)">Fri<br>2</div>
+              <div style="background:var(--light); padding:6px 8px; border-right:2px solid rgba(64,84,64,0.2); font-weight:700; color:var(--dark)">Room</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(64,84,64,0.12)">Mon<br>28</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(64,84,64,0.12)">Tue<br>29</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(64,84,64,0.12)">Wed<br>30</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:#fff; border-right:1px solid rgba(64,84,64,0.12)"><span style="background:var(--mid);border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center">31</span></div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(64,84,64,0.12)">Thu<br>1</div>
+              <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark); border-right:1px solid rgba(64,84,64,0.12)">Fri<br>2</div>
               <div style="background:var(--light); padding:6px 4px; text-align:center; font-weight:700; color:var(--dark)">Sat<br>3</div>
               <!-- Room 1 -->
-              <div style="padding:6px 8px; border-right:2px solid rgba(47,119,27,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Suite Lavande</div>
+              <div style="padding:6px 8px; border-right:2px solid rgba(64,84,64,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Suite Lavande</div>
               <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
               <div style="background:var(--mid); border-top:1px solid var(--border); padding:3px 4px; color:#fff; font-weight:600">James</div>
               <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
@@ -1354,19 +1354,19 @@ img { display: block; max-width: 100%; }
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
               <div style="border-top:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
               <!-- Room 2 -->
-              <div style="padding:6px 8px; border-right:2px solid rgba(47,119,27,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Ch. Mistral</div>
+              <div style="padding:6px 8px; border-right:2px solid rgba(64,84,64,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Ch. Mistral</div>
               <div style="background:#e2e8f0; border-top:1px solid var(--border); padding:3px 4px; color:#94a3b8; font-size:0.5rem">Sophie</div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
-              <div style="background:#86efac; border-top:1px solid var(--border); border-right:1px solid var(--border); padding:3px 4px; color:#166534; font-weight:600">Hans</div>
+              <div style="background:var(--light); border-top:1px solid var(--border); border-right:1px solid var(--border); padding:3px 4px; color:var(--dark); font-weight:600">Hans</div>
               <div style="background:var(--mid); border-top:1px solid var(--border); border-right:1px solid var(--border)"></div>
               <div style="background:var(--mid); border-top:1px solid var(--border)"></div>
               <!-- Room 3 -->
-              <div style="padding:6px 8px; border-right:2px solid rgba(47,119,27,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Le Nid</div>
+              <div style="padding:6px 8px; border-right:2px solid rgba(64,84,64,0.15); border-top:1px solid var(--border); font-weight:600; color:var(--dark)">Le Nid</div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
-              <div style="background:#86efac; border-top:1px solid var(--border); border-right:1px solid var(--border); padding:3px 4px; color:#166534; font-weight:600">Marie</div>
+              <div style="background:var(--light); border-top:1px solid var(--border); border-right:1px solid var(--border); padding:3px 4px; color:var(--dark); font-weight:600">Marie</div>
               <div style="background:var(--mid); border-top:1px solid var(--border); border-right:1px solid var(--border)"></div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>
               <div style="border-top:1px solid var(--border); border-right:1px solid var(--border); color:var(--muted); text-align:center; padding:3px; cursor:pointer">+</div>

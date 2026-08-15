@@ -67,9 +67,9 @@ export default function Login() {
 
         {resetSuccess && (
           <div className="auth-success" style={{
-            background: '#f0fdf4', border: '1px solid #86efac',
+            background: '#f0ede8', border: '1px solid #405440',
             borderRadius: 8, padding: '10px 14px',
-            fontSize: '0.875rem', color: '#15803d', marginBottom: 16,
+            fontSize: '0.875rem', color: '#405440', marginBottom: 16,
           }}>
             Password reset successfully. Sign in with your new password.
           </div>
