@@ -389,7 +389,6 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
       <span class="room-type-badge">${esc(typeLabel)}</span>
     </div>
     <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    <div class="room-capacity"><i class="ti ti-users"></i> <span data-i18n="page.upTo">Up to</span> ${esc(String(room.capacity ?? 2))} <span data-i18n="page.guests">guests</span></div>
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
@@ -1423,10 +1422,6 @@ section h2 {
   font-weight: 400;
   color: #64748b;
 }
-.room-capacity {
-  font-size: 0.85rem;
-  color: #475569;
-}
 .room-occupancy {
   font-size: 0.82rem;
   color: #475569;
@@ -1626,7 +1621,7 @@ section h2 {
 /* ── Tabler icons ──────────────────────────────────────────────────── */
 .ti { vertical-align: middle; }
 .hero-stats .ti, .hero-meta .ti { font-size: 0.95rem; opacity: 0.85; }
-.room-capacity .ti, .room-breakfast .ti, .room-occupancy .ti { font-size: 0.9rem; }
+.room-breakfast .ti, .room-occupancy .ti { font-size: 0.9rem; }
 #enquirySuccess .ti { font-size: 1.1rem; color: #16a34a; margin-right: 4px; }
 
 /* ── Guest Notes ────────────────────────────────────────────────────── */

@@ -528,7 +528,14 @@
             S.selectedRoom = match;
             S.step = 3; // room is free for these dates — skip straight to guest details
           } else {
-            S.roomFallbackNotice = T.roomFallbackNotice; // not free — fall back to room list with a note
+            // Not free — fall back to the room list with a note. Distinguish
+            // "too many guests for this room" from a genuine date clash by
+            // running the same single-room check used for the browse-flow
+            // empty-results message.
+            const preselectedRoom = rooms.find((r) => r.id === S.preselectedRoomId);
+            const capacityIssue = preselectedRoom &&
+              hasCapacityRejectedRoom([preselectedRoom], bookings, S.checkIn, S.checkOut, S.numGuests);
+            S.roomFallbackNotice = capacityIssue ? T.noRoomsCapacity(S.numGuests) : T.roomFallbackNotice;
             S.step = 2;
           }
           S.preselectedRoomId = null; // consumed — don't re-check on step-back
