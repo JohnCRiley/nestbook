@@ -148,6 +148,12 @@ export default function Settings() {
   const [editingRatePeriod,   setEditingRatePeriod]   = useState(null); // period object | null
   const [ratePeriodDeleteTarget, setRatePeriodDeleteTarget] = useState(null);
 
+  const [roomCategories,      setRoomCategories]      = useState([]);
+  const [showRoomCategoryModal, setShowRoomCategoryModal] = useState(false);
+  const [editingRoomCategory,   setEditingRoomCategory]   = useState(null); // category object | null
+  const [roomCategoryDeleteTarget, setRoomCategoryDeleteTarget] = useState(null);
+  const [roomCategoryDeleteError,  setRoomCategoryDeleteError]  = useState(null);
+
   const [partnerLinks, setPartnerLinks] = useState([]);
   const [linkSaving,   setLinkSaving]   = useState(false);
   const [linkError,    setLinkError]    = useState(null);
@@ -179,6 +185,8 @@ export default function Settings() {
     const rpFetch = plan !== 'free'
       ? apiFetch(`/api/rate-periods?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => [])
       : Promise.resolve([]);
+    const rcFetch = apiFetch(`/api/properties/${activeProperty.id}/room-categories`)
+      .then((r) => r.ok ? r.json() : []).catch(() => []);
     Promise.all([
       apiFetch(`/api/properties/${activeProperty.id}`).then((r) => r.json()),
       apiFetch(`/api/users?property_id=${activeProperty.id}`).then((r) => r.json()),
@@ -186,7 +194,8 @@ export default function Settings() {
       catFetch,
       apiFetch(`/api/rooms?property_id=${activeProperty.id}`).then((r) => r.ok ? r.json() : []).catch(() => []),
       rpFetch,
-    ]).then(([p, u, s, cats, rms, rp]) => {
+      rcFetch,
+    ]).then(([p, u, s, cats, rms, rp, rc]) => {
       setProperty(p);
       setTheme(p.theme ?? 'forest');
       let parsedGlanceFacts = {};
@@ -254,6 +263,7 @@ export default function Settings() {
       setCatTaxInputs(Object.fromEntries(catArr.map(c => [c.id, String(c.tax_rate ?? 0)])));
       setRooms(Array.isArray(rms) ? rms : (rms?.rooms ?? []));
       setRatePeriods(Array.isArray(rp) ? rp : []);
+      setRoomCategories(Array.isArray(rc) ? rc : []);
     });
   }, [activeProperty?.id, plan, user?.has_charges_addon]);
 
@@ -1323,6 +1333,22 @@ export default function Settings() {
             </PlanGate>
           </div>
 
+          {/* Room Categories — IR-mode "categories" sub-type (Phase 1: no toggle
+              sets ir_room_mode to 'categories' yet, so this section is built but
+              not currently reachable — later phase adds the actual switch). */}
+          {activeProperty?.ir_room_mode === 'categories' && (
+            <div style={{ marginTop: 16 }}>
+              <RoomCategoriesSection
+                t={t}
+                roomCategories={roomCategories}
+                error={roomCategoryDeleteError}
+                onAdd={() => { setEditingRoomCategory(null); setShowRoomCategoryModal(true); }}
+                onEdit={(c) => { setEditingRoomCategory(c); setShowRoomCategoryModal(true); }}
+                onDelete={(c) => { setRoomCategoryDeleteError(null); setRoomCategoryDeleteTarget(c); }}
+              />
+            </div>
+          )}
+
           {/* Calendar Sync — iCal export (collapsible) */}
           {(rooms.length > 0 || activeProperty?.rental_type === 'whole_property') && (
             <div className="danger-zone-card" style={{ marginTop: 16 }}>
@@ -1950,6 +1976,43 @@ export default function Settings() {
           setRatePeriodDeleteTarget(null);
         }}
         onCancel={() => setRatePeriodDeleteTarget(null)}
+      />
+
+      {showRoomCategoryModal && (
+        <RoomCategoryModal
+          t={t}
+          category={editingRoomCategory}
+          propertyId={activeProperty?.id}
+          onClose={() => setShowRoomCategoryModal(false)}
+          onSave={(saved) => {
+            setRoomCategories((prev) =>
+              editingRoomCategory
+                ? prev.map((c) => (c.id === saved.id ? saved : c))
+                : [...prev, saved]
+            );
+            setShowRoomCategoryModal(false);
+          }}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={!!roomCategoryDeleteTarget}
+        title={t('settings.roomCategories')}
+        message={`Delete "${roomCategoryDeleteTarget?.name ?? ''}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel={t('cancel')}
+        variant="danger"
+        onConfirm={async () => {
+          const res = await apiFetch(`/api/room-categories/${roomCategoryDeleteTarget.id}`, { method: 'DELETE' });
+          if (res.ok || res.status === 204) {
+            setRoomCategories((prev) => prev.filter((c) => c.id !== roomCategoryDeleteTarget.id));
+          } else {
+            const body = await res.json().catch(() => ({}));
+            setRoomCategoryDeleteError(body.error ?? 'Could not delete this category.');
+          }
+          setRoomCategoryDeleteTarget(null);
+        }}
+        onCancel={() => setRoomCategoryDeleteTarget(null)}
       />
 
       <ConfirmModal
@@ -3384,6 +3447,162 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
             <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>{t('cancel')}</button>
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? t('saving') : t('ratePeriodSave')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── RoomCategoriesSection ─────────────────────────────────────────────────────
+// Phase 1 foundation for the IR-mode "room categories" sub-type — basic CRUD
+// only. Pooled availability, the booking page, and the widget read from this
+// in a later phase; today it's purely a management list.
+
+function RoomCategoriesSection({ t, roomCategories, onAdd, onEdit, onDelete, error }) {
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.roomCategories')}</h2>
+      </div>
+      <div className="settings-card-body">
+        {error && <div className="form-error" style={{ marginBottom: 10 }}>{error}</div>}
+        {roomCategories.length === 0 ? (
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0 0 14px' }}>
+            No room categories yet.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+            {roomCategories.map((c) => (
+              <div key={c.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', borderRadius: 8,
+                background: '#f8fafc', border: '1px solid var(--border)',
+                gap: 10, flexWrap: 'wrap',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>{c.name}</span>
+                  {c.buffer > 0 && (
+                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 2 }}>
+                      {t('settings.roomCategoryBuffer')}: {c.buffer}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button className="btn-ghost-sm" onClick={() => onEdit(c)}>
+                    Edit
+                  </button>
+                  <button
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '0.8rem', padding: '2px 6px', borderRadius: 4 }}
+                    onClick={() => onDelete(c)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <button className="btn-secondary" style={{ fontSize: '0.85rem' }} onClick={onAdd}>
+          + Add category
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── RoomCategoryModal ─────────────────────────────────────────────────────────
+
+function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
+  const [form, setForm] = useState(category ? {
+    name:   category.name,
+    buffer: String(category.buffer ?? 0),
+  } : {
+    name: '', buffer: '0',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error,  setError]  = useState(null);
+
+  const isEdit = !!category;
+  const hasData = !!(form.name || Number(form.buffer) > 0);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key !== 'Escape') return;
+      if (hasData) return;
+      onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [hasData, onClose]);
+
+  function handleBackdropClick(e) {
+    if (e.target !== e.currentTarget) return;
+    if (hasData) return;
+    onClose();
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      setError(t('requiredFields'));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await apiFetch(
+        isEdit ? `/api/room-categories/${category.id}` : `/api/properties/${propertyId}/room-categories`,
+        {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name:   form.name.trim(),
+            buffer: Number(form.buffer) || 0,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? 'Failed to save.'); setSaving(false); return; }
+      onSave(data);
+    } catch (err) {
+      setError(err.message || t('networkError'));
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={handleBackdropClick}>
+      <div className="modal-box" style={{ maxWidth: 440 }}>
+        <div className="modal-header">
+          <h2>{isEdit ? 'Edit category' : 'Add category'}</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            <div className="form-group">
+              <label className="form-label">Name *</label>
+              <input className="form-control" value={form.name} autoFocus
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Double" />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">{t('settings.roomCategoryBuffer')}</label>
+              <input className="form-control" type="number" min="0" value={form.buffer}
+                onChange={e => setForm(p => ({ ...p, buffer: e.target.value }))} />
+              <span className="form-hint">{t('settings.roomCategoryBufferHint')}</span>
+            </div>
+
+            {error && <div className="form-error">{error}</div>}
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={saving}>{t('cancel')}</button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? t('saving') : t('saveChanges')}
             </button>
           </div>
         </form>

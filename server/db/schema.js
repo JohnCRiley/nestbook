@@ -2323,6 +2323,31 @@ John`
   try { db.exec(`ALTER TABLE rooms ADD COLUMN bed_config TEXT`); } catch (e) {}
   try { db.exec(`ALTER TABLE rooms ADD COLUMN max_occupancy INTEGER`); } catch (e) {}
 
+  // Room Categories — Phase 1 foundation for the IR-mode "room categories"
+  // sub-type (hosts who group rooms by type — Double/Twin/Single — instead of
+  // naming each one individually). Later phases add a pooled-availability
+  // calendar and auto-assignment at booking time; this phase only needs
+  // categories to exist and be manageable in Settings.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS room_categories (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id    INTEGER NOT NULL,
+      name           TEXT    NOT NULL,
+      buffer         INTEGER NOT NULL DEFAULT 0,
+      display_order  INTEGER NOT NULL DEFAULT 0,
+      created_at     TEXT    DEFAULT (datetime('now')),
+      FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_room_categories_property ON room_categories(property_id)`);
+
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN category_id INTEGER REFERENCES room_categories(id)`); } catch (e) {}
+
+  // ir_room_mode is the actual sub-type toggle: 'named' is today's existing
+  // behaviour (default, unchanged for everyone); 'categories' is the new mode.
+  // Not read or written by any UI yet — Phase 2/3 wire in the actual toggle.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN ir_room_mode TEXT DEFAULT 'named'`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
