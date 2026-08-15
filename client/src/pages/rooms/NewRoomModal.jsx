@@ -11,6 +11,7 @@ const BEDROOM_TYPES = ['single', 'double', 'twin', 'bunk', 'master', 'kids', 'su
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
   capacity: 2, amenities: '', status: 'available', breakfast_included: 0, description: '',
+  max_occupancy: '',
 };
 
 /** Parse amenities string → array, filtering blanks. */
@@ -60,6 +61,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
           breakfast_included: isWP ? 0 : (form.breakfast_included ? 1 : 0),
           description:        form.description.trim() || null,
           parent_unit_id:     parentUnitId ?? null,
+          max_occupancy:      (!isWP && form.max_occupancy !== '') ? Number(form.max_occupancy) : null,
         }),
       });
       if (!res.ok) {
@@ -205,6 +207,15 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                   </label>
                   <input name="capacity" type="number" className="form-control"
                     value={form.capacity} onChange={handleChange} min="1" max="20" />
+                </div>
+              )}
+
+              {!isWP && !isUnitTopLevel && (
+                <div className="form-group">
+                  <label className="form-label">{t('maxOccupancyLabel')}</label>
+                  <input name="max_occupancy" type="number" className="form-control"
+                    value={form.max_occupancy} onChange={handleChange} min="1" />
+                  <span className="form-hint">{t('maxOccupancyHint')}</span>
                 </div>
               )}
 

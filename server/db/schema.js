@@ -2316,6 +2316,13 @@ John`
   try { db.exec(`ALTER TABLE guests       ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
   try { db.exec(`ALTER TABLE bookings     ADD COLUMN is_sample_data INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
 
+  // Groundwork for future IR-mode room categories feature. room_category and
+  // bed_config are schema-only for now (no UI); max_occupancy is wired up
+  // end-to-end today as an independently useful "sleeps up to X" field.
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN room_category TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN bed_config TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN max_occupancy INTEGER`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

@@ -363,6 +363,10 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ? `<div class="room-breakfast"><i class="ti ti-coffee"></i> <span data-i18n="page.breakfastIncluded">Breakfast included</span></div>`
     : '';
 
+  const occBadge = room.max_occupancy
+    ? `<div class="room-occupancy"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(room.max_occupancy))}">Sleeps up to ${esc(String(room.max_occupancy))}</span></div>`
+    : '';
+
   const descHtml = room.description
     ? `<p class="room-desc">${esc(room.description)}</p>`
     : '';
@@ -389,6 +393,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
+    ${occBadge}
     ${roomCalendarSection(room.id)}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${room.id})` : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
@@ -1422,6 +1427,13 @@ section h2 {
   font-size: 0.85rem;
   color: #475569;
 }
+.room-occupancy {
+  font-size: 0.82rem;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 .room-desc {
   font-size: 0.88rem;
   color: #475569;
@@ -1614,7 +1626,7 @@ section h2 {
 /* ── Tabler icons ──────────────────────────────────────────────────── */
 .ti { vertical-align: middle; }
 .hero-stats .ti, .hero-meta .ti { font-size: 0.95rem; opacity: 0.85; }
-.room-capacity .ti, .room-breakfast .ti { font-size: 0.9rem; }
+.room-capacity .ti, .room-breakfast .ti, .room-occupancy .ti { font-size: 0.9rem; }
 #enquirySuccess .ti { font-size: 1.1rem; color: #16a34a; margin-right: 4px; }
 
 /* ── Guest Notes ────────────────────────────────────────────────────── */
@@ -2228,7 +2240,8 @@ var I18N = {
     "page.selectRoom":                "Room",
     "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly.",
     "page.whatGuestsSay":             "What Our Guests Say",
-    "page.ourPartners":               "Our Partners"
+    "page.ourPartners":               "Our Partners",
+    "page.sleepsUpTo":                "Sleeps up to {n}"
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -2265,7 +2278,8 @@ var I18N = {
     "page.selectRoom":                "Chambre",
     "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement.",
     "page.whatGuestsSay":             "Ce que disent nos clients",
-    "page.ourPartners":               "Nos partenaires"
+    "page.ourPartners":               "Nos partenaires",
+    "page.sleepsUpTo":                "Jusqu'à {n} personnes"
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -2302,7 +2316,8 @@ var I18N = {
     "page.selectRoom":                "Zimmer",
     "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden.",
     "page.whatGuestsSay":             "Was unsere Gäste sagen",
-    "page.ourPartners":               "Unsere Partner"
+    "page.ourPartners":               "Unsere Partner",
+    "page.sleepsUpTo":                "Platz für bis zu {n} Personen"
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -2339,7 +2354,8 @@ var I18N = {
     "page.selectRoom":                "Habitación",
     "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto.",
     "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes",
-    "page.ourPartners":               "Nuestros socios"
+    "page.ourPartners":               "Nuestros socios",
+    "page.sleepsUpTo":                "Capacidad para hasta {n} personas"
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -2376,7 +2392,8 @@ var I18N = {
     "page.selectRoom":                "Kamer",
     "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op.",
     "page.whatGuestsSay":             "Wat onze gasten zeggen",
-    "page.ourPartners":               "Onze partners"
+    "page.ourPartners":               "Onze partners",
+    "page.sleepsUpTo":                "Slaapplaats voor maximaal {n} personen"
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
@@ -2394,6 +2411,11 @@ function applyLang(lang) {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
     var key = el.getAttribute('data-i18n-placeholder');
     if (t[key] !== undefined) el.placeholder = t[key];
+  });
+  document.querySelectorAll('[data-i18n-n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-n');
+    var n = el.getAttribute('data-n');
+    if (t[key] !== undefined) el.textContent = t[key].replace('{n}', n);
   });
   document.querySelectorAll('.lang-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
