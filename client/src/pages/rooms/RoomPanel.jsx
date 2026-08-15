@@ -364,6 +364,9 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
   // Unit mode — hardcoded (not yet in the i18n catalogue), matching the
   // plain-English precedent already set elsewhere for Un mode.
   const isUnit = property?.rental_type === 'units';
+  // Room Categories (Phase 4): only IR-mode properties that have switched
+  // via the Phase 3 migration show this field at all.
+  const showCategoryField = !isUnit && property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
   const [form, setForm] = useState({
     name:               room.name               ?? '',
     type:               room.type               ?? 'double',
@@ -373,13 +376,23 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
     status:             room.status             ?? 'available',
     breakfast_included: room.breakfast_included ?? 0,
     description:        room.description        ?? '',
+    category_id:        room.category_id        ?? '',
   });
+  const [categories,         setCategories]         = useState([]);
   const [saving,             setSaving]             = useState(false);
   const [deleting,           setDeleting]           = useState(false);
   const [deleteBookingCount, setDeleteBookingCount] = useState(0);
   const [showPreDeleteModal, setShowPreDeleteModal] = useState(false);
   const [showDeleteModal,    setShowDeleteModal]    = useState(false);
   const [error,              setError]              = useState(null);
+
+  useEffect(() => {
+    if (!showCategoryField || !property?.id) return;
+    apiFetch(`/api/properties/${property.id}/room-categories`)
+      .then((r) => r.ok ? r.json() : [])
+      .then(setCategories)
+      .catch(() => {});
+  }, [showCategoryField, property?.id]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -406,6 +419,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
           status:             form.status,
           breakfast_included: form.breakfast_included ? 1 : 0,
           description:        form.description.trim() || null,
+          category_id:        showCategoryField ? (form.category_id || null) : undefined,
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -492,6 +506,18 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
           {!isUnit && (
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: -6, marginBottom: 10 }}>
               {t('capacityGuestsHint')}
+            </div>
+          )}
+
+          {showCategoryField && (
+            <div className="panel-field">
+              <label className="panel-field-label">Category</label>
+              <select name="category_id" className="panel-field-input" value={form.category_id} onChange={handleChange}>
+                <option value="">—</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
           )}
 

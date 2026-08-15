@@ -11,6 +11,7 @@ const BEDROOM_TYPES = ['single', 'double', 'twin', 'bunk', 'master', 'kids', 'su
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
   capacity: 2, amenities: '', status: 'available', breakfast_included: 0, description: '',
+  category_id: '',
 };
 
 /** Parse amenities string → array, filtering blanks. */
@@ -28,10 +29,22 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
   // itself (parentUnitId null) falls through to the existing form below,
   // unaffected.
   const isWP = property?.rental_type === 'whole_property' || !!parentUnitId;
+  // Room Categories (Phase 4): only IR-mode properties that have switched
+  // via the Phase 3 migration show this field at all.
+  const showCategoryField = !isWP && property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
   const [form,       setForm]       = useState(EMPTY);
+  const [categories, setCategories] = useState([]);
   const isBedroom = BEDROOM_TYPES.includes(form.type);
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState(null);
+
+  useEffect(() => {
+    if (!showCategoryField || !property?.id) return;
+    apiFetch(`/api/properties/${property.id}/room-categories`)
+      .then((r) => r.ok ? r.json() : [])
+      .then(setCategories)
+      .catch(() => {});
+  }, [showCategoryField, property?.id]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -60,6 +73,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
           breakfast_included: isWP ? 0 : (form.breakfast_included ? 1 : 0),
           description:        form.description.trim() || null,
           parent_unit_id:     parentUnitId ?? null,
+          category_id:        showCategoryField && form.category_id ? Number(form.category_id) : null,
         }),
       });
       if (!res.ok) {
@@ -208,6 +222,18 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                   {!isWP && !isUnitTopLevel && (
                     <span className="form-hint">{t('capacityGuestsHint')}</span>
                   )}
+                </div>
+              )}
+
+              {showCategoryField && (
+                <div className="form-group">
+                  <label className="form-label">Category</label>
+                  <select name="category_id" className="form-control" value={form.category_id} onChange={handleChange}>
+                    <option value="">—</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
               )}
 

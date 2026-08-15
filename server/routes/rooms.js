@@ -215,13 +215,22 @@ roomsRouter.get('/:id', (req, res) => {
 // ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id, category_id } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
     }
     if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
       return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    // Room Categories (Phase 4) — same cross-property guard as the PUT route.
+    let newCategoryId = null;
+    if (category_id !== undefined && category_id !== null && category_id !== '') {
+      const cat = db.prepare('SELECT id FROM room_categories WHERE id = ? AND property_id = ?')
+        .get(category_id, property_id);
+      if (!cat) return res.status(400).json({ error: 'category_id does not belong to this property.' });
+      newCategoryId = cat.id;
     }
 
     const currentUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
@@ -261,8 +270,8 @@ roomsRouter.post('/', (req, res) => {
 
     const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id, category_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
@@ -272,7 +281,8 @@ roomsRouter.post('/', (req, res) => {
       breakfast_included ? 1 : 0,
       description || null,
       ical_token,
-      parent_unit_id ?? null
+      parent_unit_id ?? null,
+      newCategoryId
     );
 
     const created = db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid);

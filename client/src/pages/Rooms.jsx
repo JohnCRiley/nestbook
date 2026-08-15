@@ -37,6 +37,11 @@ export default function Rooms() {
   const [bookingValues, setBookingValues] = useState(null);   // pre-fill for booking modal
   const [page,          setPage]          = useState(1);
 
+  // Room Categories (Phase 4) — grouped view, IR mode + ir_room_mode ===
+  // 'categories' only. Named mode and WP/Units never populate this.
+  const [categories,          setCategories]          = useState([]);
+  const [collapsedCategories, setCollapsedCategories] = useState(() => new Set());
+
   // Unit mode: which unit (if any) a "+ Room"/"+ Add Unit" click is scoped to.
   // null = creating a unit itself; a unit id = creating an internal room inside it.
   const [newRoomParentUnitId, setNewRoomParentUnitId] = useState(null);
@@ -63,6 +68,24 @@ export default function Rooms() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [property?.id]);
+
+  // Room Categories (Phase 4) — fetched only for properties that have
+  // switched via the Phase 3 migration; everyone else's list stays empty
+  // and the grouped view below never activates.
+  useEffect(() => {
+    if (!property?.id || property?.ir_room_mode !== 'categories') return;
+    apiFetch(`/api/properties/${property.id}/room-categories`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((c) => setCategories(Array.isArray(c) ? c : []))
+      .catch(() => {});
+  }, [property?.id, property?.ir_room_mode]);
+
+  const toggleCategoryCollapsed = (id) =>
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
 
   const refreshRooms = () =>
     apiFetch(`/api/rooms?property_id=${property?.id}`)
@@ -107,6 +130,30 @@ export default function Rooms() {
 
   const totalRoomPages = Math.ceil(rooms.length / pageSize) || 1;
   const pagedRooms = rooms.slice((page - 1) * pageSize, page * pageSize);
+
+  // ── Room Categories mode: group the flat rooms array under each category,
+  // ordered by display_order, with an "Uncategorized" group for the
+  // defensive case (a room somehow left without a category_id) ─────────────
+  const isCategoriesMode = property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
+  const categoryGroups = useMemo(() => {
+    if (!isCategoriesMode) return null;
+    const byCategoryId = {};
+    for (const r of rooms) {
+      const key = r.category_id ?? 'uncategorized';
+      (byCategoryId[key] ??= []).push(r);
+    }
+    const sortedCategories = [...categories].sort((a, b) =>
+      (a.display_order ?? 0) - (b.display_order ?? 0) || a.id - b.id
+    );
+    const groups = sortedCategories.map((c) => ({
+      id: c.id, name: c.name, rooms: byCategoryId[c.id] ?? [],
+    }));
+    const uncategorized = byCategoryId.uncategorized ?? [];
+    if (uncategorized.length > 0) {
+      groups.push({ id: 'uncategorized', name: 'Uncategorized', rooms: uncategorized });
+    }
+    return groups;
+  }, [isCategoriesMode, rooms, categories]);
 
   // ── Unit mode: split the flat rooms array into units + their internal rooms ─
   const units = useMemo(() => rooms.filter((r) => !r.parent_unit_id), [rooms]);
@@ -249,6 +296,23 @@ export default function Rooms() {
           {/* ── Card grid ──────────────────────────────────────────────── */}
           {loading ? (
             <div className="loading-screen">{t('loadingRooms')}</div>
+          ) : isCategoriesMode ? (
+            /* Room Categories mode — grouped view. Named mode below is
+               completely untouched by this branch. */
+            <CategoryGroupedRooms
+              groups={categoryGroups}
+              collapsedCategories={collapsedCategories}
+              onToggleCategory={toggleCategoryCollapsed}
+              activeByRoom={activeByRoom}
+              selectedRoom={selectedRoom}
+              today={today}
+              onCardClick={handleCardClick}
+              onBook={handleBook}
+              t={t}
+              currencySymbol={currencySymbol}
+              locale={locale}
+              property={property}
+            />
           ) : (
             <div className="room-grid">
               {pagedRooms.map((room) => (
@@ -268,13 +332,15 @@ export default function Rooms() {
               ))}
             </div>
           )}
-          <Pagination
-            page={page}
-            totalPages={totalRoomPages}
-            total={rooms.length}
-            limit={pageSize}
-            onPage={setPage}
-          />
+          {!isCategoriesMode && (
+            <Pagination
+              page={page}
+              totalPages={totalRoomPages}
+              total={rooms.length}
+              limit={pageSize}
+              onPage={setPage}
+            />
+          )}
         </>
       )}
 
@@ -432,6 +498,64 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── CategoryGroupedRooms — Room Categories mode ───────────────────────────────
+// Wraps the exact same RoomCard used by the flat Named-mode view above —
+// only the grouping/collapsible-header chrome around it changes.
+
+function CategoryGroupedRooms({
+  groups, collapsedCategories, onToggleCategory, activeByRoom, selectedRoom,
+  today, onCardClick, onBook, t, currencySymbol, locale, property,
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {groups.map((group) => {
+        const isCollapsed = collapsedCategories.has(group.id);
+        return (
+          <div key={group.id} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+            <div
+              onClick={() => onToggleCategory(group.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 16px', cursor: 'pointer', background: 'var(--page-bg)',
+              }}
+            >
+              <ChevronIcon expanded={!isCollapsed} />
+              <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                {group.name} ({group.rooms.length})
+              </span>
+            </div>
+            {!isCollapsed && (
+              <div style={{ padding: '14px 16px' }}>
+                {group.rooms.length === 0 ? (
+                  <div style={{ fontSize: '0.83rem', color: 'var(--text-muted)' }}>No rooms in this category yet.</div>
+                ) : (
+                  <div className="room-grid">
+                    {group.rooms.map((room) => (
+                      <RoomCard
+                        key={room.id}
+                        room={room}
+                        activeBooking={activeByRoom[room.id] ?? null}
+                        isSelected={selectedRoom?.id === room.id}
+                        today={today}
+                        onClick={onCardClick}
+                        onBook={onBook}
+                        t={t}
+                        currencySymbol={currencySymbol}
+                        locale={locale}
+                        breakfastIncluded={!!property?.breakfast_included || !!room.breakfast_included}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
