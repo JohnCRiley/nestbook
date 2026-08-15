@@ -123,6 +123,45 @@ export function UnSubTypeSelector({ form, setForm, t }) {
   );
 }
 
+// IR-mode room-organization sub-type (Named Rooms / Room Categories) — same
+// two-choice-with-description pattern as UnSubTypeSelector above. Onboarding
+// only for now; the Add Property flow's combined RentalTypeStep below is
+// deliberately not wired to this yet (existing accounts get this choice via
+// a separate Settings migration flow in a later phase).
+export function IrRoomModeSelector({ form, setForm, t }) {
+  const mode = form.ir_room_mode ?? 'named';
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+      <button
+        type="button"
+        onClick={() => setForm(f => ({ ...f, ir_room_mode: 'named' }))}
+        className={`rental-type-btn${mode === 'named' ? ' active' : ''}`}
+        style={{ padding: '14px 16px', textAlign: 'left' }}
+      >
+        <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>
+          {t('onboard.irRoomMode.named')}
+        </div>
+        <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
+          {t('onboard.irRoomMode.namedDesc')}
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={() => setForm(f => ({ ...f, ir_room_mode: 'categories' }))}
+        className={`rental-type-btn${mode === 'categories' ? ' active' : ''}`}
+        style={{ padding: '14px 16px', textAlign: 'left' }}
+      >
+        <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>
+          {t('onboard.irRoomMode.categories')}
+        </div>
+        <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
+          {t('onboard.irRoomMode.categoriesDesc')}
+        </div>
+      </button>
+    </div>
+  );
+}
+
 // Combined step for flows that want rental-type + (conditionally) sub-type
 // as a single screen, e.g. the Add Property flow's shorter step sequence.
 export default function RentalTypeStep({ form, setForm, t }) {

@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { PROPERTY_GROUPS, WHOLE_PROPERTY_TYPES } from '../utils/propertyTypes.js';
-import { RentalTypeSelector, UnSubTypeSelector } from '../components/RentalTypeStep.jsx';
+import { RentalTypeSelector, UnSubTypeSelector, IrRoomModeSelector } from '../components/RentalTypeStep.jsx';
 
 const CURRENCIES = [
   { value: 'EUR', label: '€ EUR — Euro' },
@@ -21,7 +21,10 @@ const LOCALES = [
   { value: 'nl', label: '🇳🇱 Nederlands' },
 ];
 
-const TOTAL_STEPS = 9; // 0–7 = data steps (6 = units sub-type, 7 = breakfast), 8 = summary
+// 0–8 = data steps (6 = units sub-type / IR room-organization choice,
+// 7 = IR room categories list — only when rooms+categories was chosen,
+// 8 = breakfast), 9 = summary.
+const TOTAL_STEPS = 10;
 
 function shouldSkipBreakfast(form) {
   if (!form) return false;
@@ -50,6 +53,11 @@ export default function Onboarding() {
   const [done, setDone]           = useState(false);
   const [error, setError]         = useState(null);
 
+  // IR room-categories list (step 7) — local drafts only, created via the
+  // room-categories endpoint on that step's own "Save and continue".
+  // Pre-filled with sensible suggestions rather than a blank list.
+  const [categoryDrafts, setCategoryDrafts] = useState(['Double', 'Twin', 'Single', 'Family']);
+
   useEffect(() => {
     if (user?.onboarding_completed) {
       navigate('/dashboard', { replace: true });
@@ -75,33 +83,49 @@ export default function Onboarding() {
           breakfast_start_time: p.breakfast_start_time ?? '07:00',
           breakfast_end_time:   p.breakfast_end_time   ?? '11:00',
           un_sub_type:          p.un_sub_type          ?? null,
+          ir_room_mode:         p.ir_room_mode         ?? 'named',
         });
       })
       .catch(() => {});
   }, [user?.property_id]);
 
+  // Step 6 is shared: units sub-type (units mode) or the new IR
+  // room-organization choice (rooms mode) — never both, since rental_type is
+  // exclusive. Step 7 (category list) only exists for rooms+categories.
+  function isCategoriesFlow() {
+    return form?.rental_type === 'rooms' && form?.ir_room_mode === 'categories';
+  }
+
   function getNextStep(s) {
-    // Step 5 (rental type) → 6 (units sub-type, units only) or straight to
-    // 7 (breakfast) / 8 (summary) depending on whether breakfast applies.
+    // Step 5 (rental type) → 6 (units sub-type / IR room-mode choice) for
+    // units or rooms, or straight past breakfast for whole_property (which
+    // always skips it too).
     if (s === 5) {
-      if (form?.rental_type === 'units') return 6;
-      return shouldSkipBreakfast(form) ? 8 : 7;
+      if (form?.rental_type === 'whole_property') return shouldSkipBreakfast(form) ? 9 : 8;
+      return 6;
     }
-    // Step 6 (units sub-type) → 7 (breakfast) or 8 (summary)
+    // Step 6 (units sub-type / IR room-mode choice) → 7 (category list, rooms
+    // + categories only) or straight to breakfast/summary.
     if (s === 6) {
-      return shouldSkipBreakfast(form) ? 8 : 7;
+      if (isCategoriesFlow()) return 7;
+      return shouldSkipBreakfast(form) ? 9 : 8;
     }
-    return Math.min(s + 1, 8);
+    // Step 7 (category list) → 8 (breakfast always applies to rooms mode).
+    if (s === 7) return 8;
+    return Math.min(s + 1, 9);
   }
 
   function getPrevStep(s) {
-    if (s === 8) {
-      if (form?.rental_type === 'units') return shouldSkipBreakfast(form) ? 6 : 7;
-      return form?.rental_type === 'whole_property' ? 5 : 7;
+    if (s === 9) { // summary
+      if (form?.rental_type === 'whole_property') return 5;
+      if (form?.rental_type === 'units') return shouldSkipBreakfast(form) ? 6 : 8;
+      return 8; // rooms — breakfast always shown
     }
-    if (s === 7) {
-      return form?.rental_type === 'units' ? 6 : 5;
+    if (s === 8) { // breakfast
+      if (isCategoriesFlow()) return 7;
+      return (form?.rental_type === 'units' || form?.rental_type === 'rooms') ? 6 : 5;
     }
+    if (s === 7) return 6; // category list → room-mode choice
     if (s === 6) return 5;
     return Math.max(s - 1, 0);
   }
@@ -125,6 +149,37 @@ export default function Onboarding() {
       setStep(getNextStep(step));
     } catch (_) {
       setError('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Step 7 (IR category list) doesn't touch the property form — it creates
+  // room_categories rows via the Phase 1 endpoint instead. ir_room_mode
+  // itself was already persisted by step 6's own saveStep(), so this only
+  // needs to create the categories, matching "each step saves independently."
+  async function saveCategoriesStep() {
+    if (!user?.property_id) return;
+    const names = categoryDrafts.map(n => n.trim()).filter(Boolean);
+    if (names.length === 0) return;
+    setSaving(true);
+    setError(null);
+    try {
+      for (const name of names) {
+        const res = await apiFetch(`/api/properties/${user.property_id}/room-categories`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ name }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to save. Please try again.');
+        }
+      }
+      setSavedSteps(prev => new Set([...prev, step]));
+      setStep(getNextStep(step));
+    } catch (err) {
+      setError(err.message || 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -192,12 +247,15 @@ export default function Onboarding() {
     );
   }
 
-  // Step 6 (units sub-type) is only reachable for units mode; step 7
-  // (breakfast) is skipped for whole-property, and for units unless the
-  // sub-type is Aparthotel. Both stay non-clickable in the dot row when skipped.
+  // Step 6 (units sub-type / IR room-mode choice) is skipped only for
+  // whole-property; step 7 (IR category list) only exists for rooms mode
+  // with the "categories" choice; step 8 (breakfast) is skipped for
+  // whole-property, and for units unless the sub-type is Aparthotel. All
+  // stay non-clickable in the dot row when skipped.
   function isDotSkipped(i) {
-    if (i === 6) return form.rental_type !== 'units';
-    if (i === 7) return shouldSkipBreakfast(form);
+    if (i === 6) return form.rental_type === 'whole_property';
+    if (i === 7) return !isCategoriesFlow();
+    if (i === 8) return shouldSkipBreakfast(form);
     return false;
   }
   function isDotCompleted(i) {
@@ -402,12 +460,17 @@ export default function Onboarding() {
           </>
         );
 
-      // ── Step 6: Units sub-type (units rental type only) ────────────────
+      // ── Step 6: Units sub-type (units) OR IR room-organization choice (rooms) ──
       case 6:
         return (
           <>
-            <div className="wiz-step-label">{t('onboard.wizUnSubType')}</div>
-            <UnSubTypeSelector form={form} setForm={setForm} t={t} />
+            <div className="wiz-step-label">
+              {form.rental_type === 'units' ? t('onboard.wizUnSubType') : t('onboard.wizIrRoomMode')}
+            </div>
+            {form.rental_type === 'units'
+              ? <UnSubTypeSelector form={form} setForm={setForm} t={t} />
+              : <IrRoomModeSelector form={form} setForm={setForm} t={t} />
+            }
             <button className="btn-wiz" disabled={saving} onClick={saveStep}>
               {saving ? '…' : t('onboard.saveAndContinue')}
             </button>
@@ -419,8 +482,71 @@ export default function Onboarding() {
           </>
         );
 
-      // ── Step 7: Breakfast times ────────────────────────────────────────
+      // ── Step 7: IR room categories list (rooms + categories only) ──────
       case 7:
+        return (
+          <>
+            <div className="wiz-step-label">{t('onboard.wizRoomCategoriesList')}</div>
+            <p style={{ fontSize: '0.8rem', color: '#405440', margin: '0 0 14px', lineHeight: 1.5 }}>
+              {t('onboard.roomCategoriesHint')}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+              {categoryDrafts.map((name, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    className="wizard-input"
+                    value={name}
+                    onChange={e => {
+                      const next = [...categoryDrafts];
+                      next[i] = e.target.value;
+                      setCategoryDrafts(next);
+                    }}
+                    placeholder={t('onboard.roomCategoryPlaceholder')}
+                    style={{ flex: 1 }}
+                    autoFocus={i === 0}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCategoryDrafts(categoryDrafts.filter((_, idx) => idx !== i))}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#b91c1c', fontSize: '1.1rem', padding: '4px 8px', fontFamily: 'inherit',
+                    }}
+                    aria-label="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCategoryDrafts([...categoryDrafts, ''])}
+              style={{
+                background: 'none', border: '1px dashed #405440', borderRadius: 6,
+                color: '#405440', fontSize: '0.82rem', padding: '8px 14px',
+                cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20,
+              }}
+            >
+              + {t('onboard.addCategory')}
+            </button>
+            <button
+              className="btn-wiz"
+              disabled={saving || categoryDrafts.every(n => !n.trim())}
+              onClick={saveCategoriesStep}
+            >
+              {saving ? '…' : t('onboard.saveAndContinue')}
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <button type="button" className="btn-wiz-back" onClick={() => setStep(getPrevStep(step))}>
+                ← {t('onboard.backBtn')}
+              </button>
+            </div>
+          </>
+        );
+
+      // ── Step 8: Breakfast times ────────────────────────────────────────
+      case 8:
         return (
           <>
             <div className="wiz-step-label">{t('onboard.wizBreakfast')}</div>
@@ -455,8 +581,8 @@ export default function Onboarding() {
           </>
         );
 
-      // ── Step 8: Summary ────────────────────────────────────────────────
-      case 8: {
+      // ── Step 9: Summary ────────────────────────────────────────────────
+      case 9: {
         const currencyLabel = CURRENCIES.find(c => c.value === form.currency)?.label ?? form.currency;
         const localeLabel   = LOCALES.find(l => l.value === form.locale)?.label ?? form.locale;
         const rentalLabel   = form.rental_type === 'whole_property'
@@ -603,7 +729,7 @@ export default function Onboarding() {
 
         {/* Step content */}
         <div>
-          {error && step !== 8 && (
+          {error && step !== 9 && (
             <div style={{ marginBottom: 16, padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, fontSize: '0.82rem', color: '#991b1b' }}>
               {error}
             </div>
@@ -612,7 +738,7 @@ export default function Onboarding() {
         </div>
 
         {/* Skip link */}
-        {step < 8 && (
+        {step < 9 && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <button
               type="button"

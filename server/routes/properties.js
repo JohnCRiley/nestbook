@@ -23,6 +23,9 @@ const VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
 const VALID_UN_SUB_TYPES = ['aparthotel', 'glamping', 'serviced_apartment'];
 const VALID_SERVICING_TYPES = ['daily', 'post_stay_optional', 'post_stay'];
 const VALID_BOOKING_FLOWS = ['instant', 'request'];
+// IR-mode room-organization sub-type — only meaningful for rental_type ===
+// 'rooms', but stored regardless (same as un_sub_type for non-units rows).
+const VALID_IR_ROOM_MODES = ['named', 'categories'];
 
 // Augments a property row with a computed has_sample_data boolean.
 function _withSampleFlag(row) {
@@ -284,9 +287,9 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules, local_tips,
       at_a_glance_facts,
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
-      lock_rental_type,
+      lock_rental_type, ir_room_mode,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description, rental_type_locked FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     const newUnSubType = VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null;
@@ -310,6 +313,11 @@ propertiesRouter.put('/:id', (req, res) => {
       ? (existing?.rental_type ?? 'rooms')
       : (VALID_RENTAL_TYPES.includes(rental_type) ? rental_type : (existing?.rental_type ?? 'rooms'));
     const newRentalTypeLocked = rentalTypeLocked || lock_rental_type === true ? 1 : 0;
+    // Same absent-vs-explicit pattern as un_sub_type: only overwritten when the
+    // caller actually sends a valid value (the onboarding room-mode step), so
+    // a routine Settings save — which doesn't send this field yet — never
+    // resets it back to 'named'.
+    const newIrRoomMode = VALID_IR_ROOM_MODES.includes(ir_room_mode) ? ir_room_mode : (existing?.ir_room_mode ?? 'named');
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
@@ -331,7 +339,7 @@ propertiesRouter.put('/:id', (req, res) => {
           house_rules = ?, local_tips = ?,
           at_a_glance_facts = ?,
           un_sub_type = ?, walk_in_enabled = ?, booking_flow = ?,
-          servicing_type = ?, entry_method = ?, rental_type_locked = ?
+          servicing_type = ?, entry_method = ?, rental_type_locked = ?, ir_room_mode = ?
       WHERE id = ?
     `).run(
       name ?? null, type ?? null, address ?? null, city ?? null, country ?? null,
@@ -371,7 +379,7 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       normalizeAtAGlanceFacts(at_a_glance_facts),
-      newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod, newRentalTypeLocked,
+      newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod, newRentalTypeLocked, newIrRoomMode,
       req.params.id,
     );
     if (existing && newRentalType !== existing.rental_type) {
