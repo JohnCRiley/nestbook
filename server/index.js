@@ -12,7 +12,7 @@ import { superAdminAuthRouter }      from './routes/superAdminAuth.js';
 import { stripeRouter, stripeWebhookHandler } from './routes/stripe.js';
 import { propertiesRouter }          from './routes/properties.js';
 import { roomsRouter }               from './routes/rooms.js';
-import { roomCategoriesRouter }      from './routes/roomCategories.js';
+import { roomCategoriesRouter, categoryAvailabilityPublicRouter } from './routes/roomCategories.js';
 import { guestsRouter }              from './routes/guests.js';
 import { bookingsRouter }            from './routes/bookings.js';
 import { usersRouter }               from './routes/users.js';
@@ -106,6 +106,14 @@ app.use('/api/guest-notes', guestNotesPublicRouter);
 
 // Public iCal feed — Booking.com / Airbnb fetch this directly, no login required
 app.use('/api/ical', icalRouter);
+
+// Public category-availability endpoint (Phase 6a) — guest-facing booking
+// page/widget calendar data, so this one narrow route under
+// /api/properties/:id/category-availability/:id must stay reachable without
+// a token. Mounted broadly at /api (same pattern as infoSheetRouter below —
+// no blanket middleware, so a non-matching request just falls through to
+// requireAuth and the authenticated routers unaffected), before requireAuth.
+app.use('/api', categoryAvailabilityPublicRouter);
 
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.

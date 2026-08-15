@@ -8,6 +8,7 @@ import db from '../db/database.js';
 import { stripe } from '../lib/stripeClient.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import { recoveryUrl, verifyRecoveryToken, makeRecoveryToken } from '../lib/recoveryToken.js';
+import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 import {
   sendBookingConfirmation,
   sendApprovalRequestEmail,
@@ -200,22 +201,22 @@ widgetRouter.post('/guests', (req, res) => {
 widgetRouter.post('/bookings', async (req, res) => {
   try {
     const {
-      property_id, room_id, guest_id,
+      property_id, guest_id,
       check_in_date, check_out_date,
       num_guests, status, source, notes, total_price,
       breakfast_added, breakfast_guests, breakfast_price_per_person, breakfast_start_date,
     } = req.body;
+    let room_id = req.body.room_id;
+    const category_id = req.body.category_id;
 
-    if (!property_id || !room_id || !guest_id || !check_in_date || !check_out_date) {
+    if (!property_id || (!room_id && !category_id) || !guest_id || !check_in_date || !check_out_date) {
       return res.status(400).json({
-        error: 'property_id, room_id, guest_id, check_in_date and check_out_date are required',
+        error: 'property_id, room_id (or category_id), guest_id, check_in_date and check_out_date are required',
       });
     }
 
-    console.log(`[widget-booking] started — property=${property_id} room=${room_id} guest=${guest_id} status=${status ?? 'none'}`);
-
     // Demo properties: return fake confirmation, never write to DB
-    const propCheck = db.prepare('SELECT is_demo, rental_type, booking_flow FROM properties WHERE id = ?').get(property_id);
+    const propCheck = db.prepare('SELECT is_demo, rental_type, booking_flow, ir_room_mode FROM properties WHERE id = ?').get(property_id);
     if (propCheck?.is_demo === 1) {
       const ref = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
       console.log('[widget] Demo property booking blocked:', property_id);
@@ -234,6 +235,29 @@ widgetRouter.post('/bookings', async (req, res) => {
     if (check_out_date <= check_in_date) {
       return res.status(400).json({ error: 'check_out_date must be after check_in_date' });
     }
+
+    // Room Categories mode — category_id sent instead of room_id. Assigns a
+    // specific room synchronously, immediately before the conflict check and
+    // INSERT below, with no await in between (see categoryAvailability.js —
+    // that's what keeps this race-free without an explicit lock).
+    // respectBuffer: true — guest-facing/online bookings must never draw
+    // from the buffered pool; only manual owner action (Phase 5) can.
+    if (!room_id && category_id) {
+      if (propCheck?.rental_type !== 'rooms' || propCheck?.ir_room_mode !== 'categories') {
+        return res.status(400).json({ error: 'category_id is only valid for Room Categories-mode properties.' });
+      }
+      const category = db.prepare('SELECT id FROM room_categories WHERE id = ? AND property_id = ?').get(category_id, property_id);
+      if (!category) {
+        return res.status(400).json({ error: 'category_id does not belong to this property.' });
+      }
+      const assignedRoomId = assignRoomForCategoryBooking(db, category_id, check_in_date, check_out_date, { respectBuffer: true });
+      if (!assignedRoomId) {
+        return res.status(409).json({ error: 'No rooms available in this category for those dates' });
+      }
+      room_id = assignedRoomId;
+    }
+
+    console.log(`[widget-booking] started — property=${property_id} room=${room_id} guest=${guest_id} status=${status ?? 'none'}`);
 
     const conflict = db.prepare(`
       SELECT id FROM bookings

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import db from '../db/database.js';
 import { sendApprovalRequestEmail } from '../email/emailService.js';
 import { Resend } from 'resend';
+import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 
 export const enquiriesRouter = Router();
 
@@ -22,11 +23,12 @@ function esc(str) {
 
 // ── POST /api/enquiries ───────────────────────────────────────────────────────
 // Public endpoint — no auth required. For Free-plan properties only.
-// When roomId is provided (rooms-mode), creates a real booking with
-// pending_owner_approval status and sends an approve/decline email.
-// Without roomId (whole-property free plan), falls back to email-only.
+// When roomId (or categoryId, Room Categories mode) is provided (rooms-mode),
+// creates a real booking with pending_owner_approval status and sends an
+// approve/decline email. Without either (whole-property free plan), falls
+// back to email-only.
 enquiriesRouter.post('/', async (req, res) => {
-  const { propertyId, roomId, guestName, guestEmail, checkIn, checkOut, guests, message } = req.body ?? {};
+  const { propertyId, roomId, categoryId, guestName, guestEmail, checkIn, checkOut, guests, message } = req.body ?? {};
 
   if (!propertyId || !guestName?.trim() || !guestEmail?.trim() || !checkIn || !checkOut) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -53,9 +55,27 @@ enquiriesRouter.post('/', async (req, res) => {
   }
 
   // ── Rooms-mode: create a real booking with approval flow ──────────────────
-  if (roomId) {
-    const room = db.prepare('SELECT id, name FROM rooms WHERE id = ? AND property_id = ?').get(Number(roomId), propertyId);
-    if (!room) return res.status(400).json({ error: 'Invalid room selection' });
+  if (roomId || categoryId) {
+    let room;
+    if (roomId) {
+      room = db.prepare('SELECT id, name FROM rooms WHERE id = ? AND property_id = ?').get(Number(roomId), propertyId);
+      if (!room) return res.status(400).json({ error: 'Invalid room selection' });
+    } else {
+      // Room Categories mode — categoryId sent instead of roomId. Assigns a
+      // specific room synchronously, immediately before the INSERT below,
+      // with no await in between (see categoryAvailability.js). respectBuffer:
+      // true — guest-facing enquiries must never draw from the buffered pool.
+      if (property.rental_type !== 'rooms' || property.ir_room_mode !== 'categories') {
+        return res.status(400).json({ error: 'categoryId is only valid for Room Categories-mode properties.' });
+      }
+      const category = db.prepare('SELECT id FROM room_categories WHERE id = ? AND property_id = ?').get(Number(categoryId), propertyId);
+      if (!category) return res.status(400).json({ error: 'categoryId does not belong to this property.' });
+      const assignedRoomId = assignRoomForCategoryBooking(db, Number(categoryId), checkIn, checkOut, { respectBuffer: true });
+      if (!assignedRoomId) {
+        return res.status(409).json({ error: 'No rooms available in this category for those dates' });
+      }
+      room = db.prepare('SELECT id, name FROM rooms WHERE id = ?').get(assignedRoomId);
+    }
 
     const nameParts = guestName.trim().split(/\s+/);
     const firstName = nameParts[0];

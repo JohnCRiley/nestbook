@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
+import { getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
 
 export const roomCategoriesRouter = Router();
 
@@ -117,6 +118,58 @@ roomCategoriesRouter.delete('/room-categories/:id', requireVerified, (req, res) 
 
     db.prepare('DELETE FROM room_categories WHERE id = ?').run(id);
     res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Public category-availability endpoint (Phase 6a) ─────────────────────────
+// Separate router, deliberately NOT mounted alongside roomCategoriesRouter
+// above — that one lives behind requireAuth (dashboard-only). This is
+// guest-facing (the public booking page, Phase 6b), so index.js mounts it
+// in the public-routes section instead, before requireAuth is applied.
+export const categoryAvailabilityPublicRouter = Router();
+
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// ── GET /api/properties/:propertyId/category-availability/:categoryId ───────
+// Public — no auth. Returns a ~365-day per-day availability map for a room
+// category, matching NB_AVAILABILITY[roomId]'s shape in bookingPage.js
+// exactly: { "YYYY-MM-DD": "available" | "booked", ... } — so Phase 6b's
+// frontend can feed this straight into the existing renderCalendar() client
+// function there with minimal changes.
+//
+// A date is 'available' if at least one non-buffered room in the category is
+// free that day (getAvailableRoomsInCategory, respectBuffer: true — the
+// guest-facing convention, matching Phase 6a's booking-creation routes),
+// 'booked' otherwise. This reuses categoryAvailability.js's own
+// status-exclude-list convention (NOT IN cancelled / checked_out /
+// cancelled_unpaid) rather than bookingPage.js's getRoomAvailMap(), which
+// uses a different status include-list for its own per-room calendars and is
+// untouched by this phase — this is a new, separate data source alongside it,
+// not a replacement.
+categoryAvailabilityPublicRouter.get('/properties/:propertyId/category-availability/:categoryId', (req, res) => {
+  try {
+    const propertyId = Number(req.params.propertyId);
+    const categoryId = Number(req.params.categoryId);
+    const category = db.prepare('SELECT id FROM room_categories WHERE id = ? AND property_id = ?').get(categoryId, propertyId);
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+
+    const map = {};
+    const base = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      const dateStr = localDateStr(d);
+      const next = new Date(d);
+      next.setDate(d.getDate() + 1);
+      const nextStr = localDateStr(next);
+      const available = getAvailableRoomsInCategory(db, categoryId, dateStr, nextStr, { respectBuffer: true });
+      map[dateStr] = available.length > 0 ? 'available' : 'booked';
+    }
+    res.json(map);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
