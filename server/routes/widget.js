@@ -265,6 +265,53 @@ widgetRouter.get('/category-preview', (req, res) => {
   }
 });
 
+// ── GET /api/widget/category-rooms?category_id=X&check_in=Y&check_out=Z ──────
+// Room Categories mode only — every room in the category, deliberately NOT
+// filtered by guest capacity (that filtering only happens at the category-
+// list level; this endpoint backs the room-picker step, which shows every
+// room regardless of guest count). `available` is false for a room that's
+// booked for those dates OR buffered — buffered rooms are included here,
+// same "never hidden" convention as booked ones, just flagged unavailable
+// (mirrors getAvailableRoomsInCategory's own respectBuffer:true pool, same
+// convention Phase 6a's booking routes and category-preview already use).
+widgetRouter.get('/category-rooms', (req, res) => {
+  try {
+    const { category_id, check_in, check_out } = req.query;
+    if (!category_id || !check_in || !check_out) {
+      return res.status(400).json({ error: 'category_id, check_in and check_out are required' });
+    }
+    const category = db.prepare('SELECT id, property_id FROM room_categories WHERE id = ?').get(category_id);
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!widgetPropertyGuard(category.property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
+    if (!isCategoriesModeProperty(category.property_id)) {
+      return res.status(400).json({ error: 'This property is not in Room Categories mode.' });
+    }
+
+    const rooms = db.prepare(
+      "SELECT id, name, capacity, bed_config, price_per_night FROM rooms WHERE category_id = ? AND status != 'maintenance' ORDER BY id ASC"
+    ).all(category_id);
+
+    const assignableIds = new Set(
+      getAvailableRoomsInCategory(db, category_id, check_in, check_out, { respectBuffer: true })
+    );
+
+    res.json({
+      rooms: rooms.map((r) => ({
+        room_id:         r.id,
+        name:            r.name,
+        capacity:        r.capacity,
+        bed_config:      parseBedConfig(r.bed_config),
+        price_per_night: r.price_per_night,
+        available:       assignableIds.has(r.id),
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/widget/rate-range?propertyId=X&checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD ──
 // Returns seasonal rate total + per-segment breakdown for a date range.
 // Used by WP widget to show correct price including seasonal adjustments.

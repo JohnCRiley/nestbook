@@ -113,6 +113,8 @@
       categoryJustTaken: 'That room has just been taken — please choose another option.',
       categoryUnavailableNote: 'Not available for these dates',
       summaryCategory: 'Category',
+      chooseYourRoom: 'Choose Your Room',
+      bedConfigUnspecified: 'Configuration not specified',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -176,6 +178,8 @@
       categoryJustTaken: "Cette chambre vient d'être prise — veuillez choisir une autre option.",
       categoryUnavailableNote: 'Non disponible pour ces dates',
       summaryCategory: 'Catégorie',
+      chooseYourRoom: 'Choisissez votre chambre',
+      bedConfigUnspecified: 'Configuration non précisée',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -239,6 +243,8 @@
       categoryJustTaken: 'Esa habitación acaba de ser reservada — elija otra opción.',
       categoryUnavailableNote: 'No disponible para estas fechas',
       summaryCategory: 'Categoría',
+      chooseYourRoom: 'Elija su habitación',
+      bedConfigUnspecified: 'Configuración no especificada',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -302,6 +308,8 @@
       categoryJustTaken: 'Die kamer is zojuist geboekt — kies een andere optie.',
       categoryUnavailableNote: 'Niet beschikbaar voor deze data',
       summaryCategory: 'Categorie',
+      chooseYourRoom: 'Kies uw kamer',
+      bedConfigUnspecified: 'Bedconfiguratie niet opgegeven',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -365,6 +373,8 @@
       categoryJustTaken: 'Dieses Zimmer wurde soeben vergeben — bitte wählen Sie eine andere Option.',
       categoryUnavailableNote: 'Für diese Daten nicht verfügbar',
       summaryCategory: 'Kategorie',
+      chooseYourRoom: 'Wählen Sie Ihr Zimmer',
+      bedConfigUnspecified: 'Bettenkonfiguration nicht angegeben',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
@@ -391,6 +401,10 @@
     };
     return map[type] || type;
   }
+
+  // Occupancy icon — used on the room-picker step (renderStep2CategoryRooms),
+  // same feather-style stroke convention as the bed-type icons above.
+  const OCCUPANCY_ICON_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
 
   // ── State ──────────────────────────────────────────────────────────────────
   const S = {
@@ -419,10 +433,15 @@
     steppedBack:         false,
     bookingPending:      false,
     // Room Categories mode
-    availableCategories:    [],
-    selectedCategory:       null,
-    preselectedCategoryId:  null,
-    categoryFallbackNotice: null,
+    availableCategories:      [],
+    selectedCategory:         null,
+    preselectedCategoryId:    null,
+    categoryFallbackNotice:   null,
+    // Room picker sub-step (multi-room categories) — categoryForRoomPicker
+    // holds the category object being drilled into, null = plain category
+    // list. A sub-mode flag within step 2, not a new numbered S.step.
+    categoryForRoomPicker:    null,
+    categoryRoomPickerRooms:  [],
   };
 
   // ── Calendar interaction state (persists across step-1 re-renders) ─────────
@@ -638,6 +657,11 @@
       '&check_in=' + S.checkIn + '&check_out=' + S.checkOut;
   }
 
+  function categoryRoomsPath(categoryId) {
+    return '/api/widget/category-rooms?category_id=' + categoryId +
+      '&check_in=' + S.checkIn + '&check_out=' + S.checkOut;
+  }
+
   // Turns a GET /api/widget/category-preview response into the same shape
   // renderStep3()/renderStep4() already expect from S.selectedRoom (they
   // only ever read .id/.name/.price_per_night, so no changes are needed
@@ -667,9 +691,20 @@
     if (S.preselectedCategoryId) {
       const catId = S.preselectedCategoryId;
       S.preselectedCategoryId = null; // consumed — don't re-check on step-back
+      const cat = categories.find((c) => c.id === catId);
       try {
+        // Same room-count check as the normal browse-and-click path — a
+        // multi-room category still needs the guest to pick a specific
+        // room, even when arriving via a direct preselect link.
+        const roomsData = await apiFetch(categoryRoomsPath(catId));
+        const rooms = roomsData.rooms || [];
+        if (rooms.length > 1) {
+          S.categoryForRoomPicker   = cat || { id: catId, name: '' };
+          S.categoryRoomPickerRooms = rooms;
+          S.step = 2;
+          return;
+        }
         const preview = await apiFetch(categoryPreviewPath(catId));
-        const cat = categories.find((c) => c.id === catId);
         S.selectedRoom     = selectedRoomFromPreview(preview);
         S.selectedCategory = { id: catId, name: cat ? cat.name : '' };
         S.step = 3; // category still has a room free for these dates — skip straight to guest details
@@ -1262,6 +1297,7 @@
   font-size: 0.75rem; color: #6B6A66;
 }
 .nb-bed-icon-svg { display: inline-flex; color: ${BRAND_DARK}; flex-shrink: 0; }
+.nb-bed-unspecified { color: #9B9A96; font-style: italic; }
 
 /* Room Categories mode — unavailable (buffer-exhausted) category card */
 .nb-room-unavailable { opacity: 0.55; }
@@ -2182,6 +2218,23 @@
             S.loading = true;
             render();
             try {
+              // Quick lookup — the category's TOTAL room count (unfiltered
+              // by capacity, unlike the category-list response this card
+              // came from), which is what actually decides whether a
+              // picker is needed. A capacity-filtered count could
+              // under-count rooms the picker still needs to show.
+              const roomsData = await apiFetch(categoryRoomsPath(category.id));
+              const rooms = roomsData.rooms || [];
+              if (rooms.length > 1) {
+                S.categoryForRoomPicker   = category;
+                S.categoryRoomPickerRooms = rooms;
+                S.loading = false;
+                render();
+                return;
+              }
+              // 0 or 1 room — keep the existing behaviour: category-preview
+              // does the real buffer-respecting assignment, same as a real
+              // booking would use.
               const preview = await apiFetch(categoryPreviewPath(category.id));
               S.selectedRoom     = selectedRoomFromPreview(preview);
               S.selectedCategory = { id: category.id, name: category.name };
@@ -2209,6 +2262,113 @@
     const backBtn = el('button', 'nb-btn-back');
     backBtn.appendChild(txt(T.back));
     backBtn.addEventListener('click', () => { S.step = 1; S.error = null; render(); });
+
+    footer.appendChild(backBtn);
+    footer.appendChild(el('div', ''));
+  }
+
+  // ── Step 2 (Room Categories mode): Room picker within a category ──────────
+  // Sub-mode within step 2 — S.categoryForRoomPicker holds the category
+  // being drilled into; S.step itself never changes for this. Shown only
+  // when the category has more than one room (renderStep2Categories()'s
+  // book button decides that before setting this state). Every room in the
+  // category is shown, no capacity filtering — booked/buffered rooms are
+  // disabled, never hidden.
+  function renderStep2CategoryRooms() {
+    const category = S.categoryForRoomPicker;
+    const rooms = S.categoryRoomPickerRooms || [];
+
+    const title = el('div', 'nb-section-title');
+    title.appendChild(txt(T.chooseYourRoom));
+    body.appendChild(title);
+
+    rooms.forEach((room) => {
+      const card = el('div', 'nb-room' + (room.available ? '' : ' nb-room-unavailable'));
+      const info = el('div', 'nb-room-info');
+
+      const hd = el('div', 'nb-room-hd');
+      const nameBlock = el('div', '');
+      const name = el('div', 'nb-room-name'); name.appendChild(txt(room.name));
+      nameBlock.appendChild(name);
+      const priceEl = el('div', 'nb-room-price');
+      priceEl.appendChild(txt(CUR_SYMBOL + room.price_per_night));
+      const perN = el('span', ''); perN.appendChild(txt(T.perNight));
+      priceEl.appendChild(perN);
+      hd.appendChild(nameBlock); hd.appendChild(priceEl);
+      info.appendChild(hd);
+
+      // Occupancy + bed-config chips together in one row, same "icon +
+      // label" treatment as bookingPage.js's category cards.
+      const infoRow = el('div', 'nb-bed-icons');
+
+      const occChip = el('span', 'nb-bed-icon');
+      const occIcon = el('span', 'nb-bed-icon-svg');
+      occIcon.innerHTML = OCCUPANCY_ICON_SVG;
+      occChip.appendChild(occIcon);
+      occChip.appendChild(txt(T.capacity + ' ' + room.capacity + ' ' + (room.capacity === 1 ? 'guest' : 'guests')));
+      infoRow.appendChild(occChip);
+
+      if (room.bed_config && room.bed_config.length > 0) {
+        room.bed_config.forEach((entry) => {
+          const chip = el('span', 'nb-bed-icon');
+          const iconSpan = el('span', 'nb-bed-icon-svg');
+          iconSpan.innerHTML = BED_TYPE_ICON_SVG[entry.type] || BED_TYPE_ICON_SVG.double;
+          chip.appendChild(iconSpan);
+          const qtyPrefix = entry.qty > 1 ? (entry.qty + '× ') : '';
+          chip.appendChild(txt(qtyPrefix + bedTypeLabel(entry.type)));
+          infoRow.appendChild(chip);
+        });
+      } else {
+        const noBedChip = el('span', 'nb-bed-icon nb-bed-unspecified');
+        noBedChip.appendChild(txt(T.bedConfigUnspecified));
+        infoRow.appendChild(noBedChip);
+      }
+      info.appendChild(infoRow);
+
+      if (!room.available) {
+        const noteEl = el('div', 'nb-category-unavailable-note');
+        noteEl.appendChild(txt(T.categoryUnavailableNote));
+        info.appendChild(noteEl);
+      }
+
+      const selectBtn = el('button', 'nb-btn-book-room');
+      selectBtn.appendChild(txt(T.bookRoom));
+      if (!room.available) {
+        selectBtn.disabled = true;
+      } else {
+        selectBtn.addEventListener('click', () => {
+          // A specific physical room, picked directly by the guest — this
+          // bypasses the category-assignment engine entirely (no
+          // category-preview call), same as the plain per-room booking
+          // flow (renderStep2()'s own book button) already does.
+          S.selectedRoom = {
+            id:              room.room_id,
+            name:            room.name,
+            price_per_night: room.price_per_night,
+            capacity:        room.capacity,
+          };
+          S.selectedCategory       = category ? { id: category.id, name: category.name } : null;
+          S.categoryForRoomPicker   = null;
+          S.categoryRoomPickerRooms = [];
+          S.step = 3;
+          render();
+        });
+      }
+      info.appendChild(selectBtn);
+
+      card.appendChild(info);
+      body.appendChild(card);
+    });
+
+    // Footer — back returns to the plain category list, staying on step 2.
+    const backBtn = el('button', 'nb-btn-back');
+    backBtn.appendChild(txt(T.back));
+    backBtn.addEventListener('click', () => {
+      S.categoryForRoomPicker   = null;
+      S.categoryRoomPickerRooms = [];
+      S.error = null;
+      render();
+    });
 
     footer.appendChild(backBtn);
     footer.appendChild(el('div', ''));
@@ -2497,7 +2657,7 @@
 
     switch (S.step) {
       case 1: renderStep1(); break;
-      case 2: S.wholeProperty ? renderStep2WP() : (S.categoriesMode ? renderStep2Categories() : renderStep2()); break;
+      case 2: S.wholeProperty ? renderStep2WP() : (S.categoriesMode ? (S.categoryForRoomPicker ? renderStep2CategoryRooms() : renderStep2Categories()) : renderStep2()); break;
       case 3: renderStep3(); break;
       case 4: renderStep4(); break;
       case 5: renderSuccess(); break;
@@ -2526,6 +2686,7 @@
     Object.assign(S, {
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
       availableCategories: [], selectedCategory: null,
+      categoryForRoomPicker: null, categoryRoomPickerRooms: [],
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
       bookingRef: null, loading: false, error: null,
       breakfastAdded: false, redirecting: false, steppedBack: false, bookingPending: false,
