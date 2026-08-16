@@ -106,6 +106,13 @@
       bookRoom: 'Book this room →',
       clearDates: 'Clear', today: 'Today',
       roomFallbackNotice: "Your selected room isn't available for these dates — here are the other options:",
+      bedTypeSingle: 'Single Bed', bedTypeDouble: 'Double Bed', bedTypeQueen: 'Queen Bed',
+      bedTypeKing: 'King Bed', bedTypeSofaBed: 'Sofa Bed', bedTypeBunkBed: 'Bunk Bed',
+      bookCategory: 'Book this category →',
+      categoryFallbackNotice: "Your selected category isn't available for these dates — here are the other options:",
+      categoryJustTaken: 'That room has just been taken — please choose another option.',
+      categoryUnavailableNote: 'Not available for these dates',
+      summaryCategory: 'Category',
     },
     fr: {
       bookNow: 'Réserver', close: '✕', back: '← Retour',
@@ -162,6 +169,13 @@
       bookRoom: 'Réserver cette chambre →',
       clearDates: 'Effacer', today: "Aujourd'hui",
       roomFallbackNotice: "La chambre sélectionnée n'est pas disponible à ces dates — voici les autres options :",
+      bedTypeSingle: 'Lit simple', bedTypeDouble: 'Lit double', bedTypeQueen: 'Lit Queen',
+      bedTypeKing: 'Lit King', bedTypeSofaBed: 'Canapé-lit', bedTypeBunkBed: 'Lit superposé',
+      bookCategory: 'Réserver cette catégorie →',
+      categoryFallbackNotice: "La catégorie sélectionnée n'est pas disponible à ces dates — voici les autres options :",
+      categoryJustTaken: "Cette chambre vient d'être prise — veuillez choisir une autre option.",
+      categoryUnavailableNote: 'Non disponible pour ces dates',
+      summaryCategory: 'Catégorie',
     },
     es: {
       bookNow: 'Reservar', close: '✕', back: '← Volver',
@@ -218,6 +232,13 @@
       bookRoom: 'Reservar esta habitación →',
       clearDates: 'Limpiar', today: 'Hoy',
       roomFallbackNotice: 'La habitación seleccionada no está disponible para estas fechas — aquí tienes otras opciones:',
+      bedTypeSingle: 'Cama individual', bedTypeDouble: 'Cama doble', bedTypeQueen: 'Cama Queen',
+      bedTypeKing: 'Cama King', bedTypeSofaBed: 'Sofá cama', bedTypeBunkBed: 'Litera',
+      bookCategory: 'Reservar esta categoría →',
+      categoryFallbackNotice: 'La categoría seleccionada no está disponible para estas fechas — aquí tienes otras opciones:',
+      categoryJustTaken: 'Esa habitación acaba de ser reservada — elija otra opción.',
+      categoryUnavailableNote: 'No disponible para estas fechas',
+      summaryCategory: 'Categoría',
     },
     nl: {
       bookNow: 'Boek nu', close: '✕', back: '← Terug',
@@ -274,6 +295,13 @@
       bookRoom: 'Kamer boeken →',
       clearDates: 'Wissen', today: 'Vandaag',
       roomFallbackNotice: 'De geselecteerde kamer is niet beschikbaar voor deze data — hier zijn de andere opties:',
+      bedTypeSingle: 'Eenpersoonsbed', bedTypeDouble: 'Tweepersoonsbed', bedTypeQueen: 'Queen-size bed',
+      bedTypeKing: 'King-size bed', bedTypeSofaBed: 'Slaapbank', bedTypeBunkBed: 'Stapelbed',
+      bookCategory: 'Deze categorie boeken →',
+      categoryFallbackNotice: 'De geselecteerde categorie is niet beschikbaar voor deze data — hier zijn de andere opties:',
+      categoryJustTaken: 'Die kamer is zojuist geboekt — kies een andere optie.',
+      categoryUnavailableNote: 'Niet beschikbaar voor deze data',
+      summaryCategory: 'Categorie',
     },
     de: {
       bookNow: 'Buchen', close: '✕', back: '← Zurück',
@@ -330,9 +358,39 @@
       bookRoom: 'Zimmer buchen →',
       clearDates: 'Löschen', today: 'Heute',
       roomFallbackNotice: 'Das ausgewählte Zimmer ist für diese Daten nicht verfügbar — hier sind die anderen Optionen:',
+      bedTypeSingle: 'Einzelbett', bedTypeDouble: 'Doppelbett', bedTypeQueen: 'Queen-Size-Bett',
+      bedTypeKing: 'King-Size-Bett', bedTypeSofaBed: 'Schlafsofa', bedTypeBunkBed: 'Etagenbett',
+      bookCategory: 'Diese Kategorie buchen →',
+      categoryFallbackNotice: 'Die ausgewählte Kategorie ist für diese Daten nicht verfügbar — hier sind die anderen Optionen:',
+      categoryJustTaken: 'Dieses Zimmer wurde soeben vergeben — bitte wählen Sie eine andere Option.',
+      categoryUnavailableNote: 'Für diese Daten nicht verfügbar',
+      summaryCategory: 'Kategorie',
     },
   };
   const T = STRINGS[LANG] || STRINGS.en;
+
+  // ── Bed-type icons (Room Categories mode) ───────────────────────────────────
+  // Same six shapes as the dashboard's BedIcons.jsx (Phase 7a) and
+  // bookingPage.js's own ported copy (Phase 7b) — ported here too since this
+  // file has no shared-component access. Not a redefinition — these paths
+  // must stay identical to the other two copies.
+  const BED_TYPE_ICON_SVG = {
+    single:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="6" width="10" height="4" rx="1"/><rect x="7" y="10" width="10" height="7" rx="1.5"/><path d="M8 17v2M16 17v2"/></svg>',
+    double:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="7" rx="1.5"/><path d="M4 17v2M20 17v2"/></svg>',
+    sofa_bed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="4" height="10" rx="1"/><rect x="7" y="9" width="13" height="4" rx="1"/><rect x="4" y="13" width="16" height="4" rx="1"/><path d="M3 17v2M21 17v2"/></svg>',
+    bunk_bed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="5" rx="1"/><rect x="4" y="13" width="16" height="5" rx="1"/><path d="M4 4v15M20 4v15"/></svg>',
+  };
+  // double/queen/king share the same wide silhouette.
+  BED_TYPE_ICON_SVG.queen = BED_TYPE_ICON_SVG.double;
+  BED_TYPE_ICON_SVG.king  = BED_TYPE_ICON_SVG.double;
+
+  function bedTypeLabel(type) {
+    const map = {
+      single: T.bedTypeSingle, double: T.bedTypeDouble, queen: T.bedTypeQueen,
+      king: T.bedTypeKing, sofa_bed: T.bedTypeSofaBed, bunk_bed: T.bedTypeBunkBed,
+    };
+    return map[type] || type;
+  }
 
   // ── State ──────────────────────────────────────────────────────────────────
   const S = {
@@ -350,6 +408,7 @@
     error:               null,
     wholeProperty:       false,
     unitsMode:           false,
+    categoriesMode:      false,
     wholePropertyRate:   0,
     totalCapacity:       10,
     stripeConnectActive: false,
@@ -359,6 +418,11 @@
     redirecting:         false,
     steppedBack:         false,
     bookingPending:      false,
+    // Room Categories mode
+    availableCategories:    [],
+    selectedCategory:       null,
+    preselectedCategoryId:  null,
+    categoryFallbackNotice: null,
   };
 
   // ── Calendar interaction state (persists across step-1 re-renders) ─────────
@@ -451,7 +515,11 @@
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       console.error('[NestBook widget] API error', res.status, path, body);
-      throw new Error('API error ' + res.status);
+      // .status lets callers distinguish e.g. a 409 "just taken" race from a
+      // generic server error, without parsing the message string.
+      const err = new Error('API error ' + res.status);
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   }
@@ -479,6 +547,7 @@
       if (freshProp) {
         S.wholeProperty         = freshProp.rental_type === 'whole_property';
         S.unitsMode             = freshProp.rental_type === 'units';
+        S.categoriesMode        = freshProp.rental_type === 'rooms' && freshProp.ir_room_mode === 'categories';
         S.wholePropertyRate     = freshProp.whole_property_rate || 0;
         S.totalCapacity         = freshProp.total_capacity || 10;
         S.stripeConnectActive   = freshProp.stripe_connect_active === true;
@@ -518,6 +587,13 @@
           }
           S.step = 2;
         }
+      } else if (S.categoriesMode) {
+        // Room Categories mode — server does all the filtering (capacity,
+        // buffer, overlap) via GET /api/widget/categories, so the client-side
+        // getRoomsAvailable() filter below is bypassed entirely for this
+        // branch; allRooms/allBookings are still populated above but unused
+        // here.
+        await loadCategoriesAvailability();
       } else {
         S.availableRooms = getRoomsAvailable(rooms, bookings, S.checkIn, S.checkOut, S.numGuests);
         console.log('[NestBook widget] Available rooms:', S.availableRooms.length);
@@ -551,6 +627,64 @@
     render();
   }
 
+  // ── Room Categories mode ──────────────────────────────────────────────────
+  function categoriesPath() {
+    return '/api/widget/categories?property_id=' + PROPERTY_ID +
+      '&check_in=' + S.checkIn + '&check_out=' + S.checkOut + '&guests=' + S.numGuests;
+  }
+
+  function categoryPreviewPath(categoryId) {
+    return '/api/widget/category-preview?category_id=' + categoryId +
+      '&check_in=' + S.checkIn + '&check_out=' + S.checkOut;
+  }
+
+  // Turns a GET /api/widget/category-preview response into the same shape
+  // renderStep3()/renderStep4() already expect from S.selectedRoom (they
+  // only ever read .id/.name/.price_per_night, so no changes are needed
+  // there at all).
+  function selectedRoomFromPreview(preview) {
+    return {
+      id:              preview.room_id,
+      name:            preview.name,
+      type:            preview.type,
+      capacity:        preview.capacity,
+      amenities:       preview.amenities,
+      first_photo:     preview.photo,
+      price_per_night: preview.price_per_night,
+    };
+  }
+
+  // Called from loadAvailability() when S.categoriesMode is true — mirrors
+  // that function's own preselection-handling shape (see
+  // S.preselectedRoomId above) but for a category id, calling
+  // category-preview instead of filtering the (never-fetched, for this mode)
+  // room list client-side.
+  async function loadCategoriesAvailability() {
+    const categories = await apiFetch(categoriesPath());
+    S.availableCategories = categories;
+    console.log('[NestBook widget] Available categories:', categories.length);
+
+    if (S.preselectedCategoryId) {
+      const catId = S.preselectedCategoryId;
+      S.preselectedCategoryId = null; // consumed — don't re-check on step-back
+      try {
+        const preview = await apiFetch(categoryPreviewPath(catId));
+        const cat = categories.find((c) => c.id === catId);
+        S.selectedRoom     = selectedRoomFromPreview(preview);
+        S.selectedCategory = { id: catId, name: cat ? cat.name : '' };
+        S.step = 3; // category still has a room free for these dates — skip straight to guest details
+        return;
+      } catch (_) {
+        // Not free — fall back to the category list with a note, same
+        // pattern as the room-preselection fallback above.
+        S.categoryFallbackNotice = T.categoryFallbackNotice;
+        S.step = 2;
+        return;
+      }
+    }
+    S.step = 2;
+  }
+
   async function confirmBooking() {
     S.loading = true;
     S.error   = null;
@@ -579,7 +713,13 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             property_id:              Number(PROPERTY_ID),
-            room_id:                  S.selectedRoom.id,
+            // Room Categories mode sends category_id instead of room_id —
+            // the server resolves the actual room (same
+            // assignRoomForCategoryBooking call category-preview already
+            // dry-ran). JSON.stringify drops undefined keys, so exactly one
+            // of the two is ever sent.
+            room_id:                  S.selectedCategory ? undefined : S.selectedRoom.id,
+            category_id:              S.selectedCategory ? S.selectedCategory.id : undefined,
             guest_id:                 guest.id,
             check_in_date:            S.checkIn,
             check_out_date:           S.checkOut,
@@ -618,7 +758,25 @@
         S.step           = 5;
     } catch (err) {
       console.error('[NestBook widget] confirmBooking failed:', err);
-      S.error = T.errServer;
+      if (S.selectedCategory && err.status === 409) {
+        // Rare race: someone else booked the previewed room between
+        // category-preview and this submission. Distinct message (not the
+        // generic errServer) via categoryFallbackNotice — the same notice
+        // box renderStep2Categories() already displays, since S.error itself
+        // is never rendered on step 2 (renderStep2Categories(), like the
+        // existing renderStep2(), doesn't check it). Return to step 2 with a
+        // refreshed list rather than leaving the guest stuck on step 4 with
+        // a stale selection.
+        S.categoryFallbackNotice = T.categoryJustTaken;
+        S.step               = 2;
+        S.selectedRoom       = null;
+        S.selectedCategory   = null;
+        try {
+          S.availableCategories = await apiFetch(categoriesPath());
+        } catch (_) { /* keep the stale list rather than crash */ }
+      } else {
+        S.error = T.errServer;
+      }
     }
     S.loading = false;
     render();
@@ -1095,6 +1253,23 @@
   padding: 2px 8px; border-radius: 4px;
   background: #F4F3F0; border: 1px solid #405440; color: #405440;
   margin-bottom: 10px;
+}
+
+/* Room Categories mode — bed-config icon row on category cards */
+.nb-bed-icons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.nb-bed-icon {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: #6B6A66;
+}
+.nb-bed-icon-svg { display: inline-flex; color: ${BRAND_DARK}; flex-shrink: 0; }
+
+/* Room Categories mode — unavailable (buffer-exhausted) category card */
+.nb-room-unavailable { opacity: 0.55; }
+.nb-room-unavailable .nb-btn-book-room { background: #9B9A96; cursor: not-allowed; }
+.nb-room-unavailable .nb-btn-book-room:hover { background: #9B9A96; }
+.nb-category-unavailable-note {
+  font-size: 0.75rem; color: #b45309; font-weight: 600;
+  margin-bottom: 8px;
 }
 .nb-btn-book-room {
   display: block;
@@ -1916,6 +2091,129 @@
     footer.appendChild(el('div', ''));
   }
 
+  // ── Step 2 (Room Categories mode): Category selection ─────────────────────
+  // Parallel to renderStep2() above, not a modification of it — one card per
+  // category instead of per room. Unavailable categories (available: false,
+  // e.g. only buffered rooms remain) render greyed-out with a note rather
+  // than being hidden, per spec.
+  function renderStep2Categories() {
+    if (S.categoryFallbackNotice) {
+      const notice = el('div', 'nb-fallback-notice');
+      notice.appendChild(txt(S.categoryFallbackNotice));
+      body.appendChild(notice);
+      S.categoryFallbackNotice = null;
+    }
+
+    const categories = S.availableCategories || [];
+    if (categories.length === 0) {
+      const wrap = el('div', 'nb-no-rooms');
+      const icon = el('div', 'nb-no-rooms-icon'); icon.appendChild(txt('🛏️'));
+      const msg  = el('div', ''); msg.appendChild(txt(T.noRooms));
+      wrap.appendChild(icon); wrap.appendChild(msg);
+      body.appendChild(wrap);
+    } else {
+      const title = el('div', 'nb-section-title');
+      const noun = categories.length === 1 ? 'category' : 'categories';
+      title.appendChild(txt(categories.length + ' ' + noun + ' available'));
+      body.appendChild(title);
+
+      categories.forEach((category) => {
+        const card = el('div', 'nb-room' + (category.available ? '' : ' nb-room-unavailable'));
+
+        if (category.photo) {
+          const img = el('img', 'nb-room-photo');
+          img.src     = API_BASE + '/uploads/rooms/' + category.photo;
+          img.alt     = category.name;
+          img.loading = 'lazy';
+          card.appendChild(img);
+        } else {
+          card.appendChild(makePlaceholder());
+        }
+
+        const info = el('div', 'nb-room-info');
+
+        const hd = el('div', 'nb-room-hd');
+        const nameBlock = el('div', '');
+        const name = el('div', 'nb-room-name'); name.appendChild(txt(category.name));
+        nameBlock.appendChild(name);
+        const priceEl = el('div', 'nb-room-price');
+        priceEl.appendChild(txt(category.price_min === category.price_max
+          ? CUR_SYMBOL + category.price_min
+          : CUR_SYMBOL + category.price_min + '–' + CUR_SYMBOL + category.price_max));
+        const perN = el('span', ''); perN.appendChild(txt(T.perNight));
+        priceEl.appendChild(perN);
+        hd.appendChild(nameBlock); hd.appendChild(priceEl);
+        info.appendChild(hd);
+
+        const caps = el('div', 'nb-room-caps');
+        caps.appendChild(txt(T.capacity + ' ' + category.capacity + ' ' + (category.capacity === 1 ? 'guest' : 'guests')));
+        info.appendChild(caps);
+
+        // Bed-config icons — the server already only sends this when every
+        // guest-eligible room in the category shares an identical config
+        // (GET /api/widget/categories), so no uniformity check is needed
+        // here — just render whatever came back, or nothing.
+        if (category.bed_config && category.bed_config.length > 0) {
+          const bedRow = el('div', 'nb-bed-icons');
+          category.bed_config.forEach((entry) => {
+            const chip = el('span', 'nb-bed-icon');
+            const iconSpan = el('span', 'nb-bed-icon-svg');
+            iconSpan.innerHTML = BED_TYPE_ICON_SVG[entry.type] || BED_TYPE_ICON_SVG.double;
+            chip.appendChild(iconSpan);
+            const qtyPrefix = entry.qty > 1 ? (entry.qty + '× ') : '';
+            chip.appendChild(txt(qtyPrefix + bedTypeLabel(entry.type)));
+            bedRow.appendChild(chip);
+          });
+          info.appendChild(bedRow);
+        }
+
+        if (!category.available) {
+          const noteEl = el('div', 'nb-category-unavailable-note');
+          noteEl.appendChild(txt(T.categoryUnavailableNote));
+          info.appendChild(noteEl);
+        }
+
+        const bookBtn = el('button', 'nb-btn-book-room');
+        bookBtn.appendChild(txt(T.bookCategory));
+        if (!category.available) {
+          bookBtn.disabled = true;
+        } else {
+          bookBtn.addEventListener('click', async () => {
+            S.loading = true;
+            render();
+            try {
+              const preview = await apiFetch(categoryPreviewPath(category.id));
+              S.selectedRoom     = selectedRoomFromPreview(preview);
+              S.selectedCategory = { id: category.id, name: category.name };
+              S.step = 3;
+            } catch (_) {
+              // Race: category filled between browsing and clicking — show a
+              // note and refresh the list rather than a generic error.
+              S.categoryFallbackNotice = T.categoryFallbackNotice;
+              try {
+                S.availableCategories = await apiFetch(categoriesPath());
+              } catch (_) { /* keep the stale list rather than crash */ }
+            }
+            S.loading = false;
+            render();
+          });
+        }
+        info.appendChild(bookBtn);
+
+        card.appendChild(info);
+        body.appendChild(card);
+      });
+    }
+
+    // Footer — back only; booking is triggered per-card
+    const backBtn = el('button', 'nb-btn-back');
+    backBtn.appendChild(txt(T.back));
+    backBtn.addEventListener('click', () => { S.step = 1; S.error = null; render(); });
+
+    footer.appendChild(backBtn);
+    footer.appendChild(el('div', ''));
+  }
+
   // ── Step 3: Guest details ─────────────────────────────────────────────────
   function renderStep3() {
     if (S.error) {
@@ -2002,6 +2300,10 @@
     }
 
     if (!S.wholeProperty) summary.appendChild(row(T.summaryRoom, S.selectedRoom.name));
+    // Room Categories mode — extra context row; the room row above already
+    // shows the specific resolved room (e.g. "Lavender Room"), this adds
+    // which category it came from (e.g. "Double").
+    if (S.selectedCategory) summary.appendChild(row(T.summaryCategory, S.selectedCategory.name));
     summary.appendChild(row(T.summaryDates,  fmtDate(S.checkIn) + ' → ' + fmtDate(S.checkOut)));
     summary.appendChild(row(T.summaryNights, T.nights(nights)));
     summary.appendChild(row(T.summaryGuests, S.numGuests + ' ' + (S.numGuests === 1 ? 'guest' : 'guests')));
@@ -2195,7 +2497,7 @@
 
     switch (S.step) {
       case 1: renderStep1(); break;
-      case 2: S.wholeProperty ? renderStep2WP() : renderStep2(); break;
+      case 2: S.wholeProperty ? renderStep2WP() : (S.categoriesMode ? renderStep2Categories() : renderStep2()); break;
       case 3: renderStep3(); break;
       case 4: renderStep4(); break;
       case 5: renderSuccess(); break;
@@ -2214,13 +2516,23 @@
     const preselected = window.NB_PRESELECTED_ROOM_ID ? Number(window.NB_PRESELECTED_ROOM_ID) : null;
     window.NB_PRESELECTED_ROOM_ID = null; // clear immediately — floating trigger must not inherit a stale id
 
+    // Parallel path for Room Categories mode — set by openWidget(categoryId, true)
+    // (bookingPage.js's "Book a {category} Room" button). Never both set at
+    // once in practice (a property is either Named/Units or Categories mode),
+    // but each is consumed independently regardless.
+    const preselectedCategory = window.NB_PRESELECTED_CATEGORY_ID ? Number(window.NB_PRESELECTED_CATEGORY_ID) : null;
+    window.NB_PRESELECTED_CATEGORY_ID = null;
+
     Object.assign(S, {
       step: 1, availableRooms: [], selectedRoom: null, allRooms: [], allBookings: [],
+      availableCategories: [], selectedCategory: null,
       guest: { firstName: '', lastName: '', email: '', phone: '', notes: '' },
       bookingRef: null, loading: false, error: null,
       breakfastAdded: false, redirecting: false, steppedBack: false, bookingPending: false,
       preselectedRoomId: preselected,
+      preselectedCategoryId: preselectedCategory,
       roomFallbackNotice: null,
+      categoryFallbackNotice: null,
     });
     overlay.style.display = 'block';
     window.addEventListener('wheel', _bgScrollBlock, { passive: false });
@@ -2295,6 +2607,7 @@
           PANEL_HDR_TEXT = palette.panelHdrText;
           S.wholeProperty       = data.rental_type === 'whole_property';
           S.unitsMode           = data.rental_type === 'units';
+          S.categoriesMode      = data.rental_type === 'rooms' && data.ir_room_mode === 'categories';
           S.wholePropertyRate   = data.whole_property_rate || 0;
           S.totalCapacity       = data.total_capacity || 10;
           S.stripeConnectActive = data.stripe_connect_active === true;

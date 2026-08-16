@@ -510,10 +510,13 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
 // No calendar here — there is a single property-wide pooled calendar
 // rendered once below this showcase (see propertyCalendarSection(), reused
 // unmodified — same "property" key as WP mode).
-// The book button is intentionally NOT wired to openWidget/NB_PRESELECTED_ROOM_ID
-// (widget.js is out of scope this phase) — it just pre-selects the category
-// in the enquiry form and scrolls to it.
-function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym) {
+// The book button is plan-aware, same pattern as roomCard()'s: paid-plan
+// properties call openWidget(categoryId, true) (sets
+// NB_PRESELECTED_CATEGORY_ID, a parallel path alongside the existing
+// NB_PRESELECTED_ROOM_ID one — see widget.js's openModal()); Free-plan
+// properties fall back to selectCategoryForEnquiry(), which pre-selects the
+// category in the enquiry form and scrolls to it.
+function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan) {
   if (!catsWithRooms || catsWithRooms.length === 0) return '';
 
   const rows = catsWithRooms.map((category, index) => {
@@ -581,7 +584,7 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym) 
     <div class="room-price">${priceHtml}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
     ${(bedIconsHtml || sleepsHtml) ? `<div class="ws-amenities-row">${bedIconsHtml}${sleepsHtml}</div>` : ''}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
-    <button class="btn-book" onclick="selectCategoryForEnquiry(${category.id})" data-i18n-cat="page.bookThisCategory" data-cat="${esc(category.name)}">Book a ${esc(category.name)} Room</button>
+    <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${category.id}, true)` : `selectCategoryForEnquiry(${category.id})`}" data-i18n-cat="page.bookThisCategory" data-cat="${esc(category.name)}">Book a ${esc(category.name)} Room</button>
   </div>
   <div class="ws-divider"></div>
 </div>`;
@@ -871,7 +874,7 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // same shape as the isWholeProperty branch above, reusing
     // propertyCalendarSection() unmodified (data-room-id="property").
     roomsSection = catsWithRooms.length > 0 ? `
-${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym)}
+${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan)}
 <section class="availability">
   <div class="section-inner">
     <h2 data-i18n="page.availability">Availability</h2>
@@ -2725,8 +2728,11 @@ document.addEventListener('DOMContentLoaded', function() {
   console.error('[NestBook] Script error:', e.message, e.stack);
 }
 
-function openWidget(roomId) {
-  if (roomId) window.NB_PRESELECTED_ROOM_ID = roomId;
+function openWidget(id, isCategory) {
+  if (id) {
+    if (isCategory) window.NB_PRESELECTED_CATEGORY_ID = id;
+    else window.NB_PRESELECTED_ROOM_ID = id;
+  }
   var btn = document.querySelector('.nb-trigger');
   if (btn) btn.click();
 }
@@ -2736,9 +2742,10 @@ function scrollToEnquiry() {
   if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Room Categories mode — deliberately not wired to openWidget/NB_PRESELECTED_ROOM_ID
-// (widget.js is out of scope this phase). On paid-plan properties the
-// enquiry form/categorySelect doesn't exist at all, so this just no-ops.
+// Free-plan categories-mode properties only — paid-plan properties use
+// openWidget(categoryId, true) instead (see categoryShowcase()'s book
+// button). On paid-plan properties the enquiry form/categorySelect doesn't
+// exist at all, so this just no-ops if called there.
 function selectCategoryForEnquiry(categoryId) {
   var sel = document.getElementById('categorySelect');
   if (sel) sel.value = String(categoryId);
