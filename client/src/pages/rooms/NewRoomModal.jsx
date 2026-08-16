@@ -257,6 +257,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                     onChange={(fn) => setForm((prev) => ({ ...prev, beds: fn(prev.beds) }))}
                     t={t}
                   />
+                  <span className="form-hint">{t('bedsHint')}</span>
                 </div>
               )}
 

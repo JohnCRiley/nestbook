@@ -538,6 +538,9 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
                 onChange={(fn) => setForm((prev) => ({ ...prev, beds: fn(prev.beds) }))}
                 t={t}
               />
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>
+                {t('bedsHint')}
+              </div>
             </div>
           )}
 
