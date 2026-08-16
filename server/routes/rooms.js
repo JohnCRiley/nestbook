@@ -31,6 +31,54 @@ function actorFromReq(req) {
   return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role };
 }
 
+// ── Bed configuration (Phase 7a) ────────────────────────────────────────────
+// rooms.bed_config is stored as a JSON string: an array of { type, qty }
+// objects, e.g. [{"type":"king","qty":1},{"type":"sofa_bed","qty":1}].
+// Fixed vocabulary only — no free text.
+const VALID_BED_TYPES = ['single', 'double', 'queen', 'king', 'sofa_bed', 'bunk_bed'];
+
+// Validates a bed_config value already parsed into a JS array (the JSON
+// request body arrives pre-parsed by Express). Returns { error } or
+// { value } where value is the JSON string ready to store, or null.
+function validateBedConfig(bedConfig) {
+  if (bedConfig === null || bedConfig === '' || bedConfig === undefined) {
+    return { value: null };
+  }
+  if (!Array.isArray(bedConfig)) {
+    return { error: 'bed_config must be an array of { type, qty } objects.' };
+  }
+  const clean = [];
+  for (const entry of bedConfig) {
+    if (!entry || !VALID_BED_TYPES.includes(entry.type)) {
+      return { error: `bed_config entries must have a valid type (${VALID_BED_TYPES.join(', ')}).` };
+    }
+    const qty = Number(entry.qty);
+    if (!Number.isInteger(qty) || qty < 1) {
+      return { error: 'bed_config entries must have a positive integer qty.' };
+    }
+    clean.push({ type: entry.type, qty });
+  }
+  return { value: clean.length > 0 ? JSON.stringify(clean) : null };
+}
+
+// The column can be null, or (for rows predating this phase) whatever the
+// previously-unused column state left it as — parse defensively and fall
+// back to null rather than let a malformed value break a room response.
+function parseBedConfig(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function withParsedBedConfig(room) {
+  if (!room) return room;
+  return { ...room, bed_config: parseBedConfig(room.bed_config) };
+}
+
 // ── Ownership helper (mirrors properties.js) ──────────────────────────────
 function canAccessProperty(userId, role, propId) {
   const pid = Number(propId);
@@ -121,7 +169,7 @@ roomsRouter.get('/', (req, res) => {
         FROM rooms r ${where} ORDER BY r.id LIMIT ? OFFSET ?
       `).all(...params, pageLimit, offset);
 
-      return res.json({ rooms: rows, total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+      return res.json({ rooms: rows.map(withParsedBedConfig), total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
     }
 
     res.json(db.prepare(`
@@ -130,7 +178,7 @@ roomsRouter.get('/', (req, res) => {
         (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo,
         (SELECT thumb_filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_thumb
       FROM rooms r ${where} ORDER BY r.id
-    `).all(...params));
+    `).all(...params).map(withParsedBedConfig));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -206,7 +254,7 @@ roomsRouter.get('/:id', (req, res) => {
   try {
     const row = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Room not found' });
-    res.json(row);
+    res.json(withParsedBedConfig(row));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -215,13 +263,19 @@ roomsRouter.get('/:id', (req, res) => {
 // ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id, category_id } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id, category_id, bed_config } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
     }
     if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
       return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    // Bed configuration (Phase 7a) — optional, fixed vocabulary only.
+    const bedConfigResult = validateBedConfig(bed_config);
+    if (bedConfigResult.error) {
+      return res.status(400).json({ error: bedConfigResult.error });
     }
 
     const currentUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
@@ -277,8 +331,8 @@ roomsRouter.post('/', (req, res) => {
 
     const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id, category_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id, category_id, bed_config)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
@@ -289,10 +343,11 @@ roomsRouter.post('/', (req, res) => {
       description || null,
       ical_token,
       parent_unit_id ?? null,
-      newCategoryId
+      newCategoryId,
+      bedConfigResult.value
     );
 
-    const created = db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid);
+    const created = withParsedBedConfig(db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid));
     res.status(201).json(created);
 
     logAction(db, {
@@ -319,7 +374,20 @@ roomsRouter.put('/:id', (req, res) => {
     const {
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
       access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available, category_id,
+      bed_config,
     } = req.body;
+
+    // Bed configuration (Phase 7a) — same not-sent-vs-cleared pattern as the
+    // Access & Arrival fields below: omitted entirely leaves the existing
+    // value untouched, explicitly null/[] clears it.
+    let newBedConfig = existing.bed_config;
+    if (bed_config !== undefined) {
+      const bedConfigResult = validateBedConfig(bed_config);
+      if (bedConfigResult.error) {
+        return res.status(400).json({ error: bedConfigResult.error });
+      }
+      newBedConfig = bedConfigResult.value;
+    }
 
     // Room Categories (Phase 3 migration) — same not-sent-vs-cleared pattern
     // as the Access & Arrival fields below. Cross-property assignment is
@@ -364,12 +432,12 @@ roomsRouter.put('/:id', (req, res) => {
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
           capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?,
           access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
-          staffed_checkin_available = ?, category_id = ?
+          staffed_checkin_available = ?, category_id = ?, bed_config = ?
       WHERE id = ?
     `).run(
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null,
       newAccessMethod, newAccessCode, newArrivalInstructions, newSendAccessHours,
-      newStaffedCheckin, newCategoryId,
+      newStaffedCheckin, newCategoryId, newBedConfig,
       req.params.id,
     );
 
@@ -378,7 +446,7 @@ roomsRouter.put('/:id', (req, res) => {
         .run(property_id, req.params.id, description);
     }
 
-    const updated = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
+    const updated = withParsedBedConfig(db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id));
     res.json(updated);
 
     logAction(db, {

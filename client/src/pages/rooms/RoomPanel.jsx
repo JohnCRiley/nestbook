@@ -5,6 +5,7 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+import BedsEditor from '../../components/BedsEditor.jsx';
 
 const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
 
@@ -367,6 +368,10 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
   // Room Categories (Phase 4): only IR-mode properties that have switched
   // via the Phase 3 migration show this field at all.
   const showCategoryField = !isUnit && property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
+  // Bed configuration (Phase 7a) — a general room-detail improvement, shown
+  // in both Named Rooms and Room Categories mode (not gated on ir_room_mode
+  // like the category field above), but not Units.
+  const showBedsField = !isUnit && property?.rental_type === 'rooms';
   const [form, setForm] = useState({
     name:               room.name               ?? '',
     type:               room.type               ?? 'double',
@@ -377,6 +382,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
     breakfast_included: room.breakfast_included ?? 0,
     description:        room.description        ?? '',
     category_id:        room.category_id        ?? '',
+    beds:               Array.isArray(room.bed_config) ? room.bed_config : [],
   });
   const [categories,         setCategories]         = useState([]);
   const [saving,             setSaving]             = useState(false);
@@ -420,6 +426,9 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
           breakfast_included: form.breakfast_included ? 1 : 0,
           description:        form.description.trim() || null,
           category_id:        showCategoryField ? (form.category_id || null) : undefined,
+          bed_config:         showBedsField
+            ? (form.beds.length > 0 ? form.beds.map((b) => ({ type: b.type, qty: Number(b.qty) || 1 })) : null)
+            : undefined,
         }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
@@ -518,6 +527,17 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {showBedsField && (
+            <div className="panel-field">
+              <label className="panel-field-label">{t('beds')}</label>
+              <BedsEditor
+                beds={form.beds}
+                onChange={(fn) => setForm((prev) => ({ ...prev, beds: fn(prev.beds) }))}
+                t={t}
+              />
             </div>
           )}
 

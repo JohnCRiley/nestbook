@@ -3,6 +3,7 @@ import { formatAmenity } from './RoomPanel.jsx';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { apiError } from '../../utils/apiError.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
+import BedsEditor from '../../components/BedsEditor.jsx';
 
 const ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
@@ -11,7 +12,7 @@ const BEDROOM_TYPES = ['single', 'double', 'twin', 'bunk', 'master', 'kids', 'su
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
   capacity: 2, amenities: '', status: 'available', breakfast_included: 0, description: '',
-  category_id: '',
+  category_id: '', beds: [],
 };
 
 /** Parse amenities string → array, filtering blanks. */
@@ -32,6 +33,10 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
   // Room Categories (Phase 4): only IR-mode properties that have switched
   // via the Phase 3 migration show this field at all.
   const showCategoryField = !isWP && property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
+  // Bed configuration (Phase 7a) — a general room-detail improvement, shown
+  // in both Named Rooms and Room Categories mode (not gated on ir_room_mode
+  // like the category field above), but not WP or Units.
+  const showBedsField = !isWP && property?.rental_type === 'rooms';
   const [form,       setForm]       = useState(EMPTY);
   const [categories, setCategories] = useState([]);
   const isBedroom = BEDROOM_TYPES.includes(form.type);
@@ -78,6 +83,9 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
           description:        form.description.trim() || null,
           parent_unit_id:     parentUnitId ?? null,
           category_id:        showCategoryField && form.category_id ? Number(form.category_id) : null,
+          bed_config:         showBedsField && form.beds.length > 0
+            ? form.beds.map((b) => ({ type: b.type, qty: Number(b.qty) || 1 }))
+            : null,
         }),
       });
       if (!res.ok) {
@@ -238,6 +246,17 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {showBedsField && (
+                <div className="form-group span-2">
+                  <label className="form-label">{t('beds')}</label>
+                  <BedsEditor
+                    beds={form.beds}
+                    onChange={(fn) => setForm((prev) => ({ ...prev, beds: fn(prev.beds) }))}
+                    t={t}
+                  />
                 </div>
               )}
 
