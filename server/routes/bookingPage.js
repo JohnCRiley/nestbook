@@ -5,7 +5,7 @@ export const bookingPageRouter = Router();
 
 // Theme colour palettes — must stay in sync with widget.js THEME_COLOURS
 const THEME_COLOURS = {
-  forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+  forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0' },
   royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
   ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
   ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
@@ -909,7 +909,7 @@ ${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym)}
     ${bookOrEnquiryBtn}
     <div class="nb-step-item" style="margin-top:16px;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#475569;">
       <span class="nb-step-num" style="display:flex;align-items:center;">
-        <i class="ti ti-shield-check" style="font-size:1.1rem;color:#16a34a;"></i>
+        <i class="ti ti-shield-check" style="font-size:1.1rem;color:${esc(palette.dark)};"></i>
       </span>
       <span>${esc(cancellationText)}</span>
     </div>
@@ -1854,7 +1854,7 @@ section h2 {
 .ti { vertical-align: middle; }
 .hero-stats .ti, .hero-meta .ti { font-size: 0.95rem; opacity: 0.85; }
 .room-breakfast .ti, .room-occupancy .ti { font-size: 0.9rem; }
-#enquirySuccess .ti { font-size: 1.1rem; color: #16a34a; margin-right: 4px; }
+#enquirySuccess .ti { font-size: 1.1rem; color: ${esc(palette.dark)}; margin-right: 4px; }
 
 /* ── Guest Notes ────────────────────────────────────────────────────── */
 .guest-notes-section { background: #f8f9fa; }
@@ -1993,7 +1993,7 @@ section h2 {
   font-family: inherit;
   transition: all 0.2s;
 }
-.btn-cta:hover { background: #f0fdf4; transform: translateY(-1px); }
+.btn-cta:hover { background: ${esc(palette.light)}; transform: translateY(-1px); }
 .price-display {
   font-size: 2.2rem;
   font-weight: 700;
@@ -2083,10 +2083,10 @@ footer a:hover { text-decoration: underline; }
 }
 #enquirySuccess {
   padding: 20px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: ${esc(palette.light)};
+  border: 1px solid ${esc(palette.brand)};
   border-radius: 10px;
-  color: #166534;
+  color: ${esc(palette.dark)};
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.6;
