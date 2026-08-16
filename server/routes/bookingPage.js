@@ -220,6 +220,31 @@ function getCategoriesPooledAvailMap(catsWithRooms, categoriesById, availMapsByR
   return map;
 }
 
+// Room Categories mode — pre-flattens every room's photos into one array per
+// category (tagged with room_id), plus a per-room ordinal ("Room 1", "Room
+// 2"...) and bed_config, so the "Show all photos" overlay can build its grid
+// entirely client-side from NB_CATEGORY_PHOTOS with no extra fetch. Room
+// ordinals are assigned by ascending id (stable) rather than the price-sorted
+// order categoryShowcase() otherwise uses for photo selection, so a room's
+// number does not shift if its price later changes.
+function buildCategoryPhotosById(catsWithRooms, categoriesById, photosByRoom) {
+  const result = {};
+  for (const category of catsWithRooms) {
+    const catRooms = categoriesById[category.id]?.rooms ?? [];
+    const roomsAsc = catRooms.slice().sort((a, b) => a.id - b.id);
+    const rooms = roomsAsc.map((r, i) => ({
+      id: r.id,
+      ordinal: i + 1,
+      bedConfig: parseBedConfig(r.bed_config),
+    }));
+    const photos = catRooms.flatMap(r =>
+      (photosByRoom?.[r.id] ?? []).map(p => ({ ...p, room_id: r.id }))
+    );
+    result[category.id] = { photos, rooms };
+  }
+  return result;
+}
+
 // heroPhoto   — filename stored in uploads/properties/ (property cover photo, may be null)
 // roomPhotos  — array of {filename, thumb_filename, room_name} from room_photos
 // propertyName — used for alt text
@@ -559,6 +584,13 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
     const photos  = repRoom ? (photosByRoom?.[repRoom.id] ?? []) : [];
     const primary = photos[0] ?? null;
 
+    // "Show all photos" trigger — only when other rooms in this category
+    // have photos beyond what's already visible in the thumb strip above.
+    const catPhotoCount = catRooms.reduce((sum, r) => sum + (photosByRoom?.[r.id]?.length ?? 0), 0);
+    const showAllBtnHtml = catPhotoCount > photos.length
+      ? `<button class="ws-show-all-btn" type="button" onclick="nbOpenPhotoOverlay(${category.id}, this)"><i class="ti ti-photos"></i> <span data-i18n-n="page.showAllPhotos" data-n="${esc(String(catPhotoCount))}">Show all ${esc(String(catPhotoCount))} photos</span></button>`
+      : '';
+
     const mainImgHtml = primary
       ? `<img src="/uploads/rooms/${esc(primary.filename)}" alt="${esc(category.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
       : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
@@ -577,6 +609,7 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
   <div class="ws-photo-area${isEven ? ' ws-reverse' : ''}">
     <div class="ws-main-photo" id="${esc(cid)}">
       ${mainImgHtml}
+      ${showAllBtnHtml}
     </div>
     ${photos.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
   </div>
@@ -594,6 +627,15 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
 <div class="ws-rooms">
   <div class="ws-section-title" data-i18n="page.ourRooms">Our Rooms</div>
   ${rows}
+</div>
+<div class="nb-photo-overlay" id="nbPhotoOverlay" onclick="nbPhotoOverlayBackdropClick(event)">
+  <div class="nb-photo-overlay-panel">
+    <div class="nb-photo-overlay-header">
+      <div class="nb-photo-overlay-title" id="nbPhotoOverlayTitle"></div>
+      <button class="nb-photo-overlay-close" type="button" onclick="nbClosePhotoOverlay()" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="nb-photo-overlay-grid" id="nbPhotoOverlayGrid"></div>
+  </div>
 </div>`;
 }
 
@@ -646,6 +688,13 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const catsWithRooms = isCategoriesMode
     ? categories.filter(c => (categoriesById[c.id]?.rooms.length ?? 0) > 0)
     : [];
+
+  // "Show all photos" overlay data — see buildCategoryPhotosById(). Always
+  // computed (empty object when not categories mode) so the embed below
+  // stays unconditional, same as availJson.
+  const categoryPhotosById = isCategoriesMode
+    ? buildCategoryPhotosById(catsWithRooms, categoriesById, photosByRoom)
+    : {};
 
   // Build availability JSON for client-side navigable calendars
   const availJson = {};
@@ -1312,6 +1361,7 @@ body {
 }
 .ws-reverse { flex-direction: row-reverse; }
 .ws-main-photo {
+  position: relative;
   flex: 2;
   min-width: 0;
   aspect-ratio: 4/3;
@@ -1419,6 +1469,117 @@ body {
     min-width: 80px;
     max-width: 80px;
   }
+}
+
+/* ── Category "Show all photos" trigger + overlay ─────────────────── */
+.ws-show-all-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: ${esc(palette.dark)};
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+  transition: background 0.14s;
+}
+.ws-show-all-btn:hover { background: ${esc(palette.brand)}; }
+.ws-show-all-btn .ti { font-size: 0.95rem; }
+
+.nb-photo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.92);
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.nb-photo-overlay.open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+.nb-photo-overlay-panel {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 1000px;
+  width: 100%;
+  padding: 24px;
+  margin: auto 0;
+}
+.nb-photo-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.nb-photo-overlay-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: ${esc(palette.dark)};
+}
+.nb-photo-overlay-close {
+  background: ${esc(palette.light)};
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: ${esc(palette.dark)};
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: background 0.14s, color 0.14s;
+}
+.nb-photo-overlay-close:hover { background: ${esc(palette.brand)}; color: #fff; }
+.nb-photo-overlay-room-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: ${esc(palette.dark)};
+  margin: 24px 0 10px;
+}
+.nb-photo-overlay-room-heading:first-of-type { margin-top: 0; }
+.nb-photo-overlay-grid-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.nb-photo-overlay-grid-group img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  background: #f1f5f9;
+}
+@media (max-width: 768px) {
+  .nb-photo-overlay { padding: 0; }
+  .nb-photo-overlay-panel { border-radius: 0; min-height: 100%; }
+  .nb-photo-overlay-grid-group { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
+@media (max-width: 420px) {
+  .nb-photo-overlay-grid-group { grid-template-columns: 1fr; }
 }
 
 /* ── Sections ──────────────────────────────────────────────────────── */
@@ -2350,6 +2511,9 @@ ${footerSection}
 // ── Availability data (server-injected) ──────────────────────────────────────
 var NB_AVAILABILITY = ${JSON.stringify(availJson)};
 
+// ── Category photo data (server-injected, Room Categories mode only) ─────────
+var NB_CATEGORY_PHOTOS = ${JSON.stringify(categoryPhotosById)};
+
 // ── Navigable availability calendars ─────────────────────────────────────────
 var calState = {};
 
@@ -2482,6 +2646,7 @@ var I18N = {
     "page.whatGuestsSay":             "What Our Guests Say",
     "page.ourPartners":               "Our Partners",
     "page.sleepsUpTo":                "Sleeps up to {n}",
+    "page.showAllPhotos":             "Show all {n} photos",
     "page.bedTypeSingle":             "Single Bed",
     "page.bedTypeDouble":             "Double Bed",
     "page.bedTypeQueen":              "Queen Bed",
@@ -2528,6 +2693,7 @@ var I18N = {
     "page.whatGuestsSay":             "Ce que disent nos clients",
     "page.ourPartners":               "Nos partenaires",
     "page.sleepsUpTo":                "Jusqu'à {n} personnes",
+    "page.showAllPhotos":             "Voir les {n} photos",
     "page.bedTypeSingle":             "Lit simple",
     "page.bedTypeDouble":             "Lit double",
     "page.bedTypeQueen":              "Lit Queen",
@@ -2574,6 +2740,7 @@ var I18N = {
     "page.whatGuestsSay":             "Was unsere Gäste sagen",
     "page.ourPartners":               "Unsere Partner",
     "page.sleepsUpTo":                "Platz für bis zu {n} Personen",
+    "page.showAllPhotos":             "Alle {n} Fotos anzeigen",
     "page.bedTypeSingle":             "Einzelbett",
     "page.bedTypeDouble":             "Doppelbett",
     "page.bedTypeQueen":              "Queen-Size-Bett",
@@ -2620,6 +2787,7 @@ var I18N = {
     "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes",
     "page.ourPartners":               "Nuestros socios",
     "page.sleepsUpTo":                "Capacidad para hasta {n} personas",
+    "page.showAllPhotos":             "Ver las {n} fotos",
     "page.bedTypeSingle":             "Cama individual",
     "page.bedTypeDouble":             "Cama doble",
     "page.bedTypeQueen":              "Cama Queen",
@@ -2666,6 +2834,7 @@ var I18N = {
     "page.whatGuestsSay":             "Wat onze gasten zeggen",
     "page.ourPartners":               "Onze partners",
     "page.sleepsUpTo":                "Slaapplaats voor maximaal {n} personen",
+    "page.showAllPhotos":             "Alle {n} foto's bekijken",
     "page.bedTypeSingle":             "Eenpersoonsbed",
     "page.bedTypeDouble":             "Tweepersoonsbed",
     "page.bedTypeQueen":              "Queen-size bed",
@@ -2777,6 +2946,106 @@ function wsSwap(carouselId, src, thumbEl) {
   }
   thumbEl.classList.add('active');
 }
+
+// ── Category "Show all photos" overlay ────────────────────────────────────────
+// Built entirely from NB_CATEGORY_PHOTOS (server-injected above, next to
+// NB_AVAILABILITY) — no fetch, and the <img> elements below don't exist in
+// the DOM until this function runs, so nothing loads until the guest clicks.
+var NB_BED_TYPE_I18N_KEY = {
+  single:   'page.bedTypeSingle',
+  double:   'page.bedTypeDouble',
+  queen:    'page.bedTypeQueen',
+  king:     'page.bedTypeKing',
+  sofa_bed: 'page.bedTypeSofaBed',
+  bunk_bed: 'page.bedTypeBunkBed'
+};
+
+function nbCategoryRoomLabel(room) {
+  var lang = document.documentElement.lang || 'en';
+  var t = I18N[lang] || I18N.en;
+  var label = 'Room ' + room.ordinal;
+  if (room.bedConfig && room.bedConfig.length) {
+    var parts = room.bedConfig.map(function(entry) {
+      var key = NB_BED_TYPE_I18N_KEY[entry.type] || NB_BED_TYPE_I18N_KEY.double;
+      var text = t[key] || 'Double Bed';
+      return (entry.qty > 1 ? entry.qty + '× ' : '') + text;
+    });
+    label += ' — ' + parts.join(', ');
+  }
+  return label;
+}
+
+function nbOpenPhotoOverlay(categoryId, triggerEl) {
+  var data = NB_CATEGORY_PHOTOS[categoryId];
+  if (!data || !data.photos || !data.photos.length) return;
+
+  var overlay = document.getElementById('nbPhotoOverlay');
+  var grid    = document.getElementById('nbPhotoOverlayGrid');
+  var titleEl = document.getElementById('nbPhotoOverlayTitle');
+  if (!overlay || !grid) return;
+
+  var roomsById = {};
+  data.rooms.forEach(function(r) { roomsById[r.id] = r; });
+
+  var photosByRoomId = {};
+  var roomOrder = [];
+  data.photos.forEach(function(p) {
+    if (!photosByRoomId[p.room_id]) {
+      photosByRoomId[p.room_id] = [];
+      roomOrder.push(p.room_id);
+    }
+    photosByRoomId[p.room_id].push(p);
+  });
+  // Sort by room ordinal ("Room 1", "Room 2"...) rather than the order
+  // photos happen to appear in, so the grid reads top-to-bottom sensibly.
+  roomOrder.sort(function(a, b) {
+    return (roomsById[a] ? roomsById[a].ordinal : 0) - (roomsById[b] ? roomsById[b].ordinal : 0);
+  });
+
+  grid.innerHTML = '';
+  roomOrder.forEach(function(roomId) {
+    var room = roomsById[roomId] || { ordinal: '', bedConfig: null };
+    var heading = document.createElement('h4');
+    heading.className = 'nb-photo-overlay-room-heading';
+    heading.textContent = nbCategoryRoomLabel(room);
+    grid.appendChild(heading);
+
+    var group = document.createElement('div');
+    group.className = 'nb-photo-overlay-grid-group';
+    photosByRoomId[roomId].forEach(function(p) {
+      var img = document.createElement('img');
+      img.src = '/uploads/rooms/' + p.filename;
+      img.loading = 'lazy';
+      img.alt = '';
+      group.appendChild(img);
+    });
+    grid.appendChild(group);
+  });
+
+  if (titleEl) {
+    var roomSection = triggerEl && triggerEl.closest ? triggerEl.closest('.ws-room') : null;
+    var nameEl = roomSection ? roomSection.querySelector('.ws-room-title') : null;
+    titleEl.textContent = nameEl ? nameEl.textContent : '';
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function nbClosePhotoOverlay() {
+  var overlay = document.getElementById('nbPhotoOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function nbPhotoOverlayBackdropClick(e) {
+  if (e.target && e.target.id === 'nbPhotoOverlay') nbClosePhotoOverlay();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') nbClosePhotoOverlay();
+});
 </script>
 
 ${isPaidPlan ? `<script
