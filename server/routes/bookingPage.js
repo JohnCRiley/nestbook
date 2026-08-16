@@ -79,6 +79,75 @@ function localDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// Bed-type icons (Room Categories, Phase 7b) — same six shapes and
+// vocabulary as the dashboard's BedIcons.jsx (Phase 7a), ported to raw
+// markup since this file generates static HTML rather than React. Not a
+// redefinition — these paths must stay identical to BedIcons.jsx.
+const BED_TYPE_ICON_SVG = {
+  single: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="6" width="10" height="4" rx="1"/><rect x="7" y="10" width="10" height="7" rx="1.5"/><path d="M8 17v2M16 17v2"/></svg>',
+  double: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="7" rx="1.5"/><path d="M4 17v2M20 17v2"/></svg>',
+  sofa_bed: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="4" height="10" rx="1"/><rect x="7" y="9" width="13" height="4" rx="1"/><rect x="4" y="13" width="16" height="4" rx="1"/><path d="M3 17v2M21 17v2"/></svg>',
+  bunk_bed: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="5" rx="1"/><rect x="4" y="13" width="16" height="5" rx="1"/><path d="M4 4v15M20 4v15"/></svg>',
+};
+// double/queen/king share the same wide silhouette, per BedIcons.jsx.
+BED_TYPE_ICON_SVG.queen = BED_TYPE_ICON_SVG.double;
+BED_TYPE_ICON_SVG.king  = BED_TYPE_ICON_SVG.double;
+
+const BED_TYPE_I18N_KEY = {
+  single:   'page.bedTypeSingle',
+  double:   'page.bedTypeDouble',
+  queen:    'page.bedTypeQueen',
+  king:     'page.bedTypeKing',
+  sofa_bed: 'page.bedTypeSofaBed',
+  bunk_bed: 'page.bedTypeBunkBed',
+};
+
+const BED_TYPE_LABEL_EN = {
+  single:   'Single Bed',
+  double:   'Double Bed',
+  queen:    'Queen Bed',
+  king:     'King Bed',
+  sofa_bed: 'Sofa Bed',
+  bunk_bed: 'Bunk Bed',
+};
+
+// Mirrors rooms.js's own parseBedConfig — defensive since the column can be
+// null, or (for rows predating Phase 7a) whatever the previously-unused
+// column state left it as.
+function parseBedConfig(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// Returns the shared bed_config array for a category only if EVERY room in
+// it has an identical, non-null bed_config (same types and quantities,
+// order-independent) — otherwise null, so the caller omits the bed-icon
+// row entirely rather than showing a partial or misleading result.
+function getUniformBedConfig(catRooms) {
+  if (!catRooms || catRooms.length === 0) return null;
+  const signature = (arr) => arr.map(e => `${e.type}:${e.qty}`).sort().join(',');
+
+  let shared = null;
+  let sharedSignature = null;
+  for (const room of catRooms) {
+    const parsed = parseBedConfig(room.bed_config);
+    if (!parsed || parsed.length === 0) return null;
+    const sig = signature(parsed);
+    if (sharedSignature === null) {
+      sharedSignature = sig;
+      shared = parsed;
+    } else if (sig !== sharedSignature) {
+      return null;
+    }
+  }
+  return shared;
+}
+
 function getRoomAvailMap(bookings, roomId) {
   const rb = bookings.filter(b => b.room_id === roomId);
   const map = {};
@@ -465,6 +534,21 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym) 
       ? `<span class="ws-amenity"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(maxCapacity))}">Sleeps up to ${esc(String(maxCapacity))}</span></span>`
       : '';
 
+    // Bed icons — only when every room in the category has an identical
+    // bed_config (see getUniformBedConfig); otherwise this stays empty and
+    // no bed row renders at all, rather than showing a partial/misleading
+    // result for a mixed category.
+    const uniformBeds = getUniformBedConfig(catRooms);
+    const bedIconsHtml = uniformBeds
+      ? uniformBeds.map(entry => {
+          const iconSvg = BED_TYPE_ICON_SVG[entry.type] ?? BED_TYPE_ICON_SVG.double;
+          const i18nKey = BED_TYPE_I18N_KEY[entry.type] ?? 'page.bedTypeDouble';
+          const label   = BED_TYPE_LABEL_EN[entry.type] ?? 'Double Bed';
+          const qtyHtml = entry.qty > 1 ? `${esc(String(entry.qty))}× ` : '';
+          return `<span class="ws-amenity">${iconSvg} ${qtyHtml}<span data-i18n="${i18nKey}">${esc(label)}</span></span>`;
+        }).join('')
+      : '';
+
     // catRooms preserves the outer rooms query's price_per_night ASC order,
     // so the cheapest room in the category is a reasonable default photo —
     // but prefer the first room that actually has a photo.
@@ -495,9 +579,9 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym) 
   </div>
   <div class="ws-details">
     <div class="room-price">${priceHtml}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    ${sleepsHtml ? `<div class="ws-amenities-row">${sleepsHtml}</div>` : ''}
+    ${(bedIconsHtml || sleepsHtml) ? `<div class="ws-amenities-row">${bedIconsHtml}${sleepsHtml}</div>` : ''}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
-    <button class="btn-book" onclick="selectCategoryForEnquiry(${category.id})" data-i18n="page.bookThisCategory">Book this category</button>
+    <button class="btn-book" onclick="selectCategoryForEnquiry(${category.id})" data-i18n-cat="page.bookThisCategory" data-cat="${esc(category.name)}">Book a ${esc(category.name)} Room</button>
   </div>
   <div class="ws-divider"></div>
 </div>`;
@@ -1302,6 +1386,7 @@ body {
   padding: 4px 10px;
 }
 .ws-amenity .ti { font-size: 0.85rem; color: ${esc(palette.dark)}; }
+.ws-amenity svg { color: ${esc(palette.dark)}; flex-shrink: 0; }
 .ws-desc {
   font-size: 0.95rem;
   color: #475569;
@@ -2389,11 +2474,17 @@ var I18N = {
     "page.message":                   "Message (optional)",
     "page.selectRoom":                "Room",
     "page.selectCategory":            "Category",
-    "page.bookThisCategory":          "Book this category",
+    "page.bookThisCategory":          "Book a {category} Room",
     "page.enquirySuccess":            "Booking request received! The owner will review it and be in touch shortly.",
     "page.whatGuestsSay":             "What Our Guests Say",
     "page.ourPartners":               "Our Partners",
-    "page.sleepsUpTo":                "Sleeps up to {n}"
+    "page.sleepsUpTo":                "Sleeps up to {n}",
+    "page.bedTypeSingle":             "Single Bed",
+    "page.bedTypeDouble":             "Double Bed",
+    "page.bedTypeQueen":              "Queen Bed",
+    "page.bedTypeKing":               "King Bed",
+    "page.bedTypeSofaBed":            "Sofa Bed",
+    "page.bedTypeBunkBed":            "Bunk Bed"
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -2429,11 +2520,17 @@ var I18N = {
     "page.message":                   "Message (optionnel)",
     "page.selectRoom":                "Chambre",
     "page.selectCategory":            "Catégorie",
-    "page.bookThisCategory":          "Réserver cette catégorie",
+    "page.bookThisCategory":          "Réserver une chambre {category}",
     "page.enquirySuccess":            "Demande de réservation reçue ! Le propriétaire l'examinera et vous contactera prochainement.",
     "page.whatGuestsSay":             "Ce que disent nos clients",
     "page.ourPartners":               "Nos partenaires",
-    "page.sleepsUpTo":                "Jusqu'à {n} personnes"
+    "page.sleepsUpTo":                "Jusqu'à {n} personnes",
+    "page.bedTypeSingle":             "Lit simple",
+    "page.bedTypeDouble":             "Lit double",
+    "page.bedTypeQueen":              "Lit Queen",
+    "page.bedTypeKing":               "Lit King",
+    "page.bedTypeSofaBed":            "Canapé-lit",
+    "page.bedTypeBunkBed":            "Lit superposé"
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -2469,11 +2566,17 @@ var I18N = {
     "page.message":                   "Nachricht (optional)",
     "page.selectRoom":                "Zimmer",
     "page.selectCategory":            "Kategorie",
-    "page.bookThisCategory":          "Diese Kategorie buchen",
+    "page.bookThisCategory":          "{category}-Zimmer buchen",
     "page.enquirySuccess":            "Buchungsanfrage eingegangen! Der Eigentümer wird diese prüfen und sich in Kürze melden.",
     "page.whatGuestsSay":             "Was unsere Gäste sagen",
     "page.ourPartners":               "Unsere Partner",
-    "page.sleepsUpTo":                "Platz für bis zu {n} Personen"
+    "page.sleepsUpTo":                "Platz für bis zu {n} Personen",
+    "page.bedTypeSingle":             "Einzelbett",
+    "page.bedTypeDouble":             "Doppelbett",
+    "page.bedTypeQueen":              "Queen-Size-Bett",
+    "page.bedTypeKing":               "King-Size-Bett",
+    "page.bedTypeSofaBed":            "Schlafsofa",
+    "page.bedTypeBunkBed":            "Etagenbett"
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -2509,11 +2612,17 @@ var I18N = {
     "page.message":                   "Mensaje (opcional)",
     "page.selectRoom":                "Habitación",
     "page.selectCategory":            "Categoría",
-    "page.bookThisCategory":          "Reservar esta categoría",
+    "page.bookThisCategory":          "Reservar habitación {category}",
     "page.enquirySuccess":            "¡Solicitud de reserva recibida! El propietario la revisará y se pondrá en contacto pronto.",
     "page.whatGuestsSay":             "Lo que dicen nuestros huéspedes",
     "page.ourPartners":               "Nuestros socios",
-    "page.sleepsUpTo":                "Capacidad para hasta {n} personas"
+    "page.sleepsUpTo":                "Capacidad para hasta {n} personas",
+    "page.bedTypeSingle":             "Cama individual",
+    "page.bedTypeDouble":             "Cama doble",
+    "page.bedTypeQueen":              "Cama Queen",
+    "page.bedTypeKing":               "Cama King",
+    "page.bedTypeSofaBed":            "Sofá cama",
+    "page.bedTypeBunkBed":            "Litera"
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -2549,11 +2658,17 @@ var I18N = {
     "page.message":                   "Bericht (optioneel)",
     "page.selectRoom":                "Kamer",
     "page.selectCategory":            "Categorie",
-    "page.bookThisCategory":          "Deze categorie boeken",
+    "page.bookThisCategory":          "{category}kamer boeken",
     "page.enquirySuccess":            "Boekingsaanvraag ontvangen! De eigenaar bekijkt deze en neemt binnenkort contact met u op.",
     "page.whatGuestsSay":             "Wat onze gasten zeggen",
     "page.ourPartners":               "Onze partners",
-    "page.sleepsUpTo":                "Slaapplaats voor maximaal {n} personen"
+    "page.sleepsUpTo":                "Slaapplaats voor maximaal {n} personen",
+    "page.bedTypeSingle":             "Eenpersoonsbed",
+    "page.bedTypeDouble":             "Tweepersoonsbed",
+    "page.bedTypeQueen":              "Queen-size bed",
+    "page.bedTypeKing":               "King-size bed",
+    "page.bedTypeSofaBed":            "Slaapbank",
+    "page.bedTypeBunkBed":            "Stapelbed"
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
@@ -2576,6 +2691,11 @@ function applyLang(lang) {
     var key = el.getAttribute('data-i18n-n');
     var n = el.getAttribute('data-n');
     if (t[key] !== undefined) el.textContent = t[key].replace('{n}', n);
+  });
+  document.querySelectorAll('[data-i18n-cat]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-cat');
+    var cat = el.getAttribute('data-cat');
+    if (t[key] !== undefined) el.textContent = t[key].replace('{category}', cat);
   });
   document.querySelectorAll('.lang-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
