@@ -634,7 +634,7 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
       <div class="nb-photo-overlay-title" id="nbPhotoOverlayTitle"></div>
       <button class="nb-photo-overlay-close" type="button" onclick="nbClosePhotoOverlay()" aria-label="Close"><i class="ti ti-x"></i></button>
     </div>
-    <div class="nb-photo-overlay-grid" id="nbPhotoOverlayGrid"></div>
+    <div class="nb-photo-overlay-body" id="nbPhotoOverlayBody"></div>
   </div>
 </div>`;
 }
@@ -1498,7 +1498,7 @@ body {
 .nb-photo-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15,23,42,0.92);
+  background: rgba(0,0,0,0.2);
   z-index: 2000;
   display: flex;
   align-items: flex-start;
@@ -1517,9 +1517,7 @@ body {
 }
 .nb-photo-overlay-panel {
   background: #fff;
-  border-radius: 16px;
-  max-width: 1000px;
-  width: 100%;
+  width: 88vw;
   padding: 24px;
   margin: auto 0;
 }
@@ -1539,7 +1537,6 @@ body {
 .nb-photo-overlay-close {
   background: ${esc(palette.light)};
   border: none;
-  border-radius: 50%;
   width: 36px;
   height: 36px;
   display: flex;
@@ -1552,34 +1549,17 @@ body {
   transition: background 0.14s, color 0.14s;
 }
 .nb-photo-overlay-close:hover { background: ${esc(palette.brand)}; color: #fff; }
+.nb-photo-overlay-room-block { margin-top: 24px; }
+.nb-photo-overlay-room-block:first-child { margin-top: 0; }
 .nb-photo-overlay-room-heading {
   font-size: 0.95rem;
   font-weight: 700;
   color: ${esc(palette.dark)};
-  margin: 24px 0 10px;
-}
-.nb-photo-overlay-room-heading:first-of-type { margin-top: 0; }
-.nb-photo-overlay-grid-group {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.nb-photo-overlay-grid-group img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  border-radius: 10px;
-  display: block;
-  background: #f1f5f9;
+  margin: 0 0 10px;
 }
 @media (max-width: 768px) {
   .nb-photo-overlay { padding: 0; }
-  .nb-photo-overlay-panel { border-radius: 0; min-height: 100%; }
-  .nb-photo-overlay-grid-group { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-}
-@media (max-width: 420px) {
-  .nb-photo-overlay-grid-group { grid-template-columns: 1fr; }
+  .nb-photo-overlay-panel { width: 100%; min-height: 100%; }
 }
 
 /* ── Sections ──────────────────────────────────────────────────────── */
@@ -2980,9 +2960,9 @@ function nbOpenPhotoOverlay(categoryId, triggerEl) {
   if (!data || !data.photos || !data.photos.length) return;
 
   var overlay = document.getElementById('nbPhotoOverlay');
-  var grid    = document.getElementById('nbPhotoOverlayGrid');
+  var body    = document.getElementById('nbPhotoOverlayBody');
   var titleEl = document.getElementById('nbPhotoOverlayTitle');
-  if (!overlay || !grid) return;
+  if (!overlay || !body) return;
 
   var roomsById = {};
   data.rooms.forEach(function(r) { roomsById[r.id] = r; });
@@ -2997,29 +2977,69 @@ function nbOpenPhotoOverlay(categoryId, triggerEl) {
     photosByRoomId[p.room_id].push(p);
   });
   // Sort by room ordinal ("Room 1", "Room 2"...) rather than the order
-  // photos happen to appear in, so the grid reads top-to-bottom sensibly.
+  // photos happen to appear in, so the page reads top-to-bottom sensibly.
   roomOrder.sort(function(a, b) {
     return (roomsById[a] ? roomsById[a].ordinal : 0) - (roomsById[b] ? roomsById[b].ordinal : 0);
   });
 
-  grid.innerHTML = '';
+  // Each room gets its own heading + main-photo/thumb-strip block, reusing
+  // the exact same .ws-photo-area/.ws-main-photo/.ws-thumb-col markup and
+  // CSS as the main page's category cards — same responsive breakpoint,
+  // same square corners, and wsSwap() works unmodified since it already
+  // scopes every query to the carouselId it's given. blockId is prefixed
+  // distinctly from the category card's own "cat-{id}" so ids never collide.
+  body.innerHTML = '';
   roomOrder.forEach(function(roomId) {
-    var room = roomsById[roomId] || { ordinal: '', bedConfig: null };
+    var room       = roomsById[roomId] || { ordinal: '', bedConfig: null };
+    var roomPhotos = photosByRoomId[roomId];
+    var blockId    = 'nb-ovr-room-' + roomId;
+
+    var block = document.createElement('div');
+    block.className = 'nb-photo-overlay-room-block';
+
     var heading = document.createElement('h4');
     heading.className = 'nb-photo-overlay-room-heading';
     heading.textContent = nbCategoryRoomLabel(room);
-    grid.appendChild(heading);
+    block.appendChild(heading);
 
-    var group = document.createElement('div');
-    group.className = 'nb-photo-overlay-grid-group';
-    photosByRoomId[roomId].forEach(function(p) {
-      var img = document.createElement('img');
-      img.src = '/uploads/rooms/' + p.filename;
-      img.loading = 'lazy';
-      img.alt = '';
-      group.appendChild(img);
-    });
-    grid.appendChild(group);
+    var area = document.createElement('div');
+    area.className = 'ws-photo-area';
+
+    var mainWrap = document.createElement('div');
+    mainWrap.className = 'ws-main-photo';
+    mainWrap.id = blockId;
+    var mainImg = document.createElement('img');
+    mainImg.className = 'ws-main-img';
+    mainImg.src = '/uploads/rooms/' + roomPhotos[0].filename;
+    mainImg.loading = 'lazy';
+    mainImg.alt = '';
+    mainWrap.appendChild(mainImg);
+    area.appendChild(mainWrap);
+
+    if (roomPhotos.length > 1) {
+      var thumbCol = document.createElement('div');
+      thumbCol.className = 'ws-thumb-col';
+      var thumbsWrap = document.createElement('div');
+      thumbsWrap.className = 'ws-thumbs';
+      roomPhotos.forEach(function(p, i) {
+        var thumb = document.createElement('div');
+        thumb.className = 'ws-thumb' + (i === 0 ? ' active' : '');
+        thumb.addEventListener('click', function() {
+          wsSwap(blockId, '/uploads/rooms/' + p.filename, this);
+        });
+        var thumbImg = document.createElement('img');
+        thumbImg.src = '/uploads/rooms/' + (p.thumb_filename || p.filename);
+        thumbImg.loading = 'lazy';
+        thumbImg.alt = '';
+        thumb.appendChild(thumbImg);
+        thumbsWrap.appendChild(thumb);
+      });
+      thumbCol.appendChild(thumbsWrap);
+      area.appendChild(thumbCol);
+    }
+
+    block.appendChild(area);
+    body.appendChild(block);
   });
 
   if (titleEl) {
