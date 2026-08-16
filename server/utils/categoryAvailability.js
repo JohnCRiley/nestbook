@@ -18,12 +18,18 @@
  * returned list — the pool automatic/online booking should never draw from.
  * respectBuffer: false (owner/manual bookings) returns the full list,
  * including buffered rooms.
+ *
+ * minCapacity: optional — when set, also excludes rooms whose capacity is
+ * below it. Defaults to null (no capacity filtering), so every existing
+ * caller (Phase 5/6a's manual assignment and booking-creation routes, which
+ * don't consider guest count) is unaffected.
  */
-export function getAvailableRoomsInCategory(db, categoryId, checkIn, checkOut, { respectBuffer = false } = {}) {
+export function getAvailableRoomsInCategory(db, categoryId, checkIn, checkOut, { respectBuffer = false, minCapacity = null } = {}) {
   const rows = db.prepare(`
     SELECT id FROM rooms
     WHERE category_id = ?
       AND status != 'maintenance'
+      AND (? IS NULL OR capacity >= ?)
       AND NOT EXISTS (
         SELECT 1 FROM bookings b
         WHERE b.room_id = rooms.id
@@ -32,7 +38,7 @@ export function getAvailableRoomsInCategory(db, categoryId, checkIn, checkOut, {
           AND b.check_out_date > ?
       )
     ORDER BY id ASC
-  `).all(categoryId, checkOut, checkIn);
+  `).all(categoryId, minCapacity, minCapacity, checkOut, checkIn);
 
   let ids = rows.map((r) => r.id);
 

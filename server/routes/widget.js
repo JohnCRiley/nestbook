@@ -6,9 +6,9 @@ import crypto from 'crypto';
 import { Router } from 'express';
 import db from '../db/database.js';
 import { stripe } from '../lib/stripeClient.js';
-import { getRateForDate } from '../utils/ratePeriods.js';
+import { getRateForDate, calcSeasonalBreakdown } from '../utils/ratePeriods.js';
 import { recoveryUrl, verifyRecoveryToken, makeRecoveryToken } from '../lib/recoveryToken.js';
-import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
+import { assignRoomForCategoryBooking, getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
 import {
   sendBookingConfirmation,
   sendApprovalRequestEmail,
@@ -97,6 +97,169 @@ widgetRouter.get('/rate-periods', (req, res) => {
       'SELECT id, name, date_from, date_to, rate_type, rate_value, priority FROM rate_periods WHERE property_id = ? ORDER BY priority ASC, id ASC'
     ).all(property_id);
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Bed configuration (Phase 7a format) ───────────────────────────────────
+// Mirrors the same-named local helpers already in rooms.js/bookingPage.js —
+// small enough that each route file keeps its own copy rather than sharing
+// a module, matching the established pattern in this codebase.
+function parseBedConfig(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// Returns the shared bed_config array only if EVERY room passed in has an
+// identical, non-null bed_config (same types and quantities, order-
+// independent) — otherwise null, so the caller omits the bed info entirely
+// rather than showing a partial or misleading result.
+function getUniformBedConfig(rooms) {
+  if (!rooms || rooms.length === 0) return null;
+  const signature = (arr) => arr.map((e) => `${e.type}:${e.qty}`).sort().join(',');
+
+  let shared = null;
+  let sharedSignature = null;
+  for (const room of rooms) {
+    const parsed = parseBedConfig(room.bed_config);
+    if (!parsed || parsed.length === 0) return null;
+    const sig = signature(parsed);
+    if (sharedSignature === null) {
+      sharedSignature = sig;
+      shared = parsed;
+    } else if (sig !== sharedSignature) {
+      return null;
+    }
+  }
+  return shared;
+}
+
+// Room Categories mode only — true when the property is set up that way.
+function isCategoriesModeProperty(propertyId) {
+  const property = db.prepare('SELECT rental_type, ir_room_mode FROM properties WHERE id = ?').get(propertyId);
+  return property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
+}
+
+// ── GET /api/widget/categories?property_id=X&check_in=Y&check_out=Z&guests=N ──
+// Room Categories mode only — one row per category: price range, capacity,
+// and bed_config across the rooms that fit `guests`, a representative photo,
+// and a buffer-respecting availability flag (mirrors getAvailableRoomsInCategory's
+// own convention, same as Phase 6a's booking-creation routes). Public — no
+// auth, no guest PII. Categories with zero guest-eligible rooms are omitted
+// entirely rather than returned with a misleading empty range.
+widgetRouter.get('/categories', (req, res) => {
+  try {
+    const { property_id, check_in, check_out, guests } = req.query;
+    if (!property_id || !check_in || !check_out) {
+      return res.status(400).json({ error: 'property_id, check_in and check_out are required' });
+    }
+    if (!widgetPropertyGuard(property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
+    if (!isCategoriesModeProperty(property_id)) {
+      return res.status(400).json({ error: 'This property is not in Room Categories mode.' });
+    }
+
+    const numGuests = Math.max(1, parseInt(guests, 10) || 1);
+
+    const categories = db.prepare(
+      'SELECT id, name FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC'
+    ).all(property_id);
+
+    const result = categories.map((category) => {
+      const rooms = db.prepare(`
+        SELECT id, price_per_night, capacity, bed_config
+        FROM rooms
+        WHERE category_id = ? AND status != 'maintenance' AND capacity >= ?
+        ORDER BY id ASC
+      `).all(category.id, numGuests);
+
+      if (rooms.length === 0) return null;
+
+      const prices = rooms.map((r) => Number(r.price_per_night ?? 0)).filter((p) => p > 0);
+      const priceMin = prices.length ? Math.min(...prices) : 0;
+      const priceMax = prices.length ? Math.max(...prices) : 0;
+      const capacity = Math.max(...rooms.map((r) => Number(r.capacity ?? 0)));
+
+      const photoRow = db.prepare(
+        'SELECT filename FROM room_photos WHERE room_id = ? ORDER BY display_order ASC, id ASC LIMIT 1'
+      ).get(rooms[0].id);
+
+      const availableIds = getAvailableRoomsInCategory(db, category.id, check_in, check_out, {
+        respectBuffer: true,
+        minCapacity: numGuests,
+      });
+
+      return {
+        id:         category.id,
+        name:       category.name,
+        price_min:  priceMin,
+        price_max:  priceMax,
+        capacity,
+        bed_config: getUniformBedConfig(rooms),
+        photo:      photoRow?.filename ?? null,
+        available:  availableIds.length > 0,
+      };
+    }).filter(Boolean);
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/widget/category-preview?category_id=X&check_in=Y&check_out=Z ──
+// Room Categories mode only — read-only dry run of assignRoomForCategoryBooking
+// (the exact same function and respectBuffer:true mode a real booking would
+// use), so the widget can show the guest specifically which room they'd get
+// before they confirm. Does NOT insert anything — no atomicity concerns here
+// since there's no check-then-write pair; the real booking-creation routes
+// (Phase 6a) own that discipline at submission time.
+widgetRouter.get('/category-preview', (req, res) => {
+  try {
+    const { category_id, check_in, check_out } = req.query;
+    if (!category_id || !check_in || !check_out) {
+      return res.status(400).json({ error: 'category_id, check_in and check_out are required' });
+    }
+    const category = db.prepare('SELECT id, property_id FROM room_categories WHERE id = ?').get(category_id);
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!widgetPropertyGuard(category.property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
+    if (!isCategoriesModeProperty(category.property_id)) {
+      return res.status(400).json({ error: 'This property is not in Room Categories mode.' });
+    }
+
+    const roomId = assignRoomForCategoryBooking(db, category_id, check_in, check_out, { respectBuffer: true });
+    if (!roomId) {
+      return res.status(409).json({ error: 'No rooms available in this category for those dates' });
+    }
+
+    const room = db.prepare(
+      'SELECT id, property_id, name, type, price_per_night, capacity, amenities FROM rooms WHERE id = ?'
+    ).get(roomId);
+    const photoRow = db.prepare(
+      'SELECT filename FROM room_photos WHERE room_id = ? ORDER BY display_order ASC, id ASC LIMIT 1'
+    ).get(roomId);
+    const { total, breakdown } = calcSeasonalBreakdown(room.property_id, room.id, check_in, check_out);
+
+    res.json({
+      room_id:         room.id,
+      name:            room.name,
+      type:            room.type,
+      capacity:        room.capacity,
+      amenities:       room.amenities,
+      photo:           photoRow?.filename ?? null,
+      price_per_night: room.price_per_night,
+      total_price:     total,
+      rate_breakdown:  breakdown,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -556,7 +719,7 @@ widgetRouter.get('/property', (req, res) => {
     const { property_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id is required' });
     const row = db.prepare(`
-      SELECT p.name, p.theme, p.currency, p.rental_type, p.whole_property_rate, p.total_capacity,
+      SELECT p.name, p.theme, p.currency, p.rental_type, p.ir_room_mode, p.whole_property_rate, p.total_capacity,
              p.breakfast_widget_enabled, p.breakfast_price,
              u.stripe_connect_status
       FROM properties p
@@ -569,6 +732,7 @@ widgetRouter.get('/property', (req, res) => {
       name:                     row.name               ?? '',
       currency:                 row.currency           ?? 'EUR',
       rental_type:              row.rental_type        ?? 'rooms',
+      ir_room_mode:             row.ir_room_mode        ?? 'named',
       whole_property_rate:      row.whole_property_rate ?? null,
       total_capacity:           row.total_capacity      ?? null,
       stripe_connect_active:    row.stripe_connect_status === 'active',
