@@ -1042,6 +1042,25 @@ export default function Settings() {
             </div>
           )}
 
+          {/* Room Categories — IR-mode "categories" sub-type management,
+              visible once a property has switched via the migration above
+              (or a new signup chose it during onboarding). Core property
+              configuration, so this lives in the left column alongside
+              Property Details/Properties/Breakfast Hours/Appearance —
+              not the right column's feature toggles. */}
+          {activeProperty?.ir_room_mode === 'categories' && (
+            <div style={{ marginTop: 16 }}>
+              <RoomCategoriesSection
+                t={t}
+                roomCategories={roomCategories}
+                error={roomCategoryDeleteError}
+                onAdd={() => { setEditingRoomCategory(null); setShowRoomCategoryModal(true); }}
+                onEdit={(c) => { setEditingRoomCategory(c); setShowRoomCategoryModal(true); }}
+                onDelete={(c) => { setRoomCategoryDeleteError(null); setRoomCategoryDeleteTarget(c); }}
+              />
+            </div>
+          )}
+
           {/* Report an issue */}
           {bugReportingEnabled && (
             <div className="settings-card" style={{ marginTop: 0 }}>
@@ -1364,22 +1383,6 @@ export default function Settings() {
               <RoomOrganizationCard
                 t={t}
                 onSwitchClick={() => setShowRoomOrgWarning(true)}
-              />
-            </div>
-          )}
-
-          {/* Room Categories — IR-mode "categories" sub-type management,
-              visible once a property has switched via the migration above
-              (or a new signup chose it during onboarding). */}
-          {activeProperty?.ir_room_mode === 'categories' && (
-            <div style={{ marginTop: 16 }}>
-              <RoomCategoriesSection
-                t={t}
-                roomCategories={roomCategories}
-                error={roomCategoryDeleteError}
-                onAdd={() => { setEditingRoomCategory(null); setShowRoomCategoryModal(true); }}
-                onEdit={(c) => { setEditingRoomCategory(c); setShowRoomCategoryModal(true); }}
-                onDelete={(c) => { setRoomCategoryDeleteError(null); setRoomCategoryDeleteTarget(c); }}
               />
             </div>
           )}

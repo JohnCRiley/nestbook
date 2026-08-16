@@ -120,25 +120,33 @@ function propertyCalendarSection() {
 </div>`;
 }
 
-// Room Categories mode — pooled, buffer-respecting availability for one
-// category, built in-memory from availMapsByRoom (itself already derived
-// from the route's bookings query via getRoomAvailMap, so no extra DB
-// query is needed here). Mirrors getAvailableRoomsInCategory's own logic
-// in categoryAvailability.js: rooms sorted ascending by id, the LAST
-// `buffer` rooms held back from the guest-facing pool, a date is
-// available if at least one non-buffered room in the category is free.
-function getCategoryAvailMap(catRooms, availMapsByRoom, buffer) {
-  const idsAsc = catRooms.map(r => r.id).slice().sort((a, b) => a - b);
-  const assignableIds = buffer > 0
-    ? (buffer >= idsAsc.length ? [] : idsAsc.slice(0, idsAsc.length - buffer))
-    : idsAsc;
+// Room Categories mode — ONE property-wide pooled availability map, spanning
+// every category (not a calendar per category — the spec has always called
+// for a single calendar here, same as WP mode's data-room-id="property").
+// Built in-memory from availMapsByRoom (itself already derived from the
+// route's bookings query via getRoomAvailMap, so no extra DB query is
+// needed here). For each category, the LAST `buffer` rooms (sorted
+// ascending by id) are held back from the guest-facing pool, mirroring
+// getAvailableRoomsInCategory in categoryAvailability.js. A date is
+// available if at least one non-buffered room, in ANY category, is free —
+// so the per-category assignable id lists are simply unioned before the
+// day-by-day scan.
+function getCategoriesPooledAvailMap(catsWithRooms, categoriesById, availMapsByRoom) {
+  const allAssignableIds = catsWithRooms.flatMap(cat => {
+    const catRooms = categoriesById[cat.id]?.rooms ?? [];
+    const idsAsc = catRooms.map(r => r.id).slice().sort((a, b) => a - b);
+    const buffer = Number(cat.buffer ?? 0);
+    return buffer > 0
+      ? (buffer >= idsAsc.length ? [] : idsAsc.slice(0, idsAsc.length - buffer))
+      : idsAsc;
+  });
   const map = {};
   const base = new Date();
   for (let i = 0; i < 365; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     const s = localDateStr(d);
-    map[s] = assignableIds.some(id => (availMapsByRoom[id] || {})[s] === 'available') ? 'available' : 'booked';
+    map[s] = allAssignableIds.some(id => (availMapsByRoom[id] || {})[s] === 'available') ? 'available' : 'booked';
   }
   return map;
 }
@@ -423,60 +431,82 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
 </div>`;
 }
 
-// Room Categories mode — one card per category instead of one per room.
-// Same visual style/CSS classes as roomCard above, but the header shows the
-// category name, price is a min-max range across the category's rooms, and
-// "Sleeps up to X" uses the highest capacity among them. The calendar uses
-// a synthetic "cat_{id}" key — renderCalendar() below already handles any
-// string key generically (the "property" key for WP mode proves this), so
-// no client-side changes are needed to pick it up.
+// Room Categories mode — one showcase section per category, modeled closely
+// on wpAlternatingShowcase() above (same ws-* markup/CSS, alternating photo
+// side, one section per row) rather than the per-room-card grid used by
+// plain IR mode — this is a separate function, wpAlternatingShowcase()
+// itself is untouched. Price range + "Book this category" are layered on
+// top of the shared ws-room shell the same way generateUnitsPage() already
+// layers room-price markup onto it for units.
+// No calendar here — there is a single property-wide pooled calendar
+// rendered once below this showcase (see propertyCalendarSection(), reused
+// unmodified — same "property" key as WP mode).
 // The book button is intentionally NOT wired to openWidget/NB_PRESELECTED_ROOM_ID
 // (widget.js is out of scope this phase) — it just pre-selects the category
 // in the enquiry form and scrolls to it.
-function categoryCard(category, catRooms, currSym, photosByRoom) {
-  const prices = catRooms.map(r => Number(r.price_per_night ?? 0)).filter(p => p > 0);
-  const minPrice = prices.length ? Math.min(...prices) : 0;
-  const maxPrice = prices.length ? Math.max(...prices) : 0;
-  const priceHtml = minPrice === maxPrice
-    ? `${esc(currSym)}${esc(minPrice.toFixed(0))}`
-    : `${esc(currSym)}${esc(minPrice.toFixed(0))}–${esc(currSym)}${esc(maxPrice.toFixed(0))}`;
+function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym) {
+  if (!catsWithRooms || catsWithRooms.length === 0) return '';
 
-  const capacities = catRooms.map(r => Number(r.capacity ?? 0)).filter(c => c > 0);
-  const maxCapacity = capacities.length ? Math.max(...capacities) : 0;
-  const occBadge = maxCapacity
-    ? `<div class="room-occupancy"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(maxCapacity))}">Sleeps up to ${esc(String(maxCapacity))}</span></div>`
-    : '';
+  const rows = catsWithRooms.map((category, index) => {
+    const catRooms = categoriesById[category.id]?.rooms ?? [];
+    const isEven = index % 2 === 1;
+    const cid = `cat-${category.id}`;
 
-  // catRooms preserves the outer rooms query's price_per_night ASC order,
-  // so the cheapest room in the category is a reasonable default photo —
-  // but prefer the first room that actually has a photo.
-  const repRoom = catRooms.find(r => (photosByRoom?.[r.id]?.length ?? 0) > 0) ?? catRooms[0];
-  const photos = repRoom ? photosByRoom?.[repRoom.id] : null;
+    const prices = catRooms.map(r => Number(r.price_per_night ?? 0)).filter(p => p > 0);
+    const minPrice = prices.length ? Math.min(...prices) : 0;
+    const maxPrice = prices.length ? Math.max(...prices) : 0;
+    const priceHtml = minPrice === maxPrice
+      ? `${esc(currSym)}${esc(minPrice.toFixed(0))}`
+      : `${esc(currSym)}${esc(minPrice.toFixed(0))}–${esc(currSym)}${esc(maxPrice.toFixed(0))}`;
 
-  const photoHtml = photos && photos.length > 0 ? `
-  <div class="room-photo">
-    <img src="/uploads/rooms/${esc(photos[0].filename)}" alt="${esc(category.name)}" loading="lazy" />
-  </div>
-  ${photos.length > 1 ? `
-  <div class="photo-strip">
-    ${photos.map((p, i) => `<img src="/uploads/rooms/${esc(p.filename)}" class="photo-strip-thumb${i === 0 ? ' active' : ''}" loading="lazy" alt="" />`).join('')}
-  </div>` : ''}` : '';
+    const capacities = catRooms.map(r => Number(r.capacity ?? 0)).filter(c => c > 0);
+    const maxCapacity = capacities.length ? Math.max(...capacities) : 0;
+    const sleepsHtml = maxCapacity
+      ? `<span class="ws-amenity"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(maxCapacity))}">Sleeps up to ${esc(String(maxCapacity))}</span></span>`
+      : '';
 
-  const catKey = `cat_${category.id}`;
+    // catRooms preserves the outer rooms query's price_per_night ASC order,
+    // so the cheapest room in the category is a reasonable default photo —
+    // but prefer the first room that actually has a photo.
+    const repRoom = catRooms.find(r => (photosByRoom?.[r.id]?.length ?? 0) > 0) ?? catRooms[0];
+    const photos  = repRoom ? (photosByRoom?.[repRoom.id] ?? []) : [];
+    const primary = photos[0] ?? null;
 
-  return `
-<div class="room-card">
-  ${photoHtml}
-  <div class="room-card-body">
-    <div class="room-header">
-      <h3>${esc(category.name)}</h3>
+    const mainImgHtml = primary
+      ? `<img src="/uploads/rooms/${esc(primary.filename)}" alt="${esc(category.name)}" class="ws-main-img" id="${esc(cid)}-main" loading="eager" />`
+      : `<div class="ws-no-photo"><i class="ti ti-photo-off"></i></div>`;
+
+    const thumbsHtml = photos.length > 1
+      ? `<div class="ws-thumbs">${
+          photos.map((photo, i) =>
+            `<div class="ws-thumb${i === 0 ? ' active' : ''}" onclick="wsSwap('${esc(cid)}','/uploads/rooms/${esc(photo.filename)}',this)"><img src="/uploads/rooms/${esc(photo.thumb_filename || photo.filename)}" alt="${esc(category.name)} ${i + 1}" loading="lazy" /></div>`
+          ).join('')
+        }</div>`
+      : '';
+
+    return `
+<div class="ws-room">
+  <h3 class="ws-room-title">${esc(category.name)}</h3>
+  <div class="ws-photo-area${isEven ? ' ws-reverse' : ''}">
+    <div class="ws-main-photo" id="${esc(cid)}">
+      ${mainImgHtml}
     </div>
+    ${photos.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
+  </div>
+  <div class="ws-details">
     <div class="room-price">${priceHtml}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    ${occBadge}
-    ${roomCalendarSection(catKey)}
+    ${sleepsHtml ? `<div class="ws-amenities-row">${sleepsHtml}</div>` : ''}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="selectCategoryForEnquiry(${category.id})" data-i18n="page.bookThisCategory">Book this category</button>
   </div>
+  <div class="ws-divider"></div>
+</div>`;
+  }).join('');
+
+  return `
+<div class="ws-rooms">
+  <div class="ws-section-title" data-i18n="page.ourRooms">Our Rooms</div>
+  ${rows}
 </div>`;
 }
 
@@ -538,9 +568,10 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     for (const r of rooms) availJson[String(r.id)] = availMapsByRoom[r.id];
   }
   if (isCategoriesMode) {
-    for (const cat of catsWithRooms) {
-      availJson['cat_' + cat.id] = getCategoryAvailMap(categoriesById[cat.id].rooms, availMapsByRoom, Number(cat.buffer ?? 0));
-    }
+    // ONE property-wide pooled calendar, not one per category — reuses the
+    // exact same "property" key propertyCalendarSection()/renderCalendar()
+    // already use for WP mode, so no client-side changes are needed here.
+    availJson['property'] = getCategoriesPooledAvailMap(catsWithRooms, categoriesById, availMapsByRoom);
   }
 
   const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan)).join('\n');
@@ -751,16 +782,16 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // section here.
     roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit);
   } else if (isCategoriesMode) {
-    // One card per category (categoryCard), pooled availability, instead
-    // of one card per room — see categoriesById/catsWithRooms above.
-    const catCards = catsWithRooms.map(c => categoryCard(c, categoriesById[c.id].rooms, currSym, photosByRoom)).join('\n');
+    // Category showcase (one section per category, no per-category
+    // calendar) plus a single property-wide pooled calendar below it —
+    // same shape as the isWholeProperty branch above, reusing
+    // propertyCalendarSection() unmodified (data-room-id="property").
     roomsSection = catsWithRooms.length > 0 ? `
-<section class="rooms">
+${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym)}
+<section class="availability">
   <div class="section-inner">
-    <h2 data-i18n="page.ourRooms">Our Rooms</h2>
-    <div class="rooms-grid">
-      ${catCards}
-    </div>
+    <h2 data-i18n="page.availability">Availability</h2>
+    ${propertyCalendarSection()}
   </div>
 </section>` : '';
   } else {

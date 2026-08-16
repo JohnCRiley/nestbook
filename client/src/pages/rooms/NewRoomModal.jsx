@@ -56,6 +56,10 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
       setError(t('priceRequired'));
       return;
     }
+    if (showCategoryField && !form.category_id) {
+      setError(t('roomCategoryRequired'));
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -227,9 +231,9 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
 
               {showCategoryField && (
                 <div className="form-group">
-                  <label className="form-label">Category</label>
-                  <select name="category_id" className="form-control" value={form.category_id} onChange={handleChange}>
-                    <option value="">—</option>
+                  <label className="form-label">Category *</label>
+                  <select name="category_id" className="form-control" value={form.category_id} onChange={handleChange} required>
+                    <option value="" disabled>Select a category…</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}

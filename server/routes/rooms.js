@@ -224,6 +224,9 @@ roomsRouter.post('/', (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
 
+    const currentUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+    const currentProperty = db.prepare('SELECT rental_type, ir_room_mode FROM properties WHERE id = ?').get(property_id);
+
     // Room Categories (Phase 4) — same cross-property guard as the PUT route.
     let newCategoryId = null;
     if (category_id !== undefined && category_id !== null && category_id !== '') {
@@ -233,8 +236,12 @@ roomsRouter.post('/', (req, res) => {
       newCategoryId = cat.id;
     }
 
-    const currentUser = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
-    const currentProperty = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(property_id);
+    // Categories-mode properties: every room must belong to a category, or
+    // it becomes unbookable (nothing routes guests to an uncategorized
+    // room) — server-side mirror of NewRoomModal's required category select.
+    if (currentProperty?.rental_type === 'rooms' && currentProperty?.ir_room_mode === 'categories' && !newCategoryId) {
+      return res.status(400).json({ error: 'category_id is required for Room Categories-mode properties.' });
+    }
 
     if (currentProperty?.rental_type === 'units') {
       if (!parent_unit_id) {
