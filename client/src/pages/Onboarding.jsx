@@ -204,7 +204,7 @@ export default function Onboarding() {
       const res = await apiFetch(`/api/properties/${user.property_id}`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(form),
+        body:    JSON.stringify({ ...form, lock_rental_type: true }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

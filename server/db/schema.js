@@ -2307,6 +2307,31 @@ John`
     }
   }
 
+  // One-time backfill: accounts that finished onboarding before handleFinish()
+  // was fixed to send lock_rental_type never got rental_type_locked set, so
+  // Settings kept showing the two-button Rooms/Whole-Property toggle even
+  // though onboarding was fully complete. Guarded via app_settings (not a
+  // column-existence check like the migration above, since rental_type_locked
+  // already exists by now — this is a one-time data backfill, not a schema
+  // change): INSERT OR IGNORE only succeeds (changes === 1) the very first
+  // time this runs; every later boot sees changes === 0 and skips it, so
+  // properties that finish onboarding normally from now on (and get locked
+  // by handleFinish() itself) are never touched again by this block.
+  {
+    const { changes: guardInserted } = db.prepare(
+      `INSERT OR IGNORE INTO app_settings (key, value) VALUES ('onboarding_rental_type_lock_backfill_done', '1')`
+    ).run();
+    if (guardInserted > 0) {
+      const { changes: lockedCount } = db.prepare(`
+        UPDATE properties
+        SET rental_type_locked = 1
+        WHERE rental_type_locked = 0
+          AND owner_id IN (SELECT id FROM users WHERE onboarding_completed = 1)
+      `).run();
+      console.log(`✓ Backfilled rental_type_locked for ${lockedCount} propert${lockedCount === 1 ? 'y' : 'ies'} with completed onboarding.`);
+    }
+  }
+
   // Migration: hero_photo_is_sample — 1 when set by seeding, 0 after owner uploads their own
   try { db.exec(`ALTER TABLE properties ADD COLUMN hero_photo_is_sample INTEGER NOT NULL DEFAULT 0`); } catch { /* already exists */ }
 
