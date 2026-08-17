@@ -864,6 +864,19 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Room Organization — Phase 3 migration switch, IR "named" mode only.
+              Only eligible accounts (individual rooms, not yet switched) see
+              this; switching back is deliberately not offered here. Left column,
+              directly below Property Details. */}
+          {activeProperty?.rental_type === 'rooms' && activeProperty?.ir_room_mode === 'named' && (
+            <div style={{ marginTop: 16 }}>
+              <RoomOrganizationCard
+                t={t}
+                onSwitchClick={() => setShowRoomOrgWarning(true)}
+              />
+            </div>
+          )}
+
           {/* Unit Sub-Type — Units mode only, dev-reachable, not exposed in onboarding.
               Left column, property-setup section — belongs with Property Details, not
               the right column's feature toggles. */}
@@ -1374,18 +1387,6 @@ export default function Settings() {
               />
             </PlanGate>
           </div>
-
-          {/* Room Organization — Phase 3 migration switch, IR "named" mode only.
-              Only eligible accounts (individual rooms, not yet switched) see
-              this; switching back is deliberately not offered here. */}
-          {activeProperty?.rental_type === 'rooms' && activeProperty?.ir_room_mode === 'named' && (
-            <div style={{ marginTop: 16 }}>
-              <RoomOrganizationCard
-                t={t}
-                onSwitchClick={() => setShowRoomOrgWarning(true)}
-              />
-            </div>
-          )}
 
           {/* Calendar Sync — iCal export (collapsible) */}
           {(rooms.length > 0 || activeProperty?.rental_type === 'whole_property') && (
@@ -3674,9 +3675,11 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
 }
 
 // ── RoomOrganizationCard ──────────────────────────────────────────────────────
-// Phase 3: the switch entry point for existing IR "named" accounts. Explains
-// both modes with the exact same copy as the Phase 2 onboarding step — this
-// is a one-way-easy migration, so no equivalent card exists for switching back.
+// Phase 3: the switch entry point for existing IR "named" accounts. The
+// categories copy matches the Phase 2 onboarding step; the "named" description
+// has its own settings-specific wording (settings.roomOrgNamedDesc) aimed at
+// existing accounts rather than new signups. This is a one-way-easy migration,
+// so no equivalent card exists for switching back.
 
 function RoomOrganizationCard({ t, onSwitchClick }) {
   return (
@@ -3691,7 +3694,7 @@ function RoomOrganizationCard({ t, onSwitchClick }) {
               {t('onboard.irRoomMode.named')}
             </div>
             <div style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
-              {t('onboard.irRoomMode.namedDesc')}
+              {t('settings.roomOrgNamedDesc')}
             </div>
           </div>
           <div style={{ padding: '12px 14px', borderRadius: 8, background: '#f8fafc', border: '1px solid var(--border)' }}>
