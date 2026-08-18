@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NestBook — Getting Started Guide</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sage:      #405440;
+  --sage-dark: #344634;
+  --cream:     #F0EDE8;
+  --tint:      #F4F3F0;
+  --card:      #FFFFFF;
+  --text:      #1C1C1E;
+  --muted:     #6B6A66;
+  --faint:     #9B9A96;
+  --border:    #D8D3CB;
+}
+@page { size: A4; margin: 0; }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  font-size: 9.3pt;
+  line-height: 1.36;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 18mm;
+  page-break-after: always;
+  position: relative;
+}
+.page:last-child { page-break-after: auto; }
+
+/* ── Cover page ─────────────────────────────────────────────────────────── */
+.cover {
+  background: var(--sage);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24mm;
+}
+.cover .logo { width: 34mm; height: auto; margin-bottom: 10mm; }
+.cover .brand { font-size: 15pt; font-weight: 800; letter-spacing: 1px; color: var(--cream); margin-bottom: 3mm; text-transform: uppercase; }
+.cover h1 { font-size: 25pt; font-weight: 800; line-height: 1.25; margin-bottom: 8mm; }
+.cover p.lede { font-size: 11pt; color: var(--cream); max-width: 130mm; line-height: 1.6; }
+.cover .footer { position: absolute; bottom: 16mm; left: 0; right: 0; text-align: center; font-size: 8pt; color: var(--cream); opacity: 0.85; }
+
+/* ── Interior header ────────────────────────────────────────────────────── */
+.doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2.5mm;
+  border-bottom: 1.5pt solid var(--sage);
+  margin-bottom: 5mm;
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--sage);
+  text-transform: uppercase;
+}
+.doc-header .step-tag { color: var(--muted); font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+/* ── Step page layout ───────────────────────────────────────────────────── */
+.step-head { display: flex; align-items: flex-start; gap: 5mm; margin-bottom: 4mm; }
+.step-num {
+  flex-shrink: 0;
+  width: 10mm; height: 10mm;
+  border-radius: 50%;
+  background: var(--sage);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11pt; font-weight: 800;
+}
+.step-title { font-size: 13.5pt; font-weight: 800; color: var(--sage); line-height: 1.2; }
+.step-sub { font-size: 9pt; color: var(--muted); margin-top: 1.5mm; }
+.go-to { font-size: 8.5pt; color: var(--muted); margin-bottom: 5mm; }
+.go-to strong { color: var(--sage); }
+
+h2.section-h { font-size: 10.3pt; font-weight: 800; color: var(--sage); margin: 3.5mm 0 1.3mm; }
+p { margin-bottom: 2.2mm; }
+strong { color: var(--sage); }
+
+.tip-box {
+  background: var(--cream);
+  border-left: 3pt solid var(--sage);
+  border-radius: 3px;
+  padding: 2.8mm 5mm;
+  margin: 2.8mm 0;
+  font-size: 8.7pt;
+}
+.tip-box .tip-title { font-weight: 800; color: var(--sage); display: block; margin-bottom: 0.8mm; }
+
+table.info-table { width: 100%; border-collapse: collapse; margin: 2mm 0 3.5mm; font-size: 8.4pt; }
+table.info-table th {
+  text-align: left; background: var(--sage); color: #fff;
+  padding: 1.3mm 3mm; font-weight: 700; font-size: 8pt;
+}
+table.info-table td { padding: 1.3mm 3mm; border-bottom: 0.5pt solid var(--border); vertical-align: top; }
+table.info-table tr:nth-child(even) td { background: var(--tint); }
+table.info-table td.col1 { font-weight: 700; color: var(--sage); white-space: nowrap; }
+
+.badge { display: inline-block; font-size: 6.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; padding: 1px 5px; border-radius: 8px; background: var(--sage); color: #fff; margin-left: 2px; }
+
+ul.bullets, ol.numbered { margin: 1.5mm 0 3mm 5mm; }
+ul.bullets li { margin-bottom: 1.4mm; }
+ol.numbered li { margin-bottom: 1.4mm; }
+ul.bullets li::marker { color: var(--sage); }
+
+.mode-block { margin-bottom: 1.8mm; }
+.mode-block .mode-title { font-weight: 800; color: var(--sage); font-size: 9.6pt; }
+.sub-list { margin: 1mm 0 0 4mm; font-size: 8.6pt; color: var(--muted); line-height: 1.3; }
+.sub-list strong { color: var(--text); }
+
+/* ── TOC page ───────────────────────────────────────────────────────────── */
+.toc-item { display: flex; gap: 4mm; margin-bottom: 3mm; align-items: flex-start; }
+.toc-num { flex-shrink: 0; width: 7mm; height: 7mm; border-radius: 50%; background: var(--cream); color: var(--sage); font-weight: 800; font-size: 8.5pt; display: flex; align-items: center; justify-content: center; }
+.toc-title { font-weight: 700; font-size: 9pt; color: var(--text); }
+.toc-desc { font-size: 8pt; color: var(--muted); }
+
+/* ── Checklist page ─────────────────────────────────────────────────────── */
+.checklist li { list-style: none; display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 3mm; font-size: 9pt; }
+.checklist .box { flex-shrink: 0; width: 4mm; height: 4mm; border: 1.5pt solid var(--sage); border-radius: 2px; margin-top: 0.8mm; }
+
+.closing { text-align: center; margin-top: 12mm; padding-top: 8mm; border-top: 1pt solid var(--border); }
+.closing p { color: var(--muted); font-size: 9pt; }
+.closing .sign { margin-top: 4mm; font-weight: 700; color: var(--sage); }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 — COVER ============ -->
+<div class="page cover">
+  <svg class="logo" viewBox="0 0 2405 2404" xmlns="http://www.w3.org/2000/svg"><g transform="translate(-955 -38)"><path d="M956 597.915C956 288.683 1206.68 38.0002 1515.91 38.0002L2799.09 38.0002C3108.32 38.0002 3359 288.683 3359 597.915L3359 1877.14C3359 2186.37 3108.32 2437.05 2799.09 2437.05L1515.91 2437.05C1206.68 2437.05 956 2186.37 956 1877.14Z" fill="#F0EDE8" fill-rule="evenodd"/><path d="M2704.32 962.009C2873.14 962.499 3073.52 984.601 3330 1040.38L3330 1854.69 3327.17 1911.66C3301.02 2173.96 3096.24 2382.49 2838.66 2409.12L2782.71 2412 1532.29 2412 1476.34 2409.12C1200.36 2380.58 985 2143.24 985 1854.68L985 1234.17 1091.56 1232.89C1917.69 1212.7 2125.51 960.328 2704.32 962.009Z" stroke="#405440" stroke-width="59.5833" stroke-miterlimit="8" fill="#F0EDE8" fill-rule="evenodd"/><path d="M1527 1001C1527 551.44 1809.28 187 2157.5 187 2505.72 187 2788 551.44 2788 1001 2788 1450.56 2505.72 1815 2157.5 1815 1809.28 1815 1527 1450.56 1527 1001Z" stroke="#405440" stroke-width="45.8333" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M1623 1001C1623 619.924 1862.3 311 2157.5 311 2452.7 311 2692 619.924 2692 1001 2692 1382.08 2452.7 1691 2157.5 1691 1862.3 1691 1623 1382.08 1623 1001Z" fill="#405440" fill-rule="evenodd"/><path d="M2126.1 1942.58C2140.95 1929.59 2163.51 1931.1 2176.49 1945.95L2176.49 1945.95C2189.48 1960.79 2187.97 1983.35 2173.12 1996.34L1804.85 2318.43C1790.01 2331.41 1767.45 2329.91 1754.46 2315.06L1754.46 2315.06C1741.48 2300.22 1742.99 2277.66 1757.83 2264.67Z" stroke="#405440" stroke-width="27.5" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M2439.31 545.574C2454.45 532.335 2477.45 533.874 2490.69 549.011L2490.69 549.011C2503.93 564.148 2502.39 587.151 2487.26 600.39L2196.95 854.292C2181.82 867.531 2158.81 865.992 2145.57 850.855L2145.57 850.855C2132.34 835.719 2133.87 812.715 2149.01 799.476Z" stroke="#405440" stroke-width="27.5" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M2544.35 823.094C2563.62 817.318 2583.91 828.25 2589.69 847.512L2589.69 847.512C2595.47 866.774 2584.53 887.072 2565.27 892.849L2195.85 1003.63C2176.59 1009.41 2156.29 998.475 2150.52 979.213L2150.52 979.213C2144.74 959.951 2155.67 939.653 2174.94 933.877Z" stroke="#405440" stroke-width="27.5" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M2116.08 1102.63C2135.96 1103.87 2151.06 1120.98 2149.83 1140.85L2149.83 1140.85C2148.59 1160.72 2131.48 1175.83 2111.61 1174.59L1814.87 1156.14C1795 1154.9 1779.89 1137.79 1781.13 1117.92L1781.13 1117.92C1782.36 1098.05 1799.47 1082.94 1819.35 1084.18Z" stroke="#405440" stroke-width="27.5" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M2102.61 1241.03C2118.37 1227.25 2142.31 1228.85 2156.09 1244.6L2156.09 1244.6C2169.87 1260.36 2168.27 1284.3 2152.51 1298.08L2022.94 1411.4C2007.19 1425.18 1983.25 1423.58 1969.47 1407.82L1969.47 1407.82C1955.69 1392.07 1957.29 1368.13 1973.05 1354.35Z" stroke="#405440" stroke-width="27.5" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M2122 390.524C2122 370.905 2137.9 355 2157.52 355L2157.52 355C2177.14 355 2193.05 370.905 2193.05 390.524L2193.05 2109.48C2193.05 2129.1 2177.14 2145 2157.52 2145L2157.52 2145C2137.9 2145 2122 2129.1 2122 2109.48Z" stroke="#405440" stroke-width="27.5" stroke-miterlimit="8" fill="#F4EFE4" fill-rule="evenodd"/><path d="M2122.27 1959.95C2132.77 1950.77 2148.71 1951.84 2157.89 1962.33L2157.89 1962.33C2167.07 1972.83 2166.01 1988.78 2155.51 1997.96L1803.48 2305.85C1792.99 2315.03 1777.04 2313.96 1767.86 2303.46L1767.86 2303.46C1758.68 2292.97 1759.75 2277.02 1770.24 2267.84Z" fill="#F4EFE4" fill-rule="evenodd"/></g></svg>
+  <div class="brand">NestBook</div>
+  <h1>Your Complete Getting Started Guide</h1>
+  <p class="lede">Everything you need to go from "just verified" to taking your first direct booking — one calm step at a time.</p>
+  <div class="footer">NestBook.IO Ltd &nbsp;•&nbsp; nestbook.io &nbsp;•&nbsp; hello@nestbook.io</div>
+</div>
+
+<!-- ============ PAGE 2 — WELCOME / TOC ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Welcome</span></div>
+  <h1 class="step-title" style="margin-bottom:4mm;">Welcome to NestBook</h1>
+  <p>You've just verified your email, and that's genuinely the hardest part done — from here it's just a series of small, sensible steps.</p>
+  <p>This guide is written for one purpose: so you never have to guess what to do next, and never have to switch between the app and a help page to figure something out. Everything is here, in the order you'll actually need it.</p>
+  <p>You don't need to be technical to use NestBook, and you don't need to read this guide from cover to cover in one sitting. Work through it at whatever pace suits you — do a step, close the guide, come back to it tomorrow. Nothing here is timed or urgent except the small handful of things we've clearly marked.</p>
+
+  <h2 class="section-h">How this guide is organised</h2>
+  <p>Each step below matches something you'll actually do inside NestBook, roughly in the order most owners tackle them. Depending on your rental mode — Individual Rooms, Whole Property, or Self-Catering — a few sections won't apply to you; we've noted those clearly as we go.</p>
+
+  <div class="tip-box"><span class="tip-title">A quick note on plans</span>Some features are only available on certain plans. Where that's the case, you'll see a small coloured tag like this: <span class="badge">Pro</span> or <span class="badge">Multi</span>. If you don't see a tag, the feature is available on every plan, including Free.</div>
+
+  <h2 class="section-h">What's in this guide</h2>
+  <div class="toc-item"><div class="toc-num">1</div><div><div class="toc-title">You're verified — what happens next</div><div class="toc-desc">Logging in for the first time and what you'll see</div></div></div>
+  <div class="toc-item"><div class="toc-num">2</div><div><div class="toc-title">Your property details</div><div class="toc-desc">Property type, address, check-in times, currency</div></div></div>
+  <div class="toc-item"><div class="toc-num">3</div><div><div class="toc-title">Adding your rooms, units, or whole property</div><div class="toc-desc">Photos, descriptions, capacity, amenities</div></div></div>
+  <div class="toc-item"><div class="toc-num">4</div><div><div class="toc-title">Setting your rates and seasonal pricing</div><div class="toc-desc">Base prices, peak periods, per-room overrides</div></div></div>
+  <div class="toc-item"><div class="toc-num">5</div><div><div class="toc-title">Breakfast</div><div class="toc-desc">If you offer it — property, room and booking-level settings</div></div></div>
+  <div class="toc-item"><div class="toc-num">6</div><div><div class="toc-title">Deposits and getting paid</div><div class="toc-desc">Deposit rules and accepting real card payments</div></div></div>
+  <div class="toc-item"><div class="toc-num">7</div><div><div class="toc-title">Your booking widget and booking page</div><div class="toc-desc">Letting guests book you directly, without commission</div></div></div>
+  <div class="toc-item"><div class="toc-num">8</div><div><div class="toc-title">Taking and managing bookings</div><div class="toc-desc">New Booking, the Calendar, and the Bookings list</div></div></div>
+  <div class="toc-item"><div class="toc-num">9</div><div><div class="toc-title">Guests and the booking journey</div><div class="toc-desc">Check-in, check-out, extensions, and guest records</div></div></div>
+  <div class="toc-item"><div class="toc-num">10</div><div><div class="toc-title">Syncing with Booking.com and Airbnb</div><div class="toc-desc">Stopping double bookings with iCal sync</div></div></div>
+</div>
+
+<!-- ============ PAGE 2b — TOC continued ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Welcome</span></div>
+  <div class="toc-item"><div class="toc-num">11</div><div><div class="toc-title">Bringing in your existing bookings</div><div class="toc-desc">The Booking Migration Wizard</div></div></div>
+  <div class="toc-item"><div class="toc-num">12</div><div><div class="toc-title">Making NestBook feel like yours</div><div class="toc-desc">Themes, staff access, and features</div></div></div>
+  <div class="toc-item"><div class="toc-num">13</div><div><div class="toc-title">Marketing tools and your guest welcome pack</div><div class="toc-desc">Property Info Sheet, Social Media Kit, and Guest Mailer</div></div></div>
+  <div class="toc-item"><div class="toc-num">14</div><div><div class="toc-title">Reports and keeping records</div><div class="toc-desc">Revenue reports and the activity log</div></div></div>
+  <div class="toc-item"><div class="toc-num">15</div><div><div class="toc-title">Getting help whenever you need it</div><div class="toc-desc">The help centre, error reports, and contacting us directly</div></div></div>
+  <div class="toc-item"><div class="toc-num">★</div><div><div class="toc-title">Quick reference checklist</div><div class="toc-desc">A one-page summary you can print and tick off</div></div></div>
+</div>
+
+<!-- ============ STEP 1 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 1 of 15</span></div>
+  <div class="step-head"><div class="step-num">1</div><div><div class="step-title">You're verified — what happens next</div><div class="step-sub">A calm walk-through of your very first login, so nothing on the screen feels unfamiliar.</div></div></div>
+
+  <p>Once you click the verification link from your welcome email, you'll be taken straight into NestBook and logged in automatically. There's nothing further to do to "activate" your account — verifying your email <em>is</em> the activation.</p>
+
+  <h2 class="section-h">What you'll see first</h2>
+  <p>You'll land on your <strong>Dashboard</strong> — the home screen of NestBook. On a brand new account, it will look fairly empty, and that's completely normal. Right now it's simply waiting for you to add your property details, your rooms, and your first booking. By the end of this guide, this same screen will be showing you real, useful information every time you log in.</p>
+  <p>Along the left-hand side (or, on a phone, tucked behind the menu icon) you'll see your main navigation:</p>
+
+  <table class="info-table">
+    <tr><th>Menu item</th><th>What it's for</th></tr>
+    <tr><td class="col1">Dashboard</td><td>Your daily overview — today's arrivals, departures, and anything needing your attention</td></tr>
+    <tr><td class="col1">Calendar</td><td>A visual week-by-week view of every room and every booking</td></tr>
+    <tr><td class="col1">Bookings</td><td>A searchable list of every booking, past and future</td></tr>
+    <tr><td class="col1">Guests</td><td>Your guest records — names, contact details, stay history</td></tr>
+    <tr><td class="col1">Rooms</td><td>Where you set up and manage each room, unit, or your whole property</td></tr>
+    <tr><td class="col1">Room Charges <span class="badge">Multi</span></td><td>Add extras — breakfast, meals, activities — to a guest's account during their stay</td></tr>
+    <tr><td class="col1">Reports <span class="badge">Pro</span></td><td>Revenue reports, expenses, and financial summaries</td></tr>
+    <tr><td class="col1">Billing</td><td>Your subscription, invoices, and Stripe Connect for card payments</td></tr>
+    <tr><td class="col1">Settings</td><td>Everything about how your property and account are configured</td></tr>
+    <tr><td class="col1">Pricing</td><td>Seasonal rates and special pricing periods</td></tr>
+  </table>
+
+  <p><strong>There is no wrong order.</strong> We're about to walk through setup in the order most owners find easiest, but nothing will break if you jump ahead or come back to something later. Every setting can be changed at any time.</p>
+
+  <h2 class="section-h">One decision to make early: which rental mode fits your property?</h2>
+  <p>Before you go much further, it's worth being clear on which type of property you have, because it changes what a few screens look like. NestBook supports three rental modes:</p>
+
+  <div class="mode-block">
+    <div class="mode-title">Individual Rooms (IR mode)</div>
+    You have several rooms, each bookable separately (a B&amp;B, a small guest house, a hotel-style property). Guests choose a specific room. Within IR mode, you'll also choose how rooms are presented to guests:
+    <div class="sub-list">
+      <strong>Named Rooms</strong> — each room has its own name and character (e.g. "The Oak Room"), with its own availability calendar.<br>
+      <strong>Room Categories</strong> — rooms are grouped by type (e.g. Single, Double), and guests choose a category first.
+    </div>
+  </div>
+  <div class="mode-block">
+    <div class="mode-title">Whole Property (WP mode)</div>
+    Your entire property is booked as one unit by one party at a time (a gîte, a holiday cottage, a lodge, a villa). There's nothing to "choose" — it's simply available or it isn't.
+  </div>
+  <div class="mode-block">
+    <div class="mode-title">Self-Catering</div>
+    Your property is made up of several independent self-catering units within one building or site. Choose whichever sub-type fits:
+    <div class="sub-list">
+      <strong>Aparthotel</strong> — apartments run like a small hotel, with reception and optional breakfast.<br>
+      <strong>Glamping</strong> — pods, cabins or caravans with a central check-in point.<br>
+      <strong>Serviced Apartment</strong> — independent apartments with lighter-touch, less daily-facing management.
+    </div>
+  </div>
+
+  <p>You'll set this when you fill in your Property Details in the next step, and NestBook will quietly adjust several screens to match — for example, Whole Property and Self-Catering owners won't see room-by-room occupancy stats that wouldn't make sense for them, and won't see a breakfast toggle where guests typically self-cater.</p>
+</div>
+
+<!-- ============ STEP 2 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 2 of 15</span></div>
+  <div class="step-head"><div class="step-num">2</div><div><div class="step-title">Your property details</div><div class="step-sub">The foundation everything else builds on</div></div></div>
+  <div class="go-to">Go to <strong>Settings → Property Details</strong></div>
+
+  <div class="tip-box"><span class="tip-title">You've likely already done this</span>Most of what's below — your property name, type, address, check-in and check-out times, and currency — was probably already filled in during the short setup wizard right after you verified your email. If you completed that, feel free to skip ahead to Step 3. Either way, every one of these details can be changed at any time from Settings — nothing here is permanent.</div>
+
+  <p>This is usually the very first thing to fill in, because a handful of other screens (your booking page, your widget, your emails to guests) all pull information from here.</p>
+
+  <h2 class="section-h">Property name</h2>
+  <p>This is what your guests will see everywhere — on your booking page, in confirmation emails, and on your widget. It's worth taking a moment to get this exactly right, since it also shapes your booking page web address (more on that in Step 7).</p>
+  <h2 class="section-h">Property type</h2>
+  <p>This is where you confirm your rental mode — Individual Rooms, Whole Property, or Self-Catering — as covered in Step 1.</p>
+  <h2 class="section-h">Address</h2>
+  <p>Your full street address. This is used to show a map on your standalone booking page, so guests can see exactly where you are before they book.</p>
+  <h2 class="section-h">Check-in and check-out times</h2>
+  <p>Set the times you actually want guests arriving and leaving. This isn't just informational — NestBook uses it to sensibly guide the app itself. For example, the "Check In" button on your Dashboard won't let a booking be marked as checked in before your configured check-in time has actually arrived, which stops accidental early check-ins being logged by mistake.</p>
+
+  <div class="tip-box"><span class="tip-title">Why the check-in time matters more than it looks</span>If you ever go to check a guest in and the button doesn't seem to work, it's very likely simply because it's before your set check-in time. This is working as intended, not a fault — NestBook will tell you the exact time check-in opens if you try early.</div>
+
+  <h2 class="section-h">Currency</h2>
+  <p>Set this once, correctly, at the start — it affects every rate, every invoice, and every guest-facing price across the whole system.</p>
+  <h2 class="section-h">Description</h2>
+  <p>A free-text description of your property, shown on your standalone booking page. Write it the way you'd describe your property to a friend — warm and honest tends to work far better than a list of amenities alone.</p>
+  <h2 class="section-h">Properties</h2>
+  <p>If you're on the Multi plan and manage more than one property, this is also where you add and switch between them. Each property has entirely separate rooms, bookings, guests, and settings.</p>
+  <h2 class="section-h">Appearance</h2>
+  <p>NestBook comes with seven complete colour themes — Forest, Navy, Warm Gold, Ruby, Sky Blue, Lavender, and Charcoal. Pick whichever one feels most like your property; your booking widget and standalone booking page will automatically match whatever you choose here. You're welcome to change this at any time — nothing is locked in.</p>
+</div>
+
+<!-- ============ STEP 3 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 3 of 15</span></div>
+  <div class="step-head"><div class="step-num">3</div><div><div class="step-title">Adding your rooms, units, or whole property</div></div></div>
+  <div class="go-to">Go to <strong>Rooms</strong> in the main menu</div>
+
+  <p>If you're set up as Individual Rooms or Self-Catering, this is where you'll add each room or unit. If you're a Whole Property rental, you'll add a single entry representing the entire property — everything below still applies, just with one listing instead of several.</p>
+
+  <h2 class="section-h">Basic details</h2>
+  <p>Give each room or unit a clear name (guests will see this — "Room 3" is functional but "The Garden Room" tends to book better), set its maximum capacity, and add a description. A genuine, specific description usually reassures a guest far more than a generic one.</p>
+  <h2 class="section-h">Base rate</h2>
+  <p>This is the standard nightly price — the price that applies unless a seasonal rate (Step 4) says otherwise. You can always come back and adjust this.</p>
+  <h2 class="section-h">Photos</h2>
+  <p>Upload as many photos as your plan allows — Free properties can upload 1 photo per room, Pro allows 5, and Multi allows 10. Your first photo becomes the "hero" photo shown on your booking page and in the room card on your widget. You can click any thumbnail afterwards to switch which one guests see first.</p>
+
+  <div class="tip-box"><span class="tip-title">Photos genuinely matter</span>Guests decide whether to click through to book largely based on your photos, before they've read a single word of your description. It's worth taking a little extra time here — natural light, a tidy room, and a photo that shows the whole space (not just a close-up) all help.</div>
+
+  <h2 class="section-h">Amenities</h2>
+  <p>Tick whichever amenities genuinely apply — Wi-Fi, en-suite, air conditioning, and so on. These show on your booking page and help a guest quickly judge whether the room suits them.</p>
+  <h2 class="section-h">Breakfast (Individual Rooms and applicable Self-Catering sub-types)</h2>
+  <p>If breakfast is available, you can flag it here — we cover the full breakfast setup in Step 5.</p>
+
+  <div class="tip-box"><span class="tip-title">If you're on Multi and manage several properties</span>Make sure you're working inside the correct property before adding rooms — the property switcher is in Settings, and every room belongs to exactly one property.</div>
+</div>
+
+<!-- ============ STEP 4 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 4 of 15</span></div>
+  <div class="step-head"><div class="step-num">4</div><div><div class="step-title">Setting your rates and seasonal pricing</div></div></div>
+  <div class="go-to">Go to <strong>Pricing</strong>, or <strong>Settings → Seasonal Pricing</strong></div>
+
+  <p>Every room already has a base rate from Step 3 — that's the rate that applies by default, every night, unless you tell NestBook otherwise. Seasonal Pricing is how you tell it otherwise, for the periods where your prices genuinely change: a summer peak, a quiet winter rate, a premium week over Christmas and New Year.</p>
+
+  <h2 class="section-h">Creating a rate period</h2>
+  <p>A rate period is simply a date range with a price attached. You can set a period to repeat every year automatically (useful for a fixed "summer season" that's always July–August, for example) or set it as a one-off date range for a specific year.</p>
+
+  <div class="tip-box"><span class="tip-title">Christmas doesn't trip this up</span>If your peak period crosses the new year — say, 24th December to 6th January — NestBook handles that correctly as one continuous period, rather than needing you to split it into two separate entries either side of January 1st.</div>
+
+  <h2 class="section-h">Priority and overlaps</h2>
+  <p>If two rate periods ever overlap on the same date, the one with higher priority wins. This is useful for carving out a short, higher-priced spike (like New Year's Eve itself) inside a longer, lower-priced season, without having to redraw the whole season around it.</p>
+  <h2 class="section-h">Per-room overrides</h2>
+  <p>By default, a rate period applies the same adjustment across every room. If one particular room should be priced differently during that period — your largest suite commanding a bigger premium at Christmas than your smallest room, for instance — you can set a specific override for just that room within the period.</p>
+
+  <table class="info-table">
+    <tr><th>Plan</th><th>Seasonal rate periods</th></tr>
+    <tr><td class="col1">Free</td><td>Not available</td></tr>
+    <tr><td class="col1">Pro</td><td>Up to 5</td></tr>
+    <tr><td class="col1">Multi</td><td>Unlimited</td></tr>
+  </table>
+
+  <h2 class="section-h">Where guests see the effect of this</h2>
+  <p>Whenever a guest selects dates — on your widget, your booking page, or when you create a booking manually — NestBook calculates the price night by night, showing exactly which nights fall under which rate. If a stay spans both a normal period and a seasonal period, the booking confirmation and the checkout will clearly break this down (for example: "3 nights × £95, 4 nights × £145 — Summer Peak"), so nobody, including you, has to work it out by hand.</p>
+</div>
+
+<!-- ============ STEP 5 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 5 of 15</span></div>
+  <div class="step-head"><div class="step-num">5</div><div><div class="step-title">Breakfast</div></div></div>
+  <div class="go-to">Go to <strong>Settings → Breakfast Hours</strong> and your room settings</div>
+
+  <div class="tip-box"><span class="tip-title">Whole-property owners</span>If your property is a Whole Property rental (a gîte, cottage, or lodge), this step doesn't apply to you — guests self-cater, so breakfast settings are intentionally hidden throughout NestBook for your account. Feel free to skip ahead to Step 6.</div>
+
+  <p>If you do offer breakfast, there are three separate layers of control, so you can be as broad or as specific as you like:</p>
+
+  <h2 class="section-h">Property-wide toggle</h2>
+  <p>In Settings, there's a single toggle to offer breakfast to <em>every</em> guest at your property automatically, on every booking. Only switch this on if that's genuinely your policy — it applies across the board, to every room and every booking, with no exceptions.</p>
+  <h2 class="section-h">Room-level breakfast</h2>
+  <p>If breakfast varies by room type (perhaps only certain rooms include it), you can set this individually on each room in the Rooms section instead of using the property-wide toggle.</p>
+  <h2 class="section-h">Booking-level breakfast</h2>
+  <p>Even with the above two set, you can still add or remove breakfast on an individual booking — useful for a guest who's specifically requested it, or asked not to have it.</p>
+
+  <p>Wherever breakfast is included, it shows clearly to the guest — on the booking page, in their confirmation email, and as a distinctive dashed border on that booking's tile on your Calendar, so you can see at a glance which arriving guests are expecting it.</p>
+</div>
+
+<!-- ============ STEP 6 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 6 of 15</span></div>
+  <div class="step-head"><div class="step-num">6</div><div><div class="step-title">Deposits and getting paid</div></div></div>
+  <div class="go-to">Go to <strong>Billing</strong></div>
+
+  <p>This is one of the sections most owners ask about, so we've written it in full — take your time with it.</p>
+
+  <h2 class="section-h">Deposit rules</h2>
+  <p>Under Settings, you can decide exactly how you want to handle deposits, entirely on your own terms:</p>
+  <ul class="bullets">
+    <li><strong>Whether to require one at all</strong> — this can be switched off completely if you'd rather not.</li>
+    <li><strong>The type</strong> — a percentage of the total stay, a fixed amount, or the full amount upfront.</li>
+    <li><strong>When the balance is due</strong> — for example, a set number of days before arrival.</li>
+    <li><strong>Your refund policy</strong> — shown to guests so expectations are clear from the start.</li>
+    <li><strong>Automatic emails</strong> — deposit requests, confirmations, and balance-due reminders can all be sent automatically, so you don't have to chase this by hand.</li>
+  </ul>
+  <p>Once switched on, any new booking that needs a deposit will show a clear status (awaiting deposit, deposit received, balance due) both on the booking itself and in the side panel, so you always know where each guest stands financially at a glance.</p>
+
+  <h2 class="section-h">Accepting real card payments — Stripe Connect <span class="badge">All plans</span></h2>
+  <p>NestBook lets you accept genuine card payments from guests, with the money going <strong>directly into your own bank account</strong> — not into NestBook's. We never touch your money, and we never take a cut of it. This is available on every plan, including Free.</p>
+
+  <h2 class="section-h">Setting it up</h2>
+  <ol class="numbered">
+    <li>Go to <strong>Billing → Stripe Connect</strong> and click "Connect with Stripe."</li>
+    <li>Fill in your business and personal details on Stripe's own secure page — this is Stripe's page, not ours, so your financial details are never seen or stored by NestBook.</li>
+    <li>Stripe will then verify your details. Being honest with you: this isn't instant — it can take anywhere from a few minutes to a day or two, depending on what Stripe needs to check. You'll be brought back here automatically once it's done.</li>
+  </ol>
+
+  <div class="tip-box"><span class="tip-title">Why the wait, and why it's worth it</span>Stripe is legally required to verify who's actually receiving guest payments — this is standard practice for any business anywhere in the world accepting card payments, not something specific to NestBook. It only needs doing once.</div>
+
+  <p>Once connected, guests can pay you via <strong>payment links</strong> (sent directly from any booking), <strong>your booking widget</strong> <span class="badge">Pro</span><span class="badge">Multi</span>, and <strong>your standalone booking page</strong>. NestBook charges nothing for using Stripe Connect — you'll only pay Stripe's own standard card processing fee. You're free to disconnect at any time from the same Billing page.</p>
+</div>
+
+<!-- ============ STEP 7 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 7 of 15</span></div>
+  <div class="step-head"><div class="step-num">7</div><div><div class="step-title">Your booking widget and booking page</div></div></div>
+  <div class="go-to">Go to <strong>Settings → Widget</strong></div>
+
+  <p>This is the heart of what NestBook is for: giving your guests a way to book you <strong>directly</strong>, with no commission going to a third party. There are two separate but related tools here.</p>
+
+  <h2 class="section-h">Your standalone booking page</h2>
+  <p>Every NestBook property automatically gets its own dedicated web page, at an address like <strong>nestbook.io/book/your-property-name</strong>. This is a real, fast, complete web page — not just a widget — with your photos, room descriptions, live availability, and a map. It's designed to look professional if a guest lands on it directly, and it's also what gets shared correctly (with a proper preview image and description) if you post the link on Facebook or send it by message.</p>
+  <p>You can edit your page's web address at any time under Settings — just the last part, after "/book/" — so it can be short and easy for you to say out loud or write on a business card.</p>
+
+  <h2 class="section-h">Embedding the widget on your own website</h2>
+  <p>If you already have your own website, the widget lets you embed live booking availability directly into it, rather than sending visitors away to book elsewhere. Settings will give you a small snippet of code to add to your site.</p>
+
+  <h2 class="section-h">Sharing your booking page on Facebook</h2>
+  <p>Under Settings → Widget, you'll also find your dedicated booking page link ready to share, along with straightforward instructions for adding a "Book Now" button to your Facebook page that points guests straight to it.</p>
+
+  <div class="tip-box"><span class="tip-title">Every plan gets a real booking page</span>Even on the Free plan, you get your own full standalone booking page — this is never gated behind a paid plan. Widget embedding on your own external website and automatic pay-now checkout during widget bookings are Pro and Multi features.</div>
+</div>
+
+<!-- ============ STEP 8 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 8 of 15</span></div>
+  <div class="step-head"><div class="step-num">8</div><div><div class="step-title">Taking and managing bookings</div></div></div>
+  <div class="go-to">Go to <strong>Calendar</strong> or <strong>Bookings</strong></div>
+
+  <h2 class="section-h">Adding a booking manually</h2>
+  <p>Click "+ New Booking" from the Dashboard, Calendar, or Bookings screen. The form is built to be quick for repeat guests: start typing a guest's last name and NestBook will search your existing guest records first, so you're not re-typing details for someone who's stayed with you before.</p>
+  <p>Choose the dates first, and NestBook will show you which rooms are actually available for that exact date range — no need to check the calendar separately beforehand.</p>
+
+  <h2 class="section-h">The Calendar</h2>
+  <p>A week-by-week visual grid of every room and every booking. Each tile is colour-coded by status, and — if you've set up Seasonal Pricing — a small dot appears on any date with a special rate active, so you can see peak pricing at a glance without opening anything.</p>
+
+  <h2 class="section-h">Understanding booking statuses</h2>
+  <table class="info-table">
+    <tr><th>Status</th><th>Meaning</th></tr>
+    <tr><td class="col1">Confirmed</td><td>A future booking, not yet arrived</td></tr>
+    <tr><td class="col1">Arriving</td><td>Today is the check-in date, but you haven't confirmed arrival yet</td></tr>
+    <tr><td class="col1">In house</td><td>The guest has arrived and is currently staying</td></tr>
+    <tr><td class="col1">Checked out</td><td>The stay has ended and been confirmed complete</td></tr>
+    <tr><td class="col1">Awaiting approval</td><td>A guest has requested to book and is waiting on your Accept/Decline</td></tr>
+    <tr><td class="col1">Cancelled / No show</td><td>Self-explanatory — used for your own records and reporting</td></tr>
+  </table>
+
+  <div class="tip-box"><span class="tip-title">If you ever forget to check someone in or out</span>NestBook will notice if a guest's check-in or check-out date has passed without you confirming it, and will show a friendly reminder on your Dashboard asking you to simply confirm what actually happened. Nothing gets stuck or lost if life gets busy.</div>
+
+  <h2 class="section-h">Extending or shortening a stay</h2>
+  <p>If a guest asks to stay extra nights, open their booking and choose to extend it — NestBook checks the new dates are actually free, works out the correct rate for the extra nights (respecting seasonal pricing if relevant), and gives you a clear breakdown before you confirm. An email is sent to the guest automatically with their new dates and updated total. Shortening a stay works the same way in reverse.</p>
+</div>
+
+<!-- ============ STEP 9 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 9 of 15</span></div>
+  <div class="step-head"><div class="step-num">9</div><div><div class="step-title">Guests and the booking journey</div></div></div>
+  <div class="go-to">Go to <strong>Guests</strong></div>
+
+  <p>Every person who books with you gets a guest record automatically — you never need to create one by hand unless you want to. Over time, this becomes a genuinely useful history: how many times someone has stayed, when they last visited, and their contact details, all in one place.</p>
+
+  <h2 class="section-h">A typical booking's life, start to finish</h2>
+  <ol class="numbered">
+    <li><strong>Booking made</strong> — by you directly, or by a guest through your widget or booking page.</li>
+    <li><strong>Confirmation email sent</strong> — automatically, in the guest's own registered language.</li>
+    <li><strong>Deposit requested</strong> (if you've enabled deposits) — with a reminder as the balance due date approaches.</li>
+    <li><strong>Check-in day</strong> — the booking status updates to "Arriving," and appears on your Dashboard's arrivals list.</li>
+    <li><strong>You confirm arrival</strong> — a simple tap moves the booking to "In house."</li>
+    <li><strong>Stay continues</strong> — you can add charges (Multi plan), breakfast, or handle an extension request at any point.</li>
+    <li><strong>Check-out day</strong> — you confirm departure, the room becomes available again, and if you use a cleaning workflow, a cleaning flag appears.</li>
+  </ol>
+
+  <h2 class="section-h">If a guest requests to book (rather than you entering it yourself)</h2>
+  <p>When someone books through your widget or page and your settings require your approval, you'll receive an email with a simple Accept or Decline choice — and you can also action this directly inside NestBook from the booking's side panel, without needing to use the email link at all. The guest is automatically emailed the outcome either way.</p>
+
+  <h2 class="section-h">Adding extras during a stay — Room Charges <span class="badge">Multi</span></h2>
+  <p>If you offer anything beyond the room itself — breakfast add-ons, a bar tab, an evening meal, bike hire, a spa treatment — the Room Charges screen lets you add these to a guest's account at any point during their stay, each with its own category and tax rate (set up in advance under Settings → Service Categories, covered in Step 12). Everything added shows as a running total on the guest's account, ready for a clean, itemised checkout when they leave.</p>
+</div>
+
+<!-- ============ STEP 10 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 10 of 15</span></div>
+  <div class="step-head"><div class="step-num">10</div><div><div class="step-title">Syncing with Booking.com and Airbnb</div></div></div>
+  <div class="go-to">Go to <strong>Settings → Calendar Sync</strong> — available on every plan</div>
+
+  <p>If you also list your property on Booking.com, Airbnb, or similar platforms, the single biggest risk is a <strong>double booking</strong> — someone booking the same room for the same dates on two different platforms, because neither system knew about the other. iCal sync solves this.</p>
+
+  <h2 class="section-h">How it works</h2>
+  <p>Every room in NestBook has its own unique calendar link. Copy this link and paste it into Booking.com or Airbnb's own calendar-sync settings (both platforms have a section for this — look for "Sync calendars" or "iCal export/import" in their settings). Once connected, any booking made on that platform will automatically block those same dates in NestBook, and vice versa.</p>
+  <p>NestBook checks for updates from your connected external calendars every 15 minutes, so blocks stay current without you needing to do anything manually. Externally-blocked dates show clearly in grey on your calendar, so you can always tell at a glance whether a blocked date came from a NestBook booking or an external platform.</p>
+
+  <div class="tip-box"><span class="tip-title">This is genuinely free, on every plan</span>Unlike some competitors, calendar sync is never gated behind a paid tier in NestBook — we think protecting you from double bookings shouldn't come with a price tag.</div>
+
+  <p>Full step-by-step instructions for connecting Booking.com and Airbnb specifically are also available on our Help page, since their own settings screens occasionally change slightly on their end.</p>
+</div>
+
+<!-- ============ STEP 11 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 11 of 15</span></div>
+  <div class="step-head"><div class="step-num">11</div><div><div class="step-title">Bringing in your existing bookings</div></div></div>
+  <div class="go-to">Available from the Bookings screen — available on every plan</div>
+
+  <p>If you're moving to NestBook from another system and already have upcoming bookings on the books, you don't need to re-type them all in one at a time. The Booking Migration Wizard walks you through importing them from a spreadsheet.</p>
+
+  <h2 class="section-h">What you'll need</h2>
+  <p>A CSV file (a simple spreadsheet format — Excel, Google Sheets, and most booking systems can all export to CSV) containing your bookings: guest name, email, phone, check-in date, check-out date, room, total price, and any notes. The exact column order doesn't matter — the importer matches by column heading, not position.</p>
+
+  <h2 class="section-h">The import walks you through</h2>
+  <ol class="numbered">
+    <li><strong>Uploading your file</strong> — NestBook automatically detects whether it's comma, semicolon, or tab-separated, and handles several different date formats without you needing to reformat anything first.</li>
+    <li><strong>Matching rooms</strong> — if your old system used different room names, you'll be shown a simple mapping step to match them to your NestBook rooms. (If you're in Whole Property mode, this step is skipped entirely, since there's only one property to assign to.)</li>
+    <li><strong>Reviewing before anything is saved</strong> — you'll see exactly what's about to be imported before it's confirmed, including duplicate-guest detection, so you're not creating a second record for someone already in your Guests list.</li>
+  </ol>
+
+  <p>Imported bookings show their original total clearly, rather than NestBook trying to guess a nightly rate breakdown for a booking made before you were tracking rates this way.</p>
+</div>
+
+<!-- ============ STEP 12 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 12 of 15</span></div>
+  <div class="step-head"><div class="step-num">12</div><div><div class="step-title">Making NestBook feel like yours</div></div></div>
+  <div class="go-to">Go to <strong>Settings</strong></div>
+
+  <h2 class="section-h">Language</h2>
+  <p>NestBook is fully available in English, French, Spanish, German, and Dutch — for you as the owner, and separately for each guest's confirmation emails, which are sent in whatever language they registered or booked in. You can switch your own language instantly, at any time, on every plan.</p>
+
+  <h2 class="section-h">Staff access <span class="badge">Pro</span><span class="badge">Multi</span></h2>
+  <p>If you have staff helping run your property, you can invite them with one of three access levels:</p>
+  <table class="info-table">
+    <tr><th>Role</th><th>Can typically do</th></tr>
+    <tr><td class="col1">Owner / Manager</td><td>Full access to everything, including billing and settings</td></tr>
+    <tr><td class="col1">Receptionist</td><td>Manage bookings and guests day to day, without access to financial settings</td></tr>
+    <tr><td class="col1">Staff / Charges Staff</td><td>More limited access, suited to specific tasks like adding charges during a stay</td></tr>
+  </table>
+
+  <h2 class="section-h">Features</h2>
+  <p>A simple set of toggles for the features you actually want switched on — the booking widget, email confirmations, breakfast, deposits, and offline mode (letting staff record a booking even without an internet connection, which then syncs once reconnected).</p>
+
+  <h2 class="section-h">Service Categories <span class="badge">Multi</span></h2>
+  <p>If you offer extras beyond the room itself — spa treatments, bike hire, an evening meal — Service Categories lets you set these up with their own tax rate, ready to add to a guest's account during their stay via the Room Charges screen.</p>
+</div>
+
+<!-- ============ STEP 13 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 13 of 15</span></div>
+  <div class="step-head"><div class="step-num">13</div><div><div class="step-title">Marketing tools and your guest welcome pack</div><div class="step-sub">Three tools that help you look after guests and fill more rooms, without extra software</div></div></div>
+
+  <h2 class="section-h">Property Info Sheet <span class="badge">Pro</span></h2>
+  <p>A genuinely useful one, especially for first-time guests: build a printable welcome pack for your property, combining whatever you want to include — your logo and property name, a WiFi QR code, check-in and check-out times, breakfast times and price, house rules, local directions, transport information, and recommendations for nearby shops, bars, and restaurants.</p>
+  <p>Write the content once — your house rules and local area guide are saved to your property and reused every time — then simply tick the sections you want included for a given export. Two ways to export it: as a print-ready PDF, or as a shareable image.</p>
+
+  <h2 class="section-h">Social Media Kit <span class="badge">Pro</span></h2>
+  <p>Take the photos you've already uploaded to your rooms and turn them into ready-to-post content — NestBook generates a suggested caption for each photo, and gives you a one-click "Copy Image" or "Download" for posting directly to Facebook or Instagram. Alongside it, you'll find a plain-language guide to actually setting up and posting on Facebook and Instagram, written for someone who's never done it before.</p>
+
+  <h2 class="section-h">Guest Mailer <span class="badge">Pro</span></h2>
+  <p>A way to send a genuinely branded email — with your own property name and logo — to guests who've stayed with you before. Useful for a seasonal offer, a reopening announcement, or simply staying in touch with people who already know and like your property.</p>
+
+  <div class="tip-box"><span class="tip-title">Whose contact details you can use</span>Guest Mailer works with any guest who gave <em>you</em> their email directly — through your booking page, your widget, over the phone, or in person at check-in. It doesn't matter how they originally found you. The one thing it can't be used for is emailing a contact address supplied only through Booking.com or Airbnb's own messaging systems, since neither platform allows their guest contact data to be used for outside marketing.</div>
+</div>
+
+<!-- ============ STEP 14 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 14 of 15</span></div>
+  <div class="step-head"><div class="step-num">14</div><div><div class="step-title">Reports and keeping records</div></div></div>
+  <div class="go-to">Go to <strong>Reports</strong> <span class="badge">Pro</span><span class="badge">Multi</span></div>
+
+  <h2 class="section-h">Revenue Reports</h2>
+  <p>A full profit-and-loss view of your property, built from your actual bookings and charges — no manual spreadsheet needed. You can download this as a CSV (to open in Excel or Google Sheets) or as a ready-to-print PDF, whenever you need it for your own records or for an accountant.</p>
+  <h2 class="section-h">Business Expenses</h2>
+  <p>A simple place to log your running costs against the property, so your revenue reports reflect genuine profit, not just income.</p>
+  <h2 class="section-h">Revenue Adjustments</h2>
+  <p>For the occasional manual correction — a refund given outside the normal system, or a one-off adjustment — so your reports stay accurate even for things that didn't happen through a standard booking.</p>
+  <h2 class="section-h">Activity Log</h2>
+  <p>A full audit trail of changes made within your account — useful if you have staff access set up and want a record of who did what, and when. Also available as a CSV export.</p>
+</div>
+
+<!-- ============ STEP 15 ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 15 of 15</span></div>
+  <div class="step-head"><div class="step-num">15</div><div><div class="step-title">Getting help whenever you need it</div><div class="step-sub">You are never expected to figure everything out alone</div></div></div>
+
+  <h2 class="section-h">The Help Centre</h2>
+  <p>A full searchable reference inside the app, covering every feature in more depth than this guide has room for — including step-by-step instructions for connecting specific platforms like Booking.com and Airbnb. It's available in all five languages.</p>
+  <h2 class="section-h">Reporting a problem</h2>
+  <p>If something isn't working the way you expect, there's a simple error-reporting form at the bottom of your Settings page — just choose a category and describe what happened. This goes straight to our team, and we genuinely read every one.</p>
+  <h2 class="section-h">Contacting us directly</h2>
+  <p>For anything else — a question, a feature you'd like to see, or simply wanting to talk something through — you're always welcome to reach out through the contact form on our website, or by emailing us directly. We're a small, hands-on team, and we'd rather hear from you early than have you struggle in silence.</p>
+
+  <div class="tip-box"><span class="tip-title">You're not expected to be technical</span>NestBook was built for property owners, not developers. If a screen ever feels confusing, that's useful feedback for us, not a reflection on you — please tell us, so we can make it clearer for the next person too.</div>
+</div>
+
+<!-- ============ QUICK REFERENCE ============ -->
+<div class="page">
+  <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Quick reference</span></div>
+  <h1 class="step-title" style="margin-bottom:2mm;">Quick reference checklist</h1>
+  <p style="color:var(--muted); margin-bottom:5mm;">Print this page, or keep it open, and tick things off as you go. Nothing here is a race.</p>
+
+  <ul class="checklist">
+    <li><span class="box"></span>Verify your email <em>(you've already done this!)</em></li>
+    <li><span class="box"></span>Fill in Property Details — name, type, address, check-in/out times, currency</li>
+    <li><span class="box"></span>Choose your Appearance theme</li>
+    <li><span class="box"></span>Add your rooms, units, or your single whole-property listing — with photos and descriptions</li>
+    <li><span class="box"></span>Set your base rates</li>
+    <li><span class="box"></span>Set up any seasonal rate periods that apply to you</li>
+    <li><span class="box"></span>Decide your breakfast settings, if relevant</li>
+    <li><span class="box"></span>Decide your deposit policy</li>
+    <li><span class="box"></span>Connect Stripe if you'd like to accept card payments directly</li>
+    <li><span class="box"></span>Check your standalone booking page looks right — visit it yourself</li>
+    <li><span class="box"></span>Set up your widget if you have your own website</li>
+    <li><span class="box"></span>Connect Booking.com / Airbnb via Calendar Sync, if you list elsewhere</li>
+    <li><span class="box"></span>Import existing bookings via the Migration Wizard, if needed</li>
+    <li><span class="box"></span>Invite staff, if you have any, with the right access level</li>
+    <li><span class="box"></span>Build your Property Info Sheet welcome pack, if you're on Pro or Multi</li>
+    <li><span class="box"></span>Take your first real booking</li>
+  </ul>
+
+  <div class="closing">
+    <p>Everything above can be changed later. Nothing is permanent on first setup.</p>
+    <p>You don't have to do this in one sitting. Come back whenever suits you.</p>
+    <p>If you get stuck, the Help Centre and our direct contact form are both always available — see Step 15.</p>
+    <p class="sign">Welcome aboard.</p>
+    <p>We built NestBook because independent properties deserve booking software that actually feels like it was made for them — not a bolted-on afterthought from a giant platform. We're genuinely glad you're here.</p>
+    <p>— The NestBook Team</p>
+    <p style="margin-top:4mm; font-size:8pt; color:var(--faint);">NestBook.IO Ltd &nbsp;•&nbsp; nestbook.io &nbsp;•&nbsp; hello@nestbook.io</p>
+  </div>
+</div>
+
+</body>
+</html>
