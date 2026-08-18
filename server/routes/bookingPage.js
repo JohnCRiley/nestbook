@@ -181,11 +181,12 @@ function getPropertyAvailMap(bookings) {
   return map;
 }
 
-function propertyCalendarSection() {
+function propertyCalendarSection(showWholePropertyHint = true) {
+  const hint = showWholePropertyHint ? '<p class="avail-hint" data-i18n="page.wholePropertyAvailability">Check when the whole property is available for your dates.</p>' : '';
   return `
 <div class="room-availability">
   <div class="nb-cal-container" data-room-id="property"></div>
-  <p class="avail-hint" data-i18n="page.wholePropertyAvailability">Check when the whole property is available for your dates.</p>
+  ${hint}
 </div>`;
 }
 
@@ -931,13 +932,15 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // Category showcase (one section per category, no per-category
     // calendar) plus a single property-wide pooled calendar below it —
     // same shape as the isWholeProperty branch above, reusing
-    // propertyCalendarSection() unmodified (data-room-id="property").
+    // propertyCalendarSection() (data-room-id="property") but without its
+    // whole-property hint text, since this calendar shows pooled
+    // per-category availability, not whole-property availability.
     roomsSection = catsWithRooms.length > 0 ? `
 ${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan)}
 <section class="availability">
   <div class="section-inner">
     <h2 data-i18n="page.availability">Availability</h2>
-    ${propertyCalendarSection()}
+    ${propertyCalendarSection(false)}
   </div>
 </section>` : '';
   } else {
