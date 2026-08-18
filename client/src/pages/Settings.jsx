@@ -2534,6 +2534,7 @@ function FacebookBookingSection({ property, onSaved }) {
             t('settings.facebookStep3'),
             t('settings.facebookStep4'),
             t('settings.facebookStep5'),
+            t('settings.facebookStep6'),
           ].map((step, i) => (
             <div key={i} className="embed-step">
               <span className="embed-step-num">{i + 1}</span>
