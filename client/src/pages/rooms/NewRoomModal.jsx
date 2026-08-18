@@ -275,34 +275,42 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                 </div>
               )}
 
-              <div className="form-group span-2">
-                <label className="form-label">{t('amenities')}</label>
-                <input name="amenities" className="form-control"
-                  value={form.amenities} onChange={handleChange}
-                  placeholder="wifi, ensuite, balcony, parking, minibar…" />
-                <span className="form-hint">{t('amenitiesHint')}</span>
-                {amenityPreview.length > 0 && (
-                  <div className="amenity-list" style={{ marginTop: 8 }}>
-                    {amenityPreview.map((a) => (
-                      <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Room Categories mode: amenities/description live on the category
+                  instead (guests book a category, not a specific physical room) —
+                  edited via the category modal in Settings, not here. Named Rooms
+                  and WP/Units modes are unaffected. */}
+              {!showCategoryField && (
+                <div className="form-group span-2">
+                  <label className="form-label">{t('amenities')}</label>
+                  <input name="amenities" className="form-control"
+                    value={form.amenities} onChange={handleChange}
+                    placeholder="wifi, ensuite, balcony, parking, minibar…" />
+                  <span className="form-hint">{t('amenitiesHint')}</span>
+                  {amenityPreview.length > 0 && (
+                    <div className="amenity-list" style={{ marginTop: 8 }}>
+                      {amenityPreview.map((a) => (
+                        <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              <div className="form-group span-2">
-                <label className="form-label">
-                  {'Description (optional)'}
-                </label>
-                <textarea name="description" className="form-control" rows={2}
-                  value={form.description} onChange={handleChange}
-                  placeholder={isWP
-                    ? 'Describe this bedroom — the bed size, the view, en-suite…'
-                    : (isUnitTopLevel
-                        ? 'Describe this unit — the space, the view, what makes it special...'
-                        : 'Describe this room — the view, the bed, what makes it special...')}
-                  style={{ resize: 'vertical' }} />
-              </div>
+              {!showCategoryField && (
+                <div className="form-group span-2">
+                  <label className="form-label">
+                    {'Description (optional)'}
+                  </label>
+                  <textarea name="description" className="form-control" rows={2}
+                    value={form.description} onChange={handleChange}
+                    placeholder={isWP
+                      ? 'Describe this bedroom — the bed size, the view, en-suite…'
+                      : (isUnitTopLevel
+                          ? 'Describe this unit — the space, the view, what makes it special...'
+                          : 'Describe this room — the view, the bed, what makes it special...')}
+                    style={{ resize: 'vertical' }} />
+                </div>
+              )}
             </div>
           </div>
 

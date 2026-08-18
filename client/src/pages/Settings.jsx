@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import QRCodeStyling from 'qr-code-styling';
 import InviteStaffModal from './settings/InviteStaffModal.jsx';
+import { formatAmenity } from './rooms/RoomPanel.jsx';
 import AddPropertyModal from './settings/AddPropertyModal.jsx';
 import SpecialsBannerEditor from './settings/SpecialsBannerEditor.jsx';
 import PlanGate from '../components/PlanGate.jsx';
@@ -3577,18 +3578,25 @@ function RoomCategoriesSection({ t, roomCategories, onAdd, onEdit, onDelete, err
 
 // ── RoomCategoryModal ─────────────────────────────────────────────────────────
 
+/** Parse amenities string → array, filtering blanks. */
+const parseCategoryAmenities = (str) =>
+  (str ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
 function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
   const [form, setForm] = useState(category ? {
-    name:   category.name,
-    buffer: String(category.buffer ?? 0),
+    name:        category.name,
+    buffer:      String(category.buffer ?? 0),
+    amenities:   category.amenities   ?? '',
+    description: category.description ?? '',
   } : {
-    name: '', buffer: '0',
+    name: '', buffer: '0', amenities: '', description: '',
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState(null);
 
   const isEdit = !!category;
-  const hasData = !!(form.name || Number(form.buffer) > 0);
+  const hasData = !!(form.name || Number(form.buffer) > 0 || form.amenities || form.description);
+  const amenityPreview = parseCategoryAmenities(form.amenities);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -3621,8 +3629,10 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
           method: isEdit ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name:   form.name.trim(),
-            buffer: Number(form.buffer) || 0,
+            name:        form.name.trim(),
+            buffer:      Number(form.buffer) || 0,
+            amenities:   form.amenities.trim()   || null,
+            description: form.description.trim() || null,
           }),
         }
       );
@@ -3657,6 +3667,29 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
               <input className="form-control" type="number" min="0" value={form.buffer}
                 onChange={e => setForm(p => ({ ...p, buffer: e.target.value }))} />
               <span className="form-hint">{t('settings.roomCategoryBufferHint')}</span>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">{t('amenities')}</label>
+              <input className="form-control" value={form.amenities}
+                onChange={e => setForm(p => ({ ...p, amenities: e.target.value }))}
+                placeholder="wifi, ensuite, balcony, parking, minibar…" />
+              <span className="form-hint">{t('amenitiesHint')}</span>
+              {amenityPreview.length > 0 && (
+                <div className="amenity-list" style={{ marginTop: 8 }}>
+                  {amenityPreview.map((a) => (
+                    <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Description (optional)</label>
+              <textarea className="form-control" rows={2} value={form.description}
+                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                placeholder="Describe this category — the view, the bed, what makes it special..."
+                style={{ resize: 'vertical' }} />
             </div>
 
             {error && <div className="form-error">{error}</div>}

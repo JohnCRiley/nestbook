@@ -569,38 +569,46 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
             )}
           </div>
 
-          <div className="panel-field">
-            <label className="panel-field-label">{t('amenities')}</label>
-            <input
-              name="amenities"
-              className="panel-field-input"
-              value={form.amenities}
-              onChange={handleChange}
-              placeholder="wifi, ensuite, balcony, parking…"
-            />
-            {amenityPreview.length > 0 && (
-              <div className="amenity-preview">
-                {amenityPreview.map((a) => (
-                  <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Room Categories mode: amenities/description live on the category
+              instead (guests book a category, not a specific physical room) —
+              edited via the category modal in Settings, not here. Named Rooms
+              and Units modes are unaffected. */}
+          {!showCategoryField && (
+            <div className="panel-field">
+              <label className="panel-field-label">{t('amenities')}</label>
+              <input
+                name="amenities"
+                className="panel-field-input"
+                value={form.amenities}
+                onChange={handleChange}
+                placeholder="wifi, ensuite, balcony, parking…"
+              />
+              {amenityPreview.length > 0 && (
+                <div className="amenity-preview">
+                  {amenityPreview.map((a) => (
+                    <span key={a} className="amenity-tag">{formatAmenity(a)}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          <div className="panel-field">
-            <label className="panel-field-label">{isUnit ? 'Unit description (optional)' : 'Room description (optional)'}</label>
-            <textarea
-              name="description"
-              className="panel-field-input"
-              rows={2}
-              value={form.description}
-              onChange={handleChange}
-              placeholder={isUnit
-                ? 'Describe this unit — the space, the view, what makes it special...'
-                : 'Describe this room — the view, the bed, what makes it special...'}
-              style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 'inherit' }}
-            />
-          </div>
+          {!showCategoryField && (
+            <div className="panel-field">
+              <label className="panel-field-label">{isUnit ? 'Unit description (optional)' : 'Room description (optional)'}</label>
+              <textarea
+                name="description"
+                className="panel-field-input"
+                rows={2}
+                value={form.description}
+                onChange={handleChange}
+                placeholder={isUnit
+                  ? 'Describe this unit — the space, the view, what makes it special...'
+                  : 'Describe this room — the view, the bed, what makes it special...'}
+                style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 'inherit' }}
+              />
+            </div>
+          )}
         </div>
       </div>
 

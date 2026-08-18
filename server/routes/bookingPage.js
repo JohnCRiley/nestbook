@@ -577,6 +577,15 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
         }).join('')
       : '';
 
+    // Amenities/description live on the category itself (Phase 8) — guests
+    // book a category, not a specific physical room. Same markup/classes as
+    // wpAlternatingShowcase()'s room-level ws-amenity chips + ws-desc, since
+    // this showcase is already modeled on that function. Gracefully omitted
+    // when unset — many test categories won't have these filled in yet.
+    const categoryAmenities = (category.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
+    const amenityChipsHtml = categoryAmenities.map(a => `<span class="ws-amenity">${esc(fmtAmenity(a))}</span>`).join('');
+    const catDescHtml = category.description ? `<p class="ws-desc">${esc(category.description)}</p>` : '';
+
     // catRooms preserves the outer rooms query's price_per_night ASC order,
     // so the cheapest room in the category is a reasonable default photo —
     // but prefer the first room that actually has a photo.
@@ -615,7 +624,8 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
   </div>
   <div class="ws-details">
     <div class="room-price">${priceHtml}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    ${(bedIconsHtml || sleepsHtml) ? `<div class="ws-amenities-row">${bedIconsHtml}${sleepsHtml}</div>` : ''}
+    ${(bedIconsHtml || sleepsHtml || amenityChipsHtml) ? `<div class="ws-amenities-row">${bedIconsHtml}${sleepsHtml}${amenityChipsHtml}</div>` : ''}
+    ${catDescHtml}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${category.id}, true)` : `selectCategoryForEnquiry(${category.id})`}" data-i18n-cat="page.bookThisCategory" data-cat="${esc(category.name)}">Book a ${esc(category.name)} Room</button>
   </div>

@@ -2368,6 +2368,13 @@ John`
 
   try { db.exec(`ALTER TABLE rooms ADD COLUMN category_id INTEGER REFERENCES room_categories(id)`); } catch (e) {}
 
+  // Categories mode (Phase 8): amenities/description move from the room level
+  // to the category level — guests book a category, not a specific physical
+  // room, so this is what actually shows on the booking page. Named Rooms
+  // mode is untouched; rooms.amenities/description still apply there.
+  try { db.exec(`ALTER TABLE room_categories ADD COLUMN amenities TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE room_categories ADD COLUMN description TEXT`); } catch (e) {}
+
   // ir_room_mode is the actual sub-type toggle: 'named' is today's existing
   // behaviour (default, unchanged for everyone); 'categories' is the new mode.
   // Not read or written by any UI yet — Phase 2/3 wire in the actual toggle.

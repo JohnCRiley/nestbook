@@ -74,19 +74,21 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    const { name, buffer, display_order } = req.body;
+    const { name, buffer, display_order, amenities, description } = req.body;
     if (name !== undefined && !name.trim()) {
       return res.status(400).json({ error: 'name cannot be empty' });
     }
 
     db.prepare(`
       UPDATE room_categories
-      SET name = ?, buffer = ?, display_order = ?
+      SET name = ?, buffer = ?, display_order = ?, amenities = ?, description = ?
       WHERE id = ?
     `).run(
       name !== undefined ? name.trim() : existing.name,
       buffer !== undefined ? Number(buffer) : existing.buffer,
       display_order !== undefined ? Number(display_order) : existing.display_order,
+      amenities !== undefined ? (amenities?.trim() || null) : existing.amenities,
+      description !== undefined ? (description?.trim() || null) : existing.description,
       id,
     );
 
