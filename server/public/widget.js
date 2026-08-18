@@ -108,7 +108,7 @@
       roomFallbackNotice: "Your selected room isn't available for these dates — here are the other options:",
       bedTypeSingle: 'Single Bed', bedTypeDouble: 'Double Bed', bedTypeQueen: 'Queen Bed',
       bedTypeKing: 'King Bed', bedTypeSofaBed: 'Sofa Bed', bedTypeBunkBed: 'Bunk Bed',
-      bookCategory: 'Book this category →',
+      bookCategory: (name) => `Book a ${name} Room →`,
       categoryFallbackNotice: "Your selected category isn't available for these dates — here are the other options:",
       categoryJustTaken: 'That room has just been taken — please choose another option.',
       categoryUnavailableNote: 'Not available for these dates',
@@ -173,7 +173,7 @@
       roomFallbackNotice: "La chambre sélectionnée n'est pas disponible à ces dates — voici les autres options :",
       bedTypeSingle: 'Lit simple', bedTypeDouble: 'Lit double', bedTypeQueen: 'Lit Queen',
       bedTypeKing: 'Lit King', bedTypeSofaBed: 'Canapé-lit', bedTypeBunkBed: 'Lit superposé',
-      bookCategory: 'Réserver cette catégorie →',
+      bookCategory: (name) => `Réserver une chambre ${name} →`,
       categoryFallbackNotice: "La catégorie sélectionnée n'est pas disponible à ces dates — voici les autres options :",
       categoryJustTaken: "Cette chambre vient d'être prise — veuillez choisir une autre option.",
       categoryUnavailableNote: 'Non disponible pour ces dates',
@@ -238,7 +238,7 @@
       roomFallbackNotice: 'La habitación seleccionada no está disponible para estas fechas — aquí tienes otras opciones:',
       bedTypeSingle: 'Cama individual', bedTypeDouble: 'Cama doble', bedTypeQueen: 'Cama Queen',
       bedTypeKing: 'Cama King', bedTypeSofaBed: 'Sofá cama', bedTypeBunkBed: 'Litera',
-      bookCategory: 'Reservar esta categoría →',
+      bookCategory: (name) => `Reservar habitación ${name} →`,
       categoryFallbackNotice: 'La categoría seleccionada no está disponible para estas fechas — aquí tienes otras opciones:',
       categoryJustTaken: 'Esa habitación acaba de ser reservada — elija otra opción.',
       categoryUnavailableNote: 'No disponible para estas fechas',
@@ -303,7 +303,7 @@
       roomFallbackNotice: 'De geselecteerde kamer is niet beschikbaar voor deze data — hier zijn de andere opties:',
       bedTypeSingle: 'Eenpersoonsbed', bedTypeDouble: 'Tweepersoonsbed', bedTypeQueen: 'Queen-size bed',
       bedTypeKing: 'King-size bed', bedTypeSofaBed: 'Slaapbank', bedTypeBunkBed: 'Stapelbed',
-      bookCategory: 'Deze categorie boeken →',
+      bookCategory: (name) => `${name}kamer boeken →`,
       categoryFallbackNotice: 'De geselecteerde categorie is niet beschikbaar voor deze data — hier zijn de andere opties:',
       categoryJustTaken: 'Die kamer is zojuist geboekt — kies een andere optie.',
       categoryUnavailableNote: 'Niet beschikbaar voor deze data',
@@ -368,7 +368,7 @@
       roomFallbackNotice: 'Das ausgewählte Zimmer ist für diese Daten nicht verfügbar — hier sind die anderen Optionen:',
       bedTypeSingle: 'Einzelbett', bedTypeDouble: 'Doppelbett', bedTypeQueen: 'Queen-Size-Bett',
       bedTypeKing: 'King-Size-Bett', bedTypeSofaBed: 'Schlafsofa', bedTypeBunkBed: 'Etagenbett',
-      bookCategory: 'Diese Kategorie buchen →',
+      bookCategory: (name) => `${name}-Zimmer buchen →`,
       categoryFallbackNotice: 'Die ausgewählte Kategorie ist für diese Daten nicht verfügbar — hier sind die anderen Optionen:',
       categoryJustTaken: 'Dieses Zimmer wurde soeben vergeben — bitte wählen Sie eine andere Option.',
       categoryUnavailableNote: 'Für diese Daten nicht verfügbar',
@@ -2210,7 +2210,7 @@
         }
 
         const bookBtn = el('button', 'nb-btn-book-room');
-        bookBtn.appendChild(txt(T.bookCategory));
+        bookBtn.appendChild(txt(T.bookCategory(category.name)));
         if (!category.available) {
           bookBtn.disabled = true;
         } else {
