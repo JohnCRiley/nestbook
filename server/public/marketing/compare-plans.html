@@ -17,14 +17,14 @@
 }
 @page {
   size: A4;
-  margin: 8mm 12mm 8mm 12mm;
+  margin: 6mm 12mm 6mm 12mm;
 }
 body {
   font-family: Arial, Helvetica, sans-serif;
   color: var(--text);
   background: #fff;
-  font-size: 9pt;
-  line-height: 1.35;
+  font-size: 8.6pt;
+  line-height: 1.25;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -34,9 +34,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 7px;
+  padding-bottom: 5px;
   border-bottom: 2.5px solid var(--dark);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 .doc-brand {
   display: flex;
@@ -84,7 +84,7 @@ body {
 
 /* Plan header row */
 .compare-table thead th {
-  padding: 6px 6px 8px;
+  padding: 4px 6px 5px;
   text-align: center;
   border-bottom: 2px solid var(--border);
   vertical-align: bottom;
@@ -119,16 +119,16 @@ body {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 4px 6px;
+  padding: 3px 6px;
 }
 .compare-table .group-row td.col-pro-bg { background: #143a0c; }
 
 /* Feature rows */
 .compare-table .feat-row td {
-  padding: 4.5px 6px;
+  padding: 1.8px 6px;
   border-bottom: 0.5pt solid var(--border);
   vertical-align: middle;
-  line-height: 1.3;
+  line-height: 1.15;
 }
 .compare-table .feat-row td.col-feature {
   color: var(--text);
@@ -164,8 +164,8 @@ body {
 
 /* ── Footer strip ────────────────────────────────────────────────────────── */
 .doc-footer {
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 4px;
+  padding-top: 4px;
   border-top: 1.5px solid var(--border);
   display: flex;
   justify-content: space-between;
@@ -333,7 +333,19 @@ body {
       <td class="col-multi"><span class="cell-text">EN FR ES DE NL</span></td>
     </tr>
     <tr class="feat-row">
+      <td class="col-feature">Individual rooms rental mode</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
       <td class="col-feature">Whole property rental mode</td>
+      <td class="col-free"><span class="check">✓</span></td>
+      <td class="col-pro"><span class="check">✓</span></td>
+      <td class="col-multi"><span class="check">✓</span></td>
+    </tr>
+    <tr class="feat-row">
+      <td class="col-feature">Self-catering rental mode</td>
       <td class="col-free"><span class="check">✓</span></td>
       <td class="col-pro"><span class="check">✓</span></td>
       <td class="col-multi"><span class="check">✓</span></td>
@@ -518,7 +530,7 @@ body {
 </table>
 
 <!-- Footnote -->
-<p style="font-size:6.5pt;color:var(--muted);margin-top:6px;line-height:1.4;">
+<p style="font-size:6.5pt;color:var(--muted);margin-top:3px;line-height:1.3;">
   Free property page shows a contact form only — Pro and Multi unlock live direct booking. Stripe Connect card payments are available on all plans; your Stripe account receives funds directly.
 </p>
 

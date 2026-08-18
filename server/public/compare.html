@@ -646,8 +646,20 @@ img { display: block; max-width: 100%; }
             <td class="col-pro"><span class="cell-text">EN FR ES DE NL</span></td>
             <td class="col-multi"><span class="cell-text">EN FR ES DE NL</span></td>
           </tr>
+          <tr class="feat-row" data-detail-key="detail.individualRooms" data-detail="Present your rooms the way that suits your property: Named Rooms lets guests choose by name and character, while Room Categories groups rooms by type like Single or Double.">
+            <td class="col-feature" data-i18n="feat.individualRooms">Individual rooms rental mode (Named Rooms &amp; Room Categories)</td>
+            <td class="col-free"><span class="check">✓</span></td>
+            <td class="col-pro"><span class="check">✓</span></td>
+            <td class="col-multi"><span class="check">✓</span></td>
+          </tr>
           <tr class="feat-row" data-detail-key="detail.wholeProperty" data-detail="Gîte and holiday home owners can switch to whole property mode — rooms are showcased as features, and the booking page uses a full-width layout designed for holiday rentals.">
             <td class="col-feature" data-i18n="feat.wholeProperty">Whole property rental mode</td>
+            <td class="col-free"><span class="check">✓</span></td>
+            <td class="col-pro"><span class="check">✓</span></td>
+            <td class="col-multi"><span class="check">✓</span></td>
+          </tr>
+          <tr class="feat-row" data-detail-key="detail.selfCatering" data-detail="For properties made up of independent self-catering units — apartments, glamping pods, or serviced apartments — each with its own booking calendar and guest journey.">
+            <td class="col-feature" data-i18n="feat.selfCatering">Self-catering rental mode (Aparthotel, Glamping &amp; Serviced Apartment)</td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -1086,6 +1098,12 @@ var I18N = {
     'feat.breakfast': 'Breakfast management', 'feat.deposit': 'Deposit tracking',
     'feat.receipt': 'Receipt printing', 'feat.themes': '7 colour themes',
     'feat.ical': 'iCal sync (Booking.com, Airbnb)', 'feat.importWizard': 'Booking migration wizard', 'feat.stripe': 'Direct Card Payments (Stripe Connect)', 'feat.langs': 'Interface languages',
+    'feat.wholeProperty': 'Whole property rental mode',
+    'detail.wholeProperty': 'Gîte and holiday home owners can switch to whole property mode — rooms are showcased as features, and the booking page uses a full-width layout designed for holiday rentals.',
+    'feat.individualRooms': 'Individual rooms rental mode (Named Rooms & Room Categories)',
+    'detail.individualRooms': 'Present your rooms the way that suits your property: Named Rooms lets guests choose by name and character, while Room Categories groups rooms by type like Single or Double.',
+    'feat.selfCatering': 'Self-catering rental mode (Aparthotel, Glamping & Serviced Apartment)',
+    'detail.selfCatering': "For properties made up of independent self-catering units — apartments, glamping pods, or serviced apartments — each with its own booking calendar and guest journey.",
     'feat.widget': 'Booking widget for your website',
     'feat.zeroCommission': 'Zero commission on bookings',
     'feat.emails': 'Automated confirmation emails',
@@ -1197,6 +1215,12 @@ var I18N = {
     'feat.breakfast': 'Gestion du petit-déjeuner', 'feat.deposit': 'Suivi des acomptes',
     'feat.receipt': 'Impression de reçus', 'feat.themes': '7 thèmes de couleur',
     'feat.ical': 'Sync iCal (Booking.com, Airbnb)', 'feat.importWizard': 'Assistant de migration de réservations', 'feat.stripe': 'Paiements par carte (Stripe Connect)', 'feat.langs': 'Langues de l\'interface',
+    'feat.wholeProperty': 'Mode Propriété entière',
+    'detail.wholeProperty': 'Les propriétaires de gîtes et de locations de vacances peuvent passer en mode propriété entière — les chambres sont mises en avant comme des caractéristiques, et la page de réservation utilise une mise en page pleine largeur conçue pour les locations de vacances.',
+    'feat.individualRooms': 'Mode Chambres individuelles (Chambres nommées et Catégories de chambres)',
+    'detail.individualRooms': 'Présentez vos chambres comme vous le souhaitez : Chambres nommées permet aux clients de choisir selon le nom et le caractère de chaque chambre, tandis que Catégories de chambres regroupe les chambres par type, comme Simple ou Double.',
+    'feat.selfCatering': 'Mode Hébergement autonome (Aparthotel, Glamping et Appartement avec services)',
+    'detail.selfCatering': "Pour les établissements composés d'unités autonomes indépendantes — appartements, pods de glamping ou appartements avec services — chacune avec son propre calendrier de réservation et son propre parcours client.",
     'feat.widget': 'Widget de réservation pour votre site',
     'feat.zeroCommission': 'Zéro commission sur les réservations',
     'feat.emails': 'E-mails de confirmation automatisés',
@@ -1308,6 +1332,12 @@ var I18N = {
     'feat.breakfast': 'Gestión del desayuno', 'feat.deposit': 'Seguimiento de depósitos',
     'feat.receipt': 'Impresión de recibos', 'feat.themes': '7 temas de color',
     'feat.ical': 'Sync iCal (Booking.com, Airbnb)', 'feat.importWizard': 'Asistente de migración de reservas', 'feat.stripe': 'Pagos con tarjeta (Stripe Connect)', 'feat.langs': 'Idiomas de la interfaz',
+    'feat.wholeProperty': 'Modo Propiedad completa',
+    'detail.wholeProperty': 'Los propietarios de gîtes y casas de vacaciones pueden cambiar al modo de propiedad completa — las habitaciones se muestran como características, y la página de reservas utiliza un diseño de ancho completo pensado para alquileres vacacionales.',
+    'feat.individualRooms': 'Modo Habitaciones individuales (Habitaciones con nombre y Categorías de habitación)',
+    'detail.individualRooms': 'Presente sus habitaciones como prefiera: Habitaciones con nombre permite a los huéspedes elegir según el nombre y el carácter de cada habitación, mientras que Categorías de habitación agrupa las habitaciones por tipo, como Individual o Doble.',
+    'feat.selfCatering': 'Modo Alojamiento con cocina propia (Aparthotel, Glamping y Apartamento con servicios)',
+    'detail.selfCatering': 'Para alojamientos formados por unidades independientes con cocina propia — apartamentos, pods de glamping o apartamentos con servicios — cada una con su propio calendario de reservas y su propio recorrido de huésped.',
     'feat.widget': 'Widget de reservas para su sitio web',
     'feat.zeroCommission': 'Cero comisión en reservas',
     'feat.emails': 'Correos de confirmación automáticos',
@@ -1419,6 +1449,12 @@ var I18N = {
     'feat.breakfast': 'Frühstücksverwaltung', 'feat.deposit': 'Anzahlungsverfolgung',
     'feat.receipt': 'Kassenbon drucken', 'feat.themes': '7 Farbthemen',
     'feat.ical': 'iCal-Sync (Booking.com, Airbnb)', 'feat.importWizard': 'Buchungs-Migrationsassistent', 'feat.stripe': 'Kartenzahlungen (Stripe Connect)', 'feat.langs': 'Schnittstellensprachen',
+    'feat.wholeProperty': 'Modus Gesamte Unterkunft',
+    'detail.wholeProperty': 'Eigentümer von Gîtes und Ferienhäusern können in den Modus „Gesamte Unterkunft" wechseln — Zimmer werden als Ausstattungsmerkmale dargestellt, und die Buchungsseite verwendet ein Vollbreiten-Layout, das für Ferienvermietungen konzipiert ist.',
+    'feat.individualRooms': 'Einzelzimmer-Modus (Benannte Zimmer und Zimmerkategorien)',
+    'detail.individualRooms': 'Präsentieren Sie Ihre Zimmer so, wie es zu Ihrer Unterkunft passt: Benannte Zimmer lässt Gäste anhand von Name und Charakter wählen, während Zimmerkategorien Zimmer nach Typ gruppiert, z. B. Einzel oder Doppel.',
+    'feat.selfCatering': 'Selbstversorger-Modus (Aparthotel, Glamping und Serviced Apartment)',
+    'detail.selfCatering': 'Für Unterkünfte, die aus unabhängigen Selbstversorger-Einheiten bestehen — Apartments, Glamping-Pods oder Serviced Apartments — jede mit eigenem Buchungskalender und eigenem Gästeerlebnis.',
     'feat.widget': 'Buchungs-Widget für Ihre Website',
     'feat.zeroCommission': 'Null Provision auf Buchungen',
     'feat.emails': 'Automatische Bestätigungs-E-Mails',
@@ -1530,6 +1566,12 @@ var I18N = {
     'feat.breakfast': 'Ontbijtbeheer', 'feat.deposit': 'Aanbetaling bijhouden',
     'feat.receipt': 'Bon printen', 'feat.themes': "7 kleurthema's",
     'feat.ical': 'iCal-sync (Booking.com, Airbnb)', 'feat.importWizard': 'Boekingen migratiewizard', 'feat.stripe': 'Kaartbetalingen (Stripe Connect)', 'feat.langs': 'Interfacetalen',
+    'feat.wholeProperty': 'Modus Volledig object',
+    'detail.wholeProperty': 'Eigenaren van gîtes en vakantiehuizen kunnen overschakelen naar de modus volledig object — kamers worden getoond als kenmerken, en de boekingspagina gebruikt een lay-out over de volledige breedte, speciaal ontworpen voor vakantieverhuur.',
+    'feat.individualRooms': 'Modus Individuele kamers (Benoemde kamers en Kamercategorieën)',
+    'detail.individualRooms': 'Presenteer uw kamers zoals het bij uw accommodatie past: met Benoemde kamers kiezen gasten op basis van naam en karakter, terwijl Kamercategorieën kamers groepeert per type, zoals Eenpersoons of Tweepersoons.',
+    'feat.selfCatering': 'Modus Zelfvoorzienend verblijf (Aparthotel, Glamping en Serviced apartment)',
+    'detail.selfCatering': 'Voor accommodaties die bestaan uit onafhankelijke zelfvoorzienende eenheden — appartementen, glampingpods of serviced apartments — elk met een eigen boekingskalender en gastreis.',
     'feat.widget': 'Boekingswidget voor uw website',
     'feat.zeroCommission': 'Nul commissie op boekingen',
     'feat.emails': 'Automatische bevestigingsmails',
