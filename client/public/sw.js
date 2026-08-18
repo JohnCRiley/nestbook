@@ -1,4 +1,4 @@
-const CACHE = 'nestbook-v1';
+const CACHE = 'nestbook-v2';
 const OFFLINE = '/offline.html';
 
 // App-shell assets to precache on install
