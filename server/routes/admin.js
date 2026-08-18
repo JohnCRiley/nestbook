@@ -435,6 +435,194 @@ adminRouter.patch('/properties/:id/rental-type', (req, res) => {
   }
 });
 
+// ── Rental Mode Switch panel ───────────────────────────────────────────────
+// Self-service replacement for the rental-type route above: safely moves a
+// property between IR / WP / Self-Catering after rental_type_locked is set,
+// without a developer manually touching the database. One rule drives it —
+// does the property have any real (non-sample) booking that isn't already
+// resolved? If yes, the switch is blocked and a human must resolve it first;
+// if no, the switch is fully self-service (Reset when there's no booking
+// history at all, Archive when there's past-but-resolved history to keep).
+const RMS_VALID_RENTAL_TYPES = ['rooms', 'whole_property', 'units'];
+const RMS_VALID_UN_SUB_TYPES = ['aparthotel', 'glamping', 'serviced_apartment'];
+// Mirrors client/src/utils/unSubTypes.js UN_SUB_TYPE_DEFAULTS — same presets
+// onboarding applies when an owner picks a Self-Catering sub-type, so a
+// property switched in here via Super Admin starts from the identical clean
+// state a fresh sign-up would.
+const RMS_UN_SUB_TYPE_DEFAULTS = {
+  aparthotel:          { walk_in_enabled: 1, booking_flow: 'instant', servicing_type: 'daily' },
+  glamping:            { walk_in_enabled: 1, booking_flow: 'instant', servicing_type: 'post_stay_optional' },
+  serviced_apartment:  { walk_in_enabled: 0, booking_flow: 'request', servicing_type: 'post_stay' },
+};
+// A booking counts as "active/unresolved" — and blocks the switch — unless
+// it's reached one of these resolved end states. Matches the NOT IN pattern
+// used throughout bookings.js/widget.js/bookingPage.js, so an in-progress
+// stay (arriving/in_house) blocks just like a future confirmed booking does,
+// not just ones with a future check_in_date.
+const RMS_RESOLVED_STATUSES = ['cancelled', 'checked_out', 'cancelled_unpaid', 'declined'];
+
+function rmsComputeStatus(propId) {
+  const activeBookings = db.prepare(`
+    SELECT COUNT(*) as n FROM bookings
+    WHERE property_id = ? AND is_sample_data = 0
+      AND status NOT IN (${RMS_RESOLVED_STATUSES.map(() => '?').join(',')})
+  `).get(propId, ...RMS_RESOLVED_STATUSES).n;
+
+  const pastRealBookings = db.prepare(`
+    SELECT COUNT(*) as n FROM bookings
+    WHERE property_id = ? AND is_sample_data = 0
+      AND status IN (${RMS_RESOLVED_STATUSES.map(() => '?').join(',')})
+  `).get(propId, ...RMS_RESOLVED_STATUSES).n;
+
+  // Unresolved money: a deposit taken and neither refunded nor explicitly
+  // forfeited, or a Stripe checkout link that was created but never paid.
+  // Checked across every booking regardless of status, since a cancelled
+  // booking can still be sitting on an unrefunded deposit.
+  const unresolvedDeposits = db.prepare(`
+    SELECT COUNT(*) as n FROM bookings
+    WHERE property_id = ? AND is_sample_data = 0
+      AND (
+        (deposit_paid = 1 AND refunded_at IS NULL AND deposit_forfeited = 0)
+        OR (stripe_checkout_session_id IS NOT NULL AND (stripe_payment_status IS NULL OR stripe_payment_status != 'paid'))
+      )
+  `).get(propId).n;
+
+  const roomsCount = db.prepare(
+    `SELECT COUNT(*) as n FROM rooms WHERE property_id = ?`
+  ).get(propId).n;
+
+  const activeIcalFeeds = db.prepare(
+    `SELECT COUNT(*) as n FROM ical_feeds WHERE property_id = ? AND active = 1`
+  ).get(propId).n;
+
+  const blockReasons = [];
+  if (activeBookings > 0) {
+    blockReasons.push(`${activeBookings} upcoming or in-progress booking${activeBookings === 1 ? '' : 's'} must be resolved (cancelled or completed) first.`);
+  }
+  if (unresolvedDeposits > 0) {
+    blockReasons.push(`${unresolvedDeposits} booking${unresolvedDeposits === 1 ? '' : 's'} ${unresolvedDeposits === 1 ? 'has' : 'have'} a deposit or payment that hasn't been refunded or settled yet.`);
+  }
+
+  let scenario;
+  if (blockReasons.length > 0) scenario = 'blocked';
+  else if (pastRealBookings > 0) scenario = 'archive';
+  else scenario = 'reset';
+
+  return { activeBookings, pastRealBookings, unresolvedDeposits, roomsCount, activeIcalFeeds, scenario, blockReasons };
+}
+
+// ── GET /api/admin/properties/:id/rental-mode-status ─────────────────────────
+adminRouter.get('/properties/:id/rental-mode-status', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    const property = db.prepare(`
+      SELECT id, name, address, city, country, rental_type, un_sub_type, ir_room_mode, rental_type_locked
+      FROM properties WHERE id = ?
+    `).get(propId);
+    if (!property) return res.status(404).json({ error: 'Property not found.' });
+
+    res.json({ property, ...rmsComputeStatus(propId) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/properties/:id/rental-mode-switch ────────────────────────
+adminRouter.post('/properties/:id/rental-mode-switch', (req, res) => {
+  const propId = Number(req.params.id);
+  try {
+    const { rental_type, un_sub_type, confirm_name } = req.body;
+
+    const property = db.prepare('SELECT id, name, rental_type FROM properties WHERE id = ?').get(propId);
+    if (!property) return res.status(404).json({ error: 'Property not found.' });
+
+    if (typeof confirm_name !== 'string' || confirm_name.trim() !== property.name.trim()) {
+      return res.status(400).json({ error: "Property name confirmation didn't match." });
+    }
+    if (!RMS_VALID_RENTAL_TYPES.includes(rental_type)) {
+      return res.status(400).json({ error: 'Invalid rental_type.' });
+    }
+    if (rental_type === 'units' && !RMS_VALID_UN_SUB_TYPES.includes(un_sub_type)) {
+      return res.status(400).json({ error: 'A Self-Catering sub-type must be chosen.' });
+    }
+
+    // Never trust a scenario the client computed earlier in the flow — the
+    // data could have changed (a new booking could have landed) since the
+    // status was last fetched.
+    const status = rmsComputeStatus(propId);
+    if (status.scenario === 'blocked') {
+      return res.status(409).json({ error: 'Switch is blocked.', blockReasons: status.blockReasons });
+    }
+
+    const subDefaults = rental_type === 'units' ? RMS_UN_SUB_TYPE_DEFAULTS[un_sub_type] : null;
+
+    let deletedBookings = 0, archivedBookings = 0, deletedGuests = 0;
+
+    db.exec('BEGIN');
+    try {
+      if (status.scenario === 'archive') {
+        // Preserve booking + guest history untouched — just detach it from
+        // the rooms that are about to be removed, same as rooms.js's own
+        // force-delete does for a single room.
+        archivedBookings = db.prepare('UPDATE bookings SET room_id = NULL WHERE property_id = ?').run(propId).changes;
+      } else {
+        // Reset — nothing real to preserve (either truly empty, or every
+        // booking/room/guest present is sample data). Clear it all.
+        deletedBookings = db.prepare('DELETE FROM bookings WHERE property_id = ?').run(propId).changes;
+        deletedGuests = db.prepare('DELETE FROM guests WHERE property_id = ? AND is_sample_data = 1').run(propId).changes;
+      }
+
+      // room_photos / rate_period_rooms / content_flags / nested internal
+      // rooms (parent_unit_id) all cascade off this delete.
+      db.prepare('DELETE FROM rooms WHERE property_id = ?').run(propId);
+      // Safe only now that no room still references a category.
+      db.prepare('DELETE FROM room_categories WHERE property_id = ?').run(propId);
+      // Room-level ical rows already cascaded with their room; this also
+      // clears property-wide (WP-style) feeds/blocks with no room_id, so no
+      // stale external block lingers against a mode that no longer exists.
+      db.prepare('DELETE FROM ical_blocks WHERE property_id = ?').run(propId);
+      db.prepare('DELETE FROM ical_feeds WHERE property_id = ?').run(propId);
+
+      if (subDefaults) {
+        db.prepare(`
+          UPDATE properties
+          SET rental_type = ?, un_sub_type = ?, walk_in_enabled = ?, booking_flow = ?, servicing_type = ?, rental_type_locked = 1
+          WHERE id = ?
+        `).run(rental_type, un_sub_type, subDefaults.walk_in_enabled, subDefaults.booking_flow, subDefaults.servicing_type, propId);
+      } else {
+        db.prepare(`
+          UPDATE properties SET rental_type = ?, rental_type_locked = 1 WHERE id = ?
+        `).run(rental_type, propId);
+      }
+
+      seedCategories(db, propId, rental_type);
+
+      db.exec('COMMIT');
+    } catch (innerErr) {
+      db.exec('ROLLBACK');
+      throw innerErr;
+    }
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user?.userId ?? null,
+      action:     'RENTAL_MODE_SWITCHED',
+      category:   'admin',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `${property.rental_type} → ${rental_type}${un_sub_type ? ` (${un_sub_type})` : ''} — scenario: ${status.scenario}, ${deletedBookings} booking(s) deleted, ${archivedBookings} archived, ${deletedGuests} sample guest(s) removed, ${status.roomsCount} room(s)/unit(s) cleared`,
+      ipAddress:  getIp(req),
+    });
+
+    console.log(`[admin] Rental mode switch for property ${propId} (${property.name}): ${property.rental_type} → ${rental_type} [${status.scenario}]`);
+    res.json({ success: true, scenario: status.scenario, deletedBookings, archivedBookings, deletedGuests, roomsCleared: status.roomsCount });
+  } catch (err) {
+    console.error('[rental-mode-switch] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/admin/properties/:id/reset-demo-data ───────────────────────────
 // Wipes all bookings + guests for a demo property, then seeds 5 repeat guests.
 // Server-side guard: always re-checks is_demo = 1 directly from the database.

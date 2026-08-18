@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, Routes, Route } from 'react-router-dom';
 import Overview          from './pages/Overview.jsx';
 import Properties        from './pages/Properties.jsx';
+import RentalModeSwitch  from './pages/RentalModeSwitch.jsx';
 import Users             from './pages/Users.jsx';
 import Revenue           from './pages/Revenue.jsx';
 import AdminSettings     from './pages/AdminSettings.jsx';
@@ -21,6 +22,7 @@ import { clearSASession, saApiFetch } from './saApiFetch.js';
 const NAV = [
   { to: '/super-admin',                   label: 'Overview',         end: true, icon: <IconOverview /> },
   { to: '/super-admin/properties',        label: 'Properties',                  icon: <IconProperties /> },
+  { to: '/super-admin/rental-mode-switch', label: 'Rental Mode Switch',         icon: <IconSwitch /> },
   { to: '/super-admin/users',             label: 'Users',                       icon: <IconUsers /> },
   { to: '/super-admin/revenue',           label: 'Revenue',                     icon: <IconRevenue /> },
   { to: '/super-admin/audit-log',         label: 'Audit Log',                   icon: <IconAuditLog /> },
@@ -147,6 +149,7 @@ export default function AdminLayout() {
         <Routes>
           <Route index                    element={<Overview      />} />
           <Route path="properties"        element={<Properties    />} />
+          <Route path="rental-mode-switch" element={<RentalModeSwitch />} />
           <Route path="users"             element={<Users         />} />
           <Route path="revenue"           element={<Revenue       />} />
           <Route path="audit-log"         element={<AuditLog      />} />
@@ -196,6 +199,15 @@ function IconProperties() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
       <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  );
+}
+
+function IconSwitch() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+      <path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
     </svg>
   );
 }
