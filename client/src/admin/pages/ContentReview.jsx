@@ -214,6 +214,7 @@ export default function ContentReview() {
               flag={flag}
               showHistory={tab === 'history'}
               onReview={() => setReviewing(flag)}
+              onQuickVerify={handleDone}
             />
           ))}
         </div>
@@ -226,10 +227,18 @@ export default function ContentReview() {
   );
 }
 
-function FlagCard({ flag, showHistory, onReview }) {
+function FlagCard({ flag, showHistory, onReview, onQuickVerify }) {
+  const [verifying, setVerifying] = useState(false);
   const thumb = isPhoto(flag) ? photoUrl(flag, true) : null;
   const statusColor = flag.status === 'verified' ? '#166534' : flag.status === 'removed' ? '#991b1b' : '#92400e';
   const statusBg    = flag.status === 'verified' ? '#dcfce7' : flag.status === 'removed' ? '#fee2e2' : '#fef3c7';
+
+  async function quickVerify() {
+    setVerifying(true);
+    await saApiFetch(`/api/admin/content-flags/${flag.id}/verify`, { method: 'POST' });
+    setVerifying(false);
+    onQuickVerify();
+  }
 
   return (
     <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
@@ -258,12 +267,22 @@ function FlagCard({ flag, showHistory, onReview }) {
             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{timeAgo(flag.created_at)}</span>
           )}
           {!showHistory && (
-            <button
-              onClick={onReview}
-              style={{ padding: '5px 12px', background: '#1a4710', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              Review →
-            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={quickVerify}
+                disabled={verifying}
+                title="Verify — content is fine"
+                style={{ padding: '5px 10px', background: '#dcfce7', color: '#166534', border: 'none', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, cursor: verifying ? 'default' : 'pointer', fontFamily: 'inherit' }}
+              >
+                {verifying ? '…' : '✓ Quick Verify'}
+              </button>
+              <button
+                onClick={onReview}
+                style={{ padding: '5px 12px', background: '#1a4710', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Review →
+              </button>
+            </div>
           )}
           {showHistory && flag.reviewed_at && (
             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{timeAgo(flag.reviewed_at)}</span>
