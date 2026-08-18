@@ -493,6 +493,24 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ? `<div class="room-occupancy"><i class="ti ti-users"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(room.capacity))}">Sleeps up to ${esc(String(room.capacity))}</span></div>`
     : '';
 
+  // Bed icons — same markup/CSS (ws-amenity) as categoryShowcase()'s bed
+  // row, just driven straight off this single room's bed_config rather than
+  // getUniformBedConfig (no multi-room uniformity check needed here). Rooms
+  // with no bed_config set (most existing rooms, pre-Phase 7a) render no row
+  // at all rather than an empty one.
+  const roomBeds = parseBedConfig(room.bed_config);
+  let bedIconsHtml = '';
+  if (roomBeds && roomBeds.length) {
+    const bedSpans = roomBeds.map(function(entry) {
+      const iconSvg = BED_TYPE_ICON_SVG[entry.type] ?? BED_TYPE_ICON_SVG.double;
+      const i18nKey = BED_TYPE_I18N_KEY[entry.type] ?? 'page.bedTypeDouble';
+      const label   = BED_TYPE_LABEL_EN[entry.type] ?? 'Double Bed';
+      const qtyHtml = entry.qty > 1 ? (esc(String(entry.qty)) + '× ') : '';
+      return '<span class="ws-amenity">' + iconSvg + ' ' + qtyHtml + '<span data-i18n="' + i18nKey + '">' + esc(label) + '</span></span>';
+    }).join('');
+    bedIconsHtml = '<div class="ws-amenities-row">' + bedSpans + '</div>';
+  }
+
   const descHtml = room.description
     ? `<p class="room-desc">${esc(room.description)}</p>`
     : '';
@@ -519,6 +537,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
     ${occBadge}
+    ${bedIconsHtml}
     ${roomCalendarSection(room.id)}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${room.id})` : 'scrollToEnquiry()'}" data-i18n="page.bookThisRoom">Book this room</button>
