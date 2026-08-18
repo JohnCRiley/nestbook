@@ -118,6 +118,17 @@ export default function RentalModeSwitch() {
         <div className="page-date">Safely change a property's rental type — Individual Rooms, Whole Property, or Self-Catering</div>
       </div>
 
+      <div className="admin-card" style={{ padding: '16px 20px', marginBottom: 16, borderLeft: '4px solid #0ea5e9', background: '#f0f9ff' }}>
+        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0c4a6e', marginBottom: 8 }}>How this works</div>
+        <ol style={{ margin: 0, paddingLeft: 18, color: '#0c4a6e', fontSize: '0.82rem', lineHeight: 1.8 }}>
+          <li>Search for the property below by name or owner email.</li>
+          <li>Check the stats shown — rooms/units, upcoming bookings, deposits, calendar syncs.</li>
+          <li>If there are no upcoming bookings, you can switch the mode straight away.</li>
+          <li>If there are upcoming bookings, you'll need to ask the owner to cancel or complete them first — the switch will stay blocked until then.</li>
+          <li>Choose the new mode (and sub-type, if switching to Self-Catering), then confirm by typing the property name exactly as shown.</li>
+        </ol>
+      </div>
+
       <div className="admin-card" style={{ padding: 20, marginBottom: 20 }}>
         <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: 8 }}>
           Find a property
