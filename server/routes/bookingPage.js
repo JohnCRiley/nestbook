@@ -1721,8 +1721,11 @@ section h2 {
 .rooms { background: #f8f9fa; }
 .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 24px;
+}
+@media (max-width: 480px) {
+  .rooms-grid { grid-template-columns: 1fr; }
 }
 .room-card {
   background: #fff;
@@ -1743,7 +1746,7 @@ section h2 {
 }
 .room-photo {
   width: 100%;
-  height: 200px;
+  height: 280px;
   overflow: hidden;
   flex-shrink: 0;
 }
