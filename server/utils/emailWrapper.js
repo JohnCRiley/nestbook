@@ -85,8 +85,9 @@ export function wrapGuestMailerEmail(bodyHtml, {
  * Options:
  *   footerNote  – override the footer paragraph text
  *   unsubUrl    – if provided, appends an Unsubscribe link in the footer
+ *   replyEmail  – address shown in the signature block (default hello@nestbook.io)
  */
-export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white' } = {}) {
+export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white', replyEmail = 'hello@nestbook.io' } = {}) {
   const raw = (bodyHtml ?? '').trim();
 
   // Convert plain text to HTML paragraphs; leave real HTML as-is
@@ -136,7 +137,7 @@ export function wrapEmailBody(bodyHtml, { footerNote, unsubUrl, body_bg = 'white
            style="border-radius:6px;vertical-align:middle;display:inline-block;">
       <strong style="color:${sigColor};margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
       <span style="color:#405440;font-size:13px;line-height:1.8;">
-        <a href="mailto:hello@nestbook.io" style="color:${sigColor};text-decoration:none;">hello@nestbook.io</a>
+        <a href="mailto:${replyEmail}" style="color:${sigColor};text-decoration:none;">${replyEmail}</a>
         &nbsp;&middot;&nbsp;
         <a href="https://nestbook.io" style="color:${sigColor};text-decoration:none;">nestbook.io</a>
       </span>

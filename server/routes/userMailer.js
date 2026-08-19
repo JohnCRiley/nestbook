@@ -3,7 +3,19 @@ import db from '../db/database.js';
 import { sendOutreachEmail } from '../email/emailService.js';
 import { wrapEmailBody } from '../utils/emailWrapper.js';
 
-const USER_MAILER_FOOTER = 'You received this email as a NestBook user. Questions? <a href="mailto:hello@nestbook.io" style="color:#405440;">hello@nestbook.io</a>';
+const REPLY_EMAIL_DEFAULT = 'hello@nestbook.io';
+const REPLY_EMAIL_SUPPORT = 'support@nestbook.io';
+
+// `source` arrives from the Error Report → Contact → User Mailer flow (?source=support),
+// which threads through to the send calls so the reply address reads as a support reply
+// rather than the usual broadcast/marketing address. Not a user-facing toggle.
+function resolveReplyEmail(source) {
+  return source === 'support' ? REPLY_EMAIL_SUPPORT : REPLY_EMAIL_DEFAULT;
+}
+
+function buildUserMailerFooter(replyEmail) {
+  return `You received this email as a NestBook user. Questions? <a href="mailto:${replyEmail}" style="color:#405440;">${replyEmail}</a>`;
+}
 
 export const userMailerRouter = Router();
 
@@ -125,14 +137,15 @@ userMailerRouter.get('/preview-count', (req, res) => {
 // ── Send test email to SA's own address ──────────────────────────────────────
 
 userMailerRouter.post('/send-test', async (req, res) => {
-  const { subject, html, body_bg = 'white' } = req.body;
+  const { subject, html, body_bg = 'white', source } = req.body;
   if (!subject?.trim()) return res.status(400).json({ error: 'subject is required' });
   if (!html?.trim())    return res.status(400).json({ error: 'html is required' });
 
   const saUser = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.userId);
   if (!saUser) return res.status(404).json({ error: 'Super admin user not found' });
 
-  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER, body_bg });
+  const replyEmail = resolveReplyEmail(source);
+  const wrappedHtml = wrapEmailBody(html, { footerNote: buildUserMailerFooter(replyEmail), body_bg, replyEmail });
   console.log('[user-mailer/send-test] Sending to', saUser.email);
   try {
     await sendOutreachEmail({ to: saUser.email, subject: `[TEST] ${subject}`, html: wrappedHtml });
@@ -157,6 +170,7 @@ userMailerRouter.post('/send', async (req, res) => {
     userIds = [],
     filterVerified = false,
     additionalEmails = [],
+    source: replySource,
   } = req.body;
 
   if (!subject?.trim()) return res.status(400).json({ error: 'subject is required' });
@@ -237,7 +251,8 @@ userMailerRouter.post('/send', async (req, res) => {
   });
 
   // Async send loop — wrap HTML once, reuse for all recipients
-  const wrappedHtml = wrapEmailBody(html, { footerNote: USER_MAILER_FOOTER, body_bg });
+  const replyEmail = resolveReplyEmail(replySource);
+  const wrappedHtml = wrapEmailBody(html, { footerNote: buildUserMailerFooter(replyEmail), body_bg, replyEmail });
   const trimmedSubject = subject.trim();
 
   (async () => {

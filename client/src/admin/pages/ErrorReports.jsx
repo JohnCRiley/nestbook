@@ -82,6 +82,7 @@ export default function ErrorReports() {
       email:   selected.user_email,
       subject: `Re: Your NestBook report${selected.category ? ` — ${CATEGORY_LABELS[selected.category] ?? selected.category}` : ''}`,
       body:    `Hi ${firstName(selected.user_name)},`,
+      source:  'support',
     });
     navigate(`/super-admin/user-mailer?${params}`);
   }

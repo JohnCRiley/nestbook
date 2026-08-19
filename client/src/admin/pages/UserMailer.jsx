@@ -237,7 +237,7 @@ export default function UserMailer() {
     const res = await saApiFetch('/api/admin/user-mailer/send-test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, html, body_bg: bodyBg }),
+      body: JSON.stringify({ subject, html, body_bg: bodyBg, source: searchParams.get('source') || undefined }),
     });
     const data = await res.json();
     setTestSending(false);
@@ -260,6 +260,7 @@ export default function UserMailer() {
         userIds: targetMode === 'individual' ? targetUsers.map(u => u.id) : undefined,
         filterVerified,
         additionalEmails: adhocParsed,
+        source: searchParams.get('source') || undefined,
       }),
     });
     const data = await res.json();
