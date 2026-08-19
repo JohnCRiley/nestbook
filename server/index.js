@@ -39,6 +39,7 @@ import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
 import { sendReviewRequestReminders } from './schedulers/reviewRequestScheduler.js';
 import { getBalanceDueDate } from './utils/deposits.js';
+import { stripe } from './lib/stripeClient.js';
 import db from './db/database.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -50,6 +51,17 @@ if (downgradedUsers?.length > 0) {
   for (const u of downgradedUsers) {
     sendDowngradeEmail(u.email)
       .catch(err => console.error('[dunning] Downgrade email failed:', u.email, err.message));
+    // Cancel the actual Stripe subscription so it stops retrying the charge —
+    // without this, Stripe can keep attempting to bill a card for weeks after
+    // NestBook has already revoked the user's plan access, and a later
+    // successful retry would leave them charged while stuck on Free.
+    if (stripe && u.stripe_subscription_id) {
+      stripe.subscriptions.cancel(u.stripe_subscription_id)
+        .then(() => console.log(`[dunning] Cancelled Stripe subscription ${u.stripe_subscription_id} for ${u.email}`))
+        .catch(err => console.error(`[dunning] Failed to cancel Stripe subscription ${u.stripe_subscription_id} for ${u.email}:`, err.message));
+    } else if (!u.stripe_subscription_id) {
+      console.warn(`[dunning] No stripe_subscription_id on file for ${u.email} — downgraded locally but nothing to cancel in Stripe.`);
+    }
   }
 }
 

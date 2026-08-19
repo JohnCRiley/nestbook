@@ -878,6 +878,22 @@ widgetRouter.post('/retry-payment', async (req, res) => {
   }
 
   try {
+    // Expire the original session first so only one of the two can ever be
+    // completed — without this, a guest with both the original and the
+    // recovery checkout tab open could pay through both and be charged twice.
+    // Best-effort: the original may already be expired/completed, which
+    // Stripe rejects — that's fine, it just means there's nothing to expire.
+    if (booking.stripe_checkout_session_id) {
+      try {
+        await stripe.checkout.sessions.expire(
+          booking.stripe_checkout_session_id,
+          { stripeAccount: booking.stripe_connect_account_id },
+        );
+      } catch (expireErr) {
+        console.warn(`[widget] Could not expire prior session ${booking.stripe_checkout_session_id} for booking #${booking_id}:`, expireErr.message);
+      }
+    }
+
     // Issue fresh recovery token for the new cancel_url (resets the 2-hour window)
     const { exp: newExp, t: newTok } = makeRecoveryToken(booking_id);
     const session = await stripe.checkout.sessions.create(
@@ -889,7 +905,11 @@ widgetRouter.post('/retry-payment', async (req, res) => {
         cancel_url:  `${base}/pay/recover?b=${booking_id}&exp=${newExp}&t=${newTok}`,
         metadata: {
           booking_id: String(booking_id),
-          source:     'widget_recovery',
+          // Same value the original pay-now session uses (widget.js POST
+          // /bookings) — a retry is the same payment intent, not a
+          // different kind of session, and the webhook only recognizes
+          // this one value to advance the booking to confirmed.
+          source:     'widget_payment',
         },
       },
       { stripeAccount: booking.stripe_connect_account_id },

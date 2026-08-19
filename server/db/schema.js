@@ -1220,14 +1220,25 @@ John`
   try { db.exec(`ALTER TABLE users ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'active'`); } catch {}
   try { db.exec(`ALTER TABLE users ADD COLUMN past_due_since TEXT`); } catch {}
 
-  // Downgrade users who have been past_due for more than 7 days
+  // Downgrade users who have been past_due for more than 7 days.
+  // stripe_subscription_id is read from the subscriptions table (the real
+  // source of truth), not users.stripe_subscription_id — that column is only
+  // ever populated by the discount-code/promo-conversion flows and is NULL
+  // for the majority of standard-checkout subscribers this job is meant to
+  // catch. Returned alongside each user so the caller (index.js) can cancel
+  // the actual Stripe subscription — this function stays synchronous and
+  // makes no Stripe API calls itself, matching the existing pattern where
+  // schema.js only does local DB work and index.js handles async side effects
+  // (downgrade emails) for the returned list.
   const graceCutoff = new Date();
   graceCutoff.setDate(graceCutoff.getDate() - 7);
   const dunningRows = db.prepare(`
-    SELECT id, email FROM users
-    WHERE subscription_status = 'past_due'
-      AND past_due_since < ?
-      AND plan != 'free'
+    SELECT u.id, u.email, s.stripe_subscription_id
+    FROM users u
+    LEFT JOIN subscriptions s ON s.user_id = u.id
+    WHERE u.subscription_status = 'past_due'
+      AND u.past_due_since < ?
+      AND u.plan != 'free'
   `).all(graceCutoff.toISOString());
   if (dunningRows.length > 0) {
     const downgradeStmt = db.prepare(`

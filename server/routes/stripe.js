@@ -171,8 +171,13 @@ stripeRouter.post('/sync-session', async (req, res) => {
     const oldUser = db.prepare('SELECT id, name, email, plan FROM users WHERE id = ?').get(userId);
     const oldPlan = oldUser?.plan ?? 'free';
 
-    // Update the user's plan first — this is the critical step.
-    const userUpdate = db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
+    // Update the user's plan first — this is the critical step. Also keeps
+    // stripe_customer_id/stripe_subscription_id in sync here, same as the
+    // webhook does — this endpoint is a fallback for when the webhook
+    // hasn't fired yet, so it should leave the user row in the same state
+    // the webhook would have.
+    const userUpdate = db.prepare('UPDATE users SET plan = ?, stripe_customer_id = ?, stripe_subscription_id = ? WHERE id = ?')
+      .run(plan, customerId, sub?.id ?? null, userId);
     console.log('[sync-session] UPDATE users changes:', userUpdate.changes, '| userId used:', userId);
 
     // Upsert the subscription record for billing history.
@@ -596,8 +601,21 @@ export async function stripeWebhookHandler(req, res) {
             // something confirmed later — e.g. a stale/abandoned checkout
             // session that outlives the booking it was originally held for.
             const pendingBooking = db.prepare(`
-              SELECT room_id, check_in_date, check_out_date FROM bookings WHERE id = ?
+              SELECT status, room_id, check_in_date, check_out_date FROM bookings WHERE id = ?
             `).get(bookingId);
+
+            // Reconciliation guard — Stripe can redeliver the same event, and a
+            // guest can complete two separate checkout sessions for the same
+            // booking (the original + a retry) in the narrow window before the
+            // retry's session-expire call takes effect. Either way, once this
+            // booking has already moved off pending_payment (confirmed,
+            // confirmed_conflict, or anything else), this is a duplicate/late
+            // arrival — reprocessing it would re-send the confirmation or
+            // conflict-alert emails a second time for no reason. Skip it.
+            if (!pendingBooking || pendingBooking.status !== 'pending_payment') {
+              console.log(`[stripe] checkout.session.completed for booking #${bookingId} ignored — status is already '${pendingBooking?.status ?? 'not found'}', not pending_payment (duplicate delivery or already resolved)`);
+              break;
+            }
 
             // Excludes pending_payment in addition to the creation-time check's
             // usual exclusions — a sibling still mid-checkout hasn't paid and
@@ -769,7 +787,13 @@ export async function stripeWebhookHandler(req, res) {
           `).run(userId, customerId, subscriptionId, plan, periodEnd);
         }
 
-        db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
+        // Also written by the promo-conversion branch above — kept in sync
+        // here too so the standard (non-promo) checkout path, which covers
+        // the majority of paying customers, populates this the same way.
+        // Billing.jsx's next-billing-date and cancellation-scheduled UI
+        // both key off this being set.
+        db.prepare('UPDATE users SET plan = ?, stripe_customer_id = ?, stripe_subscription_id = ? WHERE id = ?')
+          .run(plan, customerId, subscriptionId, userId);
         console.log(`✓ Subscription activated: user ${userId} → ${plan}`);
         console.log('[stripe/webhook/upgrade] Old plan:', oldWebhookPlan, '→ New plan:', plan);
         console.log('[stripe/webhook/upgrade] User:', oldWebhookUser?.email);
@@ -826,10 +850,14 @@ export async function stripeWebhookHandler(req, res) {
           WHERE stripe_subscription_id = ?
         `).run(plan, status, periodEnd, cancelAtEnd, sub.id);
 
+        // Also backfills/keeps users.stripe_subscription_id in sync — this
+        // fires for any subscription change (addon add/remove, plan swap),
+        // so it's a good opportunistic place to correct it if it was ever
+        // missed by the checkout-completion path.
         db.prepare(`
-          UPDATE users SET plan = ?, has_charges_addon = ?
+          UPDATE users SET plan = ?, has_charges_addon = ?, stripe_subscription_id = ?
           WHERE id = (SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?)
-        `).run(plan, hasAddon, sub.id);
+        `).run(plan, hasAddon, sub.id, sub.id);
         break;
       }
 
@@ -858,11 +886,34 @@ export async function stripeWebhookHandler(req, res) {
         const invoice    = event.data.object;
         const customerId = invoice.customer;
         const user = db.prepare(`
-          SELECT u.id, u.email FROM users u
+          SELECT u.id, u.email, u.plan AS local_plan FROM users u
           JOIN subscriptions s ON s.user_id = u.id
           WHERE s.stripe_customer_id = ?
         `).get(customerId);
         if (user) {
+          // Belt-and-braces: the 7-day dunning job now cancels the Stripe
+          // subscription when it downgrades a user (see schema.js), so this
+          // event firing for an already-downgraded user should no longer
+          // happen in the normal case. But if that cancel call ever fails
+          // (network error, etc.) and Stripe's own retry later succeeds, this
+          // event is exactly what would fire — restore plan here too, not
+          // just subscription_status, so a customer who did get charged isn't
+          // left stuck on Free.
+          if (user.local_plan === 'free' && invoice.subscription) {
+            try {
+              const stripeSub = await stripe.subscriptions.retrieve(invoice.subscription);
+              const planItem = stripeSub.items.data.find(
+                item => item.price.id === process.env.STRIPE_PRICE_MULTI ||
+                        item.price.id === process.env.STRIPE_PRICE_PRO
+              );
+              const restoredPlan = planItem?.price?.id === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
+              db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(restoredPlan, user.id);
+              console.log(`[webhook] Restored plan '${restoredPlan}' for previously-downgraded user ${user.email} after a late successful payment`);
+            } catch (restoreErr) {
+              console.error(`[webhook] Could not restore plan for ${user.email} after late payment success:`, restoreErr.message);
+            }
+          }
+
           db.prepare(`
             UPDATE users
             SET subscription_status = 'active', past_due_since = NULL
@@ -881,10 +932,15 @@ export async function stripeWebhookHandler(req, res) {
           WHERE stripe_subscription_id = ?
         `).run(sub.id);
 
+        // Clear stripe_subscription_id too, scoped to this specific
+        // subscription id — if the user has already started a newer
+        // subscription by the time this (possibly late) event arrives,
+        // this WHERE won't match it and the newer id is left untouched.
         db.prepare(`
-          UPDATE users SET plan = 'free'
+          UPDATE users SET plan = 'free', stripe_subscription_id = NULL
           WHERE id = (SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?)
-        `).run(sub.id);
+            AND stripe_subscription_id = ?
+        `).run(sub.id, sub.id);
         console.log(`✓ Subscription cancelled: ${sub.id}`);
         break;
       }
