@@ -194,6 +194,9 @@ roomsRouter.get('/:id/rate', (req, res) => {
     }
     const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
     if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, room.property_id)) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
 
     const result = getRateForDate(room.property_id, rid, date);
     if (!result) return res.status(404).json({ error: 'Room not found' });
@@ -215,6 +218,9 @@ roomsRouter.get('/:id/rate-range', (req, res) => {
     }
     const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
     if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, room.property_id)) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
 
     // WP properties store the base rate on the property, not the room
     const propRow = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(room.property_id);
@@ -254,6 +260,9 @@ roomsRouter.get('/:id', (req, res) => {
   try {
     const row = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Room not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, row.property_id)) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
     res.json(withParsedBedConfig(row));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -370,12 +379,19 @@ roomsRouter.put('/:id', (req, res) => {
   try {
     const existing = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Room not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, existing.property_id)) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
 
     const {
-      property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
+      name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
       access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available, category_id,
       bed_config,
     } = req.body;
+    // property_id is intentionally NOT destructured from the body — a room's
+    // property is immutable through this endpoint, always the room's existing
+    // value, regardless of what the client sends.
+    const property_id = existing.property_id;
 
     // Bed configuration (Phase 7a) — same not-sent-vs-cleared pattern as the
     // Access & Arrival fields below: omitted entirely leaves the existing
@@ -562,6 +578,9 @@ roomsRouter.delete('/:id', (req, res) => {
     const rid = Number(req.params.id);
     const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(rid);
     if (!room) return res.status(404).json({ error: 'Room not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, room.property_id)) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
     if (room.is_demo) return res.status(403).json({ error: 'Demo rooms cannot be deleted.' });
 
     const bookingCount = db.prepare(

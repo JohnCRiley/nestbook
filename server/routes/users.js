@@ -13,17 +13,56 @@ function actorFromReq(req) {
 // Password hashes are never returned in API responses.
 const SAFE_SELECT = 'SELECT id, property_id, name, email, role, created_at FROM users';
 
+// ── Ownership helper (mirrors rooms.js / properties.js) ───────────────────
+function canAccessProperty(userId, role, propId) {
+  const pid = Number(propId);
+  if (!pid) return false;
+  if (role === 'owner') {
+    if (db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId)) {
+      return true;
+    }
+    // Fallback: legacy users whose property predates the owner_id column.
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    if (Number(u?.property_id) === pid) {
+      db.prepare('UPDATE properties SET owner_id = ? WHERE id = ? AND owner_id IS NULL').run(userId, pid);
+      return true;
+    }
+    return false;
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return Number(u?.property_id) === pid;
+}
+
+function getUserPropertyIds(userId, role) {
+  if (role === 'owner') {
+    const ids = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId).map(p => p.id);
+    if (ids.length) return ids;
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    return u?.property_id ? [Number(u.property_id)] : [];
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return u?.property_id ? [Number(u.property_id)] : [];
+}
+
 // ── GET /api/users?property_id=1 ──────────────────────────────────────────
 usersRouter.get('/', (req, res) => {
   try {
     const { property_id } = req.query;
 
     if (property_id) {
+      if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
       const rows = db.prepare(`${SAFE_SELECT} WHERE property_id = ? ORDER BY id`).all(property_id);
       return res.json(rows);
     }
 
-    const rows = db.prepare(`${SAFE_SELECT} ORDER BY id`).all();
+    // No explicit property_id — scope to the caller's own accessible
+    // property/properties rather than returning every user on the platform.
+    const propIds = getUserPropertyIds(req.user.userId, req.user.role);
+    if (!propIds.length) return res.json([]);
+    const placeholders = propIds.map(() => '?').join(',');
+    const rows = db.prepare(`${SAFE_SELECT} WHERE property_id IN (${placeholders}) ORDER BY id`).all(...propIds);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -35,6 +74,9 @@ usersRouter.get('/:id', (req, res) => {
   try {
     const row = db.prepare(`${SAFE_SELECT} WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).json({ error: 'User not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, row.property_id)) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     res.json(row);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -52,6 +94,9 @@ usersRouter.post('/', (req, res) => {
     }
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
     }
 
     const normalEmail = email.toLowerCase().trim();
@@ -157,8 +202,11 @@ usersRouter.put('/:id/password', (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
 
-    const target = db.prepare('SELECT id, email FROM users WHERE id = ?').get(req.params.id);
+    const target = db.prepare('SELECT id, email, property_id FROM users WHERE id = ?').get(req.params.id);
     if (!target) return res.status(404).json({ error: 'User not found.' });
+    if (!canAccessProperty(req.user.userId, req.user.role, target.property_id)) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
 
     const hash = bcrypt.hashSync(newPassword, 10);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.params.id);
@@ -180,12 +228,26 @@ usersRouter.put('/:id/password', (req, res) => {
 
 // ── PUT /api/users/:id ────────────────────────────────────────────────────
 // Updates name, email and role only — password changes go through /me/password.
+// Owner-only: mirrors the existing /:id/password reset endpoint's restriction.
+// Owner status can never be granted through this generic edit route — the
+// only supported way to add an owner-role account is POST / (Invite Staff),
+// which is itself property-scoped above.
 usersRouter.put('/:id', (req, res) => {
   try {
-    const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
+    if (req.user.role !== 'owner') {
+      return res.status(403).json({ error: 'Only owners can edit staff accounts.' });
+    }
+
+    const existing = db.prepare('SELECT id, property_id, role FROM users WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ error: 'User not found' });
+    if (!canAccessProperty(req.user.userId, req.user.role, existing.property_id)) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
     const { name, email, role } = req.body;
+    if (role === 'owner' && existing.role !== 'owner') {
+      return res.status(400).json({ error: 'Owner status cannot be granted through this endpoint.' });
+    }
 
     db.prepare(`
       UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?
