@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { saApiFetch } from '../saApiFetch.js';
 import QuillEditor from '../QuillEditor.jsx';
 import TemplateManager from '../TemplateManager.jsx';
@@ -15,6 +16,24 @@ function parseAdhocEmails(text) {
       .map(e => e.trim().toLowerCase())
       .filter(e => EMAIL_RE.test(e))
   )];
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Wrap a plain-text prefill value as Quill-ready HTML (paragraphs on blank lines, <br> on single newlines).
+// Passes HTML-looking input through as-is.
+function textToQuillHtml(text) {
+  const raw = text.trim();
+  if (!raw) return '';
+  if (raw.startsWith('<')) return raw;
+  return raw.split(/\n{2,}/)
+    .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+    .join('');
 }
 
 function formatFilterDesc(b) {
@@ -77,11 +96,13 @@ function buildPreviewHtml(bodyHtml, bodyBg = 'white') {
 }
 
 export default function UserMailer() {
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState('compose');
 
-  // Compose
-  const [subject, setSubject]               = useState('');
-  const [html, setHtml]                     = useState('');
+  // Compose — initial values may be pre-filled from URL query params (?email=&subject=&body=),
+  // e.g. when navigated to from the Error Report modal's Contact button. Read once on mount.
+  const [subject, setSubject]               = useState(() => searchParams.get('subject') || '');
+  const [html, setHtml]                     = useState(() => textToQuillHtml(searchParams.get('body') || ''));
   const [bodyBg, setBodyBg]                 = useState('white');
   const [htmlMode, setHtmlMode]             = useState(false);
 
@@ -92,8 +113,9 @@ export default function UserMailer() {
   const editorRef   = useRef(null); // QuillEditor ref
   const textareaRef = useRef(null); // raw-HTML textarea ref
 
-  // Targeting
-  const [targetMode, setTargetMode]         = useState('all');
+  // Targeting — a prefilled ?email= switches away from the default "All Users" broadcast
+  // mode so the email only goes to the ad-hoc recipient, not the whole user base.
+  const [targetMode, setTargetMode]         = useState(() => searchParams.get('email') ? 'individual' : 'all');
   const [targetPlans, setTargetPlans]       = useState([]);
   const [targetLangs, setTargetLangs]       = useState([]);
   const [targetUsers, setTargetUsers]       = useState([]);
@@ -102,7 +124,7 @@ export default function UserMailer() {
   const [filterVerified, setFilterVerified] = useState(false);
 
   // Ad-hoc emails
-  const [adhocEmails, setAdhocEmails]       = useState('');
+  const [adhocEmails, setAdhocEmails]       = useState(() => searchParams.get('email') || '');
 
   // Preview count
   const [recipientCount, setRecipientCount] = useState(null);

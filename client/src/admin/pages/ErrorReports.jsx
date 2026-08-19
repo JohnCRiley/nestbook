@@ -74,6 +74,16 @@ export default function ErrorReports() {
     if (status === 'new') setNewCount((n) => n + 1);
   }
 
+  function contactReporter() {
+    if (!selected) return;
+    const params = new URLSearchParams({
+      email:   selected.user_email,
+      subject: `Re: Your NestBook report${selected.category ? ` — ${CATEGORY_LABELS[selected.category] ?? selected.category}` : ''}`,
+      body:    `Hi ${firstName(selected.user_name)},`,
+    });
+    window.open(`/app/super-admin/user-mailer?${params}`, '_blank', 'noopener,noreferrer');
+  }
+
   async function saveReport() {
     if (!selected) return;
     setSaving(true);
@@ -276,6 +286,7 @@ export default function ErrorReports() {
 
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                 <button className="btn-secondary" onClick={() => setSelected(null)}>Cancel</button>
+                <button className="btn-secondary" onClick={contactReporter}>Contact →</button>
                 <button className="btn-primary" onClick={saveReport} disabled={saving}>
                   {saving ? 'Saving…' : 'Save'}
                 </button>
@@ -300,6 +311,14 @@ function StatCard({ value, label, accent }) {
       <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>{label}</div>
     </div>
   );
+}
+
+// Best-effort first name from a full name — falls back to the name as-is when
+// it can't be sensibly split (single token, e.g. many non-Latin names).
+function firstName(fullName) {
+  const trimmed = (fullName ?? '').trim();
+  if (!trimmed) return '';
+  return trimmed.split(/\s+/)[0];
 }
 
 function fmtDate(iso) {
