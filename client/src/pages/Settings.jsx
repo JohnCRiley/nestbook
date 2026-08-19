@@ -296,10 +296,11 @@ export default function Settings() {
       .catch(() => {});
   }, []);
 
-  // Fetch iCal import feeds
+  // Fetch iCal import feeds — always scoped to the currently active property,
+  // not whichever property the server would otherwise default to.
   useEffect(() => {
     if (!activeProperty?.id) return;
-    apiFetch('/api/ical/feeds')
+    apiFetch(`/api/ical/feeds?property_id=${activeProperty.id}`)
       .then((r) => r.ok ? r.json() : { feeds: [] })
       .then((data) => setIcalFeeds(data.feeds || []))
       .catch(() => {});
@@ -321,6 +322,7 @@ export default function Settings() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          property_id: activeProperty.id,
           url: newFeedUrl,
           name: newFeedName || 'External calendar',
           room_id: newFeedRoomId || null,
@@ -331,7 +333,7 @@ export default function Settings() {
         setNewFeedUrl('');
         setNewFeedName('');
         setNewFeedRoomId('');
-        const r = await apiFetch('/api/ical/feeds');
+        const r = await apiFetch(`/api/ical/feeds?property_id=${activeProperty.id}`);
         const d = await r.json();
         setIcalFeeds(d.feeds || []);
       } else {
@@ -351,7 +353,7 @@ export default function Settings() {
 
   async function handleSyncFeed(id) {
     await apiFetch(`/api/ical/feeds/${id}/sync`, { method: 'POST' });
-    const r = await apiFetch('/api/ical/feeds');
+    const r = await apiFetch(`/api/ical/feeds?property_id=${activeProperty.id}`);
     const d = await r.json();
     setIcalFeeds(d.feeds || []);
   }

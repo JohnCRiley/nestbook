@@ -228,13 +228,51 @@ export async function syncFeed(feedId) {
 
 // ── iCal import — CRUD routes (auth-protected) ───────────────────────────────
 
-// GET /api/ical/feeds — list all feeds for this owner's property
+// ── Ownership helpers (mirror rooms.js / properties.js / guests.js) ───────
+function canAccessProperty(userId, role, propId) {
+  const pid = Number(propId);
+  if (!pid) return false;
+  if (role === 'owner') {
+    if (db.prepare('SELECT id FROM properties WHERE id = ? AND owner_id = ?').get(pid, userId)) {
+      return true;
+    }
+    const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+    if (Number(u?.property_id) === pid) {
+      db.prepare('UPDATE properties SET owner_id = ? WHERE id = ? AND owner_id IS NULL').run(userId, pid);
+      return true;
+    }
+    return false;
+  }
+  const u = db.prepare('SELECT property_id FROM users WHERE id = ?').get(userId);
+  return Number(u?.property_id) === pid;
+}
+
+// Resolves which property a request targets — same pattern as
+// guests.js/charges.js: an explicit property_id (query or body) takes
+// priority over the JWT's own propertyId, since the JWT's propertyId
+// reflects whichever property was active at login and goes stale the
+// moment a Multi-plan owner switches properties client-side without a
+// fresh login. Settings.jsx always sends the active property's id
+// explicitly for exactly this reason.
+//
+// Deliberately does NOT check ownership here — an explicit property_id the
+// caller doesn't own must be rejected outright by the caller's own
+// canAccessProperty() check, not silently swapped for their own property
+// (an earlier version of this function did that fallback-on-denial, which
+// masked the mismatch instead of surfacing a 403).
+function resolvePropertyId(req) {
+  const explicit = Number(req.query.property_id) || Number(req.body?.property_id);
+  return explicit || req.user.propertyId;
+}
+
+// GET /api/ical/feeds?property_id=X — list feeds for the given (or active) property
 icalRouter.get('/feeds', requireAuth, (req, res) => {
   try {
-    const property = db.prepare(
-      'SELECT id FROM properties WHERE owner_id = ? LIMIT 1'
-    ).get(req.user.userId);
-    if (!property) return res.status(404).json({ error: 'No property found' });
+    const propertyId = resolvePropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+    if (!canAccessProperty(req.user.userId, req.user.role, propertyId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     const feeds = db.prepare(`
       SELECT f.*, r.name AS room_name
@@ -242,7 +280,7 @@ icalRouter.get('/feeds', requireAuth, (req, res) => {
       LEFT JOIN rooms r ON r.id = f.room_id
       WHERE f.property_id = ?
       ORDER BY f.created_at ASC
-    `).all(property.id);
+    `).all(propertyId);
 
     res.json({ feeds });
   } catch (err) {
@@ -255,6 +293,9 @@ icalRouter.get('/blocks', requireAuth, (req, res) => {
   try {
     const { property_id } = req.query;
     if (!property_id) return res.status(400).json({ error: 'property_id required' });
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     const blocks = db.prepare(`
       SELECT ib.*, f.name AS feed_name
@@ -271,21 +312,22 @@ icalRouter.get('/blocks', requireAuth, (req, res) => {
   }
 });
 
-// POST /api/ical/feeds — add a new feed
+// POST /api/ical/feeds — add a new feed to the given (or active) property
 icalRouter.post('/feeds', requireAuth, async (req, res) => {
   try {
     const { url, name, room_id } = req.body;
     if (!url) return res.status(400).json({ error: 'URL required' });
 
-    const property = db.prepare(
-      'SELECT id FROM properties WHERE owner_id = ? LIMIT 1'
-    ).get(req.user.userId);
-    if (!property) return res.status(404).json({ error: 'No property found' });
+    const propertyId = resolvePropertyId(req);
+    if (!propertyId) return res.status(400).json({ error: 'property_id is required.' });
+    if (!canAccessProperty(req.user.userId, req.user.role, propertyId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
 
     if (room_id) {
       const room = db.prepare(
         'SELECT id FROM rooms WHERE id = ? AND property_id = ?'
-      ).get(room_id, property.id);
+      ).get(room_id, propertyId);
       if (!room) return res.status(400).json({ error: 'That room does not belong to this property.' });
     }
 
@@ -300,7 +342,7 @@ icalRouter.post('/feeds', requireAuth, async (req, res) => {
     const result = db.prepare(`
       INSERT INTO ical_feeds (property_id, room_id, name, url)
       VALUES (?, ?, ?, ?)
-    `).run(property.id, room_id || null, name || 'External calendar', url);
+    `).run(propertyId, room_id || null, name || 'External calendar', url);
 
     await syncFeed(result.lastInsertRowid);
 
@@ -310,16 +352,18 @@ icalRouter.post('/feeds', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/ical/feeds/:id
+// DELETE /api/ical/feeds/:id — ownership resolved from the feed's own
+// property, not a client-sent value or the caller's "first" property, so
+// this works correctly regardless of which property is active.
 icalRouter.delete('/feeds/:id', requireAuth, (req, res) => {
   try {
-    const property = db.prepare(
-      'SELECT id FROM properties WHERE owner_id = ? LIMIT 1'
-    ).get(req.user.userId);
-    if (!property) return res.status(404).json({ error: 'No property found' });
+    const feed = db.prepare('SELECT id, property_id FROM ical_feeds WHERE id = ?').get(req.params.id);
+    if (!feed) return res.status(404).json({ error: 'Feed not found.' });
+    if (!canAccessProperty(req.user.userId, req.user.role, feed.property_id)) {
+      return res.status(404).json({ error: 'Feed not found.' });
+    }
 
-    db.prepare('DELETE FROM ical_feeds WHERE id = ? AND property_id = ?')
-      .run(req.params.id, property.id);
+    db.prepare('DELETE FROM ical_feeds WHERE id = ?').run(feed.id);
 
     res.json({ success: true });
   } catch (err) {
@@ -327,10 +371,18 @@ icalRouter.delete('/feeds/:id', requireAuth, (req, res) => {
   }
 });
 
-// POST /api/ical/feeds/:id/sync — manual sync
+// POST /api/ical/feeds/:id/sync — manual sync. Previously had no ownership
+// check at all (any authenticated user could resync any feed by id); now
+// resolved and verified the same way as DELETE above.
 icalRouter.post('/feeds/:id/sync', requireAuth, async (req, res) => {
   try {
-    const count = await syncFeed(req.params.id);
+    const feed = db.prepare('SELECT id, property_id FROM ical_feeds WHERE id = ?').get(req.params.id);
+    if (!feed) return res.status(404).json({ error: 'Feed not found.' });
+    if (!canAccessProperty(req.user.userId, req.user.role, feed.property_id)) {
+      return res.status(404).json({ error: 'Feed not found.' });
+    }
+
+    const count = await syncFeed(feed.id);
     res.json({ success: true, blocked: count });
   } catch (e) {
     res.status(500).json({ error: e.message });

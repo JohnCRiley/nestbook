@@ -25,6 +25,7 @@ export function deleteUserAccount(userId) {
       db.prepare(`DELETE FROM audit_log          WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM property_expenses  WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM error_reports      WHERE property_id IN (${ph})`).run(...propIds);
+      db.prepare(`DELETE FROM guest_mailer_log   WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM room_photos        WHERE room_id IN (SELECT id FROM rooms WHERE property_id IN (${ph}))`).run(...propIds);
       db.prepare(`DELETE FROM room_charges       WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM bookings           WHERE property_id IN (${ph})`).run(...propIds);
@@ -45,6 +46,13 @@ export function deleteUserAccount(userId) {
     db.prepare('UPDATE room_charges SET voided_by  = NULL WHERE voided_by  = ?').run(userId);
     // audit_log.user_id → users(id) no CASCADE
     db.prepare('DELETE FROM audit_log    WHERE user_id = ?').run(userId);
+    // error_reports.user_id → users(id), NOT NULL, no CASCADE. The
+    // property_id-scoped delete above only catches reports tied to
+    // properties this account owns — a staff/reception account owns no
+    // properties (propIds is empty for them), so a bug report they filed
+    // themselves would otherwise still be sitting on their own user_id
+    // and block the DELETE FROM users below.
+    db.prepare('DELETE FROM error_reports WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM users         WHERE id      = ?').run(userId);
 

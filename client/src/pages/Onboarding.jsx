@@ -737,8 +737,16 @@ export default function Onboarding() {
           {renderStepContent()}
         </div>
 
-        {/* Skip link */}
-        {step < 9 && (
+        {/* Skip link — hidden on step 7 (IR room-categories list). Room
+            Categories mode was already persisted by step 6's own saveStep(),
+            so skipping here would let a property reach Finish (which locks
+            rental_type) with ir_room_mode='categories' and zero categories
+            ever created — a dead end, since every future room-creation
+            attempt requires a category_id that doesn't exist. The step's own
+            "Save and Continue" button already requires at least one named
+            category before it's enabled, so this just removes the one path
+            that bypassed that requirement. */}
+        {step < 9 && step !== 7 && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <button
               type="button"

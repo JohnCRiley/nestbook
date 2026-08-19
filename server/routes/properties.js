@@ -275,6 +275,9 @@ propertiesRouter.put('/:id', (req, res) => {
       check_in_time, check_out_time, currency, locale, theme,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time, breakfast_widget_enabled,
+      deposit_enabled, deposit_type, deposit_percentage, deposit_fixed_amount,
+      deposit_balance_due, deposit_balance_days, deposit_refundable,
+      deposit_auto_email, deposit_balance_auto_email,
       description, hero_image_url,
       rental_type, total_capacity, bedroom_count, bathroom_count, whole_property_rate,
       access_method, access_code, arrival_instructions, send_access_hours,
@@ -289,20 +292,35 @@ propertiesRouter.put('/:id', (req, res) => {
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
       lock_rental_type, ir_room_mode,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
-    const newUnSubType = VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null;
+    // Same not-sent-vs-cleared pattern as ir_room_mode below: only overwritten
+    // when the caller actually sends the field. Without this fallback, a
+    // request that omits these fields (e.g. a resumed onboarding session
+    // whose local hydration hadn't restored them) would silently reset an
+    // already-configured Self-Catering unit's sub-type config back to
+    // defaults instead of leaving it untouched.
+    const newUnSubType = un_sub_type !== undefined
+      ? (VALID_UN_SUB_TYPES.includes(un_sub_type) ? un_sub_type : null)
+      : (existing?.un_sub_type ?? null);
     // Serviced Apartment locks walk-in off regardless of what's submitted — a
     // server-side mirror of the Settings UI's disabled toggle, since remote,
     // unstaffed units can never offer walk-in bookings.
-    const newWalkIn = (newUnSubType === 'serviced_apartment') ? 0 : (walk_in_enabled ? 1 : 0);
-    const requestedBookingFlow = VALID_BOOKING_FLOWS.includes(booking_flow) ? booking_flow : 'instant';
+    const requestedWalkIn = walk_in_enabled !== undefined
+      ? (walk_in_enabled ? 1 : 0)
+      : (existing?.walk_in_enabled ?? 0);
+    const newWalkIn = (newUnSubType === 'serviced_apartment') ? 0 : requestedWalkIn;
+    const requestedBookingFlow = booking_flow !== undefined
+      ? (VALID_BOOKING_FLOWS.includes(booking_flow) ? booking_flow : 'instant')
+      : (existing?.booking_flow ?? 'instant');
     // Linked-pair rule enforced independently of the client: walk_in_enabled = 1
     // must never coexist with booking_flow = 'request'. Never trust the client
     // to have already applied this — correct it here too.
     const newBookingFlow = (newWalkIn && requestedBookingFlow === 'request') ? 'instant' : requestedBookingFlow;
-    const newServicingType = VALID_SERVICING_TYPES.includes(servicing_type) ? servicing_type : null;
+    const newServicingType = servicing_type !== undefined
+      ? (VALID_SERVICING_TYPES.includes(servicing_type) ? servicing_type : null)
+      : (existing?.servicing_type ?? null);
     const newEntryMethod = entry_method?.trim() || null;
     // Lock is per-property (rental_type_locked), not per-user. Once locked,
     // rental_type in the body is ignored and the existing value is preserved.
@@ -318,6 +336,10 @@ propertiesRouter.put('/:id', (req, res) => {
     // a routine Settings save — which doesn't send this field yet — never
     // resets it back to 'named'.
     const newIrRoomMode = VALID_IR_ROOM_MODES.includes(ir_room_mode) ? ir_room_mode : (existing?.ir_room_mode ?? 'named');
+    const VALID_DEPOSIT_TYPES = ['fixed', 'percentage', 'full'];
+    const VALID_BALANCE_DUE = ['checkin', 'days_before'];
+    const newDepositType = VALID_DEPOSIT_TYPES.includes(deposit_type) ? deposit_type : 'fixed';
+    const newBalanceDue = VALID_BALANCE_DUE.includes(deposit_balance_due) ? deposit_balance_due : 'checkin';
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?,
@@ -325,6 +347,9 @@ propertiesRouter.put('/:id', (req, res) => {
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
           breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?,
           breakfast_widget_enabled = ?,
+          deposit_enabled = ?, deposit_type = ?, deposit_percentage = ?, deposit_fixed_amount = ?,
+          deposit_balance_due = ?, deposit_balance_days = ?, deposit_refundable = ?,
+          deposit_auto_email = ?, deposit_balance_auto_email = ?,
           description = ?, hero_image_url = ?,
           rental_type = ?, total_capacity = ?, bedroom_count = ?, bathroom_count = ?,
           whole_property_rate = ?,
@@ -352,6 +377,15 @@ propertiesRouter.put('/:id', (req, res) => {
       breakfast_start_time ?? '07:00',
       breakfast_end_time   ?? '11:00',
       breakfast_widget_enabled ? 1 : 0,
+      deposit_enabled ? 1 : 0,
+      newDepositType,
+      deposit_percentage != null ? Math.max(1, Math.min(99, parseInt(deposit_percentage, 10) || 30)) : 30,
+      deposit_fixed_amount != null ? Math.max(0, parseFloat(deposit_fixed_amount) || 0) : 0,
+      newBalanceDue,
+      deposit_balance_days != null ? Math.max(1, Math.min(180, parseInt(deposit_balance_days, 10) || 7)) : 7,
+      deposit_refundable ? 1 : 0,
+      deposit_auto_email ? 1 : 0,
+      deposit_balance_auto_email ? 1 : 0,
       description || null,
       hero_image_url || null,
       newRentalType,
@@ -435,11 +469,18 @@ propertiesRouter.delete('/:id', (req, res) => {
       });
     }
 
-    // Delete in FK order: nullify staff refs → audit_log → charges → bookings → categories → rooms → property
+    // Delete in FK order: nullify staff/guest refs → audit_log/error_reports/
+    // guest_mailer_log → charges → bookings → categories → rooms → property
     try {
       db.exec('BEGIN');
       db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(pid);
+      // guests.property_id has no CASCADE — nullify rather than delete, same
+      // as deleteUserAccount.js/admin.js's account-deletion paths, so guest
+      // history tied to other properties (if any) survives independently.
+      db.prepare('UPDATE guests SET property_id = NULL WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM audit_log WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM error_reports WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM guest_mailer_log WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM room_charges WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM bookings WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(pid);

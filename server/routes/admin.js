@@ -807,6 +807,7 @@ adminRouter.delete('/users/:id', async (req, res) => {
       db.prepare(`DELETE FROM audit_log WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM property_expenses WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM error_reports WHERE property_id IN (${ph})`).run(...propIds);
+      db.prepare(`DELETE FROM guest_mailer_log WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM room_photos WHERE room_id IN (SELECT id FROM rooms WHERE property_id IN (${ph}))`).run(...propIds);
       db.prepare(`DELETE FROM room_charges WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM bookings WHERE property_id IN (${ph})`).run(...propIds);
@@ -827,6 +828,11 @@ adminRouter.delete('/users/:id', async (req, res) => {
     db.prepare('UPDATE room_charges SET voided_by = NULL WHERE voided_by = ?').run(userId);
     // audit_log.user_id → users(id) no CASCADE
     db.prepare('DELETE FROM audit_log WHERE user_id = ?').run(userId);
+    // error_reports.user_id → users(id), NOT NULL, no CASCADE — see
+    // deleteUserAccount.js for why this also needs to run unconditionally
+    // (a staff/reception account owns no properties, so the property_id
+    // -scoped delete above never catches a report they filed themselves).
+    db.prepare('DELETE FROM error_reports WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
 
