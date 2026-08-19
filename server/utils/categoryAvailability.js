@@ -14,6 +14,11 @@
  * excludes cancelled / checked_out / cancelled_unpaid bookings, overlap test
  * is check_in_date < checkOut AND check_out_date > checkIn.
  *
+ * Also excludes rooms with an overlapping ical_blocks row (an external
+ * Booking.com/Airbnb calendar import) — either scoped to that specific room
+ * or a property-wide block (room_id IS NULL) — so the pool never offers or
+ * assigns a room that's actually blocked externally.
+ *
  * respectBuffer: true holds back the LAST `buffer` rooms (by id) from the
  * returned list — the pool automatic/online booking should never draw from.
  * respectBuffer: false (owner/manual bookings) returns the full list,
@@ -37,8 +42,15 @@ export function getAvailableRoomsInCategory(db, categoryId, checkIn, checkOut, {
           AND b.check_in_date < ?
           AND b.check_out_date > ?
       )
+      AND NOT EXISTS (
+        SELECT 1 FROM ical_blocks ib
+        WHERE (ib.room_id IS NULL OR ib.room_id = rooms.id)
+          AND ib.property_id = rooms.property_id
+          AND ib.start_date < ?
+          AND ib.end_date > ?
+      )
     ORDER BY id ASC
-  `).all(categoryId, minCapacity, minCapacity, checkOut, checkIn);
+  `).all(categoryId, minCapacity, minCapacity, checkOut, checkIn, checkOut, checkIn);
 
   let ids = rows.map((r) => r.id);
 

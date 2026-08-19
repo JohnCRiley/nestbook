@@ -131,6 +131,7 @@ export default function Settings() {
   const [icalFeeds,            setIcalFeeds]            = useState([]);
   const [newFeedUrl,           setNewFeedUrl]           = useState('');
   const [newFeedName,          setNewFeedName]          = useState('');
+  const [newFeedRoomId,        setNewFeedRoomId]        = useState('');
   const [addingFeed,           setAddingFeed]           = useState(false);
   const [removePropertyTarget, setRemovePropertyTarget] = useState(null); // property object | null
   const [theme,            setTheme]            = useState('forest');
@@ -319,12 +320,17 @@ export default function Settings() {
       const res = await apiFetch('/api/ical/feeds', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: newFeedUrl, name: newFeedName || 'External calendar' }),
+        body: JSON.stringify({
+          url: newFeedUrl,
+          name: newFeedName || 'External calendar',
+          room_id: newFeedRoomId || null,
+        }),
       });
       const data = await res.json();
       if (data.success) {
         setNewFeedUrl('');
         setNewFeedName('');
+        setNewFeedRoomId('');
         const r = await apiFetch('/api/ical/feeds');
         const d = await r.json();
         setIcalFeeds(d.feeds || []);
@@ -1524,7 +1530,12 @@ export default function Settings() {
                             gap: 12,
                           }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{feed.name}</div>
+                              <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                                {feed.name}
+                                <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 8, fontSize: '0.76rem' }}>
+                                  — {feed.room_name || 'Whole property'}
+                                </span>
+                              </div>
                               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
                                 {feed.last_synced_at
                                   ? `Last synced: ${new Date(feed.last_synced_at).toLocaleString('en-GB')}`
@@ -1596,6 +1607,24 @@ export default function Settings() {
                           style={{ width: '100%' }}
                         />
                       </div>
+                      {activeProperty?.rental_type !== 'whole_property' && (
+                        <div style={{ marginBottom: 10 }}>
+                          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, color: 'var(--text-secondary)' }}>
+                            Applies to
+                          </label>
+                          <select
+                            value={newFeedRoomId}
+                            onChange={(e) => setNewFeedRoomId(e.target.value)}
+                            className="form-control"
+                            style={{ width: '100%' }}
+                          >
+                            <option value="">Whole property (blocks every room/unit)</option>
+                            {rooms.filter((r) => !r.parent_unit_id).map((r) => (
+                              <option key={r.id} value={r.id}>{r.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <button
                         onClick={handleAddFeed}
                         disabled={!newFeedUrl || addingFeed}

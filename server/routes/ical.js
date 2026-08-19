@@ -274,6 +274,13 @@ icalRouter.post('/feeds', requireAuth, async (req, res) => {
     ).get(req.user.userId);
     if (!property) return res.status(404).json({ error: 'No property found' });
 
+    if (room_id) {
+      const room = db.prepare(
+        'SELECT id FROM rooms WHERE id = ? AND property_id = ?'
+      ).get(room_id, property.id);
+      if (!room) return res.status(400).json({ error: 'That room does not belong to this property.' });
+    }
+
     try {
       await fetchIcalUrl(url);
     } catch {
