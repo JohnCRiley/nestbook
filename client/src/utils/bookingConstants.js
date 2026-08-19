@@ -8,6 +8,7 @@ export const BADGE_CLASS = {
   cancelled_unpaid:        'badge badge-cancelled',
   pending_owner_approval:  'badge badge-pending',
   declined:                'badge badge-declined',
+  confirmed_conflict:      'badge badge-cancelled',
 };
 
 export const BADGE_LABEL = {
@@ -18,6 +19,7 @@ export const BADGE_LABEL = {
   cancelled_unpaid:        'Unpaid',
   pending_owner_approval:  'Pending Approval',
   declined:                'Declined',
+  confirmed_conflict:      'Payment Conflict',
 };
 
 export const SOURCE_LABELS = {

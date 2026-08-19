@@ -607,7 +607,7 @@ export async function stripeWebhookHandler(req, res) {
               SELECT id FROM bookings
               WHERE room_id = ?
                 AND id != ?
-                AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'pending_payment')
+                AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'pending_payment', 'declined')
                 AND check_in_date < ?
                 AND check_out_date > ?
             `).get(pendingBooking.room_id, bookingId, pendingBooking.check_out_date, pendingBooking.check_in_date);

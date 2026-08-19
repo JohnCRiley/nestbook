@@ -119,7 +119,7 @@ function hasOverlap(roomId, checkIn, checkOut, excludeId = null) {
   const sql = `
     SELECT id FROM bookings
     WHERE room_id = ?
-      AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
+      AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
       AND check_in_date < ?
       AND check_out_date > ?
       ${excludeId ? 'AND id != ?' : ''}
@@ -129,8 +129,10 @@ function hasOverlap(roomId, checkIn, checkOut, excludeId = null) {
 }
 
 // ── GET /api/bookings/pending-count ──────────────────────────────────────────
-// Returns the count of pending_owner_approval bookings for the owner's properties.
-// Used by Sidebar for the live badge. Must be before /:id.
+// Returns the count of pending_owner_approval bookings for the owner's properties,
+// plus the count of confirmed_conflict bookings (a Stripe payment that confirmed
+// against a room already booked elsewhere — flagged for manual review, see
+// routes/stripe.js). Used by Sidebar for the live badges. Must be before /:id.
 bookingsRouter.get('/pending-count', (req, res) => {
   try {
     const row = db.prepare(`
@@ -140,7 +142,14 @@ bookingsRouter.get('/pending-count', (req, res) => {
       WHERE p.owner_id = ?
         AND b.status = 'pending_owner_approval'
     `).get(req.user.userId);
-    res.json({ count: row.count });
+    const conflictRow = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM bookings b
+      JOIN properties p ON p.id = b.property_id
+      WHERE p.owner_id = ?
+        AND b.status = 'confirmed_conflict'
+    `).get(req.user.userId);
+    res.json({ count: row.count, conflicts: conflictRow.count });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -306,6 +315,7 @@ bookingsRouter.get('/counts', (req, res) => {
       cancelled:        db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled'`).get(property_id).n,
       pending:          db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'pending_owner_approval'`).get(property_id).n,
       cancelled_unpaid: db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'cancelled_unpaid'`).get(property_id).n,
+      conflicts:        db.prepare(`SELECT COUNT(*) as n ${base} AND b.status = 'confirmed_conflict'`).get(property_id).n,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -359,6 +369,7 @@ bookingsRouter.get('/', (req, res) => {
         case 'cancelled':        conditions.push("b.status = 'cancelled'");   break;
         case 'pending':          conditions.push("b.status = 'pending_owner_approval'"); break;
         case 'cancelled_unpaid': conditions.push("b.status = 'cancelled_unpaid'"); break;
+        case 'conflicts':        conditions.push("b.status = 'confirmed_conflict'"); break;
       }
     }
 
@@ -406,7 +417,7 @@ bookingsRouter.get('/booked-rooms', (req, res) => {
       SELECT DISTINCT room_id FROM bookings
       WHERE property_id = ?
         AND room_id IS NOT NULL
-        AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
+        AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
         AND check_in_date < ?
         AND check_out_date > ?
     `).all(property_id, check_out_date, check_in_date);

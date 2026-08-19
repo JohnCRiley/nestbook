@@ -38,7 +38,7 @@ export function getAvailableRoomsInCategory(db, categoryId, checkIn, checkOut, {
       AND NOT EXISTS (
         SELECT 1 FROM bookings b
         WHERE b.room_id = rooms.id
-          AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid')
+          AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
           AND b.check_in_date < ?
           AND b.check_out_date > ?
       )

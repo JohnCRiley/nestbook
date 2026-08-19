@@ -500,6 +500,7 @@
         b.room_id === room.id &&
         b.status !== 'cancelled' &&
         b.status !== 'checked_out' &&
+        b.status !== 'declined' &&
         b.check_in_date < checkOut &&
         b.check_out_date > checkIn
       );
@@ -519,6 +520,7 @@
         b.room_id === room.id &&
         b.status !== 'cancelled' &&
         b.status !== 'checked_out' &&
+        b.status !== 'declined' &&
         b.check_in_date < checkOut &&
         b.check_out_date > checkIn
       );
@@ -580,6 +582,7 @@
         const propertyBooked = bookings.some((b) =>
           b.status !== 'cancelled' &&
           b.status !== 'checked_out' &&
+          b.status !== 'declined' &&
           b.check_in_date < S.checkOut &&
           b.check_out_date > S.checkIn
         );

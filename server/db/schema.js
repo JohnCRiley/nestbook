@@ -472,11 +472,18 @@ export function initSchema() {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rooms_property     ON rooms(property_id)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_guests_name        ON guests(last_name, first_name)`);
 
-  // Auto-advance: mark bookings whose check-out date has passed as checked_out
+  // Auto-advance: mark bookings whose check-out date has passed as checked_out.
+  // Whitelisted to the statuses that represent a real, progressing stay
+  // (confirmed/arriving/in_house) rather than excluding every other status by
+  // name — that approach silently fell behind as pending_owner_approval,
+  // pending_payment, cancelled_unpaid and confirmed_conflict were added later,
+  // each of which this job would otherwise have promoted straight to
+  // checked_out once its check_out_date passed, with no human ever having
+  // approved, paid, or resolved it.
   const advanced = db.prepare(
     `UPDATE bookings SET status = 'checked_out'
      WHERE check_out_date < date('now')
-       AND status NOT IN ('cancelled', 'checked_out', 'declined')`
+       AND status IN ('confirmed', 'arriving', 'in_house')`
   ).run();
   if (advanced.changes > 0) console.log(`✓ Auto-advanced ${advanced.changes} past booking(s) to checked_out.`);
 

@@ -72,15 +72,20 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tabletExpanded, setTabletExpanded] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [conflictCount, setConflictCount] = useState(0);
   const sidebarRef = useRef(null);
 
-  // Poll for pending approval count every 60 s (owner role only)
+  // Poll for pending approval + payment-conflict counts every 60 s (owner role only)
   useEffect(() => {
     if (user?.role !== 'owner') return;
     function fetchPending() {
       apiFetch('/api/bookings/pending-count')
         .then((r) => r.ok ? r.json() : null)
-        .then((d) => { if (d) setPendingCount(d.count ?? 0); })
+        .then((d) => {
+          if (!d) return;
+          setPendingCount(d.count ?? 0);
+          setConflictCount(d.conflicts ?? 0);
+        })
         .catch(() => {});
     }
     fetchPending();
@@ -208,12 +213,23 @@ export default function Sidebar() {
               >
                 <Icon />
                 <span className="nav-link-label">{label}</span>
+                {key === 'bookings' && conflictCount > 0 && (
+                  <span style={{
+                    background: '#dc2626', color: 'white',
+                    borderRadius: 10, padding: '1px 7px',
+                    fontSize: '0.7rem', fontWeight: 700,
+                    marginLeft: 'auto', lineHeight: 1.6,
+                    flexShrink: 0,
+                  }}>
+                    {conflictCount}
+                  </span>
+                )}
                 {key === 'bookings' && pendingCount > 0 && (
                   <span style={{
                     background: '#f59e0b', color: 'white',
                     borderRadius: 10, padding: '1px 7px',
                     fontSize: '0.7rem', fontWeight: 700,
-                    marginLeft: 'auto', lineHeight: 1.6,
+                    marginLeft: conflictCount > 0 ? 4 : 'auto', lineHeight: 1.6,
                     flexShrink: 0,
                   }}>
                     {pendingCount}
