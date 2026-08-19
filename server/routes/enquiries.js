@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import db from '../db/database.js';
-import { sendApprovalRequestEmail } from '../email/emailService.js';
+import { sendApprovalRequestEmail, sendEnquiryReceivedEmail } from '../email/emailService.js';
 import { Resend } from 'resend';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 
@@ -125,6 +125,17 @@ enquiriesRouter.post('/', async (req, res) => {
 
       sendApprovalRequestEmail(bookingForEmail, property, approveUrl, declineUrl).catch(() => {});
 
+      // Immediate receipt, separate from the approve/decline outcome email
+      // above (which only fires once the owner acts) — confirms the request
+      // itself was received.
+      sendEnquiryReceivedEmail({
+        guestFirstName: firstName,
+        guestEmail:      guestEmail.trim(),
+        checkInDate:     checkIn,
+        checkOutDate:    checkOut,
+        numGuests,
+      }, property).catch(() => {});
+
       console.log(`[enquiry] Booking request #${bookingId} created for property ${propertyId} from ${guestEmail}`);
       return res.json({ success: true });
     } catch (err) {
@@ -195,6 +206,19 @@ enquiriesRouter.post('/', async (req, res) => {
   } else {
     console.log(`[enquiry] Email skipped (Resend not configured). Enquiry from: ${guestEmail} for property: ${propertyId}`);
   }
+
+  // Immediate receipt to the guest — this branch has no bookings row and no
+  // approve/decline outcome email at all (the owner just replies directly to
+  // the enquiry email above), so this is the guest's only confirmation their
+  // submission arrived.
+  const wpFirstName = guestName.trim().split(/\s+/)[0];
+  sendEnquiryReceivedEmail({
+    guestFirstName: wpFirstName,
+    guestEmail:      guestEmail.trim(),
+    checkInDate:     checkIn,
+    checkOutDate:    checkOut,
+    numGuests:       parseInt(guests, 10) || null,
+  }, property).catch(() => {});
 
   console.log(`[enquiry] Enquiry for property ${propertyId} from ${guestEmail}`);
   res.json({ success: true });

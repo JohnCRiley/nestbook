@@ -62,7 +62,7 @@
       checkAvailability: 'Check Availability',
       noRooms: 'No rooms are available for those dates. Please try different dates.',
       noRoomsCapacity: (n) => `No rooms available for ${n} guests. Please try fewer guests or a different room.`,
-      capacity: 'Up to', perNight: '/night',
+      capacity: 'Up to', perNight: '/night', priceFrom: 'From',
       firstName: 'First Name *', lastName: 'Last Name *',
       email: 'Email Address *', phone: 'Phone Number',
       notes: 'Special Requests', optional: '(optional)',
@@ -105,6 +105,7 @@
       pendingEmailNote: "You'll receive an email as soon as the owner confirms your booking.",
       bookRoom: 'Book this room →',
       clearDates: 'Clear', today: 'Today',
+      dateUnavailable: 'Not available',
       roomFallbackNotice: "Your selected room isn't available for these dates — here are the other options:",
       bedTypeSingle: 'Single Bed', bedTypeDouble: 'Double Bed', bedTypeQueen: 'Queen Bed',
       bedTypeKing: 'King Bed', bedTypeSofaBed: 'Sofa Bed', bedTypeBunkBed: 'Bunk Bed',
@@ -127,7 +128,7 @@
       checkAvailability: 'Vérifier la disponibilité',
       noRooms: 'Aucune chambre disponible pour ces dates. Veuillez essayer d\'autres dates.',
       noRoomsCapacity: (n) => `Aucune chambre disponible pour ${n} personnes. Essayez avec moins de personnes ou une autre chambre.`,
-      capacity: "Jusqu'à", perNight: '/nuit',
+      capacity: "Jusqu'à", perNight: '/nuit', priceFrom: 'À partir de',
       firstName: 'Prénom *', lastName: 'Nom *',
       email: 'Adresse e-mail *', phone: 'Téléphone',
       notes: 'Demandes spéciales', optional: '(facultatif)',
@@ -170,6 +171,7 @@
       pendingEmailNote: 'Vous recevrez un e-mail dès que le propriétaire aura confirmé votre réservation.',
       bookRoom: 'Réserver cette chambre →',
       clearDates: 'Effacer', today: "Aujourd'hui",
+      dateUnavailable: 'Non disponible',
       roomFallbackNotice: "La chambre sélectionnée n'est pas disponible à ces dates — voici les autres options :",
       bedTypeSingle: 'Lit simple', bedTypeDouble: 'Lit double', bedTypeQueen: 'Lit Queen',
       bedTypeKing: 'Lit King', bedTypeSofaBed: 'Canapé-lit', bedTypeBunkBed: 'Lit superposé',
@@ -192,7 +194,7 @@
       checkAvailability: 'Comprobar disponibilidad',
       noRooms: 'No hay habitaciones disponibles para esas fechas. Pruebe otras fechas.',
       noRoomsCapacity: (n) => `No hay habitaciones disponibles para ${n} huéspedes. Pruebe con menos huéspedes o con otra habitación.`,
-      capacity: 'Hasta', perNight: '/noche',
+      capacity: 'Hasta', perNight: '/noche', priceFrom: 'Desde',
       firstName: 'Nombre *', lastName: 'Apellido *',
       email: 'Correo electrónico *', phone: 'Teléfono',
       notes: 'Peticiones especiales', optional: '(opcional)',
@@ -235,6 +237,7 @@
       pendingEmailNote: 'Recibirá un correo en cuanto el propietario confirme su reserva.',
       bookRoom: 'Reservar esta habitación →',
       clearDates: 'Limpiar', today: 'Hoy',
+      dateUnavailable: 'No disponible',
       roomFallbackNotice: 'La habitación seleccionada no está disponible para estas fechas — aquí tienes otras opciones:',
       bedTypeSingle: 'Cama individual', bedTypeDouble: 'Cama doble', bedTypeQueen: 'Cama Queen',
       bedTypeKing: 'Cama King', bedTypeSofaBed: 'Sofá cama', bedTypeBunkBed: 'Litera',
@@ -257,7 +260,7 @@
       checkAvailability: 'Beschikbaarheid controleren',
       noRooms: 'Geen kamers beschikbaar voor deze datums. Kies andere datums.',
       noRoomsCapacity: (n) => `Geen kamers beschikbaar voor ${n} gasten. Probeer minder gasten of een andere kamer.`,
-      capacity: 'Maximaal', perNight: '/nacht',
+      capacity: 'Maximaal', perNight: '/nacht', priceFrom: 'Vanaf',
       firstName: 'Voornaam *', lastName: 'Achternaam *',
       email: 'E-mailadres *', phone: 'Telefoonnummer',
       notes: 'Speciale verzoeken', optional: '(optioneel)',
@@ -300,6 +303,7 @@
       pendingEmailNote: 'U ontvangt een e-mail zodra de eigenaar uw boeking heeft bevestigd.',
       bookRoom: 'Kamer boeken →',
       clearDates: 'Wissen', today: 'Vandaag',
+      dateUnavailable: 'Niet beschikbaar',
       roomFallbackNotice: 'De geselecteerde kamer is niet beschikbaar voor deze data — hier zijn de andere opties:',
       bedTypeSingle: 'Eenpersoonsbed', bedTypeDouble: 'Tweepersoonsbed', bedTypeQueen: 'Queen-size bed',
       bedTypeKing: 'King-size bed', bedTypeSofaBed: 'Slaapbank', bedTypeBunkBed: 'Stapelbed',
@@ -322,7 +326,7 @@
       checkAvailability: 'Verfügbarkeit prüfen',
       noRooms: 'Keine Zimmer verfügbar für diese Daten. Bitte andere Daten wählen.',
       noRoomsCapacity: (n) => `Keine Zimmer für ${n} Gäste verfügbar. Bitte versuchen Sie es mit weniger Gästen oder einem anderen Zimmer.`,
-      capacity: 'Bis zu', perNight: '/Nacht',
+      capacity: 'Bis zu', perNight: '/Nacht', priceFrom: 'Ab',
       firstName: 'Vorname *', lastName: 'Nachname *',
       email: 'E-Mail-Adresse *', phone: 'Telefon',
       notes: 'Besondere Wünsche', optional: '(optional)',
@@ -365,6 +369,7 @@
       pendingEmailNote: 'Sie erhalten eine E-Mail, sobald der Gastgeber Ihre Buchung bestätigt hat.',
       bookRoom: 'Zimmer buchen →',
       clearDates: 'Löschen', today: 'Heute',
+      dateUnavailable: 'Nicht verfügbar',
       roomFallbackNotice: 'Das ausgewählte Zimmer ist für diese Daten nicht verfügbar — hier sind die anderen Optionen:',
       bedTypeSingle: 'Einzelbett', bedTypeDouble: 'Doppelbett', bedTypeQueen: 'Queen-Size-Bett',
       bedTypeKing: 'King-Size-Bett', bedTypeSofaBed: 'Schlafsofa', bedTypeBunkBed: 'Etagenbett',
@@ -416,6 +421,11 @@
     allBookings:    [],
     availableRooms: [],
     selectedRoom:   null,
+    // Step 1 calendar — { "YYYY-MM-DD": "available" | "booked" }, fetched
+    // once when the modal opens (see openModal()) and read by renderCalendar().
+    // Empty until the fetch resolves, so early paints just show no booked
+    // styling yet rather than blocking the calendar from rendering at all.
+    dayAvailability: {},
     guest:          { firstName: '', lastName: '', email: '', phone: '', notes: '' },
     bookingRef:          null,
     loading:             false,
@@ -543,6 +553,25 @@
       throw err;
     }
     return res.json();
+  }
+
+  // Fetches the Step 1 calendar's per-day availability map and re-renders once
+  // it lands. Fire-and-forget from openModal() — the modal opens immediately
+  // either way, this just fills in the booked/available styling a moment
+  // later. A failed fetch leaves S.dayAvailability empty, which renderCalendar()
+  // already treats the same as "not loaded yet" (no booked styling shown) —
+  // this never blocks the guest from picking dates, it only degrades the
+  // calendar back to today's plain past/today/range display.
+  async function loadDayAvailability(roomId) {
+    try {
+      const path = '/api/widget/day-availability?property_id=' + PROPERTY_ID +
+        (roomId ? '&room_id=' + roomId : '');
+      S.dayAvailability = await apiFetch(path);
+    } catch (err) {
+      console.error('[NestBook widget] loadDayAvailability failed:', err);
+      return;
+    }
+    if (S.step === 1) render();
   }
 
   async function loadAvailability() {
@@ -811,6 +840,20 @@
         S.selectedCategory   = null;
         try {
           S.availableCategories = await apiFetch(categoriesPath());
+        } catch (_) { /* keep the stale list rather than crash */ }
+      } else if (err.status === 409) {
+        // Same race, Named Rooms/Units mode — the selected room/unit was
+        // taken between browsing and submission. Mirrors the Categories
+        // branch above: a specific notice (roomFallbackNotice, the same one
+        // renderStep2() already shows when a preselected room turns out
+        // unavailable on load) plus a refreshed room list, instead of the
+        // generic errServer dead end.
+        S.roomFallbackNotice = T.roomFallbackNotice;
+        S.step               = 2;
+        S.selectedRoom       = null;
+        try {
+          S.allBookings     = await apiFetch('/api/widget/bookings?property_id=' + PROPERTY_ID);
+          S.availableRooms  = getRoomsAvailable(S.allRooms, S.allBookings, S.checkIn, S.checkOut, S.numGuests);
         } catch (_) { /* keep the stale list rather than crash */ }
       } else {
         S.error = T.errServer;
@@ -1123,12 +1166,19 @@
   transition: background 0.08s, color 0.08s;
   -webkit-tap-highlight-color: transparent;
 }
-.nb-cal-day:hover:not(.nb-cal-past):not(.nb-cal-empty) {
+.nb-cal-day:hover:not(.nb-cal-past):not(.nb-cal-booked):not(.nb-cal-empty) {
   background: ${BRAND_LIGHT};
   color: ${BRAND_DARK};
 }
 .nb-cal-day.nb-cal-empty { cursor: default; pointer-events: none; }
 .nb-cal-day.nb-cal-past  { color: #d1d5db; cursor: default; pointer-events: none; }
+.nb-cal-day.nb-cal-booked {
+  background: #f1f5f9;
+  color: #cbd5e1;
+  text-decoration: line-through;
+  cursor: default;
+  pointer-events: none;
+}
 .nb-cal-day.nb-cal-today { font-weight: 700; }
 .nb-cal-day.nb-cal-today::after {
   content: '';
@@ -1745,9 +1795,15 @@
       const isEnd   = iso === S.checkOut;
       const inRange = !!(S.checkIn && S.checkOut && iso > S.checkIn && iso < S.checkOut);
       const isToday = iso === today;
+      // Booked/ical_blocks-blocked, per the day-availability map fetched in
+      // openModal(). Never true for a day already picked as check-in or
+      // check-out — a stale map shouldn't fight a selection the guest already
+      // made and is looking at right now.
+      const isBooked = !isStart && !isEnd && S.dayAvailability[iso] === 'booked';
 
       let cls = 'nb-cal-day';
       if (isPast)   cls += ' nb-cal-past';
+      if (isBooked) cls += ' nb-cal-booked';
       if (isToday)  cls += ' nb-cal-today';
       if (isStart)  cls += ' nb-cal-start';
       if (isEnd)    cls += ' nb-cal-end';
@@ -1756,8 +1812,9 @@
       const cell = el('div', cls);
       cell.appendChild(txt(d));
       cell.dataset.date = iso;
+      if (isBooked) cell.setAttribute('aria-label', T.dateUnavailable);
 
-      if (!isPast) {
+      if (!isPast && !isBooked) {
         cell.addEventListener('click', () => {
           if (CAL.picking === 'out' && S.checkIn) {
             if (iso > S.checkIn) {
@@ -2078,6 +2135,8 @@
         const type = el('div', 'nb-room-type'); type.appendChild(txt(room.type));
         nameBlock.appendChild(name); nameBlock.appendChild(type);
         const priceEl = el('div', 'nb-room-price');
+        const fromEl = el('span', ''); fromEl.appendChild(txt(T.priceFrom + ' '));
+        priceEl.appendChild(fromEl);
         priceEl.appendChild(txt(CUR_SYMBOL + room.price_per_night));
         const perN = el('span', ''); perN.appendChild(txt(T.perNight));
         priceEl.appendChild(perN);
@@ -2176,9 +2235,16 @@
         const name = el('div', 'nb-room-name'); name.appendChild(txt(category.name));
         nameBlock.appendChild(name);
         const priceEl = el('div', 'nb-room-price');
-        priceEl.appendChild(txt(category.price_min === category.price_max
-          ? CUR_SYMBOL + category.price_min
-          : CUR_SYMBOL + category.price_min + '–' + CUR_SYMBOL + category.price_max));
+        // Single price gets the "From" prefix, same as room/unit cards. A
+        // genuine min-max range across the category's rooms already conveys
+        // "prices vary" on its own, so it's left unprefixed.
+        if (category.price_min === category.price_max) {
+          const fromEl = el('span', ''); fromEl.appendChild(txt(T.priceFrom + ' '));
+          priceEl.appendChild(fromEl);
+          priceEl.appendChild(txt(CUR_SYMBOL + category.price_min));
+        } else {
+          priceEl.appendChild(txt(CUR_SYMBOL + category.price_min + '–' + CUR_SYMBOL + category.price_max));
+        }
         const perN = el('span', ''); perN.appendChild(txt(T.perNight));
         priceEl.appendChild(perN);
         hd.appendChild(nameBlock); hd.appendChild(priceEl);
@@ -2294,6 +2360,8 @@
       const name = el('div', 'nb-room-name'); name.appendChild(txt(room.name));
       nameBlock.appendChild(name);
       const priceEl = el('div', 'nb-room-price');
+      const fromEl = el('span', ''); fromEl.appendChild(txt(T.priceFrom + ' '));
+      priceEl.appendChild(fromEl);
       priceEl.appendChild(txt(CUR_SYMBOL + room.price_per_night));
       const perN = el('span', ''); perN.appendChild(txt(T.perNight));
       priceEl.appendChild(perN);
@@ -2697,11 +2765,13 @@
       preselectedCategoryId: preselectedCategory,
       roomFallbackNotice: null,
       categoryFallbackNotice: null,
+      dayAvailability: {},
     });
     overlay.style.display = 'block';
     window.addEventListener('wheel', _bgScrollBlock, { passive: false });
     window.addEventListener('touchmove', _bgScrollBlock, { passive: false });
     render();
+    loadDayAvailability(preselected);
   }
 
   function closeModal() {

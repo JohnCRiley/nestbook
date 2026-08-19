@@ -84,6 +84,121 @@ widgetRouter.get('/rooms', (req, res) => {
   }
 });
 
+function localDateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// ── GET /api/widget/day-availability?property_id=X&room_id=Y ─────────────────
+// Returns a ~365-day map of { "YYYY-MM-DD": "available" | "booked" } for the
+// widget's own Step 1 date-picker. A separate implementation from
+// bookingPage.js's read-only calendars (no shared code between the two files),
+// but drawing on the same two data sources — bookings and ical_blocks — with
+// the same scoping convention used everywhere else (room_id IS NULL on an
+// ical_blocks row means property-wide).
+//
+// room_id (optional) — set when the guest arrived via a specific room's/
+// unit's "Book this room" button, so the calendar reflects exactly what
+// they're about to book. Without it, the map is pooled across every
+// bookable room/unit/category so browsing guests see an honest picture
+// before they've chosen anything: a date is 'available' if at least one
+// slot is free that day, mirroring bookingPage.js's own Categories-mode
+// pooling convention.
+widgetRouter.get('/day-availability', (req, res) => {
+  try {
+    const { property_id, room_id } = req.query;
+    if (!property_id) return res.status(400).json({ error: 'property_id is required' });
+    if (!widgetPropertyGuard(property_id)) {
+      return res.status(403).json({ error: 'Widget not available for this property' });
+    }
+
+    const property = db.prepare('SELECT rental_type, ir_room_mode FROM properties WHERE id = ?').get(property_id);
+    if (!property) return res.status(404).json({ error: 'Property not found' });
+
+    const map  = {};
+    const base = new Date();
+
+    if (room_id) {
+      const roomIdNum = Number(room_id);
+      const bookings = db.prepare(`
+        SELECT check_in_date, check_out_date FROM bookings
+        WHERE room_id = ? AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
+      `).all(roomIdNum);
+      const blocks = db.prepare(`
+        SELECT start_date, end_date FROM ical_blocks
+        WHERE property_id = ? AND (room_id IS NULL OR room_id = ?) AND end_date >= date('now')
+      `).all(property_id, roomIdNum);
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(base); d.setDate(base.getDate() + i);
+        const s = localDateStr(d);
+        const blocked = bookings.some((b) => b.check_in_date <= s && b.check_out_date > s) ||
+          blocks.some((b) => b.start_date <= s && b.end_date > s);
+        map[s] = blocked ? 'booked' : 'available';
+      }
+    } else if (property.rental_type === 'whole_property') {
+      const bookings = db.prepare(`
+        SELECT b.check_in_date, b.check_out_date
+        FROM bookings b JOIN rooms r ON r.id = b.room_id
+        WHERE r.property_id = ? AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
+      `).all(property_id);
+      const blocks = db.prepare(`
+        SELECT start_date, end_date FROM ical_blocks WHERE property_id = ? AND end_date >= date('now')
+      `).all(property_id);
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(base); d.setDate(base.getDate() + i);
+        const s = localDateStr(d);
+        const blocked = bookings.some((b) => b.check_in_date <= s && b.check_out_date > s) ||
+          blocks.some((b) => b.start_date <= s && b.end_date > s);
+        map[s] = blocked ? 'booked' : 'available';
+      }
+    } else if (property.rental_type === 'rooms' && property.ir_room_mode === 'categories') {
+      const categories = db.prepare('SELECT id FROM room_categories WHERE property_id = ?').all(property_id);
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(base); d.setDate(base.getDate() + i);
+        const s = localDateStr(d);
+        const next = new Date(d); next.setDate(d.getDate() + 1);
+        const nextS = localDateStr(next);
+        const available = categories.some((cat) =>
+          getAvailableRoomsInCategory(db, cat.id, s, nextS, { respectBuffer: true }).length > 0
+        );
+        map[s] = available ? 'available' : 'booked';
+      }
+    } else {
+      // Named Rooms or Units — pool across every bookable room/unit
+      // (parent_unit_id IS NULL excludes a unit's internal display-only rooms).
+      const rooms = db.prepare(`
+        SELECT id FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL
+      `).all(property_id);
+      const roomIds = rooms.map((r) => r.id);
+      if (roomIds.length === 0) { res.json({}); return; }
+
+      const placeholders = roomIds.map(() => '?').join(', ');
+      const bookings = db.prepare(`
+        SELECT room_id, check_in_date, check_out_date FROM bookings
+        WHERE room_id IN (${placeholders}) AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
+      `).all(...roomIds);
+      const blocks = db.prepare(`
+        SELECT room_id, start_date, end_date FROM ical_blocks
+        WHERE property_id = ? AND end_date >= date('now')
+      `).all(property_id);
+
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(base); d.setDate(base.getDate() + i);
+        const s = localDateStr(d);
+        const available = roomIds.some((rid) => {
+          const roomBooked = bookings.some((b) => b.room_id === rid && b.check_in_date <= s && b.check_out_date > s);
+          const roomBlocked = blocks.some((b) => (b.room_id === null || b.room_id === rid) && b.start_date <= s && b.end_date > s);
+          return !roomBooked && !roomBlocked;
+        });
+        map[s] = available ? 'available' : 'booked';
+      }
+    }
+
+    res.json(map);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/widget/rate-periods?property_id=X ───────────────────────────────
 // Returns rate periods so the widget can show seasonal prices to guests.
 widgetRouter.get('/rate-periods', (req, res) => {

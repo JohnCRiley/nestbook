@@ -421,7 +421,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     ${allThumbs.length > 1 ? `<div class="ws-thumb-col">${thumbsHtml}</div>` : ''}
   </div>
   <div class="ws-details">
-    <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
+    <div class="room-price"><span class="room-price-unit" data-i18n="page.priceFrom">From</span> ${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
     <div class="ws-details-row">
       <div class="ws-details-text">
         ${capacityHtml || amenityChips ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}</div>` : ''}
@@ -537,7 +537,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
       <h3>${esc(room.name)}</h3>
       <span class="room-type-badge">${esc(typeLabel)}</span>
     </div>
-    <div class="room-price">${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
+    <div class="room-price"><span class="room-price-unit" data-i18n="page.priceFrom">From</span> ${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
     ${bfBadge}
@@ -577,8 +577,12 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
     const prices = catRooms.map(r => Number(r.price_per_night ?? 0)).filter(p => p > 0);
     const minPrice = prices.length ? Math.min(...prices) : 0;
     const maxPrice = prices.length ? Math.max(...prices) : 0;
+    // Single price gets the same "From" prefix as room/unit cards (base
+    // rate, not a live seasonal calculation — see roomCard()). A genuine
+    // min–max range across the category's rooms already conveys "prices
+    // vary" on its own, so it's left as-is rather than also prefixed.
     const priceHtml = minPrice === maxPrice
-      ? `${esc(currSym)}${esc(minPrice.toFixed(0))}`
+      ? `<span class="room-price-unit" data-i18n="page.priceFrom">From</span> ${esc(currSym)}${esc(minPrice.toFixed(0))}`
       : `${esc(currSym)}${esc(minPrice.toFixed(0))}–${esc(currSym)}${esc(maxPrice.toFixed(0))}`;
 
     const capacities = catRooms.map(r => Number(r.capacity ?? 0)).filter(c => c > 0);
@@ -2633,6 +2637,7 @@ var I18N = {
     "page.availability":      "Availability",
     "page.bookNow":           "Ready to book?",
     "page.perNight":          "per night",
+    "page.priceFrom":         "From",
     "page.upTo":              "Up to",
     "page.guests":            "guests",
     "page.breakfastIncluded": "Breakfast included",
@@ -2680,6 +2685,7 @@ var I18N = {
     "page.availability":      "Disponibilités",
     "page.bookNow":           "Prêt à réserver ?",
     "page.perNight":          "par nuit",
+    "page.priceFrom":         "À partir de",
     "page.upTo":              "Jusqu'à",
     "page.guests":            "personnes",
     "page.breakfastIncluded": "Petit-déjeuner inclus",
@@ -2727,6 +2733,7 @@ var I18N = {
     "page.availability":      "Verfügbarkeit",
     "page.bookNow":           "Bereit zu buchen?",
     "page.perNight":          "pro Nacht",
+    "page.priceFrom":         "Ab",
     "page.upTo":              "Bis zu",
     "page.guests":            "Gäste",
     "page.breakfastIncluded": "Frühstück inklusive",
@@ -2774,6 +2781,7 @@ var I18N = {
     "page.availability":      "Disponibilidad",
     "page.bookNow":           "¿Listo para reservar?",
     "page.perNight":          "por noche",
+    "page.priceFrom":         "Desde",
     "page.upTo":              "Hasta",
     "page.guests":            "personas",
     "page.breakfastIncluded": "Desayuno incluido",
@@ -2821,6 +2829,7 @@ var I18N = {
     "page.availability":      "Beschikbaarheid",
     "page.bookNow":           "Klaar om te boeken?",
     "page.perNight":          "per nacht",
+    "page.priceFrom":         "Vanaf",
     "page.upTo":              "Tot",
     "page.guests":            "personen",
     "page.breakfastIncluded": "Ontbijt inbegrepen",

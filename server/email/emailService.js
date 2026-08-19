@@ -74,6 +74,10 @@ const T = {
     depositRequired:      'Deposit required',
     questions:            'Questions? Reply to this email and we\'ll get back to you.',
     poweredBy:            'Powered by NestBook',
+    enquiryReceived:      'Enquiry received',
+    yourEnquiryFor:       'Your enquiry for',
+    hasBeenReceived:      'has been received.',
+    enquiryNextSteps:     'The property owner will review your request and get back to you shortly.',
     depositRequestSubject:    'Deposit request for your booking',
     depositRequestHeading:    'Deposit Request',
     depositRequestBody:       'To secure your booking, a deposit payment is required.',
@@ -190,6 +194,10 @@ const T = {
     depositRequired:      'Acompte requis',
     questions:            'Des questions ? Répondez à cet e-mail, nous vous répondrons rapidement.',
     poweredBy:            'Propulsé par NestBook',
+    enquiryReceived:      'Demande reçue',
+    yourEnquiryFor:       'Votre demande pour',
+    hasBeenReceived:      'a été reçue.',
+    enquiryNextSteps:     'Le propriétaire va examiner votre demande et vous répondra bientôt.',
     depositRequestSubject:    'Demande d\'acompte pour votre réservation',
     depositRequestHeading:    'Demande d\'acompte',
     depositRequestBody:       'Pour sécuriser votre réservation, un acompte est requis.',
@@ -306,6 +314,10 @@ const T = {
     depositRequired:      'Depósito requerido',
     questions:            '¿Preguntas? Responda a este correo y le contestaremos pronto.',
     poweredBy:            'Con tecnología de NestBook',
+    enquiryReceived:      'Solicitud recibida',
+    yourEnquiryFor:       'Su solicitud para',
+    hasBeenReceived:      'ha sido recibida.',
+    enquiryNextSteps:     'El propietario revisará su solicitud y le responderá en breve.',
     depositRequestSubject:    'Solicitud de depósito para su reserva',
     depositRequestHeading:    'Solicitud de depósito',
     depositRequestBody:       'Para asegurar su reserva, es necesario un pago de depósito.',
@@ -422,6 +434,10 @@ const T = {
     depositRequired:      'Anzahlung erforderlich',
     questions:            'Fragen? Antworten Sie auf diese E-Mail, wir helfen Ihnen gerne.',
     poweredBy:            'Bereitgestellt von NestBook',
+    enquiryReceived:      'Anfrage erhalten',
+    yourEnquiryFor:       'Ihre Anfrage für',
+    hasBeenReceived:      'wurde erhalten.',
+    enquiryNextSteps:     'Der Gastgeber wird Ihre Anfrage prüfen und sich in Kürze bei Ihnen melden.',
     depositRequestSubject:    'Anzahlungsanforderung für Ihre Buchung',
     depositRequestHeading:    'Anzahlungsanforderung',
     depositRequestBody:       'Um Ihre Buchung zu sichern, ist eine Anzahlung erforderlich.',
@@ -538,6 +554,10 @@ const T = {
     depositRequired:      'Aanbetaling vereist',
     questions:            'Vragen? Beantwoord deze e-mail en we helpen u graag.',
     poweredBy:            'Aangedreven door NestBook',
+    enquiryReceived:      'Aanvraag ontvangen',
+    yourEnquiryFor:       'Uw aanvraag voor',
+    hasBeenReceived:      'is ontvangen.',
+    enquiryNextSteps:     'De eigenaar bekijkt uw aanvraag en neemt binnenkort contact met u op.',
     depositRequestSubject:    'Aanbetalingsverzoek voor uw boeking',
     depositRequestHeading:    'Aanbetalingsverzoek',
     depositRequestBody:       'Om uw boeking te bevestigen, is een aanbetaling vereist.',
@@ -916,6 +936,85 @@ export async function sendBookingConfirmation(booking, property) {
     console.log(`[email] Booking confirmation sent → ${booking.guest_email}`);
   } catch (err) {
     console.error('[email] Failed to send booking confirmation:', err.message);
+  }
+}
+
+// ── Enquiry received (to guest) ──────────────────────────────────────────────
+// Immediate receipt for the WP/Free-plan enquiry flow (enquiries.js) — sent
+// on submission, separate from and in addition to the eventual approve/
+// decline outcome email (sendBookingApprovedEmail/sendBookingDeclinedEmail
+// below, which are English-only). Localized via property.locale using the
+// same t()/T pattern as sendBookingConfirmation above, since that's the
+// established convention for guest-facing transactional email in this file —
+// the outcome emails not being localized looks like a pre-existing gap
+// rather than something worth repeating in new code.
+//
+// Takes plain fields rather than a full booking row because the WP/free-plan
+// fallback branch of enquiries.js never creates a bookings row at all — only
+// the rooms-mode branch does.
+function enquiryReceivedHtml({ guestFirstName, checkInDate, checkOutDate, numGuests }, property) {
+  const locale = property.locale ?? 'en';
+  const checkIn  = fmtDate(checkInDate,  locale);
+  const checkOut = fmtDate(checkOutDate, locale);
+
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;
+                 color:#405440;width:40%;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;
+                 color:#405440;font-weight:600;vertical-align:top;">${value}</td>
+    </tr>`;
+
+  return `
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
+      ${t(locale, 'enquiryReceived')}
+    </h1>
+    <p style="margin:0 0 24px;font-size:0.95rem;color:#405440;">
+      ${t(locale, 'dear')} ${guestFirstName},<br>
+      ${t(locale, 'yourEnquiryFor')} <strong>${property.name}</strong> ${t(locale, 'hasBeenReceived')}
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+           style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+      <tr>
+        ${row(t(locale, 'checkIn'),  checkIn)}
+        ${row(t(locale, 'checkOut'), checkOut)}
+        ${numGuests ? row(t(locale, 'guests'), String(numGuests)) : ''}
+      </tr>
+    </table>
+
+    <p style="margin:0 0 20px;font-size:0.875rem;color:#405440;line-height:1.6;">
+      ${t(locale, 'enquiryNextSteps')}
+    </p>
+    <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
+      ${t(locale, 'questions')}
+    </p>`;
+}
+
+/**
+ * Send the guest an immediate receipt for their enquiry — confirms it was
+ * received and sets the expectation the owner will respond. Separate from
+ * the eventual approve/decline outcome email.
+ * @param {object} params — { guestFirstName, guestEmail, checkInDate, checkOutDate, numGuests }
+ * @param {object} property — property row from the DB
+ */
+export async function sendEnquiryReceivedEmail(params, property) {
+  if (!resend) return;
+  if (!params?.guestEmail) return;
+
+  const locale  = property?.locale ?? 'en';
+  const subject = `${t(locale, 'enquiryReceived')} — ${property?.name ?? 'NestBook'}`;
+
+  try {
+    await resend.emails.send({
+      from:    FROM,
+      to:      params.guestEmail,
+      subject,
+      html:    guestMailerHtml(enquiryReceivedHtml(params, property ?? {}), property ?? {}),
+    });
+    console.log(`[email] Enquiry received email sent → ${params.guestEmail}`);
+  } catch (err) {
+    console.error('[email] Failed to send enquiry received email:', err.message);
   }
 }
 
