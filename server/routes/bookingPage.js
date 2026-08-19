@@ -148,15 +148,18 @@ function getUniformBedConfig(catRooms) {
   return shared;
 }
 
-function getRoomAvailMap(bookings, roomId) {
+function getRoomAvailMap(bookings, roomId, icalBlocks = []) {
   const rb = bookings.filter(b => b.room_id === roomId);
+  const ib = icalBlocks.filter(b => b.room_id === null || b.room_id === roomId);
   const map = {};
   const base = new Date();
   for (let i = 0; i < 365; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     const s = localDateStr(d);
-    map[s] = rb.some(b => b.check_in_date <= s && b.check_out_date > s) ? 'booked' : 'available';
+    const blocked = rb.some(b => b.check_in_date <= s && b.check_out_date > s) ||
+      ib.some(b => b.start_date <= s && b.end_date > s);
+    map[s] = blocked ? 'booked' : 'available';
   }
   return map;
 }
@@ -169,14 +172,16 @@ function roomCalendarSection(roomId) {
 </div>`;
 }
 
-function getPropertyAvailMap(bookings) {
+function getPropertyAvailMap(bookings, icalBlocks = []) {
   const map = {};
   const base = new Date();
   for (let i = 0; i < 365; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
     const s = localDateStr(d);
-    map[s] = bookings.some(b => b.check_in_date <= s && b.check_out_date > s) ? 'booked' : 'available';
+    const blocked = bookings.some(b => b.check_in_date <= s && b.check_out_date > s) ||
+      icalBlocks.some(b => b.start_date <= s && b.end_date > s);
+    map[s] = blocked ? 'booked' : 'available';
   }
   return map;
 }
@@ -678,7 +683,7 @@ const LANG_MAP = {
   'nl': 'nl', 'nl-NL': 'nl',
 };
 
-function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}, categories = []) {
+function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}, categories = [], icalBlocks = []) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -698,9 +703,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const isDemo = property.is_demo === 1;
 
   const availMapsByRoom = {};
-  for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id);
+  for (const r of rooms) availMapsByRoom[r.id] = getRoomAvailMap(bookings, r.id, icalBlocks);
 
-  const propAvailMap = isWholeProperty ? getPropertyAvailMap(bookings) : null;
+  const propAvailMap = isWholeProperty ? getPropertyAvailMap(bookings, icalBlocks) : null;
 
   // Room Categories mode — group the already-fetched rooms by category_id
   // (rooms.category_id is present since the route selects r.* directly).
@@ -3189,6 +3194,16 @@ bookingPageRouter.get('/:identifier', (req, res) => {
         AND b.check_out_date >= date('now')
     `).all(property.id);
 
+    // External calendar blocks (Booking.com/Airbnb imports) — room_id NULL
+    // means property-wide, matching the scoping convention already used by
+    // the bookings-check endpoints and Room Categories pooling.
+    const icalBlocks = db.prepare(`
+      SELECT room_id, start_date, end_date
+      FROM ical_blocks
+      WHERE property_id = ?
+        AND end_date >= date('now')
+    `).all(property.id);
+
     const allPhotos = db.prepare(`
       SELECT rp.room_id, rp.filename, rp.thumb_filename
       FROM room_photos rp
@@ -3230,7 +3245,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
         ).all(property.id)
       : [];
 
-    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit, categories));
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit, categories, icalBlocks));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');

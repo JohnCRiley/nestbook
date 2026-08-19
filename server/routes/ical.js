@@ -6,6 +6,13 @@ import { requireAuth } from '../middleware/requireAuth.js';
 
 export const icalRouter = Router();
 
+// Booking statuses considered "real enough to export" to an external
+// calendar — excludes pending_owner_approval/pending_payment/etc. Blocking
+// dates on Airbnb/Booking.com before a booking is actually secured risks
+// turning away a real guest for one that might never be confirmed. Shared by
+// both export routes below so the two feeds can't drift out of sync again.
+const EXPORT_BOOKING_STATUSES = ['confirmed', 'arriving', 'in_house', 'checked_out'];
+
 // ── iCal export — public, token-authenticated ─────────────────────────────────
 
 // GET /api/ical/:propertyId/:roomId/:token — per-room feed
@@ -21,9 +28,10 @@ icalRouter.get('/:propertyId/:roomId/:token', (req, res) => {
   const bookings = db.prepare(`
     SELECT id, check_in_date, check_out_date
     FROM bookings
-    WHERE room_id = ? AND property_id = ? AND status != 'cancelled'
+    WHERE room_id = ? AND property_id = ?
+      AND status IN (${EXPORT_BOOKING_STATUSES.map(() => '?').join(', ')})
     ORDER BY check_in_date
-  `).all(roomId, propertyId);
+  `).all(roomId, propertyId, ...EXPORT_BOOKING_STATUSES);
 
   const now = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
 
@@ -72,10 +80,10 @@ icalRouter.get('/:propertyId/property/:token', (req, res) => {
     FROM bookings b
     JOIN rooms r ON r.id = b.room_id
     WHERE r.property_id = ?
-      AND b.status IN ('confirmed', 'arriving', 'in_house', 'checked_out')
+      AND b.status IN (${EXPORT_BOOKING_STATUSES.map(() => '?').join(', ')})
       AND b.check_out_date >= date('now', '-1 day')
     ORDER BY b.check_in_date
-  `).all(propertyId);
+  `).all(propertyId, ...EXPORT_BOOKING_STATUSES);
 
   const now = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
 
