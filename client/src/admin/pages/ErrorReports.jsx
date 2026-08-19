@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
 const STATUS_LABELS = {
@@ -19,6 +20,7 @@ const CATEGORY_LABELS = {
 };
 
 export default function ErrorReports() {
+  const navigate = useNavigate();
   const [reports,         setReports]         = useState([]);
   const [total,           setTotal]           = useState(0);
   const [pages,           setPages]           = useState(1);
@@ -81,7 +83,7 @@ export default function ErrorReports() {
       subject: `Re: Your NestBook report${selected.category ? ` — ${CATEGORY_LABELS[selected.category] ?? selected.category}` : ''}`,
       body:    `Hi ${firstName(selected.user_name)},`,
     });
-    window.open(`/app/super-admin/user-mailer?${params}`, '_blank', 'noopener,noreferrer');
+    navigate(`/super-admin/user-mailer?${params}`);
   }
 
   async function saveReport() {
