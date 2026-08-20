@@ -313,11 +313,32 @@ authRouter.post('/forgot-password', async (req, res) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(`\n[DEV] Password reset link for ${user.email}:\nhttp://localhost:5173/app/reset-password?token=${token}\n`);
   }
+
+  // Anti-enumeration note: the two `success: true` returns above (no email /
+  // unknown email) and the success path below are all identical, so an
+  // attacker still can't distinguish "no such account" from "account exists
+  // and the email is on its way" — that guarantee is unchanged. A genuine
+  // send failure below DOES now get a different response (generic "couldn't
+  // send, try again" — never wording that confirms/denies the account
+  // exists), which narrows anti-enumeration protection to "an attacker can't
+  // tell accounts apart during normal operation" rather than "under all
+  // circumstances including an active email-provider outage" — during an
+  // outage, every real account would surface this response while unknown
+  // emails still wouldn't. That's a deliberate, disclosed trade-off: it's a
+  // narrow, time-boxed signal (outage windows only) in exchange for a real
+  // user who's actually locked out finding out something is wrong instead
+  // of waiting forever for an email that silently never arrives.
   try {
     await sendPasswordResetEmail(user.email, token);
     console.log('[forgot-password] reset email sent to:', email);
   } catch (err) {
-    console.error('[forgot-password] failed to send email:', err?.message ?? err);
+    console.error(
+      `[forgot-password] ALERT — password reset email FAILED to send for user ${user.id} (${user.email}): ${err?.message ?? err}`
+    );
+    return res.status(503).json({
+      success: false,
+      error: "We couldn't send that email right now. Please try again in a few minutes.",
+    });
   }
 
   res.json({ success: true });

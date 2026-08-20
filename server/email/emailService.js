@@ -1789,7 +1789,7 @@ export async function sendPasswordResetEmail(email, token) {
     return;
   }
   const resetUrl = `https://nestbook.io/app/reset-password?token=${token}`;
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to: email,
     subject: 'Reset your NestBook password',
@@ -1808,6 +1808,15 @@ export async function sendPasswordResetEmail(email, token) {
       </div>
     `,
   });
+  // The Resend SDK does NOT throw on an API-level failure (bad key, invalid
+  // recipient, rate limit, etc.) — it resolves normally with { data: null,
+  // error: {...} }. A bare `await` here would silently treat every one of
+  // those as success. This function is the one auth.js's forgot-password
+  // route depends on to know whether the reset link genuinely went out, so
+  // it needs to actually surface a real failure as a thrown error.
+  if (result?.error) {
+    throw new Error(result.error.message || 'Resend API error');
+  }
   console.log('[email] Password reset sent →', email);
 }
 

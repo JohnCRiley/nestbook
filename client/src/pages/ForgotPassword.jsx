@@ -22,7 +22,8 @@ export default function ForgotPassword() {
       if (res.ok) {
         setSubmitted(true);
       } else {
-        setError('Something went wrong. Please try again.');
+        const data = await res.json().catch(() => null);
+        setError(data?.error || 'Something went wrong. Please try again.');
       }
     } catch {
       setError('Could not connect to server. Is it running?');
@@ -46,6 +47,9 @@ export default function ForgotPassword() {
             <h1 className="auth-heading" style={{ color: 'var(--accent)' }}>Check your inbox</h1>
             <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 24, lineHeight: 1.6 }}>
               If an account exists for <strong>{email}</strong>, we've sent a password reset link. It expires in 1 hour.
+            </p>
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: 24, lineHeight: 1.6 }}>
+              Didn't get it after a few minutes? Check your spam folder, or feel free to try again.
             </p>
             <Link to="/login" className="auth-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
               Back to sign in
