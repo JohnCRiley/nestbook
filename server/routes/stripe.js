@@ -190,13 +190,13 @@ stripeRouter.post('/sync-session', async (req, res) => {
         SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = ?,
             status = 'active', current_period_end = ?, cancel_at_period_end = 0
         WHERE user_id = ?
-      `).run(customerId, sub?.id, plan, periodEnd, userId);
+      `).run(customerId, sub?.id ?? null, plan, periodEnd, userId);
       console.log('[sync-session] UPDATE subscriptions changes:', result.changes);
     } else {
       db.prepare(`
         INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end)
         VALUES (?, ?, ?, ?, 'active', ?)
-      `).run(userId, customerId, sub?.id, plan, periodEnd);
+      `).run(userId, customerId, sub?.id ?? null, plan, periodEnd);
       console.log('[sync-session] INSERT subscriptions done');
     }
 
