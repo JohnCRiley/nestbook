@@ -905,8 +905,32 @@ function PlanBadge({ plan }) {
 
 // ── Delete / GDPR modal ───────────────────────────────────────────────────────
 
+// Same "load the real blast radius, then require typing to confirm" shape as
+// RentalModeSwitch.jsx's ConfirmSwitchModal — this is the single most
+// destructive control in the admin panel (cascades across every property
+// the user owns), so it gets the same level of friction, not less.
 function DeleteModal({ user, onClose, onSuccess, onError }) {
+  const [preview, setPreview] = useState(null);   // null = still loading
+  const [previewError, setPreviewError] = useState(null);
+  const [confirmInput, setConfirmInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch(`/api/admin/users/${user.id}/delete-preview`)
+      .then(res => res.json())
+      .then(data => { if (!cancelled) setPreview(data); })
+      .catch(() => { if (!cancelled) setPreviewError('Could not load account details. Please try again.'); });
+    return () => { cancelled = true; };
+  }, [user.id]);
+
+  useEffect(() => {
+    const handle = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [onClose]);
+
+  const emailMatch = confirmInput.trim().toLowerCase() === user.email.trim().toLowerCase();
 
   async function handleDelete() {
     setLoading(true);
@@ -926,37 +950,73 @@ function DeleteModal({ user, onClose, onSuccess, onError }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: 440 }}>
-        <div className="modal-header">
-          <h2>Delete account</h2>
-          <button className="modal-close" onClick={onClose}>✕</button>
+    <div className="cm-backdrop" onClick={onClose}>
+      <div className="cm-card" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" style={{ maxWidth: 460 }}>
+        <div className="cm-header" style={{ background: '#991b1b', color: '#fff' }}>
+          <span className="cm-icon" aria-hidden="true">🗑</span>
+          <span className="cm-title">Delete account</span>
         </div>
-        <div className="modal-body">
-          <div style={{
-            background: '#fef2f2', border: '1px solid #fecaca',
-            borderRadius: 8, padding: '12px 16px', marginBottom: 16,
-            fontSize: '0.875rem', color: '#991b1b',
-          }}>
-            <strong>This cannot be undone.</strong> All data for this account will be
-            permanently deleted: property, rooms, bookings, guest records, and
-            subscription. Any active Stripe subscription will be cancelled immediately.
-          </div>
-          <p style={{ fontSize: '0.9rem', color: '#374151', marginBottom: 4 }}>
-            You are about to delete:
-          </p>
-          <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#0f172a', marginBottom: 20 }}>
-            {user.name} — {user.email}
-          </p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button className="btn-secondary" onClick={onClose} disabled={loading}>
+        <div className="cm-body">
+          {previewError && (
+            <p style={{ fontSize: '0.875rem', color: '#991b1b', marginBottom: 16 }}>{previewError}</p>
+          )}
+          {!preview && !previewError && (
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: 16 }}>Loading account details…</p>
+          )}
+          {preview && (
+            <>
+              <p className="cm-message">
+                You're about to permanently delete <strong>{preview.user.name}</strong> ({preview.user.email}).
+              </p>
+              <div style={{
+                background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8,
+                padding: '12px 16px', margin: '4px 0 16px', fontSize: '0.875rem', color: '#991b1b',
+              }}>
+                This will permanently delete:
+                <ul style={{ margin: '8px 0 0', paddingLeft: 20, lineHeight: 1.7 }}>
+                  <li>
+                    {preview.properties.length === 0
+                      ? 'No properties (this account owns none directly).'
+                      : `${preview.properties.length} propert${preview.properties.length === 1 ? 'y' : 'ies'}: ${preview.properties.map(p => p.name).join(', ')}`}
+                  </li>
+                  {preview.properties.length > 0 && (
+                    <>
+                      <li>{preview.roomsCount} room(s)/unit(s)</li>
+                      <li>{preview.bookingsCount} booking(s) and their guest records</li>
+                    </>
+                  )}
+                  {preview.hasActiveSubscription && (
+                    <li>Their active Stripe subscription — will be cancelled immediately</li>
+                  )}
+                </ul>
+                <strong style={{ display: 'block', marginTop: 8 }}>This cannot be undone.</strong>
+              </div>
+              <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 6px' }}>
+                Type the account's email address to confirm:
+              </p>
+              <input
+                type="text"
+                value={confirmInput}
+                onChange={e => setConfirmInput(e.target.value)}
+                placeholder={preview.user.email}
+                autoFocus
+                style={{
+                  width: '100%', padding: '8px 10px', borderRadius: 6,
+                  border: '1.5px solid #e2e8f0', fontSize: '0.875rem',
+                  marginBottom: 16, fontFamily: 'inherit', boxSizing: 'border-box',
+                }}
+              />
+            </>
+          )}
+          <div className="cm-actions">
+            <button className="cm-btn-cancel" onClick={onClose} disabled={loading}>
               Cancel
             </button>
             <button
-              style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6,
-                       padding: '8px 18px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
-              onClick={handleDelete}
-              disabled={loading}
+              className="cm-btn-confirm"
+              style={{ background: emailMatch && !loading ? '#991b1b' : '#9ca3af' }}
+              onClick={emailMatch && !loading ? handleDelete : undefined}
+              disabled={!preview || !emailMatch || loading}
             >
               {loading ? 'Deleting…' : 'Delete permanently'}
             </button>

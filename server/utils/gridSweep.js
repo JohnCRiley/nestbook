@@ -2,7 +2,21 @@
  * Generate an evenly-spaced lat/lng grid across a bounding box, for sweeping
  * Google Places Text Search across a whole country instead of one named area.
  */
+// Floor matches the (previously cosmetic-only) min="5" already declared on
+// the client's Grid Spacing field. Below this, worst case (the UK bounding
+// box) generates on the order of tens of thousands of points, which is slow
+// but bounded; at 0 the loop below never advances (infinite), and negative
+// values run away in the wrong direction forever (unbounded memory growth)
+// — both freeze/crash the whole server, not just this request, since the
+// loop is synchronous with no `await` inside it. Failing loud here protects
+// every caller of this utility, not just the one route that currently calls
+// it, in case a future caller forgets its own validation.
+export const MIN_SPACING_KM = 5;
+
 export function generateGrid(bounds, spacingKm = 35) {
+  if (!Number.isFinite(spacingKm) || spacingKm < MIN_SPACING_KM) {
+    throw new Error(`spacingKm must be a finite number >= ${MIN_SPACING_KM}`);
+  }
   const { latMin, latMax, lngMin, lngMax } = bounds;
   const kmPerDegLat = 111;
   const midLat = (latMin + latMax) / 2;

@@ -104,6 +104,18 @@ function ReviewModal({ flag, onClose, onDone }) {
           </div>
         )}
 
+        {/* Silent-remove warning — same two-step pattern as "Remove and email
+            owner" above, since this is just as permanent (no undo, no soft
+            delete) but was previously a single unconfirmed click. */}
+        {removeMode === 'silent' && (
+          <div style={{ padding: '0 24px 12px' }}>
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', fontSize: '0.85rem', color: '#991b1b', lineHeight: 1.6 }}>
+              This deletes the file/text permanently — there is no undo and no trash to recover it from.
+              The owner will <strong>not</strong> be notified.
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ padding: '12px 24px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           {!removeMode && (
@@ -123,7 +135,7 @@ function ReviewModal({ flag, onClose, onDone }) {
                 Remove and email owner
               </button>
               <button
-                onClick={() => remove(false)}
+                onClick={() => setRemoveMode('silent')}
                 disabled={saving}
                 style={{ padding: '8px 14px', background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 7, fontWeight: 500, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}
               >
@@ -139,6 +151,24 @@ function ReviewModal({ flag, onClose, onDone }) {
                 style={{ padding: '8px 18px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 7, fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {saving ? 'Removing…' : 'Confirm — remove and send email'}
+              </button>
+              <button
+                onClick={() => setRemoveMode(null)}
+                disabled={saving}
+                style={{ padding: '8px 14px', background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 7, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Back
+              </button>
+            </>
+          )}
+          {removeMode === 'silent' && (
+            <>
+              <button
+                onClick={() => remove(false)}
+                disabled={saving}
+                style={{ padding: '8px 18px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 7, fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {saving ? 'Removing…' : 'Confirm — remove permanently'}
               </button>
               <button
                 onClick={() => setRemoveMode(null)}

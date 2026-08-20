@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
 import usePageSize from '../../hooks/usePageSize.js';
+import ConfirmModal from '../../components/ConfirmModal.jsx';
 
 const TYPE_LABELS = {
   bnb: 'B&B', gite: 'Gîte', guesthouse: 'Guest House', hotel: 'Hotel', other: 'Other',
@@ -22,6 +23,14 @@ export default function Properties() {
   const [confirmInput, setConfirmInput] = useState('');
   const [resetting,    setResetting]    = useState(false);
   const [toast,        setToast]        = useState(null);
+
+  // Demo-toggle confirmation — only the ON direction (real → demo) needs
+  // confirming: it silently stops real guest enquiries from reaching the
+  // owner and unlocks the "Reset data" wipe button for this property.
+  // Switching demo back OFF is the corrective/safe direction and fires
+  // immediately, same as before.
+  const [demoTarget, setDemoTarget] = useState(null); // property object | null
+  const [demoBusy,   setDemoBusy]   = useState(false);
 
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg, type = 'success') => {
@@ -67,14 +76,39 @@ export default function Properties() {
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
 
-  const toggleDemo = useCallback(async (id, currentIsDemo) => {
-    await apiFetch(`/api/admin/properties/${id}/demo`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ is_demo: currentIsDemo ? 0 : 1 }),
-    });
-    fetchProperties();
-  }, [fetchProperties]);
+  const setDemoFlag = useCallback(async (id, isDemo) => {
+    try {
+      const res = await apiFetch(`/api/admin/properties/${id}/demo`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ is_demo: isDemo ? 1 : 0 }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? 'Update failed');
+      fetchProperties();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }, [fetchProperties, showToast]);
+
+  // Turning demo ON needs confirmation (see state comment above); turning it
+  // OFF is the safe/corrective direction and fires immediately as before.
+  const toggleDemo = useCallback((property) => {
+    if (property.is_demo) {
+      setDemoFlag(property.id, false);
+    } else {
+      setDemoTarget(property);
+    }
+  }, [setDemoFlag]);
+
+  const cancelDemoConfirm = useCallback(() => setDemoTarget(null), []);
+
+  const confirmSetDemo = useCallback(async () => {
+    if (!demoTarget) return;
+    setDemoBusy(true);
+    await setDemoFlag(demoTarget.id, true);
+    setDemoBusy(false);
+    setDemoTarget(null);
+  }, [demoTarget, setDemoFlag]);
 
   const openResetModal = useCallback((property) => {
     setResetTarget(property);
@@ -151,7 +185,7 @@ export default function Properties() {
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <button
-                      onClick={() => toggleDemo(p.id, p.is_demo)}
+                      onClick={() => toggleDemo(p)}
                       style={{
                         background: p.is_demo ? '#fef3c7' : 'var(--card-bg)',
                         border: `1px solid ${p.is_demo ? '#f59e0b' : 'var(--border)'}`,
@@ -199,6 +233,33 @@ export default function Properties() {
             </button>
           </div>
         </div>
+      )}
+
+      {demoTarget && (
+        <ConfirmModal
+          isOpen
+          variant="warning"
+          title="Set as demo property?"
+          confirmLabel={demoBusy ? 'Setting…' : 'Set as demo'}
+          onConfirm={confirmSetDemo}
+          onCancel={cancelDemoConfirm}
+          busy={demoBusy}
+          message={
+            <>
+              <strong>{demoTarget.name}</strong> is a live property — this is not a cosmetic label.
+              <ul style={{ margin: '8px 0 0', paddingLeft: 20, lineHeight: 1.7 }}>
+                <li>Real guest enquiries will silently stop reaching the owner — the guest sees a success message, but nothing is sent.</li>
+                <li>Check-in/check-out date validation is bypassed for this property.</li>
+                <li>The "Reset data" button becomes available for this property — a separate, permanent wipe of its bookings.</li>
+              </ul>
+              {(demoTarget.rooms_count > 0 || demoTarget.bookings_count > 0) && (
+                <span style={{ display: 'block', marginTop: 8 }}>
+                  This property currently has {demoTarget.rooms_count} room(s)/unit(s) and {demoTarget.bookings_count} booking(s).
+                </span>
+              )}
+            </>
+          }
+        />
       )}
 
       {resetTarget && (

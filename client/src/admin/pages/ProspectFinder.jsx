@@ -18,6 +18,11 @@ const RADIUS_OPTIONS = [
   { label: '50 km', value: 50000 },
 ];
 
+// Must match MIN_SPACING_KM in server/utils/gridSweep.js — this is a
+// client-side convenience check only, the server enforces its own copy
+// regardless of what this UI allows through.
+const MIN_SPACING_KM = 5;
+
 const LANGUAGE_OPTIONS = [
   { label: 'EN', value: 'en' },
   { label: 'FR', value: 'fr' },
@@ -143,6 +148,20 @@ export default function ProspectFinder() {
       if (!area.trim() || types.size === 0) return;
     } else if (types.size === 0) {
       return;
+    }
+
+    // Catch a bad grid-spacing value before it's even sent — a value of 0
+    // or blank would make the server's grid-generation loop never advance
+    // (it hangs the whole server, not just this request); a negative value
+    // grows the grid forever instead. The server rejects this too, but
+    // catching it here means Barry sees a plain "fix this field" message
+    // instead of a request that goes out and fails after the fact.
+    if (mode === 'sweep') {
+      const spacing = Number(spacingKm);
+      if (!Number.isFinite(spacing) || spacing < MIN_SPACING_KM) {
+        setError(`Grid spacing must be a number of at least ${MIN_SPACING_KM} km.`);
+        return;
+      }
     }
 
     setPhase('searching');
@@ -367,7 +386,7 @@ export default function ProspectFinder() {
             <div>
               <label style={labelStyle}>Grid spacing (km)</label>
               <input
-                type="number" min="5" step="5"
+                type="number" min={MIN_SPACING_KM} step="5"
                 value={spacingKm}
                 onChange={e => setSpacingKm(e.target.value)}
                 disabled={isSearching}

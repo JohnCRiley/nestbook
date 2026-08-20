@@ -773,6 +773,35 @@ adminRouter.post('/users/:id/reset-password', async (req, res) => {
   res.json({ success: true, tempPassword });
 });
 
+// ── GET /api/admin/users/:id/delete-preview ───────────────────────────────────
+// Read-only blast-radius preview shown before GDPR deletion — same
+// "compute status, show it, then confirm" shape as the Rental Mode Switch
+// panel. Counts mirror exactly what the DELETE route below actually wipes,
+// so the confirm dialog never shows a number the delete itself disagrees with.
+adminRouter.get('/users/:id/delete-preview', (req, res) => {
+  const userId = Number(req.params.id);
+  const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  const properties = db.prepare('SELECT id, name FROM properties WHERE owner_id = ?').all(userId);
+  const propIds = properties.map((p) => p.id);
+
+  let roomsCount = 0, bookingsCount = 0;
+  if (propIds.length > 0) {
+    const ph = propIds.map(() => '?').join(',');
+    roomsCount    = db.prepare(`SELECT COUNT(*) as n FROM rooms    WHERE property_id IN (${ph})`).get(...propIds).n;
+    bookingsCount = db.prepare(`SELECT COUNT(*) as n FROM bookings WHERE property_id IN (${ph})`).get(...propIds).n;
+  }
+
+  const sub = db.prepare('SELECT stripe_subscription_id, status FROM subscriptions WHERE user_id = ?').get(userId);
+  const hasActiveSubscription = !!(sub?.stripe_subscription_id && sub.status === 'active');
+
+  res.json({
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    properties, roomsCount, bookingsCount, hasActiveSubscription,
+  });
+});
+
 // ── DELETE /api/admin/users/:id ───────────────────────────────────────────────
 // GDPR account deletion: cancels Stripe sub, wipes all user data from the DB.
 adminRouter.delete('/users/:id', async (req, res) => {
@@ -1507,6 +1536,19 @@ adminRouter.post('/maintenance/cleanup', (req, res) => {
   }
 });
 
+// Validates a blog-image slug against the real list of blog posts on disk
+// before it's ever used to build a filesystem path. Without this, a slug
+// containing a URL-encoded "../" segment lets path.join() resolve outside
+// BLOG_IMG_DIR entirely — confirmed exploitable in both directions (writes
+// a file outside the directory on upload, deletes an arbitrary .jpg outside
+// it on delete) before this check existed. Mirrors the LANDING_SLOTS
+// whitelist pattern used for landing images.
+function isValidBlogSlug(slug) {
+  if (typeof slug !== 'string' || !slug) return false;
+  const files = fs.readdirSync(BLOG_DIR).filter(f => f.endsWith('.html') && f !== 'index.html');
+  return files.includes(`${slug}.html`);
+}
+
 // ── GET /api/admin/blog-images — list all blog posts with image status ────────
 adminRouter.get('/blog-images', (req, res) => {
   try {
@@ -1554,6 +1596,10 @@ adminRouter.post('/blog-images/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    if (!isValidBlogSlug(slug)) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      return res.status(404).json({ error: 'Unknown blog post.' });
+    }
 
     const outputPath = join(BLOG_IMG_DIR, `${slug}.jpg`);
 
@@ -1576,6 +1622,9 @@ adminRouter.post('/blog-images/:slug', async (req, res) => {
 // ── DELETE /api/admin/blog-images/:slug — remove image ───────────────────────
 adminRouter.delete('/blog-images/:slug', (req, res) => {
   try {
+    if (!isValidBlogSlug(req.params.slug)) {
+      return res.status(404).json({ error: 'Unknown blog post.' });
+    }
     const imgPath = join(BLOG_IMG_DIR, `${req.params.slug}.jpg`);
     if (fs.existsSync(imgPath)) {
       fs.unlinkSync(imgPath);
@@ -1655,6 +1704,11 @@ adminRouter.post('/landing-images/:id', landingImageUpload.single('image'), asyn
 // DELETE /api/admin/landing-images/:id — remove image
 adminRouter.delete('/landing-images/:id', (req, res) => {
   try {
+    // Unlike POST above, this route had no LANDING_SLOTS check at all before
+    // this fix — an id containing "../" could unlinkSync outside LANDING_IMG_DIR.
+    if (!LANDING_SLOTS.find(s => s.id === req.params.id)) {
+      return res.status(404).json({ error: 'Unknown slot' });
+    }
     const filePath = join(LANDING_IMG_DIR, `${req.params.id}.jpg`);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     res.json({ success: true });

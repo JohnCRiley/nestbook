@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateGrid, COUNTRY_BOUNDS, shuffleArray } from '../utils/gridSweep.js';
+import { generateGrid, COUNTRY_BOUNDS, shuffleArray, MIN_SPACING_KM } from '../utils/gridSweep.js';
 
 export const prospectFinderRouter = Router();
 
@@ -305,6 +305,16 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
   const bounds = COUNTRY_BOUNDS[country];
   if (!bounds) return res.status(400).json({ error: 'Unknown country' });
 
+  // Reject before generating the grid — a spacing of 0 makes generateGrid's
+  // loop never advance (infinite, freezes the server), and a negative value
+  // runs away in the wrong direction forever (unbounded memory growth /
+  // crash). Checked here, before SSE headers go out, so the client gets a
+  // normal JSON error it can show inline rather than a broken stream.
+  const spacing = Number(spacingKm);
+  if (!Number.isFinite(spacing) || spacing < MIN_SPACING_KM) {
+    return res.status(400).json({ error: `Grid spacing must be a number of at least ${MIN_SPACING_KM} km.` });
+  }
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -327,7 +337,7 @@ prospectFinderRouter.post('/sweep', async (req, res) => {
     if (!res.writableEnded) clientDisconnected = true;
   });
 
-  let points = generateGrid(bounds, Number(spacingKm));
+  let points = generateGrid(bounds, spacing);
   if (maxPoints) {
     // Shuffle only for test runs — a representative spread across the whole
     // country matters here. A full sweep covers every point regardless, so
