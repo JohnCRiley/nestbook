@@ -149,6 +149,101 @@ const T = {
     onboardPrintBtn:    '💡 Want to keep this as a reference? Most email apps let you print via File → Print or your browser\'s print option.',
     onboardGuideIntro:  'Want the full picture? Our Getting Started Guide covers everything from seasonal pricing to your booking widget. (EN version only for now — more languages coming soon.)',
     onboardGuideLink:   'Read the Getting Started Guide →',
+    // ── Shared (booking-lifecycle emails) ─────────────────────────────────
+    property:              'Property',
+    duration:               'Duration',
+    night:                  'night',
+    nights:                 'nights',
+    guestLabel:             'Guest',
+    paymentMethodLabel:     'Payment method',
+    tableCategory:          'Category',
+    tableDescription:       'Description',
+    tableAmount:            'Amount',
+    // ── Booking approved ───────────────────────────────────────────────────
+    bookingApprovedSubject:   'Booking confirmed',
+    bookingApprovedHeading:   'Your booking is confirmed!',
+    greatNews:                'Great news,',
+    hasBeenApproved:          'has been approved.',
+    // ── Booking declined ───────────────────────────────────────────────────
+    bookingDeclinedSubject:   'Booking request update',
+    bookingDeclinedHeading:   'Booking request update',
+    bookingDeclinedBody1:     'unfortunately your booking request at',
+    bookingDeclinedBody2:     'for',
+    bookingDeclinedBody3:     'could not be accommodated at this time.',
+    bookingDeclinedFooter:    "We're sorry for any inconvenience. If you'd like to try alternative dates, please visit our booking page or contact us directly.",
+    // ── Access details ──────────────────────────────────────────────────────
+    accessSubjectPrefix:      'Your access details for',
+    accessHeading:             'Your access details are ready',
+    accessIntro1:              'your stay at',
+    accessIntro2:              'starts on',
+    accessIntro3:              'Here is everything you need to access the property.',
+    accessMethodCode:          'Keypad / door code',
+    accessMethodKeybox:        'Key lockbox',
+    accessMethodKeyed:         'Physical key',
+    accessMethodApp:           'Smart lock app',
+    accessMethodOther:         'Access details',
+    checkInFromLabel:          'Check-in from',
+    arrivalInstructionsTitle:  'Arrival Instructions',
+    keyLocationPhotoTitle:     '📍 Key location photo',
+    keyLocationPhotoCaption:   'Photo of the key location provided by',
+    accessCheckInDateLabel:    'Check-in date',
+    accessCheckOutDateLabel:   'Check-out date',
+    accessFooter:              'If you have any questions, please reply to this email to contact the owner directly.',
+    // ── Charges summary ─────────────────────────────────────────────────────
+    chargesSummarySubjectSuffix: 'charges summary',
+    chargesSummaryThanksFor:   'Thank you for staying at',
+    chargesSummaryIntro:       'we hope you had a wonderful stay. Here is a summary of your booking and any additional charges incurred during your visit.',
+    bookingTotalLabel:         'Booking total',
+    additionalChargesTitle:    'Additional charges',
+    chargesTotalLabel:         'Charges total',
+    grandTotalLabel:           'Grand total',
+    paymentRequestLabel:       'Payment request:',
+    paymentRequestBody1:       'Please arrange payment of',
+    paymentRequestBody2:       'directly with',
+    paymentRequestBody3:       'If you have any questions about these charges, please reply to this email.',
+    chargesSummaryFooter1:     'Once payment is confirmed you will receive a full receipt by email.',
+    chargesSummaryFooter2:     'Thank you for choosing',
+    chargesSummaryFooter3:     '— we hope to welcome you back soon.',
+    // ── Receipt ──────────────────────────────────────────────────────────────
+    receiptSubjectPrefix:      'Receipt',
+    receiptHeading:            'Payment receipt',
+    receiptRefLabel:           'Ref:',
+    datePaidLabel:             'Date paid',
+    paymentConfirmedTitle:     'Payment confirmed',
+    paymentConfirmedBody:      'Thank you — your payment has been received',
+    pmCash:                    'Cash',
+    pmCard:                    'Card (in person)',
+    pmBankTransfer:            'Bank transfer',
+    pmOther:                   'Other',
+    pmOnline:                  'Online payment',
+    itemisedBreakdownTitle:    'Itemised breakdown',
+    accommodationLabel:        'Accommodation',
+    noAdditionalCharges:       'No additional charges',
+    totalPaidLabel:            'Total paid',
+    receiptIssuedBy:           'This receipt was issued by',
+    receiptIssuedSuffix:       'via NestBook.',
+    receiptIssuedDateLabel:    'Issued:',
+    // ── Stay extended ────────────────────────────────────────────────────────
+    stayExtendedSubjectPrefix: 'Stay extended',
+    stayExtendedSubjectMid:    'now until',
+    stayExtendedHeading:       'Great news — your stay has been extended!',
+    stayExtendedIntro1:        'Your booking at',
+    stayExtendedIntro2:        'has been updated with new dates.',
+    unchangedLabel:            '(unchanged)',
+    previousCheckOutLabel:     'Previous check-out',
+    newCheckOutLabel:          'New check-out',
+    newTotalLabel:             'New total',
+    paymentNoteLabel:          'Payment note:',
+    stayExtendedPaymentNote1:  'Please arrange the additional payment for the extended nights directly with',
+    stayExtendedPaymentNote2:  'Reply to this email if you have any questions.',
+    // ── Stay shortened ───────────────────────────────────────────────────────
+    stayShortenedSubjectPrefix: 'Booking updated',
+    stayShortenedSubjectMid:    'check-out now',
+    stayShortenedHeading:       'Your booking has been updated',
+    stayShortenedIntro1:        'Your stay at',
+    stayShortenedIntro2:        'has been shortened.',
+    updatedTotalLabel:          'Updated total',
+    stayShortenedFooter:        'If you have any questions about your updated booking, please reply to this email to contact the property directly.',
   },
   fr: {
     proUpgradeSubject:    'Bienvenue sur NestBook Pro — tout est prêt !',
@@ -269,6 +364,101 @@ const T = {
     onboardPrintBtn:    "💡 Envie de conserver cet e-mail comme référence ? La plupart des messageries permettent d'imprimer via Fichier → Imprimer, ou l'option d'impression de votre navigateur.",
     onboardGuideIntro:  "Envie d'en savoir plus ? Notre guide de démarrage couvre tout, de la tarification saisonnière à votre widget de réservation. (Version anglaise uniquement pour le moment — d'autres langues arrivent bientôt.)",
     onboardGuideLink:   'Lire le guide de démarrage →',
+    // ── Shared (booking-lifecycle emails) ─────────────────────────────────
+    property:              'Propriété',
+    duration:               'Durée',
+    night:                  'nuit',
+    nights:                 'nuits',
+    guestLabel:             'Client',
+    paymentMethodLabel:     'Mode de paiement',
+    tableCategory:          'Catégorie',
+    tableDescription:       'Description',
+    tableAmount:            'Montant',
+    // ── Booking approved ───────────────────────────────────────────────────
+    bookingApprovedSubject:   'Réservation confirmée',
+    bookingApprovedHeading:   'Votre réservation est confirmée !',
+    greatNews:                'Bonne nouvelle,',
+    hasBeenApproved:          'a été approuvée.',
+    // ── Booking declined ───────────────────────────────────────────────────
+    bookingDeclinedSubject:   'Mise à jour de votre demande de réservation',
+    bookingDeclinedHeading:   'Mise à jour de votre demande de réservation',
+    bookingDeclinedBody1:     'malheureusement, votre demande de réservation chez',
+    bookingDeclinedBody2:     'pour',
+    bookingDeclinedBody3:     "n'a pas pu être satisfaite pour le moment.",
+    bookingDeclinedFooter:    "Nous sommes désolés pour la gêne occasionnée. Si vous souhaitez essayer d'autres dates, veuillez consulter notre page de réservation ou nous contacter directement.",
+    // ── Access details ──────────────────────────────────────────────────────
+    accessSubjectPrefix:      "Vos informations d'accès pour",
+    accessHeading:             "Vos informations d'accès sont prêtes",
+    accessIntro1:              'votre séjour chez',
+    accessIntro2:              'commence le',
+    accessIntro3:              'Voici tout ce dont vous avez besoin pour accéder au logement.',
+    accessMethodCode:          'Code / clavier à code',
+    accessMethodKeybox:        'Boîte à clés',
+    accessMethodKeyed:         'Clé physique',
+    accessMethodApp:           'Application de serrure connectée',
+    accessMethodOther:         "Informations d'accès",
+    checkInFromLabel:          "Arrivée possible à partir de",
+    arrivalInstructionsTitle:  "Instructions d'arrivée",
+    keyLocationPhotoTitle:     "📍 Photo de l'emplacement des clés",
+    keyLocationPhotoCaption:   "Photo de l'emplacement des clés fournie par",
+    accessCheckInDateLabel:    "Date d'arrivée",
+    accessCheckOutDateLabel:   'Date de départ',
+    accessFooter:              'Pour toute question, répondez à cet e-mail pour contacter directement le propriétaire.',
+    // ── Charges summary ─────────────────────────────────────────────────────
+    chargesSummarySubjectSuffix: 'récapitulatif des frais',
+    chargesSummaryThanksFor:   'Merci pour votre séjour chez',
+    chargesSummaryIntro:       'nous espérons que vous avez passé un excellent séjour. Voici un récapitulatif de votre réservation et des frais supplémentaires engagés durant votre visite.',
+    bookingTotalLabel:         'Total de la réservation',
+    additionalChargesTitle:    'Frais supplémentaires',
+    chargesTotalLabel:         'Total des frais',
+    grandTotalLabel:           'Total général',
+    paymentRequestLabel:       'Demande de paiement :',
+    paymentRequestBody1:       'Veuillez régler',
+    paymentRequestBody2:       'directement auprès de',
+    paymentRequestBody3:       'Pour toute question concernant ces frais, veuillez répondre à cet e-mail.',
+    chargesSummaryFooter1:     'Une fois le paiement confirmé, vous recevrez un reçu complet par e-mail.',
+    chargesSummaryFooter2:     "Merci d'avoir choisi",
+    chargesSummaryFooter3:     '— nous espérons vous accueillir de nouveau bientôt.',
+    // ── Receipt ──────────────────────────────────────────────────────────────
+    receiptSubjectPrefix:      'Reçu',
+    receiptHeading:            'Reçu de paiement',
+    receiptRefLabel:           'Réf :',
+    datePaidLabel:             'Date de paiement',
+    paymentConfirmedTitle:     'Paiement confirmé',
+    paymentConfirmedBody:      'Merci — votre paiement a bien été reçu',
+    pmCash:                    'Espèces',
+    pmCard:                    'Carte (sur place)',
+    pmBankTransfer:            'Virement bancaire',
+    pmOther:                   'Autre',
+    pmOnline:                  'Paiement en ligne',
+    itemisedBreakdownTitle:    'Détail des frais',
+    accommodationLabel:        'Hébergement',
+    noAdditionalCharges:       'Aucun frais supplémentaire',
+    totalPaidLabel:            'Total payé',
+    receiptIssuedBy:           'Ce reçu a été émis par',
+    receiptIssuedSuffix:       'via NestBook.',
+    receiptIssuedDateLabel:    'Émis le :',
+    // ── Stay extended ────────────────────────────────────────────────────────
+    stayExtendedSubjectPrefix: 'Séjour prolongé',
+    stayExtendedSubjectMid:    "jusqu'au",
+    stayExtendedHeading:       'Bonne nouvelle — votre séjour a été prolongé !',
+    stayExtendedIntro1:        'Votre réservation chez',
+    stayExtendedIntro2:        'a été mise à jour avec de nouvelles dates.',
+    unchangedLabel:            '(inchangé)',
+    previousCheckOutLabel:     'Départ précédent',
+    newCheckOutLabel:          'Nouveau départ',
+    newTotalLabel:             'Nouveau total',
+    paymentNoteLabel:          'Note de paiement :',
+    stayExtendedPaymentNote1:  'Veuillez régler le paiement supplémentaire pour les nuits ajoutées directement auprès de',
+    stayExtendedPaymentNote2:  'Répondez à cet e-mail si vous avez des questions.',
+    // ── Stay shortened ───────────────────────────────────────────────────────
+    stayShortenedSubjectPrefix: 'Réservation mise à jour',
+    stayShortenedSubjectMid:    'départ désormais le',
+    stayShortenedHeading:       'Votre réservation a été mise à jour',
+    stayShortenedIntro1:        'Votre séjour chez',
+    stayShortenedIntro2:        'a été raccourci.',
+    updatedTotalLabel:          'Total mis à jour',
+    stayShortenedFooter:        'Pour toute question concernant votre réservation mise à jour, veuillez répondre à cet e-mail pour contacter directement le logement.',
   },
   es: {
     proUpgradeSubject:    '¡Bienvenido a NestBook Pro — todo listo!',
@@ -389,6 +579,101 @@ const T = {
     onboardPrintBtn:    '💡 ¿Quieres guardar este correo como referencia? La mayoría de las aplicaciones de correo permiten imprimir desde Archivo → Imprimir, o mediante la opción de impresión de tu navegador.',
     onboardGuideIntro:  '¿Quieres ver el panorama completo? Nuestra guía de primeros pasos cubre todo, desde precios estacionales hasta tu widget de reservas. (Solo disponible en inglés por ahora — próximamente en más idiomas.)',
     onboardGuideLink:   'Leer la guía de primeros pasos →',
+    // ── Shared (booking-lifecycle emails) ─────────────────────────────────
+    property:              'Alojamiento',
+    duration:               'Duración',
+    night:                  'noche',
+    nights:                 'noches',
+    guestLabel:             'Huésped',
+    paymentMethodLabel:     'Método de pago',
+    tableCategory:          'Categoría',
+    tableDescription:       'Descripción',
+    tableAmount:            'Importe',
+    // ── Booking approved ───────────────────────────────────────────────────
+    bookingApprovedSubject:   'Reserva confirmada',
+    bookingApprovedHeading:   '¡Su reserva está confirmada!',
+    greatNews:                '¡Buenas noticias,',
+    hasBeenApproved:          'ha sido aprobada.',
+    // ── Booking declined ───────────────────────────────────────────────────
+    bookingDeclinedSubject:   'Actualización de su solicitud de reserva',
+    bookingDeclinedHeading:   'Actualización de su solicitud de reserva',
+    bookingDeclinedBody1:     'lamentablemente, su solicitud de reserva en',
+    bookingDeclinedBody2:     'para',
+    bookingDeclinedBody3:     'no ha podido ser confirmada en este momento.',
+    bookingDeclinedFooter:    'Lamentamos las molestias. Si desea probar con otras fechas, visite nuestra página de reservas o contáctenos directamente.',
+    // ── Access details ──────────────────────────────────────────────────────
+    accessSubjectPrefix:      'Sus datos de acceso para',
+    accessHeading:             'Sus datos de acceso ya están listos',
+    accessIntro1:              'su estancia en',
+    accessIntro2:              'comienza el',
+    accessIntro3:              'Aquí tiene todo lo que necesita para acceder al alojamiento.',
+    accessMethodCode:          'Teclado / código de puerta',
+    accessMethodKeybox:        'Caja de seguridad para llaves',
+    accessMethodKeyed:         'Llave física',
+    accessMethodApp:           'Aplicación de cerradura inteligente',
+    accessMethodOther:         'Datos de acceso',
+    checkInFromLabel:          'Llegada a partir de las',
+    arrivalInstructionsTitle:  'Instrucciones de llegada',
+    keyLocationPhotoTitle:     '📍 Foto de la ubicación de las llaves',
+    keyLocationPhotoCaption:   'Foto de la ubicación de las llaves proporcionada por',
+    accessCheckInDateLabel:    'Fecha de llegada',
+    accessCheckOutDateLabel:   'Fecha de salida',
+    accessFooter:              'Si tiene alguna pregunta, responda a este correo para contactar directamente con el propietario.',
+    // ── Charges summary ─────────────────────────────────────────────────────
+    chargesSummarySubjectSuffix: 'resumen de cargos',
+    chargesSummaryThanksFor:   'Gracias por alojarse en',
+    chargesSummaryIntro:       'esperamos que haya disfrutado de una estancia maravillosa. A continuación encontrará un resumen de su reserva y de los cargos adicionales generados durante su visita.',
+    bookingTotalLabel:         'Total de la reserva',
+    additionalChargesTitle:    'Cargos adicionales',
+    chargesTotalLabel:         'Total de cargos',
+    grandTotalLabel:           'Total general',
+    paymentRequestLabel:       'Solicitud de pago:',
+    paymentRequestBody1:       'Por favor, abone',
+    paymentRequestBody2:       'directamente a',
+    paymentRequestBody3:       'Si tiene alguna pregunta sobre estos cargos, responda a este correo.',
+    chargesSummaryFooter1:     'Una vez confirmado el pago, recibirá un recibo completo por correo electrónico.',
+    chargesSummaryFooter2:     'Gracias por elegir',
+    chargesSummaryFooter3:     '— esperamos darle la bienvenida de nuevo pronto.',
+    // ── Receipt ──────────────────────────────────────────────────────────────
+    receiptSubjectPrefix:      'Recibo',
+    receiptHeading:            'Recibo de pago',
+    receiptRefLabel:           'Ref.:',
+    datePaidLabel:             'Fecha de pago',
+    paymentConfirmedTitle:     'Pago confirmado',
+    paymentConfirmedBody:      'Gracias — su pago ha sido recibido',
+    pmCash:                    'Efectivo',
+    pmCard:                    'Tarjeta (en persona)',
+    pmBankTransfer:            'Transferencia bancaria',
+    pmOther:                   'Otro',
+    pmOnline:                  'Pago en línea',
+    itemisedBreakdownTitle:    'Desglose detallado',
+    accommodationLabel:        'Alojamiento',
+    noAdditionalCharges:       'Sin cargos adicionales',
+    totalPaidLabel:            'Total pagado',
+    receiptIssuedBy:           'Este recibo fue emitido por',
+    receiptIssuedSuffix:       'a través de NestBook.',
+    receiptIssuedDateLabel:    'Emitido:',
+    // ── Stay extended ────────────────────────────────────────────────────────
+    stayExtendedSubjectPrefix: 'Estancia ampliada',
+    stayExtendedSubjectMid:    'ahora hasta',
+    stayExtendedHeading:       '¡Buenas noticias — su estancia ha sido ampliada!',
+    stayExtendedIntro1:        'Su reserva en',
+    stayExtendedIntro2:        'se ha actualizado con nuevas fechas.',
+    unchangedLabel:            '(sin cambios)',
+    previousCheckOutLabel:     'Salida anterior',
+    newCheckOutLabel:          'Nueva salida',
+    newTotalLabel:             'Nuevo total',
+    paymentNoteLabel:          'Nota de pago:',
+    stayExtendedPaymentNote1:  'Por favor, abone el pago adicional por las noches ampliadas directamente a',
+    stayExtendedPaymentNote2:  'Responda a este correo si tiene alguna pregunta.',
+    // ── Stay shortened ───────────────────────────────────────────────────────
+    stayShortenedSubjectPrefix: 'Reserva actualizada',
+    stayShortenedSubjectMid:    'salida ahora el',
+    stayShortenedHeading:       'Su reserva ha sido actualizada',
+    stayShortenedIntro1:        'Su estancia en',
+    stayShortenedIntro2:        'se ha acortado.',
+    updatedTotalLabel:          'Total actualizado',
+    stayShortenedFooter:        'Si tiene alguna pregunta sobre su reserva actualizada, responda a este correo para contactar directamente con el alojamiento.',
   },
   de: {
     proUpgradeSubject:    'Willkommen bei NestBook Pro — alles ist bereit!',
@@ -509,6 +794,101 @@ const T = {
     onboardPrintBtn:    '💡 Möchten Sie diese E-Mail als Referenz aufbewahren? Die meisten E-Mail-Programme ermöglichen den Druck über Datei → Drucken oder die Druckfunktion Ihres Browsers.',
     onboardGuideIntro:  'Möchten Sie mehr erfahren? Unser Erste-Schritte-Leitfaden deckt alles ab, von saisonalen Preisen bis zu Ihrem Buchungs-Widget. (Vorerst nur auf Englisch — weitere Sprachen folgen in Kürze.)',
     onboardGuideLink:   'Erste-Schritte-Leitfaden lesen →',
+    // ── Shared (booking-lifecycle emails) ─────────────────────────────────
+    property:              'Unterkunft',
+    duration:               'Dauer',
+    night:                  'Nacht',
+    nights:                 'Nächte',
+    guestLabel:             'Gast',
+    paymentMethodLabel:     'Zahlungsart',
+    tableCategory:          'Kategorie',
+    tableDescription:       'Beschreibung',
+    tableAmount:            'Betrag',
+    // ── Booking approved ───────────────────────────────────────────────────
+    bookingApprovedSubject:   'Buchung bestätigt',
+    bookingApprovedHeading:   'Ihre Buchung ist bestätigt!',
+    greatNews:                'Gute Nachrichten,',
+    hasBeenApproved:          'wurde genehmigt.',
+    // ── Booking declined ───────────────────────────────────────────────────
+    bookingDeclinedSubject:   'Aktualisierung Ihrer Buchungsanfrage',
+    bookingDeclinedHeading:   'Aktualisierung Ihrer Buchungsanfrage',
+    bookingDeclinedBody1:     'leider konnte Ihre Buchungsanfrage bei',
+    bookingDeclinedBody2:     'für',
+    bookingDeclinedBody3:     'derzeit nicht berücksichtigt werden.',
+    bookingDeclinedFooter:    'Es tut uns leid für die Unannehmlichkeiten. Wenn Sie andere Termine ausprobieren möchten, besuchen Sie bitte unsere Buchungsseite oder kontaktieren Sie uns direkt.',
+    // ── Access details ──────────────────────────────────────────────────────
+    accessSubjectPrefix:      'Ihre Zugangsdaten für',
+    accessHeading:             'Ihre Zugangsdaten sind bereit',
+    accessIntro1:              'Ihr Aufenthalt bei',
+    accessIntro2:              'beginnt am',
+    accessIntro3:              'Hier finden Sie alles, was Sie für den Zugang zur Unterkunft benötigen.',
+    accessMethodCode:          'Zahlenschloss / Türcode',
+    accessMethodKeybox:        'Schlüsselbox',
+    accessMethodKeyed:         'Physischer Schlüssel',
+    accessMethodApp:           'Smart-Lock-App',
+    accessMethodOther:         'Zugangsdaten',
+    checkInFromLabel:          'Anreise ab',
+    arrivalInstructionsTitle:  'Ankunftshinweise',
+    keyLocationPhotoTitle:     '📍 Foto des Schlüsselstandorts',
+    keyLocationPhotoCaption:   'Foto des Schlüsselstandorts bereitgestellt von',
+    accessCheckInDateLabel:    'Anreisedatum',
+    accessCheckOutDateLabel:   'Abreisedatum',
+    accessFooter:              'Bei Fragen antworten Sie bitte auf diese E-Mail, um den Gastgeber direkt zu kontaktieren.',
+    // ── Charges summary ─────────────────────────────────────────────────────
+    chargesSummarySubjectSuffix: 'Kostenübersicht',
+    chargesSummaryThanksFor:   'Vielen Dank für Ihren Aufenthalt bei',
+    chargesSummaryIntro:       'wir hoffen, Sie hatten einen wunderbaren Aufenthalt. Hier finden Sie eine Übersicht Ihrer Buchung sowie etwaiger zusätzlicher Kosten während Ihres Aufenthalts.',
+    bookingTotalLabel:         'Buchungssumme',
+    additionalChargesTitle:    'Zusätzliche Kosten',
+    chargesTotalLabel:         'Summe der Zusatzkosten',
+    grandTotalLabel:           'Gesamtsumme',
+    paymentRequestLabel:       'Zahlungsaufforderung:',
+    paymentRequestBody1:       'Bitte begleichen Sie',
+    paymentRequestBody2:       'direkt bei',
+    paymentRequestBody3:       'Bei Fragen zu diesen Kosten antworten Sie bitte auf diese E-Mail.',
+    chargesSummaryFooter1:     'Sobald die Zahlung bestätigt ist, erhalten Sie eine vollständige Quittung per E-Mail.',
+    chargesSummaryFooter2:     'Vielen Dank, dass Sie sich für',
+    chargesSummaryFooter3:     'entschieden haben — wir hoffen, Sie bald wieder begrüßen zu dürfen.',
+    // ── Receipt ──────────────────────────────────────────────────────────────
+    receiptSubjectPrefix:      'Quittung',
+    receiptHeading:            'Zahlungsquittung',
+    receiptRefLabel:           'Ref.:',
+    datePaidLabel:             'Zahlungsdatum',
+    paymentConfirmedTitle:     'Zahlung bestätigt',
+    paymentConfirmedBody:      'Vielen Dank — Ihre Zahlung ist eingegangen',
+    pmCash:                    'Bargeld',
+    pmCard:                    'Karte (vor Ort)',
+    pmBankTransfer:            'Banküberweisung',
+    pmOther:                   'Sonstiges',
+    pmOnline:                  'Online-Zahlung',
+    itemisedBreakdownTitle:    'Detaillierte Aufstellung',
+    accommodationLabel:        'Unterkunft',
+    noAdditionalCharges:       'Keine zusätzlichen Kosten',
+    totalPaidLabel:            'Gesamtbetrag bezahlt',
+    receiptIssuedBy:           'Diese Quittung wurde ausgestellt von',
+    receiptIssuedSuffix:       'über NestBook.',
+    receiptIssuedDateLabel:    'Ausgestellt am:',
+    // ── Stay extended ────────────────────────────────────────────────────────
+    stayExtendedSubjectPrefix: 'Aufenthalt verlängert',
+    stayExtendedSubjectMid:    'jetzt bis',
+    stayExtendedHeading:       'Gute Nachrichten — Ihr Aufenthalt wurde verlängert!',
+    stayExtendedIntro1:        'Ihre Buchung bei',
+    stayExtendedIntro2:        'wurde mit neuen Terminen aktualisiert.',
+    unchangedLabel:            '(unverändert)',
+    previousCheckOutLabel:     'Bisherige Abreise',
+    newCheckOutLabel:          'Neue Abreise',
+    newTotalLabel:             'Neuer Gesamtbetrag',
+    paymentNoteLabel:          'Zahlungshinweis:',
+    stayExtendedPaymentNote1:  'Bitte begleichen Sie die zusätzliche Zahlung für die verlängerten Nächte direkt bei',
+    stayExtendedPaymentNote2:  'Antworten Sie auf diese E-Mail, falls Sie Fragen haben.',
+    // ── Stay shortened ───────────────────────────────────────────────────────
+    stayShortenedSubjectPrefix: 'Buchung aktualisiert',
+    stayShortenedSubjectMid:    'Abreise nun am',
+    stayShortenedHeading:       'Ihre Buchung wurde aktualisiert',
+    stayShortenedIntro1:        'Ihr Aufenthalt bei',
+    stayShortenedIntro2:        'wurde verkürzt.',
+    updatedTotalLabel:          'Aktualisierter Gesamtbetrag',
+    stayShortenedFooter:        'Bei Fragen zu Ihrer aktualisierten Buchung antworten Sie bitte auf diese E-Mail, um die Unterkunft direkt zu kontaktieren.',
   },
   nl: {
     proUpgradeSubject:    'Welkom bij NestBook Pro — alles is klaar!',
@@ -629,6 +1009,101 @@ const T = {
     onboardPrintBtn:    "💡 Wil je deze e-mail als naslagwerk bewaren? De meeste e-mailprogramma's laten je afdrukken via Bestand → Afdrukken, of via de afdrukoptie van je browser.",
     onboardGuideIntro:  'Wil je het hele plaatje zien? Onze Aan de slag-gids behandelt alles, van seizoensprijzen tot je boekingswidget. (Voorlopig alleen in het Engels — meer talen volgen binnenkort.)',
     onboardGuideLink:   'Lees de Aan de slag-gids →',
+    // ── Shared (booking-lifecycle emails) ─────────────────────────────────
+    property:              'Accommodatie',
+    duration:               'Duur',
+    night:                  'nacht',
+    nights:                 'nachten',
+    guestLabel:             'Gast',
+    paymentMethodLabel:     'Betaalmethode',
+    tableCategory:          'Categorie',
+    tableDescription:       'Omschrijving',
+    tableAmount:            'Bedrag',
+    // ── Booking approved ───────────────────────────────────────────────────
+    bookingApprovedSubject:   'Boeking bevestigd',
+    bookingApprovedHeading:   'Uw boeking is bevestigd!',
+    greatNews:                'Goed nieuws,',
+    hasBeenApproved:          'is goedgekeurd.',
+    // ── Booking declined ───────────────────────────────────────────────────
+    bookingDeclinedSubject:   'Update over uw boekingsaanvraag',
+    bookingDeclinedHeading:   'Update over uw boekingsaanvraag',
+    bookingDeclinedBody1:     'helaas kon uw boekingsaanvraag bij',
+    bookingDeclinedBody2:     'voor',
+    bookingDeclinedBody3:     'op dit moment niet worden gehonoreerd.',
+    bookingDeclinedFooter:    'Onze excuses voor het ongemak. Wilt u andere data proberen, bezoek dan onze boekingspagina of neem rechtstreeks contact met ons op.',
+    // ── Access details ──────────────────────────────────────────────────────
+    accessSubjectPrefix:      'Uw toegangsgegevens voor',
+    accessHeading:             'Uw toegangsgegevens zijn klaar',
+    accessIntro1:              'uw verblijf bij',
+    accessIntro2:              'begint op',
+    accessIntro3:              'Hier vindt u alles wat u nodig heeft om toegang te krijgen tot de accommodatie.',
+    accessMethodCode:          'Codeslot / deurcode',
+    accessMethodKeybox:        'Sleutelkluisje',
+    accessMethodKeyed:         'Fysieke sleutel',
+    accessMethodApp:           'Slim-slot-app',
+    accessMethodOther:         'Toegangsgegevens',
+    checkInFromLabel:          'Inchecken vanaf',
+    arrivalInstructionsTitle:  'Aankomstinstructies',
+    keyLocationPhotoTitle:     '📍 Foto van de sleutellocatie',
+    keyLocationPhotoCaption:   'Foto van de sleutellocatie, aangeleverd door',
+    accessCheckInDateLabel:    'Aankomstdatum',
+    accessCheckOutDateLabel:   'Vertrekdatum',
+    accessFooter:              'Heeft u vragen? Beantwoord deze e-mail om rechtstreeks contact op te nemen met de eigenaar.',
+    // ── Charges summary ─────────────────────────────────────────────────────
+    chargesSummarySubjectSuffix: 'overzicht van kosten',
+    chargesSummaryThanksFor:   'Bedankt voor uw verblijf bij',
+    chargesSummaryIntro:       'we hopen dat u een fantastisch verblijf heeft gehad. Hieronder vindt u een overzicht van uw boeking en eventuele extra kosten tijdens uw verblijf.',
+    bookingTotalLabel:         'Totaal boeking',
+    additionalChargesTitle:    'Extra kosten',
+    chargesTotalLabel:         'Totaal extra kosten',
+    grandTotalLabel:           'Eindtotaal',
+    paymentRequestLabel:       'Betalingsverzoek:',
+    paymentRequestBody1:       'Wilt u een bedrag van',
+    paymentRequestBody2:       'rechtstreeks voldoen aan',
+    paymentRequestBody3:       'Heeft u vragen over deze kosten? Beantwoord dan deze e-mail.',
+    chargesSummaryFooter1:     'Zodra de betaling is bevestigd, ontvangt u een volledige kwitantie per e-mail.',
+    chargesSummaryFooter2:     'Bedankt dat u voor',
+    chargesSummaryFooter3:     'heeft gekozen — we hopen u snel weer te mogen verwelkomen.',
+    // ── Receipt ──────────────────────────────────────────────────────────────
+    receiptSubjectPrefix:      'Kwitantie',
+    receiptHeading:            'Betalingskwitantie',
+    receiptRefLabel:           'Ref.:',
+    datePaidLabel:             'Betaaldatum',
+    paymentConfirmedTitle:     'Betaling bevestigd',
+    paymentConfirmedBody:      'Bedankt — uw betaling is ontvangen',
+    pmCash:                    'Contant',
+    pmCard:                    'Kaart (ter plaatse)',
+    pmBankTransfer:            'Bankoverschrijving',
+    pmOther:                   'Overig',
+    pmOnline:                  'Online betaling',
+    itemisedBreakdownTitle:    'Gespecificeerd overzicht',
+    accommodationLabel:        'Accommodatie',
+    noAdditionalCharges:       'Geen extra kosten',
+    totalPaidLabel:            'Totaal betaald',
+    receiptIssuedBy:           'Deze kwitantie is uitgegeven door',
+    receiptIssuedSuffix:       'via NestBook.',
+    receiptIssuedDateLabel:    'Uitgegeven op:',
+    // ── Stay extended ────────────────────────────────────────────────────────
+    stayExtendedSubjectPrefix: 'Verblijf verlengd',
+    stayExtendedSubjectMid:    'nu tot',
+    stayExtendedHeading:       'Goed nieuws — uw verblijf is verlengd!',
+    stayExtendedIntro1:        'Uw boeking bij',
+    stayExtendedIntro2:        'is bijgewerkt met nieuwe data.',
+    unchangedLabel:            '(ongewijzigd)',
+    previousCheckOutLabel:     'Vorige vertrekdatum',
+    newCheckOutLabel:          'Nieuwe vertrekdatum',
+    newTotalLabel:             'Nieuw totaal',
+    paymentNoteLabel:          'Betalingsopmerking:',
+    stayExtendedPaymentNote1:  'Wilt u de extra betaling voor de verlengde nachten rechtstreeks voldoen aan',
+    stayExtendedPaymentNote2:  'Beantwoord deze e-mail als u vragen heeft.',
+    // ── Stay shortened ───────────────────────────────────────────────────────
+    stayShortenedSubjectPrefix: 'Boeking bijgewerkt',
+    stayShortenedSubjectMid:    'vertrek nu op',
+    stayShortenedHeading:       'Uw boeking is bijgewerkt',
+    stayShortenedIntro1:        'Uw verblijf bij',
+    stayShortenedIntro2:        'is ingekort.',
+    updatedTotalLabel:          'Bijgewerkt totaal',
+    stayShortenedFooter:        'Heeft u vragen over uw bijgewerkte boeking? Beantwoord dan deze e-mail om rechtstreeks contact op te nemen met de accommodatie.',
   },
 };
 
@@ -780,7 +1255,7 @@ function bookingConfirmationHtml(booking, property) {
 // ── Pro upgrade email HTML ────────────────────────────────────────────────────
 
 function proUpgradeHtml(user, property, periodEnd) {
-  const locale = property?.locale ?? 'en';
+  const locale = user?.language ?? 'en';
 
   const featureItem = (text) => `
     <tr>
@@ -853,7 +1328,7 @@ function proUpgradeHtml(user, property, periodEnd) {
 // ── Multi upgrade email HTML ──────────────────────────────────────────────────
 
 function multiUpgradeHtml(user, property) {
-  const locale = property?.locale ?? 'en';
+  const locale = user?.language ?? 'en';
 
   const featureItem = (text) => `
     <tr>
@@ -1254,7 +1729,7 @@ export async function sendUpgradeWelcome(user, property, periodEnd) {
   console.log('[email] sendUpgradeWelcome called — user:', user?.email, '| property id:', property?.id, '| resend ready:', !!resend);
   if (!resend) { console.warn('[email] Skipping — resend not initialised'); return; }
   if (!user?.email) { console.warn('[email] Skipping — no user email'); return; }
-  const locale = property?.locale ?? 'en';
+  const locale = user?.language ?? 'en';
   let html;
   try {
     html = proUpgradeHtml(user, property ?? {}, periodEnd);
@@ -1285,7 +1760,7 @@ export async function sendMultiWelcome(user, property) {
   console.log('[email] sendMultiWelcome called — user:', user?.email, '| property id:', property?.id, '| resend ready:', !!resend);
   if (!resend) { console.warn('[email] Skipping — resend not initialised'); return; }
   if (!user?.email) { console.warn('[email] Skipping — no user email'); return; }
-  const locale = property?.locale ?? 'en';
+  const locale = user?.language ?? 'en';
   let html;
   try {
     html = multiUpgradeHtml(user, property ?? {});
@@ -1503,43 +1978,46 @@ export async function sendBookingApprovedEmail(booking, property) {
   if (!resend) return;
   if (!booking?.guest_email) return;
 
-  const subject = `Booking confirmed — ${property?.name ?? 'NestBook'}`;
+  const locale  = property?.locale ?? 'en';
+  const subject = `${t(locale, 'bookingApprovedSubject')} — ${property?.name ?? 'NestBook'}`;
   const nights  = Math.round((new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000);
+  const checkInDate  = fmtDate(booking.check_in_date,  locale);
+  const checkOutDate = fmtDate(booking.check_out_date, locale);
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">Your booking is confirmed!</h1>
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">${t(locale, 'bookingApprovedHeading')}</h1>
     <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
-      Great news, ${booking.guest_first_name}! Your booking at <strong>${property?.name ?? ''}</strong> has been approved.
+      ${t(locale, 'greatNews')} ${booking.guest_first_name}! ${t(locale, 'yourBookingAt')} <strong>${property?.name ?? ''}</strong> ${t(locale, 'hasBeenApproved')}
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f0ede8;border-radius:8px;padding:20px 24px;margin-bottom:24px;border:1px solid #405440;">
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">Property</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;vertical-align:top;">${t(locale, 'property')}</td>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${property?.name ?? '—'}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Check-in</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_in_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">${t(locale, 'checkIn')}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${checkInDate}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Check-out</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_out_date}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">${t(locale, 'checkOut')}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${checkOutDate}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Duration</td>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${nights} night${nights !== 1 ? 's' : ''}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">${t(locale, 'duration')}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${nights} ${nights !== 1 ? t(locale, 'nights') : t(locale, 'night')}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">Guests</td>
+        <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;vertical-align:top;">${t(locale, 'guests')}</td>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.875rem;color:#405440;font-weight:600;">${booking.num_guests ?? 1}</td>
       </tr>
       <tr>
-        <td style="padding:10px 0;font-size:0.82rem;color:#405440;vertical-align:top;">Booking ref</td>
+        <td style="padding:10px 0;font-size:0.82rem;color:#405440;vertical-align:top;">${t(locale, 'bookingRef')}</td>
         <td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">#${booking.id}</td>
       </tr>
     </table>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
-      Questions? Reply to this email and we'll get back to you.
+      ${t(locale, 'questions')}
     </p>`;
 
   try {
@@ -1555,16 +2033,19 @@ export async function sendBookingDeclinedEmail(booking, property) {
   if (!resend) return;
   if (!booking?.guest_email) return;
 
-  const subject = `Booking request update — ${property?.name ?? 'NestBook'}`;
+  const locale  = property?.locale ?? 'en';
+  const subject = `${t(locale, 'bookingDeclinedSubject')} — ${property?.name ?? 'NestBook'}`;
+  const checkInDate  = fmtDate(booking.check_in_date,  locale);
+  const checkOutDate = fmtDate(booking.check_out_date, locale);
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">Booking request update</h1>
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">${t(locale, 'bookingDeclinedHeading')}</h1>
     <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
-      Dear ${booking.guest_first_name}, unfortunately your booking request at <strong>${property?.name ?? ''}</strong>
-      for ${booking.check_in_date} – ${booking.check_out_date} could not be accommodated at this time.
+      ${t(locale, 'dear')} ${booking.guest_first_name}, ${t(locale, 'bookingDeclinedBody1')} <strong>${property?.name ?? ''}</strong>
+      ${t(locale, 'bookingDeclinedBody2')} ${checkInDate} – ${checkOutDate} ${t(locale, 'bookingDeclinedBody3')}
     </p>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
-      We're sorry for any inconvenience. If you'd like to try alternative dates, please visit our booking page or contact us directly.
+      ${t(locale, 'bookingDeclinedFooter')}
     </p>`;
 
   try {
@@ -1586,16 +2067,19 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
   if (!booking?.guest_email) return;
   if (!accessInfo?.arrival_instructions && !accessInfo?.access_code) return;
 
+  const locale = property?.locale ?? 'en';
   const ACCESS_METHOD_LABELS = {
-    code:   'Keypad / door code',
-    keybox: 'Key lockbox',
-    keyed:  'Physical key',
-    app:    'Smart lock app',
-    other:  'Access details',
+    code:   t(locale, 'accessMethodCode'),
+    keybox: t(locale, 'accessMethodKeybox'),
+    keyed:  t(locale, 'accessMethodKeyed'),
+    app:    t(locale, 'accessMethodApp'),
+    other:  t(locale, 'accessMethodOther'),
   };
-  const methodLabel = ACCESS_METHOD_LABELS[accessInfo.access_method] ?? 'Access details';
+  const methodLabel = ACCESS_METHOD_LABELS[accessInfo.access_method] ?? t(locale, 'accessMethodOther');
   const guestName   = `${booking.guest_first_name} ${booking.guest_last_name}`;
-  const subject     = `Your access details for ${property.name} — ${booking.check_in_date}`;
+  const checkInDate  = fmtDate(booking.check_in_date,  locale);
+  const checkOutDate = fmtDate(booking.check_out_date, locale);
+  const subject     = `${t(locale, 'accessSubjectPrefix')} ${property.name} — ${checkInDate}`;
 
   const accessBlock = accessInfo.access_code ? `
     <table width="100%" cellpadding="0" cellspacing="0"
@@ -1604,12 +2088,12 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:0.82rem;color:#405440;width:40%;">${methodLabel}</td>
         <td style="padding:10px 0;border-bottom:1px solid #e5e7eb;font-size:1.1rem;color:#405440;font-weight:800;letter-spacing:2px;">${accessInfo.access_code}</td>
       </tr>
-      ${property.check_in_time ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#405440;">Check-in from</td><td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">${property.check_in_time}</td></tr>` : ''}
+      ${property.check_in_time ? `<tr><td style="padding:10px 0;font-size:0.82rem;color:#405440;">${t(locale, 'checkInFromLabel')}</td><td style="padding:10px 0;font-size:0.875rem;color:#405440;font-weight:600;">${property.check_in_time}</td></tr>` : ''}
     </table>` : '';
 
   const instructionsBlock = accessInfo.arrival_instructions ? `
     <div style="background:#fffbf0;border:1px solid #fcd34d;border-radius:8px;padding:18px 20px;margin-bottom:24px;">
-      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b45309;margin-bottom:8px;">Arrival Instructions</div>
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b45309;margin-bottom:8px;">${t(locale, 'arrivalInstructionsTitle')}</div>
       <div style="font-size:0.9rem;color:#405440;line-height:1.7;white-space:pre-line;">${accessInfo.arrival_instructions}</div>
     </div>` : '';
 
@@ -1619,18 +2103,18 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
     : null;
   const photoBlock = photoPath && fs.existsSync(photoPath) ? `
     <div style="margin-bottom:24px;">
-      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#405440;margin-bottom:10px;">📍 Key location photo</div>
+      <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#405440;margin-bottom:10px;">${t(locale, 'keyLocationPhotoTitle')}</div>
       <img src="${appBase}/uploads/access/${accessInfo.access_photo}"
            alt="Key location"
            style="width:100%;max-width:500px;border-radius:8px;border:1px solid #e2e8f0;display:block;" />
-      <p style="font-size:0.75rem;color:#405440;margin:6px 0 0;">Photo of the key location provided by ${property.name}</p>
+      <p style="font-size:0.75rem;color:#405440;margin:6px 0 0;">${t(locale, 'keyLocationPhotoCaption')} ${property.name}</p>
     </div>` : '';
 
   const body = `
-    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">Your access details are ready</h1>
+    <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">${t(locale, 'accessHeading')}</h1>
     <p style="margin:0 0 20px;font-size:0.95rem;color:#405440;">
-      Hi ${guestName}, your stay at <strong>${property.name}</strong> starts on <strong>${booking.check_in_date}</strong>.
-      Here is everything you need to access the property.
+      ${t(locale, 'dear')} ${guestName}, ${t(locale, 'accessIntro1')} <strong>${property.name}</strong> ${t(locale, 'accessIntro2')} <strong>${checkInDate}</strong>.
+      ${t(locale, 'accessIntro3')}
     </p>
     ${accessBlock}
     ${instructionsBlock}
@@ -1638,20 +2122,20 @@ export async function sendAccessEmail(booking, property, accessInfo = property) 
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:40%;">Check-in date</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_in_date}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:40%;">${t(locale, 'accessCheckInDateLabel')}</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${checkInDate}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-out date</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${booking.check_out_date}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'accessCheckOutDateLabel')}</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${checkOutDate}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Guests</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'guests')}</td>
         <td style="padding:6px 0;font-size:0.875rem;color:#405440;font-weight:600;">${booking.num_guests ?? 1}</td>
       </tr>
     </table>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
-      If you have any questions, please reply to this email to contact the owner directly.
+      ${t(locale, 'accessFooter')}
     </p>`;
 
   try {
@@ -1672,11 +2156,14 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
   const outstanding = charges.filter((c) => !c.voided_at);
   if (outstanding.length === 0) return;
 
-  const currency     = property?.currency ?? 'GBP';
-  const chargesTotal = outstanding.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
-  const bookingTotal = parseFloat(booking.total_price) || 0;
-  const grandTotal   = bookingTotal + chargesTotal;
-  const guestName    = `${booking.guest_first_name} ${booking.guest_last_name}`;
+  const locale        = property?.locale ?? 'en';
+  const currency      = property?.currency ?? 'GBP';
+  const chargesTotal  = outstanding.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const bookingTotal  = parseFloat(booking.total_price) || 0;
+  const grandTotal    = bookingTotal + chargesTotal;
+  const guestName     = `${booking.guest_first_name} ${booking.guest_last_name}`;
+  const checkInDate   = fmtDate(booking.check_in_date,  locale);
+  const checkOutDate  = fmtDate(booking.check_out_date, locale);
 
   const chargeRows = outstanding.map((c) => `
     <tr>
@@ -1694,30 +2181,29 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
 
   const body = `
     <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
-      Thank you for staying at ${property.name}
+      ${t(locale, 'chargesSummaryThanksFor')} ${property.name}
     </h1>
     <p style="margin:0 0 24px;font-size:0.875rem;color:#405440;line-height:1.6;">
-      Dear ${guestName}, we hope you had a wonderful stay.
-      Here is a summary of your booking and any additional charges incurred during your visit.
+      ${t(locale, 'dear')} ${guestName}, ${t(locale, 'chargesSummaryIntro')}
     </p>
 
     <!-- Booking summary -->
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f0ede8;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:140px;">Property</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:140px;">${t(locale, 'property')}</td>
         <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#405440;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-in</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${fmtDate(booking.check_in_date, 'en')}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'checkIn')}</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${checkInDate}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-out</td>
-        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${fmtDate(booking.check_out_date, 'en')}</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'checkOut')}</td>
+        <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${checkOutDate}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Booking total</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'bookingTotalLabel')}</td>
         <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#405440;">
           ${fmtDepositAmount(bookingTotal, currency)}
         </td>
@@ -1725,24 +2211,24 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
     </table>
 
     <!-- Additional charges -->
-    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#405440;">Additional charges</h3>
+    <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#405440;">${t(locale, 'additionalChargesTitle')}</h3>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:20px;">
       <thead>
         <tr style="background:#f0ede8;">
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#405440;text-align:left;">Category</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">${t(locale, 'tableCategory')}</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#405440;text-align:left;">Description</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">${t(locale, 'tableDescription')}</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#405440;text-align:right;">Amount</th>
+                     letter-spacing:0.05em;color:#405440;text-align:right;">${t(locale, 'tableAmount')}</th>
         </tr>
       </thead>
       <tbody>${chargeRows}</tbody>
       <tfoot>
         <tr style="background:#f0ede8;">
           <td colspan="2" style="padding:10px 12px;font-weight:700;font-size:0.875rem;color:#405440;">
-            Charges total
+            ${t(locale, 'chargesTotalLabel')}
           </td>
           <td style="padding:10px 12px;font-weight:700;font-size:0.875rem;
                      color:#405440;text-align:right;">
@@ -1756,7 +2242,7 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#405440;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="color:white;font-weight:700;font-size:1rem;">Grand total</td>
+        <td style="color:white;font-weight:700;font-size:1rem;">${t(locale, 'grandTotalLabel')}</td>
         <td style="color:white;font-weight:800;font-size:1.25rem;text-align:right;">
           ${fmtDepositAmount(grandTotal, currency)}
         </td>
@@ -1767,16 +2253,15 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
     <div style="background:#fffbf0;border-left:4px solid #f59e0b;padding:14px 18px;
                 border-radius:0 8px 8px 0;margin-bottom:24px;">
       <p style="margin:0;font-size:0.875rem;color:#78350f;line-height:1.6;">
-        <strong>Payment request:</strong> Please arrange payment of
+        <strong>${t(locale, 'paymentRequestLabel')}</strong> ${t(locale, 'paymentRequestBody1')}
         <strong>${fmtDepositAmount(grandTotal, currency)}</strong>
-        directly with ${property.name}. If you have any questions about these charges,
-        please reply to this email.
+        ${t(locale, 'paymentRequestBody2')} ${property.name}. ${t(locale, 'paymentRequestBody3')}
       </p>
     </div>
 
     <p style="margin:0 0 24px;font-size:0.82rem;color:#405440;line-height:1.6;">
-      Once payment is confirmed you will receive a full receipt by email.
-      Thank you for choosing ${property.name} — we hope to welcome you back soon.
+      ${t(locale, 'chargesSummaryFooter1')}
+      ${t(locale, 'chargesSummaryFooter2')} ${property.name} ${t(locale, 'chargesSummaryFooter3')}
     </p>`;
 
   try {
@@ -1784,7 +2269,7 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
       from:    FROM,
       to:      booking.guest_email,
       replyTo: ownerEmail || undefined,
-      subject: `Your stay at ${property.name} — charges summary`,
+      subject: `${property.name} — ${t(locale, 'chargesSummarySubjectSuffix')}`,
       html:    guestMailerHtml(body, property),
     });
     console.log(`[charges-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
@@ -1798,6 +2283,7 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
   if (!resend) return;
   if (!booking?.guest_email) return;
 
+  const locale       = property?.locale ?? 'en';
   const currency     = property?.currency ?? 'GBP';
   const outstanding  = charges.filter((c) => !c.voided_at);
   const chargesTotal = outstanding.reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
@@ -1807,15 +2293,16 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
   const nights       = Math.round(
     (new Date(booking.check_out_date) - new Date(booking.check_in_date)) / 86400000
   );
+  const todayStr     = new Date().toISOString().slice(0, 10);
 
   const PM_RECEIPT_LABELS = {
-    cash:          'Cash',
-    card:          'Card (in person)',
-    bank_transfer: 'Bank transfer',
-    other:         'Other',
+    cash:          t(locale, 'pmCash'),
+    card:          t(locale, 'pmCard'),
+    bank_transfer: t(locale, 'pmBankTransfer'),
+    other:         t(locale, 'pmOther'),
   };
   const pmLabel = PM_RECEIPT_LABELS[booking.payment_method]
-    ?? (booking.stripe_payment_status === 'paid' ? 'Online payment' : null);
+    ?? (booking.stripe_payment_status === 'paid' ? t(locale, 'pmOnline') : null);
 
   const chargeRows = outstanding.length > 0
     ? outstanding.map((c) => `
@@ -1838,15 +2325,15 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
       <tr>
         <td>
           <h1 style="margin:0 0 4px;font-size:1.4rem;font-weight:700;color:#405440;">
-            Payment receipt
+            ${t(locale, 'receiptHeading')}
           </h1>
-          <p style="margin:0;font-size:0.78rem;color:#405440;">Ref: ${receiptRef}</p>
+          <p style="margin:0;font-size:0.78rem;color:#405440;">${t(locale, 'receiptRefLabel')} ${receiptRef}</p>
         </td>
         <td style="text-align:right;vertical-align:top;">
           <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                      letter-spacing:0.05em;color:#405440;margin-bottom:3px;">Date paid</div>
+                      letter-spacing:0.05em;color:#405440;margin-bottom:3px;">${t(locale, 'datePaidLabel')}</div>
           <div style="font-size:0.875rem;font-weight:600;color:#405440;">
-            ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
+            ${fmtDate(todayStr, locale)}
           </div>
         </td>
       </tr>
@@ -1859,9 +2346,9 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
       <tr>
         <td style="color:#405440;font-size:1.1rem;width:28px;">✓</td>
         <td>
-          <div style="font-weight:700;color:#405440;font-size:0.875rem;">Payment confirmed</div>
+          <div style="font-weight:700;color:#405440;font-size:0.875rem;">${t(locale, 'paymentConfirmedTitle')}</div>
           <div style="font-size:0.78rem;color:#405440;margin-top:2px;">
-            Thank you — your payment has been received
+            ${t(locale, 'paymentConfirmedBody')}
           </div>
         </td>
       </tr>
@@ -1871,56 +2358,56 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     <table width="100%" cellpadding="0" cellspacing="0"
            style="background:#f8fafc;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:140px;">Property</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;width:140px;">${t(locale, 'property')}</td>
         <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#405440;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Guest</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'guestLabel')}</td>
         <td style="padding:6px 0;font-size:0.875rem;color:#405440;">
           ${booking.guest_first_name} ${booking.guest_last_name}
         </td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-in</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'checkIn')}</td>
         <td style="padding:6px 0;font-size:0.875rem;color:#405440;">
-          ${fmtDate(booking.check_in_date, 'en')}
+          ${fmtDate(booking.check_in_date, locale)}
         </td>
       </tr>
       <tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Check-out</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'checkOut')}</td>
         <td style="padding:6px 0;font-size:0.875rem;color:#405440;">
-          ${fmtDate(booking.check_out_date, 'en')}
+          ${fmtDate(booking.check_out_date, locale)}
         </td>
       </tr>
       ${pmLabel ? `<tr>
-        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">Payment method</td>
+        <td style="padding:6px 0;font-size:0.82rem;color:#405440;">${t(locale, 'paymentMethodLabel')}</td>
         <td style="padding:6px 0;font-size:0.875rem;color:#405440;">${pmLabel}</td>
       </tr>` : ''}
     </table>
 
     <!-- Itemised breakdown -->
     <h3 style="margin:0 0 12px;font-size:0.95rem;font-weight:700;color:#405440;">
-      Itemised breakdown
+      ${t(locale, 'itemisedBreakdownTitle')}
     </h3>
     <table width="100%" cellpadding="0" cellspacing="0"
            style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;">
       <thead>
         <tr style="background:#f0ede8;">
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#405440;text-align:left;">Category</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">${t(locale, 'tableCategory')}</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#405440;text-align:left;">Description</th>
+                     letter-spacing:0.05em;color:#405440;text-align:left;">${t(locale, 'tableDescription')}</th>
           <th style="padding:10px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;
-                     letter-spacing:0.05em;color:#405440;text-align:right;">Amount</th>
+                     letter-spacing:0.05em;color:#405440;text-align:right;">${t(locale, 'tableAmount')}</th>
         </tr>
       </thead>
       <tbody>
         <!-- Accommodation row -->
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.82rem;color:#405440;">Accommodation</td>
+                     font-size:0.82rem;color:#405440;">${t(locale, 'accommodationLabel')}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
-                     font-size:0.82rem;color:#405440;">${nights} night${nights !== 1 ? 's' : ''}</td>
+                     font-size:0.82rem;color:#405440;">${nights} ${nights !== 1 ? t(locale, 'nights') : t(locale, 'night')}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;
                      font-size:0.875rem;color:#405440;font-weight:600;text-align:right;">
             ${fmtDepositAmount(bookingTotal, currency)}
@@ -1931,7 +2418,7 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
       <tfoot>
         <tr style="background:#405440;">
           <td colspan="2" style="padding:14px 12px;font-weight:700;
-                                  font-size:0.95rem;color:white;">Total paid</td>
+                                  font-size:0.95rem;color:white;">${t(locale, 'totalPaidLabel')}</td>
           <td style="padding:14px 12px;font-weight:800;font-size:1.1rem;
                      color:white;text-align:right;">
             ${fmtDepositAmount(grandTotal, currency)}
@@ -1941,8 +2428,8 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
     </table>
 
     <p style="margin:0 0 24px;font-size:0.78rem;color:#405440;text-align:center;line-height:1.6;">
-      This receipt was issued by ${property.name} via NestBook.<br>
-      Ref: ${receiptRef} · Issued: ${fmtDate(new Date().toISOString().slice(0, 10), 'en')}
+      ${t(locale, 'receiptIssuedBy')} ${property.name} ${t(locale, 'receiptIssuedSuffix')}<br>
+      ${t(locale, 'receiptRefLabel')} ${receiptRef} · ${t(locale, 'receiptIssuedDateLabel')} ${fmtDate(todayStr, locale)}
     </p>`;
 
   try {
@@ -1950,7 +2437,7 @@ export async function sendReceiptEmail(booking, property, charges, ownerEmail) {
       from:    FROM,
       to:      booking.guest_email,
       replyTo: ownerEmail || undefined,
-      subject: `Receipt — ${property.name} · ${fmtDate(booking.check_in_date, 'en')}`,
+      subject: `${t(locale, 'receiptSubjectPrefix')} — ${property.name} · ${fmtDate(booking.check_in_date, locale)}`,
       html:    guestMailerHtml(body, property),
     });
     console.log(`[receipt-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
@@ -2209,47 +2696,48 @@ export async function sendStayExtendedEmail(booking, property, newCheckOut, newT
     console.log('[email] SKIPPED stay-extended email to', booking.guest_email);
     return;
   }
+  const locale = property?.locale ?? 'en';
   const extraNights = Math.ceil(
     (new Date(newCheckOut) - new Date(booking.check_out_date)) / (1000 * 60 * 60 * 24)
   );
   const currency = property.currency || 'GBP';
+  const newCheckOutDate = fmtDate(newCheckOut, locale);
 
   const body = `
-    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">Great news — your stay has been extended!</h2>
+    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">${t(locale, 'stayExtendedHeading')}</h2>
     <p style="color:#405440;font-size:14px;margin:0 0 24px;line-height:1.6;">
-      Your booking at <strong>${property.name}</strong> has been updated with new dates.
+      ${t(locale, 'stayExtendedIntro1')} <strong>${property.name}</strong> ${t(locale, 'stayExtendedIntro2')}
     </p>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
       <tr>
-        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">Property</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">${t(locale, 'property')}</td>
         <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#405440;font-size:14px;">Check-in</td>
-        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#405440;">(unchanged)</span></td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">${t(locale, 'checkIn')}</td>
+        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, locale)} <span style="color:#405440;">${t(locale, 'unchangedLabel')}</span></td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#405440;font-size:14px;">Previous check-out</td>
-        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">${t(locale, 'previousCheckOutLabel')}</td>
+        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(booking.check_out_date, locale)}</td>
       </tr>
       <tr style="background:#f0ede8;">
-        <td style="padding:10px 12px;color:#405440;font-size:14px;font-weight:700;">New check-out</td>
+        <td style="padding:10px 12px;color:#405440;font-size:14px;font-weight:700;">${t(locale, 'newCheckOutLabel')}</td>
         <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#405440;">
-          ${fmtDate(newCheckOut, 'en')}
+          ${newCheckOutDate}
           <span style="background:#f0ede8;color:#405440;font-size:11px;padding:2px 7px;border-radius:4px;margin-left:6px;">
-            +${extraNights} night${extraNights !== 1 ? 's' : ''}
+            +${extraNights} ${extraNights !== 1 ? t(locale, 'nights') : t(locale, 'night')}
           </span>
         </td>
       </tr>
       <tr style="border-top:2px solid #e2e8f0;">
-        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">New total</td>
+        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">${t(locale, 'newTotalLabel')}</td>
         <td style="padding:12px 0;font-weight:800;font-size:18px;color:#405440;">${fmtDepositAmount(newTotal, currency)}</td>
       </tr>
     </table>
     <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px 18px;border-radius:0 8px 8px 0;">
       <p style="color:#78350f;font-size:14px;margin:0;line-height:1.6;">
-        <strong>Payment note:</strong> Please arrange the additional payment for the extended nights
-        directly with ${property.name}. Reply to this email if you have any questions.
+        <strong>${t(locale, 'paymentNoteLabel')}</strong> ${t(locale, 'stayExtendedPaymentNote1')} ${property.name}. ${t(locale, 'stayExtendedPaymentNote2')}
       </p>
     </div>`;
 
@@ -2258,7 +2746,7 @@ export async function sendStayExtendedEmail(booking, property, newCheckOut, newT
       from: FROM,
       to: booking.guest_email,
       replyTo: ownerEmail || undefined,
-      subject: `Stay extended — ${property.name} · now until ${fmtDate(newCheckOut, 'en')}`,
+      subject: `${t(locale, 'stayExtendedSubjectPrefix')} — ${property.name} · ${t(locale, 'stayExtendedSubjectMid')} ${newCheckOutDate}`,
       html: guestMailerHtml(body, property),
     });
     console.log(`[stay-extended] Email sent to ${booking.guest_email}`);
@@ -2273,46 +2761,47 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
     console.log('[email] SKIPPED stay-shortened email to', booking.guest_email);
     return;
   }
+  const locale = property?.locale ?? 'en';
   const nightsRemoved = Math.ceil(
     (new Date(booking.check_out_date) - new Date(newCheckOut)) / (1000 * 60 * 60 * 24)
   );
   const currency = property.currency || 'GBP';
+  const newCheckOutDate = fmtDate(newCheckOut, locale);
 
   const body = `
-    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">Your booking has been updated</h2>
+    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">${t(locale, 'stayShortenedHeading')}</h2>
     <p style="color:#405440;font-size:14px;margin:0 0 24px;line-height:1.6;">
-      Your stay at <strong>${property.name}</strong> has been shortened.
+      ${t(locale, 'stayShortenedIntro1')} <strong>${property.name}</strong> ${t(locale, 'stayShortenedIntro2')}
     </p>
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
       <tr>
-        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">Property</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">${t(locale, 'property')}</td>
         <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#405440;font-size:14px;">Check-in</td>
-        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, 'en')} <span style="color:#405440;">(unchanged)</span></td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">${t(locale, 'checkIn')}</td>
+        <td style="padding:8px 0;font-size:14px;">${fmtDate(booking.check_in_date, locale)} <span style="color:#405440;">${t(locale, 'unchangedLabel')}</span></td>
       </tr>
       <tr>
-        <td style="padding:8px 0;color:#405440;font-size:14px;">Previous check-out</td>
-        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(booking.check_out_date, 'en')}</td>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">${t(locale, 'previousCheckOutLabel')}</td>
+        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(booking.check_out_date, locale)}</td>
       </tr>
       <tr style="background:#fef2f2;">
-        <td style="padding:10px 12px;color:#dc2626;font-size:14px;font-weight:700;">New check-out</td>
+        <td style="padding:10px 12px;color:#dc2626;font-size:14px;font-weight:700;">${t(locale, 'newCheckOutLabel')}</td>
         <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#dc2626;">
-          ${fmtDate(newCheckOut, 'en')}
+          ${newCheckOutDate}
           <span style="background:#fca5a5;color:#dc2626;font-size:11px;padding:2px 7px;border-radius:4px;margin-left:6px;">
-            −${nightsRemoved} night${nightsRemoved !== 1 ? 's' : ''}
+            −${nightsRemoved} ${nightsRemoved !== 1 ? t(locale, 'nights') : t(locale, 'night')}
           </span>
         </td>
       </tr>
       <tr style="border-top:2px solid #e2e8f0;">
-        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">Updated total</td>
+        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">${t(locale, 'updatedTotalLabel')}</td>
         <td style="padding:12px 0;font-weight:800;font-size:18px;color:#405440;">${fmtDepositAmount(newTotal, currency)}</td>
       </tr>
     </table>
     <p style="color:#405440;font-size:14px;line-height:1.6;">
-      If you have any questions about your updated booking, please reply to this email to contact
-      the property directly.
+      ${t(locale, 'stayShortenedFooter')}
     </p>`;
 
   try {
@@ -2320,7 +2809,7 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
       from: FROM,
       to: booking.guest_email,
       replyTo: ownerEmail || undefined,
-      subject: `Booking updated — ${property.name} · check-out now ${fmtDate(newCheckOut, 'en')}`,
+      subject: `${t(locale, 'stayShortenedSubjectPrefix')} — ${property.name} · ${t(locale, 'stayShortenedSubjectMid')} ${newCheckOutDate}`,
       html: guestMailerHtml(body, property),
     });
     console.log(`[stay-shortened] Email sent to ${booking.guest_email}`);

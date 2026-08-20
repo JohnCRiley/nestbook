@@ -681,7 +681,7 @@ function applyLang(lang) {
     if (t[key] !== undefined) el.textContent = t[key];
   });
   document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
-  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+  try { localStorage.setItem('nb-lang', lang); localStorage.setItem('nestbook_lang', lang); } catch (_) {}
 }
 document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
 (function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();
@@ -698,6 +698,7 @@ window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10
   if (langParam && supported.indexOf(langParam) !== -1) {
     try {
       localStorage.setItem('nb-lang', langParam);
+      localStorage.setItem('nestbook_lang', langParam);
       // Clear any auto-detect state — this is an explicit choice via link
       sessionStorage.removeItem('nb_lang_auto');
       sessionStorage.removeItem('nb_lang_dismissed');
@@ -782,6 +783,7 @@ window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY>10
     '<span>' + msg + '</span>' +
     '<button onclick="' +
       "localStorage.setItem('nb-lang','en');" +
+      "localStorage.setItem('nestbook_lang','en');" +
       "sessionStorage.removeItem('nb_lang_auto');" +
       "sessionStorage.removeItem('nb_lang_dismissed');" +
       "applyLang('en');" +

@@ -332,7 +332,7 @@ function applyLang(lang) {
   document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
-  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+  try { localStorage.setItem('nb-lang', lang); localStorage.setItem('nestbook_lang', lang); } catch (_) {}
 }
 
 document.querySelectorAll('.lang-btn').forEach((btn) => {

@@ -339,7 +339,7 @@ function applyLang(lang) {
     if (t[key] !== undefined) el.textContent = t[key];
   });
   document.querySelectorAll('.lang-btn').forEach((btn) => btn.classList.toggle('active', btn.dataset.lang === lang));
-  try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+  try { localStorage.setItem('nb-lang', lang); localStorage.setItem('nestbook_lang', lang); } catch (_) {}
 }
 document.querySelectorAll('.lang-btn').forEach((btn) => btn.addEventListener('click', () => applyLang(btn.dataset.lang)));
 (function() { let l='en'; try{l=localStorage.getItem('nb-lang')||'en';}catch(_){} if(l!=='en') applyLang(l); })();

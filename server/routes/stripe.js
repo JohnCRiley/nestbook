@@ -168,7 +168,7 @@ stripeRouter.post('/sync-session', async (req, res) => {
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     // Capture current plan before updating so we can detect upgrades.
-    const oldUser = db.prepare('SELECT id, name, email, plan FROM users WHERE id = ?').get(userId);
+    const oldUser = db.prepare('SELECT id, name, email, plan, language FROM users WHERE id = ?').get(userId);
     const oldPlan = oldUser?.plan ?? 'free';
 
     // Update the user's plan first — this is the critical step. Also keeps
@@ -769,7 +769,7 @@ export async function stripeWebhookHandler(req, res) {
           ? new Date(stripeSub.current_period_end * 1000).toISOString()
           : null;
 
-        const oldWebhookUser = db.prepare('SELECT id, name, email, plan FROM users WHERE id = ?').get(userId);
+        const oldWebhookUser = db.prepare('SELECT id, name, email, plan, language FROM users WHERE id = ?').get(userId);
         const oldWebhookPlan = oldWebhookUser?.plan ?? 'free';
 
         const existingSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);

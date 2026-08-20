@@ -1128,7 +1128,7 @@ document.addEventListener('DOMContentLoaded', function () {
 document.querySelectorAll('.lang-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     const lang = this.dataset.lang;
-    try { localStorage.setItem('nb-lang', lang); } catch (_) {}
+    try { localStorage.setItem('nb-lang', lang); localStorage.setItem('nestbook_lang', lang); } catch (_) {}
     applyLang(lang);
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('[data-lang="' + lang + '"]').forEach(b => b.classList.add('active'));

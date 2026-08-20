@@ -37,7 +37,7 @@ export async function cleanupAbandonedPendingPayments() {
         if (prior.n >= 1) {
           const property = db.prepare(`
             SELECT p.*, u.email AS owner_email FROM properties p
-            LEFT JOIN users u ON u.id = p.user_id WHERE p.id = ?
+            LEFT JOIN users u ON u.id = p.owner_id WHERE p.id = ?
           `).get(booking.property_id);
           await sendPaymentAssistanceEmail(booking, property)
             .catch(err => console.error(`[pending-payment-cleanup] Assistance email failed (booking #${booking.id}):`, err.message));

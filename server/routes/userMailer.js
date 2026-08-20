@@ -21,11 +21,10 @@ export const userMailerRouter = Router();
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-// Build WHERE clause + JOIN for user queries based on targeting mode
+// Build WHERE clause for user queries based on targeting mode
 function buildUserQuery(mode, plans, langs, verifiedOnly) {
   const conditions = ['u.suspended = 0', 'u.email IS NOT NULL', "u.email != ''"];
   const params = [];
-  let propJoin = '';
 
   if (mode === 'plan' && plans?.length) {
     const ph = plans.map(() => '?').join(',');
@@ -34,9 +33,14 @@ function buildUserQuery(mode, plans, langs, verifiedOnly) {
   }
 
   if (mode === 'language' && langs?.length) {
-    propJoin = 'LEFT JOIN properties p ON p.id = u.property_id';
+    // Filters on the user's own language preference (users.language — set at
+    // registration, exists specifically for this), not a joined property's
+    // guest-facing locale. A property's locale reflects what guests see on
+    // its booking page, not the account owner's own language, and an owner
+    // can have zero or several properties in different locales — neither is
+    // a reliable proxy for which language to email the owner in.
     const ph = langs.map(() => '?').join(',');
-    conditions.push(`p.locale IN (${ph})`);
+    conditions.push(`u.language IN (${ph})`);
     params.push(...langs);
   }
 
@@ -44,7 +48,7 @@ function buildUserQuery(mode, plans, langs, verifiedOnly) {
     conditions.push('u.email_verified = 1');
   }
 
-  return { propJoin, where: 'WHERE ' + conditions.join(' AND '), params };
+  return { where: 'WHERE ' + conditions.join(' AND '), params };
 }
 
 // ── Templates ─────────────────────────────────────────────────────────────────
@@ -124,9 +128,9 @@ userMailerRouter.get('/preview-count', (req, res) => {
     if (mode === 'plan'     && !plans.length) return res.json({ count: 0 });
     if (mode === 'language' && !langs.length)  return res.json({ count: 0 });
 
-    const { propJoin, where, params } = buildUserQuery(mode, plans, langs, verifiedOnly);
+    const { where, params } = buildUserQuery(mode, plans, langs, verifiedOnly);
     const { n } = db.prepare(
-      `SELECT COUNT(*) as n FROM users u ${propJoin} ${where}`
+      `SELECT COUNT(*) as n FROM users u ${where}`
     ).get(...params);
     res.json({ count: n });
   } catch (err) {
@@ -192,9 +196,9 @@ userMailerRouter.post('/send', async (req, res) => {
       if (mode === 'plan'     && !plans.length) return res.status(400).json({ error: 'Select at least one plan.' });
       if (mode === 'language' && !langs.length)  return res.status(400).json({ error: 'Select at least one language.' });
 
-      const { propJoin, where, params } = buildUserQuery(mode, plans, langs, filterVerified);
+      const { where, params } = buildUserQuery(mode, plans, langs, filterVerified);
       userRecipients = db.prepare(
-        `SELECT u.id, u.email, u.name FROM users u ${propJoin} ${where} ORDER BY u.id ASC`
+        `SELECT u.id, u.email, u.name FROM users u ${where} ORDER BY u.id ASC`
       ).all(...params);
     }
   } catch (err) {
