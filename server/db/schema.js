@@ -266,33 +266,38 @@ export function initSchema() {
     // Check whether 'flagged' column exists yet — it may have been added before this rebuild runs
     const hasFlagged = db.prepare(`PRAGMA table_info(bookings)`).all().some((c) => c.name === 'flagged');
     db.exec(`PRAGMA foreign_keys = OFF`);
-    db.exec(`
-      BEGIN;
-      CREATE TABLE bookings_v2 (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        property_id     INTEGER NOT NULL REFERENCES properties(id),
-        room_id         INTEGER REFERENCES rooms(id),
-        guest_id        INTEGER NOT NULL REFERENCES guests(id),
-        check_in_date   TEXT    NOT NULL,
-        check_out_date  TEXT    NOT NULL,
-        num_guests      INTEGER NOT NULL DEFAULT 1,
-        status          TEXT    NOT NULL DEFAULT 'confirmed'
-                                CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
-        source          TEXT    NOT NULL DEFAULT 'direct'
-                                CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
-        notes           TEXT,
-        total_price     REAL,
-        created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
-        flagged         INTEGER NOT NULL DEFAULT 0
-      );
-      INSERT INTO bookings_v2 SELECT id, property_id, room_id, guest_id, check_in_date, check_out_date,
-        num_guests, status, source, notes, total_price, created_at${hasFlagged ? ', flagged' : ', 0'} FROM bookings;
-      DROP TABLE bookings;
-      ALTER TABLE bookings_v2 RENAME TO bookings;
-      COMMIT;
-    `);
+    try {
+      db.exec(`
+        BEGIN;
+        CREATE TABLE bookings_v2 (
+          id              INTEGER PRIMARY KEY AUTOINCREMENT,
+          property_id     INTEGER NOT NULL REFERENCES properties(id),
+          room_id         INTEGER REFERENCES rooms(id),
+          guest_id        INTEGER NOT NULL REFERENCES guests(id),
+          check_in_date   TEXT    NOT NULL,
+          check_out_date  TEXT    NOT NULL,
+          num_guests      INTEGER NOT NULL DEFAULT 1,
+          status          TEXT    NOT NULL DEFAULT 'confirmed'
+                                  CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
+          source          TEXT    NOT NULL DEFAULT 'direct'
+                                  CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
+          notes           TEXT,
+          total_price     REAL,
+          created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+          flagged         INTEGER NOT NULL DEFAULT 0
+        );
+        INSERT INTO bookings_v2 SELECT id, property_id, room_id, guest_id, check_in_date, check_out_date,
+          num_guests, status, source, notes, total_price, created_at${hasFlagged ? ', flagged' : ', 0'} FROM bookings;
+        DROP TABLE bookings;
+        ALTER TABLE bookings_v2 RENAME TO bookings;
+        COMMIT;
+      `);
+      console.log('✓ bookings.room_id is now nullable.');
+    } catch (e) {
+      try { db.exec(`ROLLBACK`); } catch {}
+      console.log(`[schema] bookings.room_id nullable migration skipped/failed: ${e.message}`);
+    }
     db.exec(`PRAGMA foreign_keys = ON`);
-    console.log('✓ bookings.room_id is now nullable.');
   }
 
   // Migration: guest soft-delete and blacklist flags
@@ -409,33 +414,38 @@ export function initSchema() {
   const bookingSourceSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='bookings'`).get()?.sql ?? '';
   if (!bookingSourceSql.includes('walk_in')) {
     db.exec(`PRAGMA foreign_keys = OFF`);
-    db.exec(`
-      BEGIN;
-      CREATE TABLE bookings_src (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        property_id     INTEGER NOT NULL REFERENCES properties(id),
-        room_id         INTEGER REFERENCES rooms(id),
-        guest_id        INTEGER NOT NULL REFERENCES guests(id),
-        check_in_date   TEXT    NOT NULL,
-        check_out_date  TEXT    NOT NULL,
-        num_guests      INTEGER NOT NULL DEFAULT 1,
-        status          TEXT    NOT NULL DEFAULT 'confirmed'
-                                CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
-        source          TEXT    NOT NULL DEFAULT 'direct'
-                                CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
-        notes           TEXT,
-        total_price     REAL,
-        created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
-        flagged         INTEGER NOT NULL DEFAULT 0
-      );
-      INSERT INTO bookings_src SELECT id, property_id, room_id, guest_id, check_in_date, check_out_date,
-        num_guests, status, source, notes, total_price, created_at, flagged FROM bookings;
-      DROP TABLE bookings;
-      ALTER TABLE bookings_src RENAME TO bookings;
-      COMMIT;
-    `);
+    try {
+      db.exec(`
+        BEGIN;
+        CREATE TABLE bookings_src (
+          id              INTEGER PRIMARY KEY AUTOINCREMENT,
+          property_id     INTEGER NOT NULL REFERENCES properties(id),
+          room_id         INTEGER REFERENCES rooms(id),
+          guest_id        INTEGER NOT NULL REFERENCES guests(id),
+          check_in_date   TEXT    NOT NULL,
+          check_out_date  TEXT    NOT NULL,
+          num_guests      INTEGER NOT NULL DEFAULT 1,
+          status          TEXT    NOT NULL DEFAULT 'confirmed'
+                                  CHECK(status IN ('confirmed','arriving','checked_out','cancelled')),
+          source          TEXT    NOT NULL DEFAULT 'direct'
+                                  CHECK(source IN ('direct','phone','email','booking_com','airbnb','other','walk_in','website')),
+          notes           TEXT,
+          total_price     REAL,
+          created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+          flagged         INTEGER NOT NULL DEFAULT 0
+        );
+        INSERT INTO bookings_src SELECT id, property_id, room_id, guest_id, check_in_date, check_out_date,
+          num_guests, status, source, notes, total_price, created_at, flagged FROM bookings;
+        DROP TABLE bookings;
+        ALTER TABLE bookings_src RENAME TO bookings;
+        COMMIT;
+      `);
+      console.log('✓ bookings.source constraint updated to include walk_in and website.');
+    } catch (e) {
+      try { db.exec(`ROLLBACK`); } catch {}
+      console.log(`[schema] bookings.source CHECK migration skipped/failed: ${e.message}`);
+    }
     db.exec(`PRAGMA foreign_keys = ON`);
-    console.log('✓ bookings.source constraint updated to include walk_in and website.');
   }
 
   db.exec(`
@@ -509,36 +519,41 @@ export function initSchema() {
   const usersSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='users'`).get()?.sql ?? '';
   if (!usersSql.includes('charges_staff')) {
     db.exec(`PRAGMA foreign_keys = OFF`);
-    db.exec(`
-      BEGIN;
-      CREATE TABLE users_v3 (
-        id                       INTEGER PRIMARY KEY AUTOINCREMENT,
-        property_id              INTEGER REFERENCES properties(id),
-        name                     TEXT    NOT NULL,
-        email                    TEXT    NOT NULL UNIQUE,
-        password_hash            TEXT    NOT NULL,
-        role                     TEXT    NOT NULL DEFAULT 'reception'
-                                         CHECK(role IN ('owner','reception','charges_staff')),
-        plan                     TEXT    NOT NULL DEFAULT 'free'
-                                         CHECK(plan IN ('free','pro','multi')),
-        created_at               TEXT    NOT NULL DEFAULT (datetime('now')),
-        is_super_admin           INTEGER NOT NULL DEFAULT 0,
-        password_reset_token     TEXT,
-        password_reset_expires   TEXT,
-        discount_code            TEXT,
-        email_verified           INTEGER NOT NULL DEFAULT 1,
-        suspended                INTEGER NOT NULL DEFAULT 0,
-        email_verification_token TEXT
-      );
-      INSERT INTO users_v3 SELECT id, property_id, name, email, password_hash, role, plan, created_at,
-        is_super_admin, password_reset_token, password_reset_expires, discount_code,
-        email_verified, suspended, email_verification_token FROM users;
-      DROP TABLE users;
-      ALTER TABLE users_v3 RENAME TO users;
-      COMMIT;
-    `);
+    try {
+      db.exec(`
+        BEGIN;
+        CREATE TABLE users_v3 (
+          id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+          property_id              INTEGER REFERENCES properties(id),
+          name                     TEXT    NOT NULL,
+          email                    TEXT    NOT NULL UNIQUE,
+          password_hash            TEXT    NOT NULL,
+          role                     TEXT    NOT NULL DEFAULT 'reception'
+                                           CHECK(role IN ('owner','reception','charges_staff')),
+          plan                     TEXT    NOT NULL DEFAULT 'free'
+                                           CHECK(plan IN ('free','pro','multi')),
+          created_at               TEXT    NOT NULL DEFAULT (datetime('now')),
+          is_super_admin           INTEGER NOT NULL DEFAULT 0,
+          password_reset_token     TEXT,
+          password_reset_expires   TEXT,
+          discount_code            TEXT,
+          email_verified           INTEGER NOT NULL DEFAULT 1,
+          suspended                INTEGER NOT NULL DEFAULT 0,
+          email_verification_token TEXT
+        );
+        INSERT INTO users_v3 SELECT id, property_id, name, email, password_hash, role, plan, created_at,
+          is_super_admin, password_reset_token, password_reset_expires, discount_code,
+          email_verified, suspended, email_verification_token FROM users;
+        DROP TABLE users;
+        ALTER TABLE users_v3 RENAME TO users;
+        COMMIT;
+      `);
+      console.log('✓ users.role constraint updated to include charges_staff.');
+    } catch (e) {
+      try { db.exec(`ROLLBACK`); } catch {}
+      console.log(`[schema] users.role CHECK migration skipped/failed: ${e.message}`);
+    }
     db.exec(`PRAGMA foreign_keys = ON`);
-    console.log('✓ users.role constraint updated to include charges_staff.');
   }
 
   // Room Charges — service categories per property

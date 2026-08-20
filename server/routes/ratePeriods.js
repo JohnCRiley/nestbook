@@ -27,6 +27,18 @@ function canAccess(userId, role, propId) {
   return Number(u?.property_id) === pid;
 }
 
+// Rejects any roomId in roomRates that doesn't belong to propId — otherwise
+// an owner could attach a rate override to another tenant's room and have
+// its real name/price returned by attachRoomRates(). Mirrors the ownership
+// pattern from the rooms.js/users.js cross-tenant IDOR fix.
+function ownRoomIds(propId, roomRates) {
+  if (!roomRates || roomRates.length === 0) return [];
+  const valid = new Set(
+    db.prepare('SELECT id FROM rooms WHERE property_id = ?').all(propId).map((r) => r.id)
+  );
+  return roomRates.filter((rr) => valid.has(Number(rr.roomId)));
+}
+
 function attachRoomRates(period) {
   period.roomRates = db.prepare(`
     SELECT rpr.room_id, rpr.amount, r.name AS room_name, r.price_per_night AS default_price
@@ -93,7 +105,7 @@ ratePeriodsRouter.post('/', (req, res) => {
       const insertRoomRate = db.prepare(
         'INSERT OR REPLACE INTO rate_period_rooms (rate_period_id, room_id, amount) VALUES (?, ?, ?)'
       );
-      for (const rr of (roomRates ?? [])) {
+      for (const rr of ownRoomIds(property_id, roomRates)) {
         if (rr.roomId && rr.amount > 0) insertRoomRate.run(newId, rr.roomId, rr.amount);
       }
       db.exec('COMMIT');
@@ -141,7 +153,7 @@ ratePeriodsRouter.put('/:id', (req, res) => {
       const insertRoomRate = db.prepare(
         'INSERT INTO rate_period_rooms (rate_period_id, room_id, amount) VALUES (?, ?, ?)'
       );
-      for (const rr of (roomRates ?? [])) {
+      for (const rr of ownRoomIds(period.property_id, roomRates)) {
         if (rr.roomId && rr.amount > 0) insertRoomRate.run(id, rr.roomId, rr.amount);
       }
       db.exec('COMMIT');

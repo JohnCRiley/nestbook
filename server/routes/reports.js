@@ -76,6 +76,7 @@ reportsRouter.get('/revenue', (req, res) => {
       LEFT JOIN rooms      r ON b.room_id     = r.id
       LEFT JOIN properties p ON b.property_id = p.id
       WHERE b.property_id IN (${placeholders})
+        AND b.is_sample_data = 0
         AND b.check_in_date >= ?
         AND b.check_in_date <  ?
         ${statusClause}
@@ -90,6 +91,7 @@ reportsRouter.get('/revenue', (req, res) => {
         SUM(total_price)   AS total
       FROM bookings
       WHERE property_id IN (${placeholders})
+        AND is_sample_data = 0
         AND status = 'checked_out'
         AND check_in_date >= ?
         AND check_in_date <  ?
@@ -251,6 +253,7 @@ reportsRouter.get('/guests', (req, res) => {
       LEFT JOIN guests g ON b.guest_id = g.id
       LEFT JOIN rooms  r ON b.room_id  = r.id
       WHERE b.property_id IN (${placeholders})
+        AND b.is_sample_data = 0
         AND b.check_in_date >= ?
         AND b.check_in_date <  ?
         AND b.status NOT IN ('cancelled')

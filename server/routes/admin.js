@@ -855,6 +855,8 @@ adminRouter.delete('/users/:id', async (req, res) => {
     // room_charges.charged_by / voided_by → users(id) no CASCADE
     db.prepare('UPDATE room_charges SET charged_by = NULL WHERE charged_by = ?').run(userId);
     db.prepare('UPDATE room_charges SET voided_by = NULL WHERE voided_by = ?').run(userId);
+    // prospects.user_id → users(id) no CASCADE — see deleteUserAccount.js
+    db.prepare('UPDATE prospects SET user_id = NULL WHERE user_id = ?').run(userId);
     // audit_log.user_id → users(id) no CASCADE
     db.prepare('DELETE FROM audit_log WHERE user_id = ?').run(userId);
     // error_reports.user_id → users(id), NOT NULL, no CASCADE — see

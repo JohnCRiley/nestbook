@@ -292,7 +292,7 @@ propertiesRouter.put('/:id', (req, res) => {
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
       lock_rental_type, ir_room_mode,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     // Same not-sent-vs-cleared pattern as ir_room_mode below: only overwritten
@@ -321,7 +321,13 @@ propertiesRouter.put('/:id', (req, res) => {
     const newServicingType = servicing_type !== undefined
       ? (VALID_SERVICING_TYPES.includes(servicing_type) ? servicing_type : null)
       : (existing?.servicing_type ?? null);
-    const newEntryMethod = entry_method?.trim() || null;
+    // Same not-sent-vs-cleared pattern as un_sub_type/walk_in_enabled/
+    // booking_flow/servicing_type above — a resumed onboarding session that
+    // never sends entry_method must not silently wipe an already-configured
+    // value (e.g. "keybox") back to null.
+    const newEntryMethod = entry_method !== undefined
+      ? (entry_method?.trim() || null)
+      : (existing?.entry_method ?? null);
     // Lock is per-property (rental_type_locked), not per-user. Once locked,
     // rental_type in the body is ignored and the existing value is preserved.
     // A caller can explicitly lock a still-unlocked property by sending

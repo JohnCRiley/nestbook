@@ -54,7 +54,7 @@ widgetRouter.get('/rooms', (req, res) => {
     if (!widgetPropertyGuard(property_id)) {
       return res.status(403).json({ error: 'Widget not available for this property' });
     }
-    const conditions = ['r.property_id = ?'];
+    const conditions = ['r.property_id = ?', 'r.is_sample_data = 0'];
     const params = [property_id];
     // Unit mode — optional scope to top-level rows only (?parent_unit_id=null),
     // same param pattern as the admin rooms endpoint. Omitted entirely (the
@@ -121,7 +121,8 @@ widgetRouter.get('/day-availability', (req, res) => {
       const roomIdNum = Number(room_id);
       const bookings = db.prepare(`
         SELECT check_in_date, check_out_date FROM bookings
-        WHERE room_id = ? AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
+        WHERE room_id = ? AND is_sample_data = 0
+          AND status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
       `).all(roomIdNum);
       const blocks = db.prepare(`
         SELECT start_date, end_date FROM ical_blocks
@@ -138,7 +139,8 @@ widgetRouter.get('/day-availability', (req, res) => {
       const bookings = db.prepare(`
         SELECT b.check_in_date, b.check_out_date
         FROM bookings b JOIN rooms r ON r.id = b.room_id
-        WHERE r.property_id = ? AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
+        WHERE r.property_id = ? AND b.is_sample_data = 0
+          AND b.status NOT IN ('cancelled', 'checked_out', 'cancelled_unpaid', 'declined')
       `).all(property_id);
       const blocks = db.prepare(`
         SELECT start_date, end_date FROM ical_blocks WHERE property_id = ? AND end_date >= date('now')
@@ -166,7 +168,7 @@ widgetRouter.get('/day-availability', (req, res) => {
       // Named Rooms or Units — pool across every bookable room/unit
       // (parent_unit_id IS NULL excludes a unit's internal display-only rooms).
       const rooms = db.prepare(`
-        SELECT id FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL
+        SELECT id FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL AND is_sample_data = 0
       `).all(property_id);
       const roomIds = rooms.map((r) => r.id);
       if (roomIds.length === 0) { res.json({}); return; }

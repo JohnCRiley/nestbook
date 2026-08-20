@@ -81,6 +81,7 @@ guestMailerRouter.get('/recipients', (req, res) => {
       LEFT JOIN bookings b ON b.guest_id = g.id AND b.property_id = g.property_id
       WHERE g.property_id = ?
         AND g.deleted = 0
+        AND g.is_sample_data = 0
         AND g.email IS NOT NULL
         AND TRIM(g.email) != ''
       GROUP BY g.id
@@ -141,7 +142,7 @@ guestMailerRouter.post('/send', async (req, res) => {
     // Re-resolve recipients server-side — never trust the client list
     const allGuests = db.prepare(`
       SELECT id, email FROM guests
-      WHERE property_id = ? AND deleted = 0
+      WHERE property_id = ? AND deleted = 0 AND is_sample_data = 0
         AND email IS NOT NULL AND TRIM(email) != ''
     `).all(Number(property_id));
 

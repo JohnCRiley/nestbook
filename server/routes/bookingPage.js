@@ -3191,7 +3191,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     // excludes a unit's internal rooms from the public booking page —
     // only the unit itself is independently bookable.
     const rooms = db.prepare(
-      `SELECT * FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL ORDER BY price_per_night ASC`
+      `SELECT * FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL AND is_sample_data = 0 ORDER BY price_per_night ASC`
     ).all(property.id);
 
     const bookings = db.prepare(`
@@ -3199,6 +3199,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
       FROM bookings b
       JOIN rooms r ON r.id = b.room_id
       WHERE r.property_id = ?
+        AND b.is_sample_data = 0
         AND b.status IN ('confirmed', 'arriving', 'in_house', 'pending_owner_approval')
         AND b.check_out_date >= date('now')
     `).all(property.id);
@@ -3230,7 +3231,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     // source thumbnail photos for that unit's showcase section. Always empty
     // for IR/WP, which never have parent_unit_id set.
     const internalRoomRows = db.prepare(
-      `SELECT * FROM rooms WHERE property_id = ? AND parent_unit_id IS NOT NULL ORDER BY id ASC`
+      `SELECT * FROM rooms WHERE property_id = ? AND parent_unit_id IS NOT NULL AND is_sample_data = 0 ORDER BY id ASC`
     ).all(property.id);
     const internalRoomsByUnit = {};
     for (const r of internalRoomRows) {

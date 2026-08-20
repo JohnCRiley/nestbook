@@ -44,6 +44,11 @@ export function deleteUserAccount(userId) {
     // room_charges.charged_by / voided_by → users(id) no CASCADE
     db.prepare('UPDATE room_charges SET charged_by = NULL WHERE charged_by = ?').run(userId);
     db.prepare('UPDATE room_charges SET voided_by  = NULL WHERE voided_by  = ?').run(userId);
+    // prospects.user_id → users(id) no CASCADE. Set by checkAndConvertProspect()
+    // on signup whenever a new account's email matches a cold-outreach prospect.
+    // Nullified (not deleted) so outreach history survives independently of
+    // the account it eventually converted into.
+    db.prepare('UPDATE prospects SET user_id = NULL WHERE user_id = ?').run(userId);
     // audit_log.user_id → users(id) no CASCADE
     db.prepare('DELETE FROM audit_log    WHERE user_id = ?').run(userId);
     // error_reports.user_id → users(id), NOT NULL, no CASCADE. The

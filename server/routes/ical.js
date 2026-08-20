@@ -28,7 +28,7 @@ icalRouter.get('/:propertyId/:roomId/:token', (req, res) => {
   const bookings = db.prepare(`
     SELECT id, check_in_date, check_out_date
     FROM bookings
-    WHERE room_id = ? AND property_id = ?
+    WHERE room_id = ? AND property_id = ? AND is_sample_data = 0
       AND status IN (${EXPORT_BOOKING_STATUSES.map(() => '?').join(', ')})
     ORDER BY check_in_date
   `).all(roomId, propertyId, ...EXPORT_BOOKING_STATUSES);
@@ -80,6 +80,7 @@ icalRouter.get('/:propertyId/property/:token', (req, res) => {
     FROM bookings b
     JOIN rooms r ON r.id = b.room_id
     WHERE r.property_id = ?
+      AND b.is_sample_data = 0
       AND b.status IN (${EXPORT_BOOKING_STATUSES.map(() => '?').join(', ')})
       AND b.check_out_date >= date('now', '-1 day')
     ORDER BY b.check_in_date
