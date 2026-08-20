@@ -2797,7 +2797,7 @@ html[data-theme="forest"] .main-content {
   font-size: 0.68rem;
   padding: 2px 7px;
   border-radius: 4px;
-  background: #f3f7f2;
+  background: #F4F3F0;
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
@@ -3546,7 +3546,7 @@ html[data-theme="forest"] .main-content {
 }
 .lang-modal-actions { display: flex; flex-direction: column; gap: 8px; }
 .lang-modal-confirm {
-  background: var(--accent, #1a4710);
+  background: var(--accent, #405440);
   color: white;
   border: none;
   border-radius: 8px;
@@ -3799,7 +3799,7 @@ html[data-theme="forest"] .main-content {
 
 /* ── Plan gate (upgrade prompt) ─────────────────────────────────────────── */
 .plan-gate {
-  background: var(--soft, #f3f7f2);
+  background: var(--soft, #F4F3F0);
   border: 1.5px dashed var(--border);
   border-radius: 12px;
   padding: 32px 24px;
@@ -5637,7 +5637,7 @@ html[data-theme="forest"] .main-content {
   border-radius: 999px;
 }
 .billing-status-pending { background: #fef3c7; color: #78350f; }
-.billing-status-active  { background: #d9f0cc; color: #1a4710; }
+.billing-status-active  { background: #F4F3F0; color: #405440; }
 
 /* Payment link copy box */
 .payment-link-box {

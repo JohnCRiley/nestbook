@@ -19,7 +19,7 @@ const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 
 // Must stay in sync with THEME_COLOURS in server/routes/bookingPage.js
 const THEME_COLOURS = {
-  forest:   { brand: '#2f771b', dark: '#1a4710', light: '#d9f0cc' },
+  forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0' },
   royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
   ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
   ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7' },
@@ -48,7 +48,7 @@ const FACT_CATALOG = [
 ];
 
 const THEMES = [
-  { id: 'forest',   label: 'Forest',    primary: '#1a4710', bg: '#f3f7f2' },
+  { id: 'forest',   label: 'Forest',    primary: '#405440', bg: '#F0EDE8' },
   { id: 'royal',    label: 'Navy',      primary: '#1F3A55', bg: '#F0EDE8' },
   { id: 'ember',    label: 'Warm Gold', primary: '#1A2535', bg: '#F5F2EC' },
   { id: 'ruby',     label: 'Ruby',      primary: '#490403', bg: '#F0EDE8' },
@@ -2583,7 +2583,7 @@ function FacebookBookingSection({ property, onSaved }) {
 
 function accentColor() {
   return getComputedStyle(document.documentElement)
-    .getPropertyValue('--accent').trim() || '#1a4710';
+    .getPropertyValue('--accent').trim() || '#405440';
 }
 
 function buildStyledQr(data, size, { logoSrc, color } = {}) {

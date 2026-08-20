@@ -161,6 +161,14 @@ body {
 }
 .cell-text { font-size: 7.5pt; color: var(--muted); font-weight: 500; }
 .cell-text.hi { color: var(--dark); font-weight: 700; }
+.cell-text.addon-pill {
+  font-size: 6.5pt;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 8px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
 
 /* ── Footer strip ────────────────────────────────────────────────────────── */
 .doc-footer {
@@ -434,13 +442,13 @@ body {
     <tr class="feat-row">
       <td class="col-feature">Room charges (bar, restaurant)</td>
       <td class="col-free"><span class="cross">✗</span></td>
-      <td class="col-pro"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="cell-text addon-pill">+£6/mo add-on</span></td>
       <td class="col-multi"><span class="check">✓</span></td>
     </tr>
     <tr class="feat-row">
       <td class="col-feature">Service categories with tax rates</td>
       <td class="col-free"><span class="cross">✗</span></td>
-      <td class="col-pro"><span class="cross">✗</span></td>
+      <td class="col-pro"><span class="cell-text addon-pill">Included with add-on</span></td>
       <td class="col-multi"><span class="check">✓</span></td>
     </tr>
 
