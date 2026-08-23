@@ -11,6 +11,7 @@ export default function PlanGate({ requiredPlan = 'pro', title, detail, children
   const t    = useT();
   const [showModal, setShowModal] = useState(false);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(null);
 
   if (RANK[plan] >= RANK[requiredPlan]) return children;
 
@@ -19,15 +20,19 @@ export default function PlanGate({ requiredPlan = 'pro', title, detail, children
 
   async function handleUpgradeNow() {
     setLoadingCheckout(true);
+    setCheckoutError(null);
     try {
       const res  = await apiFetch('/api/stripe/create-checkout-session', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ plan: requiredPlan }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) { window.location.href = data.url; return; }
-    } catch {}
+      setCheckoutError(data.error || "Couldn't start checkout — please try again.");
+    } catch {
+      setCheckoutError("Couldn't start checkout — please check your connection and try again.");
+    }
     setLoadingCheckout(false);
   }
 
@@ -53,6 +58,11 @@ export default function PlanGate({ requiredPlan = 'pro', title, detail, children
             {loadingCheckout ? '…' : t('planGateUpgradeNow')}
           </button>
         </div>
+        {checkoutError && (
+          <p style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: 10 }}>
+            {checkoutError}
+          </p>
+        )}
       </div>
 
       {showModal && (

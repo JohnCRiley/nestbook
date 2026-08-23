@@ -10,12 +10,25 @@ const LocaleContext = createContext(null);
 export function LocaleProvider({ children }) {
   const [properties, setProperties] = useState([]);
   const [property,   setProperty]   = useState(null);
+  // Nearly every page's data-fetch is gated on property?.id existing, so a
+  // silently-failed load here used to leave the whole session blank with no
+  // way to recover short of a hard refresh (which just hits the same
+  // failure again). Track it explicitly so we can show a real retry screen
+  // instead — but only once we know we actually tried (an unauthenticated
+  // visitor on /login etc. never attempts this fetch at all, see the guard
+  // below, and must not be affected).
+  const [loadError, setLoadError] = useState(null);
 
-  useEffect(() => {
+  function loadProperties() {
     // Skip if not authenticated — avoids redirect loops on /login, /register, etc.
     if (!localStorage.getItem('nb_token')) return;
+    setLoadError(null);
     apiFetch('/api/properties')
-      .then((r) => r.json())
+      // apiFetch() never throws on a non-2xx status (only on a genuine
+      // network failure) — without this check, a 500 response would fall
+      // through to r.json() and silently resolve to an empty properties
+      // list rather than being treated as the failure it is.
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Server returned ${r.status}`))))
       .then((data) => {
         const props = Array.isArray(data) ? data : [];
         setProperties(props);
@@ -26,8 +39,12 @@ export function LocaleProvider({ children }) {
         setProperty(active);
         localStorage.setItem('nb_active_property', String(active.id));
       })
-      .catch(() => {});
-  }, []);
+      .catch((err) => setLoadError(err.message || 'Failed to load your account.'));
+  }
+
+  useEffect(() => {
+    loadProperties();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Switch the active property instantly (no page refresh required).
   function switchProperty(prop) {
@@ -96,6 +113,33 @@ export function LocaleProvider({ children }) {
 
   function fmtCurrency(amount) {
     return formatCurrency(amount, currency);
+  }
+
+  // Only shown once we actually attempted the fetch (a valid token was
+  // present) and it failed, and we have nothing usable to fall back on —
+  // never blocks unauthenticated pages (Login/Register/etc.), which skip
+  // the fetch entirely per the guard in loadProperties() above.
+  if (loadError && !property && localStorage.getItem('nb_token')) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', background: '#fff',
+      }}>
+        <div style={{ color: '#dc2626', fontSize: '1rem', fontWeight: 700 }}>
+          Something went wrong loading your account
+        </div>
+        <div style={{ color: '#6B6A66', fontSize: '0.88rem', maxWidth: 380 }}>
+          {loadError}
+        </div>
+        <button
+          onClick={loadProperties}
+          className="btn-primary"
+          style={{ padding: '10px 28px', marginTop: 4 }}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

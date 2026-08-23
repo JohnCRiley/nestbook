@@ -140,11 +140,17 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     const params = new URLSearchParams({
       property_id: property.id, check_in_date: form.checkIn, check_out_date: form.checkOut,
     });
+    // A silent failure here previously left bookedRoomIds empty, so every
+    // room — including genuinely booked ones — would show as selectable in
+    // the dropdown with nothing to catch it before submit. The server's own
+    // overlap check (bookings.js hasOverlap) still blocks the actual
+    // double-booking at submit time either way, but the room list itself
+    // shouldn't silently claim availability it never confirmed.
     apiFetch(`/api/bookings/booked-rooms?${params}`)
-      .then(r => r.ok ? r.json() : [])
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
       .then(ids => setBookedRoomIds(new Set(ids)))
-      .catch(() => {});
-  }, [form.checkIn, form.checkOut, property?.id]);
+      .catch(() => setAvailabilityError(t('roomAvailabilityCheckFailed')));
+  }, [form.checkIn, form.checkOut, property?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Availability check for selected room ──────────────────────────────────
   useEffect(() => {
@@ -153,10 +159,16 @@ export default function NewBookingModal({ rooms, onClose, onSuccess, initialValu
     const params = new URLSearchParams({
       room_id: form.roomId, check_in_date: form.checkIn, check_out_date: form.checkOut,
     });
+    // A silent failure here previously left availabilityError unset, so the
+    // submit button stayed enabled even though we never actually confirmed
+    // the room was free — distinguish "couldn't verify" from "not
+    // available" in the message, but block submission (via availabilityError)
+    // either way rather than silently letting the check-that-never-happened
+    // look like a pass.
     apiFetch(`/api/bookings/check?${params}`)
-      .then(r => r.ok ? r.json() : null)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error('fetch failed'))))
       .then(data => { if (data && !data.available) setAvailabilityError(t('roomNotAvailable')); })
-      .catch(() => {});
+      .catch(() => setAvailabilityError(t('roomAvailabilityCheckFailed')));
   }, [form.roomId, form.checkIn, form.checkOut, t]);
 
   // ── Rate breakdown — fetched when room + both dates are set ──────────────

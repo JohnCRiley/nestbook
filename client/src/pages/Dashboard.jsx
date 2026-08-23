@@ -83,6 +83,8 @@ export default function Dashboard() {
   const [wpSummary,            setWpSummary]            = useState(null);
   const [wpSelectedBooking,    setWpSelectedBooking]    = useState(null);
   const [missedAction,         setMissedAction]         = useState(null); // { type:'arrival'|'departure', booking }
+  const [missedActionWorking,  setMissedActionWorking]  = useState(false);
+  const [missedActionError,    setMissedActionError]    = useState(null);
 
   const today = localToday();
 
@@ -980,27 +982,41 @@ export default function Dashboard() {
 
             {missedAction.type === 'arrival' ? (() => {
               const b = missedAction.booking;
+              // Only dismiss the banner once the write genuinely succeeds —
+              // previously this dismissed optimistically before the request
+              // even started, so a failed update silently looked handled.
               async function dismissMissedArrival(action) {
-                setMissedAction(null);
-                await apiFetch(`/api/bookings/${b.id}/action-missed-arrival`, { method: 'POST' });
-                if (action === 'arrived') {
-                  const r = await apiFetch(`/api/bookings/${b.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...b, status: 'in_house' }),
-                  });
-                  const saved = r.ok ? await r.json() : null;
-                  if (saved) setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
-                } else if (action === 'cancel') {
-                  const r = await apiFetch(`/api/bookings/${b.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...b, status: 'cancelled' }),
-                  });
-                  const saved = r.ok ? await r.json() : null;
-                  if (saved) setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                setMissedActionWorking(true);
+                setMissedActionError(null);
+                try {
+                  const r0 = await apiFetch(`/api/bookings/${b.id}/action-missed-arrival`, { method: 'POST' });
+                  if (!r0.ok) throw new Error('Failed to update — please try again.');
+                  if (action === 'arrived') {
+                    const r = await apiFetch(`/api/bookings/${b.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ ...b, status: 'in_house' }),
+                    });
+                    if (!r.ok) throw new Error('Failed to update — please try again.');
+                    const saved = await r.json();
+                    setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                  } else if (action === 'cancel') {
+                    const r = await apiFetch(`/api/bookings/${b.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ ...b, status: 'cancelled' }),
+                    });
+                    if (!r.ok) throw new Error('Failed to update — please try again.');
+                    const saved = await r.json();
+                    setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                  }
+                  fetchWpSummary();
+                  setMissedAction(null);
+                } catch (err) {
+                  setMissedActionError(err.message || 'Failed to update — please try again.');
+                } finally {
+                  setMissedActionWorking(false);
                 }
-                fetchWpSummary();
               }
               return (
                 <>
@@ -1011,12 +1027,13 @@ export default function Dashboard() {
                     This booking was due to check in yesterday but hasn't been marked as arrived yet.
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <button className="btn-primary" onClick={() => dismissMissedArrival('arrived')}>
+                    <button className="btn-primary" disabled={missedActionWorking} onClick={() => dismissMissedArrival('arrived')}>
                       Yes — guests arrived
                     </button>
                     <button
                       className="btn-secondary"
                       style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                      disabled={missedActionWorking}
                       onClick={() => dismissMissedArrival('cancel')}
                     >
                       No — mark as no-show / cancel
@@ -1024,10 +1041,14 @@ export default function Dashboard() {
                     <button
                       className="btn-secondary"
                       style={{ border: '1.5px solid var(--border)', marginTop: 2 }}
+                      disabled={missedActionWorking}
                       onClick={() => dismissMissedArrival('remind_later')}
                     >
                       Remind me later
                     </button>
+                    {missedActionError && (
+                      <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: 2 }}>{missedActionError}</div>
+                    )}
                   </div>
                 </>
               );
@@ -1042,21 +1063,30 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button
                     className="btn-primary"
-                    onClick={() => {
+                    disabled={missedActionWorking}
+                    onClick={async () => {
                       const b = missedAction.booking;
-                      setMissedAction(null);
-                      apiFetch(`/api/bookings/${b.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...b, _wp_action: 'wp_departure' }),
-                      })
-                        .then((r) => r.ok ? r.json() : null)
-                        .then((saved) => {
-                          if (!saved) return;
-                          setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
-                          fetchWpSummary();
-                        })
-                        .catch(() => {});
+                      setMissedActionWorking(true);
+                      setMissedActionError(null);
+                      try {
+                        const r = await apiFetch(`/api/bookings/${b.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ...b, _wp_action: 'wp_departure' }),
+                        });
+                        if (!r.ok) throw new Error('Failed to update — please try again.');
+                        const saved = await r.json();
+                        setBookings((prev) => prev.map((bk) => (bk.id === b.id ? { ...bk, ...saved } : bk)));
+                        fetchWpSummary();
+                        // Only dismiss once the write genuinely succeeded —
+                        // previously this dismissed before the request even
+                        // started, so a failed update silently looked handled.
+                        setMissedAction(null);
+                      } catch (err) {
+                        setMissedActionError(err.message || 'Failed to update — please try again.');
+                      } finally {
+                        setMissedActionWorking(false);
+                      }
                     }}
                   >
                     Yes — guests have departed
@@ -1064,10 +1094,14 @@ export default function Dashboard() {
                   <button
                     className="btn-secondary"
                     style={{ border: '1.5px solid var(--border)' }}
-                    onClick={() => setMissedAction(null)}
+                    disabled={missedActionWorking}
+                    onClick={() => { setMissedActionError(null); setMissedAction(null); }}
                   >
                     Still here — dismiss for now
                   </button>
+                  {missedActionError && (
+                    <div style={{ color: '#dc2626', fontSize: '0.82rem', marginTop: 2 }}>{missedActionError}</div>
+                  )}
                 </div>
               </>
             )}

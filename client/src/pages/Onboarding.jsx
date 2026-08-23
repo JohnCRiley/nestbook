@@ -52,6 +52,10 @@ export default function Onboarding() {
   const [saving, setSaving]       = useState(false);
   const [done, setDone]           = useState(false);
   const [error, setError]         = useState(null);
+  // form stays null (and the render below shows a permanent "Loading…") if
+  // this fetch fails silently — track why so we can offer a retry instead
+  // of leaving the user stuck with no explanation.
+  const [loadError, setLoadError] = useState(null);
 
   // IR room-categories list (step 7) — local drafts only, created via the
   // room-categories endpoint on that step's own "Save and continue".
@@ -64,10 +68,14 @@ export default function Onboarding() {
     }
   }, [user?.onboarding_completed]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
+  function loadProperty() {
     if (!user?.property_id) return;
+    setLoadError(null);
     apiFetch(`/api/properties/${user.property_id}`)
-      .then(r => r.json())
+      // apiFetch() only throws on a genuine network failure, never on a
+      // non-2xx status — without this check a 500 would fall through to
+      // r.json() and either throw on invalid JSON or silently proceed.
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`Server returned ${r.status}`))))
       .then(p => {
         setForm({
           name:                 p.name                ?? '',
@@ -86,8 +94,12 @@ export default function Onboarding() {
           ir_room_mode:         p.ir_room_mode         ?? 'named',
         });
       })
-      .catch(() => {});
-  }, [user?.property_id]);
+      .catch(err => setLoadError(err.message || 'Failed to load your property.'));
+  }
+
+  useEffect(() => {
+    loadProperty();
+  }, [user?.property_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Step 6 is shared: units sub-type (units mode) or the new IR
   // room-organization choice (rooms mode) — never both, since rental_type is
@@ -226,6 +238,24 @@ export default function Onboarding() {
   }
 
   if (!form) {
+    if (loadError) {
+      return (
+        <div style={{
+          height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', background: '#fff',
+        }}>
+          <div style={{ color: '#dc2626', fontSize: '1rem', fontWeight: 700 }}>
+            Couldn't load your property
+          </div>
+          <div style={{ color: '#6B6A66', fontSize: '0.88rem', maxWidth: 380 }}>
+            {loadError}
+          </div>
+          <button onClick={loadProperty} className="btn-primary" style={{ padding: '10px 28px', marginTop: 4 }}>
+            Retry
+          </button>
+        </div>
+      );
+    }
     return (
       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ color: '#405440', fontSize: '0.9rem' }}>Loading…</div>
