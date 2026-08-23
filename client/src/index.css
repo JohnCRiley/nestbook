@@ -3431,7 +3431,7 @@ html[data-theme="forest"] .main-content {
   margin-top: 4px;
 }
 .auth-btn:hover    { background: var(--accent-dark); }
-.auth-btn:disabled { background: #9ec99a; cursor: not-allowed; }
+.auth-btn:disabled { background: #9B9A96; cursor: not-allowed; }
 
 .auth-switch {
   text-align: center;

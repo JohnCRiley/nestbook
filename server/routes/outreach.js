@@ -467,7 +467,7 @@ export function handleUnsubscribe(req, res) {
 <title>Unsubscribed — NestBook</title>
 <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8fafc}
 .box{text-align:center;max-width:400px;padding:40px 24px}
-h1{color:#1a4710;font-size:1.5rem}p{color:#475569}</style>
+h1{color:#405440;font-size:1.5rem}p{color:#475569}</style>
 </head>
 <body>
 <div class="box">

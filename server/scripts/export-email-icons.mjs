@@ -18,7 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Colour variants ───────────────────────────────────────────────────────────
 const COLORS = {
-  green: '#1a4710',   // NestBook brand dark green
+  green: '#405440',   // NestBook brand dark green
   white: '#ffffff',   // For use on dark backgrounds
   red:   '#dc2626',   // Warning / cancellation red (matches .badge-cancelled)
 };

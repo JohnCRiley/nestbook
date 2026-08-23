@@ -63,23 +63,23 @@ function buildPreviewHtml(bodyHtml, bodyBg = 'white') {
   const footer = USER_MAILER_FOOTER_PREVIEW;
 
   const isGreen    = bodyBg === 'green';
-  const outerBg    = isGreen ? '#1a4710' : '#ffffff';
-  const bodyBorder = isGreen ? 'border-top:1px solid #d9f0cc;' : '';
-  const sigColor   = isGreen ? '#ffffff' : '#1a4710';
+  const outerBg    = isGreen ? '#405440' : '#ffffff';
+  const bodyBorder = isGreen ? 'border-top:1px solid #e0ecdb;' : '';
+  const sigColor   = isGreen ? '#ffffff' : '#405440';
 
   return `<!DOCTYPE html><html>
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;">
 <table width="600" cellpadding="0" cellspacing="0" style="background:${outerBg};border-radius:8px;overflow:hidden;">
-  <tr><td style="background:#1a4710;padding:28px 32px;">
+  <tr><td style="background:#405440;padding:28px 32px;">
     <img src="https://nestbook.io/icon-192.png" width="36" height="36" style="border-radius:8px;vertical-align:middle;display:inline-block;">
     <span style="color:#ffffff;font-size:22px;font-weight:bold;margin-left:12px;vertical-align:middle;">NestBook</span>
     <div style="color:#a8d5a2;font-size:13px;margin-top:6px;">Booking software for independent properties</div>
   </td></tr>
-  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#1a2e14;font-size:15px;line-height:1.6;">
-    <div style="color:#1a2e14;">${htmlContent}</div>
-    <div style="margin-top:32px;padding:24px;border-top:1px solid #d9f0cc;">
+  <tr><td style="padding:32px 32px 0px;${bodyBorder}color:#405440;font-size:15px;line-height:1.6;">
+    <div style="color:#405440;">${htmlContent}</div>
+    <div style="margin-top:32px;padding:24px;border-top:1px solid #e0ecdb;">
       <img src="https://nestbook.io/icon-192.png" width="28" height="28" style="border-radius:6px;vertical-align:middle;display:inline-block;">
       <strong style="color:${sigColor};margin-left:8px;vertical-align:middle;font-size:15px;">The NestBook Team</strong><br>
       <span style="color:#5a7a52;font-size:13px;line-height:1.8;">
@@ -89,7 +89,7 @@ function buildPreviewHtml(bodyHtml, bodyBg = 'white') {
       </span>
     </div>
   </td></tr>
-  <tr><td style="background:#f0f7ed;padding:20px 32px;border-top:1px solid #d9f0cc;">
+  <tr><td style="background:#f0f7ed;padding:20px 32px;border-top:1px solid #e0ecdb;">
     <p style="margin:0;font-size:12px;color:#5a7a52;text-align:center;line-height:1.6;">${footer}</p>
   </td></tr>
 </table></td></tr></table></body></html>`;

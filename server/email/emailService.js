@@ -1301,7 +1301,7 @@ function proUpgradeHtml(user, property, periodEnd) {
               letter-spacing:0.5px;color:#405440;">${t(locale, 'proWidgetTitle')}</p>
     <p style="margin:0 0 8px;font-size:0.82rem;color:#405440;">${t(locale, 'proWidgetDesc')}</p>
     <div style="background:#1e293b;border-radius:6px;padding:12px 16px;margin-bottom:24px;overflow-x:auto;">
-      <code style="color:#86efac;font-family:monospace;font-size:0.78rem;word-break:break-all;">${widgetCode}</code>
+      <code style="color:#F4F3F0;font-family:monospace;font-size:0.78rem;word-break:break-all;">${widgetCode}</code>
     </div>
 
     <div style="text-align:center;margin-bottom:20px;">

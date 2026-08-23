@@ -266,7 +266,7 @@ export default function GuestNote() {
             disabled={!noteText.trim() || submitting}
             style={{
               width: '100%', padding: '12px', borderRadius: 8, border: 'none',
-              background: submitting || !noteText.trim() ? '#94a3b8' : '#1a4710',
+              background: submitting || !noteText.trim() ? '#94a3b8' : '#405440',
               color: '#fff', fontSize: '1rem', fontWeight: 700,
               cursor: submitting || !noteText.trim() ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit',
