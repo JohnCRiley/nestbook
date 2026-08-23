@@ -248,22 +248,29 @@ img { display: block; max-width: 100%; }
 
 /* Click-to-expand rows */
 .feat-row[data-detail] { cursor: pointer; }
-.feat-row[data-detail] td.col-feature { position: relative; padding-right: 36px; }
-.feat-row[data-detail] td.col-feature::after {
-  content: '+';
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1rem;
-  font-weight: 300;
-  color: var(--muted);
-  opacity: 0.4;
-  transition: opacity 0.12s;
-  line-height: 1;
+.feat-row[data-detail] td.col-feature { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+.feat-more-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  min-height: 30px;
+  border-radius: 20px;
+  background: var(--pale);
+  color: var(--mid);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
 }
-.feat-row[data-detail]:hover td.col-feature::after { opacity: 0.9; }
-.feat-row.expanded td.col-feature::after { content: '−'; opacity: 0.9; }
+.feat-row[data-detail]:hover .feat-more-info { background: var(--mid); color: #fff; }
+.fmi-less, .fmi-chev-less { display: none; }
+.feat-row.expanded .fmi-more, .feat-row.expanded .fmi-chev-more { display: none; }
+.feat-row.expanded .fmi-less { display: inline; }
+.feat-row.expanded .fmi-chev-less { display: block; }
+.feat-row.expanded .feat-more-info { background: var(--mid); color: #fff; }
+.fmi-chevron { flex-shrink: 0; }
 .detail-row td {
   padding: 6px 20px 14px 20px;
   font-size: 0.83rem;
@@ -575,91 +582,91 @@ img { display: block; max-width: 100%; }
             <td></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.rooms" data-detail="Each 'room' is any bookable unit — a hotel room, apartment, cabin, or pitch. Free accounts can manage up to 5; Pro and Multi have no limit.">
-            <td class="col-feature" data-i18n="feat.rooms">Number of rooms</td>
+            <td class="col-feature"><span data-i18n="feat.rooms">Number of rooms</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cell-text" data-i18n="cell.upTo3">Up to 5</span></td>
             <td class="col-pro"><span class="cell-text accent" data-i18n="cell.unlimited">Unlimited</span></td>
             <td class="col-multi"><span class="cell-text accent" data-i18n="cell.unlimited">Unlimited</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.calendar" data-detail="A grid with all your rooms across the top and dates along the side. Click any empty cell to create a booking, click an existing booking to view or edit it. Drag to extend a stay. Colour-coded by booking status.">
-            <td class="col-feature" data-i18n="feat.calendar">Visual room calendar</td>
+            <td class="col-feature"><span data-i18n="feat.calendar">Visual room calendar</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.checkin" data-detail="One-click check-in marks a guest as arrived and unlocks their folio for extras. One-click check-out closes the folio, prompts for final payment, and frees the room for the next booking.">
-            <td class="col-feature" data-i18n="feat.checkin">Check-in / check-out</td>
+            <td class="col-feature"><span data-i18n="feat.checkin">Check-in / check-out</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.guests" data-detail="A searchable directory of every guest who has ever stayed. Stores contact details, full stay history across all bookings, private notes, and total lifetime spend. Quickly find returning guests and pre-fill their details on new bookings.">
-            <td class="col-feature" data-i18n="feat.guests">Guest management</td>
+            <td class="col-feature"><span data-i18n="feat.guests">Guest management</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.breakfast" data-detail="Mark any booking as including breakfast, set a per-person price, and define the service window (e.g. 7:30–10:30). Breakfast charges can be added to the room folio automatically at check-out.">
-            <td class="col-feature" data-i18n="feat.breakfast">Breakfast management</td>
+            <td class="col-feature"><span data-i18n="feat.breakfast">Breakfast management</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.deposit" data-detail="Record an upfront deposit on any booking, mark it as received, and it's automatically deducted when the guest pays their final bill at check-out. Keeps cash flow simple and reduces no-shows.">
-            <td class="col-feature" data-i18n="feat.deposit">Deposit tracking</td>
+            <td class="col-feature"><span data-i18n="feat.deposit">Deposit tracking</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.receipt" data-detail="Generate a clean, printable or PDF-ready receipt at any point during or after a stay. Itemises the nightly rate, extras, breakfast, taxes, and any deposit already paid. Use it as a VAT receipt if required.">
-            <td class="col-feature" data-i18n="feat.receipt">Receipt printing</td>
+            <td class="col-feature"><span data-i18n="feat.receipt">Receipt printing</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.themes" data-detail="Choose from 7 built-in colour themes: Forest, Royal, Ember, Ruby, Sky, Lavender, and Charcoal. Your chosen theme applies across the dashboard, the booking widget on your website, and the standalone booking page.">
-            <td class="col-feature" data-i18n="feat.themes">7 colour themes</td>
+            <td class="col-feature"><span data-i18n="feat.themes">7 colour themes</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.ical" data-detail="Export a live iCal feed URL for each room and paste it into Booking.com, Airbnb, or any channel manager. Dates blocked on external platforms are automatically reflected in your NestBook calendar, preventing double-bookings.">
-            <td class="col-feature" data-i18n="feat.ical">iCal sync (Booking.com, Airbnb)</td>
+            <td class="col-feature"><span data-i18n="feat.ical">iCal sync (Booking.com, Airbnb)</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.importWizard" data-detail="Import your existing bookings from any property management system via CSV. A step-by-step wizard maps your room names to NestBook rooms, validates dates, and skips duplicates automatically.">
-            <td class="col-feature" data-i18n="feat.importWizard">Booking migration wizard</td>
+            <td class="col-feature"><span data-i18n="feat.importWizard">Booking migration wizard</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.stripe" data-detail="Connect your own Stripe account and accept real card payments on your booking page, widget, and payment links — zero commission, money goes straight into your own account. NestBook never touches your money.">
-            <td class="col-feature" data-i18n="feat.stripe">Direct Card Payments (Stripe Connect)</td>
+            <td class="col-feature"><span data-i18n="feat.stripe">Direct Card Payments (Stripe Connect)</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.langs" data-detail="The entire dashboard — every menu, label, and message — is available in English, French, Spanish, German and Dutch. Each staff member can use their own preferred language independently, without affecting anyone else.">
-            <td class="col-feature" data-i18n="feat.langs">Interface languages</td>
+            <td class="col-feature"><span data-i18n="feat.langs">Interface languages</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cell-text">EN FR ES DE NL</span></td>
             <td class="col-pro"><span class="cell-text">EN FR ES DE NL</span></td>
             <td class="col-multi"><span class="cell-text">EN FR ES DE NL</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.individualRooms" data-detail="Present your rooms the way that suits your property: Named Rooms lets guests choose by name and character, while Room Categories groups rooms by type like Single or Double.">
-            <td class="col-feature" data-i18n="feat.individualRooms">Individual rooms rental mode (Named Rooms &amp; Room Categories)</td>
+            <td class="col-feature"><span data-i18n="feat.individualRooms">Individual rooms rental mode (Named Rooms &amp; Room Categories)</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.wholeProperty" data-detail="Gîte and holiday home owners can switch to whole property mode — rooms are showcased as features, and the booking page uses a full-width layout designed for holiday rentals.">
-            <td class="col-feature" data-i18n="feat.wholeProperty">Whole property rental mode</td>
+            <td class="col-feature"><span data-i18n="feat.wholeProperty">Whole property rental mode</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.selfCatering" data-detail="For properties made up of independent self-catering units — apartments, glamping pods, or serviced apartments — each with its own booking calendar and guest journey.">
-            <td class="col-feature" data-i18n="feat.selfCatering">Self-catering rental mode (Aparthotel, Glamping &amp; Serviced Apartment)</td>
+            <td class="col-feature"><span data-i18n="feat.selfCatering">Self-catering rental mode (Aparthotel, Glamping &amp; Serviced Apartment)</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -673,37 +680,37 @@ img { display: block; max-width: 100%; }
             <td></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.widget" data-detail="One script tag embeds a floating 'Book Now' button on any website. Clicking it opens a branded availability calendar in a modal overlay — guests select dates, choose a room, and pay you directly. No platform account needed, no commission taken.">
-            <td class="col-feature" data-i18n="feat.widget">Booking widget for your website</td>
+            <td class="col-feature"><span data-i18n="feat.widget">Booking widget for your website</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
-          <tr class="feat-row" data-detail-key="detail.zeroCommission" data-detail="Unlike Booking.com (12–18% commission) or Airbnb (15.5%), NestBook charges nothing per booking. Guests pay you directly. You keep 100% of every booking made through the widget or booking page.">
-            <td class="col-feature" data-i18n="feat.zeroCommission">Zero commission on bookings</td>
-            <td class="col-free"><span class="cross">✗</span></td>
+          <tr class="feat-row" data-detail-key="detail.zeroCommission" data-detail="Unlike Booking.com (12–18% commission) or Airbnb (15.5%), NestBook never charges commission on any booking, on any plan. Guests pay you directly and you keep 100% — whether that's a Free-plan enquiry or a booking made through the widget or booking page.">
+            <td class="col-feature"><span data-i18n="feat.zeroCommission">Zero commission on bookings</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
+            <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.emails" data-detail="When a guest completes a widget or booking-page reservation, NestBook automatically sends a branded confirmation email with their dates, room details, check-in time, and any custom message you've configured.">
-            <td class="col-feature" data-i18n="feat.emails">Automated confirmation emails</td>
+            <td class="col-feature"><span data-i18n="feat.emails">Automated confirmation emails</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.webpage" data-detail="Every NestBook property gets a free page at nestbook.io/book/your-property-name with rooms, photos, prices and a live availability calendar. Edit your URL, share it anywhere, and add a Book Now button to your Facebook page — all free.">
-            <td class="col-feature" data-i18n="feat.webpage">Your NestBook property page</td>
+            <td class="col-feature"><span data-i18n="feat.webpage">Your NestBook property page</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cell-text accent" data-i18n="cell.webpageFree">Contact form</span></td>
             <td class="col-pro"><span class="cell-text accent" data-i18n="cell.webpagePro">Direct booking</span></td>
             <td class="col-multi"><span class="cell-text accent" data-i18n="cell.webpageMulti">Direct booking</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.facebook" data-detail="Your booking page has a clean custom URL you can edit. Add it as a Book Now button on your Facebook page in minutes — guests go straight to your booking page.">
-            <td class="col-feature" data-i18n="feat.facebook">Facebook Booking Button + slug editor</td>
+            <td class="col-feature"><span data-i18n="feat.facebook">Facebook Booking Button + slug editor</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.photos" data-detail="Upload photos for each room and they appear on your booking page automatically. Photos are resized and optimised for fast loading. Free plan: 3 photos per room. Pro: 5 per room. Multi: 10 per room.">
-            <td class="col-feature" data-i18n="feat.photos">Room photos on booking page</td>
+            <td class="col-feature"><span data-i18n="feat.photos">Room photos on booking page</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cell-text accent" data-i18n="cell.onePerRoom">3 photos/room</span></td>
             <td class="col-pro"><span class="cell-text accent" data-i18n="cell.fivePerRoom">5 photos/room</span></td>
             <td class="col-multi"><span class="cell-text accent" data-i18n="cell.tenPerRoom">10 photos/room</span></td>
@@ -717,19 +724,19 @@ img { display: block; max-width: 100%; }
             <td></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.seasonal" data-detail="Create named date ranges with different nightly rates — peak summer, school holidays, Christmas, quiet winter months. Pro allows up to 5 active pricing periods per room; Multi has no limit.">
-            <td class="col-feature" data-i18n="feat.seasonal">Seasonal pricing per room</td>
+            <td class="col-feature"><span data-i18n="feat.seasonal">Seasonal pricing per room</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="cell-text accent" data-i18n="cell.upTo5periods">Up to 5 periods</span></td>
             <td class="col-multi"><span class="cell-text accent" data-i18n="cell.unlimited">Unlimited</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.revenue" data-detail="Monthly and yearly revenue summaries broken down by room, booking source, and occupancy rate. Export to CSV for your accountant or generate a PDF for your own records. Filter by any date range and property.">
-            <td class="col-feature" data-i18n="feat.revenue">Revenue reports &amp; CSV exports</td>
+            <td class="col-feature"><span data-i18n="feat.revenue">Revenue reports &amp; CSV exports</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.audit" data-detail="Every action in the system — logins, bookings created, check-ins, cancellations, settings changes — is recorded with a timestamp, the staff member's name, and their IP address. Essential for accountability and dispute resolution.">
-            <td class="col-feature" data-i18n="feat.audit">Activity log &amp; audit trail</td>
+            <td class="col-feature"><span data-i18n="feat.audit">Activity log &amp; audit trail</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -743,25 +750,25 @@ img { display: block; max-width: 100%; }
             <td></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.properties" data-detail="Free and Pro accounts manage a single property. Multi plan supports up to 5 separate properties under one login — each with their own rooms, staff, calendar and reports. Switch between properties with one click.">
-            <td class="col-feature" data-i18n="feat.properties">Number of properties</td>
+            <td class="col-feature"><span data-i18n="feat.properties">Number of properties</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cell-text">1</span></td>
             <td class="col-pro"><span class="cell-text">1</span></td>
             <td class="col-multi"><span class="cell-text accent" data-i18n="cell.upTo5">Up to 5</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.staff" data-detail="Invite reception staff with a restricted login — they can manage the calendar, check guests in and out, and view bookings, but cannot access financial reports, settings, or billing. Pro allows up to 5 staff accounts; Multi has no limit.">
-            <td class="col-feature" data-i18n="feat.staff">Staff accounts &amp; roles</td>
+            <td class="col-feature"><span data-i18n="feat.staff">Staff accounts &amp; roles</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.charges" data-detail="Staff at the bar, restaurant, spa or shop can charge items directly to a guest's room from a dedicated staff portal — no owner login required. All charges appear on the guest's folio and are settled at check-out.">
-            <td class="col-feature" data-i18n="feat.charges">Room charges (bar, restaurant)</td>
+            <td class="col-feature"><span data-i18n="feat.charges">Room charges (bar, restaurant)</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="cell-text" style="font-size:0.78rem;color:#92400e;background:#fef3c7;border-radius:10px;padding:2px 8px;white-space:nowrap" data-i18n="compare.addon.price">+£6/mo add-on</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.categories" data-detail="Create charge categories — Food &amp; Drink, Spa, Activities, Transport — each with its own tax rate. Revenue reports and guest folios break down charges by category, making VAT reporting and reconciliation straightforward.">
-            <td class="col-feature" data-i18n="feat.categories">Service categories with tax rates</td>
+            <td class="col-feature"><span data-i18n="feat.categories">Service categories with tax rates</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="cell-text" style="font-size:0.78rem;color:#92400e;background:#fef3c7;border-radius:10px;padding:2px 8px;white-space:nowrap" data-i18n="compare.addon.included">Included with add-on</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -776,49 +783,49 @@ img { display: block; max-width: 100%; }
             <td></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.socialKit" data-detail="Download a ready-made social media kit: logo, cover images and post templates sized for Facebook and Instagram. Share your property across platforms in minutes.">
-            <td class="col-feature" data-i18n="feat.socialKit">Social Media Kit</td>
+            <td class="col-feature"><span data-i18n="feat.socialKit">Social Media Kit</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.fbSetup" data-detail="Step-by-step guide to setting up a professional Facebook Page and Instagram profile for your property, including how to add a Book Now button linked directly to your booking page.">
-            <td class="col-feature" data-i18n="feat.fbSetup">Facebook &amp; Instagram Setup Guide</td>
+            <td class="col-feature"><span data-i18n="feat.fbSetup">Facebook &amp; Instagram Setup Guide</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.qrWifi" data-detail="Generate a printable QR code that links guests directly to your NestBook booking page, plus a branded WiFi password card you can leave in every room.">
-            <td class="col-feature" data-i18n="feat.qrWifi">Booking Page QR &amp; WiFi Codes</td>
+            <td class="col-feature"><span data-i18n="feat.qrWifi">Booking Page QR &amp; WiFi Codes</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.specials" data-detail="Create a branded promotional banner for a special offer or seasonal deal — download as a print-ready PDF to display at the property, or as an image to share on social media.">
-            <td class="col-feature" data-i18n="feat.specials">Specials Banner</td>
+            <td class="col-feature"><span data-i18n="feat.specials">Specials Banner</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.guestMailer" data-detail="Send a branded email to past or future guests — promote a seasonal special, share news about your property, or send a holiday greeting. Emails use your property name and logo.">
-            <td class="col-feature" data-i18n="feat.guestMailer">Guest Mailer</td>
+            <td class="col-feature"><span data-i18n="feat.guestMailer">Guest Mailer</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.reviewReqs" data-detail="After check-out, NestBook automatically sends guests a polite review request linking to your Google or TripAdvisor page. Timing is configurable per property.">
-            <td class="col-feature" data-i18n="feat.reviewReqs">Automatic Review Requests</td>
+            <td class="col-feature"><span data-i18n="feat.reviewReqs">Automatic Review Requests</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.guestNotes" data-detail="After their stay, guests can leave a private note for the owner — honest feedback that goes directly to you without affecting your public star rating on any platform.">
-            <td class="col-feature" data-i18n="feat.guestNotes">Guest Notes</td>
+            <td class="col-feature"><span data-i18n="feat.guestNotes">Guest Notes</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.partnerLinks" data-detail="Partner with local restaurants, spas, and event venues to fill your quiet season — add their link to your booking page as a thank-you for the partnership. We believe small independent businesses do better working together, not competing for the same commission-driven platforms. &lt;a href=&quot;/blog/partner-with-local-businesses.html&quot; style=&quot;color:var(--mid);font-weight:600&quot;&gt;Read the full story →&lt;/a&gt;">
-            <td class="col-feature" data-i18n="feat.partnerLinks">Partnership Links</td>
+            <td class="col-feature"><span data-i18n="feat.partnerLinks">Partnership Links</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -831,25 +838,25 @@ img { display: block; max-width: 100%; }
             <td></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.trial" data-detail="Start Pro or Multi at no cost — no credit card required. You get full access to every feature in the plan for 30 days. After that, billing starts at £19/€22 per month for Pro or £39/€45 for Multi.">
-            <td class="col-feature" data-i18n="feat.trial">30-day free trial</td>
+            <td class="col-feature"><span data-i18n="feat.trial">30-day free trial</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="cross">✗</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.noContract" data-detail="Month-to-month billing only — no annual commitment required. Cancel any time from the Settings page. No notice period, no cancellation fees, no data held hostage.">
-            <td class="col-feature" data-i18n="feat.noContract">No contract, cancel any time</td>
+            <td class="col-feature"><span data-i18n="feat.noContract">No contract, cancel any time</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.noCommission" data-detail="NestBook is a flat monthly subscription. We never take a percentage of your booking revenue — regardless of how many guests book or how much they pay. Every pound your guests pay goes directly to you.">
-            <td class="col-feature" data-i18n="feat.noCommission">No commission on bookings</td>
+            <td class="col-feature"><span data-i18n="feat.noCommission">No commission on bookings</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
           </tr>
           <tr class="feat-row" data-detail-key="detail.noFees" data-detail="The price shown is all you pay. No setup fees, no extra charges for additional languages, no per-user fees beyond staff accounts, no API charges, no data export fees.">
-            <td class="col-feature" data-i18n="feat.noFees">No hidden fees</td>
+            <td class="col-feature"><span data-i18n="feat.noFees">No hidden fees</span><span class="feat-more-info"><span class="fmi-more" data-i18n="ui.moreInfo">More info</span><span class="fmi-less" data-i18n="ui.lessInfo">Less info</span><svg class="fmi-chevron fmi-chev-more" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg><svg class="fmi-chevron fmi-chev-less" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></span></td>
             <td class="col-free"><span class="check">✓</span></td>
             <td class="col-pro"><span class="check">✓</span></td>
             <td class="col-multi"><span class="check">✓</span></td>
@@ -881,6 +888,7 @@ img { display: block; max-width: 100%; }
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.guests">Guest management</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.ical">iCal sync (Booking.com, Airbnb)</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.stripe">Direct Card Payments (Stripe Connect)</span></div>
+          <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.zeroCommission">Zero commission on bookings</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.webpage">Your NestBook property page</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.facebook">Facebook Booking Button + slug editor</span></div>
           <div class="mpc-feat-row"><span class="mpc-feat-icon check-icon"></span><span class="mpc-feat-label" data-i18n="feat.photos">Room photos on booking page</span><span class="mpc-feat-value accent" data-i18n="cell.onePerRoom">3 photos/room</span></div>
@@ -1087,6 +1095,7 @@ var I18N = {
     'hero.badge': 'Pricing', 'hero.h1': 'Compare plans',
     'hero.p': 'Booking software built for independent properties — B&Bs, gîtes, cottages, villas and more. Choose the plan that fits your property.',
     'hero.print': 'Print / Save as PDF',
+    'ui.moreInfo': 'More info', 'ui.lessInfo': 'Less info',
     'thead.freePeriod': 'Free forever', 'thead.freeCta': 'Get started',
     'thead.popular': 'Most popular', 'thead.period': 'per month, billed monthly',
     'thead.proCta': 'Start free trial', 'thead.multiPlan': 'Multi-property',
@@ -1155,7 +1164,7 @@ var I18N = {
     'detail.stripe': 'Connect your own Stripe account and accept real card payments on your booking page, widget, and payment links — zero commission, money goes straight into your own account. NestBook never touches your money.',
     'detail.langs': 'The entire dashboard — every menu, label, and message — is available in English, French, Spanish, German and Dutch. Each staff member can use their own preferred language independently, without affecting anyone else.',
     'detail.widget': "One script tag embeds a floating 'Book Now' button on any website. Clicking it opens a branded availability calendar in a modal overlay — guests select dates, choose a room, and pay you directly. No platform account needed, no commission taken.",
-    'detail.zeroCommission': 'Unlike Booking.com (12–18% commission) or Airbnb (15.5%), NestBook charges nothing per booking. Guests pay you directly. You keep 100% of every booking made through the widget or booking page.',
+    'detail.zeroCommission': 'Unlike Booking.com (12–18% commission) or Airbnb (15.5%), NestBook never charges commission on any booking, on any plan. Guests pay you directly and you keep 100% — whether that\'s a Free-plan enquiry or a booking made through the widget or booking page.',
     'detail.emails': "When a guest completes a widget or booking-page reservation, NestBook automatically sends a branded confirmation email with their dates, room details, check-in time, and any custom message you've configured.",
     'detail.facebook': "Your booking page has a clean custom URL you can edit. Add it as a Book Now button on your Facebook page in minutes — guests go straight to your booking page.",
     'detail.webpage': "Every NestBook property gets a free page at nestbook.io/book/your-property-name with rooms, photos, prices and a live availability calendar. Edit your URL, share it anywhere, and add a Book Now button to your Facebook page — all free.",
@@ -1204,6 +1213,7 @@ var I18N = {
     'hero.badge': 'Tarifs', 'hero.h1': 'Comparer les plans',
     'hero.p': 'Logiciel de réservation pour les hébergements indépendants — B&B, gîtes, cottages, villas et plus. Choisissez le plan adapté à votre établissement.',
     'hero.print': 'Imprimer / Enregistrer en PDF',
+    'ui.moreInfo': 'Plus d\'infos', 'ui.lessInfo': 'Moins d\'infos',
     'thead.freePeriod': 'Gratuit pour toujours', 'thead.freeCta': 'Commencer',
     'thead.popular': 'Le plus populaire', 'thead.period': 'par mois, facturé mensuellement',
     'thead.proCta': 'Démarrer l\'essai gratuit', 'thead.multiPlan': 'Multi-établissement',
@@ -1272,7 +1282,7 @@ var I18N = {
     'detail.stripe': "Connectez votre propre compte Stripe et acceptez de vrais paiements par carte sur votre page de réservation, votre widget et vos liens de paiement — zéro commission, l'argent arrive directement sur votre compte. NestBook ne touche jamais à votre argent.",
     'detail.langs': "L'intégralité du tableau de bord — chaque menu, étiquette et message — est disponible en anglais, français, espagnol, allemand et néerlandais. Chaque membre du personnel peut utiliser sa propre langue préférée de manière indépendante.",
     'detail.widget': "Une balise script intègre un bouton flottant 'Réserver maintenant' sur n'importe quel site. Un clic ouvre un calendrier de disponibilité personnalisé dans une superposition modale — les clients sélectionnent les dates, choisissent une chambre et vous paient directement. Aucune commission prélevée.",
-    'detail.zeroCommission': "Contrairement à Booking.com (12–18% de commission) ou Airbnb (15.5%), NestBook ne prélève rien par réservation. Les clients vous paient directement. Vous gardez 100% de chaque réservation effectuée via le widget ou la page de réservation.",
+    'detail.zeroCommission': "Contrairement à Booking.com (12–18% de commission) ou Airbnb (15.5%), NestBook ne prélève jamais de commission, sur aucune réservation, quel que soit votre forfait. Les clients vous paient directement et vous gardez 100% — qu'il s'agisse d'une demande sur le forfait Gratuit ou d'une réservation effectuée via le widget ou la page de réservation.",
     'detail.emails': "Lorsqu'un client finalise une réservation via le widget ou la page de réservation, NestBook envoie automatiquement un e-mail de confirmation personnalisé avec les dates, les détails de la chambre, l'heure d'enregistrement et tout message personnalisé configuré.",
     'detail.facebook': "Votre page de réservation a une URL personnalisée que vous pouvez modifier. Ajoutez-la comme bouton Réserver sur votre page Facebook en quelques minutes.",
     'detail.webpage': "Chaque propriété NestBook obtient une page gratuite sur nestbook.io/book/votre-propriete avec chambres, photos, tarifs et calendrier de disponibilités. Modifiez votre URL, partagez-la partout et ajoutez un bouton Réserver sur votre page Facebook — gratuitement.",
@@ -1321,6 +1331,7 @@ var I18N = {
     'hero.badge': 'Precios', 'hero.h1': 'Comparar planes',
     'hero.p': 'Software de reservas para propiedades independientes — B&Bs, gîtes, casas rurales, villas y más. Elige el plan que se adapte a tu propiedad.',
     'hero.print': 'Imprimir / Guardar como PDF',
+    'ui.moreInfo': 'Más información', 'ui.lessInfo': 'Menos información',
     'thead.freePeriod': 'Gratis para siempre', 'thead.freeCta': 'Comenzar',
     'thead.popular': 'El más popular', 'thead.period': 'por mes, facturado mensualmente',
     'thead.proCta': 'Iniciar prueba gratuita', 'thead.multiPlan': 'Multi-propiedad',
@@ -1389,7 +1400,7 @@ var I18N = {
     'detail.stripe': 'Conecte su propia cuenta de Stripe y acepte pagos reales con tarjeta en su página de reservas, su widget y sus enlaces de pago — sin comisión, el dinero llega directamente a su cuenta. NestBook nunca toca su dinero.',
     'detail.langs': 'Todo el panel — cada menú, etiqueta y mensaje — está disponible en inglés, francés, español, alemán y neerlandés. Cada miembro del personal puede usar su propio idioma preferido de forma independiente, sin afectar a los demás.',
     'detail.widget': "Una etiqueta script incrusta un botón flotante 'Reservar ahora' en cualquier sitio web. Al hacer clic, se abre un calendario de disponibilidad personalizado en una superposición modal — los huéspedes seleccionan fechas, eligen una habitación y le pagan directamente. Sin comisión.",
-    'detail.zeroCommission': 'A diferencia de Booking.com (comisión del 12–18%) o Airbnb (15.5%), NestBook no cobra nada por reserva. Los huéspedes le pagan directamente. Usted conserva el 100% de cada reserva realizada a través del widget o la página de reservas.',
+    'detail.zeroCommission': 'A diferencia de Booking.com (comisión del 12–18%) o Airbnb (15.5%), NestBook nunca cobra comisión por ninguna reserva, en ningún plan. Los huéspedes le pagan directamente y usted conserva el 100% — ya sea una consulta del plan Gratis o una reserva realizada a través del widget o la página de reservas.',
     'detail.emails': "Cuando un huésped completa una reserva a través del widget o la página de reservas, NestBook envía automáticamente un correo electrónico de confirmación personalizado con sus fechas, detalles de la habitación, hora de check-in y cualquier mensaje personalizado que haya configurado.",
     'detail.facebook': "Su página de reservas tiene una URL personalizada que puede editar. Añádala como botón Reservar en su página de Facebook en minutos.",
     'detail.webpage': "Cada propiedad NestBook obtiene una página gratuita en nestbook.io/book/su-propiedad con habitaciones, fotos, precios y calendario de disponibilidad. Edite su URL, compártala en cualquier lugar y añada un botón Reservar a su página de Facebook — todo gratis.",
@@ -1438,6 +1449,7 @@ var I18N = {
     'hero.badge': 'Preise', 'hero.h1': 'Pläne vergleichen',
     'hero.p': 'Buchungssoftware für unabhängige Unterkünfte — B&Bs, Gîtes, Ferienhäuser, Villen und mehr. Wählen Sie den passenden Plan.',
     'hero.print': 'Drucken / Als PDF speichern',
+    'ui.moreInfo': 'Mehr Infos', 'ui.lessInfo': 'Weniger Infos',
     'thead.freePeriod': 'Dauerhaft kostenlos', 'thead.freeCta': 'Loslegen',
     'thead.popular': 'Am beliebtesten', 'thead.period': 'pro Monat, monatlich abgerechnet',
     'thead.proCta': 'Kostenlose Testversion starten', 'thead.multiPlan': 'Mehrere Objekte',
@@ -1506,7 +1518,7 @@ var I18N = {
     'detail.stripe': 'Verbinden Sie Ihr eigenes Stripe-Konto und akzeptieren Sie echte Kartenzahlungen auf Ihrer Buchungsseite, Ihrem Widget und über Zahlungslinks — keine Provision, das Geld geht direkt auf Ihr Konto. NestBook fasst Ihr Geld nie an.',
     'detail.langs': 'Das gesamte Dashboard — jedes Menü, jede Bezeichnung und jede Nachricht — ist auf Englisch, Französisch, Spanisch, Deutsch und Niederländisch verfügbar. Jeder Mitarbeiter kann seine bevorzugte Sprache unabhängig verwenden, ohne andere zu beeinflussen.',
     'detail.widget': "Ein Script-Tag bettet einen schwebenden 'Jetzt buchen'-Button auf jeder Website ein. Ein Klick öffnet einen markenbezogenen Verfügbarkeitskalender in einem modalen Overlay — Gäste wählen Daten, wählen ein Zimmer und zahlen direkt an Sie. Keine Provision.",
-    'detail.zeroCommission': 'Im Gegensatz zu Booking.com (12–18% Provision) oder Airbnb (15.5%) erhebt NestBook nichts pro Buchung. Gäste zahlen direkt an Sie. Sie behalten 100% jeder über das Widget oder die Buchungsseite getätigten Buchung.',
+    'detail.zeroCommission': 'Im Gegensatz zu Booking.com (12–18% Provision) oder Airbnb (15.5%) erhebt NestBook niemals eine Provision — bei keiner Buchung, in keinem Tarif. Gäste zahlen direkt an Sie und Sie behalten 100% — egal ob es sich um eine Anfrage im kostenlosen Tarif oder eine Buchung über das Widget oder die Buchungsseite handelt.',
     'detail.emails': 'Wenn ein Gast eine Widget- oder Buchungsseiten-Reservierung abschließt, sendet NestBook automatisch eine markenbezogene Bestätigungs-E-Mail mit Daten, Zimmerdetails, Check-in-Zeit und einer von Ihnen konfigurierten Nachricht.',
     'detail.facebook': "Ihre Buchungsseite hat eine benutzerdefinierte URL, die Sie bearbeiten können. Fügen Sie sie in wenigen Minuten als Jetzt-buchen-Button zu Ihrer Facebook-Seite hinzu.",
     'detail.webpage': "Jede NestBook-Unterkunft erhält eine kostenlose Seite auf nestbook.io/book/ihre-unterkunft mit Zimmern, Fotos, Preisen und Verfügbarkeitskalender. Bearbeiten Sie Ihre URL, teilen Sie sie überall und fügen Sie Ihrer Facebook-Seite einen Jetzt-buchen-Button hinzu — kostenlos.",
@@ -1555,6 +1567,7 @@ var I18N = {
     'hero.badge': 'Prijzen', 'hero.h1': 'Plannen vergelijken',
     'hero.p': "Boekingssoftware voor onafhankelijke accommodaties — B&B's, gîtes, vakantiehuizen, villa's en meer. Kies het plan dat bij uw accommodatie past.",
     'hero.print': 'Afdrukken / Opslaan als PDF',
+    'ui.moreInfo': 'Meer info', 'ui.lessInfo': 'Minder info',
     'thead.freePeriod': 'Altijd gratis', 'thead.freeCta': 'Aan de slag',
     'thead.popular': 'Meest populair', 'thead.period': 'per maand, maandelijks gefactureerd',
     'thead.proCta': 'Gratis proefperiode starten', 'thead.multiPlan': 'Multi-accommodatie',
@@ -1623,7 +1636,7 @@ var I18N = {
     'detail.stripe': 'Koppel uw eigen Stripe-account en accepteer echte kaartbetalingen op uw boekingspagina, widget en betaallinks — geen commissie, het geld komt rechtstreeks op uw rekening. NestBook komt nooit aan uw geld.',
     'detail.langs': 'Het volledige dashboard — elk menu, elke label en elk bericht — is beschikbaar in het Engels, Frans, Spaans, Duits en Nederlands. Elk personeelslid kan zijn eigen voorkeurstaal onafhankelijk gebruiken, zonder anderen te beïnvloeden.',
     'detail.widget': "Één script-tag embedt een zwevende 'Nu boeken'-knop op elke website. Klikken opent een gebrandmerkte beschikbaarheidskalender in een modaal overlay — gasten kiezen datums, kiezen een kamer en betalen u direct. Geen platformaccount nodig, geen commissie.",
-    'detail.zeroCommission': 'In tegenstelling tot Booking.com (12–18% commissie) of Airbnb (15.5%), brengt NestBook niets per boeking in rekening. Gasten betalen u direct. U houdt 100% van elke boeking via de widget of boekingspagina.',
+    'detail.zeroCommission': 'In tegenstelling tot Booking.com (12–18% commissie) of Airbnb (15.5%), rekent NestBook nooit commissie — op geen enkele boeking, in geen enkel abonnement. Gasten betalen u direct en u houdt 100% — of het nu gaat om een aanvraag in het Gratis abonnement of een boeking via de widget of boekingspagina.',
     'detail.emails': 'Wanneer een gast een widget- of boekingspaginareservering voltooit, stuurt NestBook automatisch een gebrandmerkte bevestigingsmail met hun datums, kamerdetails, inchecktijd en een door u geconfigureerd bericht.',
     'detail.facebook': "Uw boekingspagina heeft een aangepaste URL die u kunt bewerken. Voeg deze in enkele minuten toe als Nu-boeken-knop op uw Facebook-pagina.",
     'detail.webpage': "Elke NestBook-accommodatie krijgt een gratis pagina op nestbook.io/book/uw-accommodatie met kamers, foto's, prijzen en beschikbaarheidskalender. Bewerk uw URL, deel hem overal en voeg een Nu-boeken-knop toe aan uw Facebook-pagina — allemaal gratis.",

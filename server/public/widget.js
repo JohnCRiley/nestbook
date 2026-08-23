@@ -79,6 +79,7 @@
       errRequired: 'Please fill in all required fields.',
       errDates: 'Check-out must be after check-in.',
       errServer: 'Something went wrong. Please try again.',
+      sampleDataActive: 'This property is showing example data and can\'t accept bookings yet. Please check back soon.',
       checking: 'Checking availability…',
       demoNote: 'Demo mode — no real booking was made',
       breakfastIncluded: 'Breakfast included',
@@ -145,6 +146,7 @@
       errRequired: 'Veuillez remplir tous les champs obligatoires.',
       errDates: 'La date de départ doit être postérieure à l\'arrivée.',
       errServer: 'Une erreur est survenue. Veuillez réessayer.',
+      sampleDataActive: 'Cette propriété affiche des données d\'exemple et ne peut pas encore accepter de réservations. Merci de revenir bientôt.',
       checking: 'Vérification de la disponibilité…',
       demoNote: 'Mode démo — aucune vraie réservation n\'a été effectuée',
       breakfastIncluded: 'Petit-déjeuner inclus',
@@ -211,6 +213,7 @@
       errRequired: 'Por favor, complete todos los campos obligatorios.',
       errDates: 'La fecha de salida debe ser posterior a la llegada.',
       errServer: 'Algo salió mal. Por favor, inténtelo de nuevo.',
+      sampleDataActive: 'Este alojamiento muestra datos de ejemplo y aún no puede aceptar reservas. Vuelva a consultar pronto.',
       checking: 'Comprobando disponibilidad…',
       demoNote: 'Modo demo — no se ha realizado ninguna reserva real',
       breakfastIncluded: 'Desayuno incluido',
@@ -277,6 +280,7 @@
       errRequired: 'Vul alle verplichte velden in.',
       errDates: 'Vertrekdatum moet na aankomstdatum liggen.',
       errServer: 'Er is iets misgegaan. Probeer het opnieuw.',
+      sampleDataActive: 'Deze accommodatie toont voorbeeldgegevens en kan nog geen boekingen accepteren. Kom binnenkort terug.',
       checking: 'Beschikbaarheid controleren…',
       demoNote: 'Demo modus — er is geen echte reservering gemaakt',
       breakfastIncluded: 'Ontbijt inbegrepen',
@@ -343,6 +347,7 @@
       errRequired: 'Bitte füllen Sie alle Pflichtfelder aus.',
       errDates: 'Abreise muss nach Anreise liegen.',
       errServer: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
+      sampleDataActive: 'Diese Unterkunft zeigt Beispieldaten und kann noch keine Buchungen annehmen. Bitte schauen Sie bald wieder vorbei.',
       checking: 'Verfügbarkeit wird geprüft…',
       demoNote: 'Demo-Modus — keine echte Buchung wurde vorgenommen',
       breakfastIncluded: 'Frühstück inbegriffen',
@@ -544,12 +549,15 @@
   async function apiFetch(path, opts) {
     const res = await fetch(API_BASE + path, opts);
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      console.error('[NestBook widget] API error', res.status, path, body);
+      const bodyText = await res.text().catch(() => '');
+      console.error('[NestBook widget] API error', res.status, path, bodyText);
       // .status lets callers distinguish e.g. a 409 "just taken" race from a
-      // generic server error, without parsing the message string.
+      // generic server error, without parsing the message string. .code does
+      // the same for a specific error reason within the same status (e.g.
+      // SAMPLE_DATA_ACTIVE within a 403).
       const err = new Error('API error ' + res.status);
       err.status = res.status;
+      try { err.code = JSON.parse(bodyText)?.code; } catch (_) { /* non-JSON body */ }
       throw err;
     }
     return res.json();
@@ -825,7 +833,9 @@
         S.step           = 5;
     } catch (err) {
       console.error('[NestBook widget] confirmBooking failed:', err);
-      if (S.selectedCategory && err.status === 409) {
+      if (err.code === 'SAMPLE_DATA_ACTIVE') {
+        S.error = T.sampleDataActive;
+      } else if (S.selectedCategory && err.status === 409) {
         // Rare race: someone else booked the previewed room between
         // category-preview and this submission. Distinct message (not the
         // generic errServer) via categoryFallbackNotice — the same notice

@@ -54,6 +54,19 @@ enquiriesRouter.post('/', async (req, res) => {
     return res.status(400).json({ error: 'This property uses the full booking widget' });
   }
 
+  // Same rule as widget.js's booking-creation guard — a property still
+  // showing seeded sample data can't accept a real enquiry either, since the
+  // rooms-mode branch below writes a genuine pending_owner_approval booking.
+  const hasSampleData = db.prepare(
+    'SELECT 1 FROM rooms WHERE property_id = ? AND is_sample_data = 1 LIMIT 1'
+  ).get(propertyId);
+  if (hasSampleData) {
+    return res.status(403).json({
+      error: 'This property is still showing example data and can\'t accept bookings yet.',
+      code: 'SAMPLE_DATA_ACTIVE',
+    });
+  }
+
   // ── Rooms-mode: create a real booking with approval flow ──────────────────
   if (roomId || categoryId) {
     let room;

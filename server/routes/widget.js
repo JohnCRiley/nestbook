@@ -550,6 +550,20 @@ widgetRouter.post('/bookings', async (req, res) => {
       return res.status(201).json({ id: ref, demo: true, status: 'cancelled' });
     }
 
+    // Properties still showing seeded sample data (visible on the public
+    // booking page so a fresh host can preview it) can't take a real booking
+    // yet — regardless of which room is targeted, real or sample. Only
+    // clearing sample data (Settings → Sample Data) lifts this.
+    const hasSampleData = db.prepare(
+      'SELECT 1 FROM rooms WHERE property_id = ? AND is_sample_data = 1 LIMIT 1'
+    ).get(property_id);
+    if (hasSampleData) {
+      return res.status(403).json({
+        error: 'This property is still showing example data and can\'t accept bookings yet.',
+        code: 'SAMPLE_DATA_ACTIVE',
+      });
+    }
+
     // Units mode, request-flow booking — routes through the exact same
     // pending_owner_approval / approval_token / sendApprovalRequestEmail
     // mechanism WP's own isWpRequest already uses below, just from a new,

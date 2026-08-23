@@ -687,7 +687,7 @@ const LANG_MAP = {
   'nl': 'nl', 'nl-NL': 'nl',
 };
 
-function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}, categories = [], icalBlocks = []) {
+function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks = [], internalRoomsByUnit = {}, categories = [], icalBlocks = [], hasSampleData = false) {
   const palette  = THEME_COLOURS[property.theme] ?? THEME_COLOURS.forest;
   const name     = property.name    ?? 'Book your stay';
   const city     = property.city    ?? '';
@@ -2431,7 +2431,10 @@ ${isDemo ? `<div class="demo-banner">
   <i class="ti ti-eye"></i>
   DEMONSTRATION PAGE — This is a NestBook showcase. No real bookings will be processed.
   <a href="https://nestbook.io/app/register">Create your own free page →</a>
-</div>` : ''}
+</div>` : (hasSampleData ? `<div class="demo-banner">
+  <i class="ti ti-eye"></i>
+  <span data-i18n="page.sampleDataBanner">PREVIEW MODE — This page is showing example rooms and photos so the owner can preview their booking page. Live bookings aren't available yet — please check back soon.</span>
+</div>` : '')}
 ${heroSection}
 ${aboutSection}
 ${atAGlanceSection}
@@ -2486,6 +2489,10 @@ ${isPaidPlan ? '' : `
         </div>
         <button type="submit" class="btn-primary-large" data-i18n="page.sendEnquiry">Send enquiry</button>
       </form>
+      <div id="enquiryError" class="demo-banner" style="display:none; margin-top:14px; border: 2px solid #f59e0b; border-radius: 10px;">
+        <i class="ti ti-eye"></i>
+        <span data-i18n="page.sampleDataBanner">PREVIEW MODE — This page is showing example rooms and photos so the owner can preview their booking page. Live bookings aren't available yet — please check back soon.</span>
+      </div>
       <div id="enquirySuccess" style="display:none;">
         <p><i class="ti ti-circle-check"></i> <span data-i18n="page.enquirySuccess">Your enquiry has been sent! The property owner will be in touch shortly.</span></p>
       </div>
@@ -2521,6 +2528,10 @@ document.getElementById('enquiryForm').addEventListener('submit', async function
       document.getElementById('enquiryForm').style.display = 'none';
       document.getElementById('enquirySuccess').style.display = 'block';
     } else {
+      var errBody = await res.json().catch(function() { return {}; });
+      if (errBody.code === 'SAMPLE_DATA_ACTIVE') {
+        document.getElementById('enquiryError').style.display = 'flex';
+      }
       btn.disabled = false;
     }
   } catch(err) {
@@ -2659,6 +2670,7 @@ var I18N = {
     "page.wholePropertyAvailability": "Check when the whole property is available for your dates.",
     "page.bookTheProperty":           "Book the whole property",
     "page.ctaWholeHint":              "Book directly — best rates guaranteed, no booking fees.",
+    "page.sampleDataBanner":          "PREVIEW MODE — This page is showing example rooms and photos so the owner can preview their booking page. Live bookings aren't available yet — please check back soon.",
     "page.sendEnquiry":               "Send a booking enquiry",
     "page.enquiryHint":               "Fill in your details and the property owner will contact you to confirm availability and arrange payment.",
     "page.yourName":                  "Your name",
@@ -2707,6 +2719,7 @@ var I18N = {
     "page.wholePropertyAvailability": "Vérifiez quand la propriété entière est disponible pour vos dates.",
     "page.bookTheProperty":           "Réserver la propriété entière",
     "page.ctaWholeHint":              "Réservez directement — meilleurs tarifs garantis, sans frais de réservation.",
+    "page.sampleDataBanner":          "MODE APERÇU — Cette page affiche des chambres et photos d'exemple pour permettre au propriétaire de prévisualiser sa page de réservation. Les réservations en ligne ne sont pas encore disponibles — merci de revenir bientôt.",
     "page.sendEnquiry":               "Envoyer une demande de réservation",
     "page.enquiryHint":               "Remplissez vos coordonnées et le propriétaire vous contactera pour confirmer la disponibilité et organiser le paiement.",
     "page.yourName":                  "Votre nom",
@@ -2755,6 +2768,7 @@ var I18N = {
     "page.wholePropertyAvailability": "Prüfen Sie, wann das gesamte Objekt für Ihre Daten verfügbar ist.",
     "page.bookTheProperty":           "Das gesamte Objekt buchen",
     "page.ctaWholeHint":              "Direkt buchen — beste Preise garantiert, keine Buchungsgebühren.",
+    "page.sampleDataBanner":          "VORSCHAUMODUS — Diese Seite zeigt Beispielzimmer und -fotos, damit der Eigentümer seine Buchungsseite in der Vorschau sehen kann. Live-Buchungen sind noch nicht möglich — bitte schauen Sie bald wieder vorbei.",
     "page.sendEnquiry":               "Buchungsanfrage senden",
     "page.enquiryHint":               "Füllen Sie Ihre Daten aus und der Eigentümer wird sich mit Ihnen in Verbindung setzen, um die Verfügbarkeit zu bestätigen.",
     "page.yourName":                  "Ihr Name",
@@ -2803,6 +2817,7 @@ var I18N = {
     "page.wholePropertyAvailability": "Compruebe cuándo está disponible la propiedad completa para sus fechas.",
     "page.bookTheProperty":           "Reservar la propiedad completa",
     "page.ctaWholeHint":              "Reserve directamente — mejores tarifas garantizadas, sin gastos de reserva.",
+    "page.sampleDataBanner":          "MODO VISTA PREVIA — Esta página muestra habitaciones y fotos de ejemplo para que el propietario pueda previsualizar su página de reservas. Las reservas en línea aún no están disponibles — vuelva a consultar pronto.",
     "page.sendEnquiry":               "Enviar una consulta de reserva",
     "page.enquiryHint":               "Complete sus datos y el propietario se pondrá en contacto para confirmar la disponibilidad y organizar el pago.",
     "page.yourName":                  "Su nombre",
@@ -2851,6 +2866,7 @@ var I18N = {
     "page.wholePropertyAvailability": "Controleer wanneer de hele accommodatie beschikbaar is voor uw data.",
     "page.bookTheProperty":           "De hele accommodatie boeken",
     "page.ctaWholeHint":              "Boek direct — beste tarieven gegarandeerd, geen boekingskosten.",
+    "page.sampleDataBanner":          "PREVIEWMODUS — Deze pagina toont voorbeeldkamers en -foto's zodat de eigenaar een voorbeeld van de boekingspagina kan bekijken. Live boekingen zijn nog niet mogelijk — kom binnenkort terug.",
     "page.sendEnquiry":               "Stuur een boekingsaanvraag",
     "page.enquiryHint":               "Vul uw gegevens in en de eigenaar neemt contact met u op om de beschikbaarheid te bevestigen en de betaling te regelen.",
     "page.yourName":                  "Uw naam",
@@ -3190,9 +3206,20 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     // parent_unit_id IS NULL is a no-op for IR/WP rows (never set) and
     // excludes a unit's internal rooms from the public booking page —
     // only the unit itself is independently bookable.
+    //
+    // Sample rooms (is_sample_data = 1) are intentionally included here —
+    // they're meant to show a freshly onboarded host what their live booking
+    // page will look like. The booking-creation endpoints (widget.js,
+    // enquiries.js) separately refuse any real booking while sample data is
+    // still present, so this visibility never lets a guest actually book a
+    // fake room.
     const rooms = db.prepare(
-      `SELECT * FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL AND is_sample_data = 0 ORDER BY price_per_night ASC`
+      `SELECT * FROM rooms WHERE property_id = ? AND status != 'maintenance' AND parent_unit_id IS NULL ORDER BY price_per_night ASC`
     ).all(property.id);
+
+    const hasSampleData = !!db.prepare(
+      `SELECT 1 FROM rooms WHERE property_id = ? AND is_sample_data = 1 LIMIT 1`
+    ).get(property.id);
 
     const bookings = db.prepare(`
       SELECT b.check_in_date, b.check_out_date, b.room_id
@@ -3231,7 +3258,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
     // source thumbnail photos for that unit's showcase section. Always empty
     // for IR/WP, which never have parent_unit_id set.
     const internalRoomRows = db.prepare(
-      `SELECT * FROM rooms WHERE property_id = ? AND parent_unit_id IS NOT NULL AND is_sample_data = 0 ORDER BY id ASC`
+      `SELECT * FROM rooms WHERE property_id = ? AND parent_unit_id IS NOT NULL ORDER BY id ASC`
     ).all(property.id);
     const internalRoomsByUnit = {};
     for (const r of internalRoomRows) {
@@ -3255,7 +3282,7 @@ bookingPageRouter.get('/:identifier', (req, res) => {
         ).all(property.id)
       : [];
 
-    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit, categories, icalBlocks));
+    res.send(generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan, partnerLinks, internalRoomsByUnit, categories, icalBlocks, hasSampleData));
   } catch (err) {
     console.error('[bookingPage]', err);
     res.status(500).send('Server error');
