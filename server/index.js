@@ -28,7 +28,7 @@ import { marketingRouter }           from './routes/marketing.js';
 import { bookingPageRouter }         from './routes/bookingPage.js';
 import { ratePeriodsRouter }         from './routes/ratePeriods.js';
 import { roomPhotosRouter }          from './routes/roomPhotos.js';
-import { errorReportsRouter }        from './routes/errorReports.js';
+import { errorReportsRouter, logEmailFailureReport } from './routes/errorReports.js';
 import { enquiriesRouter }           from './routes/enquiries.js';
 import { guestMailerRouter }         from './routes/guestMailer.js';
 import { guestNotesPublicRouter, guestNotesProtectedRouter } from './routes/guestNotes.js';
@@ -50,7 +50,14 @@ const downgradedUsers = initSchema();
 if (downgradedUsers?.length > 0) {
   for (const u of downgradedUsers) {
     sendDowngradeEmail(u.email)
-      .catch(err => console.error('[dunning] Downgrade email failed:', u.email, err.message));
+      .catch(err => {
+        console.error('[dunning] Downgrade email failed:', u.email, err.message);
+        logEmailFailureReport({
+          userId: u.id, propertyId: u.property_id, userName: u.name,
+          userEmail: u.email, plan: 'free',
+          emailType: 'Dunning downgrade email', error: err,
+        });
+      });
     // Cancel the actual Stripe subscription so it stops retrying the charge —
     // without this, Stripe can keep attempting to bill a card for weeks after
     // NestBook has already revoked the user's plan access, and a later

@@ -54,3 +54,30 @@ errorReportsRouter.post('/', (req, res) => {
 
   res.json({ success: true });
 });
+
+// ── Auto-logged reports (system-detected, not user-submitted) ─────────────────
+// Reuses the same table/category/admin UI as user-submitted reports rather
+// than inventing a parallel mechanism. Distinguished from user reports purely
+// by an "[Auto-detected]" description prefix — no schema change, since the
+// existing `category: 'email'` filter and the "Contact →" action (which
+// already just needs user_name/user_email) both work unmodified either way.
+export function logEmailFailureReport({ userId, propertyId, userName, userEmail, plan, emailType, error }) {
+  try {
+    db.prepare(`
+      INSERT INTO error_reports
+        (user_id, property_id, user_name, user_email, plan, category, description, page_url)
+      VALUES (?, ?, ?, ?, ?, 'email', ?, ?)
+    `).run(
+      userId,
+      propertyId ?? null,
+      userName || userEmail || 'Unknown user',
+      userEmail ?? '',
+      plan ?? null,
+      `[Auto-detected] ${emailType} failed to send.\n\nError: ${error?.message ?? String(error)}`,
+      '(system-detected — no page)',
+    );
+    console.log(`[error-report] Auto-logged: ${emailType} failed for ${userEmail} (user #${userId})`);
+  } catch (e) {
+    console.error('[error-report] Failed to auto-log email failure:', e.message);
+  }
+}

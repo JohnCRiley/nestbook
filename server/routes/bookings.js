@@ -934,8 +934,16 @@ bookingsRouter.post('/:id/approve', async (req, res) => {
         .run(depositAmount, balanceAmount, now, req.params.id);
       const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
       if (property.deposit_auto_email) {
-        sendDepositRequest(updated, property).catch(() => {});
-        db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+        // Only mark deposit_email_sent once the send genuinely succeeds — a
+        // swallowed failure here used to write the timestamp unconditionally,
+        // showing the owner a false "sent ✓" for an email that never went out.
+        sendDepositRequest(updated, property)
+          .then(() => {
+            db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+          })
+          .catch((err) => {
+            console.error(`[booking] #${req.params.id} deposit-request email failed to send:`, err.message);
+          });
       }
       return res.json(updated);
     }
@@ -1004,8 +1012,15 @@ bookingsRouter.put('/:id', (req, res) => {
           const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
           res.json(updated);
           if (property.deposit_auto_email) {
-            sendDepositRequest(updated, property).catch(() => {});
-            db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+            // Only mark deposit_email_sent once the send genuinely succeeds —
+            // see the create-flow comment above for why this matters.
+            sendDepositRequest(updated, property)
+              .then(() => {
+                db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+              })
+              .catch((err) => {
+                console.error(`[booking] #${req.params.id} deposit-request email failed to send:`, err.message);
+              });
           }
         } else {
           db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(newStatus, req.params.id);
@@ -1063,8 +1078,15 @@ bookingsRouter.put('/:id', (req, res) => {
       `).all(updated.id);
       const outstanding = wpCharges.filter((c) => !c.voided_at);
       if (outstanding.length > 0 && !existing.charges_email_sent) {
-        sendChargesSummaryEmail(updated, property, wpCharges, ownerRow?.email ?? '').catch(() => {});
-        db.prepare(`UPDATE bookings SET charges_email_sent = datetime('now') WHERE id = ?`).run(updated.id);
+        // Only mark charges_email_sent once the send genuinely succeeds — see
+        // the deposit-request comment above for why this matters.
+        sendChargesSummaryEmail(updated, property, wpCharges, ownerRow?.email ?? '')
+          .then(() => {
+            db.prepare(`UPDATE bookings SET charges_email_sent = datetime('now') WHERE id = ?`).run(updated.id);
+          })
+          .catch((err) => {
+            console.error(`[booking] #${updated.id} charges-summary email failed to send:`, err.message);
+          });
       }
       return;
     }
@@ -1340,8 +1362,15 @@ bookingsRouter.post('/:id/resend-deposit', (req, res) => {
     }
 
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(booking.property_id);
-    sendDepositRequest(booking, property).catch(() => {});
-    db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+    // Only mark deposit_email_sent once the send genuinely succeeds — see the
+    // create-flow comment further up in this file for why this matters.
+    sendDepositRequest(booking, property)
+      .then(() => {
+        db.prepare(`UPDATE bookings SET deposit_email_sent = datetime('now') WHERE id = ?`).run(req.params.id);
+      })
+      .catch((err) => {
+        console.error(`[booking] #${req.params.id} deposit-request (resend) email failed to send:`, err.message);
+      });
 
     const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
     res.json(updated);

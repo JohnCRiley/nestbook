@@ -1248,7 +1248,7 @@ John`
   const graceCutoff = new Date();
   graceCutoff.setDate(graceCutoff.getDate() - 7);
   const dunningRows = db.prepare(`
-    SELECT u.id, u.email, s.stripe_subscription_id
+    SELECT u.id, u.email, u.name, u.property_id, s.stripe_subscription_id
     FROM users u
     LEFT JOIN subscriptions s ON s.user_id = u.id
     WHERE u.subscription_status = 'past_due'

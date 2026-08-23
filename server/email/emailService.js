@@ -1537,12 +1537,15 @@ export async function sendDepositRequest(booking, property) {
       ${t(locale, 'depositPaymentInstr')}
     </p>`;
 
-  try {
-    await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
-    console.log(`[email] Deposit request sent → ${booking.guest_email}`);
-  } catch (err) {
-    console.error('[email] Failed to send deposit request:', err.message);
+  const result = await resend.emails.send({ from: FROM, to: booking.guest_email, subject, html: guestMailerHtml(body, property) });
+  // See sendPasswordResetEmail's comment — Resend resolves normally with an
+  // error payload rather than throwing, so this needs to be surfaced as a
+  // real thrown error for bookings.js's callers to know the send genuinely
+  // failed (they use this to gate the deposit_email_sent timestamp).
+  if (result?.error) {
+    throw new Error(result.error.message || 'Resend API error');
   }
+  console.log(`[email] Deposit request sent → ${booking.guest_email}`);
 }
 
 /**
@@ -1706,17 +1709,19 @@ export async function sendVerificationEmail(user, token) {
       If you didn't create a NestBook account, you can safely ignore this email.
     </p>`);
 
-  try {
-    await resend.emails.send({
-      from:    FROM,
-      to:      user.email,
-      subject: t(lang, 'verifySubject'),
-      html,
-    });
-    console.log(`[email] Verification email sent → ${user.email}`);
-  } catch (err) {
-    console.error('[email] Failed to send verification email:', err.message);
+  const result = await resend.emails.send({
+    from:    FROM,
+    to:      user.email,
+    subject: t(lang, 'verifySubject'),
+    html,
+  });
+  // See sendPasswordResetEmail's comment — Resend resolves normally with an
+  // error payload rather than throwing, so this needs to be surfaced as a
+  // real thrown error for the caller to know the send genuinely failed.
+  if (result?.error) {
+    throw new Error(result.error.message || 'Resend API error');
   }
+  console.log(`[email] Verification email sent → ${user.email}`);
 }
 
 /**
@@ -1827,7 +1832,7 @@ export async function sendPaymentFailedEmail(email, invoiceUrl) {
     console.log('[email] SKIPPED payment-failed email to', email, '(no Resend key)');
     return;
   }
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to:   email,
     subject: 'Action required — your NestBook payment failed',
@@ -1847,6 +1852,13 @@ export async function sendPaymentFailedEmail(email, invoiceUrl) {
       </div>
     `,
   });
+  // See sendPasswordResetEmail's comment — Resend resolves normally with an
+  // error payload rather than throwing, so this needs to be surfaced as a
+  // real thrown error for stripe.js's caller to know the send genuinely
+  // failed (it uses this to log an Error Report for admin visibility).
+  if (result?.error) {
+    throw new Error(result.error.message || 'Resend API error');
+  }
   console.log('[email] Payment-failed email sent →', email);
 }
 
@@ -1855,7 +1867,7 @@ export async function sendDowngradeEmail(email) {
     console.log('[email] SKIPPED downgrade email to', email, '(no Resend key)');
     return;
   }
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: FROM,
     to:   email,
     subject: 'Your NestBook account has been moved to the Free plan',
@@ -1875,6 +1887,13 @@ export async function sendDowngradeEmail(email) {
       </div>
     `,
   });
+  // See sendPasswordResetEmail's comment — Resend resolves normally with an
+  // error payload rather than throwing, so this needs to be surfaced as a
+  // real thrown error for server/index.js's caller to know the send
+  // genuinely failed (it uses this to log an Error Report for admin visibility).
+  if (result?.error) {
+    throw new Error(result.error.message || 'Resend API error');
+  }
   console.log('[email] Downgrade email sent →', email);
 }
 
@@ -2273,18 +2292,21 @@ export async function sendChargesSummaryEmail(booking, property, charges, ownerE
       ${t(locale, 'chargesSummaryFooter2')} ${property.name} ${t(locale, 'chargesSummaryFooter3')}
     </p>`;
 
-  try {
-    await resend.emails.send({
-      from:    FROM,
-      to:      booking.guest_email,
-      replyTo: ownerEmail || undefined,
-      subject: `${property.name} — ${t(locale, 'chargesSummarySubjectSuffix')}`,
-      html:    guestMailerHtml(body, property),
-    });
-    console.log(`[charges-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
-  } catch (err) {
-    console.error('[charges-email] Failed:', err.message);
+  const result = await resend.emails.send({
+    from:    FROM,
+    to:      booking.guest_email,
+    replyTo: ownerEmail || undefined,
+    subject: `${property.name} — ${t(locale, 'chargesSummarySubjectSuffix')}`,
+    html:    guestMailerHtml(body, property),
+  });
+  // See sendPasswordResetEmail's comment — Resend resolves normally with an
+  // error payload rather than throwing, so this needs to be surfaced as a
+  // real thrown error for bookings.js's caller to know the send genuinely
+  // failed (it uses this to gate the charges_email_sent timestamp).
+  if (result?.error) {
+    throw new Error(result.error.message || 'Resend API error');
   }
+  console.log(`[charges-email] Sent → ${booking.guest_email} (booking ${booking.id})`);
 }
 
 // ── WP receipt email — sent when owner marks booking as paid ─────────────────

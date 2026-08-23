@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import db from '../db/database.js';
 import { stripe, STRIPE_MODE } from '../lib/stripeClient.js';
 import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail, sendBookingConflictAlert, sendBookingConflictHoldingEmail } from '../email/emailService.js';
+import { logEmailFailureReport } from './errorReports.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 
 export const stripeRouter = Router();
@@ -865,7 +866,7 @@ export async function stripeWebhookHandler(req, res) {
         const invoice    = event.data.object;
         const customerId = invoice.customer;
         const user = db.prepare(`
-          SELECT u.id, u.email FROM users u
+          SELECT u.id, u.email, u.name, u.property_id, u.plan FROM users u
           JOIN subscriptions s ON s.user_id = u.id
           WHERE s.stripe_customer_id = ?
         `).get(customerId);
@@ -876,7 +877,14 @@ export async function stripeWebhookHandler(req, res) {
             WHERE id = ? AND subscription_status != 'past_due'
           `).run(user.id);
           sendPaymentFailedEmail(user.email, invoice.hosted_invoice_url)
-            .catch(err => console.error('[stripe] Payment-failed email error:', err.message));
+            .catch(err => {
+              console.error('[stripe] Payment-failed email error:', err.message);
+              logEmailFailureReport({
+                userId: user.id, propertyId: user.property_id, userName: user.name,
+                userEmail: user.email, plan: user.plan,
+                emailType: 'Payment-failed (dunning) email', error: err,
+              });
+            });
           console.log('[webhook] Payment failed for user:', user.email);
         }
         break;

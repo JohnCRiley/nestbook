@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import db from '../db/database.js';
 import { stripe } from '../lib/stripeClient.js';
 import { sendFreeWelcomeEmail, sendVerificationEmail, sendPasswordResetEmail, sendProWelcomeEmail } from '../email/emailService.js';
+import { logEmailFailureReport } from './errorReports.js';
 import { checkAndConvertProspect } from './outreach.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { logAction, getIp } from '../utils/auditLog.js';
@@ -292,7 +293,14 @@ authRouter.post('/register', (req, res) => {
   sendVerificationEmail(
     { name, email: normalEmail, language: userLang },
     verificationToken
-  ).catch(() => {});
+  ).catch((err) => {
+    console.error('[register] Verification email failed to send:', normalEmail, err.message);
+    logEmailFailureReport({
+      userId, propertyId: propId, userName: name,
+      userEmail: normalEmail, plan: 'free',
+      emailType: 'Account verification email', error: err,
+    });
+  });
 });
 
 // ── POST /api/auth/forgot-password ───────────────────────────────────────
@@ -409,7 +417,7 @@ authRouter.patch('/complete-onboarding', requireAuth, (req, res) => {
 // ── POST /api/auth/resend-verification ───────────────────────────────────
 authRouter.post('/resend-verification', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, name, email, language, email_verified FROM users WHERE id = ?'
+    'SELECT id, name, email, language, email_verified, property_id, plan FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   if (user.email_verified) return res.json({ success: true }); // already verified, no-op
@@ -422,7 +430,14 @@ authRouter.post('/resend-verification', requireAuth, (req, res) => {
   sendVerificationEmail(
     { name: user.name, email: user.email, language: user.language },
     newToken
-  ).catch(() => {});
+  ).catch((err) => {
+    console.error('[resend-verification] Verification email failed to send:', user.email, err.message);
+    logEmailFailureReport({
+      userId: user.id, propertyId: user.property_id, userName: user.name,
+      userEmail: user.email, plan: user.plan,
+      emailType: 'Account verification email (resend)', error: err,
+    });
+  });
   res.json({ success: true });
 });
 
