@@ -5,6 +5,7 @@ import { usePlan } from '../hooks/usePlan.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import AddChargeModal from './charges/AddChargeModal.jsx';
 import ChargesDetailModal from './charges/ChargesDetailModal.jsx';
+import { BuildingIcon, PlusIcon, ReceiptOffIcon, XIcon } from '../components/TablerIcons.jsx';
 
 const thStyle = {
   padding: '10px 16px',
@@ -29,7 +30,7 @@ function UpgradeGate() {
   const t = useT();
   return (
     <div style={{ padding: '40px 24px', maxWidth: 520, margin: '0 auto', textAlign: 'center' }}>
-      <div style={{ fontSize: '2.5rem', marginBottom: 16, color: 'var(--accent)' }}><i className="ti ti-building" /></div>
+      <div style={{ marginBottom: 16, color: 'var(--accent)' }}><BuildingIcon size={40} /></div>
       <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 10, color: '#1a2e14' }}>
         {t('chargesUpgradeTitle')}
       </div>
@@ -278,7 +279,7 @@ export default function Charges() {
                     flexShrink: 0,
                   }}
                 >
-                  <i className="ti ti-plus" />
+                  <PlusIcon size={14} />
                   {t('chargesAddCharge')}
                 </button>
               )}
@@ -292,7 +293,7 @@ export default function Charges() {
                 color: 'var(--text-muted)',
                 fontSize: '0.88rem',
               }}>
-                <i className="ti ti-receipt-off" style={{ fontSize: '2rem', display: 'block', marginBottom: 8 }} />
+                <ReceiptOffIcon size={32} style={{ display: 'block', marginBottom: 8 }} />
                 {t('chargesCheckoutNone')}
               </div>
             ) : (
@@ -343,7 +344,7 @@ export default function Charges() {
                             }}
                             title="Void charge"
                           >
-                            <i className="ti ti-x" />
+                            <XIcon size={14} />
                           </button>
                         )}
                       </td>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT } from '../i18n/LocaleContext.jsx';
+import { CircleCheckIcon } from '../components/TablerIcons.jsx';
 
 export default function PaymentSuccess() {
   const t = useT();
@@ -35,7 +36,7 @@ export default function PaymentSuccess() {
   return (
     <div className="auth-page">
       <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '3rem', marginBottom: 16, color: 'var(--accent)' }}><i className="ti ti-circle-check" /></div>
+        <div style={{ marginBottom: 16, color: 'var(--accent)' }}><CircleCheckIcon size={48} /></div>
         <h1 className="auth-heading">{t('paySuccessTitle')}</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: 8, marginBottom: 24 }}>
           {t('paySuccessMsg')(planLabel)}

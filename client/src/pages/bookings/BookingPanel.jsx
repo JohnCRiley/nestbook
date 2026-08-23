@@ -11,6 +11,11 @@ import DepositPill from '../../components/DepositPill.jsx';
 import CheckoutModal from './CheckoutModal.jsx';
 import PrintReceipt, { buildReceiptHTML, PM_LABELS, THANK_YOU, LOCALE_MAP } from '../../components/PrintReceipt.jsx';
 import AddChargeModal from '../charges/AddChargeModal.jsx';
+import {
+  CircleCheckIcon, ReceiptIcon, CalendarCheckIcon, HomeCheckIcon, LockIcon,
+  DoorExitIcon, ArchiveIcon, BrushIcon, XIcon, AlertTriangleIcon,
+  CalendarMinusIcon, ClockIcon, CheckIcon,
+} from '../../components/TablerIcons.jsx';
 
 const SOURCE_OPTIONS = [
   { value: 'direct',      label: 'Direct' },
@@ -607,7 +612,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   onClick={() => setShowMarkPaidFullConfirm(true)}
                   disabled={markPaidFullWorking}
                 >
-                  <i className="ti ti-circle-check" style={{ marginRight: 5 }} />
+                  <CircleCheckIcon size={13} style={{ marginRight: 5 }} />
                   {t('booking.markPaidFull')}
                 </button>
               </div>
@@ -615,7 +620,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
             {allPaid && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: '#065f46', fontWeight: 600, marginTop: 6 }}>
-                <i className="ti ti-circle-check" />
+                <CircleCheckIcon size={14} />
                 {t('booking.paidInFull')}
               </div>
             )}
@@ -715,7 +720,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       {showChargesTab && activeTab === 'charges' && (
         <div style={{ padding: '14px 22px' }}>
           <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: 12 }}>
-            <i className="ti ti-receipt" style={{ marginRight: 6 }} />
+            <ReceiptIcon size={14} style={{ marginRight: 6 }} />
             {isWP ? t('charges.propertyCharges') : t('charges.roomCharges')}
           </div>
           {charges === null ? (
@@ -820,7 +825,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                 padding: '12px 16px', marginBottom: 2, fontSize: '0.85rem', color: '#166534',
               }}>
                 <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <i className="ti ti-calendar-check" />
+                  <CalendarCheckIcon size={14} />
                   Booking confirmed
                 </div>
                 <div>Check-in: <strong>{formatDateMedium(b.check_in_date, locale)}</strong></div>
@@ -843,7 +848,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                     width: '100%', justifyContent: 'center',
                   }}
                 >
-                  <i className="ti ti-home-check" style={{ fontSize: '1.2rem' }} />
+                  <HomeCheckIcon size={19} />
                   Guests have arrived and have the key
                 </button>
               ) : (
@@ -852,7 +857,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
                   color: 'var(--text-muted)', fontSize: '0.88rem',
                 }}>
-                  <i className="ti ti-lock" style={{ fontSize: '1.1rem' }} />
+                  <LockIcon size={18} />
                   <div>
                     <div style={{ fontWeight: 600 }}>Arrival confirmation locked</div>
                     <div style={{ fontSize: '0.78rem', marginTop: 2 }}>
@@ -875,7 +880,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                     width: '100%', justifyContent: 'center',
                   }}
                 >
-                  <i className="ti ti-door-exit" style={{ fontSize: '1.2rem' }} />
+                  <DoorExitIcon size={19} />
                   Guests have departed and returned the key
                 </button>
               ) : (
@@ -884,7 +889,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
                   color: 'var(--text-muted)', fontSize: '0.88rem',
                 }}>
-                  <i className="ti ti-lock" style={{ fontSize: '1.1rem' }} />
+                  <LockIcon size={18} />
                   <div>
                     <div style={{ fontWeight: 600 }}>Departure confirmation locked</div>
                     <div style={{ fontSize: '0.78rem', marginTop: 2 }}>
@@ -932,7 +937,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           gap: 8,
           margin: '12px 22px 0',
         }}>
-          <i className="ti ti-archive" style={{ fontSize: '1rem' }} />
+          <ArchiveIcon size={16} />
           {b.status === 'checked_out'
             ? 'This stay is complete — record only'
             : b.status === 'cancelled'
@@ -1047,7 +1052,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10,
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
-            <i className="ti ti-brush" />
+            <BrushIcon size={14} />
             Cleaning
           </div>
 
@@ -1064,7 +1069,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   width: '100%', justifyContent: 'center',
                 }}
               >
-                <i className="ti ti-brush" />
+                <BrushIcon size={14} />
                 Cleaning in progress
               </button>
               <button
@@ -1078,7 +1083,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   width: '100%', justifyContent: 'center',
                 }}
               >
-                <i className="ti ti-circle-check" />
+                <CircleCheckIcon size={14} />
                 Property cleaned and ready
               </button>
               <button
@@ -1100,7 +1105,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                 padding: '10px 14px', fontSize: '0.85rem', color: '#92400e',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                <i className="ti ti-brush" />
+                <BrushIcon size={14} />
                 Cleaning in progress
               </div>
               <button
@@ -1114,7 +1119,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   width: '100%', justifyContent: 'center',
                 }}
               >
-                <i className="ti ti-circle-check" />
+                <CircleCheckIcon size={14} />
                 Mark as cleaned and ready
               </button>
             </div>
@@ -1126,7 +1131,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               padding: '10px 14px', fontSize: '0.85rem', color: '#166534',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <i className="ti ti-circle-check" />
+              <CircleCheckIcon size={14} />
               Property cleaned and ready for next guests
             </div>
           )}
@@ -1137,7 +1142,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               padding: '10px 14px', fontSize: '0.85rem', color: 'var(--text-secondary)',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <i className="ti ti-circle-check" />
+              <CircleCheckIcon size={14} />
               Guests cleaned — property ready
             </div>
           )}
@@ -1182,7 +1187,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   gap: 8,
                 }}
               >
-                <i className="ti ti-x" />
+                <XIcon size={14} />
                 Cancel booking
               </button>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 6 }}>
@@ -1201,7 +1206,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                 display: 'flex', alignItems: 'center', gap: 8,
                 fontWeight: 700, fontSize: '0.85rem', color: '#92400e', marginBottom: 8,
               }}>
-                <i className="ti ti-alert-triangle" />
+                <AlertTriangleIcon size={14} />
                 Within cancellation window
               </div>
               <p style={{ fontSize: '0.78rem', color: '#78350f', lineHeight: 1.5, marginBottom: 10 }}>
@@ -1219,14 +1224,14 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
-                <i className="ti ti-calendar-minus" />
+                <CalendarMinusIcon size={14} />
                 Edit booking to shorten stay
               </button>
             </div>
           )}
           {hasArrived && (
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <i className="ti ti-lock" style={{ fontSize: '0.85rem' }} />
+              <LockIcon size={14} />
               Guests have arrived — use Edit booking to make changes
             </div>
           )}
@@ -1246,7 +1251,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   display: 'flex', alignItems: 'center', gap: 8,
                   fontWeight: 700, fontSize: '0.85rem', color: '#92400e', marginBottom: 4,
                 }}>
-                  <i className="ti ti-clock" />
+                  <ClockIcon size={14} />
                   Payment outstanding
                 </div>
                 <div style={{ fontSize: '0.78rem', color: '#78350f' }}>
@@ -1270,7 +1275,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                   justifyContent: 'center', gap: 8,
                 }}
               >
-                <i className="ti ti-circle-check" />
+                <CircleCheckIcon size={14} />
                 Mark as paid — send receipt
               </button>
             </>
@@ -1281,7 +1286,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               display: 'flex', alignItems: 'center', gap: 8,
               fontSize: '0.85rem', fontWeight: 600, color: '#166534',
             }}>
-              <i className="ti ti-circle-check" />
+              <CircleCheckIcon size={14} />
               Payment received · Receipt sent to guest
               {b.paid_at && (
                 <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 'auto', fontSize: '0.75rem' }}>
@@ -2057,7 +2062,7 @@ function StatusActions({ status, bookingId, onStatusUpdate, onEdit, t, prominent
       padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
       color: 'var(--text-muted)', fontSize: '0.88rem',
     }}>
-      <i className="ti ti-lock" style={{ fontSize: '1.1rem' }} />
+      <LockIcon size={18} />
       <div>
         <div style={{ fontWeight: 600 }}>{label}</div>
         {hint && <div style={{ fontSize: '0.78rem', marginTop: 2 }}>{hint}</div>}
@@ -2307,7 +2312,7 @@ function PaymentLinkButton({ booking, t }) {
         padding: '3px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600,
         background: '#d1fae5', color: '#065f46',
       }}>
-        <i className="ti ti-circle-check" /> {t('billing.status.paid')}
+        <CircleCheckIcon size={13} /> {t('billing.status.paid')}
       </span>
     );
   }
@@ -2356,7 +2361,7 @@ function PaymentLinkButton({ booking, t }) {
         <input readOnly value={link} onClick={(e) => e.target.select()} />
         <button onClick={copyLink} style={copied ? { background: 'var(--success, #16a34a)', color: '#fff' } : copyError ? { background: '#dc2626', color: '#fff' } : {}}>
           {copied
-            ? <><i className="ti ti-check" /> Copied</>
+            ? <><CheckIcon size={13} /> Copied</>
             : copyError
             ? 'Couldn\'t copy — select manually'
             : t('common.copy')}

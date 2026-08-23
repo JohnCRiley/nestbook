@@ -8,6 +8,7 @@ import NewBookingModal from './bookings/NewBookingModal.jsx';
 import Pagination from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import { CameraIcon, BedIcon } from '../components/TablerIcons.jsx';
 import usePageSize from '../hooks/usePageSize.js';
 import { usePlan } from '../hooks/usePlan.js';
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -461,11 +462,11 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
                   style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0 }}
                 />
               )}
-              <span><i className="ti ti-camera" /> {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
+              <span><CameraIcon size={14} /> {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
             </div>
           ) : (
             <div style={{ fontSize: '0.78rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <i className="ti ti-camera" /> No photos yet
+              <CameraIcon size={14} /> No photos yet
             </div>
           )}
         </div>
@@ -474,7 +475,7 @@ function RoomCard({ room, activeBooking, isSelected, today, onClick, onBook, t, 
       {/* Occupied strip */}
       {isOccupied && (
         <div className="room-occupied-strip">
-          <i className="ti ti-bed" />
+          <BedIcon size={14} />
           <span>
             <strong>{activeBooking.guest_first_name} {activeBooking.guest_last_name}</strong>
             {' '}— {t('checksOut')} {formatCheckOut(activeBooking.check_out_date, locale)}
@@ -646,11 +647,11 @@ function BedroomCard({ room, isSelected, onClick, t }) {
                   style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)', flexShrink: 0 }}
                 />
               )}
-              <span><i className="ti ti-camera" /> {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
+              <span><CameraIcon size={14} /> {room.photo_count} photo{room.photo_count !== 1 ? 's' : ''}</span>
             </div>
           ) : (
             <div style={{ fontSize: '0.78rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <i className="ti ti-camera" /> No photos yet
+              <CameraIcon size={14} /> No photos yet
             </div>
           )}
         </div>

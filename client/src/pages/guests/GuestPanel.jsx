@@ -5,6 +5,7 @@ import { nightsBetween } from '../../utils/format.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
+import { AlertTriangleIcon } from '../../components/TablerIcons.jsx';
 
 
 /**
@@ -133,7 +134,7 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
           background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 8,
           padding: '8px 12px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <i className="ti ti-alert-triangle" />
+          <AlertTriangleIcon size={14} />
           <span style={{ fontSize: '0.875rem', color: '#dc2626', fontWeight: 600 }}>
             {t('blacklistedBadge')}
           </span>

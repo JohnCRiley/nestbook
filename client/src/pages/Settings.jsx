@@ -14,6 +14,10 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
 import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
+import {
+  HomeIcon, BuildingIcon, BedIcon, LockIcon, BugIcon, CheckIcon, XIcon,
+  AlertTriangleIcon, RefreshIcon, TrashIcon, CameraPlusIcon, SparklesIcon,
+} from '../components/TablerIcons.jsx';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 
@@ -672,10 +676,10 @@ export default function Settings() {
                       <div className={`rental-type-btn active`} style={{ display: 'inline-flex', flexDirection: 'column', cursor: 'default', opacity: 0.85 }}>
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
                           {form.rental_type === 'whole_property'
-                            ? <><i className="ti ti-home" /> {t('settings.rentalTypeWhole')}</>
+                            ? <><HomeIcon size={14} /> {t('settings.rentalTypeWhole')}</>
                             : form.rental_type === 'units'
-                            ? <><i className="ti ti-building" /> {t('settings.rentalTypeUnits')}</>
-                            : <><i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}</>
+                            ? <><BuildingIcon size={14} /> {t('settings.rentalTypeUnits')}</>
+                            : <><BedIcon size={14} /> {t('settings.rentalTypeRooms')}</>
                           }
                         </div>
                         <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
@@ -688,7 +692,7 @@ export default function Settings() {
                         </div>
                       </div>
                       <p style={{ marginTop: 8, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        <i className="ti ti-lock" style={{ marginRight: 4 }} />
+                        <LockIcon size={13} style={{ marginRight: 4 }} />
                         {t('settings.rentalTypeLocked')}
                       </p>
                     </div>
@@ -700,7 +704,7 @@ export default function Settings() {
                         className={`rental-type-btn${form.rental_type === 'rooms' ? ' active' : ''}`}
                       >
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                          <i className="ti ti-bed" /> {t('settings.rentalTypeRooms')}
+                          <BedIcon size={14} /> {t('settings.rentalTypeRooms')}
                         </div>
                         <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
                           {t('settings.rentalTypeRoomsHint')}
@@ -712,7 +716,7 @@ export default function Settings() {
                         className={`rental-type-btn${form.rental_type === 'whole_property' ? ' active' : ''}`}
                       >
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                          <i className="ti ti-home" /> {t('settings.rentalTypeWhole')}
+                          <HomeIcon size={14} /> {t('settings.rentalTypeWhole')}
                         </div>
                         <div style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.75 }}>
                           {t('settings.rentalTypeWholeHint')}
@@ -1087,7 +1091,7 @@ export default function Settings() {
           {bugReportingEnabled && (
             <div className="settings-card" style={{ marginTop: 0 }}>
               <div className="settings-card-header">
-                <h2><i className="ti ti-bug" /> {t('settings.reportIssue')}</h2>
+                <h2><BugIcon size={19} /> {t('settings.reportIssue')}</h2>
                 <p>{t('settings.reportIssueHint')}</p>
               </div>
               <div className="settings-card-body">
@@ -1133,7 +1137,7 @@ export default function Settings() {
                     background: 'var(--tint-bg)', color: 'var(--tint-text)',
                     padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
                   }}>
-                    <i className="ti ti-check" /> {t('settings.reportSuccess')}
+                    <CheckIcon size={14} /> {t('settings.reportSuccess')}
                   </div>
                 )}
                 {reportStatus === 'error' && (
@@ -1141,7 +1145,7 @@ export default function Settings() {
                     background: '#fef2f2', color: '#dc2626',
                     padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
                   }}>
-                    <i className="ti ti-x" /> {t('settings.reportError')}
+                    <XIcon size={14} /> {t('settings.reportError')}
                   </div>
                 )}
 
@@ -1249,7 +1253,7 @@ export default function Settings() {
                       background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6,
                       fontSize: '0.78rem', color: '#92400e', lineHeight: 1.5,
                     }}>
-                      <i className="ti ti-alert-triangle" /> {t('bfPropertyToggleWarn')}
+                      <AlertTriangleIcon size={13} /> {t('bfPropertyToggleWarn')}
                     </div>
                     {plan !== 'free' && (
                       <>
@@ -1559,7 +1563,7 @@ export default function Settings() {
                                   fontFamily: 'inherit', color: 'var(--text-secondary)',
                                 }}
                               >
-                                <i className="ti ti-refresh" style={{ marginRight: 4 }} />
+                                <RefreshIcon size={12} style={{ marginRight: 4 }} />
                                 Sync
                               </button>
                               <button
@@ -1571,7 +1575,7 @@ export default function Settings() {
                                   fontFamily: 'inherit', color: '#dc2626',
                                 }}
                               >
-                                <i className="ti ti-trash" style={{ fontSize: '0.8rem' }} />
+                                <TrashIcon size={13} />
                               </button>
                             </div>
                           </div>
@@ -4171,7 +4175,7 @@ function PropertyHeroPhoto({ property, onUpdated }) {
           color: 'var(--text-muted)', background: '#f8fafc', fontWeight: 500,
         }}>
           <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
-          <i className="ti ti-camera-plus" />
+          <CameraPlusIcon size={14} />
           {uploading ? 'Uploading…' : t('settings.uploadPhoto')}
         </label>
       )}
@@ -4289,7 +4293,7 @@ function AtAGlanceSection({ form, setForm, t }) {
       <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {custom.map((c, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <i className="ti ti-sparkles" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0 }} />
+            <SparklesIcon size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
             <input
               type="text"
               className="form-control"
@@ -4316,7 +4320,7 @@ function AtAGlanceSection({ form, setForm, t }) {
                 fontFamily: 'inherit', display: 'flex', alignItems: 'center',
               }}
             >
-              <i className="ti ti-trash" />
+              <TrashIcon size={13} />
             </button>
           </div>
         ))}

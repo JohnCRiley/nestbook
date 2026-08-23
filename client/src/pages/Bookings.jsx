@@ -8,6 +8,7 @@ import ImportBookingsModal   from './bookings/ImportBookingsModal.jsx';
 import Pagination      from '../components/Pagination.jsx';
 import { apiFetch }    from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import { FileImportIcon } from '../components/TablerIcons.jsx';
 import usePageSize     from '../hooks/usePageSize.js';
 
 // toolbar + controls/filters + thead + padding
@@ -201,7 +202,7 @@ export default function Bookings() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn-secondary" onClick={() => setShowImportModal(true)}>
-              <i className="ti ti-file-import" style={{ marginRight: 6 }} />
+              <FileImportIcon size={14} style={{ marginRight: 6 }} />
               {t('importBookingsBtn')}
             </button>
             <button className="btn-primary" onClick={() => setShowNewModal(true)}>

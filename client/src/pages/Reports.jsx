@@ -4,6 +4,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import PlanGate from '../components/PlanGate.jsx';
+import { CashIcon } from '../components/TablerIcons.jsx';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -1040,7 +1041,7 @@ ${plSection}
                       background: '#fffbeb', border: '1px solid #fde68a',
                       fontSize: '0.84rem', color: '#92400e', fontWeight: 500,
                     }}>
-                      <i className="ti ti-cash" /> Deposit required per booking: {fmtMoney(property.deposit_amount)}
+                      <CashIcon size={14} /> Deposit required per booking: {fmtMoney(property.deposit_amount)}
                     </div>
                   ) : null}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>

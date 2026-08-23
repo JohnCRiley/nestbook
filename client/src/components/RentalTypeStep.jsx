@@ -1,4 +1,5 @@
 import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
+import { BedIcon, HomeIcon, BuildingIcon, LockIcon } from './TablerIcons.jsx';
 
 // Rental-type (Rooms/Whole Property/Units) + Units sub-type (Aparthotel/
 // Glamping/Serviced Apartment) selection — shared between the onboarding
@@ -18,7 +19,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
           style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
         >
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
-            <i className="ti ti-bed" /> {t('onboard.rentalTypeRooms')}
+            <BedIcon size={16} /> {t('onboard.rentalTypeRooms')}
           </div>
           <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4, marginBottom: 8 }}>
             {t('onboard.rentalTypeRoomsDesc')}
@@ -35,7 +36,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
           style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
         >
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
-            <i className="ti ti-home" /> {t('onboard.rentalTypeWhole')}
+            <HomeIcon size={16} /> {t('onboard.rentalTypeWhole')}
           </div>
           <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
             {t('onboard.rentalTypeWholeDesc')}
@@ -49,7 +50,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
           style={{ flex: 1, padding: '16px 18px', textAlign: 'left' }}
         >
           <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>
-            <i className="ti ti-building" /> {t('onboard.rentalTypeUnits')}
+            <BuildingIcon size={16} /> {t('onboard.rentalTypeUnits')}
           </div>
           <div style={{ fontSize: '0.8rem', opacity: 0.8, lineHeight: 1.4 }}>
             {t('onboard.rentalTypeUnitsDesc')}
@@ -61,7 +62,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
         background: '#fefce8', border: '1px solid #fbbf24',
         borderRadius: 7, fontSize: '0.78rem', color: '#92400e',
       }}>
-        <i className="ti ti-lock" style={{ marginRight: 5 }} />
+        <LockIcon size={13} style={{ marginRight: 5 }} />
         {t('onboard.rentalTypeLockNote')}{' '}
         <a
           href="https://nestbook.io/help.html#getting-started"

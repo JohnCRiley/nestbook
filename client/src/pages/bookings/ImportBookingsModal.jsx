@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
+import { ChevronUpIcon, ChevronDownIcon, DownloadIcon, CircleCheckIcon, AlertTriangleIcon } from '../../components/TablerIcons.jsx';
 
 const TEMPLATE_IP =
   'guest_name,guest_email,guest_phone,check_in,check_out,room,total_stay_amount,status,notes,source,deposit_paid,balance_due\n' +
@@ -226,7 +227,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
                   }}
                 >
                   {t('importBookingsHowTo')}
-                  <i className={`ti ti-chevron-${howToOpen ? 'up' : 'down'}`} style={{ fontSize: '1rem' }} />
+                  {howToOpen ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />}
                 </button>
                 {howToOpen && (
                   <div style={{ padding: '0 14px 14px', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
@@ -242,7 +243,7 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
                 className="btn-secondary"
                 onClick={() => downloadBlob(isWP ? TEMPLATE_WP : TEMPLATE_IP, 'nestbook-bookings-template.csv')}
               >
-                <i className="ti ti-download" style={{ marginRight: 6 }} />
+                <DownloadIcon size={14} style={{ marginRight: 6 }} />
                 {t('importBookingsTemplate')}
               </button>
 
@@ -396,10 +397,10 @@ export default function ImportBookingsModal({ onClose, onImported, propertyId })
           {/* ── Step 5: Result ────────────────────────────────────────────── */}
           {step === 5 && result && (
             <div className="import-step-body" style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 12 }}>
+              <div style={{ marginBottom: 12 }}>
                 {result.imported > 0
-                  ? <i className="ti ti-circle-check" style={{ color: 'var(--accent)' }} />
-                  : <i className="ti ti-alert-triangle" style={{ color: '#f59e0b' }} />}
+                  ? <CircleCheckIcon size={48} color="var(--accent)" />
+                  : <AlertTriangleIcon size={48} color="#f59e0b" />}
               </div>
               <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 16 }}>
                 {t('importBookingsDone')}

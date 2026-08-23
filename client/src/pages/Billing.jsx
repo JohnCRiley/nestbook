@@ -4,6 +4,7 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
+import { CircleCheckIcon, CreditCardIcon, BuildingBankIcon } from '../components/TablerIcons.jsx';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 const LOCALE_MAP  = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
@@ -302,7 +303,7 @@ function AccountSubscriptionCard() {
                 </div>
                 {['Unlimited rooms', '5 photos per room', 'Booking widget for your website', 'Seasonal pricing', 'Revenue reports'].map(feature => (
                   <div key={feature} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                    <i className="ti ti-circle-check" style={{ color: 'var(--accent)', fontSize: '0.9rem', flexShrink: 0 }} />
+                    <CircleCheckIcon size={14} color="var(--accent)" style={{ flexShrink: 0 }} />
                     {feature}
                   </div>
                 ))}
@@ -317,7 +318,7 @@ function AccountSubscriptionCard() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                <i className="ti ti-credit-card" />
+                <CreditCardIcon size={14} />
                 Add payment details — continue Pro after {promoExpiryShort}
               </button>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
@@ -396,7 +397,7 @@ function AccountSubscriptionCard() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
-                <i className="ti ti-credit-card" />
+                <CreditCardIcon size={14} />
                 Add payment method
               </button>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 8, lineHeight: 1.5 }}>
@@ -762,7 +763,7 @@ function StripeChecklistModal({ onClose }) {
         style={{ maxWidth: 640 }}
       >
         <div className="cm-header" style={{ background: 'var(--header-bg)', color: 'var(--header-text)' }}>
-          <i className="ti ti-building-bank cm-icon" />
+          <BuildingBankIcon size={20} style={{ flexShrink: 0 }} />
           <span className="cm-title">{t('stripeChecklist.title')}</span>
         </div>
 
@@ -919,7 +920,7 @@ function StripeConnectCard() {
   return (
     <div className="billing-card billing-connect-card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <i className="ti ti-building-bank" style={{ fontSize: '1.4rem', color: '#635bff' }} />
+        <BuildingBankIcon size={22} color="#635bff" />
         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('billing.stripeConnect')}</h3>
       </div>
       <p style={{ margin: '0 0 4px', fontSize: '0.87rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
@@ -990,7 +991,7 @@ function StripeConnectCard() {
             onCancel={() => setShowDisconnectModal(false)}
           />
           <span className="billing-status-pill billing-status-active">
-            <i className="ti ti-circle-check" /> {t('billing.connectActive')}
+            <CircleCheckIcon size={14} /> {t('billing.connectActive')}
           </span>
           <button className="billing-connect-btn billing-connect-btn-secondary" onClick={handleManage} disabled={actionLoading} style={{ display: 'block', marginTop: 10 }}>
             {actionLoading ? t('billing.connecting') : t('billing.manageOnStripe')}

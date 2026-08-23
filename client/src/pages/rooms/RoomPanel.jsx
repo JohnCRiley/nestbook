@@ -6,6 +6,7 @@ import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import BedsEditor from '../../components/BedsEditor.jsx';
+import { CameraPlusIcon } from '../../components/TablerIcons.jsx';
 
 const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
 
@@ -804,7 +805,7 @@ function RoomPhotosSection({ room, plan, isUnit = false, forceCapOne = false }) 
             />
             {uploading ? '…' : (
               <>
-                <i className="ti ti-camera-plus" style={{ fontSize: '1.2rem' }} />
+                <CameraPlusIcon size={19} />
                 Add photo
               </>
             )}

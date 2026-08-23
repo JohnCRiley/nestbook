@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import PasswordInput from './PasswordInput.jsx';
+import { CheckIcon } from './TablerIcons.jsx';
 
 export default function ChangePasswordModal({ onClose }) {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -83,7 +84,7 @@ export default function ChangePasswordModal({ onClose }) {
                 color: '#3a6e2a',
                 fontSize: '0.9rem',
               }}>
-                <i className="ti ti-check" /> Your password has been changed successfully.
+                <CheckIcon size={14} /> Your password has been changed successfully.
               </div>
             </div>
             <div className="modal-footer">

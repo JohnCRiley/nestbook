@@ -13,6 +13,7 @@ import {
 } from '../utils/format.js';
 import { isEligibleForBreakfast } from '../utils/breakfast.js';
 import BookingPanel from './bookings/BookingPanel.jsx';
+import { ClockIcon, HomeIcon, AlertTriangleIcon } from '../components/TablerIcons.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import DepositPill from '../components/DepositPill.jsx';
@@ -497,7 +498,7 @@ export default function Dashboard() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <i className="ti ti-clock" style={{ fontSize: '1.3rem', color: '#d97706' }} />
+                <ClockIcon size={21} color="#d97706" />
                 <div>
                   <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
                     {wpSummary.pending.length === 1
@@ -547,7 +548,7 @@ export default function Dashboard() {
               padding: '18px 20px', marginBottom: 16, color: 'var(--text-muted)',
               fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 10,
             }}>
-              <i className="ti ti-home" style={{ fontSize: '1.2rem' }} />
+              <HomeIcon size={19} />
               Property is currently unoccupied
             </div>
           )}
@@ -583,7 +584,7 @@ export default function Dashboard() {
           flexWrap: 'wrap', gap: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <i className="ti ti-clock" style={{ fontSize: '1.3rem', color: '#d97706' }} />
+            <ClockIcon size={21} color="#d97706" />
             <div>
               <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
                 {bookings.filter((b) => b.status === 'pending_owner_approval').length === 1
@@ -625,7 +626,7 @@ export default function Dashboard() {
             </div>
             {property?.check_in_time && (
               <div style={{ fontSize: '0.8rem', color: 'var(--accent-dark)', marginTop: 2, opacity: 0.8 }}>
-                <i className="ti ti-clock" style={{ marginRight: 4 }} />
+                <ClockIcon size={14} style={{ marginRight: 4 }} />
                 {t('checkin.availableFrom')(formatCheckInTime(property.check_in_time, locale))}
               </div>
             )}
@@ -656,7 +657,7 @@ export default function Dashboard() {
           background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 10,
           padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10,
         }}>
-          <i className="ti ti-alert-triangle" style={{ fontSize: '1.2rem', lineHeight: 1 }} />
+          <AlertTriangleIcon size={19} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>
               {t('flaggedBookingsTitle')} ({flaggedBookings.length})
@@ -781,7 +782,7 @@ export default function Dashboard() {
                                 {t('checkInConfirm')(`${b.guest_first_name} ${b.guest_last_name}`)}
                                 {property?.check_in_time && (
                                   <span style={{ display: 'block', marginTop: 8, fontSize: '0.85rem', color: '#64748b' }}>
-                                    <i className="ti ti-clock" style={{ marginRight: 4 }} />
+                                    <ClockIcon size={14} style={{ marginRight: 4 }} />
                                     {t('checkin.modalNote')(formatCheckInTime(property.check_in_time, locale))}
                                   </span>
                                 )}
@@ -971,7 +972,7 @@ export default function Dashboard() {
               background: '#fef3c7', border: '1.5px solid #f59e0b', borderRadius: 8,
               padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <i className="ti ti-alert-triangle" style={{ color: '#d97706', fontSize: '1.2rem' }} />
+              <AlertTriangleIcon size={19} color="#d97706" />
               <div style={{ fontWeight: 600, color: '#92400e', fontSize: '0.9rem' }}>
                 {missedAction.type === 'arrival' ? 'Attention needed — missed arrival' : 'Attention needed — guests due to depart'}
               </div>

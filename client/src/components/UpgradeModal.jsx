@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
+import { TiIcon } from './TablerIcons.jsx';
 
 const ICON_MAP = {
-  '🚀': 'ti ti-rocket',
-  '🌐': 'ti ti-world',
-  '📧': 'ti ti-mail',
-  '📅': 'ti ti-calendar',
-  '📸': 'ti ti-camera',
-  '📊': 'ti ti-chart-bar',
-  '📋': 'ti ti-clipboard-list',
-  '👥': 'ti ti-users',
-  '💰': 'ti ti-cash',
-  '🏠': 'ti ti-home',
-  '🍷': 'ti ti-glass-full',
-  '🏷️': 'ti ti-tag',
-  '📈': 'ti ti-trending-up',
-  '👤': 'ti ti-user',
-  '⭐': 'ti ti-star',
-  '📝': 'ti ti-notes',
+  '🚀': 'rocket',
+  '🌐': 'world',
+  '📧': 'mail',
+  '📅': 'calendar',
+  '📸': 'camera',
+  '📊': 'chart-bar',
+  '📋': 'clipboard-list',
+  '👥': 'users',
+  '💰': 'cash',
+  '🏠': 'home',
+  '🍷': 'glass-full',
+  '🏷️': 'tag',
+  '📈': 'trending-up',
+  '👤': 'user',
+  '⭐': 'star',
+  '📝': 'notes',
 };
 
 // ── Translations (self-contained — feature descriptions are too long for i18n/index.js) ──
@@ -575,7 +576,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
                   alignItems: 'flex-start',
                 }}
               >
-                <i className={ICON_MAP[f.icon] ?? 'ti ti-circle'} style={{ fontSize: 20, flexShrink: 0, lineHeight: 1, marginTop: 2, color: '#94a3b8' }} />
+                <TiIcon name={ICON_MAP[f.icon] ?? 'circle'} size={20} color="#94a3b8" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f5f9', marginBottom: 5 }}>{f.name}</div>
                   <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>{f.desc}</div>

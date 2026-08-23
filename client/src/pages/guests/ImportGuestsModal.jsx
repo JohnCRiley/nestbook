@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useT } from '../../i18n/LocaleContext.jsx';
+import { CircleCheckIcon, AlertTriangleIcon } from '../../components/TablerIcons.jsx';
 
 const FIELDS = [
   { key: 'first_name', label: 'First Name', required: true },
@@ -273,10 +274,10 @@ export default function ImportGuestsModal({ onClose, onImported, propertyId }) {
           {/* ── Step 5: Result ───────────────────────────────────────────── */}
           {step === 5 && result && (
             <div className="import-step-body" style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 12 }}>
+              <div style={{ marginBottom: 12 }}>
                 {result.imported > 0
-                  ? <i className="ti ti-circle-check" style={{ color: 'var(--accent)' }} />
-                  : <i className="ti ti-alert-triangle" style={{ color: '#f59e0b' }} />}
+                  ? <CircleCheckIcon size={48} color="var(--accent)" />
+                  : <AlertTriangleIcon size={48} color="#f59e0b" />}
               </div>
               <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 16 }}>
                 {result.imported > 0 ? t('importDoneTitle') : t('importNoneTitle') ?? 'No guests were imported'}
