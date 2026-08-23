@@ -738,7 +738,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
                       opacity: c.voided_at ? 0.45 : 1,
                     }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1a2e14' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1C1C1E' }}>
                           {c.description || c.category_name || '—'}
                           {c.voided_at && (
                             <span style={{ marginLeft: 6, fontSize: '0.72rem', color: '#ef4444', fontWeight: 500 }}>
@@ -821,7 +821,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             {/* Future confirmed WP booking — show status summary */}
             {b.status === 'confirmed' && !canMarkArrived && (
               <div style={{
-                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+                background: '#F4F3F0', border: '1px solid #D8D3CB', borderRadius: 8,
                 padding: '12px 16px', marginBottom: 2, fontSize: '0.85rem', color: '#166534',
               }}>
                 <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -1005,7 +1005,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
           background: 'var(--tint-bg)', border: '1px solid var(--tint-border)', fontSize: '0.84rem',
         }}>
           <span style={{ fontWeight: 700, color: 'var(--tint-text)' }}>{t('refundRecorded')}: </span>
-          <span style={{ color: '#1a2e14' }}>
+          <span style={{ color: '#1C1C1E' }}>
             {fmtCurrency(b.refund_amount)}
             {b.refund_reason ? ` — ${b.refund_reason}` : ''}
           </span>
@@ -1075,8 +1075,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               <button
                 onClick={() => handleCleaningStatus('completed')}
                 style={{
-                  background: '#f0fdf4', color: '#166534',
-                  border: '1.5px solid #bbf7d0', borderRadius: 8,
+                  background: '#F4F3F0', color: '#166534',
+                  border: '1.5px solid #D8D3CB', borderRadius: 8,
                   padding: '10px 16px', fontWeight: 600, fontSize: '0.88rem',
                   cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 8,
@@ -1111,8 +1111,8 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
               <button
                 onClick={() => handleCleaningStatus('completed')}
                 style={{
-                  background: '#f0fdf4', color: '#166534',
-                  border: '1.5px solid #bbf7d0', borderRadius: 8,
+                  background: '#F4F3F0', color: '#166534',
+                  border: '1.5px solid #D8D3CB', borderRadius: 8,
                   padding: '10px 16px', fontWeight: 600, fontSize: '0.88rem',
                   cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 8,
@@ -1127,7 +1127,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
 
           {b.cleaning_status === 'completed' && (
             <div style={{
-              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              background: '#F4F3F0', border: '1px solid #D8D3CB', borderRadius: 8,
               padding: '10px 14px', fontSize: '0.85rem', color: '#166534',
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
@@ -1281,7 +1281,7 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
             </>
           ) : (
             <div style={{
-              background: '#f0fdf4', border: '1.5px solid #d1fae5',
+              background: '#F4F3F0', border: '1.5px solid #d1fae5',
               borderRadius: 8, padding: '12px 16px',
               display: 'flex', alignItems: 'center', gap: 8,
               fontSize: '0.85rem', fontWeight: 600, color: '#166534',
@@ -2044,7 +2044,7 @@ function ERow({ label, value, valueColor }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
       <span style={{ color: '#64748b' }}>{label}</span>
-      <span style={{ color: valueColor ?? '#1a2e14', fontWeight: 600 }}>{value}</span>
+      <span style={{ color: valueColor ?? '#1C1C1E', fontWeight: 600 }}>{value}</span>
     </div>
   );
 }
@@ -2359,7 +2359,7 @@ function PaymentLinkButton({ booking, t }) {
     return (
       <div className="payment-link-box">
         <input readOnly value={link} onClick={(e) => e.target.select()} />
-        <button onClick={copyLink} style={copied ? { background: 'var(--success, #16a34a)', color: '#fff' } : copyError ? { background: '#dc2626', color: '#fff' } : {}}>
+        <button onClick={copyLink} style={copied ? { background: 'var(--success, #405440)', color: '#fff' } : copyError ? { background: '#dc2626', color: '#fff' } : {}}>
           {copied
             ? <><CheckIcon size={13} /> Copied</>
             : copyError

@@ -9,7 +9,7 @@ const PIPELINE = [
   { value: 'call_back',      label: 'Call back requested', color: '#8b5cf6', bg: '#f5f3ff',   icon: 'clock' },
   { value: 'interested',     label: 'Spoke — interested',  color: '#10b981', bg: '#d1fae5',   icon: 'star' },
   { value: 'not_interested', label: 'Not interested',      color: '#94a3b8', bg: '#f1f5f9',   icon: 'x' },
-  { value: 'signed_up',      label: 'Signed up',           color: '#1a4710', bg: '#d9f0cc',   icon: 'circle-check' },
+  { value: 'signed_up',      label: 'Signed up',           color: '#405440', bg: '#F4F3F0',   icon: 'circle-check' },
   { value: 'do_not_call',    label: 'Do not call',         color: '#dc2626', bg: '#fef2f2',   icon: 'ban' },
 ];
 
@@ -18,9 +18,9 @@ const PROMPT_GROUPS = [
     id: 'positive',
     label: 'Positive responses',
     subtitle: 'They sound friendly, open or interested',
-    color: '#1a4710',
-    bg: '#f0fdf4',
-    border: '#d9f0cc',
+    color: '#405440',
+    bg: '#F4F3F0',
+    border: '#D8D3CB',
     icon: 'thumb-up',
     prompts: [
       {
@@ -265,7 +265,7 @@ export default function PhoneOutreach() {
           { label: 'To call',    value: toCall,     color: '#64748b' },
           { label: 'Call backs', value: callBacks,  color: '#8b5cf6' },
           { label: 'Interested', value: interested, color: '#10b981' },
-          { label: 'Signed up',  value: signedUp,   color: '#1a4710' },
+          { label: 'Signed up',  value: signedUp,   color: '#405440' },
         ].map(stat => (
           <div key={stat.label} style={{
             background: 'var(--card-bg)', border: '1px solid var(--border)',
@@ -303,8 +303,8 @@ export default function PhoneOutreach() {
       {/* Message */}
       {message && (
         <div style={{
-          background: message.type === 'error' ? '#fef2f2' : '#f0fdf4',
-          border: `1px solid ${message.type === 'error' ? '#fca5a5' : '#bbf7d0'}`,
+          background: message.type === 'error' ? '#fef2f2' : '#F4F3F0',
+          border: `1px solid ${message.type === 'error' ? '#fca5a5' : '#D8D3CB'}`,
           color: message.type === 'error' ? '#dc2626' : '#166534',
           padding: '10px 16px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
           display: 'flex', justifyContent: 'space-between',
@@ -323,7 +323,7 @@ export default function PhoneOutreach() {
         <button
           onClick={() => setOpenPrompt(openPrompt === 'main' ? null : 'main')}
           style={{
-            width: '100%', background: '#1a4710', border: 'none', padding: '13px 16px',
+            width: '100%', background: '#405440', border: 'none', padding: '13px 16px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             cursor: 'pointer', fontFamily: 'inherit',
           }}
@@ -392,14 +392,14 @@ export default function PhoneOutreach() {
                       {isOpen && (
                         <div style={{ padding: '0 16px 16px 28px' }}>
                           <div style={{
-                            background: '#f0fdf4', border: '1px solid #d9f0cc',
-                            borderLeft: '4px solid #1a4710', borderRadius: '0 8px 8px 0',
-                            padding: '12px 14px', fontSize: '0.85rem', color: '#1a2e14',
+                            background: '#F4F3F0', border: '1px solid #D8D3CB',
+                            borderLeft: '4px solid #405440', borderRadius: '0 8px 8px 0',
+                            padding: '12px 14px', fontSize: '0.85rem', color: '#1C1C1E',
                             lineHeight: 1.7, fontStyle: 'italic', marginBottom: 8,
                           }}>
                             <div style={{
                               fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase',
-                              letterSpacing: '0.07em', color: '#1a4710', marginBottom: 6, fontStyle: 'normal',
+                              letterSpacing: '0.07em', color: '#405440', marginBottom: 6, fontStyle: 'normal',
                             }}>What to say</div>
                             "{prompt.response}"
                           </div>
@@ -455,9 +455,9 @@ export default function PhoneOutreach() {
               <div key={prospect.id} style={{
                 background: 'var(--card-bg)',
                 border: `1.5px solid ${
-                  prospect.phone_status === 'interested' ? '#d9f0cc' :
+                  prospect.phone_status === 'interested' ? '#D8D3CB' :
                   prospect.phone_status === 'call_back'  ? '#e9d5ff' :
-                  prospect.phone_status === 'signed_up'  ? '#1a4710' :
+                  prospect.phone_status === 'signed_up'  ? '#405440' :
                   'var(--border)'
                 }`,
                 borderRadius: 10, overflow: 'hidden',

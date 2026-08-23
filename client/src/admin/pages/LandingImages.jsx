@@ -69,8 +69,8 @@ export default function LandingImages() {
 
       {message && (
         <div style={{
-          background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-          border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fca5a5'}`,
+          background: message.type === 'success' ? '#F4F3F0' : '#fef2f2',
+          border: `1px solid ${message.type === 'success' ? '#D8D3CB' : '#fca5a5'}`,
           color: message.type === 'success' ? '#166534' : '#dc2626',
           padding: '10px 16px',
           borderRadius: 8,
@@ -145,7 +145,7 @@ export default function LandingImages() {
                               display: 'flex', gap: 10 }}>
                   {slot.exists ? (
                     <>
-                      <span style={{ color: '#16a34a' }}>✓ {slot.size}</span>
+                      <span style={{ color: '#405440' }}>✓ {slot.size}</span>
                       <span>Updated {slot.modified}</span>
                     </>
                   ) : (

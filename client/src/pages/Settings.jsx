@@ -2358,7 +2358,7 @@ function EmbedSection({ snippet, t, propertyId }) {
                 padding: '2px 9px', borderRadius: 4,
                 border: '1px solid var(--border)', background: 'var(--page-bg)',
                 cursor: 'pointer', fontSize: '0.75rem',
-                color: idCopied ? '#16a34a' : 'var(--text-secondary)', fontWeight: 600,
+                color: idCopied ? '#405440' : 'var(--text-secondary)', fontWeight: 600,
               }}
             >
               {idCopied ? t('embedCopied') : t('embedCopy')}

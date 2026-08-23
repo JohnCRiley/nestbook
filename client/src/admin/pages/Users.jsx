@@ -369,7 +369,7 @@ export default function Users() {
             {busy[`${u.id}_verify`] ? '…' : 'Verify email'}
           </button>
         ) : (
-          <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, whiteSpace: 'nowrap' }}>✓ Verified</span>
+          <span style={{ fontSize: '0.78rem', color: '#405440', fontWeight: 700, whiteSpace: 'nowrap' }}>✓ Verified</span>
         )}
         <button
           className={`sa-btn ${u.suspended ? 'sa-btn-comp' : 'sa-btn-cancel'}`}
@@ -858,7 +858,7 @@ function CopyId({ id }) {
         title="Copy property ID"
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
-          fontSize: '0.68rem', color: copied ? '#16a34a' : '#94a3b8',
+          fontSize: '0.68rem', color: copied ? '#405440' : '#94a3b8',
           padding: '0 2px', lineHeight: 1, fontWeight: 600,
         }}
       >

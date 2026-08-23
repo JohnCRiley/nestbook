@@ -76,8 +76,8 @@ export default function BlogImages() {
 
       {message && (
         <div style={{
-          background: message.type === 'success' ? '#f0fdf4' : '#fef2f2',
-          border: `1px solid ${message.type === 'success' ? '#bbf7d0' : '#fca5a5'}`,
+          background: message.type === 'success' ? '#F4F3F0' : '#fef2f2',
+          border: `1px solid ${message.type === 'success' ? '#D8D3CB' : '#fca5a5'}`,
           color: message.type === 'success' ? '#166534' : '#dc2626',
           padding: '10px 16px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 16,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -144,7 +144,7 @@ export default function BlogImages() {
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: 12, alignItems: 'center' }}>
                   <span style={{ opacity: 0.7 }}>{post.slug}</span>
                   {post.hasImage && (
-                    <span style={{ color: '#16a34a' }}>✓ {post.imgSize}</span>
+                    <span style={{ color: '#405440' }}>✓ {post.imgSize}</span>
                   )}
                   {!post.hasImage && (
                     <span style={{ color: '#f59e0b' }}>⚠ No image</span>

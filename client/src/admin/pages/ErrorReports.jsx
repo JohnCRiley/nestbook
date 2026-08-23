@@ -303,7 +303,7 @@ export default function ErrorReports() {
 }
 
 function StatCard({ value, label, accent }) {
-  const bg    = accent === 'warn' ? '#fefce8' : accent === 'green' ? '#f0fdf4' : '#f8fafc';
+  const bg    = accent === 'warn' ? '#fefce8' : accent === 'green' ? '#F4F3F0' : '#f8fafc';
   const color = accent === 'warn' ? '#92400e' : accent === 'green' ? '#166534' : '#1e293b';
   return (
     <div style={{

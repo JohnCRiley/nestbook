@@ -11,7 +11,7 @@ const labelStyle = {
   fontWeight: 600,
   fontSize: '0.82rem',
   marginBottom: 6,
-  color: '#557a4a',
+  color: '#6B6A66',
 };
 
 // Short Add Property flow for Multi accounts — name, type, rental type

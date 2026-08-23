@@ -907,7 +907,7 @@ html[data-theme="forest"] .main-content {
 }
 
 .booking-row:last-child { border-bottom: none; }
-.booking-row:hover      { background: #f9fbf8; }
+.booking-row:hover      { background: #F4F3F0; }
 .booking-row--clickable { cursor: pointer; }
 .booking-row--clickable:hover { background: var(--light-green); }
 
@@ -2089,7 +2089,7 @@ html[data-theme="forest"] .main-content {
 }
 .legend-swatch.sw-wp-needs-cleaning       { background: #fef3c7; border: 1px solid #f59e0b; }
 .legend-swatch.sw-wp-cleaning-in-progress { background: #dbeafe; border: 1px solid #93c5fd; }
-.legend-swatch.sw-wp-ready                { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.legend-swatch.sw-wp-ready                { background: #F4F3F0; border: 1px solid #D8D3CB; }
 .legend-swatch.sw-external-block          { background: #94a3b8; }
 .legend-swatch.sw-breakfast {
   background: repeating-conic-gradient(var(--accent) 0% 25%, rgba(255,255,255,0.55) 0% 50%) 0 0 / 7px 7px;
@@ -2310,8 +2310,8 @@ html[data-theme="forest"] .main-content {
 }
 
 .wpc-ready {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: #F4F3F0;
+  border: 1px solid #D8D3CB;
   color: #166534;
 }
 
@@ -3410,7 +3410,7 @@ html[data-theme="forest"] .main-content {
 .auth-input:focus { border-color: var(--accent); }
 
 .auth-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23557a4a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6A66' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
@@ -5816,7 +5816,7 @@ html[data-theme="forest"] .main-content {
   justify-content: space-between;
   align-items: baseline;
   padding: 12px 0;
-  border-bottom: 1px solid #e4ede2;
+  border-bottom: 1px solid #D8D3CB;
   gap: 12px;
 }
 .wiz-summary-row:last-child {

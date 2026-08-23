@@ -108,7 +108,7 @@ export default function ChargesDetailModal({ room, onClose, onAddCharge, canAddF
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             flexShrink: 0,
           }}>
-            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1a2e14' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1C1C1E' }}>
               {t('chargesViewTotal')}
             </span>
             <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--heading-text)' }}>

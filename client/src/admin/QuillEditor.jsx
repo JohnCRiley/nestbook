@@ -21,9 +21,9 @@ function injectQuillStyles() {
     .ql-editor.ql-blank::before{color:#94a3b8!important;font-style:normal!important;}
     .ql-toolbar.ql-snow .ql-stroke{stroke:#475569!important;}
     .ql-toolbar.ql-snow .ql-fill{fill:#475569!important;}
-    .ql-toolbar.ql-snow button:hover .ql-stroke,.ql-toolbar.ql-snow button.ql-active .ql-stroke{stroke:#1a4710!important;}
-    .ql-toolbar.ql-snow button:hover .ql-fill,.ql-toolbar.ql-snow button.ql-active .ql-fill{fill:#1a4710!important;}
-    .ql-toolbar.ql-snow .ql-picker-label:hover,.ql-toolbar.ql-snow .ql-picker-item:hover{color:#1a4710!important;}
+    .ql-toolbar.ql-snow button:hover .ql-stroke,.ql-toolbar.ql-snow button.ql-active .ql-stroke{stroke:#405440!important;}
+    .ql-toolbar.ql-snow button:hover .ql-fill,.ql-toolbar.ql-snow button.ql-active .ql-fill{fill:#405440!important;}
+    .ql-toolbar.ql-snow .ql-picker-label:hover,.ql-toolbar.ql-snow .ql-picker-item:hover{color:#405440!important;}
   `;
   document.head.appendChild(s);
 }

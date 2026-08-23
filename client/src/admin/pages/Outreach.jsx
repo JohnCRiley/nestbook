@@ -17,7 +17,7 @@ function StatusBadge({ status }) {
     '1st_followup_sent':  { bg: '#fff7ed', color: '#c2410c', label: '2 Sent' },
     '2nd_followup_sent':  { bg: '#fef2f2', color: '#b91c1c', label: '3 Sent' },
     '3rd_followup_sent':  { bg: '#fce7f3', color: '#9d174d', label: '4 Sent' },
-    replied:              { bg: '#f0fdf4', color: '#166534', label: 'Replied' },
+    replied:              { bg: '#F4F3F0', color: '#166534', label: 'Replied' },
     converted:            { bg: '#dcfce7', color: '#15803d', label: 'Converted' },
     unsubscribed:         { bg: '#f1f5f9', color: '#64748b', label: 'Unsubscribed' },
     complained:           { bg: '#fee2e2', color: '#991b1b', label: 'Complained' },
@@ -59,7 +59,7 @@ function Section({ title, children, action }) {
 
 function Btn({ children, onClick, variant = 'primary', small, disabled, style }) {
   const styles = {
-    primary:   { background: '#1a4710', color: '#fff', border: 'none' },
+    primary:   { background: '#405440', color: '#fff', border: 'none' },
     secondary: { background: '#fff', color: '#374151', border: '1px solid #d1d5db' },
     danger:    { background: '#fff', color: '#dc2626', border: '1px solid #fca5a5' },
   };
@@ -117,8 +117,8 @@ function StatsBar({ stats }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginBottom: 24 }}>
       {cards.map(c => (
         <div key={c.label} style={{
-          background: c.highlight ? '#f0fdf4' : '#fff',
-          border: `1px solid ${c.highlight ? '#bbf7d0' : '#e2e8f0'}`,
+          background: c.highlight ? '#F4F3F0' : '#fff',
+          border: `1px solid ${c.highlight ? '#D8D3CB' : '#e2e8f0'}`,
           borderRadius: 8, padding: '12px 16px',
         }}>
           <div style={{ fontSize: '1.4rem', fontWeight: 800, color: c.highlight ? '#166534' : '#0f172a' }}>{c.value}</div>
@@ -392,7 +392,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           </div>
           <div style={{ maxHeight: 80, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 6, padding: '6px 10px', background: '#f8fafc', display: 'flex', flexWrap: 'wrap', gap: 5 }}>
             {selected.map(p => (
-              <span key={p.id} style={{ background: '#e8f5e2', color: '#1a4710', padding: '2px 10px', borderRadius: 20, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+              <span key={p.id} style={{ background: '#e8f5e2', color: '#405440', padding: '2px 10px', borderRadius: 20, fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
                 {p.name || p.email}
               </span>
             ))}
@@ -459,9 +459,9 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               style={{
                 fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
                 fontFamily: 'monospace', fontWeight: 600,
-                border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
-                background: htmlMode ? '#d9f0cc' : '#f8fafc',
-                color: htmlMode ? '#1a4710' : '#64748b',
+                border: `1px solid ${htmlMode ? '#405440' : '#d1d5db'}`,
+                background: htmlMode ? '#F4F3F0' : '#f8fafc',
+                color: htmlMode ? '#405440' : '#64748b',
               }}
             >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
           </div>
@@ -484,7 +484,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               placeholder="Paste raw HTML here — rendered as-is in the email"
               style={{
                 width: '100%', height: 260, fontFamily: 'monospace', fontSize: '0.78rem',
-                border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
+                border: '1px solid #405440', borderRadius: 8, padding: '10px 12px',
                 resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
                 boxSizing: 'border-box',
               }}
@@ -499,9 +499,9 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
                 onClick={() => setFollowUpDays(d)}
                 style={{
                   marginRight: 6, padding: '3px 10px', borderRadius: 4, border: '1px solid',
-                  borderColor: followUpDays === d ? '#1a4710' : '#d1d5db',
-                  background: followUpDays === d ? '#d9f0cc' : '#fff',
-                  color: followUpDays === d ? '#1a4710' : '#475569',
+                  borderColor: followUpDays === d ? '#405440' : '#d1d5db',
+                  background: followUpDays === d ? '#F4F3F0' : '#fff',
+                  color: followUpDays === d ? '#405440' : '#475569',
                   fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >{d} days</button>
@@ -532,7 +532,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
                     disabled={overLimit}
                     style={{
                       padding: '5px 12px', borderRadius: 6, border: '1px solid #d1d5db',
-                      background: sendLimit === opt.value ? '#1a4710' : '#fff',
+                      background: sendLimit === opt.value ? '#405440' : '#fff',
                       color:      sendLimit === opt.value ? '#fff'    : '#374151',
                       fontWeight: sendLimit === opt.value ? 600       : 400,
                       cursor: overLimit ? 'not-allowed' : 'pointer',
@@ -563,7 +563,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
           {limitEnabled && (
             <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '-4px 0 4px' }}>
               Resend free plan: 100 emails/day.{' '}
-              <a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer" style={{ color: '#1a4710' }}>
+              <a href="https://resend.com/pricing" target="_blank" rel="noopener noreferrer" style={{ color: '#405440' }}>
                 Upgrade Resend ($20/mo)
               </a>{' '}for unlimited sending.
             </p>
@@ -585,7 +585,7 @@ function ComposeModal({ selectedIds, prospects, templates, campaigns, dailyCount
               </div>
               <div style={{ height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{
-                  height: '100%', borderRadius: 4, background: '#1a4710',
+                  height: '100%', borderRadius: 4, background: '#405440',
                   width: `${Math.round((sendProgress.done / sendProgress.total) * 100)}%`,
                   transition: 'width 0.3s ease',
                 }} />
@@ -726,7 +726,7 @@ function CampaignManager({ campaigns, onClose, onChanged }) {
   }
 
   const statusLabel = { draft: 'Draft', active: 'Active', completed: 'Done' };
-  const statusColour = { draft: '#94a3b8', active: '#1a4710', completed: '#64748b' };
+  const statusColour = { draft: '#94a3b8', active: '#405440', completed: '#64748b' };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
@@ -953,14 +953,14 @@ function CsvImportModal({ onClose, onImported }) {
               <>
                 {/* Clean rows summary */}
                 {cleanRows.length > 0 && (
-                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.82rem' }}>
+                  <div style={{ background: '#F4F3F0', border: '1px solid #D8D3CB', borderRadius: 6, padding: 10, marginBottom: 10, fontSize: '0.82rem' }}>
                     <div style={{ fontWeight: 600, color: '#166534', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <CheckIcon size={13} color="#166534" /> {cleanRows.length} row{cleanRows.length !== 1 ? 's' : ''} ready to import
                     </div>
                     {cleanRows.slice(0, 4).map((r, i) => (
                       <div key={i} style={{ color: '#15803d', marginBottom: 1 }}>{r.name} — {r.email}{r.company ? ` (${r.company})` : ''}</div>
                     ))}
-                    {cleanRows.length > 4 && <div style={{ color: '#86efac', marginTop: 2 }}>…and {cleanRows.length - 4} more</div>}
+                    {cleanRows.length > 4 && <div style={{ color: '#6B6A66', marginTop: 2 }}>…and {cleanRows.length - 4} more</div>}
                   </div>
                 )}
 
@@ -1419,7 +1419,7 @@ export default function Outreach() {
   const tabStyle = active => ({
     padding: '8px 16px', borderRadius: 6, fontWeight: 600, fontSize: '0.85rem',
     cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-    background: active ? '#1a4710' : '#f1f5f9',
+    background: active ? '#405440' : '#f1f5f9',
     color: active ? '#fff' : '#374151',
   });
 
@@ -1447,8 +1447,8 @@ export default function Outreach() {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '8px 14px',
-        background: limitEnabled ? '#fef9c3' : '#f0fdf4',
-        border: `1px solid ${limitEnabled ? '#fde047' : '#bbf7d0'}`,
+        background: limitEnabled ? '#fef9c3' : '#F4F3F0',
+        border: `1px solid ${limitEnabled ? '#fde047' : '#D8D3CB'}`,
         borderRadius: 8,
         marginBottom: 8,
       }}>
@@ -1462,7 +1462,7 @@ export default function Outreach() {
           onClick={toggleLimit}
           style={{
             fontSize: 12, padding: '4px 12px', borderRadius: 6,
-            border: `1px solid ${limitEnabled ? '#fde047' : '#bbf7d0'}`,
+            border: `1px solid ${limitEnabled ? '#fde047' : '#D8D3CB'}`,
             background: limitEnabled ? '#fef08a' : '#dcfce7',
             color: limitEnabled ? '#854d0e' : '#166534',
             cursor: 'pointer', fontWeight: 500, fontFamily: 'inherit',
@@ -1476,8 +1476,8 @@ export default function Outreach() {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '8px 14px', borderRadius: 8, marginBottom: 16,
-        background: (limitEnabled && dailyCount >= 100) ? '#fef2f2' : (limitEnabled && dailyCount >= 80) ? '#fef3c7' : '#f0fdf4',
-        border: `1px solid ${(limitEnabled && dailyCount >= 100) ? '#fca5a5' : (limitEnabled && dailyCount >= 80) ? '#fbbf24' : '#bbf7d0'}`,
+        background: (limitEnabled && dailyCount >= 100) ? '#fef2f2' : (limitEnabled && dailyCount >= 80) ? '#fef3c7' : '#F4F3F0',
+        border: `1px solid ${(limitEnabled && dailyCount >= 100) ? '#fca5a5' : (limitEnabled && dailyCount >= 80) ? '#fbbf24' : '#D8D3CB'}`,
         fontSize: '0.85rem', fontWeight: 600,
         color: (limitEnabled && dailyCount >= 100) ? '#dc2626' : (limitEnabled && dailyCount >= 80) ? '#92400e' : '#166534',
       }}>
@@ -1577,7 +1577,7 @@ export default function Outreach() {
       {selected.length > 0 && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-          background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+          background: '#F4F3F0', border: '1px solid #D8D3CB', borderRadius: 8,
           padding: '8px 12px', marginBottom: 12, fontSize: '0.85rem',
         }}>
           <span style={{ fontWeight: 600, color: '#166534', marginRight: 4 }}>
@@ -1633,7 +1633,7 @@ export default function Outreach() {
                   {filteredFollowUps.map(p => {
                     const overdue  = p.follow_up_date && p.follow_up_date < today;
                     const dueToday = p.follow_up_date && p.follow_up_date === today;
-                    const rowBg    = selected.includes(p.id) ? '#f0fdf4' : overdue ? '#fff7ed' : dueToday ? '#fefce8' : 'transparent';
+                    const rowBg    = selected.includes(p.id) ? '#F4F3F0' : overdue ? '#fff7ed' : dueToday ? '#fefce8' : 'transparent';
                     const dateColor = overdue ? '#b45309' : dueToday ? '#854d0e' : '#94a3b8';
                     return (
                       <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: rowBg }}>
@@ -1703,7 +1703,7 @@ export default function Outreach() {
                 </thead>
                 <tbody>
                   {filteredProspects.map(p => (
-                    <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: selected.includes(p.id) ? '#f0fdf4' : undefined }}>
+                    <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: selected.includes(p.id) ? '#F4F3F0' : undefined }}>
                       <td style={{ padding: '8px 12px' }}>
                         <input
                           type="checkbox"

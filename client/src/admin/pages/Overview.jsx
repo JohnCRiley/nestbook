@@ -134,7 +134,7 @@ export default function Overview() {
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px', borderRadius: 7,
                 border: '1.5px solid #e2e8f0', background: '#f8fafc',
-                fontSize: '0.82rem', fontWeight: 600, color: '#1a2e14',
+                fontSize: '0.82rem', fontWeight: 600, color: '#1C1C1E',
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
@@ -163,9 +163,9 @@ export default function Overview() {
             onClick={e => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div style={{ background: '#f0fdf4', padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: '#F4F3F0', padding: '14px 18px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a2e14', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1C1C1E', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Icon name={activeMat.icon} size={15} /> {activeMat.title}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>{activeMat.spec}</div>
@@ -188,7 +188,7 @@ export default function Overview() {
                     rel="noreferrer"
                     style={{
                       padding: '5px 12px', borderRadius: 5, fontSize: '0.78rem', fontWeight: 600,
-                      background: '#f0fdf4', border: '1px solid #86efac', color: '#166534',
+                      background: '#F4F3F0', border: '1px solid #D8D3CB', color: '#166534',
                       textDecoration: 'none',
                     }}
                   >
@@ -198,7 +198,7 @@ export default function Overview() {
                     href={`/api/marketing/pdf/${name}`}
                     style={{
                       padding: '5px 12px', borderRadius: 5, fontSize: '0.78rem', fontWeight: 600,
-                      background: '#1a4710', color: '#fff',
+                      background: '#405440', color: '#fff',
                       textDecoration: 'none',
                     }}
                   >
@@ -219,7 +219,7 @@ export default function Overview() {
         </div>
         <div style={{ padding: '12px 0 4px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1a2e14', marginBottom: 8 }}>How to send to a print shop</div>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1C1C1E', marginBottom: 8 }}>How to send to a print shop</div>
             <ol style={{ paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {[
                 'Click "PDF" on the material you want — it downloads automatically.',
@@ -231,7 +231,7 @@ export default function Overview() {
             </ol>
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1a2e14', marginBottom: 8 }}>Recommended print specs</div>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1C1C1E', marginBottom: 8 }}>Recommended print specs</div>
             <table style={{ fontSize: '0.78rem', borderCollapse: 'collapse', width: '100%' }}>
               <tbody>
                 {[
@@ -243,7 +243,7 @@ export default function Overview() {
                   ['Car Door Magnet', 'Magnetic vinyl · 3mm bleed'],
                 ].map(([mat, spec]) => (
                   <tr key={mat} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '4px 8px 4px 0', fontWeight: 600, color: '#1a2e14', whiteSpace: 'nowrap' }}>{mat}</td>
+                    <td style={{ padding: '4px 8px 4px 0', fontWeight: 600, color: '#1C1C1E', whiteSpace: 'nowrap' }}>{mat}</td>
                     <td style={{ padding: '4px 0', color: '#64748b' }}>{spec}</td>
                   </tr>
                 ))}
@@ -268,7 +268,7 @@ export default function Overview() {
             }}>
               <Icon name={icon} size={18} color="#6b7280" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1a2e14' }}>{title}</div>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1C1C1E' }}>{title}</div>
                 <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 1 }}>{desc}</div>
               </div>
               <a
@@ -277,7 +277,7 @@ export default function Overview() {
                 rel="noreferrer"
                 style={{
                   padding: '4px 10px', borderRadius: 5, fontSize: '0.75rem', fontWeight: 600,
-                  background: '#f0fdf4', border: '1px solid #86efac', color: '#166534',
+                  background: '#F4F3F0', border: '1px solid #D8D3CB', color: '#166534',
                   textDecoration: 'none', flexShrink: 0,
                 }}
               >
@@ -336,7 +336,7 @@ function CopyLinkBtn({ url }) {
       onClick={copy}
       style={{
         padding: '4px 10px', borderRadius: 5, fontSize: '0.75rem', fontWeight: 600,
-        background: copied ? '#1a4710' : '#f8fafc',
+        background: copied ? '#405440' : '#f8fafc',
         color: copied ? '#fff' : '#374151',
         border: '1px solid #e2e8f0',
         cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,

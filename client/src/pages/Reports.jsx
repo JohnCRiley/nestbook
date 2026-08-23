@@ -1089,17 +1089,17 @@ ${plSection}
                           <td style={{ padding: '5px 8px', color: '#64748b', fontSize: '0.8rem' }}>
                             {pm.count} {t('reportPMBookings')}
                           </td>
-                          <td style={{ padding: '5px 0 5px 8px', fontWeight: 600, textAlign: 'right', color: '#1a2e14' }}>
+                          <td style={{ padding: '5px 0 5px 8px', fontWeight: 600, textAlign: 'right', color: '#1C1C1E' }}>
                             {fmtMoney(pm.total || 0)}
                           </td>
                         </tr>
                       ))}
-                      <tr style={{ borderTop: '2px solid #1a4710' }}>
+                      <tr style={{ borderTop: '2px solid #405440' }}>
                         <td style={{ padding: '7px 8px 5px 0', fontWeight: 700 }}>{t('reportChargesGrandTotal')}</td>
                         <td style={{ padding: '7px 8px', color: '#64748b', fontSize: '0.8rem' }}>
                           {paymentMethods.reduce((s, pm) => s + (pm.count || 0), 0)} {t('reportPMBookings')}
                         </td>
-                        <td style={{ padding: '7px 0 5px 8px', fontWeight: 700, textAlign: 'right', color: '#1a4710' }}>
+                        <td style={{ padding: '7px 0 5px 8px', fontWeight: 700, textAlign: 'right', color: '#405440' }}>
                           {fmtMoney(paymentMethods.reduce((s, pm) => s + (pm.total || 0), 0))}
                         </td>
                       </tr>
@@ -1198,7 +1198,7 @@ ${plSection}
                         <div style={{ flex: 1, background: '#e2e8f0', borderRadius: 4, height: 14, overflow: 'hidden' }}>
                           <div style={{
                             width: `${mo.pct}%`, height: '100%', borderRadius: 4,
-                            background: mo.pct >= 80 ? '#166534' : mo.pct >= 50 ? '#1a4710' : '#4ade80',
+                            background: mo.pct >= 80 ? '#166534' : mo.pct >= 50 ? '#405440' : '#4ade80',
                             transition: 'width 0.3s ease',
                           }} />
                         </div>
@@ -1322,7 +1322,7 @@ ${plSection}
               fontFamily: 'inherit',
             }}
           >
-            <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1a2e14' }}>
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1C1C1E' }}>
               {t('reportBusinessExpenses')}
               <span style={{ marginLeft: 8, fontSize: '0.8rem', fontWeight: 400, color: '#94a3b8' }}>
                 {from} — {to}
@@ -1380,7 +1380,7 @@ ${plSection}
                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
                       <td style={{ padding: '8px 8px 8px 0', fontWeight: 700 }}>{t('reportPLTotalExpenses')}</td>
                       <td />
-                      <td style={{ padding: '8px 0 8px 8px', textAlign: 'right', fontWeight: 700, color: '#1a4710' }}>
+                      <td style={{ padding: '8px 0 8px 8px', textAlign: 'right', fontWeight: 700, color: '#405440' }}>
                         {fmtMoney(EXPENSE_CATS.reduce((s, k) => s + (Number(expenses[k].amount) || 0), 0))}
                       </td>
                     </tr>
@@ -1468,9 +1468,9 @@ ${plSection}
               {plSummary && (
                 <div style={{
                   margin: '0 20px 20px', padding: '18px 20px', borderRadius: 8,
-                  background: '#f0fdf4', border: '2px solid #1a4710',
+                  background: '#F4F3F0', border: '2px solid #405440',
                 }}>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1a4710', marginBottom: 14, letterSpacing: '0.01em' }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#405440', marginBottom: 14, letterSpacing: '0.01em' }}>
                     {t('reportPL')} — {from} to {to}
                   </div>
 
@@ -1515,9 +1515,9 @@ ${plSection}
                   {/* Net profit */}
                   <div style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-                    marginTop: 12, paddingTop: 10, borderTop: '3px double #1a4710',
+                    marginTop: 12, paddingTop: 10, borderTop: '3px double #405440',
                   }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1a2e14' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1C1C1E' }}>
                       {t('reportPLNetProfit')}
                     </span>
                     <span style={{
@@ -1593,14 +1593,14 @@ function PLRow({ label, value, bold, divider, muted }) {
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
       padding: divider ? '5px 0' : '3px 0',
-      borderTop: divider ? '1px solid #bbf7d0' : 'none',
+      borderTop: divider ? '1px solid #D8D3CB' : 'none',
       marginTop: divider ? 4 : 0,
       fontSize: '0.875rem',
     }}>
       <span style={{ color: muted ? '#92400e' : '#374151', flex: 1 }}>{label}</span>
       <span style={{
         fontWeight: bold ? 700 : 500,
-        color: muted ? '#b45309' : '#1a2e14',
+        color: muted ? '#b45309' : '#1C1C1E',
         minWidth: 90, textAlign: 'right',
       }}>
         {value}

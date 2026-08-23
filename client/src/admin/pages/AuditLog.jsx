@@ -145,8 +145,8 @@ export default function AuditLog() {
           onClick={downloadCsv}
           disabled={csvLoading}
           style={{
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #1a4710',
-            background: csvLoading ? '#f8fafc' : '#1a4710', color: csvLoading ? '#94a3b8' : '#fff',
+            padding: '6px 14px', borderRadius: 6, border: '1px solid #405440',
+            background: csvLoading ? '#f8fafc' : '#405440', color: csvLoading ? '#94a3b8' : '#fff',
             fontWeight: 600, fontSize: '0.83rem', cursor: csvLoading ? 'not-allowed' : 'pointer',
             fontFamily: 'inherit', whiteSpace: 'nowrap',
           }}

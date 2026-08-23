@@ -50,9 +50,9 @@ function formatCheckInTime(timeStr, locale) {
 
 const WP_STATUS_COLOURS = {
   pending_owner_approval: { color: '#92400e', bg: '#fef3c7', border: '#f59e0b' },
-  confirmed:              { color: '#1a4710', bg: '#f0fdf4', border: '#d9f0cc' },
+  confirmed:              { color: '#405440', bg: '#F4F3F0', border: '#D8D3CB' },
   arriving:               { color: '#92400e', bg: '#fef3c7', border: '#f59e0b' },
-  in_house:               { color: '#166534', bg: '#dcfce7', border: '#bbf7d0' },
+  in_house:               { color: '#166534', bg: '#dcfce7', border: '#D8D3CB' },
   checked_out:            { color: '#475569', bg: '#f8fafc', border: '#e2e8f0' },
   cancelled:              { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
   declined:               { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
@@ -445,8 +445,8 @@ export default function Dashboard() {
         );
         if (daysLeft <= 0 || daysLeft > 30) return null;
 
-        const bg  = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#f0fdf4';
-        const bdr = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#d9f0cc';
+        const bg  = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#F4F3F0';
+        const bdr = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#D8D3CB';
         const clr = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#92400e' : '#166534';
         const lnk = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
         const ico = daysLeft <= 7 ? 'ti-alert-triangle' : daysLeft <= 14 ? 'ti-clock' : 'ti-info-circle';

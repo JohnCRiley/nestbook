@@ -7,7 +7,7 @@ import IconPicker from './IconPicker.jsx';
 
 function Btn({ children, onClick, variant = 'primary', small, disabled }) {
   const s = {
-    primary:   { background: '#1a4710', color: '#fff', border: 'none' },
+    primary:   { background: '#405440', color: '#fff', border: 'none' },
     secondary: { background: '#fff', color: '#374151', border: '1px solid #d1d5db' },
     danger:    { background: '#fff', color: '#dc2626', border: '1px solid #fca5a5' },
   }[variant];
@@ -228,9 +228,9 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                   style={{
                     fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
                     fontFamily: 'monospace', fontWeight: 600,
-                    border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
-                    background: htmlMode ? '#d9f0cc' : '#f8fafc',
-                    color: htmlMode ? '#1a4710' : '#64748b',
+                    border: `1px solid ${htmlMode ? '#405440' : '#d1d5db'}`,
+                    background: htmlMode ? '#F4F3F0' : '#f8fafc',
+                    color: htmlMode ? '#405440' : '#64748b',
                   }}
                 >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
               </div>
@@ -245,7 +245,7 @@ export default function TemplateManager({ apiBase, bodyField = 'body', onClose, 
                   placeholder="Paste raw HTML here — rendered as-is in the email"
                   style={{
                     width: '100%', height: 220, fontFamily: 'monospace', fontSize: '0.78rem',
-                    border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
+                    border: '1px solid #405440', borderRadius: 8, padding: '10px 12px',
                     resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
                     boxSizing: 'border-box',
                   }}

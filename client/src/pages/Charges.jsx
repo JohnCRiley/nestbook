@@ -31,7 +31,7 @@ function UpgradeGate() {
   return (
     <div style={{ padding: '40px 24px', maxWidth: 520, margin: '0 auto', textAlign: 'center' }}>
       <div style={{ marginBottom: 16, color: 'var(--accent)' }}><BuildingIcon size={40} /></div>
-      <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 10, color: '#1a2e14' }}>
+      <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 10, color: '#1C1C1E' }}>
         {t('chargesUpgradeTitle')}
       </div>
       <div style={{ color: '#64748b', lineHeight: 1.6, marginBottom: 24 }}>

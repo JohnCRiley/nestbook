@@ -316,7 +316,7 @@ export default function ProspectFinder() {
               padding: '7px 18px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: '0.85rem',
               cursor: isSearching ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
               background: mode === t.key ? '#fff' : 'transparent',
-              color: mode === t.key ? '#1a4710' : '#64748b',
+              color: mode === t.key ? '#405440' : '#64748b',
               boxShadow: mode === t.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
             }}
           >
@@ -429,7 +429,7 @@ export default function ProspectFinder() {
                   checked={types.has(t)}
                   onChange={() => toggleType(t)}
                   disabled={isSearching}
-                  style={{ accentColor: '#1a4710', width: 14, height: 14, cursor: isSearching ? 'default' : 'pointer' }}
+                  style={{ accentColor: '#405440', width: 14, height: 14, cursor: isSearching ? 'default' : 'pointer' }}
                 />
                 {t}
               </label>
@@ -443,7 +443,7 @@ export default function ProspectFinder() {
           style={{
             width: '100%', padding: '11px 0', borderRadius: 8, border: 'none', fontWeight: 700,
             fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: (isSearching || (mode === 'search' && !area.trim()) || types.size === 0) ? '#a3bfa3' : '#1a4710',
+            background: (isSearching || (mode === 'search' && !area.trim()) || types.size === 0) ? '#a3bfa3' : '#405440',
             color: '#fff',
             cursor: (isSearching || (mode === 'search' && !area.trim()) || types.size === 0) ? 'not-allowed' : 'pointer',
           }}
@@ -467,7 +467,7 @@ export default function ProspectFinder() {
           {progress && (
             <>
               <div style={{ background: '#f1f5f9', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 99, background: '#1a4710', width: `${pct}%`, transition: 'width 0.3s ease' }} />
+                <div style={{ height: '100%', borderRadius: 99, background: '#405440', width: `${pct}%`, transition: 'width 0.3s ease' }} />
               </div>
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 6 }}>{progress.current} of {progress.total}</div>
             </>
@@ -484,7 +484,7 @@ export default function ProspectFinder() {
               <span style={{ fontWeight: 600 }}>{results.length} properties</span>
               <span style={{ color: '#15803d', fontWeight: 700 }}> · {emailsFound} emails found</span>
               {chainCount > 0 && <span style={{ color: '#b45309' }}> · {chainCount} possible chain{chainCount !== 1 ? 's' : ''} flagged</span>}
-              {selected.size > 0 && <span style={{ color: '#1a4710' }}> · {selected.size} selected</span>}
+              {selected.size > 0 && <span style={{ color: '#405440' }}> · {selected.size} selected</span>}
               {gridPoints != null && <span style={{ color: '#64748b' }}> · {gridPoints} grid points</span>}
               {detailCallsUsed != null && (
                 <span style={{ color: '#64748b' }} title="Places Details API calls used by this sweep — check spend in Google Cloud Console">
@@ -511,7 +511,7 @@ export default function ProspectFinder() {
                 style={{
                   padding: '7px 16px', borderRadius: 7, border: 'none', fontWeight: 600, fontSize: '0.85rem',
                   display: 'flex', alignItems: 'center', gap: 6,
-                  background: selected.size === 0 ? '#e2e8f0' : '#1a4710',
+                  background: selected.size === 0 ? '#e2e8f0' : '#405440',
                   color: selected.size === 0 ? '#94a3b8' : '#fff',
                   cursor: selected.size === 0 ? 'not-allowed' : 'pointer',
                 }}
@@ -532,7 +532,7 @@ export default function ProspectFinder() {
                       type="checkbox"
                       checked={results.length > 0 && selected.size === results.length}
                       onChange={() => selected.size === results.length ? deselectAll() : selectAll()}
-                      style={{ accentColor: '#1a4710' }}
+                      style={{ accentColor: '#405440' }}
                       title="Select / deselect all"
                     />
                   </th>
@@ -547,7 +547,7 @@ export default function ProspectFinder() {
                   const badge      = statusBadge(r.status);
                   const chain      = isChain(r.website);
                   const isSelected = selected.has(i);
-                  const rowBg      = isSelected ? '#f0fdf4' : chain ? '#fffbeb' : 'transparent';
+                  const rowBg      = isSelected ? '#F4F3F0' : chain ? '#fffbeb' : 'transparent';
                   return (
                     <tr
                       key={i}
@@ -560,7 +560,7 @@ export default function ProspectFinder() {
                           checked={isSelected}
                           onChange={() => toggleSelect(i)}
                           onClick={e => e.stopPropagation()}
-                          style={{ accentColor: '#1a4710' }}
+                          style={{ accentColor: '#405440' }}
                         />
                       </td>
                       <td style={{ padding: '8px 12px', fontWeight: 500, color: '#1e293b', maxWidth: 200 }}>
@@ -578,7 +578,7 @@ export default function ProspectFinder() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={e => e.stopPropagation()}
-                            style={{ color: '#1a4710', fontSize: '0.78rem', wordBreak: 'break-all' }}
+                            style={{ color: '#405440', fontSize: '0.78rem', wordBreak: 'break-all' }}
                           >
                             {r.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                           </a>

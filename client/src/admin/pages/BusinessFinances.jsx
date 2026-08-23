@@ -834,7 +834,7 @@ function MaintenanceSection() {
         <div style={{
           marginTop: 12, padding: '8px 12px', borderRadius: 6,
           background: '#0f172a', border: '1px solid #334155',
-          fontSize: '0.82rem', color: '#86efac', fontFamily: 'monospace',
+          fontSize: '0.82rem', color: '#F4F3F0', fontFamily: 'monospace',
         }}>
           ✓ {result}
         </div>

@@ -71,8 +71,8 @@ const ICON_GROUPS = {
 };
 
 const COLOR_OPTIONS = [
-  { key: 'green', label: 'Green',  hex: '#1a4710', textColor: '#fff' },
-  { key: 'white', label: 'White',  hex: '#ffffff', textColor: '#374151', border: '#d1d5db', previewBg: '#1a4710' },
+  { key: 'green', label: 'Green',  hex: '#405440', textColor: '#fff' },
+  { key: 'white', label: 'White',  hex: '#ffffff', textColor: '#374151', border: '#d1d5db', previewBg: '#405440' },
   { key: 'red',   label: 'Red',    hex: '#dc2626', textColor: '#fff' },
 ];
 
@@ -136,8 +136,8 @@ export default function IconPicker({ onInsert, onClose }) {
                 style={{
                   width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
                   background: c.hex,
-                  border: color === c.key ? '2.5px solid #1a4710' : `1.5px solid ${c.border ?? c.hex}`,
-                  boxShadow: color === c.key ? '0 0 0 2px #d9f0cc' : 'none',
+                  border: color === c.key ? '2.5px solid #405440' : `1.5px solid ${c.border ?? c.hex}`,
+                  boxShadow: color === c.key ? '0 0 0 2px #F4F3F0' : 'none',
                   position: 'relative',
                   transition: 'box-shadow 0.1s',
                 }}
@@ -167,12 +167,12 @@ export default function IconPicker({ onInsert, onClose }) {
                     title={name}
                     style={{
                       width: 44, height: 44, borderRadius: 7, border: '1px solid #e2e8f0',
-                      background: color === 'white' ? '#1a4710' : '#f8fafc',
+                      background: color === 'white' ? '#405440' : '#f8fafc',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       padding: 0, transition: 'border-color 0.1s, background 0.1s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#1a4710'; e.currentTarget.style.background = color === 'white' ? '#0f2d08' : '#f0fdf4'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = color === 'white' ? '#1a4710' : '#f8fafc'; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#405440'; e.currentTarget.style.background = color === 'white' ? '#0f2d08' : '#F4F3F0'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = color === 'white' ? '#405440' : '#f8fafc'; }}
                   >
                     <img
                       src={`/images/email-icons/${name}-${color}.png`}

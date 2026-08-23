@@ -376,7 +376,7 @@ function LineRow({ label, value, bold, valueStyle }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '3px 0', fontSize: '0.88rem' }}>
       <span style={{ color: '#4b5563' }}>{label}</span>
-      <span style={{ fontWeight: bold ? 700 : 500, color: '#1a2e14', ...valueStyle }}>{value}</span>
+      <span style={{ fontWeight: bold ? 700 : 500, color: '#1C1C1E', ...valueStyle }}>{value}</span>
     </div>
   );
 }

@@ -391,7 +391,7 @@ function BookingRow({ booking: b, isSelected, onClick }) {
           <span style={{
             display: 'inline-block', marginLeft: 6,
             fontSize: '0.72rem', padding: '2px 7px', borderRadius: 4, fontWeight: 600,
-            background: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#f0fdf4'
+            background: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#F4F3F0'
                       : b.cleaning_status === 'in_progress' ? '#dbeafe'
                       : '#fef2f2',
             color: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#166534'
@@ -451,7 +451,7 @@ function BookingCard({ booking: b, isSelected, onClick }) {
           marginTop: 6,
           fontSize: '0.72rem', padding: '2px 7px', borderRadius: 4, fontWeight: 600,
           display: 'inline-block',
-          background: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#f0fdf4'
+          background: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#F4F3F0'
                     : b.cleaning_status === 'in_progress' ? '#dbeafe'
                     : '#fef2f2',
           color: b.cleaning_status === 'completed' || b.cleaning_status === 'not_required' ? '#166534'

@@ -308,9 +308,9 @@ export default function UserMailer() {
             style={{
               padding: '6px 16px', borderRadius: 6, border: '1px solid',
               fontWeight: 500, fontSize: '0.875rem', cursor: 'pointer',
-              background: tab === t ? '#1a4710' : '#fff',
+              background: tab === t ? '#405440' : '#fff',
               color:      tab === t ? '#fff' : '#374151',
-              borderColor: tab === t ? '#1a4710' : '#d1d5db',
+              borderColor: tab === t ? '#405440' : '#d1d5db',
             }}
           >
             {t === 'compose' ? 'Compose' : 'History'}
@@ -371,9 +371,9 @@ export default function UserMailer() {
                   style={{
                     fontSize: '0.75rem', padding: '3px 10px', borderRadius: 5, cursor: 'pointer',
                     fontFamily: 'monospace', fontWeight: 600,
-                    border: `1px solid ${htmlMode ? '#1a4710' : '#d1d5db'}`,
-                    background: htmlMode ? '#d9f0cc' : '#f8fafc',
-                    color: htmlMode ? '#1a4710' : '#64748b',
+                    border: `1px solid ${htmlMode ? '#405440' : '#d1d5db'}`,
+                    background: htmlMode ? '#F4F3F0' : '#f8fafc',
+                    color: htmlMode ? '#405440' : '#64748b',
                   }}
                 >&lt;&gt; {htmlMode ? 'HTML mode' : 'HTML'}</button>
               </div>
@@ -389,7 +389,7 @@ export default function UserMailer() {
                 placeholder="Paste raw HTML here — rendered as-is in the email"
                 style={{
                   width: '100%', height: 300, fontFamily: 'monospace', fontSize: '0.78rem',
-                  border: '1px solid #1a4710', borderRadius: 8, padding: '10px 12px',
+                  border: '1px solid #405440', borderRadius: 8, padding: '10px 12px',
                   resize: 'vertical', lineHeight: 1.5, color: '#1e293b', background: '#f8fff6',
                   boxSizing: 'border-box',
                 }}
@@ -470,7 +470,7 @@ export default function UserMailer() {
                                 key={u.id}
                                 style={{
                                   display: 'inline-flex', alignItems: 'center', gap: 4,
-                                  background: '#e0f0d8', color: '#1a4710',
+                                  background: '#e0f0d8', color: '#405440',
                                   borderRadius: 20, padding: '2px 8px',
                                   fontSize: '0.75rem', fontWeight: 500,
                                 }}
@@ -478,7 +478,7 @@ export default function UserMailer() {
                                 {u.name || u.email}
                                 <button
                                   onClick={() => removeUser(u.id)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a4710', padding: 0, fontSize: '0.7rem', lineHeight: 1 }}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#405440', padding: 0, fontSize: '0.7rem', lineHeight: 1 }}
                                 >
                                   ✕
                                 </button>
@@ -524,7 +524,7 @@ export default function UserMailer() {
           </div>
 
           {/* Recipient count summary */}
-          <div style={{ fontSize: '0.85rem', color: '#374151', padding: '8px 12px', background: '#f0fdf4', borderRadius: 6, border: '1px solid #d1fae5' }}>
+          <div style={{ fontSize: '0.85rem', color: '#374151', padding: '8px 12px', background: '#F4F3F0', borderRadius: 6, border: '1px solid #d1fae5' }}>
             <strong>Send to:</strong> {recipientSummary()}
           </div>
 
@@ -534,7 +534,7 @@ export default function UserMailer() {
             </div>
           )}
           {sendResult && (
-            <div style={{ background: '#f0fdf4', color: '#166534', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
+            <div style={{ background: '#F4F3F0', color: '#166534', padding: '8px 12px', borderRadius: 6, fontSize: '0.85rem' }}>
               Broadcast started — sending to {sendResult.recipientCount?.toLocaleString()} recipients
               {sendResult.adhocCount > 0 ? ` (${sendResult.adhocCount} ad-hoc)` : ''}. Check History for progress.
             </div>
@@ -555,7 +555,7 @@ export default function UserMailer() {
               {testSending ? 'Sending…' : 'Send Test →'}
             </button>
             {testMsg && (
-              <span style={{ fontSize: '0.8rem', color: testMsg.startsWith('Test sent') ? '#16a34a' : '#dc2626' }}>
+              <span style={{ fontSize: '0.8rem', color: testMsg.startsWith('Test sent') ? '#405440' : '#dc2626' }}>
                 {testMsg}
               </span>
             )}
@@ -564,7 +564,7 @@ export default function UserMailer() {
               disabled={!canSend || sending || totalCount === 0}
               style={{
                 padding: '8px 18px', borderRadius: 7, border: 'none',
-                background: '#1a4710', color: '#fff', fontWeight: 600,
+                background: '#405440', color: '#fff', fontWeight: 600,
                 fontSize: '0.875rem', cursor: 'pointer', marginLeft: 'auto',
                 opacity: canSend && !sending && totalCount > 0 ? 1 : 0.5,
               }}

@@ -210,7 +210,7 @@ export default function ContentReview() {
   }
 
   const tabStyle = (active) => ({
-    padding: '8px 20px', border: 'none', background: active ? '#1a4710' : 'transparent',
+    padding: '8px 20px', border: 'none', background: active ? '#405440' : 'transparent',
     color: active ? '#fff' : '#64748b', borderRadius: 7, fontWeight: active ? 600 : 400,
     fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit',
   });
@@ -308,7 +308,7 @@ function FlagCard({ flag, showHistory, onReview, onQuickVerify }) {
               </button>
               <button
                 onClick={onReview}
-                style={{ padding: '5px 12px', background: '#1a4710', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ padding: '5px 12px', background: '#405440', color: '#fff', border: 'none', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 Review →
               </button>

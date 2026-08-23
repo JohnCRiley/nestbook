@@ -229,13 +229,13 @@ function AccountSubscriptionCard() {
       {/* ── Billing flash message ─────────────────────────────────────────── */}
       {billingMessage && (
         <div style={{
-          background: billingMessage.type === 'success' ? '#f0fdf4' : billingMessage.type === 'info' ? '#f8fafc' : '#fef2f2',
-          border: `1px solid ${billingMessage.type === 'success' ? '#d9f0cc' : billingMessage.type === 'info' ? '#e2e8f0' : '#fecaca'}`,
+          background: billingMessage.type === 'success' ? '#F4F3F0' : billingMessage.type === 'info' ? '#f8fafc' : '#fef2f2',
+          border: `1px solid ${billingMessage.type === 'success' ? '#D8D3CB' : billingMessage.type === 'info' ? '#e2e8f0' : '#fecaca'}`,
           borderRadius: 8, padding: '12px 16px', marginBottom: 16,
           display: 'flex', alignItems: 'flex-start', gap: 10,
         }}>
           <i className={`ti ${billingMessage.type === 'success' ? 'ti-circle-check' : billingMessage.type === 'info' ? 'ti-info-circle' : 'ti-alert-circle'}`}
-             style={{ color: billingMessage.type === 'success' ? '#16a34a' : billingMessage.type === 'info' ? '#64748b' : '#dc2626', marginTop: 1, flexShrink: 0 }} />
+             style={{ color: billingMessage.type === 'success' ? '#405440' : billingMessage.type === 'info' ? '#64748b' : '#dc2626', marginTop: 1, flexShrink: 0 }} />
           <span style={{ fontSize: '0.875rem', color: billingMessage.type === 'success' ? '#166534' : billingMessage.type === 'info' ? '#475569' : '#991b1b', lineHeight: 1.5 }}>
             {billingMessage.text}
           </span>
@@ -256,9 +256,9 @@ function AccountSubscriptionCard() {
           day: 'numeric', month: 'long',
         });
         const headerBg    = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#b45309' : 'var(--header-bg)';
-        const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#f0fdf4';
-        const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#d9f0cc';
-        const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#1a4710';
+        const urgencyBg   = daysLeft <= 7 ? '#fef2f2' : daysLeft <= 14 ? '#fef3c7' : '#F4F3F0';
+        const urgencyBdr  = daysLeft <= 7 ? '#fca5a5' : daysLeft <= 14 ? '#f59e0b' : '#D8D3CB';
+        const urgencyAcct = daysLeft <= 7 ? '#dc2626' : daysLeft <= 14 ? '#f59e0b' : '#405440';
         const urgencyText = daysLeft <= 7 ? '#7f1d1d' : daysLeft <= 14 ? '#78350f' : '#166534';
         const btnBg       = daysLeft <= 7 ? '#dc2626' : 'var(--accent)';
 
