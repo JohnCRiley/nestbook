@@ -5,6 +5,7 @@ import fs from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
 import db from '../db/database.js';
+import { cleanupFile } from '../utils/fileCleanup.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOM_UPLOAD_DIR = join(__dirname, '../uploads/rooms');
@@ -133,9 +134,9 @@ roomPhotosRouter.post('/:roomId/photos', upload.single('photo'), async (req, res
     });
   } catch (err) {
     if (req.file?.path) {
-      try { fs.unlinkSync(req.file.path); } catch {}
-      try { fs.unlinkSync(req.file.path + '.tmp'); } catch {}
-      try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, `thumb_${req.file.filename}`)); } catch {}
+      cleanupFile(req.file.path);
+      cleanupFile(req.file.path + '.tmp');
+      cleanupFile(join(ROOM_UPLOAD_DIR, `thumb_${req.file.filename}`));
     }
     res.status(500).json({ error: err.message });
   }
@@ -179,9 +180,9 @@ roomPhotosRouter.delete('/:roomId/photos/:photoId', (req, res) => {
     if (!photo) return res.status(404).json({ error: 'Photo not found.' });
 
     db.prepare('DELETE FROM room_photos WHERE id = ?').run(photoId);
-    try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, photo.filename)); } catch {}
+    cleanupFile(join(ROOM_UPLOAD_DIR, photo.filename));
     if (photo.thumb_filename) {
-      try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, photo.thumb_filename)); } catch {}
+      cleanupFile(join(ROOM_UPLOAD_DIR, photo.thumb_filename));
     }
     res.status(204).end();
   } catch (err) {

@@ -9,6 +9,7 @@ import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import { requireVerified } from '../middleware/requireVerified.js';
+import { cleanupFile } from '../utils/fileCleanup.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Same physical folder WP's property-level access photos already use
@@ -518,11 +519,11 @@ roomsRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), async (
     const roomId = Number(req.params.id);
     const eligibility = unitAccessEligibility(roomId);
     if (!eligibility.ok) {
-      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      if (req.file) cleanupFile(req.file.path);
       return res.status(eligibility.status).json({ error: eligibility.error });
     }
     if (!canAccessProperty(req.user.userId, req.user.role, eligibility.room.property_id)) {
-      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      if (req.file) cleanupFile(req.file.path);
       return res.status(403).json({ error: 'Access denied.' });
     }
     if (!req.file) return res.status(400).json({ error: 'No photo uploaded' });
@@ -536,17 +537,17 @@ roomsRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), async (
       .jpeg({ quality: 85 })
       .toFile(outputPath);
 
-    try { fs.unlinkSync(req.file.path); } catch {}
+    cleanupFile(req.file.path);
 
     if (existing?.access_photo) {
-      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, existing.access_photo)); } catch {}
+      cleanupFile(join(ACCESS_PHOTO_DIR, existing.access_photo));
     }
 
     db.prepare('UPDATE rooms SET access_photo = ? WHERE id = ?').run(filename, roomId);
     console.log(`[access-photo] Uploaded for room ${roomId}: ${filename}`);
     res.json({ success: true, filename });
   } catch (err) {
-    if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+    if (req.file) cleanupFile(req.file.path);
     console.error('[access-photo]', err.message);
     res.status(500).json({ error: err.message });
   }
@@ -561,7 +562,7 @@ roomsRouter.delete('/:id/access-photo', (req, res) => {
       return res.status(403).json({ error: 'Access denied.' });
     }
     if (roomRow.access_photo) {
-      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, roomRow.access_photo)); } catch {}
+      cleanupFile(join(ACCESS_PHOTO_DIR, roomRow.access_photo));
       db.prepare('UPDATE rooms SET access_photo = NULL WHERE id = ?').run(roomId);
     }
     res.json({ success: true });

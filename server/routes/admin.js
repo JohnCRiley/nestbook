@@ -11,6 +11,7 @@ import { outreachRouter } from './outreach.js';
 import { prospectFinderRouter } from './prospectFinder.js';
 import { userMailerRouter } from './userMailer.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
+import { cleanupFile } from '../utils/fileCleanup.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
@@ -1599,7 +1600,7 @@ adminRouter.post('/blog-images/:slug', async (req, res) => {
     const { slug } = req.params;
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
     if (!isValidBlogSlug(slug)) {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      cleanupFile(req.file.path);
       return res.status(404).json({ error: 'Unknown blog post.' });
     }
 
@@ -1610,7 +1611,7 @@ adminRouter.post('/blog-images/:slug', async (req, res) => {
       .jpeg({ quality: 85 })
       .toFile(outputPath);
 
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    cleanupFile(req.file.path);
 
     const imgSize = Math.round(fs.statSync(outputPath).size / 1024) + 'KB';
     console.log(`[blog-images] Uploaded image for: ${slug} (${imgSize})`);
@@ -1692,7 +1693,7 @@ adminRouter.post('/landing-images/:id', landingImageUpload.single('image'), asyn
       .resize(1600, null, { withoutEnlargement: true })
       .jpeg({ quality: 90 })
       .toFile(outputPath);
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    cleanupFile(req.file.path);
 
     const size = Math.round(fs.statSync(outputPath).size / 1024) + 'KB';
     console.log(`[landing-images] Uploaded ${slot.id}: ${size}`);
@@ -1849,14 +1850,14 @@ adminRouter.post('/content-flags/:id/remove', async (req, res) => {
       const photo = db.prepare('SELECT * FROM room_photos WHERE filename = ? AND room_id = ?').get(flag.content_ref, flag.room_id);
       if (photo) {
         db.prepare('DELETE FROM room_photos WHERE id = ?').run(photo.id);
-        try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, photo.filename)); } catch {}
-        if (photo.thumb_filename) { try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, photo.thumb_filename)); } catch {} }
+        cleanupFile(join(ROOM_UPLOAD_DIR, photo.filename));
+        if (photo.thumb_filename) { cleanupFile(join(ROOM_UPLOAD_DIR, photo.thumb_filename)); }
       }
     } else if (flag.content_type === 'hero_photo') {
       const prop = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(flag.property_id);
       if (prop?.hero_photo === flag.content_ref) {
         db.prepare('UPDATE properties SET hero_photo = NULL WHERE id = ?').run(flag.property_id);
-        try { fs.unlinkSync(join(PROP_UPLOAD_DIR, prop.hero_photo)); } catch {}
+        cleanupFile(join(PROP_UPLOAD_DIR, prop.hero_photo));
       }
     } else if (flag.content_type === 'property_description') {
       db.prepare('UPDATE properties SET description = NULL WHERE id = ?').run(flag.property_id);

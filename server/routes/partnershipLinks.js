@@ -5,6 +5,7 @@ import fs from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
 import db from '../db/database.js';
+import { cleanupFile as cleanup } from '../utils/fileCleanup.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = join(__dirname, '../uploads/partnerships');
@@ -41,8 +42,6 @@ function isPro(userId) {
   const u = db.prepare('SELECT plan FROM users WHERE id = ?').get(userId);
   return u?.plan === 'pro' || u?.plan === 'multi';
 }
-
-function cleanup(path) { try { fs.unlinkSync(path); } catch {} }
 
 export const partnershipLinksRouter = Router();
 

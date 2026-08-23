@@ -11,6 +11,7 @@ import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 import { seedCategories } from '../utils/categories.js';
 import { sanitizeBanner } from '../utils/sanitizeBanner.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
+import { cleanupFile } from '../utils/fileCleanup.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -563,13 +564,13 @@ propertiesRouter.delete('/:id/sample-data', (req, res) => {
 
     // Delete photo files after successful DB commit
     for (const p of photos) {
-      try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, p.filename)); } catch {}
+      cleanupFile(join(ROOM_UPLOAD_DIR, p.filename));
       if (p.thumb_filename) {
-        try { fs.unlinkSync(join(ROOM_UPLOAD_DIR, p.thumb_filename)); } catch {}
+        cleanupFile(join(ROOM_UPLOAD_DIR, p.thumb_filename));
       }
     }
     if (heroToDelete) {
-      try { fs.unlinkSync(join(PROP_UPLOAD_DIR, heroToDelete)); } catch {}
+      cleanupFile(join(PROP_UPLOAD_DIR, heroToDelete));
     }
 
     res.json({ success: true });
@@ -637,7 +638,7 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
     // Remove previous hero photo file if it exists
     const existing = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(propId);
     if (existing?.hero_photo) {
-      try { fs.unlinkSync(join(PROP_UPLOAD_DIR, existing.hero_photo)); } catch {}
+      cleanupFile(join(PROP_UPLOAD_DIR, existing.hero_photo));
     }
 
     db.prepare('UPDATE properties SET hero_photo = ?, hero_photo_is_sample = 0 WHERE id = ?').run(req.file.filename, propId);
@@ -647,8 +648,8 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
     res.json(_withSampleFlag(updated));
   } catch (err) {
     if (req.file?.path) {
-      try { fs.unlinkSync(req.file.path); } catch {}
-      try { fs.unlinkSync(req.file.path + '.tmp'); } catch {}
+      cleanupFile(req.file.path);
+      cleanupFile(req.file.path + '.tmp');
     }
     res.status(500).json({ error: err.message });
   }
@@ -663,7 +664,7 @@ propertiesRouter.delete('/:id/hero-photo', (req, res) => {
     }
     const existing = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(propId);
     if (existing?.hero_photo) {
-      try { fs.unlinkSync(join(PROP_UPLOAD_DIR, existing.hero_photo)); } catch {}
+      cleanupFile(join(PROP_UPLOAD_DIR, existing.hero_photo));
     }
     db.prepare('UPDATE properties SET hero_photo = NULL WHERE id = ?').run(propId);
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
@@ -690,7 +691,7 @@ propertiesRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), as
   try {
     const propId = Number(req.params.id);
     if (!canAccess(req.user.userId, req.user.role, propId)) {
-      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      if (req.file) cleanupFile(req.file.path);
       return res.status(403).json({ error: 'Access denied.' });
     }
     if (!req.file) return res.status(400).json({ error: 'No photo uploaded' });
@@ -704,17 +705,17 @@ propertiesRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), as
       .jpeg({ quality: 85 })
       .toFile(outputPath);
 
-    try { fs.unlinkSync(req.file.path); } catch {}
+    cleanupFile(req.file.path);
 
     if (existing?.access_photo) {
-      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, existing.access_photo)); } catch {}
+      cleanupFile(join(ACCESS_PHOTO_DIR, existing.access_photo));
     }
 
     db.prepare('UPDATE properties SET access_photo = ? WHERE id = ?').run(filename, propId);
     console.log(`[access-photo] Uploaded for property ${propId}: ${filename}`);
     res.json({ success: true, filename });
   } catch (err) {
-    if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+    if (req.file) cleanupFile(req.file.path);
     console.error('[access-photo]', err.message);
     res.status(500).json({ error: err.message });
   }
@@ -729,7 +730,7 @@ propertiesRouter.delete('/:id/access-photo', (req, res) => {
     }
     const existing = db.prepare('SELECT access_photo FROM properties WHERE id = ?').get(propId);
     if (existing?.access_photo) {
-      try { fs.unlinkSync(join(ACCESS_PHOTO_DIR, existing.access_photo)); } catch {}
+      cleanupFile(join(ACCESS_PHOTO_DIR, existing.access_photo));
       db.prepare('UPDATE properties SET access_photo = NULL WHERE id = ?').run(propId);
     }
     res.json({ success: true });
@@ -743,7 +744,7 @@ propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) =
   try {
     const propId = Number(req.params.id);
     if (!canAccess(req.user.userId, req.user.role, propId)) {
-      if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+      if (req.file) cleanupFile(req.file.path);
       return res.status(403).json({ error: 'Access denied.' });
     }
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
@@ -755,17 +756,17 @@ propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) =
       .resize(300, 300, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toFile(finalPath);
-    try { fs.unlinkSync(req.file.path); } catch {}
+    cleanupFile(req.file.path);
 
     const existing = db.prepare('SELECT logo_url FROM properties WHERE id = ?').get(propId);
     if (existing?.logo_url && existing.logo_url !== filename) {
-      try { fs.unlinkSync(join(LOGO_UPLOAD_DIR, existing.logo_url)); } catch {}
+      cleanupFile(join(LOGO_UPLOAD_DIR, existing.logo_url));
     }
 
     db.prepare('UPDATE properties SET logo_url = ? WHERE id = ?').run(filename, propId);
     res.json({ logo_url: filename });
   } catch (err) {
-    if (req.file) try { fs.unlinkSync(req.file.path); } catch {}
+    if (req.file) cleanupFile(req.file.path);
     res.status(500).json({ error: err.message });
   }
 });
@@ -779,7 +780,7 @@ propertiesRouter.delete('/:id/logo', (req, res) => {
     }
     const existing = db.prepare('SELECT logo_url FROM properties WHERE id = ?').get(propId);
     if (existing?.logo_url) {
-      try { fs.unlinkSync(join(LOGO_UPLOAD_DIR, existing.logo_url)); } catch {}
+      cleanupFile(join(LOGO_UPLOAD_DIR, existing.logo_url));
       db.prepare('UPDATE properties SET logo_url = NULL WHERE id = ?').run(propId);
     }
     res.json({ ok: true });
