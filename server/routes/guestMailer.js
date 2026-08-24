@@ -278,6 +278,7 @@ guestMailerRouter.get('/history', (req, res) => {
 // ── GET /api/guest-mailer/history/:id ────────────────────────────────────────
 guestMailerRouter.get('/history/:id', (req, res) => {
   try {
+    if (!requireProOwner(req, res)) return;
     const row = db.prepare(`
       SELECT gml.*, p.owner_id
       FROM guest_mailer_log gml
