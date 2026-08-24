@@ -142,7 +142,7 @@ export default function Pricing() {
       <p className="pricing-adaptive-note">{t('planAdaptivePricingNote')}</p>
       <p style={{ textAlign: 'center', marginTop: 20 }}>
         <a
-          href="/compare.html"
+          href="/compare"
           target="_blank"
           rel="noopener noreferrer"
           style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--color-muted)', textDecoration: 'underline' }}

@@ -101,6 +101,29 @@ app.use(express.json({ limit: '15mb' }));
 // Uploaded images — must be before the React SPA catch-all
 app.use('/uploads', express.static(join(__dirname, 'uploads')));
 
+// Canonical URL redirect: any request literally ending in .html (e.g. an old
+// bookmark, backlink, or search-engine result for /about.html) permanently
+// redirects to its extensionless equivalent. Must run before the static
+// handler below so the browser is redirected rather than served the file
+// directly at the non-canonical URL — the static handler's own
+// extensions:['html'] fallback then serves the extensionless request that
+// results from the redirect, so this doesn't fight that option, it just runs
+// one step earlier for the one specific case (a literal .html suffix) that
+// fallback option was never meant to canonicalize on its own.
+// Scoped away from /uploads and /app — neither is part of the extensionless
+// marketing-page convention, and /app's own index.html is handled by the SPA
+// static mount + fallback below, not by this rule.
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  if (req.path.startsWith('/uploads/') || req.path.startsWith('/app/')) return next();
+  if (!req.path.endsWith('.html')) return next();
+  const target = req.path.endsWith('/index.html')
+    ? req.path.slice(0, -'index.html'.length) || '/'
+    : req.path.slice(0, -'.html'.length);
+  const query = req.url.slice(req.path.length); // preserve ?query, if any
+  res.redirect(301, target + query);
+});
+
 // Landing page, widget.js
 // extensions:['html'] lets /about, /compare, /how-it-works etc. serve without the .html suffix
 app.use(express.static(join(__dirname, 'public'), { extensions: ['html'] }));

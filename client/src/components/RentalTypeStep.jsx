@@ -65,7 +65,7 @@ export function RentalTypeSelector({ form, setForm, t }) {
         <LockIcon size={13} style={{ marginRight: 5 }} />
         {t('onboard.rentalTypeLockNote')}{' '}
         <a
-          href="https://nestbook.io/help.html#getting-started"
+          href="https://nestbook.io/help#getting-started"
           target="_blank"
           rel="noreferrer"
           style={{ color: '#92400e', textDecoration: 'underline' }}

@@ -23,7 +23,7 @@
     var msg = document.createElement('span');
     msg.style.cssText = 'flex:1;min-width:200px;';
     msg.innerHTML = 'We use cookies to improve your experience on NestBook. ' +
-      '<a href="/cookies.html" style="color:#f0ede8;text-decoration:underline;">Learn more</a>';
+      '<a href="/cookies" style="color:#f0ede8;text-decoration:underline;">Learn more</a>';
 
     var btn = document.createElement('button');
     btn.textContent = 'Got it';

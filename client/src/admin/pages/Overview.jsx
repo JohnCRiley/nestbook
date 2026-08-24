@@ -80,7 +80,7 @@ const DOWNLOADABLE_RESOURCES = [
     key: 'calculator',
     title: 'Commission Calculator',
     desc: 'Password-protected sales tool — for OTA cost comparison',
-    url: 'https://nestbook.io/calculator.html',
+    url: 'https://nestbook.io/calculator',
     icon: 'calculator',
   },
   {

@@ -260,7 +260,7 @@ export default function Register() {
 
               <p style={{ fontSize: '0.83rem', marginBottom: 20, color: '#405440' }}>
                 {t('register.notSureYet')}{' '}
-                <a href="/compare.html" style={{ color: '#405440', fontWeight: 600, textDecoration: 'underline' }}>
+                <a href="/compare" style={{ color: '#405440', fontWeight: 600, textDecoration: 'underline' }}>
                   {t('register.seeWhatsIncluded')}
                 </a>
               </p>

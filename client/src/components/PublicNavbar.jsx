@@ -83,7 +83,7 @@ export default function PublicNavbar() {
             <a href="/how-it-works">{t('nav.hiw')}</a>
             <a href="/#features">{t('nav.features')}</a>
             <a href="/#pricing">{t('nav.pricing')}</a>
-            <a href="/compare.html">{t('nav.compare')}</a>
+            <a href="/compare">{t('nav.compare')}</a>
             <a href="/blog/">{t('nav.blog')}</a>
             <a href="/book/domaine-des-lavandes">{t('nav.demo')}</a>
           </div>
