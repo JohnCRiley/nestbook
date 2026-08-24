@@ -1367,9 +1367,9 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Facebook Booking Button & slug editor — available on all plans */}
+          {/* Facebook Action Button & slug editor — available on all plans */}
           <div style={{ marginTop: 16 }}>
-            <FacebookBookingSection
+            <FacebookActionSection
               property={property}
               onSaved={(updated) => { setProperty(updated); setContextProperty(updated); updatePropertyInList(updated); }}
             />
@@ -2410,9 +2410,9 @@ function EmbedSection({ snippet, t, propertyId }) {
   );
 }
 
-// ── FacebookBookingSection ────────────────────────────────────────────────────
+// ── FacebookActionSection ─────────────────────────────────────────────────────
 
-function FacebookBookingSection({ property, onSaved }) {
+function FacebookActionSection({ property, onSaved }) {
   const t = useT();
   const [slug,       setSlug]       = useState(property?.booking_slug ?? '');
   const [slugError,  setSlugError]  = useState('');
