@@ -288,12 +288,13 @@ propertiesRouter.put('/:id', (req, res) => {
       wifi_network_name, wifi_password,
       guest_notes_enabled,
       special_banner_enabled, special_banner_title, special_banner_text,
+      custom_section_title, custom_section_body,
       house_rules, local_tips,
       at_a_glance_facts,
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
       lock_rental_type, ir_room_mode,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method, custom_section_title, custom_section_body FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     // Same not-sent-vs-cleared pattern as ir_room_mode below: only overwritten
@@ -368,6 +369,7 @@ propertiesRouter.put('/:id', (req, res) => {
           wifi_network_name = ?, wifi_password = ?,
           guest_notes_enabled = ?,
           special_banner_enabled = ?, special_banner_title = ?, special_banner_text = ?,
+          custom_section_title = ?, custom_section_body = ?,
           house_rules = ?, local_tips = ?,
           at_a_glance_facts = ?,
           un_sub_type = ?, walk_in_enabled = ?, booking_flow = ?,
@@ -417,6 +419,8 @@ propertiesRouter.put('/:id', (req, res) => {
       special_banner_enabled ? 1 : 0,
       special_banner_title?.trim().slice(0, 50) || null,
       sanitizeBanner(special_banner_text?.trim()) || null,
+      custom_section_title?.trim().slice(0, 100) || null,
+      sanitizeBanner(custom_section_body?.trim()) || null,
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       normalizeAtAGlanceFacts(at_a_glance_facts),
@@ -429,6 +433,22 @@ propertiesRouter.put('/:id', (req, res) => {
     if (description && description !== existing?.description) {
       db.prepare(`INSERT INTO content_flags (property_id, content_type, preview_text) VALUES (?, 'property_description', ?)`)
         .run(req.params.id, description);
+    }
+
+    // Custom Section — flag on every edit, same "diff against previous value"
+    // convention as property_description/room_description above, rather than
+    // only the first time content is added.
+    {
+      const newSectionTitle = custom_section_title?.trim().slice(0, 100) || null;
+      const newSectionBody  = sanitizeBanner(custom_section_body?.trim()) || null;
+      const sectionChanged = (newSectionTitle !== (existing?.custom_section_title ?? null))
+        || (newSectionBody !== (existing?.custom_section_body ?? null));
+      if (sectionChanged && (newSectionTitle || newSectionBody)) {
+        const bodyPreview = (newSectionBody || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        const preview = [newSectionTitle, bodyPreview].filter(Boolean).join(': ').slice(0, 300);
+        db.prepare(`INSERT INTO content_flags (property_id, content_type, preview_text) VALUES (?, 'custom_section', ?)`)
+          .run(req.params.id, preview);
+      }
     }
 
     const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(req.params.id);

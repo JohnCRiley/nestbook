@@ -31,9 +31,24 @@ export const PROPERTY_GROUPS = [
     { value: 'resort_villa', label: 'Resort Villa' },
   ]},
   { group: 'Other', options: [
-    { value: 'other', label: 'Other' },
+    { value: 'pet_retreat', label: 'Pet Retreat' },
+    { value: 'other',       label: 'Other' },
   ]},
 ];
+
+// Translated label for a property-type value — falls back to the English
+// label (then the raw value) if a locale is missing the prop.* key, same
+// fallback convention as t() itself.
+export function propTypeLabel(t, value) {
+  const key = `prop.${value}`;
+  const translated = t(key);
+  if (translated !== key) return translated;
+  for (const grp of PROPERTY_GROUPS) {
+    const opt = grp.options.find(o => o.value === value);
+    if (opt) return opt.label;
+  }
+  return value;
+}
 
 // Property types that default to Whole Property rental mode when chosen —
 // shared between Onboarding (property-type step) and the Add Property flow.

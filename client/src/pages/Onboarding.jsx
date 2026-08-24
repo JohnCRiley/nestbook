@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
-import { PROPERTY_GROUPS, WHOLE_PROPERTY_TYPES } from '../utils/propertyTypes.js';
+import { PROPERTY_GROUPS, WHOLE_PROPERTY_TYPES, propTypeLabel } from '../utils/propertyTypes.js';
 import { RentalTypeSelector, UnSubTypeSelector, IrRoomModeSelector } from '../components/RentalTypeStep.jsx';
 
 const CURRENCIES = [
@@ -31,14 +31,6 @@ function shouldSkipBreakfast(form) {
   if (form.rental_type === 'whole_property') return true;
   if (form.rental_type === 'units') return form.un_sub_type !== 'aparthotel';
   return false;
-}
-
-function getPropertyTypeLabel(value) {
-  for (const grp of PROPERTY_GROUPS) {
-    const opt = grp.options.find(o => o.value === value);
-    if (opt) return opt.label;
-  }
-  return value;
 }
 
 export default function Onboarding() {
@@ -336,7 +328,7 @@ export default function Onboarding() {
               {PROPERTY_GROUPS.map(grp => (
                 <optgroup key={grp.group} label={grp.group}>
                   {grp.options.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value}>{propTypeLabel(t, opt.value)}</option>
                   ))}
                 </optgroup>
               ))}
@@ -631,7 +623,7 @@ export default function Onboarding() {
               </div>
               <div className="wiz-summary-row">
                 <span className="wiz-summary-label">{t('onboard.summaryType')}</span>
-                <span className="wiz-summary-value">{getPropertyTypeLabel(form.type)}</span>
+                <span className="wiz-summary-value">{propTypeLabel(t, form.type)}</span>
               </div>
               <div className="wiz-summary-row">
                 <span className="wiz-summary-label">{t('onboard.summaryAddress')}</span>

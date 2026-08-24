@@ -917,6 +917,14 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   </div>
 </section>` : '';
 
+  const customSection = property.custom_section_body?.trim() ? `
+<section class="custom-section">
+  <div class="section-inner">
+    ${property.custom_section_title?.trim() ? `<h2>${esc(property.custom_section_title.trim())}</h2>` : ''}
+    <div class="custom-section-body">${property.custom_section_body.trim()}</div>
+  </div>
+</section>` : '';
+
   const approvedNotes = property.guest_notes_enabled
     ? db.prepare(`
         SELECT guest_name, note_text
@@ -1748,6 +1756,19 @@ section h2 {
   .glance-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Custom Section ────────────────────────────────────────────────── */
+.custom-section { background: #fff; }
+.custom-section-body {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.75;
+}
+.custom-section-body ul {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+.custom-section-body li { margin-bottom: 6px; }
+
 /* ── Rooms ─────────────────────────────────────────────────────────── */
 .rooms { background: #f8f9fa; }
 .rooms-grid {
@@ -2438,6 +2459,7 @@ ${isDemo ? `<div class="demo-banner">
 ${heroSection}
 ${aboutSection}
 ${atAGlanceSection}
+${customSection}
 ${roomsSection}
 ${notesSection}
 ${ctaSection}

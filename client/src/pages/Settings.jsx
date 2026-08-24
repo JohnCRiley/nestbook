@@ -12,7 +12,7 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
-import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
+import { PROPERTY_GROUPS, propTypeLabel } from '../utils/propertyTypes.js';
 import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
 import {
   HomeIcon, BuildingIcon, BedIcon, LockIcon, BugIcon, CheckIcon, XIcon,
@@ -249,6 +249,8 @@ export default function Settings() {
         special_banner_enabled:      p.special_banner_enabled ? 1 : 0,
         special_banner_title:        p.special_banner_title ?? '',
         special_banner_text:         p.special_banner_text ?? '',
+        custom_section_title:        p.custom_section_title ?? '',
+        custom_section_body:         p.custom_section_body ?? '',
         at_a_glance_facts:           parsedGlanceFacts,
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
@@ -660,7 +662,7 @@ export default function Settings() {
                     {PROPERTY_GROUPS.map((grp) => (
                       <optgroup key={grp.group} label={grp.group}>
                         {grp.options.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          <option key={opt.value} value={opt.value}>{propTypeLabel(t, opt.value)}</option>
                         ))}
                       </optgroup>
                     ))}
@@ -1355,6 +1357,13 @@ export default function Settings() {
           {form && (
             <div style={{ marginTop: 16 }}>
               <SpecialsBannerSection property={property} theme={theme} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
+            </div>
+          )}
+
+          {/* Custom Section — all plans */}
+          {form && (
+            <div style={{ marginTop: 16 }}>
+              <CustomSectionSection property={property} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
             </div>
           )}
 
@@ -2932,6 +2941,115 @@ function SpecialsBannerSection({ property, theme, form, setForm, handleSave, sav
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── CustomSectionSection ──────────────────────────────────────────────────────
+
+function CustomSectionSection({ property, form, setForm, handleSave, saving, t }) {
+  const TITLE_MAX = 100;
+  const title = form?.custom_section_title ?? '';
+  const body  = form?.custom_section_body ?? '';
+
+  const draftKey = `nb_customsection_draft_${property?.id}`;
+
+  // Restore any unsaved draft left behind by a previous mount — same pattern
+  // (and same reasoning) as SpecialsBannerSection's draft restore above.
+  useEffect(() => {
+    if (!property?.id) return;
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      setForm(p => ({
+        ...p,
+        custom_section_title: draft.title ?? p.custom_section_title,
+        custom_section_body: draft.body ?? p.custom_section_body,
+      }));
+    } catch { /* corrupt/old draft — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property]);
+
+  // Autosave the draft, debounced, so unsaved edits survive navigating away.
+  useEffect(() => {
+    if (!property?.id) return;
+    const handle = setTimeout(() => {
+      try {
+        sessionStorage.setItem(draftKey, JSON.stringify({
+          title: form.custom_section_title ?? '',
+          body: form.custom_section_body ?? '',
+        }));
+      } catch { /* sessionStorage unavailable — fail silently, not fatal */ }
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [form.custom_section_title, form.custom_section_body, property?.id]);
+
+  return (
+    <div className="settings-card">
+      <div className="settings-card-header">
+        <h2>{t('settings.customSection')}</h2>
+        <p>{t('settings.customSectionHint')}</p>
+      </div>
+      <div className="settings-card-body">
+        <div className="settings-form">
+          <div>
+            <label className="form-label">{t('settings.customSectionTitle')}</label>
+            <input
+              className="form-control"
+              value={title}
+              onChange={e => setForm(p => ({ ...p, custom_section_title: e.target.value.slice(0, TITLE_MAX) }))}
+              placeholder={t('settings.customSectionTitlePlaceholder')}
+            />
+            <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              {title.length}/{TITLE_MAX}
+            </div>
+          </div>
+          <div>
+            <label className="form-label">{t('settings.customSectionBody')}</label>
+            <SpecialsBannerEditor
+              value={body}
+              onChange={html => setForm(p => ({ ...p, custom_section_body: html }))}
+              placeholder={t('settings.customSectionBodyPlaceholder')}
+              maxLength={2000}
+            />
+          </div>
+
+          <div className="settings-save-row">
+            <button className="btn-primary" onClick={() => { handleSave(); sessionStorage.removeItem(draftKey); }} disabled={saving}>
+              {saving ? t('saving') : t('saveChanges')}
+            </button>
+          </div>
+        </div>
+
+        {/* Live preview — mirrors how the section renders on the booking page */}
+        {!!(title || body) && (
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', marginBottom: 10 }}>
+              {t('settings.customSectionPreview')}
+            </div>
+            <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 12, padding: 20, maxWidth: 480 }}>
+              {title && (
+                <div style={{
+                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontWeight: 700,
+                  fontSize: '1.2rem',
+                  color: '#1e293b',
+                  marginBottom: body ? 8 : 0,
+                }}>
+                  {title}
+                </div>
+              )}
+              {body && (
+                <div
+                  style={{ fontSize: '0.9rem', lineHeight: 1.6, color: '#1e293b' }}
+                  dangerouslySetInnerHTML={{ __html: body }}
+                />
+              )}
             </div>
           </div>
         )}

@@ -1869,6 +1869,8 @@ adminRouter.post('/content-flags/:id/remove', async (req, res) => {
     } else if (flag.content_type === 'partnership_link' && flag.content_ref) {
       db.prepare(`UPDATE partnership_links SET status = 'rejected' WHERE id = ?`)
         .run(Number(flag.content_ref));
+    } else if (flag.content_type === 'custom_section') {
+      db.prepare('UPDATE properties SET custom_section_title = NULL, custom_section_body = NULL WHERE id = ?').run(flag.property_id);
     }
 
     db.prepare(`UPDATE content_flags SET status = 'removed', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?`)

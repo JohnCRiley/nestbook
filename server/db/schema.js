@@ -776,6 +776,38 @@ export function initSchema() {
     }
   }
 
+  // Expand properties.type CHECK constraint to include 'pet_retreat' (Pet
+  // Retreat / Animal Hospitality — label-only addition to the property-type
+  // dropdown, same rebuild-from-own-sql pattern as the aparthotel migration above).
+  {
+    const propRow = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='properties'`).get();
+    const propSql = propRow?.sql ?? '';
+    if (propSql && !propSql.includes("'pet_retreat'")) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        const newSql = propSql
+          .replace(/CREATE TABLE "?properties"?/, 'CREATE TABLE properties_v5')
+          .replace("'resort_villa','other'", "'resort_villa','pet_retreat','other'");
+        if (!newSql.includes("'pet_retreat'") || !newSql.includes('properties_v5')) {
+          throw new Error('pet_retreat CHECK-list replace did not match expected sql — aborting to avoid a broken migration');
+        }
+        const cols = db.prepare(`PRAGMA table_info(properties)`).all().map(c => c.name);
+        db.exec(newSql);
+        db.exec(`INSERT INTO properties_v5 (${cols.join(', ')}) SELECT ${cols.join(', ')} FROM properties`);
+        db.exec(`DROP TABLE properties`);
+        db.exec(`ALTER TABLE properties_v5 RENAME TO properties`);
+        db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_properties_booking_slug ON properties(booking_slug)`);
+        db.exec(`COMMIT`);
+        console.log('✓ properties.type constraint expanded to include pet_retreat.');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] pet_retreat CHECK migration skipped/failed: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+    }
+  }
+
   // iCal sync token per room — unguessable URL for calendar feed export
   try { db.exec(`ALTER TABLE rooms ADD COLUMN ical_token TEXT`); } catch { /* already exists */ }
   db.prepare(`UPDATE rooms SET ical_token = lower(hex(randomblob(16))) WHERE ical_token IS NULL`).run();
@@ -2164,6 +2196,11 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_text TEXT`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN special_banner_title TEXT`); } catch {}
 
+  // Custom Section — free-form title + rich-text block shown on the booking
+  // page below At a Glance. Same storage shape as the Specials Banner above.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN custom_section_title TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN custom_section_body TEXT`); } catch {}
+
   // Property Info Sheet
   try { db.exec(`ALTER TABLE properties ADD COLUMN house_rules TEXT`); } catch {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN local_tips TEXT`); } catch {}
@@ -2215,6 +2252,42 @@ John`
       } catch (e) {
         try { db.exec(`ROLLBACK`); } catch {}
         console.log(`[schema] content_flags partnership_link migration skipped: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+    }
+  }
+
+  // Expand content_flags CHECK to include 'custom_section'
+  {
+    const cfSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='content_flags'`).get()?.sql ?? '';
+    if (!cfSql.includes("'custom_section'")) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE content_flags_v4 (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id  INTEGER NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+            room_id      INTEGER REFERENCES rooms(id) ON DELETE CASCADE,
+            content_type TEXT NOT NULL CHECK(content_type IN ('room_photo','hero_photo','property_description','room_description','guest_note','partnership_link','custom_section')),
+            content_ref  TEXT,
+            preview_text TEXT,
+            status       TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','verified','removed')),
+            created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            reviewed_at  TEXT,
+            reviewed_by  INTEGER REFERENCES users(id)
+          )
+        `);
+        db.exec(`INSERT INTO content_flags_v4 SELECT * FROM content_flags`);
+        db.exec(`DROP TABLE content_flags`);
+        db.exec(`ALTER TABLE content_flags_v4 RENAME TO content_flags`);
+        db.exec(`COMMIT`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_status ON content_flags(status)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_content_flags_property ON content_flags(property_id)`);
+        console.log('✓ content_flags expanded to include custom_section type');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] content_flags custom_section migration skipped: ${e.message}`);
       }
       db.exec(`PRAGMA foreign_keys = ON`);
     }

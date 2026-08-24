@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale } from '../../i18n/LocaleContext.jsx';
-import { PROPERTY_GROUPS, WHOLE_PROPERTY_TYPES } from '../../utils/propertyTypes.js';
+import { PROPERTY_GROUPS, WHOLE_PROPERTY_TYPES, propTypeLabel } from '../../utils/propertyTypes.js';
 import RentalTypeStep from '../../components/RentalTypeStep.jsx';
 
 const STEPS = ['name', 'type', 'rentalType', 'details'];
@@ -134,7 +134,7 @@ export default function AddPropertyModal({ onClose, onSuccess, t }) {
                 {PROPERTY_GROUPS.map(grp => (
                   <optgroup key={grp.group} label={grp.group}>
                     {grp.options.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={opt.value} value={opt.value}>{propTypeLabel(t, opt.value)}</option>
                     ))}
                   </optgroup>
                 ))}

@@ -8,6 +8,7 @@ const TYPE_LABEL = {
   room_description:     'Room description',
   guest_note:           'Guest note',
   partnership_link:     'Partnership link',
+  custom_section:       'Custom section',
 };
 
 function timeAgo(dateStr) {

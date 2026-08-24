@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { useT } from '../i18n/LocaleContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 import PublicNavbar from '../components/PublicNavbar.jsx';
-import { PROPERTY_GROUPS } from '../utils/propertyTypes.js';
+import { PROPERTY_GROUPS, propTypeLabel } from '../utils/propertyTypes.js';
 
 const SUPPORTED_LANGS = ['en', 'fr', 'de', 'es', 'nl'];
 
@@ -251,7 +251,7 @@ export default function Register() {
                 {PROPERTY_GROUPS.map((grp) => (
                   <optgroup key={grp.group} label={grp.group}>
                     {grp.options.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      <option key={opt.value} value={opt.value}>{propTypeLabel(t, opt.value)}</option>
                     ))}
                   </optgroup>
                 ))}
