@@ -1520,7 +1520,7 @@ export default function Settings() {
                     </>
                   )}
                   <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '14px 0 0' }}>
-                    Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong>, <strong>Airbnb → Availability → Sync calendars</strong>, or <strong>Expedia Partner Central → Rooms and Rates → Connect calendars</strong>.
+                    Paste a URL into <strong>Booking.com → Calendar → Import calendar</strong>, <strong>Airbnb → Availability → Sync calendars</strong>, <strong>Expedia Partner Central → Rooms and Rates → Connect calendars</strong>, or <strong>Vrbo Owner Dashboard → Calendar → Connect calendars</strong>.
                   </p>
 
                   {/* ── External calendar import ── */}
