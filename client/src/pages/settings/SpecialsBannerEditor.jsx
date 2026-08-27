@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+import IconPicker from '../../admin/IconPicker.jsx';
 
 const SIZE_WHITELIST = ['12px', '16px', '20px', '28px'];
 const SIZE_LABELS = { '12px': 'Small', '16px': 'Normal', '20px': 'Large', '28px': 'Huge' };
@@ -47,11 +48,17 @@ function visibleLength(quill) {
 // Restricted rich-text editor for the Specials Banner body: bold, italic,
 // bullet list, and font size only — mirrors client/src/admin/QuillEditor.jsx's
 // import/setup pattern but with a narrower toolbar and a visible-text cap.
-export default function SpecialsBannerEditor({ value, onChange, placeholder, maxLength = 300 }) {
+//
+// `iconPicker` is opt-in (default off) rather than always-on: this component
+// is shared verbatim by the actual Specials Banner and the Custom Section, and
+// the icon library is guest-facing property content — wanted for Custom
+// Section, not silently added to the Specials Banner's own editor too.
+export default function SpecialsBannerEditor({ value, onChange, placeholder, maxLength = 300, iconPicker = false }) {
   const containerRef = useRef(null);
   const quillRef      = useRef(null);
   const onChangeRef   = useRef(onChange);
   const [count, setCount] = useState(0);
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
   useEffect(() => { onChangeRef.current = onChange; });
 
@@ -105,12 +112,47 @@ export default function SpecialsBannerEditor({ value, onChange, placeholder, max
     setCount(visibleLength(quill));
   }, [value]);
 
+  // Insert icon HTML at the current cursor position via Quill's clipboard
+  // pipeline — same dangerouslyPasteHTML approach used for the initial
+  // content/value-sync above, and for the same reason: a raw DOM write here
+  // would leave Quill's own state out of sync with what's on screen.
+  function handleInsertIcon(html) {
+    const quill = quillRef.current;
+    if (!quill) return;
+    const sel = quill.getSelection(true);
+    const index = sel ? sel.index : quill.getLength();
+    quill.clipboard.dangerouslyPasteHTML(index, html, 'user');
+    quill.setSelection(index + 1, 0, 'silent');
+  }
+
   return (
     <div className="specials-banner-editor">
+      {iconPicker && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+          <button
+            type="button"
+            onClick={() => setShowIconPicker(true)}
+            title="Insert icon"
+            style={{
+              fontSize: '0.75rem', padding: '3px 9px', borderRadius: 5, cursor: 'pointer',
+              border: '1px solid #d1d5db', background: '#f8fafc', color: '#64748b', fontWeight: 600,
+            }}
+          >
+            Insert icon
+          </button>
+        </div>
+      )}
       <div ref={containerRef} />
       <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
         {count}/{maxLength}
       </div>
+      {showIconPicker && (
+        <IconPicker
+          defaultMode="guest"
+          onInsert={handleInsertIcon}
+          onClose={() => setShowIconPicker(false)}
+        />
+      )}
     </div>
   );
 }

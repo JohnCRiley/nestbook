@@ -78,7 +78,50 @@ const COLOR_OPTIONS = [
 
 const BASE_URL = 'https://nestbook.io/images/email-icons';
 
-export default function IconPicker({ onInsert, onClose }) {
+// ── Guest-facing icon library ────────────────────────────────────────────────
+// Must match server/scripts/export-guest-icons.mjs GUEST_ICON_GROUPS (names
+// only — colour is fixed per icon in this library, baked into the PNG at
+// export time, so the picker doesn't need to know which ones are black vs
+// real brand colour).
+const GUEST_ICON_GROUPS = {
+  'Pets & Animals': ['paw', 'dog', 'dog-bowl', 'cat', 'bird', 'fish', 'horse', 'farm-barn'],
+  'Food & Drink': [
+    'coffee-cup', 'tea', 'breakfast-plate', 'wine-glass', 'beer', 'bread-bakery',
+    'fruit', 'restaurant-cutlery', 'bbq-grill', 'fridge', 'ice-cream', 'birthday-cake',
+  ],
+  'Outdoors & Activity': [
+    'hiking-boot', 'trail-map', 'bicycle', 'mountain', 'beach-umbrella', 'waves-sea',
+    'tree', 'garden-flower', 'campfire', 'tent', 'binoculars', 'fishing-rod',
+    'golf', 'kayak-canoe', 'ski', 'backpack',
+  ],
+  'Comfort & Amenities': [
+    'wifi', 'bed', 'bath', 'shower', 'pool', 'hot-tub', 'air-conditioning',
+    'heating-radiator', 'tv', 'washing-machine', 'iron', 'hairdryer',
+    'safe', 'balcony', 'fireplace', 'sofa',
+  ],
+  'Practical / Property Info': [
+    'parking', 'key', 'clock', 'location-pin', 'luggage', 'lift', 'stairs',
+    'no-smoking', 'fire-extinguisher', 'first-aid', 'umbrella-weather',
+    'cash', 'credit-card', 'calendar', 'door', 'bell',
+  ],
+  'People & Access': [
+    'family', 'child', 'wheelchair', 'group-friends', 'couple',
+    'pet-friendly', 'no-pets', 'single-traveller',
+  ],
+  'Weather / Ambience': [
+    'sun', 'cloud', 'rain', 'snow', 'moon-night', 'wind', 'thermometer', 'night-sky-stars',
+  ],
+  'Social Media & Contact': [
+    'google', 'facebook', 'instagram', 'whatsapp', 'x', 'tripadvisor', 'youtube',
+    'linkedin', 'pinterest', 'tiktok', 'phone-call', 'email', 'message-chat',
+    'website-globe', 'messenger', 'qr-code',
+  ],
+};
+
+const GUEST_BASE_URL = 'https://nestbook.io/images/guest-icons';
+
+export default function IconPicker({ onInsert, onClose, defaultMode = 'email' }) {
+  const [mode, setMode]       = useState(defaultMode); // 'email' | 'guest'
   const [search, setSearch]   = useState('');
   const [color, setColor]     = useState('green');
   const searchRef             = useRef(null);
@@ -87,14 +130,18 @@ export default function IconPicker({ onInsert, onClose }) {
 
   const q = search.trim().toLowerCase();
 
-  const filtered = Object.entries(ICON_GROUPS).reduce((acc, [category, icons]) => {
+  const activeGroups = mode === 'guest' ? GUEST_ICON_GROUPS : ICON_GROUPS;
+
+  const filtered = Object.entries(activeGroups).reduce((acc, [category, icons]) => {
     const hits = q ? icons.filter(n => n.includes(q)) : icons;
     if (hits.length) acc.push({ category, icons: hits });
     return acc;
   }, []);
 
   function handleInsert(iconName) {
-    const url = `${BASE_URL}/${iconName}-${color}.png`;
+    const url = mode === 'guest'
+      ? `${GUEST_BASE_URL}/${iconName}.png`
+      : `${BASE_URL}/${iconName}-${color}.png`;
     onInsert(`<img src="${url}" width="20" height="20" alt="${iconName}" style="vertical-align:middle;display:inline-block;">`);
     onClose();
   }
@@ -115,6 +162,29 @@ export default function IconPicker({ onInsert, onClose }) {
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: '#94a3b8', lineHeight: 1 }}>✕</button>
           </div>
 
+          {/* Mode tabs */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: '#f1f5f9', borderRadius: 7, padding: 3 }}>
+            {[
+              { key: 'email', label: 'Email icons' },
+              { key: 'guest', label: 'Property & Guest icons' },
+            ].map(m => (
+              <button
+                key={m.key}
+                onClick={() => setMode(m.key)}
+                style={{
+                  flex: 1, padding: '6px 10px', borderRadius: 5, border: 'none', cursor: 'pointer',
+                  fontSize: '0.8rem', fontWeight: 700,
+                  background: mode === m.key ? '#fff' : 'transparent',
+                  color: mode === m.key ? '#405440' : '#64748b',
+                  boxShadow: mode === m.key ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                  transition: 'background 0.1s, color 0.1s',
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
           {/* Search */}
           <input
             ref={searchRef}
@@ -125,28 +195,34 @@ export default function IconPicker({ onInsert, onClose }) {
             style={{ width: '100%', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '0.85rem', boxSizing: 'border-box', marginBottom: 10 }}
           />
 
-          {/* Colour swatches */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>Colour:</span>
-            {COLOR_OPTIONS.map(c => (
-              <button
-                key={c.key}
-                onClick={() => setColor(c.key)}
-                title={c.label}
-                style={{
-                  width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
-                  background: c.hex,
-                  border: color === c.key ? '2.5px solid #405440' : `1.5px solid ${c.border ?? c.hex}`,
-                  boxShadow: color === c.key ? '0 0 0 2px #F4F3F0' : 'none',
-                  position: 'relative',
-                  transition: 'box-shadow 0.1s',
-                }}
-              />
-            ))}
-            <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginLeft: 4 }}>
-              {selectedColor?.label} — inserted as 20×20 px
+          {/* Colour swatches — email icons only; guest icons have a fixed colour per icon */}
+          {mode === 'email' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>Colour:</span>
+              {COLOR_OPTIONS.map(c => (
+                <button
+                  key={c.key}
+                  onClick={() => setColor(c.key)}
+                  title={c.label}
+                  style={{
+                    width: 28, height: 28, borderRadius: 6, cursor: 'pointer',
+                    background: c.hex,
+                    border: color === c.key ? '2.5px solid #405440' : `1.5px solid ${c.border ?? c.hex}`,
+                    boxShadow: color === c.key ? '0 0 0 2px #F4F3F0' : 'none',
+                    position: 'relative',
+                    transition: 'box-shadow 0.1s',
+                  }}
+                />
+              ))}
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8', marginLeft: 4 }}>
+                {selectedColor?.label} — inserted as 20×20 px
+              </span>
+            </div>
+          ) : (
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+              Black by default; platform logos use their own real brand colour — inserted as 20×20 px
             </span>
-          </div>
+          )}
         </div>
 
         {/* Icon grid */}
@@ -167,15 +243,15 @@ export default function IconPicker({ onInsert, onClose }) {
                     title={name}
                     style={{
                       width: 44, height: 44, borderRadius: 7, border: '1px solid #e2e8f0',
-                      background: color === 'white' ? '#405440' : '#f8fafc',
+                      background: mode === 'email' && color === 'white' ? '#405440' : '#f8fafc',
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       padding: 0, transition: 'border-color 0.1s, background 0.1s',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#405440'; e.currentTarget.style.background = color === 'white' ? '#0f2d08' : '#F4F3F0'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = color === 'white' ? '#405440' : '#f8fafc'; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#405440'; e.currentTarget.style.background = mode === 'email' && color === 'white' ? '#0f2d08' : '#F4F3F0'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = mode === 'email' && color === 'white' ? '#405440' : '#f8fafc'; }}
                   >
                     <img
-                      src={`/images/email-icons/${name}-${color}.png`}
+                      src={mode === 'guest' ? `/images/guest-icons/${name}.png` : `/images/email-icons/${name}-${color}.png`}
                       width={22}
                       height={22}
                       alt={name}

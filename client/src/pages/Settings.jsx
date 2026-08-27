@@ -3016,6 +3016,7 @@ function CustomSectionSection({ property, form, setForm, handleSave, saving, t }
               onChange={html => setForm(p => ({ ...p, custom_section_body: html }))}
               placeholder={t('settings.customSectionBodyPlaceholder')}
               maxLength={2000}
+              iconPicker
             />
           </div>
 
