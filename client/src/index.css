@@ -92,32 +92,36 @@ html[data-theme="ember"] {
   --text-muted:         #8a7a5e;
 }
 html[data-theme="ruby"] {
-  --sidebar-bg:         #490403;
+  --sidebar-bg:         #999494;
+  --sidebar-hover:      #A8A4A4;
   --sidebar-text:       #F8F7F6;
-  --sidebar-active:     #CF514F;
-  --accent:             #490403;
-  --accent-dark:        #340302;
-  --card-bg:            #F8F7F7;
+  --sidebar-active:     #AE887E;
+  --accent:             #999494;
+  --accent-dark:        #AE887E;
+  --card-bg:            #F5F5F5;
   --panel-bg:           #F8F7F7;
-  --header-bg:          #E9E7E7;
-  --header-text:        #CF514F;
-  --heading-text:       #CF514F;
-  --accent-bar:         #988181;
-  --section-bg:         #E9E7E7;
-  --section-text:       #CF514F;
+  --header-bg:          #F5F5F5;
+  --header-text:        #6B201F;
+  --heading-text:       #AC6362;
+  --accent-bar:         #6B201F;
+  --section-bg:         #F5F5F5;
+  --section-text:       #6B201F;
   --tint-bg:            #D1C2C2;
   --tint-border:        #988181;
-  --tint-text:          #1C1C1E;
+  --tint-text:          #6B201F;
   --light-green:        #E9E7E7;
   --btn-secondary-bg:   #D1C2C2;
   --btn-secondary-text: #1C1C1E;
-  --toggle-on:          #CF514F;
+  --toggle-on:          #999494;
   --toggle-off:         #E2DFDA;
   --page-bg:            #F0EDE8;
-  --border:             #e2d8d8;
+  --border:             #E2D8D8;
   --text-primary:       #1C160D;
-  --text-secondary:     #CF514F;
+  --text-secondary:     #6B201F;
   --text-muted:         #988181;
+  --shadow-sm:          0 2px 8px rgba(28,28,30,0.08);
+  --shadow-md:          0 16px 48px rgba(28,28,30,0.18);
+  --radius:             10px;
 }
 html[data-theme="sky"] {
   --sidebar-bg:         #4B779B;
