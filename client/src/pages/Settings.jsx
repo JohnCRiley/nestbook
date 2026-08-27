@@ -2882,6 +2882,7 @@ function SpecialsBannerSection({ property, theme, form, setForm, handleSave, sav
               onChange={html => setForm(p => ({ ...p, special_banner_text: html }))}
               placeholder={t('settings.specialsPlaceholder')}
               maxLength={300}
+              iconPicker
             />
           </div>
 
