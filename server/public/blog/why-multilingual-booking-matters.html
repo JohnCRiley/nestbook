@@ -145,6 +145,26 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 900px) { .footer-inner { grid-template-columns: 1fr 1fr; } .related-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .footer-inner { grid-template-columns: 1fr; } .article-layout { padding: 0 20px; } .article-cta { padding: 28px 20px; } }
+
+/* ── All-posts sidebar ────────────────────────────────────────────────── */
+.article-page-grid { max-width: 1100px; margin: 0 auto; padding: 0 28px; display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 40px; align-items: start; }
+.article-page-grid > .article-layout { max-width: none; margin: 0; padding: 0; }
+.article-sidebar { position: sticky; top: 24px; background: var(--soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; max-height: calc(100vh - 48px); overflow-y: auto; }
+.article-sidebar h3 { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dark); margin-bottom: 14px; }
+.article-sidebar-list { display: flex; flex-direction: column; gap: 2px; }
+.article-sidebar-item { display: block; padding: 8px 10px; border-radius: 8px; text-decoration: none; transition: background 0.12s; }
+a.article-sidebar-item:hover { background: #fff; }
+.article-sidebar-item.is-current { background: #fff; border-left: 3px solid var(--mid); padding-left: 7px; cursor: default; }
+.article-sidebar-title { display: block; font-size: 0.8rem; font-weight: 600; color: var(--dark); line-height: 1.35; margin-bottom: 2px; }
+.article-sidebar-date { display: block; font-size: 0.7rem; color: var(--muted); }
+@media (max-width: 960px) {
+  .article-page-grid { grid-template-columns: 1fr; max-width: 720px; padding: 0 28px; }
+  .article-page-grid > .article-layout { padding: 0; }
+  .article-sidebar { position: static; max-height: none; margin-top: 40px; }
+}
+@media (max-width: 600px) {
+  .article-page-grid { padding: 0 20px; }
+}
 </style>
 
 <!-- Google Analytics -->
@@ -238,6 +258,7 @@ img { display: block; max-width: 100%; }
     />
   </div>
 
+  <div class="article-page-grid">
   <article class="article-layout" id="article">
 
     <header class="article-header">
@@ -358,6 +379,117 @@ img { display: block; max-width: 100%; }
     </div>
 
   </article>
+
+      <aside class="article-sidebar" aria-label="All blog posts">
+        <h3>All Posts</h3>
+        <div class="article-sidebar-list">
+        <a class="article-sidebar-item" href="/blog/after-the-rush-autumn.html">
+          <span class="article-sidebar-title">After the Rush: What Autumn Actually Offers Independent Properties</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/greece-short-term-rental-rules-2026.html">
+          <span class="article-sidebar-title">What Greece's New Short-Term Rental Rules Mean for Small Hosts</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/french-camping-holidays.html">
+          <span class="article-sidebar-title">Pools, Pines and Pitches: The French Love Affair with Camping</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/cumbria-lake-district.html">
+          <span class="article-sidebar-title">Fells, Fire and Fast Boats: The Story of Cumbria and the Lake District</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/uk-staycation-boom-2026.html">
+          <span class="article-sidebar-title">Britain's Holiday Boom, Take Two: What's Really Driving the 2026 Staycation Surge</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/andalucia-tourism-boom.html">
+          <span class="article-sidebar-title">From Necessity to 38 Million Visitors: The Real Story Behind Andalucía's Tourism Boom</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/summer-2026-europe-tourism-trends.html">
+          <span class="article-sidebar-title">Summer 2026: A Good Season, Just Not the Same Season Everywhere</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/one-roof-three-ways-to-let-it.html">
+          <span class="article-sidebar-title">One Roof, Three Ways to Let It</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/what-nobody-tells-independent-hoteliers.html">
+          <span class="article-sidebar-title">What Nobody Tells Independent Hoteliers About Their Website</span>
+          <span class="article-sidebar-date">August 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/what-inns-with-rooms-need.html">
+          <span class="article-sidebar-title">What Do Inns With Rooms Actually Need From a Booking Platform?</span>
+          <span class="article-sidebar-date">July 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/partner-with-local-businesses.html">
+          <span class="article-sidebar-title">Your Slowest Month Doesn't Have to Be Empty — Team Up With Your Neighbours</span>
+          <span class="article-sidebar-date">July 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/direct-card-payments-stripe-connect.html">
+          <span class="article-sidebar-title">Your Photos Get Them To Look. Stripe Connect Gets Them To Pay.</span>
+          <span class="article-sidebar-date">July 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/your-facebook-photos-are-doing-the-hard-work.html">
+          <span class="article-sidebar-title">Your Facebook photos are already doing the hard work — here's how to make them pay</span>
+          <span class="article-sidebar-date">June 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/airbnb-new-fee-structure-2026-what-hosts-need-to-know.html">
+          <span class="article-sidebar-title">Airbnb's new fee structure 2026: what hosts need to know</span>
+          <span class="article-sidebar-date">June 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/whole-property-rental-booking-software.html">
+          <span class="article-sidebar-title">Why gîte and holiday cottage owners need a direct booking system</span>
+          <span class="article-sidebar-date">June 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/how-to-switch-booking-systems.html">
+          <span class="article-sidebar-title">How to switch booking systems without losing your data or your mind</span>
+          <span class="article-sidebar-date">May 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/what-does-a-bnb-need-from-a-pms.html">
+          <span class="article-sidebar-title">What does a small B&B actually need from a property management system?</span>
+          <span class="article-sidebar-date">May 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/why-we-built-nestbook.html">
+          <span class="article-sidebar-title">Why we built NestBook</span>
+          <span class="article-sidebar-date">May 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/5-questions-before-choosing-booking-software.html">
+          <span class="article-sidebar-title">5 questions to ask before choosing booking software for your B&B or gîte</span>
+          <span class="article-sidebar-date">May 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/ical-vs-channel-management.html">
+          <span class="article-sidebar-title">iCal vs channel management: which does a small B&B actually need?</span>
+          <span class="article-sidebar-date">May 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/are-you-paying-too-much-for-your-booking-system.html">
+          <span class="article-sidebar-title">Are you paying too much for your booking system?</span>
+          <span class="article-sidebar-date">May 2026</span>
+        </a>
+        <div class="article-sidebar-item is-current" aria-current="page">
+          <span class="article-sidebar-title">Why multilingual booking matters for European holiday rentals</span>
+          <span class="article-sidebar-date">April 2026</span>
+        </div>
+        <a class="article-sidebar-item" href="/blog/the-hidden-cost-of-airbnb-and-booking-com.html">
+          <span class="article-sidebar-title">The hidden cost of Airbnb and Booking.com — what the commission really means over a season</span>
+          <span class="article-sidebar-date">April 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/how-to-get-your-first-direct-booking.html">
+          <span class="article-sidebar-title">How to get your first direct booking within 30 days</span>
+          <span class="article-sidebar-date">April 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/five-things-gite-owners-wish-they-knew.html">
+          <span class="article-sidebar-title">5 things French gîte owners wish they'd known before their first season</span>
+          <span class="article-sidebar-date">April 2026</span>
+        </a>
+        <a class="article-sidebar-item" href="/blog/why-small-bbs-are-switching-to-booking-software.html">
+          <span class="article-sidebar-title">Why small B&Bs and gîtes are switching from paper diaries to simple booking software</span>
+          <span class="article-sidebar-date">April 2026</span>
+        </a>
+        </div>
+      </aside>
+    </div>
 </main>
 
 <footer class="footer">
