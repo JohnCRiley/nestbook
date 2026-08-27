@@ -370,8 +370,8 @@ img { display: block; max-width: 100%; }
             <input type="number" id="atrc-rate" class="atrc-input" inputmode="decimal" min="0" step="any" placeholder="e.g. 95">
           </div>
           <div class="atrc-field">
-            <label for="atrc-bookings">Roughly how many bookings a month come through Airbnb, Booking.com or a similar platform?</label>
-            <input type="number" id="atrc-bookings" class="atrc-input" inputmode="decimal" min="0" step="any" placeholder="e.g. 12">
+            <label for="atrc-nights">Roughly how many nights a month are booked through Airbnb, Booking.com or a similar platform?</label>
+            <input type="number" id="atrc-nights" class="atrc-input" inputmode="decimal" min="0" step="any" placeholder="e.g. 12">
           </div>
           <div class="atrc-field">
             <label for="atrc-preset">Commission percentage you're charged</label>
@@ -418,7 +418,7 @@ img { display: block; max-width: 100%; }
       <script>
       (function () {
         var rateEl = document.getElementById('atrc-rate');
-        var bookingsEl = document.getElementById('atrc-bookings');
+        var nightsEl = document.getElementById('atrc-nights');
         var presetEl = document.getElementById('atrc-preset');
         var percentEl = document.getElementById('atrc-percent');
         var splitNoteEl = document.getElementById('atrc-splitfee-note');
@@ -431,7 +431,7 @@ img { display: block; max-width: 100%; }
         var costsCardEl = document.getElementById('atrc-card-costs');
         var costsValueEl = document.getElementById('atrc-costs-value');
 
-        if (!rateEl || !bookingsEl || !presetEl || !percentEl) { return; }
+        if (!rateEl || !nightsEl || !presetEl || !percentEl) { return; }
 
         function atrcFormat(n) {
           return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -439,13 +439,13 @@ img { display: block; max-width: 100%; }
 
         function atrcRecalc() {
           var rate = parseFloat(rateEl.value);
-          var bookings = parseFloat(bookingsEl.value);
+          var otaNightsPerMonth = parseFloat(nightsEl.value);
           var percent = parseFloat(percentEl.value);
 
-          var valid = !isNaN(rate) && rate > 0 && !isNaN(bookings) && bookings > 0 && !isNaN(percent) && percent > 0;
+          var valid = !isNaN(rate) && rate > 0 && !isNaN(otaNightsPerMonth) && otaNightsPerMonth > 0 && !isNaN(percent) && percent > 0;
 
           if (valid) {
-            var monthly = rate * bookings * (percent / 100);
+            var monthly = rate * otaNightsPerMonth * (percent / 100);
             var annual = monthly * 12;
             monthlyValueEl.textContent = atrcFormat(monthly);
             annualValueEl.textContent = atrcFormat(annual);
@@ -473,7 +473,7 @@ img { display: block; max-width: 100%; }
           atrcRecalc();
         });
 
-        [rateEl, bookingsEl, percentEl, costsEl].forEach(function (el) {
+        [rateEl, nightsEl, percentEl, costsEl].forEach(function (el) {
           el.addEventListener('input', atrcRecalc);
         });
 
