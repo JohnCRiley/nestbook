@@ -53,17 +53,17 @@ const FACT_CATALOG = [
 ];
 
 const THEMES = [
-  { id: 'forest',   label: 'Forest',    primary: '#405440', bg: '#F0EDE8' },
-  { id: 'royal',    label: 'Navy',      primary: '#3D3D3D', bg: '#FAFAFA' },
-  { id: 'ember',    label: 'Warm Gold', primary: '#1A2535', bg: '#F5F2EC' },
-  { id: 'ruby',     label: 'Ruby',      primary: '#3D3D3D', bg: '#FAFAFA' },
-  { id: 'sky',      label: 'Sky Blue',  primary: '#3D3D3D', bg: '#FAFAFA' },
-  { id: 'lavender', label: 'Lavender',  primary: '#3D3D3D', bg: '#FAFAFA' },
+  { id: 'forest',   label: 'Forest',    primary: '#405440', bg: '#FFFFFF' },
+  { id: 'royal',    label: 'Navy',      primary: '#70879E', bg: '#FAFAFA' },
+  { id: 'ember',    label: 'Warm Gold', primary: '#E8A838', bg: '#F5F2EC' },
+  { id: 'ruby',     label: 'Ruby',      primary: '#7D5E61', bg: '#FAFAFA' },
+  { id: 'sky',      label: 'Sky Blue',  primary: '#B3C6D6', bg: '#FAFAFA' },
+  { id: 'lavender', label: 'Lavender',  primary: '#7B7599', bg: '#FAFAFA' },
   { id: 'aero',     label: 'Aero',      primary: '#5395B2', bg: '#F4F5F6' },
-  { id: 'charcoal', label: 'Charcoal',  primary: '#3D3D3D', bg: '#FAFAFA', accent: '#878787' },
-  { id: 'slate',    label: 'Slate',     primary: '#4C524E', bg: '#E6E6E6', accent: '#95A397' },
-  { id: 'storm',   label: 'Storm',     primary: '#5D6D74', bg: '#D1D1D1', accent: '#A4B1B7' },
-  { id: 'hessian', label: 'Hessian',   primary: '#3D3D3D', bg: '#FAFAFA', accent: '#677E69' },
+  { id: 'charcoal', label: 'Charcoal',  primary: '#878787', bg: '#FAFAFA' },
+  { id: 'slate',    label: 'Slate',     primary: '#95A397', bg: '#E6E6E6' },
+  { id: 'storm',   label: 'Storm',     primary: '#A4B1B7', bg: '#D1D1D1' },
+  { id: 'hessian', label: 'Hessian',   primary: '#677E69', bg: '#FAFAFA' },
 ];
 
 // ── Constants ─────────────────────────────────────────────────────────────────
