@@ -118,7 +118,14 @@ const GUEST_ICON_GROUPS = {
   ],
 };
 
-const GUEST_BASE_URL = 'https://nestbook.io/images/guest-icons';
+// Relative, unlike email icons' BASE_URL above — these are inserted into
+// content the app renders itself (Custom Section, Specials Banner, and the
+// booking page they end up on), not a standalone email an external client
+// has to load images into. An absolute production URL here would (a) break
+// every non-production environment outright and (b) get silently stripped
+// by sanitizeBanner's allowlist anyway, since that only accepts paths
+// starting with /images/guest-icons/, not a full URL.
+const GUEST_BASE_URL = '/images/guest-icons';
 
 // `guestOnly`: for callers that just want the owner to pick a bare icon name
 // (not an <img> HTML snippet to insert into rich text) — e.g. At a Glance's

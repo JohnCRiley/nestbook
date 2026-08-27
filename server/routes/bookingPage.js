@@ -1698,6 +1698,10 @@ section h2 {
   color: ${esc(palette.dark)};
   line-height: 1.55;
 }
+/* Quill's built-in image format only preserves alt/height/width on save,
+   dropping any inline style the icon picker set — so alignment lives here
+   instead of relying on an inline style attribute that never survives. */
+.specials-flyout-body img { vertical-align: middle; display: inline-block; }
 .specials-flyout-body ul {
   margin: 6px 0 0 18px;
   padding: 0;
@@ -1775,6 +1779,8 @@ section h2 {
   color: #374151;
   line-height: 1.75;
 }
+/* See .specials-flyout-body img above — same reason. */
+.custom-section-body img { vertical-align: middle; display: inline-block; }
 .custom-section-body ul {
   margin: 8px 0 0 20px;
   padding: 0;
