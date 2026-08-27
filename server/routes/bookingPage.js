@@ -7,16 +7,16 @@ export const bookingPageRouter = Router();
 // Theme colour palettes — must stay in sync with widget.js THEME_COLOURS
 const THEME_COLOURS = {
   forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0' },
-  royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE' },
+  royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F7F6F2' },
   ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2' },
-  ruby:     { brand: '#999494', dark: '#AE887E', light: '#E9E7E7' },
-  sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6' },
-  lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9' },
+  ruby:     { brand: '#7D5E61', dark: '#734549', light: '#F7F6F2' },
+  sky:      { brand: '#B3C6D6', dark: '#97A7B4', light: '#F7F6F2' },
+  lavender: { brand: '#7B7599', dark: '#68647D', light: '#F7F6F2' },
   aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8' },
-  charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6' },
+  charcoal: { brand: '#878787', dark: '#594F4F', light: '#F7F6F2' },
   slate:    { brand: '#95A397', dark: '#25503E', light: '#EFF0F0' },
   storm:    { brand: '#A4B1B7', dark: '#546369', light: '#F5F2EC' },
-  hessian:  { brand: '#CCCFBB', dark: '#425B3D', light: '#F5F2EC' },
+  hessian:  { brand: '#677E69', dark: '#5A6C5C', light: '#F7F6F2' },
 };
 
 const TYPE_LABELS = {

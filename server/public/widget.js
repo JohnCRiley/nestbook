@@ -31,16 +31,16 @@
   // panelHdrBg/panelHdrText match the app's --header-bg/--header-text per theme exactly.
   const THEME_COLOURS = {
     forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0', panelHdrBg: '#F0EDE8', panelHdrText: '#405440' },
-    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE', panelHdrBg: '#F6F4EE', panelHdrText: '#1F3A55' },
+    royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F7F6F2', panelHdrBg: '#FFFFFF', panelHdrText: '#1F3A55' },
     ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2', panelHdrBg: '#E9E7E2', panelHdrText: '#1A2535' },
-    ruby:     { brand: '#999494', dark: '#AE887E', light: '#E9E7E7', panelHdrBg: '#E9E7E7', panelHdrText: '#999494' },
-    sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#878A8C' },
-    lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9', panelHdrBg: '#E7E7E9', panelHdrText: '#4F4582' },
+    ruby:     { brand: '#7D5E61', dark: '#734549', light: '#F7F6F2', panelHdrBg: '#FFFFFF', panelHdrText: '#1C1C1E' },
+    sky:      { brand: '#B3C6D6', dark: '#97A7B4', light: '#F7F6F2', panelHdrBg: '#FFFFFF', panelHdrText: '#1C1C1E' },
+    lavender: { brand: '#7B7599', dark: '#68647D', light: '#F7F6F2', panelHdrBg: '#FFFFFF', panelHdrText: '#1C1C1E' },
     aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8', panelHdrBg: '#F4F5F6', panelHdrText: '#1C1C1E' },
-    charcoal: { brand: '#8A0505', dark: '#292929', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#68696A' },
+    charcoal: { brand: '#878787', dark: '#594F4F', light: '#F7F6F2', panelHdrBg: '#FFFFFF', panelHdrText: '#1C1C1E' },
     slate:    { brand: '#95A397', dark: '#25503E', light: '#EFF0F0', panelHdrBg: '#F5F5F5', panelHdrText: '#1C1C1E' },
     storm:    { brand: '#A4B1B7', dark: '#546369', light: '#F5F2EC', panelHdrBg: '#FFFFFF',  panelHdrText: '#3B454E' },
-    hessian:  { brand: '#CCCFBB', dark: '#425B3D', light: '#F5F2EC', panelHdrBg: '#F6F3EC', panelHdrText: '#0C310F' },
+    hessian:  { brand: '#677E69', dark: '#5A6C5C', light: '#F7F6F2', panelHdrBg: '#FFFFFF', panelHdrText: '#1C1C1E' },
   };
 
   let BRAND          = '#405440';
