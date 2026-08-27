@@ -33,7 +33,7 @@
     forest:   { brand: '#405440', dark: '#405440', light: '#F4F3F0', panelHdrBg: '#F0EDE8', panelHdrText: '#405440' },
     royal:    { brand: '#70879E', dark: '#1F3A55', light: '#F6F4EE', panelHdrBg: '#F6F4EE', panelHdrText: '#1F3A55' },
     ember:    { brand: '#E8A838', dark: '#1A2535', light: '#E9E7E2', panelHdrBg: '#E9E7E2', panelHdrText: '#1A2535' },
-    ruby:     { brand: '#CF514F', dark: '#490403', light: '#E9E7E7', panelHdrBg: '#E9E7E7', panelHdrText: '#CF514F' },
+    ruby:     { brand: '#999494', dark: '#AE887E', light: '#E9E7E7', panelHdrBg: '#E9E7E7', panelHdrText: '#999494' },
     sky:      { brand: '#878A8C', dark: '#4B779B', light: '#F4F5F6', panelHdrBg: '#F4F5F6', panelHdrText: '#878A8C' },
     lavender: { brand: '#928CB1', dark: '#62598F', light: '#E7E7E9', panelHdrBg: '#E7E7E9', panelHdrText: '#4F4582' },
     aero:     { brand: '#5395B2', dark: '#3E7A9E', light: '#E5F0F8', panelHdrBg: '#F4F5F6', panelHdrText: '#1C1C1E' },
