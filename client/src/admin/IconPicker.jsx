@@ -120,8 +120,13 @@ const GUEST_ICON_GROUPS = {
 
 const GUEST_BASE_URL = 'https://nestbook.io/images/guest-icons';
 
-export default function IconPicker({ onInsert, onClose, defaultMode = 'email' }) {
-  const [mode, setMode]       = useState(defaultMode); // 'email' | 'guest'
+// `guestOnly`: for callers that just want the owner to pick a bare icon name
+// (not an <img> HTML snippet to insert into rich text) — e.g. At a Glance's
+// per-custom-fact icon choice, which stores the name itself. Forces guest
+// mode permanently and hides the mode tabs, since email icons (which need a
+// colour choice) don't make sense for that use case.
+export default function IconPicker({ onInsert, onClose, defaultMode = 'email', guestOnly = false }) {
+  const [mode, setMode]       = useState(guestOnly ? 'guest' : defaultMode); // 'email' | 'guest'
   const [search, setSearch]   = useState('');
   const [color, setColor]     = useState('green');
   const searchRef             = useRef(null);
@@ -139,6 +144,11 @@ export default function IconPicker({ onInsert, onClose, defaultMode = 'email' })
   }, []);
 
   function handleInsert(iconName) {
+    if (guestOnly) {
+      onInsert(iconName);
+      onClose();
+      return;
+    }
     const url = mode === 'guest'
       ? `${GUEST_BASE_URL}/${iconName}.png`
       : `${BASE_URL}/${iconName}-${color}.png`;
@@ -162,28 +172,30 @@ export default function IconPicker({ onInsert, onClose, defaultMode = 'email' })
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: '#94a3b8', lineHeight: 1 }}>✕</button>
           </div>
 
-          {/* Mode tabs */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: '#f1f5f9', borderRadius: 7, padding: 3 }}>
-            {[
-              { key: 'email', label: 'Email icons' },
-              { key: 'guest', label: 'Property & Guest icons' },
-            ].map(m => (
-              <button
-                key={m.key}
-                onClick={() => setMode(m.key)}
-                style={{
-                  flex: 1, padding: '6px 10px', borderRadius: 5, border: 'none', cursor: 'pointer',
-                  fontSize: '0.8rem', fontWeight: 700,
-                  background: mode === m.key ? '#fff' : 'transparent',
-                  color: mode === m.key ? '#405440' : '#64748b',
-                  boxShadow: mode === m.key ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
-                  transition: 'background 0.1s, color 0.1s',
-                }}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
+          {/* Mode tabs — hidden entirely for guestOnly callers, which never leave guest mode */}
+          {!guestOnly && (
+            <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: '#f1f5f9', borderRadius: 7, padding: 3 }}>
+              {[
+                { key: 'email', label: 'Email icons' },
+                { key: 'guest', label: 'Property & Guest icons' },
+              ].map(m => (
+                <button
+                  key={m.key}
+                  onClick={() => setMode(m.key)}
+                  style={{
+                    flex: 1, padding: '6px 10px', borderRadius: 5, border: 'none', cursor: 'pointer',
+                    fontSize: '0.8rem', fontWeight: 700,
+                    background: mode === m.key ? '#fff' : 'transparent',
+                    color: mode === m.key ? '#405440' : '#64748b',
+                    boxShadow: mode === m.key ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                    transition: 'background 0.1s, color 0.1s',
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Search */}
           <input

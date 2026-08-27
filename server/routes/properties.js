@@ -10,6 +10,7 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 import { seedCategories } from '../utils/categories.js';
 import { sanitizeBanner } from '../utils/sanitizeBanner.js';
+import { GUEST_ICON_NAMES } from '../utils/guestIconNames.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 
@@ -50,7 +51,14 @@ function normalizeAtAGlanceFacts(facts) {
   }
   const custom = Array.isArray(facts.custom)
     ? facts.custom
-        .map(c => ({ label: String(c?.label ?? '').trim(), value: String(c?.value ?? '').trim() }))
+        .map(c => ({
+          // Optional guest-icon choice, replacing the default sparkle on the
+          // booking page — whitelisted against the known icon set so a
+          // crafted value can't be used to build an arbitrary <img src> path.
+          icon: GUEST_ICON_NAMES.has(c?.icon) ? c.icon : null,
+          label: String(c?.label ?? '').trim(),
+          value: String(c?.value ?? '').trim(),
+        }))
         .filter(c => c.label || c.value)
     : [];
   if (custom.length) cleaned.custom = custom;

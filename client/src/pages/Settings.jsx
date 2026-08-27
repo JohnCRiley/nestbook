@@ -5,6 +5,7 @@ import InviteStaffModal from './settings/InviteStaffModal.jsx';
 import { formatAmenity } from './rooms/RoomPanel.jsx';
 import AddPropertyModal from './settings/AddPropertyModal.jsx';
 import SpecialsBannerEditor from './settings/SpecialsBannerEditor.jsx';
+import IconPicker from '../admin/IconPicker.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
@@ -4311,6 +4312,7 @@ function PropertyHeroPhoto({ property, onUpdated }) {
 function AtAGlanceSection({ form, setForm, t }) {
   const facts  = form?.at_a_glance_facts ?? {};
   const custom = facts.custom ?? [];
+  const [iconPickerIndex, setIconPickerIndex] = useState(null);
 
   function toggleFact(fact, checked) {
     setForm(p => {
@@ -4344,7 +4346,7 @@ function AtAGlanceSection({ form, setForm, t }) {
       ...p,
       at_a_glance_facts: {
         ...(p.at_a_glance_facts ?? {}),
-        custom: [...(p.at_a_glance_facts?.custom ?? []), { label: '', value: '' }],
+        custom: [...(p.at_a_glance_facts?.custom ?? []), { icon: '', label: '', value: '' }],
       },
     }));
   }
@@ -4413,7 +4415,32 @@ function AtAGlanceSection({ form, setForm, t }) {
       <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {custom.map((c, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <SparklesIcon size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+            <button
+              type="button"
+              onClick={() => setIconPickerIndex(i)}
+              title={t('settings.glanceCustomIconPick')}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}
+            >
+              {c.icon
+                ? <img src={`/images/guest-icons/${c.icon}.png`} width={16} height={16} alt="" />
+                : <SparklesIcon size={14} color="var(--text-muted)" />}
+            </button>
+            {c.icon && (
+              <button
+                type="button"
+                onClick={() => updateCustom(i, 'icon', '')}
+                title={t('settings.glanceCustomIconReset')}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0, marginRight: 2,
+                }}
+              >
+                ✕
+              </button>
+            )}
             <input
               type="text"
               className="form-control"
@@ -4453,6 +4480,14 @@ function AtAGlanceSection({ form, setForm, t }) {
           {t('settings.glanceAddCustom')}
         </button>
       </div>
+
+      {iconPickerIndex !== null && (
+        <IconPicker
+          guestOnly
+          onInsert={name => { updateCustom(iconPickerIndex, 'icon', name); setIconPickerIndex(null); }}
+          onClose={() => setIconPickerIndex(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import db from '../db/database.js';
+import { GUEST_ICON_NAMES } from '../utils/guestIconNames.js';
 
 export const bookingPageRouter = Router();
 
@@ -896,7 +897,16 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
       if (Array.isArray(raw.custom)) {
         raw.custom.forEach(c => {
           if (c?.label?.trim() && c?.value?.trim()) {
-            glanceFacts.push({ icon: 'ti-sparkles', text: `${esc(c.label.trim())}: ${esc(c.value.trim())}` });
+            // Re-validate against the known icon set here too, rather than
+            // trusting whatever string is in the DB — properties.js already
+            // whitelists this on save, but this is the point that actually
+            // builds the <img src>, so it re-checks independently.
+            const guestIcon = GUEST_ICON_NAMES.has(c?.icon) ? c.icon : null;
+            glanceFacts.push({
+              icon: guestIcon ? null : 'ti-sparkles',
+              guestIcon,
+              text: `${esc(c.label.trim())}: ${esc(c.value.trim())}`,
+            });
           }
         });
       }
@@ -910,7 +920,9 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     <div class="glance-grid">
       ${glanceFacts.map(f => `
       <div class="glance-item">
-        <i class="ti ${f.icon}"></i>
+        ${f.guestIcon
+          ? `<img src="/images/guest-icons/${f.guestIcon}.png" width="18" height="18" alt="" style="vertical-align:middle;">`
+          : `<i class="ti ${f.icon}"></i>`}
         <span>${f.text}</span>
       </div>`).join('')}
     </div>
