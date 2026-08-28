@@ -495,7 +495,9 @@ roomsRouter.post('/bulk-import', async (req, res) => {
       );
       roomCount++;
 
-      const photoUrls = [row.photo_url_1, row.photo_url_2, row.photo_url_3]
+      // Template offers photo_url_1..10 (Multi's cap); the per-plan photo limit
+      // below stops attaching once the plan's allowance is reached.
+      const photoUrls = Array.from({ length: 10 }, (_, i) => row[`photo_url_${i + 1}`])
         .map((u) => (u ?? '').toString().trim())
         .filter(Boolean);
 

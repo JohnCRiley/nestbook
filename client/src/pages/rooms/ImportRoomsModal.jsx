@@ -13,16 +13,27 @@ const FREE_ROOM_LIMIT = 5;
 // shows one. Query strings (?w=800&auto=compress) are fine — CDNs add them.
 const IMAGE_EXT_RE = /\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic)(\?|#|$)/i;
 
+// The template always offers the Multi plan's max (10) photo columns. Free/Pro
+// accounts can leave the extras blank — the server's per-plan cap (PHOTO_LIMITS
+// in roomPhotos.js) stops attaching once the plan limit is reached and flags
+// the rest, so extra columns are harmless.
+const MAX_PHOTO_COLS = 10;
+const PHOTO_COLS = Array.from({ length: MAX_PHOTO_COLS }, (_, i) => `photo_url_${i + 1}`);
+
 const TEMPLATE_COLS = [
   'name', 'type', 'price_per_night', 'capacity', 'max_occupancy',
-  'amenities', 'description', 'bed_config', 'photo_url_1', 'photo_url_2', 'photo_url_3',
+  'amenities', 'description', 'bed_config', ...PHOTO_COLS,
+];
+
+const TEMPLATE_ROWS = [
+  ['La Suite Lavande', 'suite', '145', '2', '3', '"wifi,ensuite,balcony,minibar"', 'Top-floor suite with valley views', 'king:1;sofa_bed:1'],
+  ['Chambre Mistral', 'twin', '95', '2', '', '"wifi,ensuite"', 'Cosy twin with garden view', 'single:2'],
+  ['Chambre Olivier', 'single', '70', '1', '', 'wifi', 'Compact single', 'single:1'],
 ];
 
 const TEMPLATE_CSV =
   TEMPLATE_COLS.join(',') + '\n' +
-  'La Suite Lavande,suite,145,2,3,"wifi,ensuite,balcony,minibar",Top-floor suite with valley views,king:1;sofa_bed:1,,,\n' +
-  'Chambre Mistral,twin,95,2,,"wifi,ensuite",Cosy twin with garden view,single:2,,,\n' +
-  'Chambre Olivier,single,70,1,,wifi,Compact single,single:1,,,\n';
+  TEMPLATE_ROWS.map((r) => [...r, ...Array(MAX_PHOTO_COLS).fill('')].join(',')).join('\n') + '\n';
 
 function downloadBlob(content, filename) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
@@ -127,7 +138,7 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
         const bed = parseBedConfigCell(obj.bed_config);
         if (bed.warning) warnings.push('bed: ' + bed.warning);
 
-        [obj.photo_url_1, obj.photo_url_2, obj.photo_url_3]
+        PHOTO_COLS.map((c) => obj[c])
           .filter(Boolean)
           .forEach((u) => {
             if (!/^https?:\/\/.+/i.test(u)) warnings.push('photo: ' + t('importRoomsRowBadUrl')(u));
@@ -312,7 +323,7 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
                           <td>{row.price_per_night || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
                           <td>{row.capacity || '2'}</td>
                           <td>{row.bed_config || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
-                          <td>{[row.photo_url_1, row.photo_url_2, row.photo_url_3].filter(Boolean).length || <span style={{ color: '#cbd5e1' }}>0</span>}</td>
+                          <td>{PHOTO_COLS.map((c) => row[c]).filter(Boolean).length || <span style={{ color: '#cbd5e1' }}>0</span>}</td>
                         </tr>
                       );
                     })}

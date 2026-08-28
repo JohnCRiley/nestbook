@@ -194,4 +194,24 @@ From first real use:
 New i18n keys (×5 locales): `importRoomsBedHint`, `importRoomsPhotoDirectHint`,
 `importRoomsRowNotDirectImage`. No schema or endpoint changes.
 
-## Status: COMPLETE — shipped 2026-08-28 (2 commits). Safe to move to docs/completed/ or delete.
+## Follow-up: template photo columns (2026-08-28, commit 3)
+
+Template hardcoded only `photo_url_1..3` — fine for Free (cap 3) but Pro (5) / Multi (10)
+owners couldn't supply more than 3 via import.
+
+- `ImportRoomsModal.jsx`: `MAX_PHOTO_COLS = 10` + `PHOTO_COLS` array; `TEMPLATE_COLS`
+  spreads `...PHOTO_COLS`; `TEMPLATE_CSV` built from `TEMPLATE_ROWS` + 10 trailing empties.
+  The CSV-row parser (`TEMPLATE_COLS.map`) and preview/validation loops now iterate
+  `PHOTO_COLS` instead of the three literals — so it was NOT template-only; the parser
+  and preview were also capped at 3.
+- `rooms.js` bulk-import: `photoUrls` now reads `photo_url_1..10` (was `1..3`). The
+  per-plan cap in the attach loop (`attached >= photoLimit` → `photo_errors`, row still
+  imported) was already correct and unchanged.
+- No i18n change (help text already said "up to your plan's photo limit per room").
+
+Verified: template header has 18 cols / 10 `photo_url_*`; Free + 5 URLs → 3 attached,
+2 in `photo_errors` ("not attached"), room imported; Multi + 10 URLs → all 10 attached
+(display_order 0–9); Pro + 4 valid URLs → all attached, no limit flag; no-photo rows
+and 3-column old templates still work unchanged.
+
+## Status: COMPLETE — shipped 2026-08-28 (3 commits). Safe to move to docs/completed/ or delete.
