@@ -5,9 +5,12 @@
  * The script is idempotent: if any property already exists it exits early.
  */
 
+import { join } from 'path';
 import bcrypt from 'bcryptjs';
 import { initSchema } from './schema.js';
 import db from './database.js';
+import { cleanupFile } from '../utils/fileCleanup.js';
+import { ROOM_UPLOAD_DIR } from '../utils/processRoomPhoto.js';
 
 // Make sure the tables exist before we try to insert into them.
 initSchema();
@@ -79,11 +82,18 @@ function ensureAdminTestData() {
 function reseedDemoProperty(propertyId) {
   console.log(`\n  Reseeding demo property (id ${propertyId})…`);
 
+  // Collect photo files first — room_id can be NULL (unassigned-pool rows, e.g.
+  // from a hero-photo swap) so the room cascade no longer catches everything.
+  const demoPhotoFiles = db.prepare(
+    'SELECT filename, thumb_filename FROM room_photos WHERE property_id = ?'
+  ).all(propertyId);
+
   db.exec('BEGIN');
   try {
-    // Wipe existing bookings and rooms for this property only
-    db.prepare('DELETE FROM bookings WHERE property_id = ?').run(propertyId);
-    db.prepare('DELETE FROM rooms    WHERE property_id = ?').run(propertyId);
+    // Wipe existing bookings, photos and rooms for this property only
+    db.prepare('DELETE FROM bookings    WHERE property_id = ?').run(propertyId);
+    db.prepare('DELETE FROM room_photos WHERE property_id = ?').run(propertyId);
+    db.prepare('DELETE FROM rooms       WHERE property_id = ?').run(propertyId);
 
     // Insert 4 canonical demo rooms with is_demo = 1
     const insertRoom = db.prepare(`
@@ -136,6 +146,12 @@ function reseedDemoProperty(propertyId) {
     });
 
     db.exec('COMMIT');
+
+    for (const p of demoPhotoFiles) {
+      cleanupFile(join(ROOM_UPLOAD_DIR, p.filename));
+      if (p.thumb_filename) cleanupFile(join(ROOM_UPLOAD_DIR, p.thumb_filename));
+    }
+
     console.log(`  ✓ ${demoRooms.length} rooms inserted (is_demo = 1)`);
     console.log(`  ✓ ${futureBookings.length} future bookings inserted`);
   } catch (err) {

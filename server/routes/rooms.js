@@ -11,6 +11,7 @@ import { getRateForDate } from '../utils/ratePeriods.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
+import { adoptFileIntoPool } from '../utils/mediaPool.js';
 import { PHOTO_LIMITS } from './roomPhotos.js';
 import { createRoomCategory } from './roomCategories.js';
 
@@ -1358,7 +1359,15 @@ roomsRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), async (
     cleanupFile(req.file.path);
 
     if (existing?.access_photo) {
-      cleanupFile(join(ACCESS_PHOTO_DIR, existing.access_photo));
+      // Media Library: the photo being replaced is already reviewed content —
+      // relocate it into the property's unassigned pool instead of deleting it.
+      const oldPath = join(ACCESS_PHOTO_DIR, existing.access_photo);
+      try {
+        await adoptFileIntoPool({ srcPath: oldPath, propertyId: eligibility.room.property_id });
+      } catch (e) {
+        console.error('[access-photo] pool adopt failed, deleting instead:', e.message);
+        cleanupFile(oldPath);
+      }
     }
 
     db.prepare('UPDATE rooms SET access_photo = ? WHERE id = ?').run(filename, roomId);
@@ -1411,6 +1420,14 @@ roomsRouter.delete('/:id', (req, res) => {
     }
 
     db.prepare(`UPDATE bookings SET room_id = NULL WHERE room_id = ?`).run(rid);
+    // Media Library: detach this room's photos (and, if it's a unit, its
+    // internal rooms' photos) into the property's unassigned pool rather than
+    // letting the ON DELETE CASCADE destroy them.
+    db.prepare(`
+      UPDATE room_photos SET room_id = NULL
+       WHERE room_id = ?
+          OR room_id IN (SELECT id FROM rooms WHERE parent_unit_id = ?)
+    `).run(rid, rid);
     db.prepare('DELETE FROM rooms WHERE id = ?').run(rid);
     res.status(204).end();
 

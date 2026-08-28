@@ -11,8 +11,11 @@ import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 import { seedCategories } from '../utils/categories.js';
 import { sanitizeBanner } from '../utils/sanitizeBanner.js';
 import { GUEST_ICON_NAMES } from '../utils/guestIconNames.js';
-import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
+import { ROOM_UPLOAD_DIR, PHOTO_LIMITS } from './roomPhotos.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
+import { processRoomPhoto } from '../utils/processRoomPhoto.js';
+import { attachPoolPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
+import { computePoolCap, poolCount, adoptFileIntoPool } from '../utils/mediaPool.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -506,6 +509,13 @@ propertiesRouter.delete('/:id', (req, res) => {
 
     // Delete in FK order: nullify staff/guest refs → audit_log/error_reports/
     // guest_mailer_log → charges → bookings → categories → rooms → property
+    // Collect every photo file for this property (room-attached AND unassigned
+    // pool rows) up front — room_id can be NULL now, so the room cascade no
+    // longer catches them all, and none of these files were ever cleaned up.
+    const photoFiles = db.prepare(
+      'SELECT filename, thumb_filename FROM room_photos WHERE property_id = ?'
+    ).all(pid);
+
     try {
       db.exec('BEGIN');
       db.prepare('UPDATE users SET property_id = NULL WHERE property_id = ?').run(pid);
@@ -519,12 +529,18 @@ propertiesRouter.delete('/:id', (req, res) => {
       db.prepare('DELETE FROM room_charges WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM bookings WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM service_categories WHERE property_id = ?').run(pid);
+      db.prepare('DELETE FROM room_photos WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM rooms WHERE property_id = ?').run(pid);
       db.prepare('DELETE FROM properties WHERE id = ?').run(pid);
       db.exec('COMMIT');
     } catch (e) {
       try { db.exec('ROLLBACK'); } catch {}
       throw e;
+    }
+
+    for (const p of photoFiles) {
+      cleanupFile(join(ROOM_UPLOAD_DIR, p.filename));
+      if (p.thumb_filename) cleanupFile(join(ROOM_UPLOAD_DIR, p.thumb_filename));
     }
 
     // If this was the owner's active property, switch them to another one
@@ -663,10 +679,22 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
     fs.unlinkSync(req.file.path);
     fs.renameSync(tmpPath, req.file.path);
 
-    // Remove previous hero photo file if it exists
-    const existing = db.prepare('SELECT hero_photo FROM properties WHERE id = ?').get(propId);
+    // Media Library: the previous hero photo is already-reviewed content —
+    // relocate it into the property's unassigned pool rather than deleting it.
+    // A sample hero is the exception: it should never pollute the pool.
+    const existing = db.prepare('SELECT hero_photo, hero_photo_is_sample FROM properties WHERE id = ?').get(propId);
     if (existing?.hero_photo) {
-      cleanupFile(join(PROP_UPLOAD_DIR, existing.hero_photo));
+      const oldPath = join(PROP_UPLOAD_DIR, existing.hero_photo);
+      if (existing.hero_photo_is_sample) {
+        cleanupFile(oldPath);
+      } else {
+        try {
+          await adoptFileIntoPool({ srcPath: oldPath, propertyId: propId });
+        } catch (e) {
+          console.error('[hero-photo] pool adopt failed, deleting instead:', e.message);
+          cleanupFile(oldPath);
+        }
+      }
     }
 
     db.prepare('UPDATE properties SET hero_photo = ?, hero_photo_is_sample = 0 WHERE id = ?').run(req.file.filename, propId);
@@ -736,7 +764,15 @@ propertiesRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), as
     cleanupFile(req.file.path);
 
     if (existing?.access_photo) {
-      cleanupFile(join(ACCESS_PHOTO_DIR, existing.access_photo));
+      // Media Library: relocate the replaced access photo into the unassigned
+      // pool instead of deleting it — it is already-reviewed content.
+      const oldPath = join(ACCESS_PHOTO_DIR, existing.access_photo);
+      try {
+        await adoptFileIntoPool({ srcPath: oldPath, propertyId: propId });
+      } catch (e) {
+        console.error('[access-photo] pool adopt failed, deleting instead:', e.message);
+        cleanupFile(oldPath);
+      }
     }
 
     db.prepare('UPDATE properties SET access_photo = ? WHERE id = ?').run(filename, propId);
@@ -762,6 +798,161 @@ propertiesRouter.delete('/:id/access-photo', (req, res) => {
       db.prepare('UPDATE properties SET access_photo = NULL WHERE id = ?').run(propId);
     }
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ═══ Media Library (Phase 1a) ════════════════════════════════════════════════
+
+// Multer for direct-to-pool uploads — saves straight into the room-photos dir
+// so processRoomPhoto (which resizes in place) and the /uploads/rooms/ static
+// mount both work unchanged.
+const mediaPoolUpload = multer({
+  storage: multer.diskStorage({
+    destination: ROOM_UPLOAD_DIR,
+    filename: (req, file, cb) =>
+      cb(null, `pool-${req.params.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) =>
+    file.mimetype.startsWith('image/') ? cb(null, true) : cb(new Error('Images only')),
+});
+
+// ── GET /api/properties/:id/media ────────────────────────────────────────────
+// Everything the (future) Media Library page needs in one call.
+propertiesRouter.get('/:id/media', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+    const prop = db.prepare(
+      'SELECT id, hero_photo, access_photo, rental_type, owner_id FROM properties WHERE id = ?'
+    ).get(propId);
+    if (!prop) return res.status(404).json({ error: 'Property not found.' });
+
+    const plan = db.prepare('SELECT plan FROM users WHERE id = ?').get(prop.owner_id)?.plan ?? 'free';
+    const isUnits = prop.rental_type === 'units';
+    const perRoomLimit = isUnits ? 1 : (PHOTO_LIMITS[plan] ?? 1);
+
+    const rooms = db.prepare(`
+      SELECT id, name, type, parent_unit_id, access_photo
+      FROM rooms WHERE property_id = ?
+      ORDER BY COALESCE(parent_unit_id, id), id
+    `).all(propId);
+
+    const allPhotos = db.prepare(`
+      SELECT id, room_id, filename, thumb_filename, display_order
+      FROM room_photos WHERE property_id = ?
+      ORDER BY display_order ASC, id ASC
+    `).all(propId);
+
+    const shape = (p) => ({
+      id: p.id,
+      filename: p.filename,
+      url: `/uploads/rooms/${p.filename}`,
+      thumbUrl: `/uploads/rooms/${p.thumb_filename || p.filename}`,
+      displayOrder: p.display_order,
+    });
+
+    const byRoom = new Map();
+    const poolPhotos = [];
+    for (const p of allPhotos) {
+      if (p.room_id == null) { poolPhotos.push(shape(p)); continue; }
+      if (!byRoom.has(p.room_id)) byRoom.set(p.room_id, []);
+      byRoom.get(p.room_id).push(shape(p));
+    }
+
+    res.json({
+      hero: prop.hero_photo
+        ? { filename: prop.hero_photo, url: `/uploads/properties/${prop.hero_photo}` }
+        : null,
+      propertyAccessPhoto: prop.access_photo
+        ? { filename: prop.access_photo, url: `/uploads/access/${prop.access_photo}` }
+        : null,
+      rooms: rooms.map(r => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        parentUnitId: r.parent_unit_id,
+        limit: perRoomLimit,
+        photos: byRoom.get(r.id) || [],
+      })),
+      unitAccessPhotos: rooms
+        .filter(r => r.access_photo && (!isUnits || r.parent_unit_id === null))
+        .map(r => ({
+          roomId: r.id,
+          roomName: r.name,
+          filename: r.access_photo,
+          url: `/uploads/access/${r.access_photo}`,
+        })),
+      pool: {
+        cap: computePoolCap(propId),
+        count: poolPhotos.length,
+        photos: poolPhotos,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/properties/:id/media/upload ────────────────────────────────────
+// Upload a photo straight into the unassigned pool (no room chosen).
+propertiesRouter.post('/:id/media/upload', mediaPoolUpload.single('photo'), async (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      if (req.file) cleanupFile(req.file.path);
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!db.prepare('SELECT id FROM properties WHERE id = ?').get(propId)) {
+      if (req.file) cleanupFile(req.file.path);
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    const cap = computePoolCap(propId);
+    if (poolCount(propId) >= cap) {
+      cleanupFile(req.file.path);
+      return res.status(403).json({ error: `The unassigned pool is full (${cap} max for this property).` });
+    }
+
+    const { id, filename, displayOrder } = await processRoomPhoto(req.file.path, null, propId);
+    res.status(201).json({ id, url: `/uploads/rooms/${filename}`, displayOrder });
+  } catch (err) {
+    if (req.file?.path) {
+      cleanupFile(req.file.path);
+      cleanupFile(req.file.path + '.tmp');
+      cleanupFile(join(ROOM_UPLOAD_DIR, `thumb_${req.file.filename}`));
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/properties/:id/media/upload-url ────────────────────────────────
+// Same, but fetch the image from a URL (reuses the CSV importer's validation).
+propertiesRouter.post('/:id/media/upload-url', async (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    if (!db.prepare('SELECT id FROM properties WHERE id = ?').get(propId)) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+    const url = (req.body?.url || '').trim();
+    if (!url) return res.status(400).json({ error: 'A url is required.' });
+
+    const cap = computePoolCap(propId);
+    if (poolCount(propId) >= cap) {
+      return res.status(403).json({ error: `The unassigned pool is full (${cap} max for this property).` });
+    }
+
+    const outcome = await attachPoolPhotoFromUrl(propId, url, 'Photo');
+    if (!outcome.attached) return res.status(400).json({ error: outcome.error });
+    res.status(201).json({ attached: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

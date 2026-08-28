@@ -8,11 +8,22 @@
  * Stripe cancellation is the caller's responsibility (callers that have it:
  * auth.js DELETE /account, admin.js DELETE /users/:id).
  */
+import { join } from 'path';
 import db from '../db/database.js';
+import { cleanupFile } from './fileCleanup.js';
+import { ROOM_UPLOAD_DIR } from './processRoomPhoto.js';
 
 export function deleteUserAccount(userId) {
   const ownedProps = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId);
   const propIds    = ownedProps.map((p) => p.id);
+
+  // Room-photo files (room-attached AND unassigned-pool rows) for these
+  // properties — collected up front so the files can be swept after commit.
+  const photoFiles = propIds.length > 0
+    ? db.prepare(
+        `SELECT filename, thumb_filename FROM room_photos WHERE property_id IN (${propIds.map(() => '?').join(',')})`
+      ).all(...propIds)
+    : [];
 
   db.exec('BEGIN');
   try {
@@ -26,7 +37,8 @@ export function deleteUserAccount(userId) {
       db.prepare(`DELETE FROM property_expenses  WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM error_reports      WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM guest_mailer_log   WHERE property_id IN (${ph})`).run(...propIds);
-      db.prepare(`DELETE FROM room_photos        WHERE room_id IN (SELECT id FROM rooms WHERE property_id IN (${ph}))`).run(...propIds);
+      // Scoped by property_id, not room_id — room_id can be NULL (pool photos).
+      db.prepare(`DELETE FROM room_photos        WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM room_charges       WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM bookings           WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM service_categories WHERE property_id IN (${ph})`).run(...propIds);
@@ -65,5 +77,10 @@ export function deleteUserAccount(userId) {
   } catch (err) {
     try { db.exec('ROLLBACK'); } catch {}
     throw err;
+  }
+
+  for (const p of photoFiles) {
+    cleanupFile(join(ROOM_UPLOAD_DIR, p.filename));
+    if (p.thumb_filename) cleanupFile(join(ROOM_UPLOAD_DIR, p.thumb_filename));
   }
 }

@@ -541,6 +541,13 @@ adminRouter.post('/properties/:id/rental-mode-switch', (req, res) => {
 
     let deletedBookings = 0, archivedBookings = 0, deletedGuests = 0;
 
+    // Media Library: real photos survive a mode switch in the unassigned pool
+    // (the owner re-attaches them to the new mode's rooms). Sample-data photos
+    // are the exception — they are torn down with the rest of the sample set.
+    const sampleSwitchPhotos = db.prepare(
+      'SELECT filename, thumb_filename FROM room_photos WHERE property_id = ? AND is_sample_data = 1'
+    ).all(propId);
+
     db.exec('BEGIN');
     try {
       if (status.scenario === 'archive') {
@@ -555,8 +562,12 @@ adminRouter.post('/properties/:id/rental-mode-switch', (req, res) => {
         deletedGuests = db.prepare('DELETE FROM guests WHERE property_id = ? AND is_sample_data = 1').run(propId).changes;
       }
 
-      // room_photos / rate_period_rooms / content_flags / nested internal
-      // rooms (parent_unit_id) all cascade off this delete.
+      // Detach real photos into the unassigned pool, then hard-delete the
+      // sample-data ones, BEFORE the room delete removes the room_id target.
+      db.prepare('DELETE FROM room_photos WHERE property_id = ? AND is_sample_data = 1').run(propId);
+      db.prepare('UPDATE room_photos SET room_id = NULL WHERE property_id = ?').run(propId);
+      // rate_period_rooms / content_flags / nested internal rooms
+      // (parent_unit_id) still cascade off this delete.
       db.prepare('DELETE FROM rooms WHERE property_id = ?').run(propId);
       // Safe only now that no room still references a category.
       db.prepare('DELETE FROM room_categories WHERE property_id = ?').run(propId);
@@ -584,6 +595,11 @@ adminRouter.post('/properties/:id/rental-mode-switch', (req, res) => {
     } catch (innerErr) {
       db.exec('ROLLBACK');
       throw innerErr;
+    }
+
+    for (const p of sampleSwitchPhotos) {
+      cleanupFile(join(ROOM_UPLOAD_DIR, p.filename));
+      if (p.thumb_filename) cleanupFile(join(ROOM_UPLOAD_DIR, p.thumb_filename));
     }
 
     logAction(db, {
@@ -825,6 +841,14 @@ adminRouter.delete('/users/:id', async (req, res) => {
   const ownedProps = db.prepare('SELECT id FROM properties WHERE owner_id = ?').all(userId);
   const propIds    = ownedProps.map((p) => p.id);
 
+  // Every room-photo file for these properties (room-attached AND pool rows) —
+  // collected before the transaction so the files can be swept after commit.
+  const bulkPhotoFiles = propIds.length > 0
+    ? db.prepare(
+        `SELECT filename, thumb_filename FROM room_photos WHERE property_id IN (${propIds.map(() => '?').join(',')})`
+      ).all(...propIds)
+    : [];
+
   try {
     db.exec('BEGIN');
 
@@ -838,7 +862,9 @@ adminRouter.delete('/users/:id', async (req, res) => {
       db.prepare(`DELETE FROM property_expenses WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM error_reports WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM guest_mailer_log WHERE property_id IN (${ph})`).run(...propIds);
-      db.prepare(`DELETE FROM room_photos WHERE room_id IN (SELECT id FROM rooms WHERE property_id IN (${ph}))`).run(...propIds);
+      // Scoped by property_id, not room_id — room_id can be NULL (pool photos)
+      // and would otherwise be left behind.
+      db.prepare(`DELETE FROM room_photos WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM room_charges WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM bookings WHERE property_id IN (${ph})`).run(...propIds);
       db.prepare(`DELETE FROM service_categories WHERE property_id IN (${ph})`).run(...propIds);
@@ -869,6 +895,12 @@ adminRouter.delete('/users/:id', async (req, res) => {
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
 
     db.exec('COMMIT');
+
+    for (const p of bulkPhotoFiles) {
+      cleanupFile(join(ROOM_UPLOAD_DIR, p.filename));
+      if (p.thumb_filename) cleanupFile(join(ROOM_UPLOAD_DIR, p.thumb_filename));
+    }
+
     console.log('[admin/delete-user] Successfully deleted user:', userId);
     res.json({ success: true });
   } catch (err) {
@@ -1847,7 +1879,12 @@ adminRouter.post('/content-flags/:id/remove', async (req, res) => {
 
   try {
     if (flag.content_type === 'room_photo') {
-      const photo = db.prepare('SELECT * FROM room_photos WHERE filename = ? AND room_id = ?').get(flag.content_ref, flag.room_id);
+      // Prefer the permanent room_photos_id link (survives the photo being
+      // moved between rooms or into the pool); fall back to the legacy
+      // filename + room_id match for flags created before that column existed.
+      const photo = flag.room_photos_id
+        ? db.prepare('SELECT * FROM room_photos WHERE id = ?').get(flag.room_photos_id)
+        : db.prepare('SELECT * FROM room_photos WHERE filename = ? AND room_id = ?').get(flag.content_ref, flag.room_id);
       if (photo) {
         db.prepare('DELETE FROM room_photos WHERE id = ?').run(photo.id);
         cleanupFile(join(ROOM_UPLOAD_DIR, photo.filename));

@@ -2486,6 +2486,74 @@ John`
   // Not read or written by any UI yet — Phase 2/3 wire in the actual toggle.
   try { db.exec(`ALTER TABLE properties ADD COLUMN ir_room_mode TEXT DEFAULT 'named'`); } catch (e) {}
 
+  // ── Media Library (Phase 1a) ─────────────────────────────────────────────
+  // room_photos.room_id becomes nullable so a photo can live in a property's
+  // "unassigned pool" (room_id NULL, property_id kept) after its room/unit is
+  // deleted or it is explicitly moved there. Standard node:sqlite rebuild.
+  {
+    const rpSql = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name='room_photos'`).get()?.sql ?? '';
+    if (/room_id\s+INTEGER\s+NOT\s+NULL/i.test(rpSql)) {
+      db.exec(`PRAGMA foreign_keys = OFF`);
+      db.exec(`BEGIN`);
+      try {
+        db.exec(`
+          CREATE TABLE room_photos_v2 (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            room_id        INTEGER,
+            property_id    INTEGER NOT NULL,
+            filename       TEXT    NOT NULL,
+            display_order  INTEGER DEFAULT 0,
+            created_at     TEXT    DEFAULT (datetime('now')),
+            thumb_filename TEXT,
+            is_sample_data INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (room_id)     REFERENCES rooms(id)      ON DELETE CASCADE,
+            FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+          )
+        `);
+        db.exec(`
+          INSERT INTO room_photos_v2
+            (id, room_id, property_id, filename, display_order, created_at, thumb_filename, is_sample_data)
+          SELECT
+            id, room_id, property_id, filename, display_order, created_at, thumb_filename, is_sample_data
+          FROM room_photos
+        `);
+        db.exec(`DROP TABLE room_photos`);
+        db.exec(`ALTER TABLE room_photos_v2 RENAME TO room_photos`);
+        db.exec(`COMMIT`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_room_photos_room     ON room_photos(room_id)`);
+        db.exec(`CREATE INDEX IF NOT EXISTS idx_room_photos_property ON room_photos(property_id)`);
+        console.log('✓ room_photos.room_id is now nullable (Media Library pool)');
+      } catch (e) {
+        try { db.exec(`ROLLBACK`); } catch {}
+        console.log(`[schema] room_photos nullable migration skipped: ${e.message}`);
+      }
+      db.exec(`PRAGMA foreign_keys = ON`);
+    }
+  }
+
+  // content_flags.room_photos_id — a permanent, move-proof handle on the flagged
+  // photo. The legacy (content_ref filename + room_id) lookup breaks the moment
+  // a photo is reassigned to another room or into the pool. New flags set it
+  // (utils/processRoomPhoto.js); the moderation "remove" handler prefers it and
+  // falls back to the old lookup when null.
+  try {
+    db.exec(`ALTER TABLE content_flags ADD COLUMN room_photos_id INTEGER REFERENCES room_photos(id) ON DELETE SET NULL`);
+  } catch { /* already exists */ }
+  try {
+    db.exec(`
+      UPDATE content_flags
+         SET room_photos_id = (
+           SELECT rp.id FROM room_photos rp
+            WHERE rp.filename = content_flags.content_ref
+              AND rp.room_id = content_flags.room_id
+         )
+       WHERE content_type = 'room_photo'
+         AND room_photos_id IS NULL
+    `);
+  } catch (e) {
+    console.log(`[schema] content_flags.room_photos_id backfill skipped: ${e.message}`);
+  }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

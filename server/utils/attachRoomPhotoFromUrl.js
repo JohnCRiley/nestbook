@@ -9,17 +9,13 @@ import { cleanupFile } from './fileCleanup.js';
 const IMAGE_URL_RE = /\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic)(\?|#|$)/i;
 
 /**
- * Fetches one image URL and attaches it to `roomId` via processRoomPhoto.
- * Never throws. Returns `{ attached: true }` on success, or
- * `{ attached: false, error }` with a user-facing message. `label` is
- * prepended to every message (e.g. `Row 3 ("Garden Room")`).
- *
- * Shared by both CSV importers (Named Rooms + Room Categories) so the
- * fetch/validation/"that's a webpage link" messaging lives in one place.
+ * Fetches + validates one image URL into a temp file inside ROOM_UPLOAD_DIR.
+ * Returns `{ ok: true, tmpPath }` or `{ ok: false, error }` with a user-facing
+ * message. Shared by the room and pool attach helpers below.
  */
-export async function attachRoomPhotoFromUrl(roomId, url, label = 'Photo') {
+async function fetchImageToTmp(namePrefix, url, label) {
   if (!/^https?:\/\/.+/i.test(url)) {
-    return { attached: false, error: `${label}: "${url}" is not a valid http(s) URL` };
+    return { ok: false, error: `${label}: "${url}" is not a valid http(s) URL` };
   }
 
   // The URL shape is the discriminator: no image extension → treat any failure
@@ -28,7 +24,7 @@ export async function attachRoomPhotoFromUrl(roomId, url, label = 'Photo') {
   const looksLikeImageUrl = IMAGE_URL_RE.test(url);
   const webpageMsg = `${label}: "${url}" looks like a webpage link, not a direct image link — it should point straight at an image file (ending in .jpg, .png, etc.)`;
 
-  const tmpName = `${roomId}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+  const tmpName = `${namePrefix}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
   const tmpPath = join(ROOM_UPLOAD_DIR, tmpName);
 
   try {
@@ -36,14 +32,11 @@ export async function attachRoomPhotoFromUrl(roomId, url, label = 'Photo') {
     const ctype = (resp.headers.get('content-type') || '').toLowerCase();
 
     if (!resp.ok) {
-      return {
-        attached: false,
-        error: looksLikeImageUrl ? `${label}: ${url} returned HTTP ${resp.status}` : webpageMsg,
-      };
+      return { ok: false, error: looksLikeImageUrl ? `${label}: ${url} returned HTTP ${resp.status}` : webpageMsg };
     }
     if (!ctype.startsWith('image/')) {
       return {
-        attached: false,
+        ok: false,
         error: looksLikeImageUrl
           ? `${label}: ${url} returned ${ctype || 'a non-image response'} instead of an image`
           : webpageMsg,
@@ -51,10 +44,47 @@ export async function attachRoomPhotoFromUrl(roomId, url, label = 'Photo') {
     }
 
     fs.writeFileSync(tmpPath, Buffer.from(await resp.arrayBuffer()));
-    await processRoomPhoto(tmpPath, roomId);
-    return { attached: true };
+    return { ok: true, tmpPath };
   } catch (e) {
     cleanupFile(tmpPath);
-    return { attached: false, error: `${label}: could not fetch ${url} (${e.message})` };
+    return { ok: false, error: `${label}: could not fetch ${url} (${e.message})` };
+  }
+}
+
+/**
+ * Fetches one image URL and attaches it to `roomId` via processRoomPhoto.
+ * Never throws. Returns `{ attached: true }` on success, or
+ * `{ attached: false, error }` with a user-facing message. `label` is
+ * prepended to every message (e.g. `Row 3 ("Garden Room")`).
+ *
+ * Shared by all CSV importers so the fetch/validation/"that's a webpage link"
+ * messaging lives in one place.
+ */
+export async function attachRoomPhotoFromUrl(roomId, url, label = 'Photo') {
+  const r = await fetchImageToTmp(String(roomId), url, label);
+  if (!r.ok) return { attached: false, error: r.error };
+  try {
+    await processRoomPhoto(r.tmpPath, roomId);
+    return { attached: true };
+  } catch (e) {
+    cleanupFile(r.tmpPath);
+    return { attached: false, error: `${label}: ${e.message}` };
+  }
+}
+
+/**
+ * Same as attachRoomPhotoFromUrl but drops the photo straight into a property's
+ * unassigned pool (room_id NULL). Used by the Media Library direct-to-pool
+ * upload-by-URL endpoint. Never throws.
+ */
+export async function attachPoolPhotoFromUrl(propertyId, url, label = 'Photo') {
+  const r = await fetchImageToTmp(`pool-${propertyId}`, url, label);
+  if (!r.ok) return { attached: false, error: r.error };
+  try {
+    await processRoomPhoto(r.tmpPath, null, propertyId);
+    return { attached: true };
+  } catch (e) {
+    cleanupFile(r.tmpPath);
+    return { attached: false, error: `${label}: ${e.message}` };
   }
 }
