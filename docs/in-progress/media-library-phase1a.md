@@ -101,7 +101,17 @@ One mount: `server/index.js:102` — `app.use('/uploads', express.static('upload
 | Legacy `POST/GET/DELETE /api/rooms/:roomId/photos*` unchanged | ✅ (new upload also writes room_photos_id) |
 | Server boots — no circular import (roomPhotos ↔ mediaPool resolved via PHOTO_LIMITS in processRoomPhoto) | ✅ |
 
-**Not re-smoke-tested** (not functionally touched — only a new import line in rooms.js, and a byte-identical fetch refactor): the 4 CSV importers. `deleteUserAccount` / `DELETE /users/:id` / demo reseed file-cleanup code was read-reviewed, not executed (destructive).
+**CSV importers — real end-to-end pass (2026-08-29, follow-up):** ran one live import through each of the 4 wizards with a photo URL (`http://localhost:3001/uploads/importtest.jpg`) in the CSV, against a copy of the live DB (restored after). Every one returned `photos_attached: 1`, `photo_errors: []`, and DB-level checks confirmed the `room_photos` row (filename + thumb, both files on disk) and the `content_flags` row with `room_photos_id` correctly set:
+
+| Importer | Endpoint | Result |
+|---|---|---|
+| Named Rooms | `POST /api/rooms/bulk-import` | ✅ photo attached, flag.room_photos_id set |
+| Room Categories | `POST /api/rooms/bulk-import-categories` | ✅ photo attached, flag.room_photos_id set |
+| Whole Property | `POST /api/rooms/bulk-import-wp` | ✅ photo attached, flag.room_photos_id set |
+| Units (unit row) | `POST /api/rooms/bulk-import-units` | ✅ photo attached, flag.room_photos_id set |
+| Units (internal-room row, pass 2) | same | ✅ photo attached, flag.room_photos_id set |
+
+`deleteUserAccount` / `DELETE /users/:id` / demo reseed file-cleanup code was read-reviewed, not executed (destructive).
 
 ---
 
