@@ -168,4 +168,30 @@ has the import group duplicated in source, block added after the later copy — 
 | `client && npx vite build` | ✓ built, 863 modules, no errors |
 | All test data removed | property 1 back to 4 original rooms, demo=free, rooms/named; no dangling photos/flags |
 
-## Status: COMPLETE — shipped 2026-08-28. Safe to move to docs/completed/ or delete.
+## Follow-up UX fixes (2026-08-28, commit 2)
+
+From first real use:
+
+1. **bed_config** — case-insensitive matching was *already* in place (both `parseBedConfigCsv`
+   server and `parseBedConfigCell` client trim + `.toLowerCase()` the type before comparing
+   to `VALID_BED_TYPES` / `BED_TYPES`); comments made this explicit and it's now verified
+   (`King:1;Sofa_Bed:1` → stored `[{"type":"king","qty":1},{"type":"sofa_bed","qty":1}]`, no warning).
+   Added a visible format hint line in step 1 (`importRoomsBedHint`) and the same hint under
+   the bed-warnings block in the validation panel (new `hint` prop on `ValidationBlock`).
+2. **Photo URLs**:
+   - Step 1 now has a `photo_url_1/2/3` line: `importRoomsPhotoDirectHint` — "Must link
+     directly to an image file (ending in .jpg/.png/etc), not a webpage that displays one."
+     Same hint repeated under the photo-warnings block in the validation panel.
+   - Client: `IMAGE_EXT_RE` — a `photo_url` that is a valid `http(s)` URL but has no image
+     extension now raises a soft amber warning (`importRoomsRowNotDirectImage`), non-blocking.
+   - Server `POST /bulk-import` photo loop: `looksLikeImageUrl` (same regex) is the discriminator.
+     A URL with no image extension that fails (403/HTML/non-image) → "looks like a webpage link,
+     not a direct image link …". A real `.jpg` that 404s → still the plain "returned HTTP 404".
+     A `.jpg` that returns 200 + non-image → "returned <ctype> instead of an image".
+   - Verified: `pexels.com/photo/title/` → webpage message; `…/really-not-here.jpg` (404) → HTTP 404;
+     `/about` (HTML) → webpage message; validation panel shows both hint lines in-browser.
+
+New i18n keys (×5 locales): `importRoomsBedHint`, `importRoomsPhotoDirectHint`,
+`importRoomsRowNotDirectImage`. No schema or endpoint changes.
+
+## Status: COMPLETE — shipped 2026-08-28 (2 commits). Safe to move to docs/completed/ or delete.

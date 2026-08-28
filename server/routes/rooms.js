@@ -49,9 +49,11 @@ const FREE_PLAN_ROOM_LIMIT = 5;
 const IMPORT_ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
 // Parses a CSV bed_config cell like "king:1;sofa_bed:1" into the JSON string
-// the rooms.bed_config column stores. A single invalid bed type or quantity
-// discards the whole cell: returns { value: null, warning } and the caller
-// still imports the row, just without a bed configuration set.
+// the rooms.bed_config column stores. Bed types are matched case-insensitively
+// (trimmed + lower-cased) so "King:1" from an auto-capitalising spreadsheet
+// works the same as "king:1". A single invalid bed type or quantity discards
+// the whole cell: returns { value: null, warning } and the caller still
+// imports the row, just without a bed configuration set.
 function parseBedConfigCsv(cell) {
   const raw = (cell ?? '').trim();
   if (!raw) return { value: null };
@@ -526,16 +528,29 @@ roomsRouter.post('/bulk-import', async (req, res) => {
           photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): "${url}" is not a valid http(s) URL`);
           continue;
         }
+        // A photo_url must point straight at an image file, not at a webpage
+        // that displays one (e.g. a pexels.com/photo/... gallery page, which
+        // 403s an HTML page). Query strings are fine — image CDNs append them.
+        // The URL shape is the discriminator: no image extension → treat any
+        // failure as "that's a webpage link"; a real .jpg that 404s still gets
+        // the plain HTTP-status message.
+        const looksLikeImageUrl = /\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic)(\?|#|$)/i.test(url);
+        const webpageMsg = `Row ${rec.rowNum} ("${rec.name}"): "${url}" looks like a webpage link, not a direct image link — it should point straight at an image file (ending in .jpg, .png, etc.)`;
         const tmpName = `${rec.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const tmpPath = join(ROOM_UPLOAD_DIR, tmpName);
         try {
           const resp = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(15000) });
+          const ctype = (resp.headers.get('content-type') || '').toLowerCase();
           if (!resp.ok) {
-            photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): ${url} returned HTTP ${resp.status}`);
+            photoErrors.push(looksLikeImageUrl
+              ? `Row ${rec.rowNum} ("${rec.name}"): ${url} returned HTTP ${resp.status}`
+              : webpageMsg);
             continue;
           }
-          if (!(resp.headers.get('content-type') || '').startsWith('image/')) {
-            photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): ${url} did not return an image`);
+          if (!ctype.startsWith('image/')) {
+            photoErrors.push(looksLikeImageUrl
+              ? `Row ${rec.rowNum} ("${rec.name}"): ${url} returned ${ctype || 'a non-image response'} instead of an image`
+              : webpageMsg);
             continue;
           }
           fs.writeFileSync(tmpPath, Buffer.from(await resp.arrayBuffer()));

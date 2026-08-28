@@ -9,6 +9,10 @@ import { ChevronUpIcon, ChevronDownIcon, DownloadIcon, CircleCheckIcon, AlertTri
 const ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 const FREE_ROOM_LIMIT = 5;
 
+// A photo_url should point straight at an image file, not at a webpage that
+// shows one. Query strings (?w=800&auto=compress) are fine — CDNs add them.
+const IMAGE_EXT_RE = /\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic)(\?|#|$)/i;
+
 const TEMPLATE_COLS = [
   'name', 'type', 'price_per_night', 'capacity', 'max_occupancy',
   'amenities', 'description', 'bed_config', 'photo_url_1', 'photo_url_2', 'photo_url_3',
@@ -32,6 +36,8 @@ function downloadBlob(content, filename) {
 
 // Parse "king:1;sofa_bed:1" → { beds:[{type,qty}], warning }.
 // Any invalid entry discards the whole cell (mirrors the server).
+// Bed types are matched case-insensitively — CSV editors love to
+// auto-capitalise, so "King:1" and "king:1" are treated the same.
 function parseBedConfigCell(raw) {
   const s = (raw ?? '').trim();
   if (!s) return { beds: [] };
@@ -123,7 +129,10 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
 
         [obj.photo_url_1, obj.photo_url_2, obj.photo_url_3]
           .filter(Boolean)
-          .forEach((u) => { if (!/^https?:\/\/.+/i.test(u)) warnings.push('photo: ' + t('importRoomsRowBadUrl')(u)); });
+          .forEach((u) => {
+            if (!/^https?:\/\/.+/i.test(u)) warnings.push('photo: ' + t('importRoomsRowBadUrl')(u));
+            else if (!IMAGE_EXT_RE.test(u)) warnings.push('photo: ' + t('importRoomsRowNotDirectImage')(u));
+          });
 
         return { ...obj, _row: i + 2, _errors: errors, _warnings: warnings, _overLimit: false };
       });
@@ -231,6 +240,12 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
               <p style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {t('importRoomsTemplateHint')}
               </p>
+              <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                <strong>bed_config</strong> — {t('importRoomsBedHint')}
+              </p>
+              <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                <strong>photo_url_1 / 2 / 3</strong> — {t('importRoomsPhotoDirectHint')}
+              </p>
               {plan === 'free' && (
                 <p style={{ marginTop: 4, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}>
                   {t('importRoomsFreeHint')(FREE_ROOM_LIMIT, currentRoomCount)}
@@ -332,6 +347,7 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
                       tone="amber"
                       title={t('importRoomsPanelBeds')}
                       lines={rowsWithBedWarn.map((r) => `${t('importRoomsRowLabel')(r._row)}: ${r._warnings.filter((w) => w.startsWith('bed')).map((w) => w.slice(5)).join('; ')}`)}
+                      hint={t('importRoomsBedHint')}
                     />
                   )}
                   {rowsWithUrlWarn.length > 0 && (
@@ -339,6 +355,7 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
                       tone="amber"
                       title={t('importRoomsPanelPhotos')}
                       lines={rowsWithUrlWarn.map((r) => `${t('importRoomsRowLabel')(r._row)}: ${r._warnings.filter((w) => w.startsWith('photo')).map((w) => w.slice(7)).join('; ')}`)}
+                      hint={t('importRoomsPhotoDirectHint')}
                     />
                   )}
                 </div>
@@ -450,7 +467,7 @@ export default function ImportRoomsModal({ onClose, onImported, propertyId, curr
   );
 }
 
-function ValidationBlock({ tone, title, lines }) {
+function ValidationBlock({ tone, title, lines, hint }) {
   const palette = tone === 'red'
     ? { bg: '#fef2f2', border: '#fca5a5', color: '#b91c1c' }
     : { bg: '#fffbeb', border: '#fcd34d', color: '#92400e' };
@@ -463,6 +480,7 @@ function ValidationBlock({ tone, title, lines }) {
       <strong style={{ display: 'block', marginBottom: 4 }}>{title}</strong>
       {lines.slice(0, 8).map((l, i) => <div key={i}>{l}</div>)}
       {lines.length > 8 && <div>…and {lines.length - 8} more</div>}
+      {hint && <div style={{ marginTop: 6, opacity: 0.85, fontStyle: 'italic' }}>{hint}</div>}
     </div>
   );
 }
