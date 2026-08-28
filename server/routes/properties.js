@@ -837,10 +837,15 @@ propertiesRouter.get('/:id/media', (req, res) => {
     const perRoomLimit = isUnits ? 1 : (PHOTO_LIMITS[plan] ?? 1);
 
     const rooms = db.prepare(`
-      SELECT id, name, type, parent_unit_id, access_photo
+      SELECT id, name, type, parent_unit_id, category_id, access_photo
       FROM rooms WHERE property_id = ?
       ORDER BY COALESCE(parent_unit_id, id), id
     `).all(propId);
+
+    // Only meaningful in Room Categories mode; harmless (empty) otherwise.
+    const categories = db.prepare(
+      'SELECT id, name FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC'
+    ).all(propId);
 
     const allPhotos = db.prepare(`
       SELECT id, room_id, filename, thumb_filename, display_order
@@ -871,11 +876,13 @@ propertiesRouter.get('/:id/media', (req, res) => {
       propertyAccessPhoto: prop.access_photo
         ? { filename: prop.access_photo, url: `/uploads/access/${prop.access_photo}` }
         : null,
+      categories,
       rooms: rooms.map(r => ({
         id: r.id,
         name: r.name,
         type: r.type,
         parentUnitId: r.parent_unit_id,
+        categoryId: r.category_id,
         limit: perRoomLimit,
         photos: byRoom.get(r.id) || [],
       })),
