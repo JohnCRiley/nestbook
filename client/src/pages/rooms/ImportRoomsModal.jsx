@@ -43,6 +43,23 @@ const CAT_ROWS = [
   ['Single', 'Nook', '65', '1', '', 'single:1', 'wifi', 'Compact singles'],
 ];
 
+// ── Whole Property template ─────────────────────────────────────────────────
+// Kept in sync with server WP_ROOM_TYPES / rooms.js and NewRoomModal's WP list.
+const WP_ROOM_TYPES = [
+  'double', 'twin', 'single', 'bunk', 'master', 'kids',
+  'bathroom', 'ensuite', 'shower_room', 'wc',
+  'living_room', 'kitchen', 'kitchen_diner', 'dining_room', 'study', 'games_room', 'cinema_room', 'playroom',
+  'garden', 'terrace', 'pool', 'hot_tub', 'sauna', 'gym', 'garage', 'games_area',
+  'other',
+];
+const WP_COLS = ['section_name', 'type', 'capacity', 'amenities', 'description', ...PHOTO_COLS];
+const WP_ROWS = [
+  ['Bedrooms', 'double', '6', '"wifi,blackout blinds,linens provided"', 'Three comfortable bedrooms sleeping up to six.'],
+  ['Living Spaces', 'living_room', '', '"wifi,smart TV,wood burner"', 'Open-plan kitchen, dining and lounge.'],
+  ['Bathrooms', 'bathroom', '', '"rainfall shower,towels provided"', 'Family bathroom plus a downstairs WC.'],
+  ['Garden', 'garden', '', '"furniture,BBQ,parking"', 'Enclosed garden with seating and a barbecue.'],
+];
+
 // Each sample row supplies the non-photo columns; the 10 photo columns are
 // appended empty so the header still advertises all of them.
 function buildTemplate(cols, sampleRows) {
@@ -98,11 +115,14 @@ export default function ImportRoomsModal({
   const { currencySymbol } = useLocale();
   const fileRef = useRef(null);
   const isCat = mode === 'categories';
+  const isWP  = mode === 'whole_property';
 
-  const TEMPLATE_COLS = isCat ? CAT_COLS : NAMED_COLS;
-  const TEMPLATE_CSV  = isCat ? buildTemplate(CAT_COLS, CAT_ROWS) : buildTemplate(NAMED_COLS, NAMED_ROWS);
-  const templateName  = isCat ? 'nestbook-room-categories-template.csv' : 'nestbook-rooms-template.csv';
-  const endpoint      = isCat ? '/api/rooms/bulk-import-categories' : '/api/rooms/bulk-import';
+  const TEMPLATE_COLS = isCat ? CAT_COLS : isWP ? WP_COLS : NAMED_COLS;
+  const TEMPLATE_CSV  = buildTemplate(TEMPLATE_COLS, isCat ? CAT_ROWS : isWP ? WP_ROWS : NAMED_ROWS);
+  const templateName  = isCat ? 'nestbook-room-categories-template.csv'
+    : isWP ? 'nestbook-property-sections-template.csv' : 'nestbook-rooms-template.csv';
+  const endpoint      = isCat ? '/api/rooms/bulk-import-categories'
+    : isWP ? '/api/rooms/bulk-import-wp' : '/api/rooms/bulk-import';
 
   const [step,       setStep]       = useState(1);   // 1 instr · 2 upload · 3 preview · 4 result
   const [dataRows,   setDataRows]   = useState([]);
@@ -144,6 +164,7 @@ export default function ImportRoomsModal({
 
   const validRows       = dataRows.filter((r) => r._errors.length === 0);
   const importable      = validRows.filter((r) => !r._overLimit);
+  const rowsWithTypeWarn = dataRows.filter((r) => r._warnings.some((w) => w.startsWith('type:')));
   const rowsWithBedWarn  = dataRows.filter((r) => r._warnings.some((w) => w.startsWith('bed')));
   const rowsWithUrlWarn  = dataRows.filter((r) => r._warnings.some((w) => w.startsWith('photo')));
   const rowsOverLimit    = validRows.filter((r) => r._overLimit);
@@ -230,17 +251,24 @@ export default function ImportRoomsModal({
         if (isCat) {
           if (!obj.category) errors.push(t('importRoomsRowNoCategory'));
           if (!obj.room_name) errors.push(t('importRoomsRowNoRoomName'));
+        } else if (isWP) {
+          if (!obj.section_name) errors.push(t('importRoomsRowNoSection'));
+          const type = obj.type.toLowerCase();
+          if (type && !WP_ROOM_TYPES.includes(type)) warnings.push('type: ' + t('importRoomsWpBadType')(obj.type));
         } else {
           if (!obj.name) errors.push(t('importRoomsRowNoName'));
           const type = obj.type.toLowerCase();
-          if (type && !ROOM_TYPES.includes(type)) warnings.push(t('importRoomsRowBadType')(obj.type));
+          if (type && !ROOM_TYPES.includes(type)) warnings.push('type: ' + t('importRoomsRowBadType')(obj.type));
         }
 
-        const price = parsePrice(obj.price_per_night);
-        if (!Number.isFinite(price) || price < 0) errors.push(t('importRoomsRowBadPrice'));
+        // WP sections carry no price and no bed_config.
+        if (!isWP) {
+          const price = parsePrice(obj.price_per_night);
+          if (!Number.isFinite(price) || price < 0) errors.push(t('importRoomsRowBadPrice'));
 
-        const bed = parseBedConfigCell(obj.bed_config);
-        if (bed.warning) warnings.push('bed: ' + bed.warning);
+          const bed = parseBedConfigCell(obj.bed_config);
+          if (bed.warning) warnings.push('bed: ' + bed.warning);
+        }
 
         PHOTO_COLS.map((c) => obj[c])
           .filter(Boolean)
@@ -289,10 +317,9 @@ export default function ImportRoomsModal({
     }
   };
 
-  const title = isCat ? t('importRoomsCatTitle') : t('importRoomsTitle');
+  const title = isCat ? t('importRoomsCatTitle') : isWP ? t('importRoomsWpTitle') : t('importRoomsTitle');
   const stepLabels = [t('importRoomsStepInstr'), t('importRoomsStepUpload'), t('importRoomsStepPreview')];
   const previewRows = dataRows.slice(0, 8);
-  const rowName = (r) => (isCat ? r.room_name : r.name);
 
   return (
     <div className="modal-overlay" onClick={handleBackdropClick}>
@@ -320,7 +347,7 @@ export default function ImportRoomsModal({
           {step === 1 && (
             <div className="import-step-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.6 }}>
-                {isCat ? t('importRoomsCatIntro') : t('importRoomsIntro')}
+                {isCat ? t('importRoomsCatIntro') : isWP ? t('importRoomsWpIntro') : t('importRoomsIntro')}
               </p>
 
               <div style={{ marginBottom: 20, border: '1px solid var(--border)', borderRadius: 8 }}>
@@ -344,6 +371,13 @@ export default function ImportRoomsModal({
                         <p style={{ marginBottom: 8 }}><strong>category</strong> — {t('importRoomsCatHelpGrouping')}</p>
                         <p style={{ marginBottom: 8 }}><strong>category_amenities / category_description</strong> — {t('importRoomsCatHelpDetail')}</p>
                         <p style={{ margin: 0 }}><strong>bed_config</strong> — {t('importRoomsHelpBeds')}</p>
+                      </>
+                    ) : isWP ? (
+                      <>
+                        <p style={{ marginBottom: 8, marginTop: 4 }}>{t('importRoomsWpHelpColumns')}</p>
+                        <p style={{ marginBottom: 8 }}><strong>type</strong> — {t('importRoomsWpHelpTypes')}</p>
+                        <p style={{ marginBottom: 8 }}><strong>capacity</strong> — {t('importRoomsWpHelpCapacity')}</p>
+                        <p style={{ margin: 0 }}><strong>photo_url_1/2/3</strong> — {t('importRoomsHelpPhotos')}</p>
                       </>
                     ) : (
                       <>
@@ -370,9 +404,16 @@ export default function ImportRoomsModal({
                   <strong>category</strong> — {t('importRoomsCatHint')}
                 </p>
               )}
-              <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                <strong>bed_config</strong> — {t('importRoomsBedHint')}
-              </p>
+              {isWP && (
+                <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  <strong>type</strong> — {t('importRoomsWpHint')}
+                </p>
+              )}
+              {!isWP && (
+                <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  <strong>bed_config</strong> — {t('importRoomsBedHint')}
+                </p>
+              )}
               <p style={{ marginTop: 4, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 <strong>photo_url_1 / 2 / 3</strong> — {t('importRoomsPhotoDirectHint')}
               </p>
@@ -472,6 +513,40 @@ export default function ImportRoomsModal({
                     </div>
                   ))}
                 </div>
+              ) : isWP ? (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="import-preview-table">
+                    <thead>
+                      <tr>
+                        <th>{t('importRoomsColSection')}</th>
+                        <th>{t('importRoomsColType')}</th>
+                        <th>{t('importRoomsColSleeps')}</th>
+                        <th>{t('importRoomsColPhotos')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewRows.map((row, i) => {
+                        const bad = row._errors.length > 0;
+                        return (
+                          <tr key={i} style={{
+                            background: bad ? '#fef2f2' : row._overLimit ? '#fffbeb' : undefined,
+                            color: bad ? '#b91c1c' : undefined,
+                          }}>
+                            <td>{row.section_name || <span style={{ color: '#cbd5e1' }}>—</span>}</td>
+                            <td>{(row.type || 'other').toLowerCase()}</td>
+                            <td>{row.capacity || '2'}</td>
+                            <td>{PHOTO_COLS.map((c) => row[c]).filter(Boolean).length || <span style={{ color: '#cbd5e1' }}>0</span>}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {dataRows.length > previewRows.length && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 8 }}>
+                      {t('importMoreRows')(dataRows.length - previewRows.length)}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table className="import-preview-table">
@@ -513,8 +588,9 @@ export default function ImportRoomsModal({
               )}
 
               {/* Validation panel */}
-              {(dataRows.some((r) => r._errors.length) || rowsOverLimit.length > 0 || rowsWithBedWarn.length > 0
-                || rowsWithUrlWarn.length > 0 || categoryConflicts.length > 0 || priceNotes.length > 0) && (
+              {(dataRows.some((r) => r._errors.length) || rowsOverLimit.length > 0 || rowsWithTypeWarn.length > 0
+                || rowsWithBedWarn.length > 0 || rowsWithUrlWarn.length > 0 || categoryConflicts.length > 0
+                || priceNotes.length > 0) && (
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {dataRows.some((r) => r._errors.length) && (
                     <ValidationBlock
@@ -528,6 +604,13 @@ export default function ImportRoomsModal({
                       tone="amber"
                       title={t('importRoomsPanelOverLimit')}
                       lines={[t('importRoomsOverLimitBody')(FREE_ROOM_LIMIT, rowsOverLimit.map((r) => r._row).join(', '))]}
+                    />
+                  )}
+                  {rowsWithTypeWarn.length > 0 && (
+                    <ValidationBlock
+                      tone="amber"
+                      title={t('importRoomsPanelTypes')}
+                      lines={rowsWithTypeWarn.map((r) => `${t('importRoomsRowLabel')(r._row)}: ${r._warnings.filter((w) => w.startsWith('type:')).map((w) => w.slice(5).trim()).join('; ')}`)}
                     />
                   )}
                   {categoryConflicts.length > 0 && (
@@ -581,7 +664,7 @@ export default function ImportRoomsModal({
               <div className="import-result-grid">
                 <div className="import-result-item">
                   <span className="import-result-num" style={{ color: '#10b981' }}>{result.imported}</span>
-                  <span>{t('importRoomsResImported')}</span>
+                  <span>{isWP ? t('importRoomsResSections') : t('importRoomsResImported')}</span>
                 </div>
                 {isCat && (
                   <div className="import-result-item">

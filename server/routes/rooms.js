@@ -49,6 +49,17 @@ const FREE_PLAN_ROOM_LIMIT = 5;
 // NewRoomModal.jsx's ROOM_TYPES. An unknown value falls back to 'double'.
 const IMPORT_ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
+// Whole-Property showcase-section types — mirrors NewRoomModal.jsx's WP <optgroup>
+// list. No DB CHECK; an unknown value falls back to 'other' (not 'double').
+// `capacity` is only meaningful for the bedroom subset.
+const WP_ROOM_TYPES = [
+  'double', 'twin', 'single', 'bunk', 'master', 'kids',
+  'bathroom', 'ensuite', 'shower_room', 'wc',
+  'living_room', 'kitchen', 'kitchen_diner', 'dining_room', 'study', 'games_room', 'cinema_room', 'playroom',
+  'garden', 'terrace', 'pool', 'hot_tub', 'sauna', 'gym', 'garage', 'games_area',
+  'other',
+];
+
 // Parses a CSV bed_config cell like "king:1;sofa_bed:1" into the JSON string
 // the rooms.bed_config column stores. Bed types are matched case-insensitively
 // (trimmed + lower-cased) so "King:1" from an auto-capitalising spreadsheet
@@ -765,6 +776,126 @@ roomsRouter.post('/bulk-import-categories', async (req, res) => {
       photo_errors:        photoErrors,
       limit_message: skippedForLimit.length
         ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} rooms. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited rooms.`
+        : null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/rooms/bulk-import-wp ────────────────────────────────────────────
+// Room Import Wizard — Whole Property mode. WP showcase sections are just
+// `rooms` rows with no price and no independent availability, so this is the
+// simplest of the three importers: a flat single pass, one CSV row → one room.
+//
+// Hard-gated: 403 unless rental_type='whole_property'. price_per_night is
+// forced to 0 and status to 'available' (neither is a CSV column). Reuses the
+// Free-plan room cap and the shared photo-URL attach helper unchanged.
+roomsRouter.post('/bulk-import-wp', async (req, res) => {
+  try {
+    const { property_id, rows } = req.body;
+    if (!property_id || !Array.isArray(rows)) {
+      return res.status(400).json({ error: 'Missing property_id or rows' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const property = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(property_id);
+    if (!property) return res.status(404).json({ error: 'Property not found.' });
+    if (property.rental_type !== 'whole_property') {
+      return res.status(403).json({ error: 'This import is only available for whole-property rentals.' });
+    }
+
+    if (rows.length === 0) return res.status(400).json({ error: 'No rows to import.' });
+    if (rows.length > 500) return res.status(400).json({ error: 'Too many rows — 500 maximum per import.' });
+
+    const plan       = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId)?.plan ?? 'free';
+    const roomCap    = plan === 'free' ? FREE_PLAN_ROOM_LIMIT : Infinity;
+    const photoLimit = PHOTO_LIMITS[plan] ?? PHOTO_LIMITS.free;
+    let roomCount    = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
+
+    const insertRoom = db.prepare(`
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, description, ical_token)
+      VALUES (?, ?, ?, 0, ?, ?, 'available', ?, ?)
+    `);
+
+    const created         = [];
+    const warnings        = [];
+    const errors          = [];
+    const skippedForLimit = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 2;
+      const row = rows[i] ?? {};
+
+      const name = (row.section_name ?? '').toString().trim();
+      if (!name) { errors.push(`Row ${rowNum}: missing section_name`); continue; }
+
+      if (roomCount >= roomCap) { skippedForLimit.push(rowNum); continue; }
+
+      let type = (row.type ?? '').toString().trim().toLowerCase();
+      if (type && !WP_ROOM_TYPES.includes(type)) {
+        warnings.push(`Row ${rowNum}: unknown section type "${row.type}" — imported as "other"`);
+        type = 'other';
+      }
+      if (!type) type = 'other';
+
+      // Advisory — accept any positive integer, no warning on a non-bedroom type.
+      const capParsed = parseInt(row.capacity, 10);
+      const capacity  = Number.isInteger(capParsed) && capParsed > 0 ? Math.min(20, capParsed) : 2;
+      const amenities   = (row.amenities ?? '').toString().trim() || null;
+      const description = (row.description ?? '').toString().trim() || null;
+
+      const ical_token = crypto.randomBytes(16).toString('hex');
+      const info = insertRoom.run(property_id, name, type, capacity, amenities, description, ical_token);
+      roomCount++;
+
+      const photoUrls = Array.from({ length: 10 }, (_, k) => row[`photo_url_${k + 1}`])
+        .map((u) => (u ?? '').toString().trim())
+        .filter(Boolean);
+
+      created.push({ id: info.lastInsertRowid, name, rowNum, photoUrls });
+
+      logAction(db, {
+        ...actorFromReq(req),
+        propertyId: Number(property_id),
+        action: 'ROOM_CREATED',
+        category: 'room',
+        targetType: 'room',
+        targetId: info.lastInsertRowid,
+        targetName: name,
+        ipAddress: getIp(req),
+      });
+    }
+
+    // ── Photos — best-effort, after every row is inserted ─────────────────
+    const photoErrors = [];
+    let photosAttached = 0;
+    for (const rec of created) {
+      let attached = db.prepare('SELECT COUNT(*) as n FROM room_photos WHERE room_id = ?').get(rec.id).n;
+      for (const url of rec.photoUrls) {
+        const label = `Row ${rec.rowNum} ("${rec.name}")`;
+        if (attached >= photoLimit) {
+          photoErrors.push(`${label}: ${plan} plan allows ${photoLimit} photos per section — "${url}" not attached`);
+          continue;
+        }
+        const outcome = await attachRoomPhotoFromUrl(rec.id, url, label);
+        if (outcome.attached) { attached++; photosAttached++; }
+        else photoErrors.push(outcome.error);
+      }
+    }
+
+    res.json({
+      imported:            created.length,
+      rooms_skipped_limit: skippedForLimit.length,
+      skipped_rows:        skippedForLimit,
+      warnings,
+      errors,
+      photos_attached:     photosAttached,
+      photo_errors:        photoErrors,
+      limit_message: skippedForLimit.length
+        ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} sections. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited sections.`
         : null,
     });
   } catch (err) {

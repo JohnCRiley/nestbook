@@ -248,6 +248,7 @@ export default function Rooms() {
           selectedRoom={selectedRoom}
           onCardClick={handleCardClick}
           onAddBedroom={() => setShowNewRoom(true)}
+          onImport={() => setShowImport(true)}
           stats={stats}
           t={t}
           locale={locale}
@@ -382,7 +383,7 @@ export default function Rooms() {
           propertyId={property?.id}
           currentRoomCount={rooms.length}
           plan={plan}
-          mode={property?.ir_room_mode}
+          mode={property?.rental_type === 'whole_property' ? 'whole_property' : property?.ir_room_mode}
           onClose={() => setShowImport(false)}
           onImported={() => { setShowImport(false); refreshRooms(); }}
         />
@@ -681,7 +682,7 @@ function BedroomCard({ room, isSelected, onClick, t }) {
   );
 }
 
-function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, onCardClick, onAddBedroom, stats, t, locale }) {
+function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, onCardClick, onAddBedroom, onImport, stats, t, locale }) {
   return (
     <>
       <div className="page-toolbar">
@@ -689,10 +690,17 @@ function WholePropertyPage({ rooms, loading, today, activeByRoom, selectedRoom, 
           <h1>{t('nav.property')}</h1>
           <div className="page-date">{rooms.length} {t('roomsCount')}</div>
         </div>
-        <button className="btn-primary" onClick={onAddBedroom}>
-          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          {t('rooms.addRoom')}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {onImport && (
+            <button className="btn-secondary" onClick={onImport}>
+              {t('importRoomsBtn')}
+            </button>
+          )}
+          <button className="btn-primary" onClick={onAddBedroom}>
+            <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+            {t('rooms.addRoom')}
+          </button>
+        </div>
       </div>
 
       <RoomGridSection rooms={rooms} loading={loading} selectedRoom={selectedRoom} onCardClick={onCardClick} t={t} />
