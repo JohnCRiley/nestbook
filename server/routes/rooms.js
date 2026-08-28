@@ -10,8 +10,9 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
-import { processRoomPhoto, ROOM_UPLOAD_DIR } from '../utils/processRoomPhoto.js';
+import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { PHOTO_LIMITS } from './roomPhotos.js';
+import { createRoomCategory } from './roomCategories.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Same physical folder WP's property-level access photos already use
@@ -522,47 +523,14 @@ roomsRouter.post('/bulk-import', async (req, res) => {
     for (const rec of created) {
       let attached = db.prepare('SELECT COUNT(*) as n FROM room_photos WHERE room_id = ?').get(rec.id).n;
       for (const url of rec.photoUrls) {
+        const label = `Row ${rec.rowNum} ("${rec.name}")`;
         if (attached >= photoLimit) {
-          photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): ${plan} plan allows ${photoLimit} photos per room — "${url}" not attached`);
+          photoErrors.push(`${label}: ${plan} plan allows ${photoLimit} photos per room — "${url}" not attached`);
           continue;
         }
-        if (!/^https?:\/\/.+/i.test(url)) {
-          photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): "${url}" is not a valid http(s) URL`);
-          continue;
-        }
-        // A photo_url must point straight at an image file, not at a webpage
-        // that displays one (e.g. a pexels.com/photo/... gallery page, which
-        // 403s an HTML page). Query strings are fine — image CDNs append them.
-        // The URL shape is the discriminator: no image extension → treat any
-        // failure as "that's a webpage link"; a real .jpg that 404s still gets
-        // the plain HTTP-status message.
-        const looksLikeImageUrl = /\.(jpe?g|png|webp|gif|avif|bmp|tiff?|heic)(\?|#|$)/i.test(url);
-        const webpageMsg = `Row ${rec.rowNum} ("${rec.name}"): "${url}" looks like a webpage link, not a direct image link — it should point straight at an image file (ending in .jpg, .png, etc.)`;
-        const tmpName = `${rec.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-        const tmpPath = join(ROOM_UPLOAD_DIR, tmpName);
-        try {
-          const resp = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(15000) });
-          const ctype = (resp.headers.get('content-type') || '').toLowerCase();
-          if (!resp.ok) {
-            photoErrors.push(looksLikeImageUrl
-              ? `Row ${rec.rowNum} ("${rec.name}"): ${url} returned HTTP ${resp.status}`
-              : webpageMsg);
-            continue;
-          }
-          if (!ctype.startsWith('image/')) {
-            photoErrors.push(looksLikeImageUrl
-              ? `Row ${rec.rowNum} ("${rec.name}"): ${url} returned ${ctype || 'a non-image response'} instead of an image`
-              : webpageMsg);
-            continue;
-          }
-          fs.writeFileSync(tmpPath, Buffer.from(await resp.arrayBuffer()));
-          await processRoomPhoto(tmpPath, rec.id);
-          attached++;
-          photosAttached++;
-        } catch (e) {
-          cleanupFile(tmpPath);
-          photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): could not fetch ${url} (${e.message})`);
-        }
+        const outcome = await attachRoomPhotoFromUrl(rec.id, url, label);
+        if (outcome.attached) { attached++; photosAttached++; }
+        else photoErrors.push(outcome.error);
       }
     }
 
@@ -571,6 +539,227 @@ roomsRouter.post('/bulk-import', async (req, res) => {
       rooms_skipped_limit: skippedForLimit.length,
       skipped_rows:        skippedForLimit,
       warnings,
+      errors,
+      photos_attached:     photosAttached,
+      photo_errors:        photoErrors,
+      limit_message: skippedForLimit.length
+        ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} rooms. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited rooms.`
+        : null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/rooms/bulk-import-categories ────────────────────────────────────
+// Room Import Wizard — Room Categories mode. Two passes over the parsed CSV:
+//   1. resolve the distinct `category` names (existing → reuse id; new →
+//      create via createRoomCategory using the FIRST row's category_amenities /
+//      category_description; a later row with different values is a non-blocking
+//      warning, first row wins). Names match case-insensitively + trimmed.
+//   2. create each room under its resolved category_id.
+//
+// Hard-gated: 403 unless rental_type='rooms' AND ir_room_mode='categories' —
+// the inverse of /bulk-import's gate. Partial success is intentional (Free-plan
+// room cap). Photos attach to the room (categories have no photo pipeline).
+roomsRouter.post('/bulk-import-categories', async (req, res) => {
+  try {
+    const { property_id, rows } = req.body;
+    if (!property_id || !Array.isArray(rows)) {
+      return res.status(400).json({ error: 'Missing property_id or rows' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const property = db.prepare('SELECT rental_type, ir_room_mode, currency FROM properties WHERE id = ?').get(property_id);
+    if (!property) return res.status(404).json({ error: 'Property not found.' });
+    if (property.rental_type !== 'rooms' || property.ir_room_mode !== 'categories') {
+      return res.status(403).json({ error: 'This import is only available for properties in Room Categories mode.' });
+    }
+
+    if (rows.length === 0) return res.status(400).json({ error: 'No rows to import.' });
+    if (rows.length > 500) return res.status(400).json({ error: 'Too many rows — 500 maximum per import.' });
+
+    const currSym    = ({ EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' })[property.currency] || (property.currency ? property.currency + ' ' : '€');
+    const plan       = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId)?.plan ?? 'free';
+    const roomCap    = plan === 'free' ? FREE_PLAN_ROOM_LIMIT : Infinity;
+    const photoLimit = PHOTO_LIMITS[plan] ?? PHOTO_LIMITS.free;
+    let roomCount    = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
+
+    // ── Pass 1 — resolve / create categories ──────────────────────────────
+    const existing = db.prepare('SELECT id, name, display_order FROM room_categories WHERE property_id = ?').all(property_id);
+    const catByKey = new Map();   // lower(trim(name)) -> { id, name, created }
+    for (const c of existing) catByKey.set(c.name.trim().toLowerCase(), { id: c.id, name: c.name, created: false });
+    let nextDisplayOrder = existing.reduce((m, c) => Math.max(m, c.display_order ?? 0), 0) + 1;
+
+    const firstSpecByKey   = new Map();   // key -> { amen, desc, displayName, rowNum }
+    const categoryWarnings = [];
+    const categoriesCreated = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 2;
+      const row = rows[i] ?? {};
+      const rawName = (row.category ?? '').toString().trim();
+      if (!rawName) continue;                       // rejected in pass 2
+      const key  = rawName.toLowerCase();
+      const amen = (row.category_amenities ?? '').toString().trim() || null;
+      const desc = (row.category_description ?? '').toString().trim() || null;
+
+      if (catByKey.has(key)) {
+        const spec = firstSpecByKey.get(key);       // only set for categories THIS import created
+        // Only a NON-EMPTY later value that differs is a conflict — a later row
+        // is expected to leave category_amenities/description blank.
+        const amenConflict = spec && amen && amen !== (spec.amen ?? null);
+        const descConflict = spec && desc && desc !== (spec.desc ?? null);
+        if (amenConflict || descConflict) {
+          categoryWarnings.push(`Category "${spec.displayName}" — using the amenities/description from its first row (row ${spec.rowNum}); row ${rowNum} had different values, which were ignored.`);
+        }
+        continue;
+      }
+
+      const cat = createRoomCategory(property_id, {
+        name: rawName, buffer: 0, display_order: nextDisplayOrder++, amenities: amen, description: desc,
+      });
+      catByKey.set(key, { id: cat.id, name: cat.name, created: true });
+      firstSpecByKey.set(key, { amen, desc, displayName: rawName, rowNum });
+      categoriesCreated.push(cat.name);
+
+      logAction(db, {
+        ...actorFromReq(req),
+        propertyId: Number(property_id),
+        action: 'ROOM_CATEGORY_CREATED',
+        category: 'room',
+        targetType: 'room_category',
+        targetId: cat.id,
+        targetName: cat.name,
+        ipAddress: getIp(req),
+      });
+    }
+
+    // ── Pass 2 — create rooms ─────────────────────────────────────────────
+    const insertRoom = db.prepare(`
+      INSERT INTO rooms
+        (property_id, name, type, price_per_night, capacity, max_occupancy,
+         status, ical_token, bed_config, category_id)
+      VALUES (?, ?, ?, ?, ?, ?, 'available', ?, ?, ?)
+    `);
+
+    const created         = [];   // { id, name, rowNum, categoryId, categoryName, photoUrls }
+    const warnings        = [];
+    const errors          = [];
+    const skippedForLimit = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 2;
+      const row = rows[i] ?? {};
+
+      const rawCat   = (row.category ?? '').toString().trim();
+      const roomName = (row.room_name ?? '').toString().trim();
+      if (!rawCat)   { errors.push(`Row ${rowNum}: missing category`); continue; }
+      if (!roomName) { errors.push(`Row ${rowNum}: missing room_name`); continue; }
+
+      const price = parseFloat((row.price_per_night ?? '').toString().replace(/[£$€¥,\s]/g, ''));
+      if (!Number.isFinite(price) || price < 0) {
+        errors.push(`Row ${rowNum}: invalid price "${row.price_per_night ?? ''}"`);
+        continue;
+      }
+
+      const cat = catByKey.get(rawCat.toLowerCase());
+      if (!cat) { errors.push(`Row ${rowNum}: could not resolve category "${rawCat}"`); continue; }
+
+      if (roomCount >= roomCap) { skippedForLimit.push(rowNum); continue; }
+
+      const capacity      = Math.min(20, Math.max(1, parseInt(row.capacity, 10) || 2));
+      const maxOccParsed  = parseInt(row.max_occupancy, 10);
+      const max_occupancy = Number.isInteger(maxOccParsed) && maxOccParsed > 0 ? maxOccParsed : null;
+
+      const bed = parseBedConfigCsv(row.bed_config);
+      if (bed.warning) warnings.push(`Row ${rowNum}: ${bed.warning}`);
+
+      const ical_token = crypto.randomBytes(16).toString('hex');
+      const info = insertRoom.run(
+        property_id, roomName, 'double', price, capacity, max_occupancy,
+        ical_token, bed.value, cat.id,
+      );
+      roomCount++;
+
+      const photoUrls = Array.from({ length: 10 }, (_, k) => row[`photo_url_${k + 1}`])
+        .map((u) => (u ?? '').toString().trim())
+        .filter(Boolean);
+
+      created.push({ id: info.lastInsertRowid, name: roomName, rowNum, categoryId: cat.id, categoryName: cat.name, photoUrls });
+
+      logAction(db, {
+        ...actorFromReq(req),
+        propertyId: Number(property_id),
+        action: 'ROOM_CREATED',
+        category: 'room',
+        targetType: 'room',
+        targetId: info.lastInsertRowid,
+        targetName: roomName,
+        ipAddress: getIp(req),
+      });
+    }
+
+    // Drop any category THIS import created that ended up with zero rooms
+    // (every row targeting it failed validation).
+    for (const c of catByKey.values()) {
+      if (!c.created) continue;
+      const n = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE category_id = ?').get(c.id).n;
+      if (n === 0) {
+        db.prepare('DELETE FROM room_categories WHERE id = ?').run(c.id);
+        const idx = categoriesCreated.indexOf(c.name);
+        if (idx !== -1) categoriesCreated.splice(idx, 1);
+      }
+    }
+
+    // ── Photos — best-effort, after every room row is inserted ─────────────
+    const photoErrors = [];
+    let photosAttached = 0;
+    for (const rec of created) {
+      let attached = db.prepare('SELECT COUNT(*) as n FROM room_photos WHERE room_id = ?').get(rec.id).n;
+      for (const url of rec.photoUrls) {
+        const label = `Row ${rec.rowNum} ("${rec.name}")`;
+        if (attached >= photoLimit) {
+          photoErrors.push(`${label}: ${plan} plan allows ${photoLimit} photos per room — "${url}" not attached`);
+          continue;
+        }
+        const outcome = await attachRoomPhotoFromUrl(rec.id, url, label);
+        if (outcome.attached) { attached++; photosAttached++; }
+        else photoErrors.push(outcome.error);
+      }
+    }
+
+    // ── Price-variance informational notes ────────────────────────────────
+    const priceNotes = [];
+    for (const catId of [...new Set(created.map((r) => r.categoryId))]) {
+      const prices = db.prepare('SELECT price_per_night FROM rooms WHERE category_id = ?').all(catId)
+        .map((r) => Number(r.price_per_night)).filter((p) => p > 0);
+      if (prices.length < 2) continue;
+      const min = Math.min(...prices), max = Math.max(...prices);
+      if (max > min && (max - min) / min >= 0.05) {
+        const catName = created.find((r) => r.categoryId === catId)?.categoryName ?? 'Category';
+        priceNotes.push(`Category "${catName}" now has rooms priced ${currSym}${min.toFixed(0)}–${currSym}${max.toFixed(0)} — this is normal and will show as a price range to guests.`);
+      }
+    }
+
+    // Group echo for the result step.
+    const groupsMap = new Map();
+    for (const rec of created) {
+      if (!groupsMap.has(rec.categoryId)) groupsMap.set(rec.categoryId, { category: rec.categoryName, rooms: [] });
+      groupsMap.get(rec.categoryId).rooms.push(rec.name);
+    }
+
+    res.json({
+      imported:            created.length,
+      categories_created:  categoriesCreated,
+      groups:              [...groupsMap.values()].map((g) => ({ category: g.category, room_count: g.rooms.length, rooms: g.rooms })),
+      rooms_skipped_limit: skippedForLimit.length,
+      skipped_rows:        skippedForLimit,
+      warnings,
+      category_warnings:   categoryWarnings,
+      price_notes:         priceNotes,
       errors,
       photos_attached:     photosAttached,
       photo_errors:        photoErrors,

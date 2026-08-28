@@ -5,6 +5,26 @@ import { getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
 
 export const roomCategoriesRouter = Router();
 
+/**
+ * Inserts one room_categories row and returns it. Shared by the create route
+ * below and the CSV Categories importer (routes/rooms.js) so the column set —
+ * crucially including amenities/description — stays in one place.
+ */
+export function createRoomCategory(propertyId, { name, buffer = 0, display_order = 0, amenities = null, description = null } = {}) {
+  const result = db.prepare(`
+    INSERT INTO room_categories (property_id, name, buffer, display_order, amenities, description)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    Number(propertyId),
+    String(name).trim(),
+    Number(buffer) || 0,
+    Number(display_order) || 0,
+    (typeof amenities === 'string' ? amenities.trim() : amenities) || null,
+    (typeof description === 'string' ? description.trim() : description) || null,
+  );
+  return db.prepare('SELECT * FROM room_categories WHERE id = ?').get(result.lastInsertRowid);
+}
+
 // ── Ownership helper (mirrors rooms.js / ratePeriods.js) ──────────────────────
 function canAccessProperty(userId, role, propId) {
   const pid = Number(propId);
@@ -48,16 +68,19 @@ roomCategoriesRouter.post('/properties/:propertyId/room-categories', requireVeri
     if (!canAccessProperty(req.user.userId, req.user.role, propId)) {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { name, buffer, display_order } = req.body;
+    const { name, buffer, display_order, amenities, description } = req.body;
     if (!name?.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
-    const result = db.prepare(`
-      INSERT INTO room_categories (property_id, name, buffer, display_order)
-      VALUES (?, ?, ?, ?)
-    `).run(propId, name.trim(), Number(buffer ?? 0), Number(display_order ?? 0));
-
-    const created = db.prepare('SELECT * FROM room_categories WHERE id = ?').get(result.lastInsertRowid);
+    // amenities/description are persisted on create here too — previously they
+    // were silently dropped and only saved by a later PUT.
+    const created = createRoomCategory(propId, {
+      name,
+      buffer: buffer ?? 0,
+      display_order: display_order ?? 0,
+      amenities,
+      description,
+    });
     res.status(201).json(created);
   } catch (err) {
     res.status(500).json({ error: err.message });

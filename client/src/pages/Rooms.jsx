@@ -283,7 +283,7 @@ export default function Rooms() {
               <div className="page-date">{rooms.length} {t('roomsCount')}</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {property?.rental_type === 'rooms' && property?.ir_room_mode === 'named' && (
+              {property?.rental_type === 'rooms' && ['named', 'categories'].includes(property?.ir_room_mode) && (
                 <button className="btn-secondary" onClick={() => setShowImport(true)}>
                   {t('importRoomsBtn')}
                 </button>
@@ -376,12 +376,13 @@ export default function Rooms() {
         />
       )}
 
-      {/* ── Bulk import modal (Named Rooms mode only) ─────────────────────── */}
+      {/* ── Bulk import modal (Named Rooms + Room Categories modes) ────────── */}
       {showImport && (
         <ImportRoomsModal
           propertyId={property?.id}
           currentRoomCount={rooms.length}
           plan={plan}
+          mode={property?.ir_room_mode}
           onClose={() => setShowImport(false)}
           onImported={() => { setShowImport(false); refreshRooms(); }}
         />
