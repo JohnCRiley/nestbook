@@ -60,6 +60,22 @@ const WP_ROOM_TYPES = [
   'other',
 ];
 
+// Units mode. A top-level unit's type comes from NewRoomModal's non-WP dropdown
+// (unknown → 'apartment'); an internal room reuses WP_ROOM_TYPES (unknown →
+// 'other'). Both defaults are inside the rooms.type CHECK, so a coerced value
+// never trips it. Per-unit access + structural caps below.
+const UNIT_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
+const VALID_UNIT_ACCESS_METHODS = ['none', 'code', 'keybox', 'keyed', 'app', 'other'];
+const UNIT_FREE_PLAN_LIMIT = 5;      // Free plan: max top-level units per property
+const ROOMS_PER_UNIT_LIMIT = 5;      // all plans: max internal rooms per unit
+const UNIT_PHOTO_LIMIT     = 1;      // all plans: 1 photo per unit / internal room
+
+// yes/no/1/0 → 0 | 1 (case-insensitive; blank/unknown → 0).
+function parseYesNo(v) {
+  const s = (v ?? '').toString().trim().toLowerCase();
+  return (s === 'yes' || s === 'y' || s === '1' || s === 'true') ? 1 : 0;
+}
+
 // Parses a CSV bed_config cell like "king:1;sofa_bed:1" into the JSON string
 // the rooms.bed_config column stores. Bed types are matched case-insensitively
 // (trimmed + lower-cased) so "King:1" from an auto-capitalising spreadsheet
@@ -897,6 +913,280 @@ roomsRouter.post('/bulk-import-wp', async (req, res) => {
       limit_message: skippedForLimit.length
         ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} sections. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited sections.`
         : null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/rooms/bulk-import-units ─────────────────────────────────────────
+// Room Import Wizard — Units mode (Self-Catering: Aparthotel / Glamping /
+// Serviced Apartment). One importer serves all three sub-types — un_sub_type
+// affects only property-level settings, never unit/room creation.
+//
+// Two passes:
+//   1. rows with a blank room_name define units, grouped by unit_name
+//      (case-insensitive + trimmed). First occurrence creates the unit (type
+//      coerced to CHECK-safe UNIT_TYPES, price required, capacity, amenities,
+//      description, access_method validated against the whitelist, access_code,
+//      arrival_instructions, staffed_checkin_available). A later unit-defining
+//      row for the same name with a differing non-blank unit field → non-blocking
+//      warning, first row wins (mirrors the Categories importer exactly).
+//   2. rows with room_name filled create an internal room under the resolved
+//      unit's id (parent_unit_id), price_per_night forced to 0. Unit-only fields
+//      on a room row are ignored with a warning.
+//
+// Hard-gated: 403 unless rental_type='units'. Caps: Free → 5 units/property;
+// all plans → 5 internal rooms/unit; 1 photo per row (unit or internal room).
+roomsRouter.post('/bulk-import-units', async (req, res) => {
+  try {
+    const { property_id, rows } = req.body;
+    if (!property_id || !Array.isArray(rows)) {
+      return res.status(400).json({ error: 'Missing property_id or rows' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const property = db.prepare('SELECT rental_type, currency FROM properties WHERE id = ?').get(property_id);
+    if (!property) return res.status(404).json({ error: 'Property not found.' });
+    if (property.rental_type !== 'units') {
+      return res.status(403).json({ error: 'This import is only available for self-catering (units) properties.' });
+    }
+
+    if (rows.length === 0) return res.status(400).json({ error: 'No rows to import.' });
+    if (rows.length > 500) return res.status(400).json({ error: 'Too many rows — 500 maximum per import.' });
+
+    const currSym = ({ EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' })[property.currency] || (property.currency ? property.currency + ' ' : '€');
+    const plan    = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId)?.plan ?? 'free';
+    const unitCap = plan === 'free' ? UNIT_FREE_PLAN_LIMIT : Infinity;
+
+    const parsePrice = (v) => parseFloat((v ?? '').toString().replace(/[£$€¥,\s]/g, ''));
+    const nonBlank   = (v) => (v ?? '').toString().trim() !== '';
+
+    // ── Pass 1 — resolve / create units ──────────────────────────────────
+    const existingUnits = db.prepare(
+      'SELECT id, name FROM rooms WHERE property_id = ? AND parent_unit_id IS NULL',
+    ).all(property_id);
+    const unitByKey = new Map();   // lower(trim(name)) -> { id, name, created }
+    for (const u of existingUnits) unitByKey.set(u.name.trim().toLowerCase(), { id: u.id, name: u.name, created: false });
+    let unitCount = existingUnits.length;
+
+    const firstSpecByKey = new Map();   // key -> { price, type, amen, desc, access_method, access_code, arrival, staffed, displayName, rowNum }
+    const unitWarnings   = [];
+    const warnings       = [];
+    const errors         = [];
+    const unitsSkipped   = [];   // row numbers of new-unit rows skipped for the Free cap
+    const unitsCreated   = [];
+    const created        = [];   // { id, name, rowNum, kind, unitKey, unitName?, photoUrl }
+
+    const insertUnit = db.prepare(`
+      INSERT INTO rooms
+        (property_id, name, type, price_per_night, capacity, amenities, status, description,
+         ical_token, parent_unit_id, access_method, access_code, arrival_instructions, staffed_checkin_available)
+      VALUES (?, ?, ?, ?, ?, ?, 'available', ?, ?, NULL, ?, ?, ?, ?)
+    `);
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 2;
+      const row = rows[i] ?? {};
+      const rawUnit  = (row.unit_name ?? '').toString().trim();
+      const roomName = (row.room_name ?? '').toString().trim();
+      if (!rawUnit || roomName) continue;   // blank unit → pass 2 error; room row → pass 2
+      const key = rawUnit.toLowerCase();
+
+      const price      = parsePrice(row.price_per_night);
+      const rawType    = (row.type ?? '').toString().trim().toLowerCase();
+      const typeUnknown = !!rawType && !UNIT_TYPES.includes(rawType);
+      const type       = UNIT_TYPES.includes(rawType) ? rawType : 'apartment';
+      const capacity   = Math.min(20, Math.max(1, parseInt(row.capacity, 10) || 2));
+      const amen       = (row.amenities ?? '').toString().trim() || null;
+      const desc       = (row.description ?? '').toString().trim() || null;
+      const rawAccess  = (row.access_method ?? '').toString().trim().toLowerCase();
+      const accessUnknown = !!rawAccess && !VALID_UNIT_ACCESS_METHODS.includes(rawAccess);
+      const access_method = VALID_UNIT_ACCESS_METHODS.includes(rawAccess) ? rawAccess : 'none';
+      const access_code   = (row.access_code ?? '').toString().trim() || null;
+      const arrival       = (row.arrival_instructions ?? '').toString().trim() || null;
+      const staffed       = parseYesNo(row.staffed_checkin_available);
+
+      if (unitByKey.has(key)) {
+        const spec = firstSpecByKey.get(key);   // only set for units THIS import created
+        if (spec) {
+          const conflicts = [];
+          if (nonBlank(row.price_per_night) && Number.isFinite(price) && price !== spec.price) conflicts.push('price');
+          if (rawType && type !== spec.type) conflicts.push('type');
+          if (amen && amen !== spec.amen) conflicts.push('amenities');
+          if (desc && desc !== spec.desc) conflicts.push('description');
+          if (rawAccess && access_method !== spec.access_method) conflicts.push('access_method');
+          if (access_code && access_code !== spec.access_code) conflicts.push('access_code');
+          if (arrival && arrival !== spec.arrival) conflicts.push('arrival_instructions');
+          if (nonBlank(row.staffed_checkin_available) && staffed !== spec.staffed) conflicts.push('staffed_checkin_available');
+          if (conflicts.length) {
+            unitWarnings.push(`Unit "${spec.displayName}" — using values from its first row (row ${spec.rowNum}); row ${rowNum} had different ${conflicts.join(', ')}, which were ignored.`);
+          }
+        }
+        continue;
+      }
+
+      if (!Number.isFinite(price) || price < 0) {
+        errors.push(`Row ${rowNum}: unit "${rawUnit}" has an invalid or missing price "${row.price_per_night ?? ''}"`);
+        continue;
+      }
+      if (unitCount >= unitCap) { unitsSkipped.push(rowNum); continue; }
+
+      if (typeUnknown)   warnings.push(`Row ${rowNum}: unknown unit type "${row.type}" — imported as "apartment"`);
+      if (accessUnknown) warnings.push(`Row ${rowNum}: unknown access_method "${row.access_method}" — set to "none"`);
+
+      const ical_token = crypto.randomBytes(16).toString('hex');
+      const info = insertUnit.run(
+        property_id, rawUnit, type, price, capacity, amen, desc,
+        ical_token, access_method, access_code, arrival, staffed,
+      );
+      unitCount++;
+      unitByKey.set(key, { id: info.lastInsertRowid, name: rawUnit, created: true });
+      firstSpecByKey.set(key, { price, type, amen, desc, access_method, access_code, arrival, staffed, displayName: rawUnit, rowNum });
+      unitsCreated.push(rawUnit);
+      created.push({ id: info.lastInsertRowid, name: rawUnit, rowNum, kind: 'unit', unitKey: key, photoUrl: (row.photo_url ?? '').toString().trim() });
+
+      logAction(db, {
+        ...actorFromReq(req),
+        propertyId: Number(property_id),
+        action: 'ROOM_CREATED', category: 'room', targetType: 'room',
+        targetId: info.lastInsertRowid, targetName: rawUnit, ipAddress: getIp(req),
+      });
+    }
+
+    // ── Pass 2 — create internal rooms ───────────────────────────────────
+    const insertInternal = db.prepare(`
+      INSERT INTO rooms
+        (property_id, name, type, price_per_night, capacity, amenities, status, description, ical_token, parent_unit_id)
+      VALUES (?, ?, ?, 0, ?, ?, 'available', ?, ?, ?)
+    `);
+    const roomsSkipped         = [];        // { rowNum, unit }
+    const roomsInUnit          = new Map(); // unitId -> running internal count
+    const unitKeysWithRoomRows = new Set(); // unit keys the CSV gave internal-room rows
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 2;
+      const row = rows[i] ?? {};
+      const rawUnit  = (row.unit_name ?? '').toString().trim();
+      const roomName = (row.room_name ?? '').toString().trim();
+      if (!roomName) continue;   // unit-defining row — pass 1
+      if (!rawUnit) { errors.push(`Row ${rowNum}: internal room "${roomName}" has no unit_name`); continue; }
+
+      const key = rawUnit.toLowerCase();
+      unitKeysWithRoomRows.add(key);
+      const unit = unitByKey.get(key);
+      if (!unit) {
+        errors.push(`Row ${rowNum}: room "${roomName}" references unit "${rawUnit}", which has no unit-defining row (a row with unit_name set and room_name blank)`);
+        continue;
+      }
+
+      const stray = ['price_per_night', 'access_method', 'access_code', 'arrival_instructions', 'staffed_checkin_available']
+        .filter((f) => nonBlank(row[f]));
+      if (stray.length) warnings.push(`Row ${rowNum}: ${stray.join(', ')} only apply to a unit row — ignored for internal room "${roomName}"`);
+
+      if (!roomsInUnit.has(unit.id)) {
+        roomsInUnit.set(unit.id, db.prepare('SELECT COUNT(*) as n FROM rooms WHERE parent_unit_id = ?').get(unit.id).n);
+      }
+      if (roomsInUnit.get(unit.id) >= ROOMS_PER_UNIT_LIMIT) {
+        roomsSkipped.push({ rowNum, unit: unit.name });
+        continue;
+      }
+
+      const rawType = (row.type ?? '').toString().trim().toLowerCase();
+      if (rawType && !WP_ROOM_TYPES.includes(rawType)) {
+        warnings.push(`Row ${rowNum}: unknown room type "${row.type}" — imported as "other"`);
+      }
+      const type     = WP_ROOM_TYPES.includes(rawType) ? rawType : 'other';
+      const capacity = Math.min(20, Math.max(1, parseInt(row.capacity, 10) || 2));
+      const amen     = (row.amenities ?? '').toString().trim() || null;
+      const desc     = (row.description ?? '').toString().trim() || null;
+
+      const ical_token = crypto.randomBytes(16).toString('hex');
+      const info = insertInternal.run(property_id, roomName, type, capacity, amen, desc, ical_token, unit.id);
+      roomsInUnit.set(unit.id, roomsInUnit.get(unit.id) + 1);
+      created.push({ id: info.lastInsertRowid, name: roomName, rowNum, kind: 'room', unitKey: key, unitName: unit.name, photoUrl: (row.photo_url ?? '').toString().trim() });
+
+      logAction(db, {
+        ...actorFromReq(req),
+        propertyId: Number(property_id),
+        action: 'ROOM_CREATED', category: 'room', targetType: 'room',
+        targetId: info.lastInsertRowid, targetName: roomName, ipAddress: getIp(req),
+      });
+    }
+
+    // Clean up any unit THIS import created whose internal-room rows all failed —
+    // 0 children AND the CSV clearly intended it to have some. A deliberate
+    // bare-unit import (no room rows at all) is preserved.
+    const unitsRemoved = [];
+    for (const u of unitByKey.values()) {
+      if (!u.created) continue;
+      const key = u.name.trim().toLowerCase();
+      if (!unitKeysWithRoomRows.has(key)) continue;
+      const childCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE parent_unit_id = ?').get(u.id).n;
+      if (childCount > 0) continue;
+      db.prepare('DELETE FROM room_photos WHERE room_id = ?').run(u.id);
+      db.prepare('DELETE FROM content_flags WHERE room_id = ?').run(u.id);
+      db.prepare('DELETE FROM rooms WHERE id = ?').run(u.id);
+      const ci = unitsCreated.indexOf(u.name); if (ci !== -1) unitsCreated.splice(ci, 1);
+      unitsRemoved.push(u.name);
+    }
+    const removedIds = new Set();
+    for (const u of unitByKey.values()) if (u.created && unitsRemoved.includes(u.name)) removedIds.add(u.id);
+    const liveCreated = created.filter((r) => !removedIds.has(r.id));
+
+    // ── Photos — best-effort, 1 per row regardless of plan ────────────────
+    const photoErrors = [];
+    let photosAttached = 0;
+    for (const rec of liveCreated) {
+      if (!rec.photoUrl) continue;
+      const label = `Row ${rec.rowNum} ("${rec.name}")`;
+      const already = db.prepare('SELECT COUNT(*) as n FROM room_photos WHERE room_id = ?').get(rec.id).n;
+      if (already >= UNIT_PHOTO_LIMIT) {
+        photoErrors.push(`${label}: only ${UNIT_PHOTO_LIMIT} photo is allowed per unit and per internal room — "${rec.photoUrl}" not attached`);
+        continue;
+      }
+      const outcome = await attachRoomPhotoFromUrl(rec.id, rec.photoUrl, label);
+      if (outcome.attached) photosAttached++;
+      else photoErrors.push(outcome.error);
+    }
+
+    // ── Group echo (unit → internal rooms, with the unit price) ───────────
+    const groupsMap = new Map();
+    for (const rec of liveCreated) {
+      if (!groupsMap.has(rec.unitKey)) {
+        groupsMap.set(rec.unitKey, { unit: unitByKey.get(rec.unitKey)?.name ?? rec.name, price: firstSpecByKey.get(rec.unitKey)?.price ?? null, rooms: [] });
+      }
+      if (rec.kind === 'room') groupsMap.get(rec.unitKey).rooms.push(rec.name);
+    }
+
+    const limitParts = [];
+    if (unitsSkipped.length) {
+      limitParts.push(`Your ${plan} plan is limited to ${UNIT_FREE_PLAN_LIMIT} units. Row${unitsSkipped.length === 1 ? '' : 's'} ${unitsSkipped.join(', ')} could not be imported — upgrade to Pro for unlimited units.`);
+    }
+    if (roomsSkipped.length) {
+      limitParts.push(`A unit can hold at most ${ROOMS_PER_UNIT_LIMIT} internal rooms. Row${roomsSkipped.length === 1 ? '' : 's'} ${roomsSkipped.map((x) => x.rowNum).join(', ')} exceeded that and ${roomsSkipped.length === 1 ? 'was' : 'were'} skipped.`);
+    }
+
+    res.json({
+      imported:            liveCreated.length,
+      units_imported:      liveCreated.filter((r) => r.kind === 'unit').length,
+      rooms_imported:      liveCreated.filter((r) => r.kind === 'room').length,
+      units_created:       unitsCreated,
+      units_removed:       unitsRemoved,
+      groups:              [...groupsMap.values()].map((g) => ({ unit: g.unit, price: g.price, room_count: g.rooms.length, rooms: g.rooms })),
+      units_skipped_limit: unitsSkipped.length,
+      rooms_skipped_limit: roomsSkipped.length,
+      skipped_unit_rows:   unitsSkipped,
+      skipped_room_rows:   roomsSkipped.map((x) => x.rowNum),
+      warnings,
+      unit_warnings:       unitWarnings,
+      errors,
+      photos_attached:     photosAttached,
+      photo_errors:        photoErrors,
+      currency_symbol:     currSym,
+      limit_message:       limitParts.join(' ') || null,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -271,6 +271,7 @@ export default function Rooms() {
           onAddRoomToUnit={handleAddRoomToUnit}
           onEditUnit={handleEditUnit}
           onUnitFieldsUpdated={handleUnitFieldsUpdated}
+          onImport={() => setShowImport(true)}
           t={t}
           currencySymbol={currencySymbol}
         />
@@ -383,7 +384,11 @@ export default function Rooms() {
           propertyId={property?.id}
           currentRoomCount={rooms.length}
           plan={plan}
-          mode={property?.rental_type === 'whole_property' ? 'whole_property' : property?.ir_room_mode}
+          mode={
+            property?.rental_type === 'whole_property' ? 'whole_property'
+            : property?.rental_type === 'units' ? 'units'
+            : property?.ir_room_mode
+          }
           onClose={() => setShowImport(false)}
           onImported={() => { setShowImport(false); refreshRooms(); }}
         />
@@ -745,7 +750,7 @@ function RoomGridSection({ rooms, loading, selectedRoom, onCardClick, t, emptyMe
 // Un mode — hardcoded English strings below are not yet in the i18n catalogue;
 // this UI isn't customer-facing yet (see plan-gating note in the task).
 
-function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCurrency, locale, hasChargesAddon, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, onUnitFieldsUpdated, t, currencySymbol }) {
+function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCurrency, locale, hasChargesAddon, loading, selectedRoom, onCardClick, onAddUnit, onAddRoomToUnit, onEditUnit, onUnitFieldsUpdated, onImport, t, currencySymbol }) {
   const [expandedUnitId, setExpandedUnitId] = useState(null);
 
   return (
@@ -755,10 +760,17 @@ function UnitsPage({ units, roomsByUnit, bookingsByRoom, today, property, fmtCur
           <h1>Units</h1>
           <div className="page-date">{units.length} unit{units.length !== 1 ? 's' : ''}</div>
         </div>
-        <button className="btn-primary" onClick={onAddUnit}>
-          <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-          Add Unit
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {onImport && (
+            <button className="btn-secondary" onClick={onImport}>
+              {t('importRoomsBtn')}
+            </button>
+          )}
+          <button className="btn-primary" onClick={onAddUnit}>
+            <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+            Add Unit
+          </button>
+        </div>
       </div>
 
       {loading ? (
