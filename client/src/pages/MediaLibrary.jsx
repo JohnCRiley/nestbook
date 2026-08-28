@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { CameraPlusIcon } from '../components/TablerIcons.jsx';
+import ConfirmModal from '../components/ConfirmModal.jsx';
 
 // ── Media Library ────────────────────────────────────────────────────────────
 // A property-wide view onto every photo: the unassigned pool, the single-slot
@@ -20,6 +21,7 @@ export default function MediaLibrary() {
   const [selected, setSelected] = useState(null);   // { id, url, roomId }
   const [toast,    setToast]    = useState(null);    // { kind, text }
   const [busy,     setBusy]     = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);   // pool photo awaiting confirmation
 
   const isUnits      = property?.rental_type === 'units';
   const isWholeProp  = property?.rental_type === 'whole_property';
@@ -101,6 +103,27 @@ export default function MediaLibrary() {
       return false;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function deletePoolPhoto(photoId) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/media/${photoId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        flash('error', body.error || t('ml.deleteFailed'));
+        return;
+      }
+      if (selected?.id === photoId) setSelected(null);
+      flash('success', t('ml.deleted'));
+      load(true);
+    } catch (e) {
+      flash('error', e.message || t('ml.deleteFailed'));
+    } finally {
+      setBusy(false);
+      setPendingDelete(null);
     }
   }
 
@@ -206,6 +229,7 @@ export default function MediaLibrary() {
             onPhotoClick={onPhotoClick}
             onUploadFile={uploadFile}
             onUploadUrl={uploadUrl}
+            onDeleteRequest={(photo) => setPendingDelete(photo)}
             t={t}
           />
 
@@ -314,12 +338,23 @@ export default function MediaLibrary() {
           </section>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!pendingDelete}
+        variant="danger"
+        title={t('ml.deleteConfirmTitle')}
+        message={t('ml.deleteConfirmBody')}
+        confirmLabel={t('ml.deletePhoto')}
+        busy={busy}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => pendingDelete && deletePoolPhoto(pendingDelete.id)}
+      />
     </>
   );
 }
 
 // ── Pool section (with add-photo controls) ───────────────────────────────────
-function PoolSection({ pool, selected, busy, onPhotoClick, onUploadFile, onUploadUrl, t }) {
+function PoolSection({ pool, selected, busy, onPhotoClick, onUploadFile, onUploadUrl, onDeleteRequest, t }) {
   const [mode, setMode] = useState(null);   // null | 'url'
   const [url,  setUrl]  = useState('');
   const fileRef = useRef(null);
@@ -342,6 +377,8 @@ function PoolSection({ pool, selected, busy, onPhotoClick, onUploadFile, onUploa
             photo={p}
             selectedId={selected?.id}
             onClick={() => onPhotoClick(p, null)}
+            onRemove={() => onDeleteRequest(p)}
+            removeTitle={t('ml.deletePhoto')}
           />
         ))}
 

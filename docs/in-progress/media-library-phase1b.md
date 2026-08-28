@@ -71,9 +71,12 @@ Browser `computer` clicks were unreliable (0×0 pane); interactions driven via `
 
 ---
 
-## Known gaps / notes (for a later phase)
+## Follow-up (2026-08-29) — permanent delete for pool photos
 
-- **No permanent delete for pool photos.** Phase 1a never added one (the only removal is the moderation queue). Pool photos on this page show copy-URL only, no ✕. If owners need to purge unwanted pool photos, add `DELETE /api/properties/:id/media/:photoId` (+ file cleanup + flag cleanup) later.
+- **`DELETE /api/properties/:id/media/:photoId`** added in `server/routes/properties.js` (after `/media/upload-url`). Ownership check via `canAccess`; only acts on a `room_photos` row with `id + property_id` match AND `room_id IS NULL`. Room-attached photo → **409** (`"attached to a room…"`), missing → 404, other property → 403. On success: `BEGIN` → `DELETE FROM content_flags WHERE room_photos_id = ?` → `DELETE FROM room_photos WHERE id = ?` → `COMMIT`, then `cleanupFile()` for filename + thumb. So a pool photo's pending moderation flag is removed, not orphaned.
+- Frontend: pool `PhotoTile`s now get the same ✕ as room tiles, wired to `onDeleteRequest` → `ConfirmModal` (`variant="danger"`) → `deletePoolPhoto()`. This is the only destructive action on the page, hence the confirm step (everything else is a reversible move).
+- New i18n keys: `ml.deletePhoto`, `ml.deleteConfirmTitle`, `ml.deleteConfirmBody`, `ml.deleted`, `ml.deleteFailed` ×5 locales.
+- Verified: pool delete removes row + both files + pending flag; 409 on a room-attached id; existing `DELETE /api/rooms/:roomId/photos/:photoId` unchanged (204, still `SET NULL`s its flag per pre-existing behaviour); UI ✕ → confirm → delete, cancel is a no-op.
 - No drag-and-drop (deliberate — click-to-assign only this phase).
 - No swap: assigning onto a full room is blocked with a message, never a swap.
 - Hero / access photos can't be *set* from a pool photo here (no endpoint) — only viewed + copied. Setting them stays in Settings.

@@ -965,6 +965,50 @@ propertiesRouter.post('/:id/media/upload-url', async (req, res) => {
   }
 });
 
+// ── DELETE /api/properties/:id/media/:photoId ────────────────────────────────
+// Permanently delete an UNASSIGNED pool photo (room_id IS NULL) on this
+// property. Room-attached photos and the single-slot hero / property-access /
+// unit-access photos have their own established delete paths and are rejected
+// here rather than silently ignored. Mirrors roomPhotos.js's photo delete:
+// ownership check, drop the row, cleanupFile() for the full image + its thumb.
+// Also removes any content_flags row that referenced this photo (via
+// room_photos_id) so an unreviewed pool photo doesn't leave a dangling flag.
+propertiesRouter.delete('/:id/media/:photoId', (req, res) => {
+  try {
+    const propId  = Number(req.params.id);
+    const photoId = Number(req.params.photoId);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const photo = db.prepare('SELECT * FROM room_photos WHERE id = ? AND property_id = ?').get(photoId, propId);
+    if (!photo) return res.status(404).json({ error: 'Photo not found.' });
+    if (photo.room_id != null) {
+      return res.status(409).json({
+        error: 'That photo is attached to a room. Move it to the unassigned pool before deleting it.',
+      });
+    }
+
+    db.exec('BEGIN');
+    try {
+      db.prepare('DELETE FROM content_flags WHERE room_photos_id = ?').run(photoId);
+      db.prepare('DELETE FROM room_photos WHERE id = ?').run(photoId);
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
+
+    cleanupFile(join(ROOM_UPLOAD_DIR, photo.filename));
+    if (photo.thumb_filename) {
+      cleanupFile(join(ROOM_UPLOAD_DIR, photo.thumb_filename));
+    }
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/properties/:id/logo ─────────────────────────────────────────────
 propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) => {
   try {
