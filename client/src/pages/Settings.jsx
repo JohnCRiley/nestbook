@@ -1246,18 +1246,26 @@ export default function Settings() {
                 ))}
                 {form && activeProperty?.rental_type !== 'whole_property' && (
                   <>
-                    <ToggleRow
-                      label={t('bfPropertyToggleLabel')}
-                      checked={!!form.breakfast_included}
-                      onChange={() => setForm((p) => ({ ...p, breakfast_included: p.breakfast_included ? 0 : 1 }))}
-                    />
-                    <div style={{
-                      margin: '2px 0 10px 0', padding: '8px 12px',
-                      background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6,
-                      fontSize: '0.78rem', color: '#92400e', lineHeight: 1.5,
-                    }}>
-                      <AlertTriangleIcon size={13} /> {t('bfPropertyToggleWarn')}
-                    </div>
+                    {/* Property-wide breakfast on/off — Named Rooms only. Units-mode
+                        properties get this toggle in the Unit Sub-Type section
+                        instead (right next to where picking a sub-type sets its
+                        breakfast default), so it isn't duplicated here. */}
+                    {activeProperty?.rental_type === 'rooms' && (
+                      <>
+                        <ToggleRow
+                          label={t('bfPropertyToggleLabel')}
+                          checked={!!form.breakfast_included}
+                          onChange={() => setForm((p) => ({ ...p, breakfast_included: p.breakfast_included ? 0 : 1 }))}
+                        />
+                        <div style={{
+                          margin: '2px 0 10px 0', padding: '8px 12px',
+                          background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6,
+                          fontSize: '0.78rem', color: '#92400e', lineHeight: 1.5,
+                        }}>
+                          <AlertTriangleIcon size={13} /> {t('bfPropertyToggleWarn')}
+                        </div>
+                      </>
+                    )}
                     {plan !== 'free' && (
                       <>
                         <ToggleRow
@@ -4742,6 +4750,15 @@ function UnSubTypeSection({ form, setForm, handleSave, saving, t }) {
               />
               <span style={{ fontSize: '0.875rem' }}>Offer breakfast to all guests</span>
             </label>
+            {(subType === 'glamping' || subType === 'serviced_apartment') && (
+              <div style={{
+                margin: '8px 0 2px 0', padding: '8px 12px',
+                background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6,
+                fontSize: '0.78rem', color: '#92400e', lineHeight: 1.5,
+              }}>
+                {t('bfUnitSubTypeNote')}
+              </div>
+            )}
           </FormField>
 
           <FormField label="Servicing">
