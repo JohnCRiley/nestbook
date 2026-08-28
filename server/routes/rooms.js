@@ -10,6 +10,8 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
+import { processRoomPhoto, ROOM_UPLOAD_DIR } from '../utils/processRoomPhoto.js';
+import { PHOTO_LIMITS } from './roomPhotos.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Same physical folder WP's property-level access photos already use
@@ -37,6 +39,39 @@ function actorFromReq(req) {
 // objects, e.g. [{"type":"king","qty":1},{"type":"sofa_bed","qty":1}].
 // Fixed vocabulary only — no free text.
 const VALID_BED_TYPES = ['single', 'double', 'queen', 'king', 'sofa_bed', 'bunk_bed'];
+
+// Free plan is capped at this many rooms per property (Named Rooms / WP modes).
+// Pro / Multi are unlimited. Enforced in POST / and reused by the CSV import.
+const FREE_PLAN_ROOM_LIMIT = 5;
+
+// Room types the CSV import accepts for Named Rooms mode — mirrors
+// NewRoomModal.jsx's ROOM_TYPES. An unknown value falls back to 'double'.
+const IMPORT_ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
+
+// Parses a CSV bed_config cell like "king:1;sofa_bed:1" into the JSON string
+// the rooms.bed_config column stores. A single invalid bed type or quantity
+// discards the whole cell: returns { value: null, warning } and the caller
+// still imports the row, just without a bed configuration set.
+function parseBedConfigCsv(cell) {
+  const raw = (cell ?? '').trim();
+  if (!raw) return { value: null };
+  const entries = [];
+  for (const part of raw.split(';')) {
+    const piece = part.trim();
+    if (!piece) continue;
+    const [typeRaw, qtyRaw] = piece.split(':').map((x) => (x ?? '').trim());
+    const type = typeRaw.toLowerCase();
+    if (!VALID_BED_TYPES.includes(type)) {
+      return { value: null, warning: `bed_config "${raw}" ignored — "${typeRaw}" is not a valid bed type (${VALID_BED_TYPES.join(', ')})` };
+    }
+    const qty = qtyRaw === '' ? 1 : Number(qtyRaw);
+    if (!Number.isInteger(qty) || qty < 1) {
+      return { value: null, warning: `bed_config "${raw}" ignored — "${qtyRaw}" is not a positive whole number` };
+    }
+    entries.push({ type, qty });
+  }
+  return { value: entries.length ? JSON.stringify(entries) : null };
+}
 
 // Validates a bed_config value already parsed into a JS array (the JSON
 // request body arrives pre-parsed by Express). Returns { error } or
@@ -331,9 +366,9 @@ roomsRouter.post('/', (req, res) => {
       // IR / WP: Free plan: max 5 rooms per property
       if (currentUser?.plan === 'free') {
         const roomCount = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
-        if (roomCount >= 5) {
+        if (roomCount >= FREE_PLAN_ROOM_LIMIT) {
           return res.status(403).json({
-            error: "You've reached the free plan limit of 5 rooms. Upgrade to Pro for unlimited rooms.",
+            error: `You've reached the free plan limit of ${FREE_PLAN_ROOM_LIMIT} rooms. Upgrade to Pro for unlimited rooms.`,
           });
         }
       }
@@ -369,6 +404,162 @@ roomsRouter.post('/', (req, res) => {
       targetId: created.id,
       targetName: created.name,
       ipAddress: getIp(req),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/rooms/bulk-import ───────────────────────────────────────────────
+// Room Import Wizard — Named Rooms mode only. Bulk-creates rooms from parsed
+// CSV rows (client sends `rows`, an array of objects keyed by the template
+// columns) and best-effort attaches photos fetched from the row's photo URLs.
+//
+// Hard-gated: Room Categories, Units and Whole-Property properties get a 403,
+// enforced from the DB so a direct API call can't bypass the hidden button.
+// Partial success is intentional — rows past the Free-plan room cap are skipped
+// and reported rather than failing the whole import.
+roomsRouter.post('/bulk-import', async (req, res) => {
+  try {
+    const { property_id, rows } = req.body;
+    if (!property_id || !Array.isArray(rows)) {
+      return res.status(400).json({ error: 'Missing property_id or rows' });
+    }
+    if (!canAccessProperty(req.user.userId, req.user.role, property_id)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const property = db.prepare('SELECT rental_type, ir_room_mode FROM properties WHERE id = ?').get(property_id);
+    if (!property) return res.status(404).json({ error: 'Property not found.' });
+    if (property.rental_type !== 'rooms' || property.ir_room_mode !== 'named') {
+      return res.status(403).json({ error: 'Room import is only available for properties in Named Rooms mode.' });
+    }
+
+    if (rows.length === 0) return res.status(400).json({ error: 'No rows to import.' });
+    if (rows.length > 500) return res.status(400).json({ error: 'Too many rows — 500 maximum per import.' });
+
+    const plan       = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId)?.plan ?? 'free';
+    const roomCap    = plan === 'free' ? FREE_PLAN_ROOM_LIMIT : Infinity;
+    const photoLimit = PHOTO_LIMITS[plan] ?? PHOTO_LIMITS.free;
+    let roomCount    = db.prepare('SELECT COUNT(*) as n FROM rooms WHERE property_id = ?').get(property_id).n;
+
+    const insertRoom = db.prepare(`
+      INSERT INTO rooms
+        (property_id, name, type, price_per_night, capacity, max_occupancy,
+         amenities, status, description, ical_token, bed_config)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?, ?, ?)
+    `);
+
+    const created         = [];   // { id, name, rowNum, photoUrls }
+    const warnings        = [];    // amber, non-blocking
+    const errors          = [];    // row rejected outright
+    const skippedForLimit = [];    // row numbers not imported (plan cap)
+
+    for (let i = 0; i < rows.length; i++) {
+      const rowNum = i + 2;        // +1 header line, +1 to 1-index
+      const row = rows[i] ?? {};
+
+      const name = (row.name ?? '').toString().trim();
+      if (!name) { errors.push(`Row ${rowNum}: missing room name`); continue; }
+
+      const price = parseFloat((row.price_per_night ?? '').toString().replace(/[£$€¥,\s]/g, ''));
+      if (!Number.isFinite(price) || price < 0) {
+        errors.push(`Row ${rowNum}: invalid price "${row.price_per_night ?? ''}"`);
+        continue;
+      }
+
+      if (roomCount >= roomCap) { skippedForLimit.push(rowNum); continue; }
+
+      let type = (row.type ?? '').toString().trim().toLowerCase();
+      if (type && !IMPORT_ROOM_TYPES.includes(type)) {
+        warnings.push(`Row ${rowNum}: unknown room type "${row.type}" — imported as "double"`);
+        type = 'double';
+      }
+      if (!type) type = 'double';
+
+      const capacity      = Math.min(20, Math.max(1, parseInt(row.capacity, 10) || 2));
+      const maxOccParsed  = parseInt(row.max_occupancy, 10);
+      const max_occupancy = Number.isInteger(maxOccParsed) && maxOccParsed > 0 ? maxOccParsed : null;
+      const amenities     = (row.amenities ?? '').toString().trim() || null;
+      const description    = (row.description ?? '').toString().trim() || null;
+
+      const bed = parseBedConfigCsv(row.bed_config);
+      if (bed.warning) warnings.push(`Row ${rowNum}: ${bed.warning}`);
+
+      const ical_token = crypto.randomBytes(16).toString('hex');
+      const info = insertRoom.run(
+        property_id, name, type, price, capacity, max_occupancy,
+        amenities, description, ical_token, bed.value,
+      );
+      roomCount++;
+
+      const photoUrls = [row.photo_url_1, row.photo_url_2, row.photo_url_3]
+        .map((u) => (u ?? '').toString().trim())
+        .filter(Boolean);
+
+      created.push({ id: info.lastInsertRowid, name, rowNum, photoUrls });
+
+      logAction(db, {
+        ...actorFromReq(req),
+        propertyId: Number(property_id),
+        action: 'ROOM_CREATED',
+        category: 'room',
+        targetType: 'room',
+        targetId: info.lastInsertRowid,
+        targetName: name,
+        ipAddress: getIp(req),
+      });
+    }
+
+    // ── Photos — best-effort, after every room row is inserted ──────────────
+    const photoErrors = [];
+    let photosAttached = 0;
+
+    for (const rec of created) {
+      let attached = db.prepare('SELECT COUNT(*) as n FROM room_photos WHERE room_id = ?').get(rec.id).n;
+      for (const url of rec.photoUrls) {
+        if (attached >= photoLimit) {
+          photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): ${plan} plan allows ${photoLimit} photos per room — "${url}" not attached`);
+          continue;
+        }
+        if (!/^https?:\/\/.+/i.test(url)) {
+          photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): "${url}" is not a valid http(s) URL`);
+          continue;
+        }
+        const tmpName = `${rec.id}-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const tmpPath = join(ROOM_UPLOAD_DIR, tmpName);
+        try {
+          const resp = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(15000) });
+          if (!resp.ok) {
+            photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): ${url} returned HTTP ${resp.status}`);
+            continue;
+          }
+          if (!(resp.headers.get('content-type') || '').startsWith('image/')) {
+            photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): ${url} did not return an image`);
+            continue;
+          }
+          fs.writeFileSync(tmpPath, Buffer.from(await resp.arrayBuffer()));
+          await processRoomPhoto(tmpPath, rec.id);
+          attached++;
+          photosAttached++;
+        } catch (e) {
+          cleanupFile(tmpPath);
+          photoErrors.push(`Row ${rec.rowNum} ("${rec.name}"): could not fetch ${url} (${e.message})`);
+        }
+      }
+    }
+
+    res.json({
+      imported:            created.length,
+      rooms_skipped_limit: skippedForLimit.length,
+      skipped_rows:        skippedForLimit,
+      warnings,
+      errors,
+      photos_attached:     photosAttached,
+      photo_errors:        photoErrors,
+      limit_message: skippedForLimit.length
+        ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} rooms. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited rooms.`
+        : null,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

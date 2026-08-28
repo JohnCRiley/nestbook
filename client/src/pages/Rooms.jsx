@@ -4,6 +4,7 @@ import { localToday, LOCALE_MAP } from '../utils/format.js';
 import { StatusPill, formatAmenity, fmtDate, upcomingBookings } from './rooms/RoomPanel.jsx';
 import RoomPanel    from './rooms/RoomPanel.jsx';
 import NewRoomModal from './rooms/NewRoomModal.jsx';
+import ImportRoomsModal from './rooms/ImportRoomsModal.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
 import Pagination from '../components/Pagination.jsx';
 import { apiFetch } from '../utils/apiFetch.js';
@@ -35,6 +36,7 @@ export default function Rooms() {
   const [loading,       setLoading]       = useState(true);
   const [selectedRoom,  setSelectedRoom]  = useState(null);
   const [showNewRoom,   setShowNewRoom]   = useState(false);
+  const [showImport,    setShowImport]    = useState(false);
   const [bookingValues, setBookingValues] = useState(null);   // pre-fill for booking modal
   const [page,          setPage]          = useState(1);
 
@@ -280,10 +282,17 @@ export default function Rooms() {
               <h1>{t('rooms')}</h1>
               <div className="page-date">{rooms.length} {t('roomsCount')}</div>
             </div>
-            <button className="btn-primary" onClick={() => setShowNewRoom(true)}>
-              <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-              {t('addRoom').replace('+ ', '')}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {property?.rental_type === 'rooms' && property?.ir_room_mode === 'named' && (
+                <button className="btn-secondary" onClick={() => setShowImport(true)}>
+                  {t('importRoomsBtn')}
+                </button>
+              )}
+              <button className="btn-primary" onClick={() => setShowNewRoom(true)}>
+                <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+                {t('addRoom').replace('+ ', '')}
+              </button>
+            </div>
           </div>
 
           {/* ── Stat bar ───────────────────────────────────────────────── */}
@@ -364,6 +373,17 @@ export default function Rooms() {
           parentUnitId={newRoomParentUnitId}
           onClose={() => { setShowNewRoom(false); setNewRoomParentUnitId(null); }}
           onSuccess={handleNewRoomSuccess}
+        />
+      )}
+
+      {/* ── Bulk import modal (Named Rooms mode only) ─────────────────────── */}
+      {showImport && (
+        <ImportRoomsModal
+          propertyId={property?.id}
+          currentRoomCount={rooms.length}
+          plan={plan}
+          onClose={() => setShowImport(false)}
+          onImported={() => { setShowImport(false); refreshRooms(); }}
         />
       )}
 

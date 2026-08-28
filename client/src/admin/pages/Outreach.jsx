@@ -4,6 +4,7 @@ import QuillEditor from '../QuillEditor.jsx';
 import TemplateManager from '../TemplateManager.jsx';
 import IconPicker from '../IconPicker.jsx';
 import { SendIcon, AlertTriangleIcon, CheckIcon, LockIcon, LockOpenIcon, MailIcon, PhoneIcon, MapPinIcon } from '../icons.jsx';
+import { parseCsv } from '../../utils/csvParser.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toLocaleString(); }
@@ -783,27 +784,6 @@ function normalizeSource(raw) {
   if (!raw || !raw.trim()) return 'csv';
   const key = raw.trim().toLowerCase().replace(/\./g, '_').replace(/\s+/g, '_');
   return VALID_SOURCES.includes(SOURCE_MAP[key]) ? SOURCE_MAP[key] : 'other';
-}
-
-function parseCsv(text) {
-  const cleaned = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-  for (let i = 0; i < cleaned.length; i++) {
-    const ch = cleaned[i];
-    if (inQuotes) {
-      if (ch === '"' && cleaned[i + 1] === '"') { field += '"'; i++; }
-      else if (ch === '"') { inQuotes = false; }
-      else { field += ch; }
-    } else {
-      if      (ch === '"')  { inQuotes = true; }
-      else if (ch === ',')  { row.push(field); field = ''; }
-      else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-      else                  { field += ch; }
-    }
-  }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
-  return rows.filter(r => r.length > 1 || r[0]?.trim() !== '');
 }
 
 function validateRow(r, rowNum) {

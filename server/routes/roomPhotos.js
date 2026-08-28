@@ -3,17 +3,18 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
-import sharp from 'sharp';
 import db from '../db/database.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
+import { processRoomPhoto } from '../utils/processRoomPhoto.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOM_UPLOAD_DIR = join(__dirname, '../uploads/rooms');
 
 fs.mkdirSync(ROOM_UPLOAD_DIR, { recursive: true });
 
-// Free: 3, Pro: 5, Multi: 10
-const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
+// Free: 3, Pro: 5, Multi: 10. Exported so the CSV room-import path
+// (routes/rooms.js) enforces the exact same per-plan cap.
+export const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
 
 function getOwnerPlan(userId) {
   const user = db.prepare('SELECT plan FROM users WHERE id = ?').get(userId);
@@ -100,37 +101,14 @@ roomPhotosRouter.post('/:roomId/photos', upload.single('photo'), async (req, res
       });
     }
 
-    // Generate full-size (1200px) and thumbnail (400px)
-    const baseName  = req.file.filename;
-    const thumbName = `thumb_${baseName}`;
-    const thumbPath = join(ROOM_UPLOAD_DIR, thumbName);
-    const tmpPath   = req.file.path + '.tmp';
-    await sharp(req.file.path)
-      .resize(1200, null, { withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toFile(tmpPath);
-    await sharp(req.file.path)
-      .resize(400, null, { withoutEnlargement: true })
-      .jpeg({ quality: 80 })
-      .toFile(thumbPath);
-    fs.unlinkSync(req.file.path);
-    fs.renameSync(tmpPath, req.file.path);
-
-    const room     = db.prepare('SELECT property_id FROM rooms WHERE id = ?').get(roomId);
-    const maxOrder = db.prepare('SELECT MAX(display_order) as m FROM room_photos WHERE room_id = ?').get(roomId);
-    const nextOrder = (maxOrder?.m ?? -1) + 1;
-
-    const result = db.prepare(
-      `INSERT INTO room_photos (room_id, property_id, filename, thumb_filename, display_order) VALUES (?, ?, ?, ?, ?)`
-    ).run(roomId, room.property_id, req.file.filename, thumbName, nextOrder);
-
-    db.prepare(`INSERT INTO content_flags (property_id, room_id, content_type, content_ref) VALUES (?, ?, 'room_photo', ?)`)
-      .run(room.property_id, roomId, req.file.filename);
+    // Resize + thumbnail + room_photos + content_flags — shared with the CSV
+    // room-import photo-from-URL path (server/utils/processRoomPhoto.js).
+    const { id, filename, displayOrder } = await processRoomPhoto(req.file.path, roomId);
 
     res.status(201).json({
-      id: result.lastInsertRowid,
-      url: `/uploads/rooms/${req.file.filename}`,
-      displayOrder: nextOrder,
+      id,
+      url: `/uploads/rooms/${filename}`,
+      displayOrder,
     });
   } catch (err) {
     if (req.file?.path) {
