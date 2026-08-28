@@ -49,4 +49,3 @@ server/public/images/blog/*.webp
 server/public/images/landing/*.jpg
 server/public/images/landing/*.png
 server/public/images/landing/*.webp
-client/dist/index.html
