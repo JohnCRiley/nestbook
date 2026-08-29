@@ -102,3 +102,22 @@ Browser `computer` clicks were unreliable (0×0 pane); interactions driven via `
 - Verified in-browser: 12/12 soft-navs → exactly 1 completed `GET /media` + 1 instantly-aborted stub (React StrictMode dev double-invoke; 1 in prod), no burst, no stuck error/loading. Stale-guard: 3 rapid same-mount reloads with responses delayed 1600/900/200 ms and tagged cap 1001/1002/1003 → page settled on **1003** (newest), stragglers ignored, no error. Cross-nav: a doctored slow response (`pool.count=999`) resolving 1.8 s after navigating away never reached the DOM.
 
 Files: `server/routes/properties.js`, `client/src/pages/MediaLibrary.jsx`, `client/src/i18n/index.js`.
+
+## Follow-up (2026-08-29) — single-slot tiles become real manage controls
+
+The Property + Utility section tiles now upload / replace / remove, not just view + copy.
+
+- **`SingleSlot`** gained `onUpload(file)` / `onRemove()` / `busy` / `accept` props. When present it renders **Copy image URL · Change · Remove** below the thumbnail (Remove in red), and an empty slot becomes an "Add photo" upload button. The `hint` ("Change in Settings" / "Manage this in Guest Mailer" / "Manage on the Units page") stays — this is a second entry point, not a replacement.
+- **Handlers** (`uploadSingle({url,field}, file)` / `removeSingle({url})` in `MediaLibrary.jsx`) call the existing endpoints directly, per tile:
+  - hero → `POST/DELETE /api/properties/:id/hero-photo` (field `photo`)
+  - logo → `POST/DELETE /api/properties/:id/logo` (field **`logo`**)
+  - property access → `POST/DELETE /api/properties/:id/access-photo` (field `photo`, WP-only tile)
+  - unit access → `POST/DELETE /api/rooms/:id/access-photo` (field `photo`)
+  - No confirm dialog — matches Settings' `PropertyHeroPhoto` / Guest Mailer logo UX. `accept` is `image/*` for hero/logo, `image/jpeg,image/png,image/webp` for the access tiles (mirrors the server `fileFilter`s).
+- **`POST /api/properties/:id/logo`** now relocates the replaced logo into the unassigned pool via `adoptFileIntoPool()` instead of `cleanupFile()`-ing it — matching the hero / access-photo swap pattern. (DELETE still deletes outright, same as hero/access DELETE.)
+- **Utility section** re-gated: from `isUnits && unitAccessPhotos.length > 0` to `un_sub_type === 'glamping' || 'serviced_apartment'` (matches the per-unit Access & Arrival gate) **and** at least one top-level unit exists. It now lists **every** top-level unit (derived from `data.rooms.filter(r => r.parentUnitId == null)`), each with its photo or an "Add photo" control — previously it only listed units that already had one.
+- New i18n: `ml.change`, `ml.remove`, `ml.addPhoto`, `ml.singleUpdated`, `ml.singleRemoved` ×5.
+
+Verified in-browser (DB restored after): hero/logo/access replace → old file leaves its dir and appears as a pool `room_photos` row (`room_id NULL`) with a thumb; hero/access/unit-access Remove → file deleted, pool unchanged, slot shows "Add photo"; empty-slot "Add photo" upload works; Utility section hidden for Aparthotel, shown for Glamping + Serviced Apartment with a tile per unit; non-image upload rejected by the server (no client bypass); Guest Mailer logo POST + Settings hero POST/DELETE still 200 unchanged.
+
+Files: `server/routes/properties.js`, `client/src/pages/MediaLibrary.jsx`, `client/src/index.css`, `client/src/i18n/index.js`.

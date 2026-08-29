@@ -5965,10 +5965,18 @@ html[data-theme="forest"] .main-content {
   font-size: 0.75rem; color: var(--text-muted); cursor: default; border-style: dashed;
 }
 .ml-single-hint { font-size: 0.68rem; color: var(--text-muted); }
+.ml-single-img--add {
+  flex-direction: column; gap: 3px; color: var(--accent); cursor: pointer;
+}
+.ml-single-img--add:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, #f1f1f0); }
+.ml-single-img--add:disabled { cursor: wait; opacity: 0.6; }
+.ml-single-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .ml-linklike {
-  align-self: flex-start; background: none; border: none; padding: 0; cursor: pointer;
+  background: none; border: none; padding: 0; cursor: pointer;
   font-family: inherit; font-size: 0.74rem; font-weight: 600; color: var(--accent); text-decoration: underline;
 }
+.ml-linklike:disabled { opacity: 0.5; cursor: not-allowed; }
+.ml-linklike--danger { color: #dc2626; }
 
 /* selection bar */
 .ml-selbar {

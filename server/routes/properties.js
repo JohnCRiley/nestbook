@@ -1049,7 +1049,15 @@ propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) =
 
     const existing = db.prepare('SELECT logo_url FROM properties WHERE id = ?').get(propId);
     if (existing?.logo_url && existing.logo_url !== filename) {
-      cleanupFile(join(LOGO_UPLOAD_DIR, existing.logo_url));
+      // Media Library: relocate the replaced logo into the unassigned pool
+      // instead of deleting it — matches the hero / access-photo swap pattern.
+      const oldPath = join(LOGO_UPLOAD_DIR, existing.logo_url);
+      try {
+        await adoptFileIntoPool({ srcPath: oldPath, propertyId: propId });
+      } catch (e) {
+        console.error('[logo] pool adopt failed, deleting instead:', e.message);
+        cleanupFile(oldPath);
+      }
     }
 
     db.prepare('UPDATE properties SET logo_url = ? WHERE id = ?').run(filename, propId);

@@ -170,6 +170,47 @@ export default function MediaLibrary() {
     }
   }
 
+  // ── single-slot manage (hero / logo / property access / unit access) ──────
+  // Each calls its own existing endpoint directly — an additional entry point
+  // alongside Settings / Guest Mailer / Units, not a replacement. Field name
+  // and validation are the server's; we only pass the file through.
+  async function uploadSingle(cfg, file) {
+    if (!file || busy) return;
+    setBusy(true);
+    const fd = new FormData();
+    fd.append(cfg.field, file);
+    try {
+      const res  = await apiFetch(cfg.url, { method: 'POST', body: fd });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { flash('error', body.error || t('ml.uploadFailed')); return; }
+      flash('success', t('ml.singleUpdated'));
+      reload(true);
+    } catch (e) {
+      flash('error', e.message || t('ml.uploadFailed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeSingle(cfg) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await apiFetch(cfg.url, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        flash('error', body.error || t('ml.deleteFailed'));
+        return;
+      }
+      flash('success', t('ml.singleRemoved'));
+      reload(true);
+    } catch (e) {
+      flash('error', e.message || t('ml.deleteFailed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // ── slot interactions ─────────────────────────────────────────────────────
   function onPhotoClick(photo, roomId) {
     setSelected((cur) => (cur && cur.id === photo.id ? null : { id: photo.id, url: photo.url, roomId: roomId ?? null }));
@@ -292,8 +333,12 @@ export default function MediaLibrary() {
                 hint={t('ml.manageInSettings')}
                 photo={data.hero}
                 selected={selected}
+                busy={busy}
+                accept="image/*"
                 onSelect={() => data.hero && selectSingle(data.hero.url)}
                 onCopy={copyUrl}
+                onUpload={(f) => uploadSingle({ url: `/api/properties/${property.id}/hero-photo`, field: 'photo' }, f)}
+                onRemove={() => removeSingle({ url: `/api/properties/${property.id}/hero-photo` })}
                 t={t}
               />
               <SingleSlot
@@ -301,8 +346,12 @@ export default function MediaLibrary() {
                 hint={t('ml.manageInGuestMailer')}
                 photo={data.logo}
                 selected={selected}
+                busy={busy}
+                accept="image/*"
                 onSelect={() => data.logo && selectSingle(data.logo.url)}
                 onCopy={copyUrl}
+                onUpload={(f) => uploadSingle({ url: `/api/properties/${property.id}/logo`, field: 'logo' }, f)}
+                onRemove={() => removeSingle({ url: `/api/properties/${property.id}/logo` })}
                 t={t}
               />
               {isWholeProp && (
@@ -311,31 +360,45 @@ export default function MediaLibrary() {
                   hint={t('ml.manageInSettings')}
                   photo={data.propertyAccessPhoto}
                   selected={selected}
+                  busy={busy}
+                  accept="image/jpeg,image/png,image/webp"
                   onSelect={() => data.propertyAccessPhoto && selectSingle(data.propertyAccessPhoto.url)}
                   onCopy={copyUrl}
+                  onUpload={(f) => uploadSingle({ url: `/api/properties/${property.id}/access-photo`, field: 'photo' }, f)}
+                  onRemove={() => removeSingle({ url: `/api/properties/${property.id}/access-photo` })}
                   t={t}
                 />
               )}
             </div>
           </section>
 
-          {/* 3 ── Utility (unit access photos) — units mode only ───────── */}
-          {isUnits && data.unitAccessPhotos.length > 0 && (
+          {/* 3 ── Utility (per-unit access photos) — Glamping / Serviced   */}
+          {/* Apartment only, matching the per-unit Access & Arrival gate;   */}
+          {/* hidden entirely for Aparthotel (staffed reception).            */}
+          {(property?.un_sub_type === 'glamping' || property?.un_sub_type === 'serviced_apartment') &&
+           (data.rooms || []).some((r) => r.parentUnitId == null) && (
             <section className="ml-section">
               <h2 className="ml-section-title">{t('ml.utilitySection')}</h2>
               <div className="ml-single-row">
-                {data.unitAccessPhotos.map((ua) => (
-                  <SingleSlot
-                    key={ua.roomId}
-                    label={ua.roomName}
-                    hint={t('ml.manageUnitAccess')}
-                    photo={ua}
-                    selected={selected}
-                    onSelect={() => selectSingle(ua.url)}
-                    onCopy={copyUrl}
-                    t={t}
-                  />
-                ))}
+                {(data.rooms || []).filter((r) => r.parentUnitId == null).map((u) => {
+                  const photo = (data.unitAccessPhotos || []).find((ua) => ua.roomId === u.id) || null;
+                  return (
+                    <SingleSlot
+                      key={u.id}
+                      label={u.name}
+                      hint={t('ml.manageUnitAccess')}
+                      photo={photo}
+                      selected={selected}
+                      busy={busy}
+                      accept="image/jpeg,image/png,image/webp"
+                      onSelect={() => photo && selectSingle(photo.url)}
+                      onCopy={copyUrl}
+                      onUpload={(f) => uploadSingle({ url: `/api/rooms/${u.id}/access-photo`, field: 'photo' }, f)}
+                      onRemove={() => removeSingle({ url: `/api/rooms/${u.id}/access-photo` })}
+                      t={t}
+                    />
+                  );
+                })}
               </div>
             </section>
           )}
@@ -570,28 +633,64 @@ function PhotoTile({ photo, selectedId, onClick, onRemove, removeTitle }) {
   );
 }
 
-// ── Single-slot photo (hero / logo / access / unit access) — display + copy ──
-// These have no room_photos id and their own editing homes elsewhere, so this
-// page only views them and copies their URL. `hint` points at where to edit.
-function SingleSlot({ label, hint, photo, selected, onSelect, onCopy, t }) {
+// ── Single-slot photo (hero / logo / property + unit access) ─────────────────
+// A second, equally valid entry point for these fields — it manages them via
+// their own existing endpoints (`onUpload` / `onRemove`), and the `hint` still
+// points at the primary editing home (Settings / Guest Mailer / Units).
+function SingleSlot({ label, hint, photo, selected, busy, accept = 'image/*', onSelect, onCopy, onUpload, onRemove, t }) {
   const isSel = photo && selected && selected.url === photo.url;
+  const fileRef = useRef(null);
+  const pick = () => fileRef.current?.click();
+
   return (
     <div className="ml-single">
       <div className="ml-single-label">{label}</div>
+
       {photo ? (
-        <>
-          <button
-            type="button"
-            className={`ml-single-img${isSel ? ' is-selected' : ''}`}
-            onClick={onSelect}
-          >
-            <img src={photo.url} alt="" loading="lazy" />
-          </button>
-          <button type="button" className="ml-linklike" onClick={() => onCopy(photo.url)}>{t('ml.copyUrl')}</button>
-        </>
+        <button
+          type="button"
+          className={`ml-single-img${isSel ? ' is-selected' : ''}`}
+          onClick={onSelect}
+        >
+          <img src={photo.url} alt="" loading="lazy" />
+        </button>
+      ) : onUpload ? (
+        <button
+          type="button"
+          className="ml-single-img ml-single-img--empty ml-single-img--add"
+          disabled={busy}
+          onClick={pick}
+        >
+          <CameraPlusIcon size={18} />
+          <span>{t('ml.addPhoto')}</span>
+        </button>
       ) : (
         <div className="ml-single-img ml-single-img--empty">{t('ml.notSet')}</div>
       )}
+
+      {onUpload && (
+        <input
+          ref={fileRef}
+          type="file"
+          accept={accept}
+          style={{ display: 'none' }}
+          disabled={busy}
+          onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; if (f) onUpload(f); }}
+        />
+      )}
+
+      {photo && (
+        <div className="ml-single-actions">
+          <button type="button" className="ml-linklike" onClick={() => onCopy(photo.url)}>{t('ml.copyUrl')}</button>
+          {onUpload && (
+            <button type="button" className="ml-linklike" disabled={busy} onClick={pick}>{t('ml.change')}</button>
+          )}
+          {onRemove && (
+            <button type="button" className="ml-linklike ml-linklike--danger" disabled={busy} onClick={onRemove}>{t('ml.remove')}</button>
+          )}
+        </div>
+      )}
+
       {hint && <div className="ml-single-hint">{hint}</div>}
     </div>
   );
