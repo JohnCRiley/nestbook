@@ -173,7 +173,7 @@ ul.bullets li::marker { color: var(--sage); }
 <!-- ============ PAGE 2b — TOC continued ============ -->
 <div class="page">
   <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Welcome</span></div>
-  <div class="toc-item"><div class="toc-num">11</div><div><div class="toc-title">Bringing in your existing bookings</div><div class="toc-desc">The Booking Migration Wizard</div></div></div>
+  <div class="toc-item"><div class="toc-num">11</div><div><div class="toc-title">Bringing in your existing data</div><div class="toc-desc">Migration wizards for bookings, rooms and guests</div></div></div>
   <div class="toc-item"><div class="toc-num">12</div><div><div class="toc-title">Making NestBook feel like yours</div><div class="toc-desc">Themes, staff access, and features</div></div></div>
   <div class="toc-item"><div class="toc-num">13</div><div><div class="toc-title">Marketing tools and your guest welcome pack</div><div class="toc-desc">Property Info Sheet, Social Media Kit, and Guest Mailer</div></div></div>
   <div class="toc-item"><div class="toc-num">14</div><div><div class="toc-title">Reports and keeping records</div><div class="toc-desc">Revenue reports and the activity log</div></div></div>
@@ -275,12 +275,16 @@ ul.bullets li::marker { color: var(--sage); }
 
   <p>If you're set up as Individual Rooms or Self-Catering, this is where you'll add each room or unit. If you're a Whole Property rental, you'll add a single entry representing the entire property — everything below still applies, just with one listing instead of several.</p>
 
+  <div class="tip-box"><span class="tip-title">Already have a list of rooms?</span>If you're moving from another system, you don't have to add each room by hand. Click <strong>Import Rooms</strong> at the top of the Rooms (or Units) screen and upload a CSV of your rooms, categories, or units. There's an import wizard for each rental mode — Named Rooms, Room Categories, Whole Property, and Self-Catering — and NestBook shows you the right one automatically. Step 11 covers this alongside the booking and guest imports. Otherwise, add each room by hand as below.</div>
+
   <h2 class="section-h">Basic details</h2>
   <p>Give each room or unit a clear name (guests will see this — "Room 3" is functional but "The Garden Room" tends to book better), set its maximum capacity, and add a description. A genuine, specific description usually reassures a guest far more than a generic one.</p>
   <h2 class="section-h">Base rate</h2>
   <p>This is the standard nightly price — the price that applies unless a seasonal rate (Step 4) says otherwise. You can always come back and adjust this.</p>
   <h2 class="section-h">Photos</h2>
-  <p>Upload as many photos as your plan allows — Free properties can upload 1 photo per room, Pro allows 5, and Multi allows 10. Your first photo becomes the "hero" photo shown on your booking page and in the room card on your widget. You can click any thumbnail afterwards to switch which one guests see first.</p>
+  <p>Upload as many photos as your plan allows — Free properties can upload 3 photos per room, Pro allows 5, and Multi allows 10. Your first photo becomes the "hero" photo shown on your booking page and in the room card on your widget. You can click any thumbnail afterwards to switch which one guests see first.</p>
+
+  <p>Once you've got photos in, the <strong>Media Library</strong> (in the main menu) gives you one place to see and manage every photo across your whole property — room and unit photos, your booking-page hero image, and your logo. From there you can move a photo from one room to another, upload new ones, or copy a direct link to any image.</p>
 
   <div class="tip-box"><span class="tip-title">Photos genuinely matter</span>Guests decide whether to click through to book largely based on your photos, before they've read a single word of your description. It's worth taking a little extra time here — natural light, a tidy room, and a photo that shows the whole space (not just a close-up) all help.</div>
 
@@ -472,22 +476,22 @@ ul.bullets li::marker { color: var(--sage); }
 <!-- ============ STEP 11 ============ -->
 <div class="page">
   <div class="doc-header"><span>NestBook — Getting Started Guide</span><span class="step-tag">Step 11 of 15</span></div>
-  <div class="step-head"><div class="step-num">11</div><div><div class="step-title">Bringing in your existing bookings</div></div></div>
-  <div class="go-to">Available from the Bookings screen — available on every plan</div>
+  <div class="step-head"><div class="step-num">11</div><div><div class="step-title">Bringing in your existing data</div></div></div>
+  <div class="go-to">Available from the <strong>Bookings</strong>, <strong>Rooms</strong> and <strong>Guests</strong> screens — on every plan</div>
 
-  <p>If you're moving to NestBook from another system and already have upcoming bookings on the books, you don't need to re-type them all in one at a time. The Booking Migration Wizard walks you through importing them from a spreadsheet.</p>
+  <p>Moving to NestBook from another system? You don't need to re-type everything by hand. NestBook has migration wizards for your <strong>bookings</strong>, your <strong>rooms</strong>, and your <strong>guest list</strong> — each works from a CSV file (a simple spreadsheet format that Excel, Google Sheets, and most booking systems can export). The exact column order never matters; the importer matches by column heading, not position.</p>
 
-  <h2 class="section-h">What you'll need</h2>
-  <p>A CSV file (a simple spreadsheet format — Excel, Google Sheets, and most booking systems can all export to CSV) containing your bookings: guest name, email, phone, check-in date, check-out date, room, total price, and any notes. The exact column order doesn't matter — the importer matches by column heading, not position.</p>
-
-  <h2 class="section-h">The import walks you through</h2>
+  <h2 class="section-h">Bookings</h2>
+  <p>From the Bookings screen, choose <strong>Import</strong> and upload a CSV containing guest name, email, phone, check-in and check-out dates, room, total price, and any notes. The wizard then walks you through three steps:</p>
   <ol class="numbered">
-    <li><strong>Uploading your file</strong> — NestBook automatically detects whether it's comma, semicolon, or tab-separated, and handles several different date formats without you needing to reformat anything first.</li>
-    <li><strong>Matching rooms</strong> — if your old system used different room names, you'll be shown a simple mapping step to match them to your NestBook rooms. (If you're in Whole Property mode, this step is skipped entirely, since there's only one property to assign to.)</li>
-    <li><strong>Reviewing before anything is saved</strong> — you'll see exactly what's about to be imported before it's confirmed, including duplicate-guest detection, so you're not creating a second record for someone already in your Guests list.</li>
+    <li><strong>Uploading your file</strong> — NestBook detects whether it's comma, semicolon, or tab-separated, and handles several different date formats without you needing to reformat anything first.</li>
+    <li><strong>Matching rooms</strong> — if your old system used different room names, a simple mapping step lines them up with your NestBook rooms. (Skipped in Whole Property mode, since there's only one to assign to.)</li>
+    <li><strong>Reviewing before anything is saved</strong> — you'll see exactly what's about to be imported, including duplicate-guest detection, so you're not creating a second record for someone already in your Guests list.</li>
   </ol>
+  <p>Imported bookings keep their original total, rather than NestBook trying to guess a nightly rate breakdown for a booking made before you were tracking rates this way.</p>
 
-  <p>Imported bookings show their original total clearly, rather than NestBook trying to guess a nightly rate breakdown for a booking made before you were tracking rates this way.</p>
+  <h2 class="section-h">Rooms and guests</h2>
+  <p>The Rooms (or Units) screen has its own <strong>Import Rooms</strong> wizard — one version for each rental mode, chosen automatically for your setup — for bringing in your rooms, categories, or units from a CSV. The Guests screen has an <strong>Import</strong> option for your existing guest list. Both check the file first, flag anything that looks wrong, and let you fix it before confirming. As with bookings, nothing is saved until you approve it.</p>
 </div>
 
 <!-- ============ STEP 12 ============ -->
@@ -583,7 +587,7 @@ ul.bullets li::marker { color: var(--sage); }
     <li><span class="box"></span>Check your standalone booking page looks right — visit it yourself</li>
     <li><span class="box"></span>Set up your widget if you have your own website</li>
     <li><span class="box"></span>Connect Booking.com / Airbnb via Calendar Sync, if you list elsewhere</li>
-    <li><span class="box"></span>Import existing bookings via the Migration Wizard, if needed</li>
+    <li><span class="box"></span>Import your existing bookings, rooms and guests via the migration wizards, if needed</li>
     <li><span class="box"></span>Invite staff, if you have any, with the right access level</li>
     <li><span class="box"></span>Build your Property Info Sheet welcome pack, if you're on Pro or Multi</li>
     <li><span class="box"></span>Take your first real booking</li>
