@@ -750,6 +750,14 @@ propertiesRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), as
       if (req.file) cleanupFile(req.file.path);
       return res.status(403).json({ error: 'Access denied.' });
     }
+    // Property-level access photo is whole-property-only (units use per-unit
+    // rooms.access_photo; IR has no such field). Mirrors the WP-only gate on
+    // AccessCodeSection in Settings — the only UI that sets this.
+    const gp = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(propId);
+    if (gp?.rental_type !== 'whole_property') {
+      if (req.file) cleanupFile(req.file.path);
+      return res.status(403).json({ error: 'A property-level access photo is only available for whole-property rentals.' });
+    }
     if (!req.file) return res.status(400).json({ error: 'No photo uploaded' });
 
     const existing = db.prepare('SELECT access_photo FROM properties WHERE id = ?').get(propId);
@@ -792,6 +800,10 @@ propertiesRouter.delete('/:id/access-photo', (req, res) => {
     if (!canAccess(req.user.userId, req.user.role, propId)) {
       return res.status(403).json({ error: 'Access denied.' });
     }
+    const gp = db.prepare('SELECT rental_type FROM properties WHERE id = ?').get(propId);
+    if (gp?.rental_type !== 'whole_property') {
+      return res.status(403).json({ error: 'A property-level access photo is only available for whole-property rentals.' });
+    }
     const existing = db.prepare('SELECT access_photo FROM properties WHERE id = ?').get(propId);
     if (existing?.access_photo) {
       cleanupFile(join(ACCESS_PHOTO_DIR, existing.access_photo));
@@ -828,9 +840,10 @@ propertiesRouter.get('/:id/media', (req, res) => {
       return res.status(404).json({ error: 'Property not found.' });
     }
     const prop = db.prepare(
-      'SELECT id, hero_photo, access_photo, rental_type, owner_id FROM properties WHERE id = ?'
+      'SELECT id, hero_photo, access_photo, logo_url, rental_type, owner_id FROM properties WHERE id = ?'
     ).get(propId);
     if (!prop) return res.status(404).json({ error: 'Property not found.' });
+    const isWholeProp = prop.rental_type === 'whole_property';
 
     const plan = db.prepare('SELECT plan FROM users WHERE id = ?').get(prop.owner_id)?.plan ?? 'free';
     const isUnits = prop.rental_type === 'units';
@@ -873,7 +886,13 @@ propertiesRouter.get('/:id/media', (req, res) => {
       hero: prop.hero_photo
         ? { filename: prop.hero_photo, url: `/uploads/properties/${prop.hero_photo}` }
         : null,
-      propertyAccessPhoto: prop.access_photo
+      logo: prop.logo_url
+        ? { filename: prop.logo_url, url: `/uploads/logos/${prop.logo_url}` }
+        : null,
+      // Property-level access photo is a whole-property-only field (its only
+      // editing UI is WP's AccessCodeSection in Settings, and the upload route
+      // is gated to WP). Never surface it for IR / units.
+      propertyAccessPhoto: (isWholeProp && prop.access_photo)
         ? { filename: prop.access_photo, url: `/uploads/access/${prop.access_photo}` }
         : null,
       categories,

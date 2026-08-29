@@ -81,3 +81,24 @@ Browser `computer` clicks were unreliable (0×0 pane); interactions driven via `
 - No swap: assigning onto a full room is blocked with a message, never a swap.
 - Hero / access photos can't be *set* from a pool photo here (no endpoint) — only viewed + copied. Setting them stays in Settings.
 - Pool `display_order` can have duplicate ordinals after a room-delete detach (Phase 1a note) — the page sorts by `displayOrder, id` so order is still stable; not re-sequenced.
+
+## Follow-up (2026-08-29) — logo tile, WP access-photo gate, load-race fix
+
+**Fix 1 — property logo in the Property section.**
+- `GET /:id/media` now returns `logo` (`{ filename, url }` from `properties.logo_url` → `/uploads/logos/...`) or `null`.
+- New `SingleSlot` for it beside hero/access — view + copy-URL only; hint "Manage this in Guest Mailer" (its actual upload UI is the Guest Mailer page, not Settings). `SingleSlot` gained a `hint` prop (hero/access → "Change in Settings", logo → Guest Mailer, unit access → "Manage on the Units page"); the old hardcoded `t('ml.manageInSettings')` is gone.
+- New i18n: `ml.logoPhoto`, `ml.manageInGuestMailer`, `ml.manageUnitAccess` ×5.
+
+**Fix 2 — property-level access photo is WP-only, enforced.**
+- `POST` and `DELETE /api/properties/:id/access-photo` now 403 (`"A property-level access photo is only available for whole-property rentals."`) unless `rental_type === 'whole_property'` — mirrors the WP-only gate on Settings' `AccessCodeSection` (the only UI that sets it).
+- `GET /:id/media` returns `propertyAccessPhoto: null` for non-WP even if the column has a stale value.
+- Media Library page only renders the access-photo `SingleSlot` when `isWholeProp` — hidden, not blank, for IR/units.
+- Verified: IR `POST`/`DELETE` → 403; WP `POST` (no file) → 400, `DELETE` → 200 (gate passed, WP flow intact); `/media` hides a stale IR `access_photo`.
+
+**Fix 3 — load race on first navigation.**
+- Root cause: `t` in `useCallback([property?.id, t])` → new `load` identity on every `LocaleProvider` re-render → `useEffect([load])` re-fires → ~14-request burst; a slow/failed straggler overwrote good data via last-write-wins.
+- Now: no `useCallback` for the fetch. One `useEffect` keyed on the primitive `propId` (+ a `reloadTick` counter for post-mutation refreshes, via a `reload(keepSelection)` helper). Each run: `AbortController` (aborted in cleanup) + a `reqIdRef` "is this still current" guard — a superseded/late response is dropped, never applied. Separate effect wipes `data` on `propId` change so stale payload never renders against a new property. `error` is a boolean now (string resolved at render via `t('ml.loadError')`), so a failed load doesn't bake a stale translation into state.
+- Spinner: `showSpinner` only after a 400 ms delay and only while `!data && !error` — never flashes on the fast path or on post-mutation refreshes (which keep existing data on screen). Per the "use spinners sparingly" note.
+- Verified in-browser: 12/12 soft-navs → exactly 1 completed `GET /media` + 1 instantly-aborted stub (React StrictMode dev double-invoke; 1 in prod), no burst, no stuck error/loading. Stale-guard: 3 rapid same-mount reloads with responses delayed 1600/900/200 ms and tagged cap 1001/1002/1003 → page settled on **1003** (newest), stragglers ignored, no error. Cross-nav: a doctored slow response (`pool.count=999`) resolving 1.8 s after navigating away never reached the DOM.
+
+Files: `server/routes/properties.js`, `client/src/pages/MediaLibrary.jsx`, `client/src/i18n/index.js`.

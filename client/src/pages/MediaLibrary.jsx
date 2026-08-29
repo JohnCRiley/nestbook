@@ -14,30 +14,73 @@ import ConfirmModal from '../components/ConfirmModal.jsx';
 export default function MediaLibrary() {
   const t = useT();
   const { property } = useLocale();
+  const propId = property?.id ?? null;
 
   const [data,     setData]     = useState(null);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState(null);
+  const [error,    setError]    = useState(false);
   const [selected, setSelected] = useState(null);   // { id, url, roomId }
   const [toast,    setToast]    = useState(null);    // { kind, text }
   const [busy,     setBusy]     = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);   // pool photo awaiting confirmation
+  const [reloadTick, setReloadTick] = useState(0);
 
   const isUnits      = property?.rental_type === 'units';
   const isWholeProp  = property?.rental_type === 'whole_property';
   const isCategories = property?.rental_type === 'rooms' && property?.ir_room_mode === 'categories';
 
-  const load = useCallback((keepSelection = false) => {
-    if (!property?.id) return;
-    if (!keepSelection) setSelected(null);
-    apiFetch(`/api/properties/${property.id}/media`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(t('ml.loadError')))))
-      .then((d) => { setData(d); setError(null); })
-      .catch((e) => setError(e.message || t('ml.loadError')))
-      .finally(() => setLoading(false));
-  }, [property?.id, t]);
+  // Which fetch is current — a slow/failed straggler from an earlier request (or
+  // a different property) must never overwrite a newer result.
+  const reqIdRef  = useRef(0);
+  const keepSelRef = useRef(false);
 
-  useEffect(() => { setLoading(true); load(); }, [load]);
+  // Refetch without changing property. `keepSelection` lets a post-mutation
+  // refresh keep the user's current selection.
+  const reload = useCallback((keepSelection = false) => {
+    keepSelRef.current = keepSelection;
+    setReloadTick((n) => n + 1);
+  }, []);
+
+  // Property switch: drop the previous property's payload so we don't render it
+  // against the new context (and so the spinner logic treats this as a fresh load).
+  useEffect(() => {
+    setData(null);
+    setError(false);
+    setSelected(null);
+  }, [propId]);
+
+  // The one and only fetch. Keyed on the primitive propId (+ an explicit reload
+  // counter) so it fires exactly once per navigation / reload — no t-driven
+  // re-creation, no burst.
+  useEffect(() => {
+    if (!propId) return;
+    const myReq = ++reqIdRef.current;
+    const ac = new AbortController();
+
+    apiFetch(`/api/properties/${propId}/media`, { signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load-failed'))))
+      .then((d) => {
+        if (reqIdRef.current !== myReq) return;   // superseded
+        if (!keepSelRef.current) setSelected(null);
+        keepSelRef.current = false;
+        setData(d);
+        setError(false);
+      })
+      .catch(() => {
+        if (ac.signal.aborted || reqIdRef.current !== myReq) return;
+        setError(true);
+      });
+
+    return () => ac.abort();
+  }, [propId, reloadTick]);
+
+  // Spinner only for a genuinely slow first load — never flashes on the common
+  // fast path or on post-mutation refreshes (which keep the existing data on screen).
+  const [showSpinner, setShowSpinner] = useState(false);
+  useEffect(() => {
+    if (data || error || !propId) { setShowSpinner(false); return; }
+    const id = setTimeout(() => setShowSpinner(true), 400);
+    return () => clearTimeout(id);
+  }, [data, error, propId]);
 
   useEffect(() => {
     if (!toast) return;
@@ -59,7 +102,7 @@ export default function MediaLibrary() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { flash('error', body.error || t('ml.moveFailed')); return; }
       flash('success', roomId === null ? t('ml.movedToPool') : t('ml.moved'));
-      load();
+      reload();
     } catch (e) {
       flash('error', e.message || t('ml.moveFailed'));
     } finally {
@@ -77,7 +120,7 @@ export default function MediaLibrary() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { flash('error', body.error || t('ml.uploadFailed')); return; }
       flash('success', t('ml.uploaded'));
-      load(true);
+      reload(true);
     } catch (e) {
       flash('error', e.message || t('ml.uploadFailed'));
     } finally {
@@ -96,7 +139,7 @@ export default function MediaLibrary() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { flash('error', body.error || t('ml.uploadFailed')); return false; }
       flash('success', t('ml.uploaded'));
-      load(true);
+      reload(true);
       return true;
     } catch (e) {
       flash('error', e.message || t('ml.uploadFailed'));
@@ -118,7 +161,7 @@ export default function MediaLibrary() {
       }
       if (selected?.id === photoId) setSelected(null);
       flash('success', t('ml.deleted'));
-      load(true);
+      reload(true);
     } catch (e) {
       flash('error', e.message || t('ml.deleteFailed'));
     } finally {
@@ -130,6 +173,12 @@ export default function MediaLibrary() {
   // ── slot interactions ─────────────────────────────────────────────────────
   function onPhotoClick(photo, roomId) {
     setSelected((cur) => (cur && cur.id === photo.id ? null : { id: photo.id, url: photo.url, roomId: roomId ?? null }));
+  }
+
+  // Single-slot photos (hero / logo / access) are identified by URL — they have
+  // no room_photos id and aren't reassignable, just selectable for copy-URL.
+  function selectSingle(url) {
+    setSelected((cur) => (cur && cur.url === url ? null : { id: null, url, roomId: null }));
   }
 
   function onEmptySlotClick(room) {
@@ -212,14 +261,15 @@ export default function MediaLibrary() {
         </div>
       )}
 
-      {loading && <div className="ml-muted">{t('ml.loading')}</div>}
-      {error && !loading && (
+      {error && !data && (
         <div className="form-error" style={{ marginBottom: 16 }}>
-          {error} <button className="ml-btn" onClick={() => { setLoading(true); load(); }}>{t('ml.retry')}</button>
+          {t('ml.loadError')}{' '}
+          <button className="ml-btn" onClick={() => reload()}>{t('ml.retry')}</button>
         </div>
       )}
+      {showSpinner && !data && !error && <div className="ml-muted">{t('ml.loading')}</div>}
 
-      {data && !loading && (
+      {data && (
         <div className="ml-page">
           {/* 1 ── Unassigned pool ───────────────────────────────────────── */}
           <PoolSection
@@ -233,26 +283,39 @@ export default function MediaLibrary() {
             t={t}
           />
 
-          {/* 2 ── Property (hero + access) ─────────────────────────────── */}
+          {/* 2 ── Property (hero + logo + access) ──────────────────────── */}
           <section className="ml-section">
             <h2 className="ml-section-title">{t('ml.propertySection')}</h2>
             <div className="ml-single-row">
               <SingleSlot
                 label={t('ml.heroPhoto')}
+                hint={t('ml.manageInSettings')}
                 photo={data.hero}
                 selected={selected}
-                onSelect={() => data.hero && setSelected((c) => (c && c.url === data.hero.url ? null : { id: null, url: data.hero.url, roomId: null }))}
+                onSelect={() => data.hero && selectSingle(data.hero.url)}
                 onCopy={copyUrl}
                 t={t}
               />
               <SingleSlot
-                label={t('ml.accessPhoto')}
-                photo={data.propertyAccessPhoto}
+                label={t('ml.logoPhoto')}
+                hint={t('ml.manageInGuestMailer')}
+                photo={data.logo}
                 selected={selected}
-                onSelect={() => data.propertyAccessPhoto && setSelected((c) => (c && c.url === data.propertyAccessPhoto.url ? null : { id: null, url: data.propertyAccessPhoto.url, roomId: null }))}
+                onSelect={() => data.logo && selectSingle(data.logo.url)}
                 onCopy={copyUrl}
                 t={t}
               />
+              {isWholeProp && (
+                <SingleSlot
+                  label={t('ml.accessPhoto')}
+                  hint={t('ml.manageInSettings')}
+                  photo={data.propertyAccessPhoto}
+                  selected={selected}
+                  onSelect={() => data.propertyAccessPhoto && selectSingle(data.propertyAccessPhoto.url)}
+                  onCopy={copyUrl}
+                  t={t}
+                />
+              )}
             </div>
           </section>
 
@@ -265,9 +328,10 @@ export default function MediaLibrary() {
                   <SingleSlot
                     key={ua.roomId}
                     label={ua.roomName}
+                    hint={t('ml.manageUnitAccess')}
                     photo={ua}
                     selected={selected}
-                    onSelect={() => setSelected((c) => (c && c.url === ua.url ? null : { id: null, url: ua.url, roomId: null }))}
+                    onSelect={() => selectSingle(ua.url)}
                     onCopy={copyUrl}
                     t={t}
                   />
@@ -506,8 +570,10 @@ function PhotoTile({ photo, selectedId, onClick, onRemove, removeTitle }) {
   );
 }
 
-// ── Single-slot photo (hero / access / unit access) — display + copy only ────
-function SingleSlot({ label, photo, selected, onSelect, onCopy, t }) {
+// ── Single-slot photo (hero / logo / access / unit access) — display + copy ──
+// These have no room_photos id and their own editing homes elsewhere, so this
+// page only views them and copies their URL. `hint` points at where to edit.
+function SingleSlot({ label, hint, photo, selected, onSelect, onCopy, t }) {
   const isSel = photo && selected && selected.url === photo.url;
   return (
     <div className="ml-single">
@@ -526,7 +592,7 @@ function SingleSlot({ label, photo, selected, onSelect, onCopy, t }) {
       ) : (
         <div className="ml-single-img ml-single-img--empty">{t('ml.notSet')}</div>
       )}
-      <div className="ml-single-hint">{t('ml.manageInSettings')}</div>
+      {hint && <div className="ml-single-hint">{hint}</div>}
     </div>
   );
 }
