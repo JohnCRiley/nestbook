@@ -940,6 +940,12 @@ function UnitAccordionPanel({
             )}
           </div>
 
+          {/* Access & Arrival — Glamping / Serviced Apartment only. Aparthotel
+              units are run like a staffed hotel (reception handles arrival), so
+              self-service entry fields aren't typically relevant. This only
+              hides the UI: the per-unit access data is never cleared, so nothing
+              is lost if the owner switches sub-type later. */}
+          {(property?.un_sub_type === 'glamping' || property?.un_sub_type === 'serviced_apartment') && (
           <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
             <div
               onClick={() => setShowAccess((v) => !v)}
@@ -957,6 +963,7 @@ function UnitAccordionPanel({
               <UnitAccessSection unit={unit} property={property} onUnitUpdated={onUnitFieldsUpdated} />
             )}
           </div>
+          )}
           </div>
 
           <div className="page-toolbar" style={{ marginBottom: 12 }}>
@@ -1124,9 +1131,10 @@ function UnitAccessSection({ unit, property, onUnitUpdated }) {
         </select>
       </div>
 
-      {/* Only relevant when walk-in is enabled (Aparthotel/Glamping) — Serviced
-          Apartment always has walk_in_enabled locked off, so this stays hidden there. */}
-      {!!property?.walk_in_enabled && (
+      {/* Staffed check-in is meaningless specifically for Serviced Apartment
+          (self-catering, no on-site staff). Gate directly on the sub-type
+          rather than on walk_in_enabled, which only happens to correlate. */}
+      {property?.un_sub_type !== 'serviced_apartment' && (
         <div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <input

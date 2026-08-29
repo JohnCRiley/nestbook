@@ -4803,6 +4803,11 @@ function UnSubTypeSection({ form, setForm, handleSave, saving, t }) {
             </select>
           </FormField>
 
+          {/* Entry method — Glamping / Serviced Apartment only. Aparthotel guests
+              collect keys/keycards at reception, so a self-service entry note
+              isn't typically relevant. Visibility only: an existing value is
+              never cleared, so switching sub-type later loses nothing. */}
+          {(subType === 'glamping' || subType === 'serviced_apartment') && (
           <FormField label="Entry method" hint="Free text, descriptive only — e.g. &quot;Keycard&quot; or &quot;Key box code 4471&quot;.">
             <input
               type="text"
@@ -4812,6 +4817,7 @@ function UnSubTypeSection({ form, setForm, handleSave, saving, t }) {
               placeholder="e.g. Keycard, Key box code 4471"
             />
           </FormField>
+          )}
 
           <div className="settings-save-row">
             <button className="btn-primary" onClick={handleSave} disabled={saving}>
