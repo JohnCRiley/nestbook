@@ -71,8 +71,10 @@ function buildHtml(prop) {
       </div>
     </div>`;
 
-  // Breakfast section
-  const breakfastSection = prop.breakfast_included ? `
+  // Breakfast section — hidden for whole-property rentals, which have no
+  // Settings UI to control breakfast (the stored breakfast_included value is
+  // left intact in case the property switches back to IR/Units later).
+  const breakfastSection = (prop.breakfast_included && prop.rental_type !== 'whole_property') ? `
     <div class="section">
       <div class="section-title">☕ Breakfast</div>
       <div class="grid-2">

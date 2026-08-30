@@ -97,7 +97,10 @@ function PreviewField({ label, value, mono }) {
 
 function SheetPreview({ property, houseRules, localTips, t }) {
   const hasWifi = property?.wifi_network_name || property?.wifi_password;
-  const hasBreakfast = property?.breakfast_included;
+  // Hidden for whole-property rentals — no Settings UI controls breakfast for
+  // WP. The stored breakfast_included value is left as-is so it returns if the
+  // property switches back to IR/Units.
+  const hasBreakfast = property?.breakfast_included && property?.rental_type !== 'whole_property';
   const hasRules = houseRules.trim();
   const hasTips = localTips.trim();
   const hasSpecial = property?.special_banner_enabled && property?.special_banner_text?.trim();
