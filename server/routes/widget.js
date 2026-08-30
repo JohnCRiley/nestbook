@@ -877,7 +877,7 @@ function approvalPage(message, success) {
   const icon   = success ? '✓' : '✕';
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NestBook — Booking ${success ? 'Approved' : 'Declined'}</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f0faf0}
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#F4F3F0}
 .card{background:#fff;border-radius:14px;padding:40px 48px;max-width:480px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
 .icon{width:64px;height:64px;border-radius:50%;background:${colour}20;color:${colour};font-size:2rem;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
 h1{color:${colour};font-size:1.5rem;margin:0 0 12px}p{color:#374151;line-height:1.6;margin:0 0 24px}

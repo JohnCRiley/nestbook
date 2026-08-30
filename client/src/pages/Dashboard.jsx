@@ -245,7 +245,7 @@ export default function Dashboard() {
 
   const monthStart   = today.slice(0, 7) + '-01';
   const monthRevenue = bookings
-    .filter((b) => b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
+    .filter((b) => b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && b.status !== 'declined' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
     .reduce((sum, b) => sum + (b.total_price || 0), 0);
 
   // Serviced Apartment — reuses WP's own simplified-dashboard *pattern* (fewer
@@ -267,6 +267,7 @@ export default function Dashboard() {
         b.status !== 'cancelled' &&
         b.status !== 'cancelled_unpaid' &&
         b.status !== 'checked_out' &&
+        b.status !== 'declined' &&
         norm(b.check_in_date) <= today &&
         norm(b.check_out_date) > today
       )
@@ -285,7 +286,7 @@ export default function Dashboard() {
     ? Math.round((occupiedRoomIds.size / activeRooms.length) * 100)
     : 0;
 
-  const flaggedBookings = bookings.filter((b) => b.flagged && b.status !== 'cancelled' && b.status !== 'cancelled_unpaid');
+  const flaggedBookings = bookings.filter((b) => b.flagged && b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && b.status !== 'declined');
 
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? t('greetingMorning') : hour < 18 ? t('greetingAfternoon') : t('greetingEvening');
@@ -1328,10 +1329,10 @@ function BreakfastServiceList({ bookings, property, t }) {
   }
 
   const inHouseToday    = bookings.filter(b =>
-    b.status !== 'cancelled' && b.status !== 'checked_out' &&
+    b.status !== 'cancelled' && b.status !== 'checked_out' && b.status !== 'declined' &&
     b.check_in_date <= today    && b.check_out_date >= today);
   const inHouseTomorrow = bookings.filter(b =>
-    b.status !== 'cancelled' && b.status !== 'checked_out' &&
+    b.status !== 'cancelled' && b.status !== 'checked_out' && b.status !== 'declined' &&
     b.check_in_date <= tomorrow && b.check_out_date >= tomorrow);
 
   const todayGuests    = inHouseToday.filter(b    => isEligibleForBreakfast(b, null, property, today));
