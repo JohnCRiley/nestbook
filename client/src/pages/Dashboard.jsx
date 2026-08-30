@@ -11,7 +11,8 @@ import {
   nightsBetween,
   addDays,
 } from '../utils/format.js';
-import { isEligibleForBreakfast, countBreakfastMornings } from '../utils/breakfast.js';
+import { isEligibleForBreakfast } from '../utils/breakfast.js';
+import { computeBookingTotal } from '../utils/bookingTotal.js';
 import BookingPanel from './bookings/BookingPanel.jsx';
 import { ClockIcon, HomeIcon, AlertTriangleIcon } from '../components/TablerIcons.jsx';
 import NewBookingModal from './bookings/NewBookingModal.jsx';
@@ -246,7 +247,7 @@ export default function Dashboard() {
   const monthStart   = today.slice(0, 7) + '-01';
   const monthRevenue = bookings
     .filter((b) => b.status !== 'cancelled' && b.status !== 'cancelled_unpaid' && b.status !== 'declined' && norm(b.check_in_date) >= monthStart && norm(b.check_in_date) <= today)
-    .reduce((sum, b) => sum + (b.total_price || 0), 0);
+    .reduce((sum, b) => sum + computeBookingTotal(b, property).grossTotal, 0);
 
   // Serviced Apartment — reuses WP's own simplified-dashboard *pattern* (fewer
   // stat tiles, a longer calm upcoming window) without touching WP's actual
@@ -1173,22 +1174,11 @@ function StatCard({ value, label }) {
   );
 }
 
+// Amount still owed on a booking. Single source of truth — see
+// utils/bookingTotal.js. `b` must carry the ENRICHED_SELECT fields
+// (rate_breakdown, price_per_night, breakfast_*, charges_total).
 export function calcDue(b, property) {
-  const room       = parseFloat(b.total_price) || 0;
-  const bfFree     = !!(property?.breakfast_included || b.room_breakfast_included);
-  const bfCharged  = !!b.breakfast_added && !bfFree;
-  // Trust the booking's own recorded price (0 = complimentary, a real choice);
-  // only fall back to the property default when nothing was recorded.
-  const bfPrice    = b.breakfast_price_per_person != null
-    ? parseFloat(b.breakfast_price_per_person) || 0
-    : parseFloat(property?.breakfast_price) || 0;
-  const bfDays     = bfCharged
-    ? countBreakfastMornings(b.breakfast_start_date, b.check_in_date, b.check_out_date)
-    : 0;
-  const bfGuests   = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
-  const bfSub      = bfCharged ? bfGuests * bfDays * bfPrice : 0;
-  const depDeduct  = b.deposit_paid ? (parseFloat(property?.deposit_amount) || 0) : 0;
-  return Math.max(0, room + bfSub - depDeduct);
+  return computeBookingTotal(b, property).total;
 }
 
 function bfStatusBadge(b, property, t, locale) {

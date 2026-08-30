@@ -543,7 +543,7 @@ widgetRouter.post('/bookings', async (req, res) => {
     }
 
     // Demo properties: return fake confirmation, never write to DB
-    const propCheck = db.prepare('SELECT is_demo, rental_type, booking_flow, ir_room_mode FROM properties WHERE id = ?').get(property_id);
+    const propCheck = db.prepare('SELECT is_demo, rental_type, booking_flow, ir_room_mode, whole_property_rate FROM properties WHERE id = ?').get(property_id);
     if (propCheck?.is_demo === 1) {
       const ref = 'DEMO-' + String(Math.floor(1000 + Math.random() * 9000));
       console.log('[widget] Demo property booking blocked:', property_id);
@@ -631,6 +631,16 @@ widgetRouter.post('/bookings', async (req, res) => {
       if (bl) flagged = 1;
     }
 
+    // Persist the room-rate breakdown so every "amount owed" surface can
+    // reconstruct the room subtotal without trusting total_price (which for a
+    // widget booking is room-only — breakfast rides as a separate Stripe line).
+    const wpBaseRate = propCheck?.rental_type === 'whole_property'
+      ? (propCheck.whole_property_rate ?? null)
+      : null;
+    const rateBreakdownStr = JSON.stringify(
+      calcSeasonalBreakdown(Number(property_id), Number(room_id), check_in_date, check_out_date, wpBaseRate).breakdown
+    );
+
     // ── Block-booking protection check ───────────────────────────────────────
     // Must run BEFORE the Stripe Connect branch so it applies even when the
     // property has an active Connect account (Stripe branch returns early and
@@ -679,9 +689,9 @@ widgetRouter.post('/bookings', async (req, res) => {
         const result = db.prepare(`
           INSERT INTO bookings
             (property_id, room_id, guest_id, check_in_date, check_out_date,
-             num_guests, status, source, notes, total_price, flagged,
+             num_guests, status, source, notes, total_price, rate_breakdown, flagged,
              breakfast_added, breakfast_guests, breakfast_price_per_person, breakfast_start_date)
-          VALUES (?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           property_id, room_id, guest_id,
           check_in_date, check_out_date,
@@ -689,6 +699,7 @@ widgetRouter.post('/bookings', async (req, res) => {
           source     ?? 'direct',
           notes      ?? null,
           total_price ?? null,
+          rateBreakdownStr,
           flagged,
           breakfast_added ? 1 : 0,
           breakfast_guests ?? 0,
@@ -758,9 +769,9 @@ widgetRouter.post('/bookings', async (req, res) => {
     const result = db.prepare(`
       INSERT INTO bookings
         (property_id, room_id, guest_id, check_in_date, check_out_date,
-         num_guests, status, source, notes, total_price, flagged, approval_token,
+         num_guests, status, source, notes, total_price, rate_breakdown, flagged, approval_token,
          breakfast_added, breakfast_guests, breakfast_price_per_person, breakfast_start_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, room_id, guest_id,
       check_in_date, check_out_date,
@@ -769,6 +780,7 @@ widgetRouter.post('/bookings', async (req, res) => {
       source       ?? 'direct',
       notes        ?? null,
       total_price  ?? null,
+      rateBreakdownStr,
       flagged,
       approvalToken,
       breakfast_added ? 1 : 0,

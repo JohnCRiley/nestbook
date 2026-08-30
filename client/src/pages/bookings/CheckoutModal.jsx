@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { nightsBetween } from '../../utils/format.js';
-import { countBreakfastMornings } from '../../utils/breakfast.js';
+import { computeBookingTotal } from '../../utils/bookingTotal.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
 import PrintReceipt from '../../components/PrintReceipt.jsx';
 
@@ -38,36 +38,26 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
 
   const nights          = nightsBetween(b.check_in_date, b.check_out_date);
   const isWP            = property?.rental_type === 'whole_property';
-  const wpTotal         = parseFloat(b.total_price) || 0;
-  const pricePerNight   = isWP
-    ? (nights > 0 ? wpTotal / nights : 0)
-    : (b.price_per_night || (nights > 0 ? wpTotal / nights : 0));
-  const roomSubtotal    = isWP ? wpTotal : (roomBreakdown?.total ?? nights * pricePerNight);
 
-  const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
-  const breakfastCharged = !!b.breakfast_added && !breakfastFree;
-  // An explicit breakfast_price_per_person of 0 means "complimentary" — a real
-  // decision the owner made, not a missing value — so only fall back to the
-  // property default when the booking has no price recorded at all.
-  const bfPricePerPerson = b.breakfast_price_per_person != null
-    ? parseFloat(b.breakfast_price_per_person) || 0
-    : parseFloat(property?.breakfast_price) || 0;
-  const bfDays           = breakfastCharged
-    ? countBreakfastMornings(b.breakfast_start_date, b.check_in_date, b.check_out_date)
-    : 0;
-  const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
-  const breakfastSubtotal = breakfastCharged ? bfGuests * bfDays * bfPricePerPerson : 0;
+  // All money from the shared helper — see utils/bookingTotal.js.
+  const m = computeBookingTotal(b, property, { charges: chargesProp, roomBreakdown });
+  const roomSubtotal      = m.roomSubtotal;
+  const pricePerNight     = nights > 0 ? roomSubtotal / nights : 0;
+  const breakfastFree     = m.breakfastFree;
+  const breakfastCharged  = m.breakfastCharged;
+  const bfPricePerPerson  = m.breakfastPricePerPerson;
+  const bfDays            = m.breakfastDays;
+  const bfGuests          = m.breakfastGuests;
+  const breakfastSubtotal = m.breakfastSubtotal;
+  const chargesSubtotal   = m.chargesSubtotal;
+  const subtotal          = m.grossTotal;
 
-  const depositPaid     = !!b.deposit_paid;
-  const depositAmount   = parseFloat(property?.deposit_amount) || 0;
-  const depositDeduction = depositPaid ? depositAmount : 0;
-  const refundAmt        = parseFloat(b.refund_amount) || 0;
-
-  const chargesSubtotal = roomCharges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
-  const subtotal     = roomSubtotal + breakfastSubtotal + chargesSubtotal;
-  const totalDue     = Math.max(0, subtotal - depositDeduction);
-  const displayTotal = Math.max(0, totalDue - refundAmt);
-  const outstanding  = !depositPaid && depositAmount > 0 ? depositAmount : 0;
+  const depositPaid      = !!b.deposit_paid;
+  const depositAmount    = parseFloat(property?.deposit_amount) || 0;
+  const depositDeduction = m.depositDeduction;
+  const refundAmt        = m.refund;
+  const displayTotal     = m.total;
+  const outstanding      = !depositPaid && depositAmount > 0 ? depositAmount : 0;
 
   const handleConfirm = async () => {
     if (!paymentMethod) return;

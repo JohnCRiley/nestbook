@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { localToday, LOCALE_MAP } from '../utils/format.js';
+import { computeBookingTotal } from '../utils/bookingTotal.js';
 import { BADGE_CLASS, SOURCE_LABELS } from '../utils/bookingConstants.js';
 import BookingPanel          from './bookings/BookingPanel.jsx';
 import NewBookingModal       from './bookings/NewBookingModal.jsx';
@@ -381,7 +382,10 @@ function BookingRow({ booking: b, isSelected, onClick }) {
         </span>
       </td>
       <td className="cell-price">
-        {b.total_price != null ? fmtCurrency(b.total_price) : <span className="cell-muted">{t('tbc')}</span>}
+        {(() => {
+          const g = computeBookingTotal(b, property).grossTotal;
+          return g > 0 ? fmtCurrency(g) : <span className="cell-muted">{t('tbc')}</span>;
+        })()}
       </td>
       <td>
         <span className={BADGE_CLASS[b.status] ?? 'badge'}>
@@ -443,9 +447,10 @@ function BookingCard({ booking: b, isSelected, onClick }) {
       <div className="bc-dates">
         {formatTableDate(b.check_in_date, locale)} → {formatTableDate(b.check_out_date, locale)}
       </div>
-      {b.total_price != null && (
-        <div className="bc-price">{fmtCurrency(b.total_price)}</div>
-      )}
+      {(() => {
+        const g = computeBookingTotal(b, property).grossTotal;
+        return g > 0 ? <div className="bc-price">{fmtCurrency(g)}</div> : null;
+      })()}
       {b.status === 'checked_out' && isWP && (
         <div style={{
           marginTop: 6,

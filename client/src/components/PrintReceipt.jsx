@@ -258,7 +258,9 @@ export default function PrintReceipt({
 
   // Pre-resolve all strings (hooks can't be called inside buildReceiptHTML)
   const depositReqd   = property?.require_deposit === 1;
-  const depPaidLine   = depositReqd && !!depositPaid && depositAmount > 0;
+  // A paid deposit is always deducted (matches utils/bookingTotal.js / EstimatedTotal);
+  // the "outstanding" info line only shows when a deposit was actually required.
+  const depPaidLine   = !!depositPaid && depositAmount > 0;
   const depOutLine    = depositReqd && !depositPaid  && depositAmount > 0;
   const refund        = Number(refundAmount) || 0;
   // Compute total from raw components — never from a pre-calculated prop

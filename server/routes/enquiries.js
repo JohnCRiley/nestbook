@@ -4,6 +4,7 @@ import db from '../db/database.js';
 import { sendApprovalRequestEmail, sendEnquiryReceivedEmail } from '../email/emailService.js';
 import { Resend } from 'resend';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
+import { calcSeasonalBreakdown } from '../utils/ratePeriods.js';
 
 export const enquiriesRouter = Router();
 
@@ -104,16 +105,26 @@ enquiriesRouter.post('/', async (req, res) => {
       const approvalToken = crypto.randomBytes(32).toString('hex');
       const numGuests     = parseInt(guests, 10) || 1;
 
+      // Record the room-rate breakdown + total up-front so the booking has a
+      // real price the moment it's created (this path used to leave both NULL,
+      // so approved enquiry bookings had no total anywhere). Rooms-mode only —
+      // WP free-plan enquiries never reach here.
+      const { total: roomTotal, breakdown } = calcSeasonalBreakdown(
+        Number(propertyId), Number(room.id), checkIn, checkOut, null
+      );
+
       const bookingResult = db.prepare(`
         INSERT INTO bookings
           (property_id, room_id, guest_id, check_in_date, check_out_date,
-           num_guests, status, source, notes, approval_token)
-        VALUES (?, ?, ?, ?, ?, ?, 'pending_owner_approval', 'website', ?, ?)
+           num_guests, status, source, notes, total_price, rate_breakdown, approval_token)
+        VALUES (?, ?, ?, ?, ?, ?, 'pending_owner_approval', 'website', ?, ?, ?, ?)
       `).run(
         propertyId, room.id, guestId,
         checkIn, checkOut,
         numGuests,
         message?.trim() || null,
+        roomTotal,
+        JSON.stringify(breakdown),
         approvalToken,
       );
 

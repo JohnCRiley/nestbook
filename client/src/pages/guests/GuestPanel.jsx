@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { initials, phoneFlag, phoneCountry, fmtDate, fmtPrice } from '../../utils/guestHelpers.js';
 import { BADGE_CLASS } from '../../utils/bookingConstants.js';
 import { nightsBetween } from '../../utils/format.js';
+import { computeBookingTotal } from '../../utils/bookingTotal.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
@@ -85,7 +86,7 @@ function ViewMode({ guest, bookings, onEdit, onGuestUpdated, onGuestDeleted }) {
   const [deleting,          setDeleting]          = useState(false);
   const [blacklisting,      setBlacklisting]      = useState(false);
   const sorted = [...bookings].sort((a, b) => (b.check_in_date > a.check_in_date ? 1 : -1));
-  const totalSpend = bookings.reduce((s, b) => s + (b.total_price || 0), 0);
+  const totalSpend = bookings.reduce((s, b) => s + computeBookingTotal(b, property).grossTotal, 0);
 
   return (
     <>
@@ -281,7 +282,7 @@ function EditMode({ guest, onCancel, onSaved }) {
 // ── HistoryRow ────────────────────────────────────────────────────────────────
 
 function HistoryRow({ booking: b }) {
-  const { currencySymbol, locale } = useLocale();
+  const { currencySymbol, locale, property } = useLocale();
   const t = useT();
   const nights = nightsBetween(b.check_in_date, b.check_out_date);
   const statusLabel = { arriving: t('calLegendInHouse'), in_house: t('calLegendInHouse'), confirmed: t('confirmed'), checked_out: t('checkedOut'), cancelled: t('cancelled') }[b.status] ?? b.status;
@@ -298,7 +299,7 @@ function HistoryRow({ booking: b }) {
         <span className={BADGE_CLASS[b.status] ?? 'badge'} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
           {statusLabel}
         </span>
-        <span className="history-price">{fmtPrice(b.total_price, currencySymbol)}</span>
+        <span className="history-price">{fmtPrice(computeBookingTotal(b, property).grossTotal, currencySymbol)}</span>
       </div>
     </div>
   );

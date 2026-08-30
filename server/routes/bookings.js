@@ -110,7 +110,10 @@ const ENRICHED_SELECT = `
     r.name         AS room_name,
     r.type         AS room_type,
     r.price_per_night,
-    r.breakfast_included AS room_breakfast_included
+    r.breakfast_included AS room_breakfast_included,
+    (SELECT COALESCE(SUM(rc.amount), 0)
+       FROM room_charges rc
+      WHERE rc.booking_id = b.id AND rc.voided_at IS NULL) AS charges_total
   FROM bookings b
   LEFT JOIN guests g ON b.guest_id  = g.id
   LEFT JOIN rooms  r ON b.room_id   = r.id
