@@ -8,8 +8,11 @@ import { calculateDeposit } from '../utils/deposits.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { recoveryUrl } from '../lib/recoveryToken.js';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
+import { countBreakfastMornings } from '../utils/breakfast.js';
 
 export const bookingsRouter = Router();
+
+const CURRENCY_SYMBOLS = { EUR: '€', GBP: '£', USD: '$', CHF: 'CHF ' };
 
 bookingsRouter.use((req, res, next) => {
   if (req.method === 'GET') return next();
@@ -1144,15 +1147,39 @@ bookingsRouter.put('/:id', (req, res) => {
     let rateBreakdownStr = null;
     const newCheckIn  = check_in_date  ?? existing.check_in_date;
     const newCheckOut = check_out_date ?? existing.check_out_date;
-    if (newCheckIn !== existing.check_in_date || newCheckOut !== existing.check_out_date) {
-      const prop = db.prepare('SELECT rental_type, whole_property_rate FROM properties WHERE id = ?').get(existing.property_id);
+    const datesChanged = newCheckIn !== existing.check_in_date || newCheckOut !== existing.check_out_date;
+    // Breakfast-morning counts, captured for the audit detail below. Only set
+    // for a paid breakfast whose subtotal is folded back into total_price.
+    let bfMorningsBefore = null;
+    let bfMorningsAfter  = null;
+    let editPropCurrency = null;
+    if (datesChanged) {
+      const prop = db.prepare('SELECT rental_type, whole_property_rate, currency FROM properties WHERE id = ?').get(existing.property_id);
       const isWPProp = prop?.rental_type === 'whole_property';
       const baseRate = isWPProp ? (prop.whole_property_rate ?? 0) : null;
+      editPropCurrency = prop?.currency ?? null;
       const { total: computedTotal, breakdown } = calcSeasonalBreakdown(
         existing.property_id, existing.room_id, newCheckIn, newCheckOut, baseRate
       );
-      finalTotalPrice = computedTotal;
       rateBreakdownStr = JSON.stringify(breakdown);
+
+      // Paid breakfast → recalculate its subtotal against the NEW mornings and
+      // fold it back into total_price, instead of silently dropping it.
+      // Complimentary (price 0) and property/room-included breakfast are already
+      // correctly €0 either way; breakfast is inert in whole-property mode.
+      const bfPrice = parseFloat(existing.breakfast_price_per_person) || 0;
+      const isPaidBreakfast = !isWPProp && !!existing.breakfast_added && bfPrice > 0;
+      if (isPaidBreakfast) {
+        const bfGuests = existing.breakfast_start_date
+          ? (existing.breakfast_guests || 1)
+          : (existing.num_guests || 1);
+        bfMorningsBefore = countBreakfastMornings(existing.breakfast_start_date, existing.check_in_date, existing.check_out_date);
+        bfMorningsAfter  = countBreakfastMornings(existing.breakfast_start_date, newCheckIn, newCheckOut);
+        const bfSubtotal = Math.round(bfMorningsAfter * bfGuests * bfPrice * 100) / 100;
+        finalTotalPrice = Math.round((computedTotal + bfSubtotal) * 100) / 100;
+      } else {
+        finalTotalPrice = computedTotal;
+      }
     }
 
     db.prepare(`
@@ -1191,6 +1218,24 @@ bookingsRouter.put('/:id', (req, res) => {
     } else if (breakfast_added && !existing.breakfast_added) {
       auditAction = 'BREAKFAST_ADDED';
     }
+
+    // Spell out a plain date edit — the activity log only surfaces the free-text
+    // `detail`, so a bare "Booking edited" tells the owner nothing about the
+    // dates or the price swing.
+    let auditDetail = null;
+    if (auditAction === 'BOOKING_EDITED' && datesChanged) {
+      const sym = CURRENCY_SYMBOLS[editPropCurrency] ?? '';
+      const money = (n) => `${sym}${(Number(n) || 0).toFixed(2)}`;
+      const parts = [
+        `Dates ${existing.check_in_date} → ${existing.check_out_date} changed to ${newCheckIn} → ${newCheckOut}`,
+      ];
+      if (bfMorningsAfter != null && bfMorningsBefore !== bfMorningsAfter) {
+        parts.push(`breakfast ${bfMorningsBefore} → ${bfMorningsAfter} mornings`);
+      }
+      parts.push(`total ${money(existing.total_price)} → ${money(finalTotalPrice)}`);
+      auditDetail = parts.join(' · ');
+    }
+
     logAction(db, {
       ...actor,
       propertyId: updated.property_id,
@@ -1199,6 +1244,7 @@ bookingsRouter.put('/:id', (req, res) => {
       targetType: 'booking',
       targetId: updated.id,
       targetName,
+      detail: auditDetail,
       beforeValue: { status: existing.status },
       afterValue:  { status: updated.status },
       ipAddress: getIp(req),

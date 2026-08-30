@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { nightsBetween } from '../../utils/format.js';
+import { countBreakfastMornings } from '../../utils/breakfast.js';
 import { useT, useLocale } from '../../i18n/LocaleContext.jsx';
 import PrintReceipt from '../../components/PrintReceipt.jsx';
 
@@ -51,8 +52,9 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
   const bfPricePerPerson = b.breakfast_price_per_person != null
     ? parseFloat(b.breakfast_price_per_person) || 0
     : parseFloat(property?.breakfast_price) || 0;
-  const bfStartDate      = b.breakfast_start_date || b.check_in_date;
-  const bfDays           = breakfastCharged ? Math.max(1, nightsBetween(bfStartDate, b.check_out_date)) : 0;
+  const bfDays           = breakfastCharged
+    ? countBreakfastMornings(b.breakfast_start_date, b.check_in_date, b.check_out_date)
+    : 0;
   const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
   const breakfastSubtotal = breakfastCharged ? bfGuests * bfDays * bfPricePerPerson : 0;
 

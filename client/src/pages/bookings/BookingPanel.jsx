@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween, localToday, addDays } from '../../utils/format.js';
-import { isEligibleForBreakfast } from '../../utils/breakfast.js';
+import { isEligibleForBreakfast, countBreakfastMornings } from '../../utils/breakfast.js';
 import { apiFetch } from '../../utils/apiFetch.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
@@ -339,8 +339,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
       const rpBfPrice   = b.breakfast_price_per_person != null
         ? parseFloat(b.breakfast_price_per_person) || 0
         : parseFloat(property?.breakfast_price) || 0;
-      const bfStart     = b.breakfast_start_date || b.check_in_date;
-      const rpBfDays    = rpBfChg ? Math.max(1, nightsBetween(bfStart, b.check_out_date)) : 0;
+      const rpBfDays    = rpBfChg
+        ? countBreakfastMornings(b.breakfast_start_date, b.check_in_date, b.check_out_date)
+        : 0;
       const rpBfGuests  = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
       const rpBfSub     = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
       const rpDepPaid    = !!b.deposit_paid;
@@ -1384,8 +1385,9 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpBfPrice  = b.breakfast_price_per_person != null
           ? parseFloat(b.breakfast_price_per_person) || 0
           : parseFloat(property?.breakfast_price) || 0;
-        const rpBfStart  = b.breakfast_start_date || b.check_in_date;
-        const rpBfDays   = rpBfChg ? Math.max(1, nightsBetween(rpBfStart, b.check_out_date)) : 0;
+        const rpBfDays   = rpBfChg
+          ? countBreakfastMornings(b.breakfast_start_date, b.check_in_date, b.check_out_date)
+          : 0;
         const rpBfGuests = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
         const rpBfSub    = rpBfChg ? rpBfGuests * rpBfDays * rpBfPrice : 0;
         const rpDepPaid  = !!b.deposit_paid;
@@ -1995,8 +1997,9 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
   const bfPrice          = b.breakfast_price_per_person != null
     ? parseFloat(b.breakfast_price_per_person) || 0
     : parseFloat(property?.breakfast_price) || 0;
-  const bfStartDate      = b.breakfast_start_date || b.check_in_date;
-  const bfDays           = breakfastCharged ? Math.max(1, nightsBetween(bfStartDate, b.check_out_date)) : 0;
+  const bfDays           = breakfastCharged
+    ? countBreakfastMornings(b.breakfast_start_date, b.check_in_date, b.check_out_date)
+    : 0;
   const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
   const breakfastSub     = breakfastCharged ? bfGuests * bfDays * bfPrice : 0;
   const depositPaid      = !!b.deposit_paid;
