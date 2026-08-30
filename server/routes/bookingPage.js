@@ -701,6 +701,13 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const currency = property.currency ?? 'EUR';
   const currSym  = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
   const typeLabel = TYPE_LABELS[property.type] ?? '';
+  // Property logo — an aspect-preserved opaque JPEG (see docs/in-progress/hero-logo.md).
+  // Rendered only when set; the CSS chip (.hero-logo-chip) gives it the white
+  // rounded backing every other consumer already applies. alt="" — the adjacent
+  // <h1> already carries the name.
+  const logoChip = property.logo_url
+    ? `<img class="hero-logo-chip" src="/uploads/logos/${esc(property.logo_url)}" alt="" loading="eager" />`
+    : '';
   const slug     = property.booking_slug ?? String(propId);
   const isWholeProperty  = property.rental_type === 'whole_property';
   const isUnitsMode      = property.rental_type === 'units';
@@ -797,7 +804,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   <div class="wp-stats-inner">
     <div class="wp-stats-name">
       ${typeLabel ? `<div class="hero-badge" style="position:relative;background:${esc(palette.light)};border-color:${esc(palette.brand)};color:${esc(palette.dark)}">${esc(typeLabel)}</div>` : ''}
-      <h1>${esc(name)}</h1>
+      ${logoChip}<h1>${esc(name)}</h1>
     </div>
     ${statsDetails ? `<div class="wp-stats-details">${statsDetails}</div>` : ''}
     ${isPaidPlan ? `<button class="wp-stats-btn" onclick="openWidget()">Check availability →</button>` : `<button class="wp-stats-btn" onclick="scrollToEnquiry()">Send enquiry</button>`}
@@ -815,7 +822,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   ${mapIframe}
   ${heroInner}
     ${typeLabel ? `<div class="hero-badge">${esc(typeLabel)}</div>` : ''}
-    <h1>${esc(name)}</h1>
+    <div class="hero-title-row">${logoChip}<h1>${esc(name)}</h1></div>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     ${statsHtml ? `<div class="hero-stats">${statsHtml}</div>` : ''}
     ${rateDisplay ? `<div class="hero-price">${rateDisplay}<span class="room-price-unit"> / <span data-i18n="page.perNight">per night</span></span></div>` : ''}
@@ -828,7 +835,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   ${mapIframe}
   ${heroInner}
     ${typeLabel ? `<div class="hero-badge">${esc(typeLabel)}</div>` : ''}
-    <h1>${esc(name)}</h1>
+    <div class="hero-title-row">${logoChip}<h1>${esc(name)}</h1></div>
     ${(city || country) ? `<p class="hero-location">${esc([city, country].filter(Boolean).join(', '))}</p>` : ''}
     <div class="hero-meta">
       <span><i class="ti ti-clock"></i> <span data-i18n="page.checkIn">Check-in from</span> ${esc(property.check_in_time ?? '15:00')}</span>
@@ -1267,6 +1274,51 @@ body {
 @media (max-width: 540px) {
   .hero { height: 320px; }
   .hero-overlay { padding: 20px 18px; }
+}
+
+/* ── Property logo chip (hero, beside the name) ───────────────────────
+   Logos are aspect-preserved opaque JPEGs, so contain + a white rounded
+   backing — the same compensation the email header / info sheet / specials
+   flyout already apply. The chip is light regardless of backdrop, so it
+   reads on the dark .hero-overlay with no extra work; the border + soft
+   shadow give it an edge on the light .wp-stats-bar. */
+.hero-logo-chip {
+  height: 50px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.16);
+  padding: 4px 6px;
+  flex-shrink: 0;
+  display: block;
+}
+/* Dark contexts: badge stays on its own line above; this row holds
+   chip + name inline. Placed after the .hero-overlay h1 rule so the
+   equal-specificity margin/min-width overrides win on source order. */
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.hero-title-row h1 {
+  margin-bottom: 0;
+  min-width: 0;
+}
+/* Light WP bar: compact, and .wp-stats-name is already a flex row. */
+.wp-stats-name .hero-logo-chip {
+  height: 32px;
+  border-radius: 6px;
+  padding: 3px 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.14);
+}
+@media (max-width: 540px) {
+  .hero-logo-chip { height: 38px; }
+  .hero-title-row { gap: 10px; }
 }
 
 /* ── WP Photo Gallery ─────────────────────────────────────────────── */
