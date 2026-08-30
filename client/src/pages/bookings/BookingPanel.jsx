@@ -334,7 +334,11 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         : null;
       const rpBfFree    = !!(property?.breakfast_included || b.room_breakfast_included);
       const rpBfChg     = !!b.breakfast_added && !rpBfFree;
-      const rpBfPrice   = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
+      // Explicit 0 = complimentary (a real decision) — never override it with
+      // the property default; only fall back when the booking has no price set.
+      const rpBfPrice   = b.breakfast_price_per_person != null
+        ? parseFloat(b.breakfast_price_per_person) || 0
+        : parseFloat(property?.breakfast_price) || 0;
       const bfStart     = b.breakfast_start_date || b.check_in_date;
       const rpBfDays    = rpBfChg ? Math.max(1, nightsBetween(bfStart, b.check_out_date)) : 0;
       const rpBfGuests  = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
@@ -1375,7 +1379,11 @@ function ViewMode({ b, nights, perNight, fmtCurrency, locale, t, property, curre
         const rpRoom     = rpIsWP ? rpWPTotal : (roomBreakdown?.total ?? rpNights * rpRate);
         const rpBfFree   = !!(property?.breakfast_included || b.room_breakfast_included);
         const rpBfChg    = !!b.breakfast_added && !rpBfFree;
-        const rpBfPrice  = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
+        // Explicit 0 = complimentary; only fall back to the property default
+        // when the booking has no recorded breakfast price.
+        const rpBfPrice  = b.breakfast_price_per_person != null
+          ? parseFloat(b.breakfast_price_per_person) || 0
+          : parseFloat(property?.breakfast_price) || 0;
         const rpBfStart  = b.breakfast_start_date || b.check_in_date;
         const rpBfDays   = rpBfChg ? Math.max(1, nightsBetween(rpBfStart, b.check_out_date)) : 0;
         const rpBfGuests = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
@@ -1846,7 +1854,15 @@ function AddBreakfastSection({ b, property, onBookingUpdated, t, fmtCurrency, cu
             <div style={{ display: 'flex', gap: 6 }}>
               <button
                 style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid var(--tint-border)', background: '#fff', color: 'var(--tint-text)', cursor: 'pointer', fontFamily: 'inherit' }}
-                onClick={() => { setEditing(true); setBfMorning(morningDate); setBfGuests(guests); }}
+                onClick={() => {
+                  setEditing(true); setBfMorning(morningDate); setBfGuests(guests);
+                  // Pre-fill the form with this booking's own recorded price —
+                  // 0 (complimentary) included — not the property default, which
+                  // would silently turn a free breakfast into a charged one on save.
+                  setBfPrice(b.breakfast_price_per_person != null
+                    ? parseFloat(b.breakfast_price_per_person) || 0
+                    : parseFloat(property?.breakfast_price) || 0);
+                }}
               >{t('bfModify')}</button>
               <button
                 style={{ fontSize: '0.78rem', padding: '4px 10px', borderRadius: 5, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -1974,7 +1990,11 @@ function EstimatedTotal({ b, nights, property, fmtCurrency, currencySymbol, t, c
   const roomSubtotal     = isWP ? wpTotal : (roomBreakdown?.total ?? (nights * fallbackPerNight));
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
-  const bfPrice          = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
+  // Explicit 0 = complimentary; only fall back to the property default when the
+  // booking has no recorded breakfast price.
+  const bfPrice          = b.breakfast_price_per_person != null
+    ? parseFloat(b.breakfast_price_per_person) || 0
+    : parseFloat(property?.breakfast_price) || 0;
   const bfStartDate      = b.breakfast_start_date || b.check_in_date;
   const bfDays           = breakfastCharged ? Math.max(1, nightsBetween(bfStartDate, b.check_out_date)) : 0;
   const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);

@@ -1177,7 +1177,11 @@ export function calcDue(b, property) {
   const room       = parseFloat(b.total_price) || 0;
   const bfFree     = !!(property?.breakfast_included || b.room_breakfast_included);
   const bfCharged  = !!b.breakfast_added && !bfFree;
-  const bfPrice    = parseFloat(property?.breakfast_price) || 0;
+  // Trust the booking's own recorded price (0 = complimentary, a real choice);
+  // only fall back to the property default when nothing was recorded.
+  const bfPrice    = b.breakfast_price_per_person != null
+    ? parseFloat(b.breakfast_price_per_person) || 0
+    : parseFloat(property?.breakfast_price) || 0;
   const bfStart    = b.breakfast_start_date || b.check_in_date;
   const bfDays     = bfCharged ? Math.max(1, nightsBetween(bfStart, b.check_out_date)) : 0;
   const bfGuests   = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);

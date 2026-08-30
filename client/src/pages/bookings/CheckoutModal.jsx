@@ -45,7 +45,12 @@ export default function CheckoutModal({ booking: b, property, charges: chargesPr
 
   const breakfastFree    = !!(property?.breakfast_included || b.room_breakfast_included);
   const breakfastCharged = !!b.breakfast_added && !breakfastFree;
-  const bfPricePerPerson = parseFloat(b.breakfast_price_per_person) || parseFloat(property?.breakfast_price) || 0;
+  // An explicit breakfast_price_per_person of 0 means "complimentary" — a real
+  // decision the owner made, not a missing value — so only fall back to the
+  // property default when the booking has no price recorded at all.
+  const bfPricePerPerson = b.breakfast_price_per_person != null
+    ? parseFloat(b.breakfast_price_per_person) || 0
+    : parseFloat(property?.breakfast_price) || 0;
   const bfStartDate      = b.breakfast_start_date || b.check_in_date;
   const bfDays           = breakfastCharged ? Math.max(1, nightsBetween(bfStartDate, b.check_out_date)) : 0;
   const bfGuests         = b.breakfast_start_date ? (b.breakfast_guests || 1) : (b.num_guests || 1);
