@@ -369,7 +369,7 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
 // starts with that same photo (so it stays reachable after swapping),
 // followed by one photo each from the unit's internal rooms (bedroom,
 // kitchen, etc.).
-function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit) {
+function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit, property) {
   if (!units || units.length === 0) return '';
 
   const rows = units.map((unit, index) => {
@@ -411,6 +411,10 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     const amenityChips = amenities.map(a => `<span class="ws-amenity">${esc(fmtAmenity(a))}</span>`).join('');
     const descHtml      = unit.description ? `<p class="ws-desc">${esc(unit.description)}</p>` : '';
 
+    // Breakfast chip — property-wide flag OR this unit's own flag (same OR the
+    // booking widget uses). Opt-in by nature, so no unit-sub-type gating.
+    const bfChipHtml = (property?.breakfast_included || unit.breakfast_included) ? breakfastChip() : '';
+
     return `
 <div class="ws-room">
   <h3 class="ws-room-title">${esc(unit.name)}</h3>
@@ -425,7 +429,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     <div class="room-price"><span class="room-price-unit" data-i18n="page.priceFrom">From</span> ${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
     <div class="ws-details-row">
       <div class="ws-details-text">
-        ${capacityHtml || amenityChips ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}</div>` : ''}
+        ${capacityHtml || amenityChips || bfChipHtml ? `<div class="ws-amenities-row">${capacityHtml}${amenityChips}${bfChipHtml}</div>` : ''}
         ${descHtml}
       </div>
       <div class="unit-avail-wrap">${roomCalendarSection(unit.id)}</div>
@@ -442,6 +446,14 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
   <div class="ws-section-title">Our Units</div>
   ${rows}
 </div>`;
+}
+
+// Shared "Breakfast included" chip — deliberately the quiet ws-amenity idiom
+// (small neutral pill, same as the bed-config / "Sleeps up to" chips) rather
+// than a loud banner, so IR-Named, Categories and Units modes all present
+// breakfast identically. Callers decide WHEN to show it; this is just markup.
+function breakfastChip() {
+  return `<span class="ws-amenity"><i class="ti ti-coffee"></i> <span data-i18n="page.breakfastIncluded">Breakfast included</span></span>`;
 }
 
 function showcaseRoomCard(room, palette, photos) {
@@ -480,7 +492,7 @@ function showcaseRoomCard(room, palette, photos) {
 </div>`;
 }
 
-function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
+function roomCard(room, currSym, palette, photos, availMap, isPaidPlan, property) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const price = Number(room.price_per_night ?? 0).toFixed(0);
   const typeLabel = room.type
@@ -491,8 +503,11 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
     `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`
   ).join('');
 
-  const bfBadge = room.breakfast_included
-    ? `<div class="room-breakfast"><i class="ti ti-coffee"></i> <span data-i18n="page.breakfastIncluded">Breakfast included</span></div>`
+  // Breakfast is "included" when either the property-wide flag or this room's
+  // own flag is set — same condition the booking widget already uses
+  // (widget.js renderStep2), so the two surfaces agree for the same room.
+  const bfBadge = (property?.breakfast_included || room.breakfast_included)
+    ? `<div class="ws-amenities-row">${breakfastChip()}</div>`
     : '';
 
   const occBadge = room.capacity
@@ -567,7 +582,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan) {
 // NB_PRESELECTED_ROOM_ID one — see widget.js's openModal()); Free-plan
 // properties fall back to selectCategoryForEnquiry(), which pre-selects the
 // category in the enquiry form and scrolls to it.
-function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan) {
+function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan, property) {
   if (!catsWithRooms || catsWithRooms.length === 0) return '';
 
   const rows = catsWithRooms.map((category, index) => {
@@ -606,6 +621,15 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
           return `<span class="ws-amenity">${iconSvg} ${qtyHtml}<span data-i18n="${i18nKey}">${esc(label)}</span></span>`;
         }).join('')
       : '';
+
+    // Breakfast chip — conservative all-or-nothing, mirroring getUniformBedConfig
+    // above: a category pools multiple physical rooms and the guest could be
+    // assigned any of them, so only advertise breakfast when it's guaranteed —
+    // the property-wide flag is set, OR every room in the category has its own
+    // flag set. "Some rooms" deliberately shows nothing rather than overpromise.
+    const catBreakfast = !!property?.breakfast_included
+      || (catRooms.length > 0 && catRooms.every(r => !!r.breakfast_included));
+    const bfChipHtml = catBreakfast ? breakfastChip() : '';
 
     // Amenities/description live on the category itself (Phase 8) — guests
     // book a category, not a specific physical room. Same markup/classes as
@@ -654,7 +678,7 @@ function categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, 
   </div>
   <div class="ws-details">
     <div class="room-price">${priceHtml}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
-    ${(bedIconsHtml || sleepsHtml || amenityChipsHtml) ? `<div class="ws-amenities-row">${bedIconsHtml}${sleepsHtml}${amenityChipsHtml}</div>` : ''}
+    ${(bedIconsHtml || sleepsHtml || amenityChipsHtml || bfChipHtml) ? `<div class="ws-amenities-row">${bedIconsHtml}${sleepsHtml}${amenityChipsHtml}${bfChipHtml}</div>` : ''}
     ${catDescHtml}
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
     <button class="btn-book" onclick="${isPaidPlan ? `openWidget(${category.id}, true)` : `selectCategoryForEnquiry(${category.id})`}" data-i18n-cat="page.bookThisCategory" data-cat="${esc(category.name)}">Book a ${esc(category.name)} Room</button>
@@ -757,7 +781,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
     availJson['property'] = getCategoriesPooledAvailMap(catsWithRooms, categoriesById, availMapsByRoom);
   }
 
-  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan)).join('\n');
+  const roomCards = rooms.map(r => roomCard(r, currSym, palette, photosByRoom?.[r.id], availMapsByRoom[r.id], isPaidPlan, property)).join('\n');
 
   const metaDesc = property.description
     ? esc(property.description.slice(0, 155))
@@ -982,7 +1006,7 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // Each unit carries its own calendar inline (see generateUnitsPage),
     // so unlike WP mode there is no separate top-level availability
     // section here.
-    roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit);
+    roomsSection = generateUnitsPage(rooms, photosByRoom, currSym, isPaidPlan, internalRoomsByUnit, property);
   } else if (isCategoriesMode) {
     // Category showcase (one section per category, no per-category
     // calendar) plus a single property-wide pooled calendar below it —
@@ -991,7 +1015,7 @@ ${rooms.length > 0 ? wpAlternatingShowcase(rooms, photosByRoom, palette) : ''}
     // whole-property hint text, since this calendar shows pooled
     // per-category availability, not whole-property availability.
     roomsSection = catsWithRooms.length > 0 ? `
-${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan)}
+${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidPlan, property)}
 <section class="availability">
   <div class="section-inner">
     <h2 data-i18n="page.availability">Availability</h2>
@@ -1958,15 +1982,6 @@ section h2 {
   font-size: 0.78rem;
   font-weight: 500;
 }
-.room-breakfast {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  border-radius: 6px;
-  padding: 5px 10px;
-}
 .btn-book {
   margin-top: 0;
   background: ${esc(palette.dark)};
@@ -2132,7 +2147,7 @@ section h2 {
 /* ── Tabler icons ──────────────────────────────────────────────────── */
 .ti { vertical-align: middle; }
 .hero-stats .ti, .hero-meta .ti { font-size: 0.95rem; opacity: 0.85; }
-.room-breakfast .ti, .room-occupancy .ti { font-size: 0.9rem; }
+.room-occupancy .ti { font-size: 0.9rem; }
 #enquirySuccess .ti { font-size: 1.1rem; color: ${esc(palette.dark)}; margin-right: 4px; }
 
 /* ── Guest Notes ────────────────────────────────────────────────────── */

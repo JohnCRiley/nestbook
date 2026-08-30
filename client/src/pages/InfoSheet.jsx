@@ -100,10 +100,12 @@ function SheetPreview({ property, houseRules, localTips, t }) {
   // Hidden for whole-property rentals — no Settings UI controls breakfast for
   // WP. The stored breakfast_included value is left as-is so it returns if the
   // property switches back to IR/Units.
-  const hasBreakfast = property?.breakfast_included && property?.rental_type !== 'whole_property';
+  // `!!` matters: breakfast_included / special_banner_enabled come from SQLite
+  // as the integer 0, and `{0 && <JSX>}` renders a literal "0" in the preview.
+  const hasBreakfast = !!property?.breakfast_included && property?.rental_type !== 'whole_property';
   const hasRules = houseRules.trim();
   const hasTips = localTips.trim();
-  const hasSpecial = property?.special_banner_enabled && property?.special_banner_text?.trim();
+  const hasSpecial = !!property?.special_banner_enabled && !!property?.special_banner_text?.trim();
   const locationLine = [property?.city, property?.country].filter(Boolean).join(', ');
 
   return (
