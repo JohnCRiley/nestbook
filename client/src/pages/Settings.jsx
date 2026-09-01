@@ -178,6 +178,7 @@ export default function Settings() {
   const [reportDescription, setReportDescription] = useState('');
   const [reportStatus,      setReportStatus]      = useState(null); // null | 'success' | 'error'
   const [reportSubmitting,  setReportSubmitting]  = useState(false);
+  const reportSectionRef = useRef(null);
 
   const [devBusy, setDevBusy] = useState(false);
 
@@ -302,6 +303,27 @@ export default function Settings() {
       .then(({ enabled }) => setBugReportingEnabled(enabled))
       .catch(() => {});
   }, []);
+
+  // Deep-link from elsewhere in the app (e.g. the "Payment links aren't
+  // available" modal in BookingPanel) — scroll straight to the report form.
+  // The Settings page keeps growing for a second or two after mount as
+  // Pro-gated cards and async data land, which shifts a one-shot scroll off
+  // target, so re-pin the report card whenever body layout changes for a
+  // bounded window, then hand scroll control back to the owner.
+  useEffect(() => {
+    if (searchParams.get('report') !== '1' || !bugReportingEnabled) return;
+    let ro;
+    const pin = () => document
+      .getElementById('report-issue')
+      ?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    const startId = requestAnimationFrame(() => {
+      pin();
+      ro = new ResizeObserver(pin);
+      ro.observe(document.body);
+    });
+    const stopId = setTimeout(() => ro?.disconnect(), 3000);
+    return () => { cancelAnimationFrame(startId); clearTimeout(stopId); ro?.disconnect(); };
+  }, [bugReportingEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch iCal import feeds — always scoped to the currently active property,
   // not whichever property the server would otherwise default to.
@@ -1092,7 +1114,7 @@ export default function Settings() {
 
           {/* Report an issue */}
           {bugReportingEnabled && (
-            <div className="settings-card" style={{ marginTop: 0 }}>
+            <div className="settings-card" style={{ marginTop: 0 }} ref={reportSectionRef} id="report-issue">
               <div className="settings-card-header">
                 <h2><BugIcon size={19} /> {t('settings.reportIssue')}</h2>
                 <p>{t('settings.reportIssueHint')}</p>

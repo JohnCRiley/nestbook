@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BADGE_CLASS, SOURCE_LABELS } from '../../utils/bookingConstants.js';
 import { formatDateMedium, nightsBetween, localToday, addDays } from '../../utils/format.js';
 import { computeBookingTotal } from '../../utils/bookingTotal.js';
@@ -108,6 +109,7 @@ export default function BookingPanel({ booking: initialBooking, rooms = [], gues
 function ViewMode({ b, nights, fmtCurrency, locale, t, property, currencySymbol, onStatusUpdate, onEdit, onBookingUpdated }) {
   const plan = usePlan();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab,          setActiveTab]          = useState('details');
   const [roomBreakdown,      setRoomBreakdown]      = useState(null);
   const [charges,            setCharges]            = useState(null); // null = not loaded
@@ -128,6 +130,7 @@ function ViewMode({ b, nights, fmtCurrency, locale, t, property, currencySymbol,
   const [showReprint,        setShowReprint]        = useState(false);
   const [showRefund,         setShowRefund]         = useState(false);
   const [connectStatus,      setConnectStatus]      = useState(null);
+  const [showConnectHelp,    setShowConnectHelp]    = useState(false);
   const checkedOutBookingRef = useRef(null);
 
   const showChargesTab = plan === 'multi' || !!user?.has_charges_addon;
@@ -622,13 +625,23 @@ function ViewMode({ b, nights, fmtCurrency, locale, t, property, currencySymbol,
       })()}
 
       {/* ── Stripe payment link ──────────────────────────────────────────── */}
-      {connectStatus?.status === 'active' && user?.role === 'owner' &&
+      {/* The slot is always shown for owners on a live booking. If Stripe
+          Connect isn't 'active' (misconfigured, or still syncing after a
+          backend hiccup), the button opens an explanatory modal that routes
+          the owner to the error-reporting tool — rather than the feature
+          silently vanishing with no explanation. */}
+      {user?.role === 'owner' &&
         ['confirmed', 'arriving', 'in_house'].includes(b.status) && (
         <div style={{ padding: '10px 22px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {t('bookingPanel.sendPaymentLink')}
           </div>
-          <PaymentLinkButton booking={b} t={t} />
+          <PaymentLinkButton
+            booking={b}
+            t={t}
+            connectReady={connectStatus?.status === 'active'}
+            onConnectNotReady={() => setShowConnectHelp(true)}
+          />
         </div>
       )}
 
@@ -1310,6 +1323,18 @@ function ViewMode({ b, nights, fmtCurrency, locale, t, property, currencySymbol,
         variant="danger"
         onConfirm={() => { setShowCancelConfirm(false); onStatusUpdate(b.id, 'cancelled'); }}
         onCancel={() => setShowCancelConfirm(false)}
+      />
+
+      {/* Stripe Connect not ready — explain and route to the error-report tool */}
+      <ConfirmModal
+        isOpen={showConnectHelp}
+        title={t('bookingPanel.connectNotReady.title')}
+        message={t('bookingPanel.connectNotReady.body')}
+        confirmLabel={t('bookingPanel.connectNotReady.button')}
+        cancelLabel={t('common.cancel')}
+        variant="warning"
+        onConfirm={() => { setShowConnectHelp(false); navigate('/settings?report=1'); }}
+        onCancel={() => setShowConnectHelp(false)}
       />
 
       {/* ── WP departure confirmation with charges summary ────────────────── */}
@@ -2288,7 +2313,11 @@ function RefundModal({ booking: b, fmtCurrency, t, onConfirm, onClose }) {
 }
 
 // ── Stripe payment link button ─────────────────────────────────────────────
-function PaymentLinkButton({ booking, t }) {
+// connectReady=false → the owner's Stripe Connect status isn't 'active'. We
+// still render the button (so the feature never silently disappears); clicking
+// it calls onConnectNotReady() to open the explanatory modal instead of hitting
+// the API. connectReady defaults to true so any other caller is unaffected.
+function PaymentLinkButton({ booking, t, connectReady = true, onConnectNotReady }) {
   const { currencySymbol, property } = useLocale();
   // Pre-fill with the amount actually owed — see utils/bookingTotal.js.
   const owed = computeBookingTotal(booking, property).total;
@@ -2309,6 +2338,18 @@ function PaymentLinkButton({ booking, t }) {
       }}>
         <CircleCheckIcon size={13} /> {t('billing.status.paid')}
       </span>
+    );
+  }
+
+  if (!connectReady) {
+    return (
+      <button
+        className="btn-panel-primary"
+        style={{ fontSize: '0.78rem', padding: '5px 10px', whiteSpace: 'nowrap' }}
+        onClick={onConnectNotReady}
+      >
+        {t('bookingPanel.sendPaymentLink')}
+      </button>
     );
   }
 
