@@ -20,13 +20,22 @@ const KNOWN_SECRET_SHA256 = '6cc8477c5a021298e93a0c8e0cbe03d72026fecdfccb388274e
 
 // ── Environment ───────────────────────────────────────────────────────────────
 const STRIPE_MODE = process.env.STRIPE_MODE ?? 'live';
-const secret      = STRIPE_MODE === 'test'
-  ? process.env.STRIPE_TEST_WEBHOOK_SECRET
-  : process.env.STRIPE_WEBHOOK_SECRET;
+const MAIN_VAR    = STRIPE_MODE === 'test' ? 'STRIPE_TEST_WEBHOOK_SECRET'         : 'STRIPE_WEBHOOK_SECRET';
+const CONNECT_VAR = STRIPE_MODE === 'test' ? 'STRIPE_TEST_CONNECT_WEBHOOK_SECRET' : 'STRIPE_CONNECT_WEBHOOK_SECRET';
+const secret        = process.env[MAIN_VAR];
+const connectSecret = process.env[CONNECT_VAR];
 
 console.log('── Environment ────────────────────────────────────────────────────────');
 console.log('  STRIPE_MODE:              ', STRIPE_MODE);
-console.log('  Secret var used:          ', STRIPE_MODE === 'test' ? 'STRIPE_TEST_WEBHOOK_SECRET' : 'STRIPE_WEBHOOK_SECRET');
+console.log(`  Main endpoint secret (${MAIN_VAR}):`,
+  secret ? `SET  sha256=${crypto.createHash('sha256').update(secret).digest('hex').slice(0, 16)}` : '❌ NOT SET');
+console.log(`  Connect endpoint secret (${CONNECT_VAR}):`,
+  connectSecret ? `SET  sha256=${crypto.createHash('sha256').update(connectSecret).digest('hex').slice(0, 16)}` : '⚠️  NOT SET');
+console.log('  → If Stripe Dashboard has a SEPARATE "Connected accounts" endpoint pointing at');
+console.log('    /api/stripe/webhook, its signing secret MUST be in', CONNECT_VAR, 'or every');
+console.log('    account.updated / connected checkout.session.* event fails signature verification.');
+console.log();
+console.log('  Secret var used (legacy single-secret tests below):', MAIN_VAR);
 console.log('  Secret defined:           ', secret !== undefined);
 console.log('  Secret first 20 chars:    ', secret?.slice(0, 20));
 console.log('  Secret length:            ', secret?.length);

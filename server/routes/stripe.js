@@ -40,14 +40,51 @@ if (!stripe) {
   }
 }
 
+// ── Webhook signing secrets ──────────────────────────────────────────────────
+// A single Stripe *account* can have MULTIPLE webhook endpoint configs pointing
+// at this one URL — most commonly a "main account" endpoint plus a SEPARATE
+// endpoint scoped to "Connected accounts". Each endpoint has its OWN distinct
+// signing secret, and Stripe signs every event with the secret of the endpoint
+// it was delivered from. So we must hold every configured secret and, on each
+// event, accept it if ANY of them verifies the signature. Using only one secret
+// makes every event from the other endpoint fail with:
+//   "No signatures found matching the expected signature for payload"
+//
+//   LIVE:  STRIPE_WEBHOOK_SECRET          (main account endpoint)
+//          STRIPE_CONNECT_WEBHOOK_SECRET  (Connected accounts endpoint) — optional
+//   TEST:  STRIPE_TEST_WEBHOOK_SECRET
+//          STRIPE_TEST_CONNECT_WEBHOOK_SECRET — optional
+//
+// The CONNECT secret is optional: if there is only one endpoint (or one unified
+// endpoint that receives both platform and Connect events) just leave it unset
+// and behaviour is exactly as before.
+export function getWebhookSecrets() {
+  const names = STRIPE_MODE === 'test'
+    ? ['STRIPE_TEST_WEBHOOK_SECRET', 'STRIPE_TEST_CONNECT_WEBHOOK_SECRET']
+    : ['STRIPE_WEBHOOK_SECRET',      'STRIPE_CONNECT_WEBHOOK_SECRET'];
+  return names
+    .map(name => ({ name, value: (process.env[name] ?? '').trim() }))
+    .filter(s => s.value);
+}
+
+function describeSecret(value) {
+  if (!value) return 'NOT SET';
+  return `SET (${value.slice(0, 11)}… sha256=${createHash('sha256').update(value).digest('hex').slice(0, 12)})`;
+}
+
 if (STRIPE_MODE === 'test') {
   console.log('⚠️  [STRIPE MODE] Currently: TEST (sandbox — no real money)');
-  const testWebhookSecret = process.env.STRIPE_TEST_WEBHOOK_SECRET;
-  console.log(`[STRIPE] STRIPE_TEST_WEBHOOK_SECRET: ${testWebhookSecret ? `SET (${testWebhookSecret.slice(0, 10)}...)` : 'NOT SET — webhook signature check will be skipped'}`);
+  console.log(`[STRIPE] Main webhook secret    (STRIPE_TEST_WEBHOOK_SECRET):         ${describeSecret((process.env.STRIPE_TEST_WEBHOOK_SECRET ?? '').trim())}`);
+  console.log(`[STRIPE] Connect webhook secret (STRIPE_TEST_CONNECT_WEBHOOK_SECRET): ${describeSecret((process.env.STRIPE_TEST_CONNECT_WEBHOOK_SECRET ?? '').trim())}`);
 } else {
   console.log('✅ [STRIPE MODE] Currently: LIVE (real payments)');
-  const liveWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  console.log(`[STRIPE] STRIPE_WEBHOOK_SECRET: ${liveWebhookSecret ? `SET (${liveWebhookSecret.slice(0, 10)}...)` : 'NOT SET — webhook signature check will be skipped'}`);
+  console.log(`[STRIPE] Main webhook secret    (STRIPE_WEBHOOK_SECRET):         ${describeSecret((process.env.STRIPE_WEBHOOK_SECRET ?? '').trim())}`);
+  console.log(`[STRIPE] Connect webhook secret (STRIPE_CONNECT_WEBHOOK_SECRET): ${describeSecret((process.env.STRIPE_CONNECT_WEBHOOK_SECRET ?? '').trim())}`);
+}
+if (getWebhookSecrets().length === 0) {
+  console.warn('[STRIPE] ⚠️  No webhook signing secret configured — webhook signature verification will be SKIPPED (dev only; never run production like this).');
+} else {
+  console.log(`[STRIPE] Webhook signature verification will try ${getWebhookSecrets().length} secret(s) per event, in order: ${getWebhookSecrets().map(s => s.name).join(', ')} — routed to POST /api/stripe/webhook`);
 }
 
 const PLAN_PRICES = {
@@ -562,29 +599,51 @@ stripeRouter.post('/addon/charges/remove', async (req, res) => {
 // requireAuth and express.json(). Stripe uses its own signature verification
 // via stripe.webhooks.constructEvent() — no JWT needed.
 export async function stripeWebhookHandler(req, res) {
-  const sig    = req.headers['stripe-signature'];
-  const secret = STRIPE_MODE === 'test'
-    ? process.env.STRIPE_TEST_WEBHOOK_SECRET
-    : process.env.STRIPE_WEBHOOK_SECRET;
+  const sig     = req.headers['stripe-signature'];
+  const secrets = getWebhookSecrets();
 
   console.log('[webhook debug] STRIPE_MODE:', process.env.STRIPE_MODE ?? '(unset — defaulting to live)');
   console.log('[webhook debug] sig header:', sig);
   console.log('[webhook debug] body type:', typeof req.body, Buffer.isBuffer(req.body));
   console.log('[webhook debug] body length:', req.body?.length);
   console.log('[webhook debug] body first 60 bytes (utf8):', req.body?.slice(0, 60).toString('utf8'));
-  console.log('[webhook debug] secret SHA-256:', createHash('sha256').update(secret ?? '').digest('hex'));
+  console.log('[webhook debug] candidate secrets:', secrets.map(s => `${s.name}=sha256:${createHash('sha256').update(s.value).digest('hex').slice(0, 12)}`).join(', ') || '(none)');
 
   let event;
-  try {
-    // If webhook secret is not yet configured, skip signature verification
-    // (safe for local dev; always set it in production).
-    event = secret
-      ? stripe.webhooks.constructEvent(req.body, sig, secret)
-      : JSON.parse(req.body.toString());
-  } catch (err) {
-    console.error('Webhook signature error:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+  let verifiedWith = null;
+  if (secrets.length === 0) {
+    // No secret configured — skip signature verification. Dev only; the startup
+    // log already warns loudly. Never run production without a secret.
+    try {
+      event = JSON.parse(req.body.toString());
+    } catch (err) {
+      console.error('Webhook body parse error (no secret configured):', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+  } else {
+    // Try every configured secret (main + Connect). Stripe signs each event with
+    // exactly one endpoint's secret, so the first that verifies is the match.
+    const errors = [];
+    for (const { name, value } of secrets) {
+      try {
+        event = stripe.webhooks.constructEvent(req.body, sig, value);
+        verifiedWith = name;
+        break;
+      } catch (err) {
+        errors.push(`${name}: ${err.message}`);
+      }
+    }
+    if (!event) {
+      console.error(
+        `Webhook signature error — no configured secret matched (tried ${secrets.length}): ${errors.join(' | ')}. ` +
+        `Are you passing the raw request body? Is the right endpoint's signing secret set ` +
+        `(main vs Connected-accounts)?`
+      );
+      return res.status(400).send('Webhook Error: signature verification failed');
+    }
   }
+
+  console.log(`[stripe] webhook ${event.type} — verified with ${verifiedWith ?? '(no secret — dev)'} — account=${event.account ?? 'platform'} — id=${event.id}`);
 
   try {
     switch (event.type) {
