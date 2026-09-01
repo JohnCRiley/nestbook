@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createHash } from 'node:crypto';
 import db from '../db/database.js';
 import { stripe, STRIPE_MODE } from '../lib/stripeClient.js';
+import { applyConnectAccountState } from '../lib/connectStatus.js';
 import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail, sendBookingConflictAlert, sendBookingConflictHoldingEmail } from '../email/emailService.js';
 import { logEmailFailureReport } from './errorReports.js';
 import { logAction, getIp } from '../utils/auditLog.js';
@@ -956,22 +957,13 @@ export async function stripeWebhookHandler(req, res) {
       case 'account.updated': {
         const account = event.data.object;
         const connectUser = db.prepare(
-          'SELECT id, stripe_connect_status FROM users WHERE stripe_connect_account_id = ?'
+          'SELECT id, stripe_connect_status, stripe_connect_details_submitted FROM users WHERE stripe_connect_account_id = ?'
         ).get(account.id);
         if (connectUser) {
-          const newStatus = account.charges_enabled ? 'active' : 'pending';
-          console.log(`[stripe] Connect account ${account.id} — charges_enabled=${account.charges_enabled}, details_submitted=${account.details_submitted}, current_status=${connectUser.stripe_connect_status}, new_status=${newStatus}`);
-          // Guard: Stripe fires multiple account.updated events during onboarding.
-          // An early event may have charges_enabled:true followed by one with
-          // charges_enabled:false as capabilities settle. Never overwrite 'active'
-          // with 'pending' — only allow upgrades (pending→active) and same-level writes.
-          if (newStatus === 'active' || connectUser.stripe_connect_status !== 'active') {
-            db.prepare('UPDATE users SET stripe_connect_status = ?, stripe_connect_details_submitted = ? WHERE id = ?')
-              .run(newStatus, account.details_submitted ? 1 : 0, connectUser.id);
-            console.log(`[stripe] Connect account ${account.id} status written: ${newStatus}`);
-          } else {
-            console.log(`[stripe] Connect account ${account.id} status downgrade suppressed (already active)`);
-          }
+          // Evaluate charges_enabled && payouts_enabled && details_submitted
+          // together, and never let this event downgrade an already-active
+          // account (events can arrive out of order). See connectStatus.js.
+          applyConnectAccountState(connectUser, account, 'webhook');
         }
         break;
       }

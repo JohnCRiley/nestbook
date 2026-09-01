@@ -38,6 +38,7 @@ import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArr
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
 import { sendReviewRequestReminders } from './schedulers/reviewRequestScheduler.js';
+import { reconcilePendingConnectAccounts } from './schedulers/connectStatusReconcile.js';
 import { getBalanceDueDate } from './utils/deposits.js';
 import { stripe } from './lib/stripeClient.js';
 import db from './db/database.js';
@@ -546,4 +547,10 @@ app.listen(PORT, () => {
   // Review request emails — sent N days after checkout. Runs on boot then every 4 hours.
   sendReviewRequestReminders();
   setInterval(sendReviewRequestReminders, 4 * 60 * 60 * 1000);
+
+  // Stripe Connect status reconciliation — safety net for missed account.updated
+  // webhooks. Spot-checks any non-active Connect account against Stripe's live
+  // state and upgrades it if genuinely enabled. Runs on boot then every 6 hours.
+  reconcilePendingConnectAccounts();
+  setInterval(reconcilePendingConnectAccounts, 6 * 60 * 60 * 1000);
 });
