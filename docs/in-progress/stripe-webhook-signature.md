@@ -122,7 +122,21 @@ module.
   (untouched), any secret **value** (not touched — awaiting Dashboard).
 - `db.transaction()` — n/a here.
 
+## Prior audit context (AUDIT_MASTER_LIST.md)
+
+- **PO1** parked this as "diagnostic evidence points at infra (Nginx
+  `proxy_request_buffering`), not app code". But that conclusion came from
+  `webhook-diag.mjs`'s *hypothesis* and did **not** consider the two-endpoint /
+  two-secret case. `server/nginx.conf` already has `proxy_request_buffering off`
+  on `/api/` — so if that's what's live, the Nginx theory is already handled and
+  the residual failures are better explained by the missing Connect secret.
+  Confirm which it is with step 6 + the Dashboard check.
+- **item 414 / PmC3**: the per-call `[webhook debug]` logging in
+  `stripeWebhookHandler` fires on *every* production webhook, not just failures.
+  Kept (trimmed) for now while chasing this. **When this is resolved**, cut it
+  back to failure-only and drop `webhook-diag.mjs`.
+
 ## When done
 
 Delete this file (or move to `docs/completed/`) once steps 1–5 are verified in
-production.
+production, and trim the debug logging per the note above.
