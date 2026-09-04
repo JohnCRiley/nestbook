@@ -34,6 +34,7 @@ import { guestMailerRouter }         from './routes/guestMailer.js';
 import { guestNotesPublicRouter, guestNotesProtectedRouter } from './routes/guestNotes.js';
 import { infoSheetRouter }            from './routes/infoSheet.js';
 import { partnershipLinksRouter }     from './routes/partnershipLinks.js';
+import { featureInterestRouter }      from './routes/featureInterest.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
@@ -157,6 +158,11 @@ app.use('/api/ical', icalRouter);
 // no blanket middleware, so a non-matching request just falls through to
 // requireAuth and the authenticated routers unaffected), before requireAuth.
 app.use('/api', categoryAvailabilityPublicRouter);
+
+// Public feature-interest widget endpoints — blog posts (anonymous visitors)
+// vote/count/leave an email against a feature slug, no auth required. Generic
+// across any slug; see server/routes/featureInterest.js.
+app.use('/api/feature-interest', featureInterestRouter);
 
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.

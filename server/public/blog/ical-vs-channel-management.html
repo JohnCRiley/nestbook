@@ -67,6 +67,7 @@
 
 <link rel="icon" type="image/svg+xml" href="/icon.svg">
 <link rel="stylesheet" href="/navbar.css">
+<link rel="stylesheet" href="/feature-interest-widget.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root { --dark:#334333; --mid:#405440; --light:#f0ede8; --page:#ffffff; --soft:#f0ede8; --border:#e0ecdb; --text:#1C1C1E; --muted:#6B6A66; --radius:12px; }
@@ -339,9 +340,14 @@ a.article-sidebar-item:hover { background: #fff; }
 
       <p>Every room in NestBook has its own unique iCal URL. You'll find it in Settings under Calendar Sync. Copy the link for each room, paste it into Booking.com or Airbnb's calendar import once, and your availability stays in sync automatically.</p>
 
-      <p>No setup fee. No monthly charge. No complexity.</p>
+      <p>No setup fee. No monthly charge. No complexity. iCal sync is included in every NestBook plan, always — that will never change.</p>
 
-      <p>For properties that genuinely need real-time multi-channel sync, full channel management remains the right tool. For the majority of independent B&amp;Bs and guest houses, iCal sync is everything you need.</p>
+      <p>For the majority of independent B&amp;Bs and guest houses, that's genuinely everything you need. But we know a smaller number of properties — several platforms, a steady flow of bookings, real double-booking risk — do need real-time, multi-channel sync. Rather than send those owners elsewhere to pay £50–150 a month for it, we're exploring building it properly as an add-on inside NestBook. No "Contact us for a quote," no hidden module pricing if we do — just a plain number: <strong>£9 (€10) per property, per month</strong>, on top of your existing plan.</p>
+
+      <p>It isn't built yet. Before we spend the time building it properly, we want to know one honest thing: would you actually use it?</p>
+
+      <!-- FEATURE_INTEREST_WIDGET slug="channel-manager-addon" -->
+      <div class="feature-interest" data-feature-slug="channel-manager-addon"></div>
 
     </div>
 
@@ -691,6 +697,7 @@ window.addEventListener('scroll', () => { nb.style.boxShadow = window.scrollY > 
   document.body.insertBefore(banner, document.body.firstChild);
 })();
 </script>
+<script src="/feature-interest-widget.js"></script>
 <script src="/cookie-banner.js"></script>
 <script src="/navbar.js"></script>
 </body>

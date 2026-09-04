@@ -14,6 +14,7 @@ import ProspectFinder    from './pages/ProspectFinder.jsx';
 import PhoneOutreach     from './pages/PhoneOutreach.jsx';
 import ErrorReports      from './pages/ErrorReports.jsx';
 import BlogImages        from './pages/BlogImages.jsx';
+import FeatureInterest   from './pages/FeatureInterest.jsx';
 import LandingImages     from './pages/LandingImages.jsx';
 import ContentReview     from './pages/ContentReview.jsx';
 import UserMailer        from './pages/UserMailer.jsx';
@@ -36,6 +37,7 @@ const NAV = [
   { to: '/super-admin/settings',          label: 'Settings',                    icon: <IconSettings /> },
   { to: '/super-admin/business-finances', label: 'NestBook Business',           icon: <IconFinances /> },
   { to: '/super-admin/blog-images',       label: 'Blog Images',                  icon: <IconPhoto /> },
+  { to: '/super-admin/feature-interest', label: 'Feature Interest',             icon: <IconThumbsUp /> },
   { to: '/super-admin/landing-images',   label: 'Landing Images',               icon: <IconPhotoStar /> },
 ];
 
@@ -162,6 +164,7 @@ export default function AdminLayout() {
           <Route path="settings"          element={<AdminSettings      />} />
           <Route path="business-finances" element={<BusinessFinances   />} />
           <Route path="blog-images"       element={<BlogImages         />} />
+          <Route path="feature-interest"  element={<FeatureInterest    />} />
           <Route path="landing-images"    element={<LandingImages      />} />
           <Route path="content-review"    element={<ContentReview      />} />
         </Routes>
@@ -306,6 +309,15 @@ function IconPhoto() {
       <rect x="3" y="3" width="18" height="18" rx="2"/>
       <circle cx="8.5" cy="8.5" r="1.5"/>
       <polyline points="21 15 16 10 5 21"/>
+    </svg>
+  );
+}
+
+function IconThumbsUp() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 10v12"/>
+      <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
     </svg>
   );
 }

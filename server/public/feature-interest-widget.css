@@ -1,0 +1,92 @@
+/**
+ * Feature Interest widget — shared styles.
+ *
+ * Generic and reusable: any page embeds a
+ *   <div class="feature-interest" data-feature-slug="your-slug"></div>
+ * (see feature-interest-widget.js for the behaviour). Buttons deliberately
+ * reuse the host page's own .btn / .btn-primary / .btn-outline / .btn-ghost
+ * classes rather than defining new button styles here — every NestBook blog
+ * post already defines those, so this file only needs the layout/typography
+ * that's unique to the widget itself.
+ *
+ * Colours reference the site's sage/cream CSS custom properties (defined in
+ * every blog post's own <style> block) with hex fallbacks, so the widget
+ * still looks correct even on a page that doesn't define them.
+ */
+
+.feature-interest {
+  background: var(--light, var(--soft, #f0ede8));
+  border-radius: 16px;
+  padding: 32px 36px;
+  margin: 2.5em 0;
+  text-align: center;
+}
+
+.feature-interest .fi-question {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--dark, #334333);
+  margin-bottom: 8px;
+}
+
+.feature-interest .fi-count {
+  font-size: 0.92rem;
+  color: var(--mid, #405440);
+  margin-bottom: 18px;
+}
+
+.feature-interest .fi-thanks-wrap {
+  margin-top: 4px;
+}
+
+.feature-interest .fi-thanks {
+  font-size: 0.92rem;
+  color: var(--mid, #405440);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.feature-interest .fi-email-step {
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.feature-interest .fi-email-prompt {
+  font-size: 0.85rem;
+  color: var(--muted, #6B6A66);
+  margin-bottom: 10px;
+}
+
+.feature-interest .fi-email-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.feature-interest .fi-email-input {
+  flex: 1 1 200px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border, #e0ecdb);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  color: var(--text, #1C1C1E);
+  background: #fff;
+}
+
+.feature-interest .fi-email-input:focus {
+  outline: none;
+  border-color: var(--mid, #405440);
+}
+
+.feature-interest .fi-error {
+  color: #b91c1c;
+  font-size: 0.82rem;
+  margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .feature-interest { padding: 24px 20px; }
+}

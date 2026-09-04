@@ -2554,6 +2554,30 @@ John`
     console.log(`[schema] content_flags.room_photos_id backfill skipped: ${e.message}`);
   }
 
+  // ── Feature Interest ─────────────────────────────────────────────────────
+  // Generic, reusable interest gauge — not tied to any one feature. A blog post
+  // (or any page) embeds the feature-interest widget with a `feature_slug` and
+  // these two tables collect the results. See server/routes/featureInterest.js
+  // and server/public/feature-interest-widget.{css,js}.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feature_interest_votes (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      feature_slug TEXT    NOT NULL,
+      created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_feature_interest_votes_slug ON feature_interest_votes(feature_slug)`);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feature_interest_emails (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      feature_slug TEXT    NOT NULL,
+      email        TEXT    NOT NULL,
+      created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_feature_interest_emails_slug ON feature_interest_emails(feature_slug)`);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

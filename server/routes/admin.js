@@ -1671,6 +1671,51 @@ adminRouter.delete('/blog-images/:slug', (req, res) => {
   }
 });
 
+// ── GET /api/admin/feature-interest — results for every feature-interest slug ─
+// Generic viewer, not specific to any one feature — see server/routes/featureInterest.js
+// and server/public/feature-interest-widget.{css,js} for how results get here.
+adminRouter.get('/feature-interest', (req, res) => {
+  try {
+    const voteCounts = db.prepare(`
+      SELECT feature_slug, COUNT(*) AS count
+      FROM feature_interest_votes
+      GROUP BY feature_slug
+      ORDER BY count DESC
+    `).all();
+
+    const emails = db.prepare(`
+      SELECT feature_slug, email, created_at
+      FROM feature_interest_emails
+      ORDER BY created_at DESC
+    `).all();
+
+    const emailsBySlug = {};
+    for (const e of emails) {
+      (emailsBySlug[e.feature_slug] ??= []).push({ email: e.email, created_at: e.created_at });
+    }
+
+    const results = voteCounts.map(v => ({
+      slug: v.feature_slug,
+      count: v.count,
+      emails: emailsBySlug[v.feature_slug] ?? [],
+    }));
+
+    // A slug with emails but (somehow) zero recorded votes shouldn't normally
+    // happen — email submission only ever follows a vote — but keep the view
+    // complete rather than silently dropping data if it ever does.
+    for (const slug of Object.keys(emailsBySlug)) {
+      if (!results.some(r => r.slug === slug)) {
+        results.push({ slug, count: 0, emails: emailsBySlug[slug] });
+      }
+    }
+
+    res.json({ results });
+  } catch (e) {
+    console.error('[feature-interest]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Landing image upload setup ────────────────────────────────────────────────
 const LANDING_IMG_DIR = join(__dirname, '../public/images/landing');
 fs.mkdirSync(LANDING_IMG_DIR, { recursive: true });
