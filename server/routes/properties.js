@@ -1091,6 +1091,25 @@ propertiesRouter.delete('/:id/logo', (req, res) => {
   }
 });
 
+// ── PATCH /api/properties/:id/logo-background ──────────────────────────────────
+// Media Library's "Show background behind logo" toggle. Independent of the
+// logo file itself — Media Library only shows this control when a logo is
+// set, but the flag can exist either way.
+propertiesRouter.patch('/:id/logo-background', (req, res) => {
+  try {
+    const propId = Number(req.params.id);
+    if (!canAccess(req.user.userId, req.user.role, propId)) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+    const value = req.body.logo_has_background ? 1 : 0;
+    db.prepare('UPDATE properties SET logo_has_background = ? WHERE id = ?').run(value, propId);
+    const updated = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+    res.json(_withSampleFlag(updated));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── PUT /api/properties/:id/mailer-signature ──────────────────────────────────
 propertiesRouter.put('/:id/mailer-signature', (req, res) => {
   try {

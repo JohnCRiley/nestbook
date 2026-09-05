@@ -2108,6 +2108,10 @@ John`
   // Guest Mailer: logo + signature on properties, send log table
   try { db.exec(`ALTER TABLE properties ADD COLUMN logo_url TEXT`); } catch(e) {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN mailer_signature TEXT`); } catch(e) {}
+  // Media Library: "Show background behind logo" toggle for the booking-page
+  // hero chip. Default 1 (background on) preserves current behaviour for
+  // every existing property until an owner actively turns it off.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN logo_has_background INTEGER DEFAULT 1`); } catch(e) {}
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS guest_mailer_log (

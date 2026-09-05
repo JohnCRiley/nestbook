@@ -13,7 +13,7 @@ import ConfirmModal from '../components/ConfirmModal.jsx';
 
 export default function MediaLibrary() {
   const t = useT();
-  const { property } = useLocale();
+  const { property, setProperty } = useLocale();
   const propId = property?.id ?? null;
 
   const [data,     setData]     = useState(null);
@@ -91,6 +91,25 @@ export default function MediaLibrary() {
   const flash = (kind, text) => setToast({ kind, text });
 
   // ── mutations ─────────────────────────────────────────────────────────────
+  const [logoBgSaving, setLogoBgSaving] = useState(false);
+  async function toggleLogoBackground(nextValue) {
+    if (!property?.id || logoBgSaving) return;
+    setLogoBgSaving(true);
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/logo-background`, {
+        method: 'PATCH',
+        body: JSON.stringify({ logo_has_background: nextValue }),
+      });
+      if (!res.ok) { flash('error', t('ml.logoBackgroundFailed')); return; }
+      const updated = await res.json();
+      setProperty(updated);
+    } catch (e) {
+      flash('error', e.message || t('ml.logoBackgroundFailed'));
+    } finally {
+      setLogoBgSaving(false);
+    }
+  }
+
   async function movePhoto(photoId, roomId) {
     if (busy) return;
     setBusy(true);
@@ -370,6 +389,23 @@ export default function MediaLibrary() {
                 />
               )}
             </div>
+            {data.logo && (
+              <div className="toggle-row" style={{ marginTop: 12 }}>
+                <div className="toggle-info">
+                  <div className="toggle-label">{t('ml.logoBackground')}</div>
+                  <div className="toggle-desc">{t('ml.logoBackgroundDesc')}</div>
+                </div>
+                <label className="toggle-switch" aria-label={t('ml.logoBackground')}>
+                  <input
+                    type="checkbox"
+                    checked={property?.logo_has_background !== 0}
+                    onChange={(e) => toggleLogoBackground(e.target.checked)}
+                    disabled={logoBgSaving}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </div>
+            )}
           </section>
 
           {/* 3 ── Utility (per-unit access photos) — Glamping / Serviced   */}

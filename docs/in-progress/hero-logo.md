@@ -1,11 +1,70 @@
 # Feature: property logo in the booking-page hero (beside the property name)
 
-Status: **built + verified in-browser** on 2026-08-30, then bug-fixed on
-2026-09-06 (transparent-PNG logos were showing a solid black background, and
-the chip's border/shadow was too heavy — see "2026-09-06 fix" below).
+Status: **built + verified in-browser** on 2026-08-30, bug-fixed on 2026-09-06
+(transparent-PNG logos were showing a solid black background, and the chip's
+border/shadow was too heavy — see "2026-09-06 fix" below), then extended the
+same day with a per-property on/off toggle for the chip background — see
+"2026-09-06 toggle" below.
 Committed to `main`. Safe to delete / move to docs/completed once John has
 eyeballed it on real data.
 Started 2026-08-30 (John).
+
+## 2026-09-06 toggle — "Show background behind logo" (Media Library)
+
+New `properties.logo_has_background` column (`INTEGER DEFAULT 1`, added in
+[schema.js](../../server/db/schema.js) right after the existing `logo_url`
+migration) — default 1 preserves the current chip for every existing property
+until an owner actively turns it off. New dedicated endpoint
+`PATCH /api/properties/:id/logo-background`
+([properties.js:1096](../../server/routes/properties.js)), mirroring the
+existing small single-field pattern (`PATCH /:id/slug`) rather than wedging
+into the large `PUT /:id` Settings-save endpoint — simpler, and the giant PUT's
+whitelist/validation logic has nothing to do with this flag. Read side needed
+no route change: every property-fetch endpoint already does `SELECT *`, so the
+new column is already on the `property` object from `useLocale()` context.
+
+UI: Media Library ([MediaLibrary.jsx](../../client/src/pages/MediaLibrary.jsx)),
+a toggle-row placed directly under the existing hero/logo/access-photo slots,
+rendered only when `data.logo` is set. Reused the exact `toggle-row` /
+`toggle-switch` / `toggle-track` markup and CSS classes already defined
+globally in `index.css` and used by Settings.jsx's `ToggleRow` component —
+that component itself isn't exported, so this is a small local inline
+duplicate of its markup rather than a cross-file import, to avoid touching
+Settings.jsx. On change: `PATCH` the new endpoint, then `setProperty(updated)`
+from the `useLocale()` context (same pattern Settings.jsx uses after its own
+saves) so the whole app's shared property object — and this page's own
+re-read of `property.logo_has_background` for the checkbox's `checked` state
+— updates immediately with no reload.
+
+Render side: **one shared `logoChip` string** in `generateBookingPage()`
+(confirmed via investigation — already the case from the original build, see
+below) means the toggle needed exactly one conditional, not two. `logoChip`
+now appends a `hero-logo-chip--no-bg` modifier class when
+`property.logo_has_background === 0`; that one class change is reused
+verbatim in all three chip insertion points (hero dark-overlay ×2, WP light
+bar) and both CSS contexts, since the modifier's rules are pure CSS.
+
+`.hero-logo-chip--no-bg` zeroes background/border/border-radius/box-shadow/
+padding and adds `filter: drop-shadow(0 2px 5px rgba(0,0,0,.45))` on the
+`<img>` itself — `filter:drop-shadow` (not `box-shadow`) is deliberate: it
+follows the logo's own alpha shape, so a non-rectangular transparent logo
+doesn't get a rectangular shadow box around its empty corners. Cascade
+gotcha: `.wp-stats-name .hero-logo-chip` (2-class specificity) sets
+`padding`/`box-shadow` for the compact WP-bar variant, and a plain
+`.hero-logo-chip.hero-logo-chip--no-bg` rule is *also* 2-class specificity —
+equal specificity means source order would decide the tie, which is fragile.
+Added an explicit `.wp-stats-name .hero-logo-chip.hero-logo-chip--no-bg`
+(3-class) rule so the no-bg override wins there unconditionally regardless of
+source position. Verified by injecting that exact DOM shape
+(`.wp-stats-name > img.hero-logo-chip.hero-logo-chip--no-bg`) into a live page
+and reading computed styles — no real WP-mode property with a hero photo
+existed in the local dev DB to test the natural way.
+
+Confirmed via investigation, not assumed: Guest Mailer's email logo
+(`emailWrapper.js`) is a plain `<img>` with inline styles, no chip class, no
+white background of any kind to begin with — grepped for
+`logo_has_background` afterwards across the whole repo to confirm it appears
+nowhere in that file or `guestMailer.js`.
 
 ## 2026-09-06 fix — transparency + chip styling
 

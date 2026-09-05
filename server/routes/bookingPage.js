@@ -730,8 +730,14 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   // (.hero-logo-chip) gives it the white rounded backing every other consumer
   // already applies, so it reads on both dark and light hero contexts. alt=""
   // — the adjacent <h1> already carries the name.
+  // logo_has_background (Media Library toggle, default on) — off drops the
+  // white chip fill/border/shadow via the --no-bg modifier class, so the
+  // logo floats directly on the backdrop with only a drop-shadow for
+  // legibility. Same modifier class works in both hero contexts since the
+  // CSS lives on .hero-logo-chip / .wp-stats-name .hero-logo-chip either way.
+  const logoBgOff = property.logo_has_background === 0;
   const logoChip = property.logo_url
-    ? `<img class="hero-logo-chip" src="/uploads/logos/${esc(property.logo_url)}" alt="" loading="eager" />`
+    ? `<img class="hero-logo-chip${logoBgOff ? ' hero-logo-chip--no-bg' : ''}" src="/uploads/logos/${esc(property.logo_url)}" alt="" loading="eager" />`
     : '';
   const slug     = property.booking_slug ?? String(propId);
   const isWholeProperty  = property.rental_type === 'whole_property';
@@ -1341,6 +1347,26 @@ body {
   border-radius: 6px;
   padding: 3px 5px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+/* Media Library "Show background behind logo" toggle, off: no white fill,
+   no border, no box-shadow — the logo floats directly on the backdrop.
+   filter:drop-shadow follows the logo's own alpha shape (unlike box-shadow,
+   which would shadow the whole rectangular box even where the PNG is
+   transparent), so it stays legible without looking like a boxed chip.
+   The .wp-stats-name override below re-wins padding/box-shadow explicitly
+   at matching specificity, since source order alone can't be relied on. */
+.hero-logo-chip.hero-logo-chip--no-bg {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45));
+}
+.wp-stats-name .hero-logo-chip.hero-logo-chip--no-bg {
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
 }
 @media (max-width: 540px) {
   .hero-logo-chip { height: 38px; }
