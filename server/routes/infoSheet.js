@@ -2,7 +2,7 @@ import { Router } from 'express';
 import puppeteer from 'puppeteer';
 import db from '../db/database.js';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,12 +31,15 @@ function escNl(str) {
   return esc(str).replace(/\n/g, '<br>');
 }
 
+const LOGO_MIME_TYPES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+
 function buildLogoDataUrl(logoFilename) {
   if (!logoFilename) return null;
   try {
     const logoPath = join(__dirname, '../uploads/logos', logoFilename);
     const data = readFileSync(logoPath);
-    return `data:image/jpeg;base64,${data.toString('base64')}`;
+    const mimeType = LOGO_MIME_TYPES[extname(logoFilename).toLowerCase()] || 'image/jpeg';
+    return `data:${mimeType};base64,${data.toString('base64')}`;
   } catch {
     return null;
   }

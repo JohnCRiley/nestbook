@@ -725,10 +725,11 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
   const currency = property.currency ?? 'EUR';
   const currSym  = CURRENCY_SYMBOLS[currency] ?? currency + ' ';
   const typeLabel = TYPE_LABELS[property.type] ?? '';
-  // Property logo — an aspect-preserved opaque JPEG (see docs/in-progress/hero-logo.md).
-  // Rendered only when set; the CSS chip (.hero-logo-chip) gives it the white
-  // rounded backing every other consumer already applies. alt="" — the adjacent
-  // <h1> already carries the name.
+  // Property logo — an aspect-preserved PNG, transparent background preserved
+  // (see docs/in-progress/hero-logo.md). Rendered only when set; the CSS chip
+  // (.hero-logo-chip) gives it the white rounded backing every other consumer
+  // already applies, so it reads on both dark and light hero contexts. alt=""
+  // — the adjacent <h1> already carries the name.
   const logoChip = property.logo_url
     ? `<img class="hero-logo-chip" src="/uploads/logos/${esc(property.logo_url)}" alt="" loading="eager" />`
     : '';
@@ -1301,11 +1302,12 @@ body {
 }
 
 /* ── Property logo chip (hero, beside the name) ───────────────────────
-   Logos are aspect-preserved opaque JPEGs, so contain + a white rounded
-   backing — the same compensation the email header / info sheet / specials
-   flyout already apply. The chip is light regardless of backdrop, so it
-   reads on the dark .hero-overlay with no extra work; the border + soft
-   shadow give it an edge on the light .wp-stats-bar. */
+   Logos are aspect-preserved PNGs (transparency preserved), so contain +
+   a white rounded backing — the same compensation the email header / info
+   sheet / specials flyout already apply. The chip is light regardless of
+   backdrop, so it reads on the dark .hero-overlay with no extra work; a
+   hairline border and soft shadow give it just enough edge on the light
+   .wp-stats-bar without looking boxy. */
 .hero-logo-chip {
   height: 50px;
   width: auto;
@@ -1313,8 +1315,8 @@ body {
   object-fit: contain;
   border-radius: 8px;
   background: #fff;
-  border: 1px solid rgba(0,0,0,0.10);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.16);
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
   padding: 4px 6px;
   flex-shrink: 0;
   display: block;
@@ -1338,7 +1340,7 @@ body {
   height: 32px;
   border-radius: 6px;
   padding: 3px 5px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.14);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 @media (max-width: 540px) {
   .hero-logo-chip { height: 38px; }

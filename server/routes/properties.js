@@ -1038,12 +1038,17 @@ propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) =
     }
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
-    const filename = `logo-${propId}-${Date.now()}.jpg`;
+    const filename = `logo-${propId}-${Date.now()}.png`;
     const finalPath = join(LOGO_UPLOAD_DIR, filename);
 
+    // PNG, not JPEG: logos (unlike room/property photos) are frequently
+    // uploaded with a transparent background, and JPEG has no alpha channel —
+    // sharp would flatten transparency to solid black. PNG preserves alpha
+    // when the source has it, and behaves like a normal opaque image when it
+    // doesn't, so this is safe for every logo regardless of source format.
     await sharp(req.file.path)
       .resize(300, 300, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
+      .png()
       .toFile(finalPath);
     cleanupFile(req.file.path);
 

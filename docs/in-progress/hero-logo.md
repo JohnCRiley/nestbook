@@ -1,8 +1,54 @@
 # Feature: property logo in the booking-page hero (beside the property name)
 
-Status: **built + verified in-browser** on 2026-08-30. Committed to `main`.
-Safe to delete / move to docs/completed once John has eyeballed it on real data.
+Status: **built + verified in-browser** on 2026-08-30, then bug-fixed on
+2026-09-06 (transparent-PNG logos were showing a solid black background, and
+the chip's border/shadow was too heavy — see "2026-09-06 fix" below).
+Committed to `main`. Safe to delete / move to docs/completed once John has
+eyeballed it on real data.
 Started 2026-08-30 (John).
+
+## 2026-09-06 fix — transparency + chip styling
+
+The original build (below) deliberately stored logos as **opaque JPEG**,
+treating that as a fixed constraint the chip design had to work around. That
+was itself the bug: sharp's JPEG encoder has no alpha channel, so any
+transparent-background PNG a user uploaded was silently flattened to solid
+black. Root cause confirmed via `sharp(...).metadata()` / raw pixel
+inspection, not assumed.
+
+Fix — [properties.js:1041](../../server/routes/properties.js) — logo uploads
+are now encoded as **PNG** (`filename` ends `.png`, `.png()` instead of
+`.jpeg({ quality: 85 })`), which preserves alpha when the source has it and
+behaves like a normal opaque image when it doesn't. Verified end-to-end: a
+generated transparent PNG uploaded through the real
+`POST /api/properties/:id/logo` endpoint round-tripped with `hasAlpha: true`
+and a genuinely `alpha: 0` corner pixel (not `rgb(0,0,0)`), and rendered with
+the chip's white background showing through on the live booking-page hero.
+
+Room/property photos (`hero_photo`, `access_photo`, room photos) are
+**untouched** — they stay JPEG; only the logo upload route's `sharp()` call
+changed. That's the *only* pipeline: emails, the QR-code centre overlay, and
+the Settings logo previews were investigated and confirmed to all reference
+this exact same stored file (`/uploads/logos/<logo_url>`) rather than a
+separate pipeline, so fixing this one route fixes every surface at once.
+
+One knock-on fix was needed: [infoSheet.js](../../server/routes/infoSheet.js)
+`buildLogoDataUrl()` had hardcoded `data:image/jpeg;base64,...` regardless of
+the actual file — harmless while every logo really was a JPEG, but would have
+silently broken (wrong-mimetype data URI) once logos could be PNG. Now derives
+the mimetype from the file extension (map covers `.png`/`.jpg`/`.jpeg`/`.webp`,
+falls back to `image/jpeg` for anything else), so existing already-uploaded
+`.jpg` logos keep working exactly as before.
+
+Chip styling ([bookingPage.js:1310](../../server/routes/bookingPage.js)) —
+`.hero-logo-chip` border softened `rgba(0,0,0,.10)` → `rgba(0,0,0,.06)`, shadow
+softened `0 2px 6px rgba(0,0,0,.16)` → `0 1px 3px rgba(0,0,0,.10)`; the
+`.wp-stats-name .hero-logo-chip` shadow softened `0 1px 3px rgba(0,0,0,.14)` →
+`0 1px 2px rgba(0,0,0,.08)`. Border kept (not removed) — the original design
+notes below flag that the border is what separates a pale/white logo from the
+light WP bar background, so removing it entirely risked the exact regression
+already anticipated in "Follow-up / notes"; thinned instead of dropped.
+Colour (`background:#fff`), size, radius, and layout untouched.
 
 ## Goal
 
