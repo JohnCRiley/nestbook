@@ -157,14 +157,14 @@ code { font-size: 0.85em; background: #f1f5f9; padding: 2px 6px; border-radius: 
 }
 
 .help-bullets { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.help-bullets li { display: flex; gap: 10px; font-size: 0.88rem; color: #405440; line-height: 1.7; }
-.help-bullets li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mid); margin-top: 8px; flex-shrink: 0; }
+.help-bullets li { display: block; position: relative; padding-left: 16px; font-size: 0.88rem; color: #405440; line-height: 1.7; }
+.help-bullets li::before { content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--mid); }
 
 .help-bullets.help-nested > li { display: block; position: relative; padding-left: 16px; }
 .help-bullets.help-nested > li::before { position: absolute; left: 0; top: 8px; margin-top: 0; }
 .help-bullets-sub { list-style: none; display: flex; flex-direction: column; gap: 2px; margin: 4px 0 0 16px; }
-.help-bullets-sub li { display: flex; gap: 10px; font-size: 0.88rem; color: #405440; line-height: 1.7; }
-.help-bullets-sub li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--mid); margin-top: 8px; flex-shrink: 0; }
+.help-bullets-sub li { display: block; position: relative; padding-left: 16px; font-size: 0.88rem; color: #405440; line-height: 1.7; }
+.help-bullets-sub li::before { content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--mid); }
 
 .help-tip {
   display: flex; align-items: flex-start; gap: 10px;
