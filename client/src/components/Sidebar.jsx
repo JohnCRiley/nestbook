@@ -54,7 +54,7 @@ const RECEPTION_NAV_KEYS = new Set(['dashboard', 'calendar', 'bookings', 'guests
 const UN_SUB_TYPE_BADGES = {
   aparthotel:         'Aparthotel',
   glamping:           'Glamping',
-  serviced_apartment: 'Apartments',
+  serviced_apartment: 'Holiday Rentals',
 };
 function rentalTypeBadge(p) {
   if (p.rental_type === 'whole_property') return 'WP';

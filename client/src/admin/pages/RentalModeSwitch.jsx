@@ -5,7 +5,7 @@ import { UN_SUB_TYPES } from '../../utils/unSubTypes.js';
 const MODE_OPTIONS = [
   { value: 'rooms',          label: 'Individual Rooms',  desc: 'Guests book one or more individual rooms (B&Bs, guesthouses, small hotels).' },
   { value: 'whole_property', label: 'Whole Property',    desc: 'Guests book the entire property for their stay (gîtes, cottages, lodges, villas).' },
-  { value: 'units',          label: 'Self-Catering',     desc: 'Guests book a self-contained unit (aparthotels, glamping, serviced apartments).' },
+  { value: 'units',          label: 'Self-Catering',     desc: 'Guests book a self-contained unit (aparthotels, glamping, holiday rentals).' },
 ];
 
 function currentModeLabel(property) {

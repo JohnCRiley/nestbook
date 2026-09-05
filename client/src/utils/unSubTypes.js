@@ -15,8 +15,8 @@ export const UN_SUB_TYPES = [
   },
   {
     value: 'serviced_apartment',
-    label: 'Serviced Apartment',
-    desc: 'Self-catering holiday apartments, managed without on-site staff.',
+    label: 'Holiday Rentals',
+    desc: 'Self-catering, short-term rental properties.',
   },
 ];
 
