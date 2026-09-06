@@ -36,6 +36,7 @@ import { infoSheetRouter }            from './routes/infoSheet.js';
 import { partnershipLinksRouter }     from './routes/partnershipLinks.js';
 import { featureInterestRouter }      from './routes/featureInterest.js';
 import { helpChatRouter }             from './routes/helpChat.js';
+import { landingChatRouter }          from './routes/landingChat.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
@@ -164,6 +165,11 @@ app.use('/api', categoryAvailabilityPublicRouter);
 // vote/count/leave an email against a feature slug, no auth required. Generic
 // across any slug; see server/routes/featureInterest.js.
 app.use('/api/feature-interest', featureInterestRouter);
+
+// Public landing-page AI assistant — anonymous marketing-site visitors, no auth.
+// IP-based rate limit inside the router. Completely separate from /api/help-chat
+// (different audience, knowledge file, and rate-limit bucket).
+app.use('/api/landing-chat', landingChatRouter);
 
 // ── Super-admin routes — own auth, BEFORE the global requireAuth ──────────────
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.
