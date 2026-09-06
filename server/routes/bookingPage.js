@@ -112,6 +112,44 @@ const BED_TYPE_LABEL_EN = {
   bunk_bed: 'Bunk Bed',
 };
 
+// Room-type display labels. Covers every value NewRoomModal.jsx can store: the
+// WP internal-room set (WP_ROOM_TYPES in rooms.js) plus the IR/unit set
+// (single/double/twin/suite/apartment). Guest-facing — the raw stored code
+// (e.g. "living_room") must never reach the page, and CSS text-transform on
+// .ws-room-type / .room-type-badge would otherwise render it as "LIVING_ROOM".
+// The English strings here are the pre-applyLang() fallback; the real
+// per-language text lives in the I18N dict under the matching page.roomType*
+// key (see roomTypeI18nKey). 'other' / unknown deliberately have no entry so
+// roomTypeDisplay() returns null and the badge is omitted entirely.
+const ROOM_TYPE_LABEL_EN = {
+  double: 'Double Room', twin: 'Twin Room', single: 'Single Room',
+  bunk: 'Bunk Room', master: 'Master Suite', kids: 'Kids Room',
+  suite: 'Suite', apartment: 'Apartment',
+  bathroom: 'Bathroom', ensuite: 'En-suite', shower_room: 'Shower Room', wc: 'WC',
+  living_room: 'Living Room', kitchen: 'Kitchen', kitchen_diner: 'Kitchen / Diner',
+  dining_room: 'Dining Room', study: 'Study', games_room: 'Games Room',
+  cinema_room: 'Cinema Room', playroom: 'Playroom',
+  garden: 'Garden', terrace: 'Terrace', pool: 'Swimming Pool', hot_tub: 'Hot Tub',
+  sauna: 'Sauna', gym: 'Gym', garage: 'Garage', games_area: 'Outdoor Games Area',
+};
+
+// double -> "page.roomTypeDouble", living_room -> "page.roomTypeLivingRoom"
+function roomTypeI18nKey(type) {
+  return 'page.roomType' + String(type || '')
+    .split('_')
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+    .join('');
+}
+
+// { key, label } for a room/unit type, or null when there is nothing
+// meaningful to show ('other', empty, or an unrecognised value) — callers
+// omit the badge rather than print a raw code.
+function roomTypeDisplay(type) {
+  const label = ROOM_TYPE_LABEL_EN[type];
+  if (!label) return null;
+  return { key: roomTypeI18nKey(type), label };
+}
+
 // Mirrors rooms.js's own parseBedConfig — defensive since the column can be
 // null, or (for rows predating Phase 7a) whatever the previously-unused
 // column state left it as.
@@ -306,9 +344,7 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
     const isEven    = index % 2 === 1;
     const primary   = photos[0] ?? null;
     const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
-    const typeLabel = room.type && room.type !== 'other'
-      ? room.type.charAt(0).toUpperCase() + room.type.slice(1)
-      : '';
+    const roomType  = roomTypeDisplay(room.type);
     const isBedroom = ['single','double','twin','suite'].includes(room.type);
     const cid       = `room-${room.id}`;
 
@@ -325,7 +361,7 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
       : '';
 
     const sleepsHtml   = isBedroom && room.capacity
-      ? `<span class="ws-amenity"><i class="ti ti-moon"></i> Sleeps ${esc(String(room.capacity))}</span>`
+      ? `<span class="ws-amenity"><i class="ti ti-moon"></i> <span data-i18n-n="page.sleepsUpTo" data-n="${esc(String(room.capacity))}">Sleeps up to ${esc(String(room.capacity))}</span></span>`
       : '';
     const amenityChips = amenities.map(a => `<span class="ws-amenity">${esc(fmtAmenity(a))}</span>`).join('');
     const descHtml     = room.description ? `<p class="ws-desc">${esc(room.description)}</p>` : '';
@@ -333,7 +369,7 @@ function wpAlternatingShowcase(rooms, photosByRoom, palette) {
     return `
 <div class="ws-room">
   <h3 class="ws-room-title">${esc(room.name)}</h3>
-  ${typeLabel ? `<div class="ws-room-type">${esc(typeLabel)}</div>` : ''}
+  ${roomType ? `<div class="ws-room-type" data-i18n="${roomType.key}">${esc(roomType.label)}</div>` : ''}
   <div class="ws-photo-area${isEven ? ' ws-reverse' : ''}">
     <div class="ws-main-photo" id="${esc(cid)}">
       ${mainImgHtml}
@@ -376,9 +412,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     const primary   = photosByRoom?.[unit.id]?.[0] ?? null;
     const isEven    = index % 2 === 1;
     const amenities = (unit.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
-    const typeLabel = unit.type && unit.type !== 'other'
-      ? unit.type.charAt(0).toUpperCase() + unit.type.slice(1)
-      : '';
+    const roomType  = roomTypeDisplay(unit.type);
     const cid   = 'unit-' + unit.id;
     const price = Number(unit.price_per_night ?? 0).toFixed(0);
 
@@ -418,7 +452,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
     return `
 <div class="ws-room">
   <h3 class="ws-room-title">${esc(unit.name)}</h3>
-  ${typeLabel ? `<div class="ws-room-type">${esc(typeLabel)}</div>` : ''}
+  ${roomType ? `<div class="ws-room-type" data-i18n="${roomType.key}">${esc(roomType.label)}</div>` : ''}
   <div class="ws-photo-area${isEven ? ' ws-reverse' : ''}">
     <div class="ws-main-photo" id="${esc(cid)}">
       ${mainImgHtml}
@@ -435,7 +469,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
       <div class="unit-avail-wrap">${roomCalendarSection(unit.id)}</div>
     </div>
     <p class="avail-hint" data-i18n="page.availabilityHint">Check availability and book.</p>
-    <button class="btn-book" onclick="${isPaidPlan ? 'openWidget(' + unit.id + ')' : 'scrollToEnquiry()'}">Book this unit</button>
+    <button class="btn-book" onclick="${isPaidPlan ? 'openWidget(' + unit.id + ')' : 'scrollToEnquiry()'}" data-i18n="page.bookThisUnit">Book this unit</button>
   </div>
   <div class="ws-divider"></div>
 </div>`;
@@ -443,7 +477,7 @@ function generateUnitsPage(units, photosByRoom, currSym, isPaidPlan, internalRoo
 
   return `
 <div class="ws-rooms">
-  <div class="ws-section-title">Our Units</div>
+  <div class="ws-section-title" data-i18n="page.ourUnits">Our Units</div>
   ${rows}
 </div>`;
 }
@@ -458,9 +492,7 @@ function breakfastChip() {
 
 function showcaseRoomCard(room, palette, photos) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
-  const typeLabel = room.type
-    ? room.type.charAt(0).toUpperCase() + room.type.slice(1)
-    : '';
+  const roomType  = roomTypeDisplay(room.type);
 
   const amenityTags = amenities.map(a =>
     `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`
@@ -484,7 +516,7 @@ function showcaseRoomCard(room, palette, photos) {
   <div class="room-card-body">
     <div class="room-header">
       <h3>${esc(room.name)}</h3>
-      <span class="room-type-badge">${esc(typeLabel)}</span>
+      ${roomType ? `<span class="room-type-badge" data-i18n="${roomType.key}">${esc(roomType.label)}</span>` : ''}
     </div>
     ${descHtml}
     ${amenityTags ? `<div class="amenities">${amenityTags}</div>` : ''}
@@ -495,9 +527,7 @@ function showcaseRoomCard(room, palette, photos) {
 function roomCard(room, currSym, palette, photos, availMap, isPaidPlan, property) {
   const amenities = (room.amenities ?? '').split(',').map(a => a.trim()).filter(Boolean);
   const price = Number(room.price_per_night ?? 0).toFixed(0);
-  const typeLabel = room.type
-    ? room.type.charAt(0).toUpperCase() + room.type.slice(1)
-    : '';
+  const roomType = roomTypeDisplay(room.type);
 
   const amenityTags = amenities.map(a =>
     `<span class="amenity-tag">${esc(fmtAmenity(a))}</span>`
@@ -551,7 +581,7 @@ function roomCard(room, currSym, palette, photos, availMap, isPaidPlan, property
   <div class="room-card-body">
     <div class="room-header">
       <h3>${esc(room.name)}</h3>
-      <span class="room-type-badge">${esc(typeLabel)}</span>
+      ${roomType ? `<span class="room-type-badge" data-i18n="${roomType.key}">${esc(roomType.label)}</span>` : ''}
     </div>
     <div class="room-price"><span class="room-price-unit" data-i18n="page.priceFrom">From</span> ${esc(currSym)}${esc(price)}<span class="room-price-unit"> <span data-i18n="page.perNight">per night</span></span></div>
     ${descHtml}
@@ -838,7 +868,7 @@ function generateBookingPage(property, rooms, bookings, photosByRoom, isPaidPlan
       ${logoChip}<h1>${esc(name)}</h1>
     </div>
     ${statsDetails ? `<div class="wp-stats-details">${statsDetails}</div>` : ''}
-    ${isPaidPlan ? `<button class="wp-stats-btn" onclick="openWidget()">Check availability →</button>` : `<button class="wp-stats-btn" onclick="scrollToEnquiry()">Send enquiry</button>`}
+    ${isPaidPlan ? `<button class="wp-stats-btn" onclick="openWidget()" data-i18n="page.checkAvailability">Check availability →</button>` : `<button class="wp-stats-btn" onclick="scrollToEnquiry()" data-i18n="page.sendEnquiry">Send enquiry</button>`}
   </div>
 </div>`;
     } else {
@@ -2824,7 +2854,37 @@ var I18N = {
     "page.bedTypeQueen":              "Queen Bed",
     "page.bedTypeKing":               "King Bed",
     "page.bedTypeSofaBed":            "Sofa Bed",
-    "page.bedTypeBunkBed":            "Bunk Bed"
+    "page.bedTypeBunkBed":            "Bunk Bed",
+    "page.ourUnits":                  "Our Units",
+    "page.bookThisUnit":              "Book this unit",
+    "page.roomTypeDouble":            "Double Room",
+    "page.roomTypeTwin":              "Twin Room",
+    "page.roomTypeSingle":            "Single Room",
+    "page.roomTypeBunk":              "Bunk Room",
+    "page.roomTypeMaster":            "Master Suite",
+    "page.roomTypeKids":              "Kids Room",
+    "page.roomTypeSuite":             "Suite",
+    "page.roomTypeApartment":         "Apartment",
+    "page.roomTypeBathroom":          "Bathroom",
+    "page.roomTypeEnsuite":           "En-suite",
+    "page.roomTypeShowerRoom":        "Shower Room",
+    "page.roomTypeWc":                "WC",
+    "page.roomTypeLivingRoom":        "Living Room",
+    "page.roomTypeKitchen":           "Kitchen",
+    "page.roomTypeKitchenDiner":      "Kitchen / Diner",
+    "page.roomTypeDiningRoom":        "Dining Room",
+    "page.roomTypeStudy":             "Study",
+    "page.roomTypeGamesRoom":         "Games Room",
+    "page.roomTypeCinemaRoom":        "Cinema Room",
+    "page.roomTypePlayroom":          "Playroom",
+    "page.roomTypeGarden":            "Garden",
+    "page.roomTypeTerrace":           "Terrace",
+    "page.roomTypePool":              "Swimming Pool",
+    "page.roomTypeHotTub":            "Hot Tub",
+    "page.roomTypeSauna":             "Sauna",
+    "page.roomTypeGym":               "Gym",
+    "page.roomTypeGarage":            "Garage",
+    "page.roomTypeGamesArea":         "Outdoor Games Area"
   },
   fr: {
     "page.aboutUs":           "À propos de nous",
@@ -2873,7 +2933,37 @@ var I18N = {
     "page.bedTypeQueen":              "Lit Queen",
     "page.bedTypeKing":               "Lit King",
     "page.bedTypeSofaBed":            "Canapé-lit",
-    "page.bedTypeBunkBed":            "Lit superposé"
+    "page.bedTypeBunkBed":            "Lit superposé",
+    "page.ourUnits":                  "Nos logements",
+    "page.bookThisUnit":              "Réserver ce logement",
+    "page.roomTypeDouble":            "Chambre double",
+    "page.roomTypeTwin":              "Chambre à deux lits",
+    "page.roomTypeSingle":            "Chambre simple",
+    "page.roomTypeBunk":              "Chambre à lits superposés",
+    "page.roomTypeMaster":            "Suite parentale",
+    "page.roomTypeKids":              "Chambre d'enfants",
+    "page.roomTypeSuite":             "Suite",
+    "page.roomTypeApartment":         "Appartement",
+    "page.roomTypeBathroom":          "Salle de bains",
+    "page.roomTypeEnsuite":           "Salle de bains privative",
+    "page.roomTypeShowerRoom":        "Salle d'eau",
+    "page.roomTypeWc":                "WC",
+    "page.roomTypeLivingRoom":        "Salon",
+    "page.roomTypeKitchen":           "Cuisine",
+    "page.roomTypeKitchenDiner":      "Cuisine / salle à manger",
+    "page.roomTypeDiningRoom":        "Salle à manger",
+    "page.roomTypeStudy":             "Bureau",
+    "page.roomTypeGamesRoom":         "Salle de jeux",
+    "page.roomTypeCinemaRoom":        "Salle de cinéma",
+    "page.roomTypePlayroom":          "Salle de jeux pour enfants",
+    "page.roomTypeGarden":            "Jardin",
+    "page.roomTypeTerrace":           "Terrasse",
+    "page.roomTypePool":              "Piscine",
+    "page.roomTypeHotTub":            "Bain à remous",
+    "page.roomTypeSauna":             "Sauna",
+    "page.roomTypeGym":               "Salle de sport",
+    "page.roomTypeGarage":            "Garage",
+    "page.roomTypeGamesArea":         "Espace de jeux extérieur"
   },
   de: {
     "page.aboutUs":           "Über uns",
@@ -2922,7 +3012,37 @@ var I18N = {
     "page.bedTypeQueen":              "Queen-Size-Bett",
     "page.bedTypeKing":               "King-Size-Bett",
     "page.bedTypeSofaBed":            "Schlafsofa",
-    "page.bedTypeBunkBed":            "Etagenbett"
+    "page.bedTypeBunkBed":            "Etagenbett",
+    "page.ourUnits":                  "Unsere Unterkünfte",
+    "page.bookThisUnit":              "Diese Unterkunft buchen",
+    "page.roomTypeDouble":            "Doppelzimmer",
+    "page.roomTypeTwin":              "Zweibettzimmer",
+    "page.roomTypeSingle":            "Einzelzimmer",
+    "page.roomTypeBunk":              "Zimmer mit Etagenbett",
+    "page.roomTypeMaster":            "Hauptschlafzimmer",
+    "page.roomTypeKids":              "Kinderzimmer",
+    "page.roomTypeSuite":             "Suite",
+    "page.roomTypeApartment":         "Wohnung",
+    "page.roomTypeBathroom":          "Badezimmer",
+    "page.roomTypeEnsuite":           "Eigenes Bad",
+    "page.roomTypeShowerRoom":        "Duschbad",
+    "page.roomTypeWc":                "Gäste-WC",
+    "page.roomTypeLivingRoom":        "Wohnzimmer",
+    "page.roomTypeKitchen":           "Küche",
+    "page.roomTypeKitchenDiner":      "Wohnküche",
+    "page.roomTypeDiningRoom":        "Esszimmer",
+    "page.roomTypeStudy":             "Arbeitszimmer",
+    "page.roomTypeGamesRoom":         "Spielzimmer",
+    "page.roomTypeCinemaRoom":        "Heimkino",
+    "page.roomTypePlayroom":          "Spielzimmer für Kinder",
+    "page.roomTypeGarden":            "Garten",
+    "page.roomTypeTerrace":           "Terrasse",
+    "page.roomTypePool":              "Swimmingpool",
+    "page.roomTypeHotTub":            "Whirlpool",
+    "page.roomTypeSauna":             "Sauna",
+    "page.roomTypeGym":               "Fitnessraum",
+    "page.roomTypeGarage":            "Garage",
+    "page.roomTypeGamesArea":         "Außenspielbereich"
   },
   es: {
     "page.aboutUs":           "Sobre nosotros",
@@ -2971,7 +3091,37 @@ var I18N = {
     "page.bedTypeQueen":              "Cama Queen",
     "page.bedTypeKing":               "Cama King",
     "page.bedTypeSofaBed":            "Sofá cama",
-    "page.bedTypeBunkBed":            "Litera"
+    "page.bedTypeBunkBed":            "Litera",
+    "page.ourUnits":                  "Nuestros alojamientos",
+    "page.bookThisUnit":              "Reservar este alojamiento",
+    "page.roomTypeDouble":            "Habitación doble",
+    "page.roomTypeTwin":              "Habitación con dos camas",
+    "page.roomTypeSingle":            "Habitación individual",
+    "page.roomTypeBunk":              "Habitación con literas",
+    "page.roomTypeMaster":            "Suite principal",
+    "page.roomTypeKids":              "Habitación infantil",
+    "page.roomTypeSuite":             "Suite",
+    "page.roomTypeApartment":         "Apartamento",
+    "page.roomTypeBathroom":          "Baño",
+    "page.roomTypeEnsuite":           "Baño privado",
+    "page.roomTypeShowerRoom":        "Cuarto de ducha",
+    "page.roomTypeWc":                "Aseo",
+    "page.roomTypeLivingRoom":        "Salón",
+    "page.roomTypeKitchen":           "Cocina",
+    "page.roomTypeKitchenDiner":      "Cocina-comedor",
+    "page.roomTypeDiningRoom":        "Comedor",
+    "page.roomTypeStudy":             "Estudio",
+    "page.roomTypeGamesRoom":         "Sala de juegos",
+    "page.roomTypeCinemaRoom":        "Sala de cine",
+    "page.roomTypePlayroom":          "Sala de juegos infantil",
+    "page.roomTypeGarden":            "Jardín",
+    "page.roomTypeTerrace":           "Terraza",
+    "page.roomTypePool":              "Piscina",
+    "page.roomTypeHotTub":            "Jacuzzi",
+    "page.roomTypeSauna":             "Sauna",
+    "page.roomTypeGym":               "Gimnasio",
+    "page.roomTypeGarage":            "Garaje",
+    "page.roomTypeGamesArea":         "Zona de juegos exterior"
   },
   nl: {
     "page.aboutUs":           "Over ons",
@@ -3020,7 +3170,37 @@ var I18N = {
     "page.bedTypeQueen":              "Queen-size bed",
     "page.bedTypeKing":               "King-size bed",
     "page.bedTypeSofaBed":            "Slaapbank",
-    "page.bedTypeBunkBed":            "Stapelbed"
+    "page.bedTypeBunkBed":            "Stapelbed",
+    "page.ourUnits":                  "Onze accommodaties",
+    "page.bookThisUnit":              "Deze accommodatie boeken",
+    "page.roomTypeDouble":            "Tweepersoonskamer",
+    "page.roomTypeTwin":              "Tweepersoonskamer met aparte bedden",
+    "page.roomTypeSingle":            "Eenpersoonskamer",
+    "page.roomTypeBunk":              "Kamer met stapelbed",
+    "page.roomTypeMaster":            "Master slaapkamer",
+    "page.roomTypeKids":              "Kinderkamer",
+    "page.roomTypeSuite":             "Suite",
+    "page.roomTypeApartment":         "Appartement",
+    "page.roomTypeBathroom":          "Badkamer",
+    "page.roomTypeEnsuite":           "Eigen badkamer",
+    "page.roomTypeShowerRoom":        "Doucheruimte",
+    "page.roomTypeWc":                "Toilet",
+    "page.roomTypeLivingRoom":        "Woonkamer",
+    "page.roomTypeKitchen":           "Keuken",
+    "page.roomTypeKitchenDiner":      "Woonkeuken",
+    "page.roomTypeDiningRoom":        "Eetkamer",
+    "page.roomTypeStudy":             "Studeerkamer",
+    "page.roomTypeGamesRoom":         "Speelkamer",
+    "page.roomTypeCinemaRoom":        "Bioscoopkamer",
+    "page.roomTypePlayroom":          "Speelkamer voor kinderen",
+    "page.roomTypeGarden":            "Tuin",
+    "page.roomTypeTerrace":           "Terras",
+    "page.roomTypePool":              "Zwembad",
+    "page.roomTypeHotTub":            "Bubbelbad",
+    "page.roomTypeSauna":             "Sauna",
+    "page.roomTypeGym":               "Fitnessruimte",
+    "page.roomTypeGarage":            "Garage",
+    "page.roomTypeGamesArea":         "Buitenspeelruimte"
   }
   // Future: add zh-CN, ja, th, vi, ms, id for nestbook.asia
 };
