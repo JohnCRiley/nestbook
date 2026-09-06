@@ -11,6 +11,71 @@ fs.mkdirSync(PROP_UPLOAD_DIR, { recursive: true });
 
 const HERO_URL = 'https://images.pexels.com/photos/1438834/pexels-photo-1438834.jpeg?auto=compress&cs=tinysrgb&w=1260';
 
+// ── Localised sample-data strings ────────────────────────────────────────────
+// Sample data is entirely system-generated preview content (not a real owner's
+// own room names), so it follows the new account's language — same principle as
+// the welcome emails and onboarding wizard. Selected once at seed time.
+//
+// The WP `desc` strings MUST stay byte-identical to the page.sampleDesc* values
+// in server/routes/bookingPage.js's I18N dict — the booking page also translates
+// these live via data-i18n so a guest switching the page language sees them
+// change. Room *names* are seed-time only (they also show in the owner's
+// dashboard / calendar / bookings, which data-i18n can't reach).
+
+const SAMPLE_LANGS = ['en', 'fr', 'de', 'es', 'nl'];
+
+const SAMPLE_CONTENT = {
+  en: {
+    ir: ['Garden Room', 'Orchard Room'],
+    wp: {
+      bedrooms:     { name: 'Bedrooms',      desc: 'Comfortable bedrooms with plenty of natural light, ready to welcome your guests.' },
+      livingSpaces: { name: 'Living Spaces', desc: 'A warm kitchen and living area where guests can relax and feel at home.' },
+      bathroom:     { name: 'Bathroom',      desc: "A clean, well-appointed bathroom for your guests' stay." },
+    },
+    un: { unitA: 'Unit A', unitB: 'Unit B', double: 'Double Room', kitchen: 'Kitchen', living: 'Living Area', bathroom: 'Bathroom' },
+  },
+  fr: {
+    ir: ['Chambre Jardin', 'Chambre Verger'],
+    wp: {
+      bedrooms:     { name: 'Chambres',        desc: 'Des chambres confortables et lumineuses, prêtes à accueillir vos invités.' },
+      livingSpaces: { name: 'Espaces de vie',  desc: 'Une cuisine chaleureuse et un espace de vie où les invités peuvent se détendre et se sentir chez eux.' },
+      bathroom:     { name: 'Salle de bains',  desc: 'Une salle de bains propre et bien équipée pour le séjour de vos invités.' },
+    },
+    un: { unitA: 'Logement A', unitB: 'Logement B', double: 'Chambre double', kitchen: 'Cuisine', living: 'Espace de vie', bathroom: 'Salle de bains' },
+  },
+  de: {
+    ir: ['Gartenzimmer', 'Obstgartenzimmer'],
+    wp: {
+      bedrooms:     { name: 'Schlafzimmer', desc: 'Komfortable, lichtdurchflutete Schlafzimmer, bereit für Ihre Gäste.' },
+      livingSpaces: { name: 'Wohnräume',    desc: 'Eine gemütliche Küche und ein Wohnbereich, in dem sich Gäste entspannen und wohlfühlen können.' },
+      bathroom:     { name: 'Badezimmer',   desc: 'Ein sauberes, gut ausgestattetes Badezimmer für den Aufenthalt Ihrer Gäste.' },
+    },
+    un: { unitA: 'Unterkunft A', unitB: 'Unterkunft B', double: 'Doppelzimmer', kitchen: 'Küche', living: 'Wohnbereich', bathroom: 'Badezimmer' },
+  },
+  es: {
+    ir: ['Habitación Jardín', 'Habitación Huerto'],
+    wp: {
+      bedrooms:     { name: 'Dormitorios',   desc: 'Dormitorios cómodos y luminosos, listos para recibir a sus huéspedes.' },
+      livingSpaces: { name: 'Zonas comunes', desc: 'Una cocina acogedora y una zona de estar donde los huéspedes pueden relajarse y sentirse como en casa.' },
+      bathroom:     { name: 'Baño',          desc: 'Un baño limpio y bien equipado para la estancia de sus huéspedes.' },
+    },
+    un: { unitA: 'Alojamiento A', unitB: 'Alojamiento B', double: 'Habitación doble', kitchen: 'Cocina', living: 'Zona de estar', bathroom: 'Baño' },
+  },
+  nl: {
+    ir: ['Tuinkamer', 'Boomgaardkamer'],
+    wp: {
+      bedrooms:     { name: 'Slaapkamers',  desc: 'Comfortabele slaapkamers met veel natuurlijk licht, klaar om uw gasten te ontvangen.' },
+      livingSpaces: { name: 'Woonruimtes',  desc: 'Een warme keuken en woonruimte waar gasten kunnen ontspannen en zich thuis voelen.' },
+      bathroom:     { name: 'Badkamer',     desc: 'Een schone, goed uitgeruste badkamer voor het verblijf van uw gasten.' },
+    },
+    un: { unitA: 'Accommodatie A', unitB: 'Accommodatie B', double: 'Tweepersoonskamer', kitchen: 'Keuken', living: 'Woonruimte', bathroom: 'Badkamer' },
+  },
+};
+
+function sampleStrings(lang) {
+  return SAMPLE_CONTENT[SAMPLE_LANGS.includes(lang) ? lang : 'en'];
+}
+
 /**
  * Seeds sample rooms, guests, bookings and photos for a freshly registered
  * property. Called fire-and-forget from the onboarding completion hook.
@@ -22,13 +87,17 @@ export async function seedSampleData(userId, propertyId, rentalType, unSubType) 
   ).get(propertyId);
   if (existing) return;
 
+  // Match the account's language, the same way the welcome email does.
+  const userRow = db.prepare('SELECT language FROM users WHERE id = ?').get(userId);
+  const S = sampleStrings(userRow?.language);
+
   try {
     if (rentalType === 'rooms') {
-      await _seedIR(propertyId);
+      await _seedIR(propertyId, S);
     } else if (rentalType === 'whole_property') {
-      await _seedWP(propertyId);
+      await _seedWP(propertyId, S);
     } else if (rentalType === 'units') {
-      await _seedUn(propertyId, unSubType);
+      await _seedUn(propertyId, unSubType, S);
     }
 
     _seedGuestsAndBookings(propertyId, rentalType);
@@ -40,16 +109,16 @@ export async function seedSampleData(userId, propertyId, rentalType, unSubType) 
 
 // ── IR: 2 guest rooms, 3 photos each ─────────────────────────────────────────
 
-async function _seedIR(propertyId) {
+async function _seedIR(propertyId, S) {
   const { lastInsertRowid: r1 } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
-    VALUES (?, 'Garden Room', 'double', 85, 2, 1)
-  `).run(propertyId);
+    VALUES (?, ?, 'double', 85, 2, 1)
+  `).run(propertyId, S.ir[0]);
 
   const { lastInsertRowid: r2 } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
-    VALUES (?, 'Orchard Room', 'double', 95, 2, 1)
-  `).run(propertyId);
+    VALUES (?, ?, 'double', 95, 2, 1)
+  `).run(propertyId, S.ir[1]);
 
   await Promise.all([
     _seedPhoto(r1, propertyId, 'https://images.pexels.com/photos/31267713/pexels-photo-31267713.jpeg?auto=compress&cs=tinysrgb&w=1260', 0),
@@ -65,9 +134,8 @@ async function _seedIR(propertyId) {
 
 const WP_ROWS = [
   {
-    name: 'Bedrooms',
+    key: 'bedrooms',
     type: 'double',
-    description: 'Comfortable bedrooms with plenty of natural light, ready to welcome your guests.',
     urls: [
       'https://images.pexels.com/photos/7745932/pexels-photo-7745932.jpeg?auto=compress&cs=tinysrgb&w=1260',   // main bedroom
       'https://images.pexels.com/photos/7746571/pexels-photo-7746571.jpeg?auto=compress&cs=tinysrgb&w=1260',   // guest bedroom
@@ -75,31 +143,30 @@ const WP_ROWS = [
     ],
   },
   {
-    name: 'Living Spaces',
+    key: 'livingSpaces',
     type: 'living_room',
-    description: 'A warm kitchen and living area where guests can relax and feel at home.',
     urls: [
       'https://images.pexels.com/photos/8186477/pexels-photo-8186477.jpeg?auto=compress&cs=tinysrgb&w=1260',  // kitchen
       'https://images.pexels.com/photos/8583743/pexels-photo-8583743.jpeg?auto=compress&cs=tinysrgb&w=1260',  // living room
     ],
   },
   {
-    name: 'Bathroom',
+    key: 'bathroom',
     type: 'bathroom',
-    description: "A clean, well-appointed bathroom for your guests' stay.",
     urls: [
       'https://images.pexels.com/photos/7031840/pexels-photo-7031840.jpeg?auto=compress&cs=tinysrgb&w=1260',  // bathroom
     ],
   },
 ];
 
-async function _seedWP(propertyId) {
+async function _seedWP(propertyId, S) {
   const photoTasks = [];
   for (const row of WP_ROWS) {
+    const str = S.wp[row.key];
     const { lastInsertRowid: rid } = db.prepare(`
       INSERT INTO rooms (property_id, name, type, price_per_night, capacity, description, is_sample_data)
       VALUES (?, ?, ?, 0, 0, ?, 1)
-    `).run(propertyId, row.name, row.type, row.description);
+    `).run(propertyId, str.name, row.type, str.desc);
     row.urls.forEach((url, i) => photoTasks.push(_seedPhoto(rid, propertyId, url, i)));
   }
 
@@ -114,50 +181,50 @@ async function _seedWP(propertyId) {
 // ── Un: 2 top-level units (1 photo each) + 3 internal rooms per unit (1 photo each) ─
 // Capped at 1 photo per room/unit to match the enforced Free-plan Un-mode limit.
 
-async function _seedUn(propertyId, unSubType) {
+async function _seedUn(propertyId, unSubType, S) {
   const unitType = unSubType === 'glamping' ? 'other' : 'apartment';
 
   // ── Unit A ────────────────────────────────────────────────────────────────
   const { lastInsertRowid: unitAId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
-    VALUES (?, 'Unit A', ?, 110, 4, 1)
-  `).run(propertyId, unitType);
+    VALUES (?, ?, ?, 110, 4, 1)
+  `).run(propertyId, S.un.unitA, unitType);
 
   const { lastInsertRowid: aDoubleId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
-    VALUES (?, 'Double Room', 'double', 0, 2, ?, 1)
-  `).run(propertyId, unitAId);
+    VALUES (?, ?, 'double', 0, 2, ?, 1)
+  `).run(propertyId, S.un.double, unitAId);
 
   const { lastInsertRowid: aKitchenId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
-    VALUES (?, 'Kitchen', 'kitchen', 0, 0, ?, 1)
-  `).run(propertyId, unitAId);
+    VALUES (?, ?, 'kitchen', 0, 0, ?, 1)
+  `).run(propertyId, S.un.kitchen, unitAId);
 
   const { lastInsertRowid: aLivingId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
-    VALUES (?, 'Living Area', 'living_room', 0, 0, ?, 1)
-  `).run(propertyId, unitAId);
+    VALUES (?, ?, 'living_room', 0, 0, ?, 1)
+  `).run(propertyId, S.un.living, unitAId);
 
   // ── Unit B ────────────────────────────────────────────────────────────────
   const { lastInsertRowid: unitBId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, is_sample_data)
-    VALUES (?, 'Unit B', ?, 110, 4, 1)
-  `).run(propertyId, unitType);
+    VALUES (?, ?, ?, 110, 4, 1)
+  `).run(propertyId, S.un.unitB, unitType);
 
   const { lastInsertRowid: bDoubleId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
-    VALUES (?, 'Double Room', 'double', 0, 2, ?, 1)
-  `).run(propertyId, unitBId);
+    VALUES (?, ?, 'double', 0, 2, ?, 1)
+  `).run(propertyId, S.un.double, unitBId);
 
   const { lastInsertRowid: bKitchenId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
-    VALUES (?, 'Kitchen', 'kitchen', 0, 0, ?, 1)
-  `).run(propertyId, unitBId);
+    VALUES (?, ?, 'kitchen', 0, 0, ?, 1)
+  `).run(propertyId, S.un.kitchen, unitBId);
 
   const { lastInsertRowid: bBathroomId } = db.prepare(`
     INSERT INTO rooms (property_id, name, type, price_per_night, capacity, parent_unit_id, is_sample_data)
-    VALUES (?, 'Bathroom', 'bathroom', 0, 0, ?, 1)
-  `).run(propertyId, unitBId);
+    VALUES (?, ?, 'bathroom', 0, 0, ?, 1)
+  `).run(propertyId, S.un.bathroom, unitBId);
 
   await Promise.all([
     // Unit A — 1 photo on the unit itself
