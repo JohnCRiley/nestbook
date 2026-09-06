@@ -417,9 +417,9 @@ Keep this at the level a prospect actually asks about — no in-app button steps
 
 ---
 
-## 10. VAT, and one still-unconfirmed point (internal, not for users)
+## 10. VAT, and downgrading from Multi to Pro (internal, not for users)
 
-### VAT on the subscription price (confirmed)
+### VAT on the subscription price
 
 NestBook is **not currently VAT-registered** (it is below the UK's £90,000 mandatory
 registration threshold), so **no VAT is added to subscription prices**. The advertised
@@ -433,12 +433,17 @@ If a business customer specifically asks for a VAT invoice or a VAT number, be h
 company's turnover grows past the registration threshold in future. Direct anything
 beyond that to **hello@nestbook.io**.
 
-### Still unconfirmed — DO NOT ANSWER FROM THIS YET
+### Downgrading from Multi to Pro with more than one property
 
-**If a visitor asks about the item below, do not guess — say you're not certain and point
-them to hello@nestbook.io.**
+If a Multi-plan owner who has more than one property wants to move down to Pro (which
+supports **one property**), **the owner chooses which property to keep**. The others are
+**not deleted outright** — their data is exported to a CSV and emailed to the owner, so
+nothing is lost.
 
-- **TODO — Multi → Pro downgrade with more than one property.** It is not yet confirmed
-  what happens to the extra properties (and their booking pages / data) if a Multi-plan
-  owner who has more than one property downgrades to Pro. Do not describe or invent an
-  outcome until this is confirmed.
+That is the intended policy. As of this file's writing the mechanism is **not fully
+automated in the app yet** — same honesty rule as the £9/€10 channel-management add-on in
+Section 5: describe the policy plainly, don't imply a self-service button that doesn't
+exist. So if a Multi customer asks about this today, the assistant should say: *you'd pick
+the one property to keep; the rest are exported and emailed to you as a CSV, nothing is
+just deleted* — and point them to **hello@nestbook.io** to arrange it, because it
+currently needs to be done manually rather than through a button in the account.
