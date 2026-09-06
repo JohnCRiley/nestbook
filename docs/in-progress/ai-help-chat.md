@@ -4,8 +4,31 @@ Slug: `ai-help-chat`. Started 2026-09-06.
 
 ## Goal
 Floating help button on every authenticated app page → right-side slide-out chat
-panel → Claude (Haiku) answers questions grounded in the live `help.html`
-content, in the user's language. Available on ALL plans (support feature, not premium).
+panel → Claude (Haiku) answers questions grounded in the live help-bot knowledge
+base, in the user's language. Available on ALL plans (support feature, not premium).
+
+## 2026-09-06 — knowledge source switched from help.html → dedicated file
+- New source: `server/docs/help-bot-knowledge.md` — a single English-only
+  Markdown file, purpose-written for the bot (blunter/deeper than help.html,
+  with its own Section 0 answer + plan/mode instructions and Section 14 gap
+  handling). Read **fresh on every request**, same as before.
+- `server/utils/helpContent.js` is now just `readHelpKnowledge()` — one
+  `readFileSync`. All the base64-blob / per-language / HTML-strip extraction
+  is **gone** (the file is English-only; the model translates its answer).
+- `server/routes/helpChat.js`:
+  - `loadUserContext(userId)` — one `users LEFT JOIN properties` query (replaces,
+    not adds to, the old `SELECT language` lookup) → `{ language, plan,
+    has_charges_addon, rental_type, un_sub_type, ir_room_mode }`.
+  - System prompt now two blocks: block 1 = intro + full knowledge base
+    (`cache_control: ephemeral`, shared across all users/langs); block 2 =
+    core rules + "reply in {lang}" + an **account-context block** stating the
+    user's Plan / Bar & Charges add-on / rental mode (mapped to the file's
+    Mode key via `describeMode()`), so the model can follow Section 0's
+    plan/mode-awareness rules.
+- Frontend unchanged — it already sends `language`; plan/mode come from the DB.
+- `SUPPORTED_HELP_LANGS` export removed from helpContent.js; helpChat.js now
+  has a local `SUPPORTED_LANGS` (still just the 5 canned-message languages).
+- help.html untouched and still served as the public `/help` centre.
 
 ## Confirmed facts (do not re-check)
 
@@ -103,8 +126,12 @@ Done locally:
 - ✅ First-time cue — `.help-chat-trigger-cue` pulse + "New" badge show when
   `nb_helpchat_seen` unset; on first open the flag is set and after reload both
   are gone.
-- ✅ Live help.html edit — re-encoded the i18n blob with a changed value; the
-  very next `extractHelpText()` call reflected it (no restart/rebuild). Reverted.
+- ✅ Live knowledge-file edit — appended a marker to help-bot-knowledge.md; the
+  very next `readHelpKnowledge()` call reflected it (no restart). Reverted.
+  (Earlier: same confirmed for the old help.html i18n-blob path.)
+- ✅ `loadUserContext` — the JOIN query returns the right shape for demo
+  (Free / no add-on / IR-N) and every rental-mode variant maps to the correct
+  Mode-key label via `describeMode()`. One round-trip.
 - ✅ Rate limit — 31 calls in a row → friendly localized `{ rate_limited: true }`
   message, not a raw error. (EN + FR strings checked.)
 - ✅ Graceful degradation — no `ANTHROPIC_API_KEY` → friendly "not available"
@@ -113,13 +140,18 @@ Done locally:
   confirmed they follow `data-theme` (e.g. ruby → accent #7D5E61).
 
 STILL TO VERIFY (blocked — no ANTHROPIC_API_KEY in this environment):
-- ⚠️ Real answer quality: conversational (not quoted), grounded in help.html,
-  honest "I'm not sure — try the error-report tool" for uncovered questions,
-  replies in the user's language. The system prompt in `server/routes/helpChat.js`
-  instructs all of this; needs a live key to confirm behaviour.
+- ⚠️ Real answer quality: conversational (not quoted), grounded in the NEW
+  knowledge file (e.g. account deletion — only the new file covers it), honest
+  "I'm not sure — try the error-report tool" for uncovered questions.
+- ⚠️ Spanish question → Spanish reply, translated from the English-only source.
+- ⚠️ Ask about a feature the account's plan/mode doesn't have → bot says so
+  plainly (not "here's how"). Demo = Free / IR-N, so e.g. "how do I use
+  Seasonal Pricing" or "the Reports page" should trigger the not-available path.
   **John: add `ANTHROPIC_API_KEY=sk-ant-...` to `server/.env`, restart, then run
-  the two answer-quality checks from the spec.**
+  these three checks.**
 
 ## Shipped
-Committed to `main` 2026-09-06 (see commit). Feature is live-ready pending the
-API key. Delete this file once John confirms the two answer-quality checks pass.
+- Feature build committed to `main` 2026-09-06.
+- Knowledge-source switch (help.html → help-bot-knowledge.md) + plan/mode
+  context committed 2026-09-06 (see commit). Feature is live-ready pending the
+  API key. Delete this file once John confirms the three answer-quality checks.
