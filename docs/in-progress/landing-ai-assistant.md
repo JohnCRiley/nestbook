@@ -160,3 +160,10 @@ once the key is confirmed in `server/.env`, same as the in-app help chat):
 ## Shipped
 - Feature build committed to `main` 2026-09-07. Live-ready pending the API key.
 - Delete this file once John confirms the 5 blocked answer-quality checks.
+
+## 2026-09-07 follow-up
+- Trigger button: added a hover-expand label. Circle → pill on hover, revealing
+  "AI Assistant" (5 langs, `assistantLabel` string). Guarded by
+  `@media (hover:hover) and (pointer:fine)` so touch devices stay icon-only with
+  no sticky-hover. Verified expand/collapse on desktop + no expansion on emulated
+  mobile.

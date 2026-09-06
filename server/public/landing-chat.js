@@ -26,6 +26,7 @@
   var STRINGS = {
     en: {
       triggerAria: 'Open the NestBook assistant',
+      assistantLabel: 'AI Assistant',
       title: 'NestBook AI Assistant',
       greeting: "Hi! I can answer questions about NestBook — pricing, plans, how it works, whether it suits your property. What would you like to know?",
       starters: ['What does it cost?', 'Is there a free plan?', 'How is this different from Airbnb?'],
@@ -37,6 +38,7 @@
     },
     fr: {
       triggerAria: "Ouvrir l'assistant NestBook",
+      assistantLabel: 'Assistant IA',
       title: 'Assistant IA NestBook',
       greeting: "Bonjour ! Je réponds aux questions sur NestBook — tarifs, forfaits, fonctionnement, adéquation avec votre hébergement. Que souhaitez-vous savoir ?",
       starters: ['Combien ça coûte ?', 'Existe-t-il un forfait gratuit ?', 'Quelle différence avec Airbnb ?'],
@@ -48,6 +50,7 @@
     },
     de: {
       triggerAria: 'NestBook-Assistent öffnen',
+      assistantLabel: 'KI-Assistent',
       title: 'NestBook KI-Assistent',
       greeting: 'Hallo! Ich beantworte Fragen zu NestBook — Preise, Tarife, Funktionsweise, ob es zu Ihrer Unterkunft passt. Was möchten Sie wissen?',
       starters: ['Was kostet es?', 'Gibt es einen kostenlosen Tarif?', 'Worin unterscheidet es sich von Airbnb?'],
@@ -59,6 +62,7 @@
     },
     es: {
       triggerAria: 'Abrir el asistente de NestBook',
+      assistantLabel: 'Asistente IA',
       title: 'Asistente de IA de NestBook',
       greeting: '¡Hola! Puedo responder preguntas sobre NestBook — precios, planes, cómo funciona, si encaja con tu alojamiento. ¿Qué quieres saber?',
       starters: ['¿Cuánto cuesta?', '¿Hay un plan gratuito?', '¿En qué se diferencia de Airbnb?'],
@@ -70,6 +74,7 @@
     },
     nl: {
       triggerAria: 'De NestBook-assistent openen',
+      assistantLabel: 'AI-assistent',
       title: 'NestBook AI-assistent',
       greeting: 'Hoi! Ik beantwoord vragen over NestBook — prijzen, abonnementen, hoe het werkt, of het bij jouw accommodatie past. Wat wil je weten?',
       starters: ['Wat kost het?', 'Is er een gratis abonnement?', 'Wat is het verschil met Airbnb?'],
@@ -116,12 +121,19 @@
       'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}',
     '#nb-lc-root.nb-lc-cookie{bottom:76px;}',
 
-    /* trigger */
-    '#nb-lc-trigger{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;',
+    /* trigger — a circle that expands to a labelled pill on hover (desktop only) */
+    '#nb-lc-trigger{height:56px;min-width:56px;border-radius:28px;border:none;cursor:pointer;',
       'background:var(--mid,#405440);box-shadow:0 6px 20px rgba(51,67,51,0.32);',
-      'display:flex;align-items:center;justify-content:center;padding:0;transition:transform .15s ease,box-shadow .15s ease;}',
+      'display:flex;align-items:center;justify-content:center;padding:0 13px;',
+      'transition:transform .15s ease,box-shadow .15s ease;}',
     '#nb-lc-trigger:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(51,67,51,0.4);}',
-    '#nb-lc-trigger img{width:30px;height:30px;display:block;border-radius:7px;}',
+    '#nb-lc-trigger img{width:30px;height:30px;display:block;border-radius:7px;flex-shrink:0;}',
+    '#nb-lc-trigger .nb-lc-trigger-label{color:#fff;font-weight:600;font-size:0.9rem;',
+      'white-space:nowrap;max-width:0;opacity:0;margin-left:0;overflow:hidden;',
+      'transition:max-width .22s ease,opacity .18s ease,margin-left .22s ease;}',
+    '@media (hover:hover) and (pointer:fine){',
+      '#nb-lc-trigger:hover .nb-lc-trigger-label{max-width:140px;opacity:1;margin-left:9px;}',
+    '}',
     '#nb-lc-trigger.nb-lc-hidden{display:none;}',
 
     /* panel */
@@ -211,7 +223,8 @@
       '</form>' +
       '<div id="nb-lc-foot"></div>' +
     '</div>' +
-    '<button id="nb-lc-trigger" type="button"><img src="' + ICON + '" alt=""></button>';
+    '<button id="nb-lc-trigger" type="button"><img src="' + ICON + '" alt="">' +
+      '<span class="nb-lc-trigger-label"></span></button>';
 
   var panel, thread, startersWrap, form, input, sendBtn, trigger, titleEl, closeBtn, footEl;
   var busy = false;
@@ -265,6 +278,7 @@
     var t = s();
     titleEl.textContent = t.title;
     trigger.setAttribute('aria-label', t.triggerAria);
+    trigger.querySelector('.nb-lc-trigger-label').textContent = t.assistantLabel;
     closeBtn.setAttribute('aria-label', t.close);
     panel.setAttribute('aria-label', t.title);
     input.setAttribute('placeholder', t.placeholder);
