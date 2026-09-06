@@ -417,15 +417,27 @@ Keep this at the level a prospect actually asks about — no in-app button steps
 
 ---
 
-## 10. Unconfirmed points — DO NOT ANSWER FROM THESE YET (internal, not for users)
+## 10. VAT, and one still-unconfirmed point (internal, not for users)
 
-**These two items are not yet verified. Until this section is replaced with confirmed
-facts, if a visitor asks about either, do not guess — say you're not certain and point
+### VAT on the subscription price (confirmed)
+
+NestBook is **not currently VAT-registered** (it is below the UK's £90,000 mandatory
+registration threshold), so **no VAT is added to subscription prices**. The advertised
+prices — £19 / €22 Pro, £39 / €45 Multi, £6 / €7 add-on — are the **full amount charged**,
+with **no VAT line on the invoice**. This applies regardless of the customer's own
+location or VAT status: there is currently no VAT number to provide for reverse-charge
+purposes, because no VAT is being charged.
+
+If a business customer specifically asks for a VAT invoice or a VAT number, be honest that
+**none applies right now**. Only if asked, you may add that this could change if the
+company's turnover grows past the registration threshold in future. Direct anything
+beyond that to **hello@nestbook.io**.
+
+### Still unconfirmed — DO NOT ANSWER FROM THIS YET
+
+**If a visitor asks about the item below, do not guess — say you're not certain and point
 them to hello@nestbook.io.**
 
-- **TODO — VAT on the subscription price.** It is not yet confirmed whether the advertised
-  plan prices (£19 / €22 etc.) are VAT-inclusive or whether VAT is added on top at
-  checkout. Do not state either way until this is confirmed.
 - **TODO — Multi → Pro downgrade with more than one property.** It is not yet confirmed
   what happens to the extra properties (and their booking pages / data) if a Multi-plan
   owner who has more than one property downgrades to Pro. Do not describe or invent an
