@@ -643,11 +643,12 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.85);
-  /* Resting state = the hide transition: quick and immediate, so the overlay
-     exits briskly. A quick cursor pass-by adds .is-open then removes it before
-     the reveal delay below elapses, so opacity/transform never start animating
-     and no flash is seen. */
-  transition: transform 0.16s ease-in, opacity 0.13s ease-in;
+  /* Resting state = the hide transition: fast and immediate, so the overlay has
+     cleared before the cursor reaches the next tile — otherwise it lingers over
+     the grid as an opaque block. A quick cursor pass-by adds .is-open then removes
+     it before the reveal delay below elapses, so opacity/transform never start
+     animating and no flash is seen. */
+  transition: transform 0.1s ease-in, opacity 0.07s ease-in;
   z-index: 10;
 }
 .ig-overlay.is-open {
