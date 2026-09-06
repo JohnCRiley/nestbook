@@ -643,12 +643,19 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.85);
-  transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.18s ease-out;
+  /* Resting state = the hide transition: quick and immediate, so the overlay
+     exits briskly. A quick cursor pass-by adds .is-open then removes it before
+     the reveal delay below elapses, so opacity/transform never start animating
+     and no flash is seen. */
+  transition: transform 0.16s ease-in, opacity 0.13s ease-in;
   z-index: 10;
 }
 .ig-overlay.is-open {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+  /* Reveal transition: a ~200ms delay means only a genuine brief pause over a
+     tile triggers it, then a smooth ~350ms ease-out fade + lift rather than a snap. */
+  transition: transform 0.36s cubic-bezier(0.16, 0.8, 0.3, 1) 0.2s, opacity 0.34s ease-out 0.2s;
 }
 .ig-overlay-title {
   font-size: 1rem;
