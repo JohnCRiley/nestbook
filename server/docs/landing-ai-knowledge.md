@@ -25,7 +25,8 @@ right fit for someone (they need real-time channel management across ten platfor
 run a 200-room hotel), say so plainly — it builds trust and it's on-brand.
 
 **Grounding:** everything below is drawn from NestBook's own live public content
-(homepage, `/how-it-works`, `/compare`, `/pricing`, the Plan Comparison PDF, `/about`,
+(homepage, `/how-it-works`, `/compare`, the homepage pricing section (`/#pricing`), the
+Plan Comparison PDF, `/about`,
 the public help centre, `/terms`, `/privacy`, and the blog). Do not invent features,
 prices, competitor claims, or policies that aren't here. If asked something this file
 doesn't cover — a custom requirement, an unusual property type, an exact legal/refund
@@ -68,7 +69,8 @@ What it gives an owner:
 
 **Who it is NOT for:** large hotels with departments and staff rotas; operators who list
 on many platforms with a high booking volume and genuinely need real-time channel
-management (NestBook's iCal sync updates on a schedule, not instantly — see Section 5);
+management (NestBook's iCal sync runs on a schedule — every 15 minutes inbound, and
+outbound as often as each platform re-checks the feed — not instantly; see Section 5);
 anyone wanting yield-optimisation / dynamic-pricing engines. NestBook is deliberately
 "the core things done well," not an enterprise PMS.
 
@@ -80,8 +82,11 @@ built for Europe.
 
 ## 2. Plans and pricing (prospect level)
 
-Three plans plus one optional add-on. **Prices are shown in the visitor's local currency
-at checkout;** the headline figures are GBP and EUR.
+Three plans plus one optional add-on. **Subscriptions are billed in GBP or EUR only** —
+not the visitor's own local currency. The card issuer handles any conversion. (The
+separate property-level *guest* currency shown on the booking page supports more
+currencies; that is an unrelated setting and does not change how the subscription is
+billed.) The headline figures below are GBP / EUR.
 
 ### Free ("Starter") — free forever, no card required
 
@@ -211,6 +216,11 @@ takes about five minutes; Stripe handles the identity verification. This works f
 booking widget, the standalone property page, and simple payment links sent by email or
 messenger. No extra fee, no commission on payments, on Free/Pro/Multi alike.
 
+Note: **Stripe's own standard card-processing fee still applies** (roughly 1.5% + 20p for
+UK/EEA cards, higher for non-European or currency-converted cards). That fee is set by
+Stripe, goes to Stripe, and NestBook adds nothing on top of it. "Zero platform fee" means
+NestBook itself takes nothing — not that card processing is free.
+
 **iCal channel sync, free on every plan, forever.** Every room gets its own iCal calendar
 link; paste it into Booking.com or Airbnb once (about two minutes per platform) and
 availability stays in sync automatically. No setup fee, no monthly charge — the public
@@ -234,9 +244,13 @@ themes are part of the plan, not upsells. The one optional paid add-on is Bar & 
 
 **Privacy and data.** EU company, **EU hosting** (Hetzner, in Germany and Finland),
 **GDPR-compliant**, Data Processing Agreements with its processors (Stripe for payments,
-Resend for transactional email, Zoho for the support mailbox). NestBook does **not** sell,
-rent or share personal data for marketing, does not build ad profiles, does not use
-tracking cookies, and does not store card details (Stripe does, under PCI-DSS).
+Resend for transactional email, Zoho for the support mailbox, Google Analytics for
+anonymised traffic analytics on the public marketing site). NestBook does **not** sell,
+rent or share personal data for marketing, and does not build ad profiles. It uses **no
+advertising, retargeting or behavioural-tracking cookies**: the app itself uses only
+essential cookies, and the public marketing site uses privacy-friendly analytics (Google
+Analytics 4) for anonymised traffic measurement only. NestBook does not store card
+details (Stripe does, under PCI-DSS).
 
 ---
 
@@ -266,8 +280,11 @@ A full channel manager gives **real-time** sync across many platforms and typica
 PMS platforms are built for hotels with departments. NestBook is deliberately simpler and
 cheaper: it does the core loop small properties actually run every day — see today's
 arrivals/departures, take a booking, check in/out, monthly report — well, in 5 languages,
-at a small-property price. Its iCal sync updates **on a schedule (every few hours)**, not
-instantly. NestBook's own published guidance: if you regularly get multiple bookings for
+at a small-property price. Its iCal sync updates **on a schedule**, not instantly:
+NestBook imports changes from linked external calendars (Booking.com, Airbnb) **every 15
+minutes**, while how fast *your* NestBook availability shows up on those platforms depends
+on how often each one re-checks your feed — typically every few hours. NestBook's own
+published guidance: if you regularly get multiple bookings for
 the same room on the same day, or list on more than 3–4 platforms with a steady booking
 flow, a real channel manager is probably worth the cost; if not — and most small
 independents don't — "iCal sync gives you 90% of the protection at none of the cost."
@@ -285,7 +302,8 @@ records, calendar sync.
 **"Contact us for a quote?"**
 No. NestBook publishes every price. Its own blog argues that hiding prices behind a
 "contact us" wall is a lead-capture tactic (and, in a customer's own booking flow, now
-against UK/EU pricing-transparency law). Everything is on `/pricing` and `/compare`.
+against UK/EU pricing-transparency law). Everything is on the homepage pricing section
+and `/compare`.
 
 ---
 
@@ -314,8 +332,8 @@ Keep this at the level a prospect actually asks about — no in-app button steps
   billing but keeps everything on the Free plan — the better choice for someone who only
   wants to stop paying. Under GDPR the owner can also request export or erasure of their
   personal data. On account closure, data can be exported for **30 days** and is deleted
-  or anonymised within that window (financial records may be kept longer where law
-  requires, typically up to 7 years). If a visitor needs the precise legal wording,
+  or anonymised **after that window closes** (financial records may be kept longer where
+  law requires, typically up to 7 years). If a visitor needs the precise legal wording,
   point them to the Privacy Policy / Terms of Service or hello@nestbook.io.
 
 ---
@@ -329,8 +347,10 @@ Keep this at the level a prospect actually asks about — no in-app button steps
   `nestbook.io/book/domaine-des-lavandes` (also linked as "Live demo" in the site nav) —
   rooms, photos, availability calendar and a direct booking button, exactly what a guest
   would see.
-- **Compare plans in detail:** `nestbook.io/compare` (also downloadable as a PDF).
-- **Pricing summary:** `nestbook.io/pricing`.
+- **Compare plans in detail:** `nestbook.io/compare` (also printable / save-as-PDF from
+  the page).
+- **Pricing summary:** `nestbook.io/#pricing` — the pricing section on the homepage
+  (there is no standalone `/pricing` page).
 - **How it works / the savings maths:** `nestbook.io/how-it-works` (includes a calculator
   where an owner enters their real numbers).
 - **Questions / anything custom:** `hello@nestbook.io` or `nestbook.io/contact`.
@@ -350,6 +370,7 @@ Keep this at the level a prospect actually asks about — no in-app button steps
   Europe. That is the whole answer; do not add any biographical or personal detail.
 - **Support:** email **hello@nestbook.io** (a real person, "usually much faster" than 24
   hours, in any of the 5 languages) or the contact form at **nestbook.io/contact**.
+  There is **no phone line** — email and the contact form are the only support channels.
   Blogs are written in English; the site itself is fully translated.
 
 ---
@@ -393,4 +414,19 @@ Keep this at the level a prospect actually asks about — no in-app button steps
 
 - **Never** give in-app instructions ("go to Settings and…"). If the honest answer is
   "you'd do that inside your account once you sign up," say exactly that and stop.
-```
+
+---
+
+## 10. Unconfirmed points — DO NOT ANSWER FROM THESE YET (internal, not for users)
+
+**These two items are not yet verified. Until this section is replaced with confirmed
+facts, if a visitor asks about either, do not guess — say you're not certain and point
+them to hello@nestbook.io.**
+
+- **TODO — VAT on the subscription price.** It is not yet confirmed whether the advertised
+  plan prices (£19 / €22 etc.) are VAT-inclusive or whether VAT is added on top at
+  checkout. Do not state either way until this is confirmed.
+- **TODO — Multi → Pro downgrade with more than one property.** It is not yet confirmed
+  what happens to the extra properties (and their booking pages / data) if a Multi-plan
+  owner who has more than one property downgrades to Pro. Do not describe or invent an
+  outcome until this is confirmed.
