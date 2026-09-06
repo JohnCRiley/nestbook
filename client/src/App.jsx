@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { LocaleProvider, useLocale, useT } from './i18n/LocaleContext.jsx';
 import ProtectedRoute   from './components/ProtectedRoute.jsx';
 import Sidebar          from './components/Sidebar.jsx';
+import HelpChatPanel    from './components/HelpChatPanel.jsx';
 import Login            from './pages/Login.jsx';
 import Register         from './pages/Register.jsx';
 import Dashboard        from './pages/Dashboard.jsx';
@@ -246,6 +247,7 @@ function AppLayout() {
           <Route path="/charges"   element={<Charges   />} />
         </Routes>
       </main>
+      <HelpChatPanel />
     </div>
   );
 }
