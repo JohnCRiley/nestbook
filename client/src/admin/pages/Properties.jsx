@@ -131,6 +131,25 @@ export default function Properties() {
     }
   }, [fetchProperties, showToast]);
 
+  // Channex: real API call — pushes room types + rate plans + 90 days of ARI
+  // to Channex staging. Only offered once a property is connected. The
+  // "already pushed" guard lives server-side; its error shows via the toast.
+  const pushChannexInventory = useCallback(async (property) => {
+    setChannexBusyId(property.id);
+    try {
+      const res  = await apiFetch(`/api/admin/properties/${property.id}/channex-push`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Channex inventory push failed');
+      const rt = data.roomTypes?.length ?? 0;
+      showToast(`Pushed to Channex — ${rt} room type${rt === 1 ? '' : 's'}, ${data.window?.days ?? 90} days ARI`);
+      fetchProperties();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setChannexBusyId(null);
+    }
+  }, [fetchProperties, showToast]);
+
   const openResetModal = useCallback((property) => {
     setResetTarget(property);
     setConfirmInput('');
@@ -236,12 +255,34 @@ export default function Properties() {
                 </td>
                 <td>
                   {p.channex_property_id ? (
-                    <span
-                      title={p.channex_property_id}
-                      style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}
-                    >
-                      ✓ {String(p.channex_property_id).slice(0, 8)}…
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span
+                        title={p.channex_property_id}
+                        style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}
+                      >
+                        ✓ {String(p.channex_property_id).slice(0, 8)}…
+                      </span>
+                      {p.channex_mapping_count > 0 ? (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                          · {p.channex_mapping_count} room type{p.channex_mapping_count === 1 ? '' : 's'}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => pushChannexInventory(p)}
+                          disabled={channexBusyId === p.id}
+                          style={{
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-secondary)',
+                            padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                            fontWeight: 600, cursor: channexBusyId === p.id ? 'default' : 'pointer',
+                            fontFamily: 'inherit', opacity: channexBusyId === p.id ? 0.6 : 1,
+                          }}
+                        >
+                          {channexBusyId === p.id ? 'Pushing…' : 'Push Inventory'}
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <button
                       onClick={() => createInChannex(p)}

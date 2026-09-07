@@ -162,12 +162,120 @@ when done — no API delete in the codebase):**
 
 ---
 
-## Next — Slice 3 (not started)
+## Slice 3 — first-time inventory push (room types + rate plans + ARI)  ✅ DONE (2026-09-07)
 
-- Decide: one Channex property per NestBook property for `units` mode, or one
-  Channex property per unit (research §5 says per-unit for Holiday Rentals —
-  revisit when wiring room types).
-- Push room types + rate plans + availability (ARI) to a connected property.
-- A "disconnect / remove from Channex" path (DELETE `/api/v1/properties/:id` +
-  clear the column) — currently there's no way to undo a connection from inside
-  the app.
+**Built:**
+
+- **Schema:** new table `channex_room_mappings` (guarded `CREATE TABLE IF NOT
+  EXISTS` + two indexes). One row per Channex room type, linking it to whatever
+  the NestBook side of the pairing is:
+  - `nestbook_ref_type = 'room'`  → `nestbook_ref_id = rooms.id` (IR-Named, Units)
+  - `nestbook_ref_type = 'category'` → `nestbook_ref_id = room_categories.id` (IR-Categories)
+  - `nestbook_ref_type = 'whole_property'` → `nestbook_ref_id = NULL` (WP)
+  Stores **both** `channex_room_type_id` and `channex_rate_plan_id`. Chose a
+  table over columns on `rooms` because (a) the NestBook side isn't always a
+  room (category / whole-property), (b) a row needs two Channex ids, (c)
+  IR-Categories maps one Channex room type to many `rooms`. Unique index on
+  `(property_id, nestbook_ref_type, IFNULL(nestbook_ref_id,-1))`.
+- **`server/utils/channexClient.js`:** added `createRoomType`, `createRatePlan`,
+  `deleteRoomType`/`deleteRatePlan` (`?force=true`), `updateAvailability`,
+  `updateRates`. `channexRequest` gained a `raw` option so the ARI endpoints can
+  return `meta.warnings` (they report per-row problems on a 200, not as errors).
+- **`server/utils/channexPushInventory.js`:** `pushInitialInventory(property)`.
+  - `buildTargets(property)` (exported) → one entry per Channex room type:
+    - **IR-Named / Units:** `rooms` where `parent_unit_id IS NULL AND
+      is_sample_data = 0 AND status != 'maintenance'`; `count_of_rooms = 1`.
+    - **IR-Categories:** one per `room_categories` row; `count_of_rooms` =
+      rooms in the category (`status != 'maintenance'`, matching
+      `getAvailableRoomsInCategory`); base rate = lowest positive room price.
+    - **WP:** one target from property-level fields (`whole_property_rate`,
+      `total_capacity`); `count_of_rooms = 1`.
+  - Occupancy: `occ_adults = max(1, max_occupancy ?? capacity)`,
+    `default_occupancy = min(occ_adults, capacity)`, children/infants 0.
+  - Availability window = **90 days from today**, real NestBook availability
+    (bookings excl. cancelled/checked_out/cancelled_unpaid/declined + `ical_blocks`
+    with `room_id IS NULL` = property-wide) — mirrors `widget.js`
+    `day-availability` / `bookings.js` `hasOverlap`; categories reuses the
+    shared `getAvailableRoomsInCategory` helper directly. Per-day values are
+    coalesced into contiguous `date_from`/`date_to` segments.
+  - Rate plan: `sell_mode: per_room`, `rate_mode: manual`, one primary
+    occupancy option. Base **flat rate** (`price_per_night` / `whole_property_rate`)
+    pushed across the whole window in one `/restrictions` row per plan.
+    Seasonal `rate_periods` are **not** reflected — deferred to the ongoing-sync
+    slice. A rate of 0 is skipped (Channex requires rate > 0) and reported.
+  - **Best-effort rollback:** if any create call or the mapping insert throws,
+    it deletes every room type / rate plan it already created (force) and clears
+    any mapping rows, then rethrows — so a partial failure doesn't strand
+    orphans that the re-push guard (which counts local mappings) would then
+    silently duplicate.
+- **Route:** `POST /api/admin/properties/:id/channex-push` (Super Admin only).
+  Guards: 404 (no property); **400** if `channex_property_id` is null
+  ("not connected — use Create in Channex first"); **409** if
+  `channex_room_mappings` rows already exist ("Inventory has already been
+  pushed … Re-push / ongoing sync is a later slice"); **422** if the property
+  has no bookable rooms; **502** on a `ChannexError` with a status; **500**
+  otherwise. Audit-logs `CHANNEX_INVENTORY_PUSHED`.
+- **UI (`Properties.jsx`):** the "Channex" cell now shows, for a connected
+  property, either a **"Push Inventory"** button (→ "Pushing…") or, once pushed,
+  `· N room types`. Result via the existing toast. Admin `GET /properties` also
+  returns `channex_mapping_count`.
+
+**Re-push decision:** **block** (409), not update. Room types / rate plans are
+not idempotent to re-create, and reconciling NestBook↔Channex (renames, adds,
+deletes) is real sync logic that belongs in the dedicated ongoing-sync slice.
+ARI on its own is last-win idempotent, but a partial re-push is confusing. To
+redo a push today: delete the property's `channex_room_mappings` rows **and** the
+Channex-side room types, then push again.
+
+**Verified this slice (real, from the Super Admin UI):**
+- Connected **property #1 "Local Dev"** (IR-Named, 4 real rooms) → Channex
+  property **`a50e441f-bbd8-40b6-a69e-f728953a976e`**, then "Push Inventory":
+  - 4 room types + 4 rate plans created on Channex, `count_of_rooms` 1 each,
+    `occ_adults` 2/2/4/1 (matches room capacities).
+  - 4 `channex_room_mappings` rows (`nestbook_ref_type='room'`, ids 341–344),
+    each with both Channex ids.
+  - ARI confirmed via `GET /api/v1/restrictions`: availability = 1 every day
+    for the 90-day window, rates `95.00 / 85.00 / 145.00 / 65.00` = the rooms'
+    `price_per_night`. No warnings.
+- Re-push (#1, has mappings) → **409** with the explanatory message, no
+  duplicate room types on Channex.
+- Push #36 (no `channex_property_id`) → **400** "not connected … use Create in
+  Channex first".
+- Push #2 (connected, 0 rooms) → **422** "no bookable rooms/units/categories".
+- `grep` for "channex" across `client/src` → only `admin/pages/Properties.jsx`;
+  across `server/` → only `admin.js` (SA-gated) + `schema.js` + the 4 utils.
+  No owner-facing surface.
+- `node --check` clean on all changed server files.
+- **Not** checked in the Channex web dashboard's Rooms & Rates / Inventory
+  pages — verified against the Channex **API** (the source of truth) instead,
+  since the dashboard visibility gap from the slice-1/2 notes (property not
+  appearing under the dashboard login) is still unresolved.
+
+**Only verifiable against live data for IR-Named** — this DB has no WP, Units,
+or IR-Categories property. The other modes' `buildTargets` branches are written
+from the data model + `widget.js`/`rooms.js` reading and unit-checked via
+`buildTargets` on property #27 (categories rows), but their end-to-end push is
+unverified.
+
+**Test artifacts on Channex staging (John to remove manually — Properties →
+Actions → Remove; no API delete wired into the app):**
+- `fff09646-…` "NestBook Test Property" (Phase 1)
+- `e8675aa3-…` "Test Property" (slice 2) — connected, no inventory
+- `a50e441f-…` "Local Dev" (slice 3) — **4 room types + 4 rate plans + 90 days ARI**
+
+**Deferred (unchanged):** ongoing/auto sync on room/rate/availability change;
+seasonal `rate_periods` in the rate push; Holiday-Rentals one-Channex-property-
+per-unit split (research §5); a "disconnect / remove from Channex" path
+(`DELETE /api/v1/properties/:id` + clear the column + drop mappings).
+
+---
+
+## Next — Slice 4 (not started)
+
+- Ongoing sync: when a NestBook room/rate/availability changes, push the delta
+  to Channex (uses `channex_room_mappings` to find the target room type / rate
+  plan). This is where the "update vs block" re-push question gets its real
+  answer.
+- Reflect seasonal `rate_periods` in the rate push (`getRateForDate` already
+  exists — `server/utils/ratePeriods.js`).
+- A disconnect path (see Deferred above).

@@ -68,11 +68,15 @@ export function getChannexBaseUrl() {
  * @param {object} [opts.body]     plain object, JSON-encoded as-is — the caller
  *                                 wraps it under the entity key (e.g. { property: {...} })
  * @param {object} [opts.query]    query-string params (undefined/null values skipped)
- * @returns {Promise<object|null>} the parsed `data` from the Channex response
+ * @param {boolean} [opts.raw=false] return the whole parsed body ({ data, meta })
+ *                                 instead of just `data` — needed for the ARI
+ *                                 endpoints, which report per-row problems in
+ *                                 `meta.warnings` on an otherwise-200 response
+ * @returns {Promise<object|null>} the parsed `data` (or the full body when raw)
  * @throws {ChannexError}          on missing key, network failure, non-2xx, or an
  *                                 unparseable body — it never resolves silently
  */
-export async function channexRequest(path, { method = 'GET', body, query } = {}) {
+export async function channexRequest(path, { method = 'GET', body, query, raw = false } = {}) {
   const apiKey = getChannexApiKey();
 
   let url = `${getChannexBaseUrl()}${path}`;
@@ -122,6 +126,7 @@ export async function channexRequest(path, { method = 'GET', body, query } = {})
     );
   }
 
+  if (raw) return parsed ?? null;
   return parsed?.data ?? parsed ?? null;
 }
 
@@ -138,5 +143,69 @@ export async function createProperty(attributes) {
   return channexRequest('/api/v1/properties', {
     method: 'POST',
     body: { property: attributes },
+  });
+}
+
+/**
+ * Create a Room Type. Required attributes: property_id, title, count_of_rooms,
+ * occ_adults, occ_children, occ_infants, default_occupancy.
+ * Availability of a new room type defaults to 0 — push real values with
+ * updateAvailability().
+ * @returns {Promise<object>} the created room type's `data` (includes `id`)
+ */
+export async function createRoomType(attributes) {
+  return channexRequest('/api/v1/room_types', {
+    method: 'POST',
+    body: { room_type: attributes },
+  });
+}
+
+/**
+ * Create a Rate Plan. Required attributes: title (unique per property),
+ * property_id, room_type_id, options (array of { occupancy, is_primary, rate }).
+ * Rate defaults to 0 — push real values with updateRates().
+ * @returns {Promise<object>} the created rate plan's `data` (includes `id`)
+ */
+export async function createRatePlan(attributes) {
+  return channexRequest('/api/v1/rate_plans', {
+    method: 'POST',
+    body: { rate_plan: attributes },
+  });
+}
+
+/** Delete a Room Type. `force` also removes dependent rate plans/mappings. */
+export async function deleteRoomType(id, { force = false } = {}) {
+  return channexRequest(`/api/v1/room_types/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' });
+}
+
+/** Delete a Rate Plan. `force` also removes dependent objects. */
+export async function deleteRatePlan(id, { force = false } = {}) {
+  return channexRequest(`/api/v1/rate_plans/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' });
+}
+
+/**
+ * Push availability for room types. `values` is an array of
+ * { property_id, room_type_id, date | (date_from & date_to), availability }.
+ * Channex processes this asynchronously (returns task ids). Past dates rejected.
+ */
+export async function updateAvailability(values) {
+  return channexRequest('/api/v1/availability', {
+    method: 'POST',
+    body: { values },
+    raw: true,
+  });
+}
+
+/**
+ * Push rates / restrictions for rate plans. `values` is an array of
+ * { property_id, rate_plan_id, date | (date_from & date_to), rate?, min_stay_arrival?, … }.
+ * `rate` must be > 0; accepts a decimal string ("120.00") or integer minor units.
+ * Validation problems come back as `meta.warnings` on a 200, not as an error.
+ */
+export async function updateRates(values) {
+  return channexRequest('/api/v1/restrictions', {
+    method: 'POST',
+    body: { values },
+    raw: true,
   });
 }

@@ -17,6 +17,7 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
 import { createChannexProperty } from '../utils/createChannexProperty.js';
 import { ChannexError } from '../utils/channexClient.js';
+import { pushInitialInventory } from '../utils/channexPushInventory.js';
 
 export const adminRouter = Router();
 
@@ -384,6 +385,7 @@ adminRouter.get('/properties', (req, res) => {
     const BASE_SELECT = `
       SELECT p.id, p.name, p.type, p.country, p.created_at, p.is_demo,
              p.channex_property_id,
+             (SELECT COUNT(*) FROM channex_room_mappings m WHERE m.property_id = p.id) as channex_mapping_count,
              u.email as owner_email, u.plan,
              (SELECT COUNT(*) FROM rooms    r WHERE r.property_id = p.id) as rooms_count,
              (SELECT COUNT(*) FROM bookings b WHERE b.property_id = p.id) as bookings_count
@@ -763,6 +765,68 @@ adminRouter.post('/properties/:id/channex-create', async (req, res) => {
   } catch (err) {
     const status = err instanceof ChannexError && err.status ? 502 : 500;
     console.error(`[admin] channex-create failed for property #${propId}:`, err.message);
+    return res.status(status).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/properties/:id/channex-push ──────────────────────────────
+// Channex integration (Phase 2, slice 3) — Super Admin manual trigger ONLY.
+// First-time push of a connected property's room types + rate plans + a 90-day
+// window of availability and base rates to Channex. Real API calls against
+// Channex staging.
+//
+// Guards: property must exist, must be connected (channex_property_id set), and
+// must NOT already have channex_room_mappings rows — re-push / ongoing sync is a
+// later slice, so a second attempt is blocked with an explanatory message
+// rather than duplicating room types on Channex's side.
+adminRouter.post('/properties/:id/channex-push', async (req, res) => {
+  const propId = Number(req.params.id);
+  if (!Number.isInteger(propId)) {
+    return res.status(400).json({ error: 'Invalid property id' });
+  }
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+
+  if (!property.channex_property_id) {
+    return res.status(400).json({
+      error: 'This property is not connected to Channex yet — use "Create in Channex" first.',
+    });
+  }
+
+  const existingMappings = db.prepare(
+    'SELECT COUNT(*) AS n FROM channex_room_mappings WHERE property_id = ?'
+  ).get(propId).n;
+  if (existingMappings > 0) {
+    return res.status(409).json({
+      error: `Inventory has already been pushed for this property (${existingMappings} room type${existingMappings === 1 ? '' : 's'} mapped). ` +
+             `Re-push / ongoing sync is a later slice — not supported yet.`,
+    });
+  }
+
+  try {
+    const summary = await pushInitialInventory(property);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user?.userId ?? null,
+      action:     'CHANNEX_INVENTORY_PUSHED',
+      category:   'admin',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Pushed ${summary.roomTypes.length} room type(s) + rate plans + ` +
+                  `${summary.window.days}-day ARI to Channex ${property.channex_property_id}`,
+      ipAddress:  getIp(req),
+    });
+
+    console.log(`[admin] Channex inventory pushed for #${propId} (${property.name}) — ${summary.roomTypes.length} room type(s)`);
+    return res.json({ success: true, ...summary });
+  } catch (err) {
+    let status = 500;
+    if (err instanceof ChannexError && err.status) status = 502;
+    else if (/no bookable rooms\/units\/categories/.test(err.message)) status = 422;
+    console.error(`[admin] channex-push failed for property #${propId}:`, err.message);
     return res.status(status).json({ error: err.message });
   }
 });

@@ -2590,6 +2590,38 @@ John`
   // See docs/in-progress/channex-integration-phase2.md.
   try { db.exec(`ALTER TABLE properties ADD COLUMN channex_property_id TEXT`); } catch (e) {}
 
+  // channex_room_mappings (Phase 2, slice 3) — links a NestBook bookable thing
+  // to the Channex room type + rate plan created for it by the Super Admin
+  // "Push Inventory" trigger. A dedicated table rather than columns on `rooms`
+  // because the NestBook side of the link is not always a room:
+  //   nestbook_ref_type = 'room'            -> nestbook_ref_id = rooms.id
+  //     (IR-Named: one per top-level room; Units: one per unit)
+  //   nestbook_ref_type = 'category'        -> nestbook_ref_id = room_categories.id
+  //     (IR-Categories: one Channex room type per category, which maps to many rooms)
+  //   nestbook_ref_type = 'whole_property'  -> nestbook_ref_id = NULL
+  //     (WP: the whole property is the single bookable unit, no rooms row for it)
+  // Each row also needs BOTH ids (room_type + rate_plan), which columns on
+  // `rooms` couldn't hold cleanly. Written only by the Super Admin trigger; no
+  // owner-facing surface. See docs/in-progress/channex-integration-phase2.md.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channex_room_mappings (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      property_id           INTEGER NOT NULL,
+      channex_property_id   TEXT    NOT NULL,
+      nestbook_ref_type     TEXT    NOT NULL,
+      nestbook_ref_id       INTEGER,
+      channex_room_type_id  TEXT    NOT NULL,
+      channex_rate_plan_id  TEXT    NOT NULL,
+      created_at            TEXT    NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_channex_room_mappings_property ON channex_room_mappings(property_id)`);
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_channex_room_mappings_ref
+    ON channex_room_mappings(property_id, nestbook_ref_type, IFNULL(nestbook_ref_id, -1))
+  `);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
