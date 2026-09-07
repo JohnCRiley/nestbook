@@ -5713,6 +5713,30 @@ html[data-theme="forest"] .main-content {
   margin-bottom: 4px;
 }
 
+/* Express Dashboard link — explanatory line + post-onboarding callout */
+.billing-connect-hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  text-align: left;
+}
+.billing-connect-done {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--light-green);
+  border: 1.5px solid var(--accent);
+  text-align: left;
+}
+.billing-connect-done h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.billing-connect-done .billing-connect-btn { margin-top: 10px; }
+
 /* ── Onboarding wizard ──────────────────────────────────────────────────── */
 .wizard-steps {
   display: flex;

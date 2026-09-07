@@ -485,11 +485,18 @@ stripeRouter.get('/connect/status', (req, res) => {
 });
 
 // ── POST /api/stripe/connect/dashboard-link ───────────────────────────────────
+// Returns a single-use, short-lived Stripe Express Dashboard login link so the
+// owner can see their own balance / payouts / payment history. Generated fresh
+// on every call — the URL is never cached or stored. Gated on an *active*
+// Connect account: a pending account has no Express Dashboard to log in to.
 stripeRouter.post('/connect/dashboard-link', async (req, res) => {
   try {
-    const user = db.prepare('SELECT stripe_connect_account_id FROM users WHERE id = ?').get(req.user.userId);
+    const user = db.prepare('SELECT stripe_connect_account_id, stripe_connect_status FROM users WHERE id = ?').get(req.user.userId);
     if (!user?.stripe_connect_account_id) {
       return res.status(400).json({ error: 'No connected account' });
+    }
+    if (user.stripe_connect_status !== 'active') {
+      return res.status(400).json({ error: 'Connected account is not active yet' });
     }
     const loginLink = await stripe.accounts.createLoginLink(user.stripe_connect_account_id);
     res.json({ url: loginLink.url });

@@ -30,9 +30,13 @@ function fmtDate(iso, locale = 'en') {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Billing() {
   const t = useT();
+  const [justOnboarded, setJustOnboarded] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Arriving back from Stripe Connect onboarding — surface the Express
+    // Dashboard link prominently once, right when it's most relevant.
+    if (params.get('connect') === 'success') setJustOnboarded(true);
     if (params.get('connect') === 'success' || params.get('connect') === 'refresh') {
       window.history.replaceState({}, '', '/app/billing');
     }
@@ -51,7 +55,7 @@ export default function Billing() {
         </div>
         <div className="billing-right">
           <GuestPaymentsCard />
-          <StripeConnectCard />
+          <StripeConnectCard justOnboarded={justOnboarded} />
         </div>
       </div>
     </div>
@@ -849,8 +853,27 @@ function StripeChecklistModal({ onClose }) {
   );
 }
 
+// ── Express Dashboard link (button + explanatory line) ────────────────────────
+// The login link is single-use and short-lived, so it is always generated fresh
+// on click (handleManage) and never stored.
+function DashboardLink({ t, onClick, loading }) {
+  return (
+    <>
+      <button
+        className="billing-connect-btn billing-connect-btn-secondary"
+        onClick={onClick}
+        disabled={loading}
+        style={{ display: 'block', marginTop: 10 }}
+      >
+        {loading ? t('billing.connecting') : t('billing.viewStripeDashboard')}
+      </button>
+      <p className="billing-connect-hint">{t('billing.stripeDashboardHint')}</p>
+    </>
+  );
+}
+
 // ── Stripe Connect card ───────────────────────────────────────────────────────
-function StripeConnectCard() {
+function StripeConnectCard({ justOnboarded = false }) {
   const t = useT();
   const [status,              setStatus]              = useState(null);
   const [loading,             setLoading]             = useState(true);
@@ -993,9 +1016,16 @@ function StripeConnectCard() {
           <span className="billing-status-pill billing-status-active">
             <CircleCheckIcon size={14} /> {t('billing.connectActive')}
           </span>
-          <button className="billing-connect-btn billing-connect-btn-secondary" onClick={handleManage} disabled={actionLoading} style={{ display: 'block', marginTop: 10 }}>
-            {actionLoading ? t('billing.connecting') : t('billing.manageOnStripe')}
-          </button>
+
+          {justOnboarded ? (
+            <div className="billing-connect-done">
+              <h4>{t('billing.connectDoneTitle')}</h4>
+              <DashboardLink t={t} onClick={handleManage} loading={actionLoading} />
+            </div>
+          ) : (
+            <DashboardLink t={t} onClick={handleManage} loading={actionLoading} />
+          )}
+
           <button className="billing-disconnect-link" onClick={() => setShowDisconnectModal(true)} disabled={actionLoading}>
             {t('billing.disconnectStripe')}
           </button>
