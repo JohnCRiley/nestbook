@@ -1139,7 +1139,14 @@ widgetRouter.get('/verify-session', async (req, res) => {
     console.log(`[verify-session] session=${session_id} payment_status=${session.payment_status} booking=${booking.id}`);
 
     if (paid && booking.stripe_payment_status !== 'paid') {
-      db.prepare('UPDATE bookings SET stripe_payment_status = ? WHERE id = ?').run('paid', booking.id);
+      // Keep payment_status / paid_at in step with stripe_payment_status — see the
+      // matching note in stripe.js's checkout.session.completed handler. This is a
+      // webhook fallback, so it must leave the row in the same state the webhook would.
+      db.prepare(`
+        UPDATE bookings
+        SET stripe_payment_status = 'paid', payment_status = 'paid', paid_at = COALESCE(paid_at, ?)
+        WHERE id = ?
+      `).run(new Date().toISOString(), booking.id);
       console.log(`[verify-session] Booking #${booking.id} marked paid (webhook fallback)`);
     }
 

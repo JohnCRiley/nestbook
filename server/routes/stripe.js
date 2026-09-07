@@ -656,6 +656,14 @@ export async function stripeWebhookHandler(req, res) {
         if (event.account) {
           const bookingId    = session.metadata?.booking_id;
           const paidAmount   = session.amount_total != null ? session.amount_total / 100 : null;
+          // A successful Stripe payment for a booking is the same underlying fact
+          // that the manual "Mark as paid" action (POST /api/bookings/:id/mark-paid)
+          // records via payment_status = 'paid' / paid_at. Keep the two in step:
+          // every branch below that sets stripe_payment_status = 'paid' also sets
+          // payment_status = 'paid' so the booking never shows "Payment outstanding"
+          // to an owner/guest after they've genuinely paid online. COALESCE on
+          // paid_at preserves an earlier manual mark-paid timestamp if one exists.
+          const paidAt = new Date().toISOString();
           if (session.metadata?.source === 'widget_payment' && bookingId) {
             // Re-check for a clash before confirming. The creation-time check
             // (widget.js) stops two guests racing for the same room/dates, but
@@ -698,9 +706,10 @@ export async function stripeWebhookHandler(req, res) {
               // or auto-refund; resolution stays a human decision.
               db.prepare(`
                 UPDATE bookings
-                SET status = 'confirmed_conflict', stripe_payment_status = 'paid', stripe_payment_amount = ?
+                SET status = 'confirmed_conflict', stripe_payment_status = 'paid', stripe_payment_amount = ?,
+                    payment_status = 'paid', paid_at = COALESCE(paid_at, ?)
                 WHERE id = ?
-              `).run(paidAmount, bookingId);
+              `).run(paidAmount, paidAt, bookingId);
               console.error(`[stripe] CONFLICT: booking #${bookingId} confirmed-payment clashed with existing booking #${clash.id} — flagged as confirmed_conflict, NOT auto-resolved`);
 
               const conflictBooking = db.prepare(`
@@ -729,9 +738,10 @@ export async function stripeWebhookHandler(req, res) {
             // Widget booking — advance from pending_payment to confirmed
             db.prepare(`
               UPDATE bookings
-              SET status = 'confirmed', stripe_payment_status = 'paid', stripe_payment_amount = ?
+              SET status = 'confirmed', stripe_payment_status = 'paid', stripe_payment_amount = ?,
+                  payment_status = 'paid', paid_at = COALESCE(paid_at, ?)
               WHERE id = ?
-            `).run(paidAmount, bookingId);
+            `).run(paidAmount, paidAt, bookingId);
             const confirmedBooking = db.prepare(`
               SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
                      g.email AS guest_email, g.phone AS guest_phone,
@@ -755,9 +765,10 @@ export async function stripeWebhookHandler(req, res) {
             // Payment-link payment — mark paid (amount already set at link-creation; overwrite for consistency)
             db.prepare(`
               UPDATE bookings
-              SET stripe_payment_status = 'paid', stripe_payment_amount = COALESCE(?, stripe_payment_amount)
+              SET stripe_payment_status = 'paid', stripe_payment_amount = COALESCE(?, stripe_payment_amount),
+                  payment_status = 'paid', paid_at = COALESCE(paid_at, ?)
               WHERE id = ?
-            `).run(paidAmount, bookingId);
+            `).run(paidAmount, paidAt, bookingId);
             const paidBooking = db.prepare(`
               SELECT b.*, g.first_name AS guest_first_name, g.last_name AS guest_last_name,
                      g.email AS guest_email, g.phone AS guest_phone,
