@@ -146,10 +146,38 @@ Separate, later phases (unchanged): **Phase 3** — billing (new Stripe price ID
 
 ---
 
-## 12. Open questions before Phase 2 can fully start
+## 12. Answers from Channex support (received, confirmed — no longer open questions)
 
-- [ ] Ask Channex support directly: is using ApartHotel/Camping `property_type` for genuinely unstaffed self-catering properties (purely to get flat billing) acceptable, or could it cause issues later?
-- [ ] Confirm realistic certification timeline for NestBook's actual team size/pace.
-- [ ] Decide and implement a public HTTPS endpoint solution for webhook development/testing (staging replacement).
-- [ ] Confirm current full list of Channex webhook events before designing the receiving code.
+Emailed support@channex.io directly ahead of Phase 2; full reply below, folded into the record.
+
+### On `property_type` / billing (Section 4's open question — now answered)
+
+Channex confirmed: **the property_type choice should follow how NestBook actually structures and pushes inventory, not just which label sounds closest.** Their own framing: "If a site is one inventory calendar with several bookable units as room types under that property (glamping site, small aparthotel), hotel-family types — including ApartHotel/Camping when that matches the model — are fine... Use Apartment when each unit should bill as its own VR unit. Keep it consistent with how you actually push ARI (one property + room types vs many properties)."
+
+**This confirms the Section 4 mapping is legitimate and intentional, not a loophole** — NestBook genuinely does model a glamping site or aparthotel as one property with multiple room-type units, which is exactly the "hotel-family" shape Channex describes. No change needed to the mapping table in Section 4; it's now confirmed correct by Channex directly, not just inferred from testing.
+
+One nuance worth remembering for Phase 2's actual build: this is explicitly framed as "keep it consistent with how you push ARI" — meaning if NestBook's data model or push pattern for a mode ever changed shape (e.g. started pushing SC-Holiday-Rentals units as one property with many room types instead of many properties), the correct property_type would need to be reconsidered alongside it. The mapping isn't a fixed label lookup independent of the actual integration architecture.
+
+### On certification timeline (Section 3's open question — now answered)
+
+"Lead time is mostly your build pace, not ours. Fast movers often land in a couple of weeks once the integration is solid — treat that as an impression, not a promise." The certification path itself is fully public and documented: **14 items across 5 stages** (https://docs.channex.io/api-v.1-documentation/pms-certification-tests). Confirmed: **staging remains free to use until certification passes; there's no production subscription commitment before then** — meaning further sandbox development work between now and actual certification costs nothing.
+
+### On webhooks (Section 9's open question — now answered, and one new architectural decision surfaced)
+
+The publicly documented webhook list is confirmed complete — nothing undocumented exists (https://docs.channex.io/api-v.1-documentation/webhook-collection). Full event set: `ari`, `booking` / `booking_new` / `booking_modification` / `booking_cancellation`, unmapped room/rate warnings, `non_acked_booking`, `message`, `sync_error` / `sync_warning` / `rate_error`, `review` / `updated_review`, Airbnb-specific Live Feed events (`reservation_request`, `alteration_request`, `accepted_reservation`, `declined_reservation`, `inquiry`), and channel lifecycle events (`new_channel`, `updated_channel`, activate/deactivate/disconnect, removal warnings).
+
+**Two new, important architectural findings for Phase 2, not previously known:**
+
+1. **For a multi-property account (which NestBook is, at the platform level), Channex recommends a single global webhook** (`property_id: null`, `is_global: true`) rather than registering one webhook per property. This is a real design decision for Phase 2's webhook-receiving endpoint — it should be built to handle events for any/all NestBook properties through one registered endpoint, not a per-property webhook setup.
+2. **Webhook delivery order is not guaranteed, and payloads are not cryptographically signed** — authentication is a shared-secret header over HTTPS, not signature verification like Stripe's webhooks use. Two consequences for Phase 2's build: (a) the receiving code must treat every webhook as a prompt to **pull current state from Channex's API**, never trust the webhook body as the authoritative final truth or assume events arrive in the order they happened; (b) the shared-secret header must be validated on every incoming request, and this is a meaningfully weaker security model than signature-based verification — worth handling carefully (e.g. a long random secret, HTTPS-only, no logging of the raw secret).
+
+---
+
+## 13. Remaining open items before Phase 2 can fully start
+
+- [x] ~~Ask Channex support directly: is using ApartHotel/Camping `property_type` for genuinely unstaffed self-catering properties acceptable?~~ — **Answered, confirmed legitimate (Section 12).**
+- [x] ~~Confirm realistic certification timeline.~~ — **Answered: build-pace-dependent, "a couple of weeks" once integration is solid, staging free until passing (Section 12).**
+- [x] ~~Confirm current full list of Channex webhook events.~~ — **Answered: public docs are complete and authoritative (Section 12).**
+- [ ] Decide and implement a public HTTPS endpoint solution for webhook development/testing (staging replacement) — still open.
+- [ ] Design the webhook-receiving endpoint around the two new findings above: single global webhook registration, and "pull current state" handling rather than trusting webhook payload order/content.
 - [ ] Re-validate the "customers will have ≤14 units" assumption against real usage once the feature is live, given it underpins the flat single-price decision.
