@@ -80,6 +80,14 @@ is Phase 4 — neither is touched here.
 - `node --check` clean on all three files.
 - `grep` confirms nothing in `server/` or `client/` imports or references any of
   the three files or `CHANNEX_API_KEY` — genuinely inert.
+- **HTTP path live-verified against Channex staging (2026-09-07):**
+  `createChannexProperty()` created a real property — UUID
+  `168ca97a-1b7a-4e4c-a472-94ca642350f2`, title "Rosewood Guest House",
+  `property_type: guest_house` — and a follow-up `GET
+  /api/v1/properties/:id` confirmed it exists, is owned by user
+  `jcriley@nestbook.io` and sits in the default "User Group". No need to
+  re-verify the create/GET round-trip in a future slice. (This test property
+  is John's to remove manually via the Channex UI.)
 
 **Ruled out / deliberately deferred:**
 - No DB columns / migrations this slice (schema decision = slice 2).
