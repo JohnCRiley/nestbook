@@ -2582,6 +2582,14 @@ John`
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_feature_interest_emails_slug ON feature_interest_emails(feature_slug)`);
 
+  // ── Channex channel-manager integration (Phase 2) ────────────────────────
+  // channex_property_id holds the Channex property UUID once a property has
+  // been created on Channex's side. NULL = not connected. Written only by the
+  // Super Admin manual trigger (POST /api/admin/properties/:id/channex-create)
+  // for now — no customer-facing surface, no billing gating yet (Phase 3/4).
+  // See docs/in-progress/channex-integration-phase2.md.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_property_id TEXT`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

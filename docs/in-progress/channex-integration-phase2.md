@@ -105,12 +105,69 @@ then the mapping/attribute-builder logic is unit-verified but the HTTP path is n
 
 ---
 
-## Next — Slice 2 (not started)
+## Slice 2 — schema column + Super Admin manual trigger  ✅ DONE (2026-09-07)
 
-- Add `channex_property_id TEXT` (nullable) to `properties` (additive migration,
-  same guarded `ALTER TABLE … catch` pattern as the rest of `schema.js`).
-- A script/console entry point that: picks a NestBook property → calls
-  `createChannexProperty()` → stores the returned id.
+**Built:**
+
+- **Schema:** `properties.channex_property_id TEXT` (nullable). Added near the
+  end of `server/db/schema.js`'s migration block, guarded
+  `try { ALTER TABLE … } catch {}` per house convention. NULL = not connected.
+  Verified live: column present (`cid 74`), all existing rows NULL.
+- **Route:** `POST /api/admin/properties/:id/channex-create` in
+  `server/routes/admin.js` (mounted under `requireSuperAdminSession` — Super
+  Admin only, no owner path). Loads the full property row, calls
+  `createChannexProperty(property)` (real Channex staging API call), stores the
+  returned UUID in `channex_property_id`, writes an audit-log entry
+  (`CHANNEX_PROPERTY_CREATED`). **Duplicate guard:** if `channex_property_id`
+  is already set, returns `409 { error: "This property is already connected to
+  Channex.", channex_property_id }` and makes **no** API call.
+  `ChannexError` with an HTTP status → `502`; anything else → `500`.
+- **UI:** `client/src/admin/pages/Properties.jsx` — new "Channex" column in the
+  existing properties table. Unconnected: a "Create in Channex" button
+  (→ "Creating…" while in flight) that hits the route and shows the result via
+  the page's existing toast. Connected: `✓ <first 8 chars>…` with the full
+  UUID in the `title` tooltip. No modal, no styling polish — internal debug tool.
+  The admin `GET /api/admin/properties` SELECT now also returns
+  `p.channex_property_id`.
+
+**Verified this slice (real, from the Super Admin UI — not a script):**
+- Clicked "Create in Channex" on property #2 "Test Property" (lodge, England,
+  GBP) → success toast, real Channex property created:
+  **`e8675aa3-2216-4d31-86eb-add34759cbe3`**. Confirmed stored in
+  `properties.channex_property_id` and echoed in the server log.
+- Second `POST` to the same route → `409 "This property is already connected to
+  Channex."`, no second Channex property (staging list still shows exactly one
+  "Test Property").
+- `grep` for "channex" across `client/src` and `server/` → only the admin page,
+  `admin.js`, `schema.js`, and the three `utils/channex*` files. No owner-facing
+  page renders `channex_property_id`. (It *is* in the owner `GET /properties`
+  `SELECT *` payload as `null` — same as every other admin-only column like
+  `is_demo`; not rendered anywhere owner-facing.)
+- `node --check` clean on `admin.js` and `schema.js`.
+
+**Note — pre-existing, not introduced here:** the admin Properties table logs a
+React "two children with the same key" warning because the admin `/properties`
+route's `LEFT JOIN users … role='owner'` emits two rows for a property that has
+two owner-role users (property #1 "Local Dev"), and the row `key` is `p.id`.
+Predates this slice; left alone.
+
+**Ruled out / deferred (unchanged):** no owner UI, no billing/plan gating
+(Phase 3), no automatic triggering — Super Admin manual click only.
+
+**Test properties now in the Channex staging account (John to remove manually
+when done — no API delete in the codebase):**
+- `fff09646-…` "NestBook Test Property" (Phase 1 sandbox testing)
+- `e8675aa3-…` "Test Property" (this slice's UI verification)
+- (`168ca97a-…` "Rosewood Guest House" from slice 1 — already removed.)
+
+---
+
+## Next — Slice 3 (not started)
+
 - Decide: one Channex property per NestBook property for `units` mode, or one
   Channex property per unit (research §5 says per-unit for Holiday Rentals —
   revisit when wiring room types).
+- Push room types + rate plans + availability (ARI) to a connected property.
+- A "disconnect / remove from Channex" path (DELETE `/api/v1/properties/:id` +
+  clear the column) — currently there's no way to undo a connection from inside
+  the app.

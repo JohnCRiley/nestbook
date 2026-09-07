@@ -32,6 +32,9 @@ export default function Properties() {
   const [demoTarget, setDemoTarget] = useState(null); // property object | null
   const [demoBusy,   setDemoBusy]   = useState(false);
 
+  // Channex integration (Phase 2) — internal debug trigger, Super Admin only.
+  const [channexBusyId, setChannexBusyId] = useState(null); // property id | null
+
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg, type = 'success') => {
     clearTimeout(toastTimerRef.current);
@@ -110,6 +113,24 @@ export default function Properties() {
     setDemoTarget(null);
   }, [demoTarget, setDemoFlag]);
 
+  // Channex: real API call — creates a property in Channex staging on click.
+  // No confirmation modal (internal debug tool); the "already connected" guard
+  // lives server-side and its error is surfaced via the toast.
+  const createInChannex = useCallback(async (property) => {
+    setChannexBusyId(property.id);
+    try {
+      const res  = await apiFetch(`/api/admin/properties/${property.id}/channex-create`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Channex create failed');
+      showToast(`Created in Channex — ${data.channex_property_id}`);
+      fetchProperties();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setChannexBusyId(null);
+    }
+  }, [fetchProperties, showToast]);
+
   const openResetModal = useCallback((property) => {
     setResetTarget(property);
     setConfirmInput('');
@@ -169,6 +190,7 @@ export default function Properties() {
               <th>Bookings</th>
               <th>Created</th>
               <th>Demo</th>
+              <th>Channex</th>
             </tr>
           </thead>
           <tbody>
@@ -211,6 +233,31 @@ export default function Properties() {
                       </button>
                     ) : null}
                   </div>
+                </td>
+                <td>
+                  {p.channex_property_id ? (
+                    <span
+                      title={p.channex_property_id}
+                      style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}
+                    >
+                      ✓ {String(p.channex_property_id).slice(0, 8)}…
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => createInChannex(p)}
+                      disabled={channexBusyId === p.id}
+                      style={{
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                        padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                        fontWeight: 600, cursor: channexBusyId === p.id ? 'default' : 'pointer',
+                        fontFamily: 'inherit', opacity: channexBusyId === p.id ? 0.6 : 1,
+                      }}
+                    >
+                      {channexBusyId === p.id ? 'Creating…' : 'Create in Channex'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

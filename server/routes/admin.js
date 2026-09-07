@@ -15,6 +15,8 @@ import { cleanupFile } from '../utils/fileCleanup.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
+import { createChannexProperty } from '../utils/createChannexProperty.js';
+import { ChannexError } from '../utils/channexClient.js';
 
 export const adminRouter = Router();
 
@@ -381,6 +383,7 @@ adminRouter.get('/properties', (req, res) => {
 
     const BASE_SELECT = `
       SELECT p.id, p.name, p.type, p.country, p.created_at, p.is_demo,
+             p.channex_property_id,
              u.email as owner_email, u.plan,
              (SELECT COUNT(*) FROM rooms    r WHERE r.property_id = p.id) as rooms_count,
              (SELECT COUNT(*) FROM bookings b WHERE b.property_id = p.id) as bookings_count
@@ -709,6 +712,58 @@ adminRouter.post('/properties/:id/reset-demo-data', (req, res) => {
   } catch (err) {
     console.error('[reset-demo-data] Error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/properties/:id/channex-create ────────────────────────────
+// Channex integration (Phase 2, slice 2) — Super Admin manual trigger ONLY.
+// Reachable only under /api/admin (requireSuperAdminSession). No owner-facing
+// surface, no automatic invocation, no billing gating (Phase 3/4). One property
+// at a time, only when a Super Admin clicks "Create in Channex".
+//
+// This makes a REAL call to the Channex staging API and creates a real property
+// there. On success the returned Channex UUID is stored in
+// properties.channex_property_id. If that column is already set, the request is
+// rejected — never create a duplicate.
+adminRouter.post('/properties/:id/channex-create', async (req, res) => {
+  const propId = Number(req.params.id);
+  if (!Number.isInteger(propId)) {
+    return res.status(400).json({ error: 'Invalid property id' });
+  }
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+
+  if (property.channex_property_id) {
+    return res.status(409).json({
+      error: 'This property is already connected to Channex.',
+      channex_property_id: property.channex_property_id,
+    });
+  }
+
+  try {
+    const { id: channexId, propertyType } = await createChannexProperty(property);
+
+    db.prepare('UPDATE properties SET channex_property_id = ? WHERE id = ?').run(channexId, propId);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user?.userId ?? null,
+      action:     'CHANNEX_PROPERTY_CREATED',
+      category:   'admin',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Created Channex property ${channexId} (property_type: ${propertyType})`,
+      ipAddress:  getIp(req),
+    });
+
+    console.log(`[admin] Channex property created for #${propId} (${property.name}) → ${channexId}`);
+    return res.json({ success: true, channex_property_id: channexId, property_type: propertyType });
+  } catch (err) {
+    const status = err instanceof ChannexError && err.status ? 502 : 500;
+    console.error(`[admin] channex-create failed for property #${propId}:`, err.message);
+    return res.status(status).json({ error: err.message });
   }
 });
 
