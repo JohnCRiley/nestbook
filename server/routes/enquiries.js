@@ -5,6 +5,7 @@ import { sendApprovalRequestEmail, sendEnquiryReceivedEmail } from '../email/ema
 import { Resend } from 'resend';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 import { calcSeasonalBreakdown } from '../utils/ratePeriods.js';
+import { pushAvailabilityUpdate } from '../utils/channexPushInventory.js';
 
 export const enquiriesRouter = Router();
 
@@ -161,7 +162,12 @@ enquiriesRouter.post('/', async (req, res) => {
       }, property).catch(() => {});
 
       console.log(`[enquiry] Booking request #${bookingId} created for property ${propertyId} from ${guestEmail}`);
-      return res.json({ success: true });
+      res.json({ success: true });
+
+      // Fire-and-forget — a pending_owner_approval request blocks these dates
+      // on connected OTAs. No-op when the property isn't Channex-connected.
+      pushAvailabilityUpdate(Number(propertyId), 'room', Number(room.id), checkIn, checkOut).catch(() => {});
+      return;
     } catch (err) {
       console.error('[enquiry] Failed to create booking:', err.message);
       return res.status(500).json({ error: 'Failed to create booking request' });

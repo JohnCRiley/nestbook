@@ -9,6 +9,7 @@ import { requireVerified } from '../middleware/requireVerified.js';
 import { recoveryUrl } from '../lib/recoveryToken.js';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 import { countBreakfastMornings } from '../utils/breakfast.js';
+import { pushAvailabilityUpdate } from '../utils/channexPushInventory.js';
 
 export const bookingsRouter = Router();
 
@@ -793,6 +794,12 @@ bookingsRouter.post('/import', (req, res) => {
     }
 
     res.json({ imported, skipped, errors });
+
+    // Fire-and-forget — a bulk import can touch many rooms/dates; refresh every
+    // Channex room type for this property (no-op when it isn't connected).
+    if (imported > 0) {
+      pushAvailabilityUpdate(Number(property_id), 'property', null, null, null).catch(() => {});
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -915,6 +922,12 @@ bookingsRouter.post('/', (req, res) => {
     // Fire-and-forget — email must not delay or break the HTTP response
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(newBooking.property_id);
     sendBookingConfirmation(newBooking, property).catch(() => {});
+
+    // Fire-and-forget — keep Channex availability in sync (no-op if not connected)
+    pushAvailabilityUpdate(
+      newBooking.property_id, 'room', newBooking.room_id,
+      newBooking.check_in_date, newBooking.check_out_date,
+    ).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -983,6 +996,12 @@ bookingsRouter.post('/:id/decline', async (req, res) => {
     sendBookingDeclinedEmail(updated, property).catch(() => {});
     console.log(`[booking] #${req.params.id} declined in-app`);
     res.json(updated);
+
+    // Fire-and-forget — declining frees the dates on Channel-connected OTAs
+    pushAvailabilityUpdate(
+      existing.property_id, 'room', existing.room_id,
+      existing.check_in_date, existing.check_out_date,
+    ).catch(() => {});
   } catch (err) {
     console.error('[booking] in-app decline error:', err.message);
     res.status(500).json({ error: err.message });
@@ -1040,6 +1059,11 @@ bookingsRouter.put('/:id', (req, res) => {
         res.json(updated);
         const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
         sendBookingDeclinedEmail(updated, property).catch(() => {});
+        // Fire-and-forget — declining a WP request frees the dates on OTAs
+        pushAvailabilityUpdate(
+          existing.property_id, 'room', existing.room_id,
+          existing.check_in_date, existing.check_out_date,
+        ).catch(() => {});
       }
       return;
     }
@@ -1072,6 +1096,12 @@ bookingsRouter.put('/:id', (req, res) => {
         .run('checked_out', now, req.params.id);
       const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
       res.json(updated);
+
+      // Fire-and-forget — check-out frees the dates on connected OTAs
+      pushAvailabilityUpdate(
+        existing.property_id, 'room', existing.room_id,
+        existing.check_in_date, existing.check_out_date,
+      ).catch(() => {});
 
       // Fire-and-forget charges summary email if outstanding charges exist
       const property  = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
@@ -1210,6 +1240,23 @@ bookingsRouter.put('/:id', (req, res) => {
 
     const updated = db.prepare(`${ENRICHED_SELECT} WHERE b.id = ?`).get(req.params.id);
     res.json(updated);
+
+    // Fire-and-forget — a date edit, room move, or status flip into/out of the
+    // "blocks availability" set can change Channex-visible availability on both
+    // the old and the new (room, range). Push both; the helper recomputes the
+    // true state and no-ops when the property isn't Channex-connected.
+    pushAvailabilityUpdate(
+      existing.property_id, 'room', existing.room_id,
+      existing.check_in_date, existing.check_out_date,
+    ).catch(() => {});
+    if (updated.room_id !== existing.room_id ||
+        updated.check_in_date !== existing.check_in_date ||
+        updated.check_out_date !== existing.check_out_date) {
+      pushAvailabilityUpdate(
+        updated.property_id, 'room', updated.room_id,
+        updated.check_in_date, updated.check_out_date,
+      ).catch(() => {});
+    }
 
     const actor = actorFromReq(req);
     const targetName = `${updated.guest_first_name} ${updated.guest_last_name} — ${updated.room_name ?? ''}`;
@@ -1672,6 +1719,12 @@ bookingsRouter.delete('/:id', (req, res) => {
 
     db.prepare('DELETE FROM bookings WHERE id = ?').run(req.params.id);
     res.status(204).end();
+
+    // Fire-and-forget — deleting a booking frees its dates on connected OTAs
+    pushAvailabilityUpdate(
+      booking.property_id, 'room', booking.room_id,
+      booking.check_in_date, booking.check_out_date,
+    ).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

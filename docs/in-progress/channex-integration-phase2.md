@@ -270,12 +270,89 @@ per-unit split (research §5); a "disconnect / remove from Channex" path
 
 ---
 
-## Next — Slice 4 (not started)
+## Slice 4 — ongoing outbound availability sync  ✅ DONE (2026-09-07)
 
-- Ongoing sync: when a NestBook room/rate/availability changes, push the delta
-  to Channex (uses `channex_room_mappings` to find the target room type / rate
-  plan). This is where the "update vs block" re-push question gets its real
-  answer.
-- Reflect seasonal `rate_periods` in the rate push (`getRateForDate` already
-  exists — `server/utils/ratePeriods.js`).
-- A disconnect path (see Deferred above).
+**Problem it fixes:** slice 3 pushed availability once. After that, a new
+booking / cancellation / date-edit on a connected property never touched
+Channex, so OTA-visible availability silently went stale — a real
+double-booking risk.
+
+**Built:**
+
+- **`server/utils/channexPushInventory.js`:** new exported
+  `pushAvailabilityUpdate(propertyId, refType, refId, dateFrom, dateTo)`.
+  - `refType` is `'room'` (the usual call, with the booking's `room_id`),
+    `'category'`, `'whole_property'`, or `'property'` (refresh every mapping —
+    used by bulk import).
+  - `affectedMappings()` resolves which `channex_room_mappings` rows a change
+    touches, reusing the same mode branching as `buildTargets()`: WP → the one
+    `whole_property` mapping; IR-Categories → the affected category's mapping
+    (resolved from the room's `category_id`); IR-Named / Units → the room's
+    mapping.
+  - Recomputes availability for just the affected nights via
+    `buildTargets(property)` (so the predicates stay identical to slice 3 /
+    `widget.js` day-availability / `bookings.js` `hasOverlap`), clamped to the
+    initial-push window `[today, today+89]`, coalesced into date ranges, one
+    `POST /api/v1/availability` call.
+  - **No-ops silently** when the property has no `channex_room_mappings` rows
+    (checked first — the common case) or no `channex_property_id`.
+  - **Never throws / never rejects** — the whole body is wrapped; a Channex
+    failure logs `[channex-sync] … failed (non-fatal)` and returns.
+- **`channexClient.js`:** unchanged from slice 3 (`updateAvailability` already
+  returned `{ meta }` via `raw: true`).
+- **Call sites** (all fire-and-forget, after the HTTP response, `.catch(()=>{})`):
+  - `bookings.js`: `POST /` (create), `POST /import` (property-wide refresh),
+    `POST /:id/decline`, `PUT /:id` main path (pushes **both** old and new
+    room/range), `PUT /:id` `_wp_action` decline + `wp_departure`, `DELETE /:id`.
+  - `widget.js`: Stripe-Connect `pending_payment` insert, the main public
+    booking insert, the approval-token decline.
+  - `enquiries.js`: the enquiry→`pending_owner_approval` booking.
+  - `stripe.js`: `checkout.session.expired` → `cancelled_unpaid`.
+  - Skipped (no availability change — both states block): `approve` /
+    `pending_owner_approval → confirmed`, `wp_checkin`, `checkout.session.completed`.
+
+**Verified this slice (real, via the owner app UI on connected property #1
+`a50e441f`):**
+- Book Chambre Lavande (room 341) 2026-10-15→18 → Channex rate plan
+  `e4f3f2a6` availability **0 on 10-15/16/17**, 1 elsewhere. Log:
+  `[channex-sync] property #1 room:341 … — 2 segment(s)`.
+- Cancel it → availability **back to 1** across the range. Log: `1 segment(s)`.
+- Date-shift booking #181 (room 342) 11-05→08 to 11-10→13 → `PUT` fired **two**
+  syncs (old + new range); Channex Mistral shows **11-05/06/07 → 1 (freed)**,
+  **11-10/11/12 → 0 (new)**. `DELETE` of the test bookings pushed everything
+  back to 1.
+- Non-connected property #13 → `pushAvailabilityUpdate` returns in 0 ms, **no
+  API call, no log line, no throw**. Same for #2 (connected, 0 mappings).
+- Forced API failure (bad base URL) on a real mapped ref → logs
+  `[channex-sync] … failed (non-fatal): … fetch failed`, **does not throw**.
+- `node --check` clean on all changed files
+  (`channexPushInventory.js`, `bookings.js`, `widget.js`, `enquiries.js`,
+  `stripe.js`).
+
+**Only end-to-end verified for IR-Named** (same DB limitation as slice 3 — no
+WP / Units / IR-Categories property exists locally). The category / WP branches
+of `affectedMappings()` mirror `buildTargets()` but are unverified against live
+data.
+
+**Test bookings** #180 / #181 on "Local Dev" were created and deleted during
+verification — no leftover NestBook rows. Channex `a50e441f` is back to an
+all-available state.
+
+**Deferred (unchanged):** rate re-push / seasonal `rate_periods` sync;
+room-type reconciliation (add/rename/delete a NestBook room after the initial
+push); Holiday-Rentals one-Channex-property-per-unit split; a "disconnect from
+Channex" path; **inbound** sync (Channex webhook → NestBook booking) — that is
+the next slice and needs the public-HTTPS-endpoint gap from
+`channex-integration-research.md` §9 solved first.
+
+---
+
+## Next — Slice 5 (not started)
+
+- Inbound: receive a booking from Channex via webhook and create it in NestBook
+  (research §9/§12 — single global webhook, no payload signing, pull current
+  state rather than trusting the webhook body). **Blocked** on a public HTTPS
+  endpoint for local/staging webhook testing.
+- Rate re-push + seasonal `rate_periods` (`getRateForDate` in
+  `server/utils/ratePeriods.js`).
+- Room-type reconciliation and a disconnect path.
