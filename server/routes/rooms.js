@@ -1351,7 +1351,9 @@ roomsRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), async (
     const filename = `access-room-${roomId}-${Date.now()}.jpg`;
     const outputPath = join(ACCESS_PHOTO_DIR, filename);
 
+    // .rotate() (no args) auto-orients from EXIF before the resize bakes pixels.
     await sharp(req.file.path)
+      .rotate()
       .resize(1200, null, { withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toFile(outputPath);

@@ -84,6 +84,7 @@ partnershipLinksRouter.post('/:propertyId', iconUpload.single('icon'), async (re
     if (req.file) {
       const tmpPath = req.file.path + '.tmp';
       await sharp(req.file.path)
+        .rotate()
         .resize(80, 80, { fit: 'cover', position: 'centre' })
         .jpeg({ quality: 85 })
         .toFile(tmpPath);
@@ -163,6 +164,7 @@ partnershipLinksRouter.post('/:propertyId/:id/icon', iconUpload.single('icon'), 
 
     const tmpPath = req.file.path + '.tmp';
     await sharp(req.file.path)
+      .rotate()
       .resize(80, 80, { fit: 'cover', position: 'centre' })
       .jpeg({ quality: 85 })
       .toFile(tmpPath);

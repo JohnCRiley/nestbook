@@ -1758,6 +1758,7 @@ adminRouter.post('/blog-images/:slug', async (req, res) => {
     const outputPath = join(BLOG_IMG_DIR, `${slug}.jpg`);
 
     await sharp(req.file.path)
+      .rotate()
       .resize(1200, 630, { fit: 'cover', position: 'centre', withoutEnlargement: false })
       .jpeg({ quality: 85 })
       .toFile(outputPath);
@@ -1886,6 +1887,7 @@ adminRouter.post('/landing-images/:id', landingImageUpload.single('image'), asyn
 
     const outputPath = join(LANDING_IMG_DIR, `${slot.id}.jpg`);
     await sharp(req.file.path)
+      .rotate()
       .resize(1600, null, { withoutEnlargement: true })
       .jpeg({ quality: 90 })
       .toFile(outputPath);

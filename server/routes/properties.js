@@ -670,9 +670,11 @@ propertiesRouter.post('/:id/hero-photo', propPhotoUpload.single('photo'), async 
     }
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
-    // Resize to max 1920px wide, JPEG quality 85
+    // Resize to max 1920px wide, JPEG quality 85.
+    // .rotate() (no args) auto-orients from EXIF before the resize bakes pixels.
     const tmpPath = req.file.path + '.tmp';
     await sharp(req.file.path)
+      .rotate()
       .resize(1920, null, { withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toFile(tmpPath);
@@ -764,7 +766,9 @@ propertiesRouter.post('/:id/access-photo', accessPhotoUpload.single('photo'), as
     const filename = `access-${propId}-${Date.now()}.jpg`;
     const outputPath = join(ACCESS_PHOTO_DIR, filename);
 
+    // .rotate() (no args) auto-orients from EXIF before the resize bakes pixels.
     await sharp(req.file.path)
+      .rotate()
       .resize(1200, null, { withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toFile(outputPath);
@@ -1047,6 +1051,7 @@ propertiesRouter.post('/:id/logo', logoUpload.single('logo'), async (req, res) =
     // when the source has it, and behaves like a normal opaque image when it
     // doesn't, so this is safe for every logo regardless of source format.
     await sharp(req.file.path)
+      .rotate()
       .resize(300, 300, { fit: 'inside', withoutEnlargement: true })
       .png()
       .toFile(finalPath);

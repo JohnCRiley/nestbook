@@ -56,11 +56,16 @@ export async function processRoomPhoto(filePath, roomId, propertyIdOverride = nu
   const tmpPath   = fullPath + '.tmp';
 
   try {
+    // .rotate() with no args auto-orients from EXIF Orientation (e.g. phone
+    // photos shot in portrait). Must run BEFORE .resize() — sharp does not
+    // auto-orient by default, and the resize bakes pixels + drops the EXIF tag.
     await sharp(filePath)
+      .rotate()
       .resize(1200, null, { withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toFile(tmpPath);
     await sharp(filePath)
+      .rotate()
       .resize(400, null, { withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .toFile(thumbPath);

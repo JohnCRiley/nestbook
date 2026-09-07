@@ -75,7 +75,11 @@ export async function adoptFileIntoPool({ srcPath, propertyId }) {
   }
 
   try {
+    // The source here is an already-processed (physically rotated, EXIF-free)
+    // file, so .rotate() is normally a no-op — kept for defense-in-depth in case
+    // an unprocessed file ever reaches the pool.
     await sharp(destPath)
+      .rotate()
       .resize(400, null, { withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .toFile(thumbPath);
