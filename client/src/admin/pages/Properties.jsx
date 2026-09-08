@@ -150,6 +150,35 @@ export default function Properties() {
     }
   }, [fetchProperties, showToast]);
 
+  // Channel Manager: the way back out (Phase 2, slice 8). Clears the
+  // NestBook-side link only (channex_property_id + channex_room_mappings rows) —
+  // the Channex property and its room types / rate plans are left intact for the
+  // owner to remove in their own Channex account, and existing bookings are
+  // untouched. window.confirm rather than a full modal: internal SA debug tool,
+  // and a disconnected property can just be reconnected.
+  const disconnectChannex = useCallback(async (property) => {
+    const n = property.channex_mapping_count || 0;
+    if (!window.confirm(
+      `Disconnect "${property.name}" from Channex?\n\n` +
+      `Clears the NestBook-side link (channex_property_id + ${n} room-type mapping${n === 1 ? '' : 's'}). ` +
+      `The Channex property and its room types / rate plans are LEFT INTACT — remove them from your Channex account if you want them gone. ` +
+      `Existing bookings are unaffected.`
+    )) return;
+    setChannexBusyId(property.id);
+    try {
+      const res  = await apiFetch(`/api/admin/properties/${property.id}/channex-disconnect`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Channex disconnect failed');
+      const d = data.cleared?.mappings_deleted ?? 0;
+      showToast(`Disconnected from Channex — ${d} mapping${d === 1 ? '' : 's'} cleared, Channex side left intact`);
+      fetchProperties();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setChannexBusyId(null);
+    }
+  }, [fetchProperties, showToast]);
+
   const openResetModal = useCallback((property) => {
     setResetTarget(property);
     setConfirmInput('');
@@ -282,6 +311,21 @@ export default function Properties() {
                           {channexBusyId === p.id ? 'Pushing…' : 'Push Inventory'}
                         </button>
                       )}
+                      <button
+                        onClick={() => disconnectChannex(p)}
+                        disabled={channexBusyId === p.id}
+                        title="Clear the NestBook-side Channex link (leaves the Channex property intact)"
+                        style={{
+                          background: 'var(--card-bg)',
+                          border: '1px solid #c0392b',
+                          color: '#c0392b',
+                          padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                          fontWeight: 600, cursor: channexBusyId === p.id ? 'default' : 'pointer',
+                          fontFamily: 'inherit', opacity: channexBusyId === p.id ? 0.6 : 1,
+                        }}
+                      >
+                        {channexBusyId === p.id ? '…' : 'Disconnect'}
+                      </button>
                     </div>
                   ) : (
                     <button

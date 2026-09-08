@@ -690,6 +690,84 @@ IR-Named create/rename/delete/orphan path is the one exercised end-to-end.
 ### Deferred
 
 Property rename → WP room-type title (separate route, separate concern);
-automatic `DELETE` of an orphaned Channex room type / rate plan (needs a human +
-a "disconnect" surface); un-orphaning a mapping when the owner re-creates a
-same-named room.
+automatic `DELETE` of an orphaned Channex room type / rate plan (needs a human);
+un-orphaning a mapping when the owner re-creates a same-named room.
+(~~disconnect surface~~ — done, slice 8.)
+
+---
+
+## Slice 8 — disconnect path  ✅ DONE (2026-09-08)
+
+**Problem it fixes:** slices 2–7 are one-way. No way to clear
+`properties.channex_property_id` + `channex_room_mappings` if an owner stops
+using Channel Manager, switches providers, or connected the wrong property.
+
+### Investigation (confirmed 2026-09-08)
+
+- **Nothing half-built** — `grep channex` across `client/src` → only
+  `admin/pages/Properties.jsx`; no disconnect anywhere in `server/routes`.
+- **Channex `DELETE /api/v1/properties/:id`** (hotels-collection.md): exists but
+  *"can't be reverted … create it again from scratch"*, blocked if the property
+  has ≥1 channel unless `?force=true`, cascade to room types / rate plans
+  **undocumented**.
+- **Decision: disconnect severs the NestBook side ONLY — no Channex API call.**
+  Clear `channex_property_id`, delete the property's `channex_room_mappings`
+  rows (orphaned rows included). Leave the Channex property + room types + rate
+  plans intact (owner manages them in their own Channex account). Matches the
+  standing "never auto-destroy OTA-side history" rule (slices 5 + 7).
+- **`channex_reservation_id` bookings are safe:** plain nullable TEXT on
+  `bookings`, no FK, no trigger; nothing joins `bookings` →
+  `channex_room_mappings`; the property row itself is never deleted (only its one
+  column nulled). OTA-origin bookings stay real; the column is kept as the
+  historical record.
+- **Post-disconnect no-op is automatic** — `pushAvailabilityUpdate` /
+  `pushRateUpdate` / `pushRoomTypeReconcile` all bail on
+  `mappings.length === 0`; `channexInboundSync` can't resolve the property
+  (`channex_property_id` NULL) → its existing "unmapped property → skip" path.
+
+### Built
+
+- **`server/utils/channexPushInventory.js`:** `disconnectChannexProperty(property)`
+  — **pure DB, synchronous, no API calls.** Reads the mapping rows for the
+  summary, then `BEGIN` → `DELETE FROM channex_room_mappings WHERE property_id`
+  → `UPDATE properties SET channex_property_id = NULL` → `COMMIT`
+  (`ROLLBACK` + rethrow on error). Returns `{ priorChannexPropertyId,
+  mappingsDeleted, orphanedMappingsDeleted, roomTypeIds, ratePlanIds,
+  channexSide: 'untouched' }`.
+- **`server/routes/admin.js`:** `POST /api/admin/properties/:id/channex-disconnect`
+  (Super Admin only — same mount as `channex-create` / `channex-push`;
+  owner-facing is Phase 4). 400 invalid id / not-connected; 404 no property;
+  else disconnect + `logAction` `CHANNEX_DISCONNECTED` (detail spells out
+  NestBook-side cleared + Channex-side left intact) + `res.json({ success,
+  cleared: { channex_property_id, mappings_deleted }, channex_side })`. No 502
+  branch (no API call).
+- **`client/src/admin/pages/Properties.jsx`:** `disconnectChannex()` callback —
+  `window.confirm` (internal SA debug tool; reconnect is possible so no full
+  modal), `POST …/channex-disconnect`, toast, `fetchProperties()`. New
+  danger-coloured **"Disconnect"** button in the connected branch of the Channex
+  cell, next to the room-type count / Push Inventory button. After disconnect
+  the cell falls back to "Create in Channex" (the SELECT already returns the
+  now-NULL `channex_property_id` + 0 `channex_mapping_count`).
+
+### Verified (2026-09-08 — harness against connected property #1 `a50e441f`, restored to exact pre-slice-8 state after)
+
+- **Disconnect** → `channex_property_id` NULL, 4 mapping rows deleted,
+  **0 Channex API calls**. ✅
+- Seeded booking #187 with a `channex_reservation_id` → **unchanged** (resv id +
+  `confirmed` status intact) after disconnect. ✅
+- Post-disconnect: `pushAvailabilityUpdate` + `pushRateUpdate` +
+  `pushRoomTypeReconcile` (×2) → **0 fetch calls**. ✅
+- **Reconnect** from scratch: `createChannexProperty` → new UUID
+  `17deedb0…` (≠ old, no collision) → `pushInitialInventory` → 4 room types +
+  4 rate plans + 4 fresh mappings, no leftover-state collision. ✅
+- Cleanup: new Channex property force-deleted; local DB restored to the exact
+  original 4 mapping rows + `channex_property_id`. The original `a50e441f`
+  Channex property was never touched.
+- `node --check` clean on `admin.js` + `channexPushInventory.js`; `Properties.jsx`
+  JSX transform-checks clean.
+
+### Deferred
+
+Owner-facing disconnect (Phase 4 Settings UI); an optional "also delete on
+Channex" checkbox for the empty-property case where the owner confirms nothing
+of value is on the Channex side.

@@ -24,6 +24,11 @@
 // overwhelmingly common case), and it NEVER throws — a Channex API failure is
 // logged, never allowed to block or roll back a real booking action.
 //
+// Slice 8: disconnectChannexProperty() — clears properties.channex_property_id +
+// deletes the property's channex_room_mappings rows. NestBook-side only: no
+// Channex API call (a property DELETE is irreversible; room types may hold OTA
+// booking history). Bookings untouched. See admin.js channex-disconnect route.
+//
 // Slice 7: pushRoomTypeReconcile() — keeps channex_room_mappings + the
 // Channex-side room types / rate plans in sync when an owner adds, renames or
 // deletes a room / category / unit AFTER the initial push. Same fire-and-forget,
@@ -959,5 +964,65 @@ export async function pushInitialInventory(property) {
       skippedZeroRate: rateSkipped,
       warnings: rateResult?.meta?.warnings ?? [],
     },
+  };
+}
+
+// ── disconnect (slice 8) ───────────────────────────────────────────────────
+
+/**
+ * Sever a property's Channex link on the NestBook side ONLY.
+ *
+ * Deliberately makes NO Channex API call. Channex's DELETE /properties/:id is
+ * irreversible and its cascade to room types / rate plans is undocumented, and
+ * those room types may carry OTA booking history — same standing rule as slices
+ * 5 + 7: NestBook never auto-destroys OTA-side data. The Channex property + its
+ * room types + rate plans are left intact for the owner to remove from their own
+ * Channex account.
+ *
+ * Clears `properties.channex_property_id` and deletes every
+ * `channex_room_mappings` row for the property (including slice-7 orphaned rows)
+ * in one transaction. Does NOT touch `bookings` — an OTA-origin booking stays a
+ * real NestBook booking and keeps its `channex_reservation_id` as the historical
+ * record.
+ *
+ * After this, pushAvailabilityUpdate / pushRateUpdate / pushRoomTypeReconcile all
+ * no-op for the property (no mapping rows), and channexInboundSync can't resolve
+ * it (no channex_property_id) so inbound webhooks for the old Channex property
+ * hit its existing "unmapped property → skip" path.
+ *
+ * @param {object} property  a full NestBook `properties` row
+ * @returns {{ priorChannexPropertyId: string|null, mappingsDeleted: number,
+ *             orphanedMappingsDeleted: number, roomTypeIds: string[],
+ *             ratePlanIds: string[], channexSide: 'untouched' }}
+ * @throws {Error} only on an unexpected DB failure (transaction is rolled back)
+ */
+export function disconnectChannexProperty(property) {
+  if (!property || typeof property !== 'object' || !property.id) {
+    throw new Error('disconnectChannexProperty: a property record is required');
+  }
+  const propId = property.id;
+  const priorChannexPropertyId = property.channex_property_id ?? null;
+
+  const mappings = db.prepare(
+    'SELECT channex_room_type_id, channex_rate_plan_id, orphaned_at FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propId);
+
+  db.exec('BEGIN');
+  try {
+    db.prepare('DELETE FROM channex_room_mappings WHERE property_id = ?').run(propId);
+    db.prepare('UPDATE properties SET channex_property_id = NULL WHERE id = ?').run(propId);
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+
+  return {
+    priorChannexPropertyId,
+    mappingsDeleted: mappings.length,
+    orphanedMappingsDeleted: mappings.filter((m) => m.orphaned_at).length,
+    roomTypeIds: mappings.map((m) => m.channex_room_type_id),
+    ratePlanIds: mappings.map((m) => m.channex_rate_plan_id),
+    channexSide: 'untouched',
   };
 }
