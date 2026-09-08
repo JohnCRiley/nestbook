@@ -481,3 +481,82 @@ guest, and it never blocked NestBook's own availability.
   `non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state
   (research §10) — inbound currently tolerates `rate_plan_id: null` (it only
   keys off `room_type_id`).
+
+### Verified live in production (2026-09-08, John)
+
+Slice 5 was re-verified end-to-end against **real production infrastructure**
+(not Local Dev, not a replay harness) — first genuine Channex-originated
+webhook delivery to `https://nestbook.io/api/channex/webhook`.
+
+- Connected a real production property (#95 "The category", IR-Categories
+  mode) to Channex for the first time via `channex-create` + `channex-push`
+  (5 room types/rate plans, 90 days ARI, no warnings).
+- Registered the global webhook against production via
+  `POST /api/admin/channex/register-webhook` (`CHANNEX_API_KEY` had to be
+  added to production `server/.env` — it only existed in Local Dev's `.env`
+  before this session; sandbox key).
+- Created a real reservation on Channex staging (Booking CRS app, property
+  dropdown workaround needed — see below) → webhook fired →
+  `[channex-inbound] reservation ... CREATED — booking(s) 250` → booking #250
+  appeared correctly in the owner-facing app (room 1 / Double, confirmed,
+  2 guests, correct dates, guest "Webhook Testing" created) — **first live
+  proof the IR-Categories `assignRoomForCategoryBooking()` inbound branch
+  works against a real Channex booking**, not just the harness.
+- Cancelled the same reservation on Channex → webhook fired →
+  `[channex-inbound] reservation ... CANCELLED — 1 booking(s) freed` →
+  booking #250 flipped to `status='cancelled'` in the DB and in the owner
+  app's Bookings list; calendar/dashboard correctly freed the room. Cancel
+  leg now proven live, not just via harness.
+- Availability push-back (`pushAvailabilityUpdate`) fired correctly after
+  both events, confirmed no reservation was echoed back to Channex.
+
+**Known Channex dashboard quirk (not a NestBook bug):** the property
+switcher/dropdown at the top of the Channex dashboard did not show newly
+created or existing properties reliably — required a hard refresh in one
+case, and a manual URL (`/properties/{id}/edit`) to reach a property at all
+in another. Confirmed independent of NestBook-side permissions (Groups
+showed correct access throughout). Worth remembering before assuming a
+property connection is broken — try a hard refresh first.
+
+**Still not verified:** WP and IR-Named inbound in production (only
+IR-Categories tested live this session). Rate/restriction sync *from*
+Channex back to NestBook (i.e. OTA-set pricing) is out of scope for slice 5
+and remains a future slice if ever needed.
+
+### All dispatch branches verified live in production (2026-09-08, John, continued)
+
+Following the IR-Categories production proof above, the two remaining
+inbound dispatch branches were verified live against real production
+throwaway properties (not Local Dev, not a harness):
+
+- **Whole-Property mode** — property #108 "Test One Property"
+  (`whole_property` / `villa`). Connected via `channex-create` +
+  `channex-push` (1 room type, first-room mapping). Real Channex reservation
+  created via Booking CRS → `[channex-inbound] reservation ... CREATED —
+  booking(s) 255` → booking landed correctly assigned to room 265 (the
+  property's first room), `status=confirmed`, correct dates/total, and
+  rendered correctly in the owner-facing Dashboard and Calendar (not just
+  the DB row).
+- **Named Rooms (IR-Named) mode** — property #109 "Test Two property"
+  (`rooms` / `named`, 2 real rooms: Garden Room, River Run). Connected the
+  same way (2 room types/rate plans mapped 1:1 to rooms). Real Channex
+  reservation for one room → `[channex-inbound] reservation ... CREATED —
+  booking(s) 256` → booking landed on the correct specific room (272 /
+  "River Run"), `status=confirmed`, correct dates/total.
+
+**All four dispatch branches (`room` / `category` / `whole_property`, plus
+the `assignRoomForCategoryBooking()` sub-path) are now proven against real,
+live, Channex-originated webhook deliveries in production** — not just code
+review or Local Dev harness replay. This closes the last standing "not
+verified locally" caveat carried since slice 3.
+
+Both throwaway properties (#108, #109) were Free-plan, created solely for
+this test, and are safe to disconnect/delete/leave alone — nothing
+production-real depends on them.
+
+**Status: Phase 2 technical build is complete.** Full lifecycle proven live:
+connect → initial push → ongoing availability sync → seasonal rate sync →
+inbound booking create → inbound booking cancel → room-type reconciliation
+→ disconnect. Next step is Channex's certification process (efficiency
+review + live session with their team) before any real OTA channel can go
+live — no further engineering work is required to reach that point.
