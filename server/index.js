@@ -37,6 +37,7 @@ import { partnershipLinksRouter }     from './routes/partnershipLinks.js';
 import { featureInterestRouter }      from './routes/featureInterest.js';
 import { helpChatRouter }             from './routes/helpChat.js';
 import { landingChatRouter }          from './routes/landingChat.js';
+import { channexRouter, channexAdminRouter } from './routes/channex.js';
 import { sendDowngradeEmail, sendAccessEmail, sendBalanceDueEmail, sendMissedArrivalReminder, sendMissedDepartureReminder, sendPromoExpiryReminderEmail, sendPromoExpiredEmail } from './email/emailService.js';
 import { runUnverifiedCleanup } from './schedulers/unverifiedCleanup.js';
 import { cleanupAbandonedPendingPayments } from './schedulers/pendingPaymentCleanup.js';
@@ -153,6 +154,12 @@ app.use('/api/guest-notes', guestNotesPublicRouter);
 // Public iCal feed — Booking.com / Airbnb fetch this directly, no login required
 app.use('/api/ical', icalRouter);
 
+// Public Channex webhook receiver — Channex's servers POST reservation events
+// here; no NestBook session. Authenticated by the X-Channex-Webhook-Secret
+// shared-secret header inside the router (Channex webhooks are NOT HMAC-signed —
+// unrelated to the Stripe webhook). Phase 2, slice 5.
+app.use('/api/channex', channexRouter);
+
 // Public category-availability endpoint (Phase 6a) — guest-facing booking
 // page/widget calendar data, so this one narrow route under
 // /api/properties/:id/category-availability/:id must stay reachable without
@@ -175,6 +182,9 @@ app.use('/api/landing-chat', landingChatRouter);
 // Uses a separate JWT (isSuperAdmin: true) with sliding 2-hour inactivity window.
 // Returns 404 on any auth failure to keep the panel invisible.
 app.use('/api/admin', requireSuperAdminSession, adminRouter);
+// Channex webhook registration (Super Admin manual trigger — same pattern as
+// slices 2–4). Register/list/delete the single global Channex webhook.
+app.use('/api/admin/channex', requireSuperAdminSession, channexAdminRouter);
 
 // ── Auth middleware — protects all regular /api routes below ──────────────────
 app.use('/api', requireAuth);

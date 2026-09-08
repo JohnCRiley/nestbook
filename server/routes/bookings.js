@@ -10,6 +10,7 @@ import { recoveryUrl } from '../lib/recoveryToken.js';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 import { countBreakfastMornings } from '../utils/breakfast.js';
 import { pushAvailabilityUpdate } from '../utils/channexPushInventory.js';
+import { normaliseSource, splitName } from '../utils/normaliseSource.js';
 
 export const bookingsRouter = Router();
 
@@ -657,18 +658,8 @@ bookingsRouter.post('/import', (req, res) => {
       return 'confirmed';
     }
 
-    function normaliseSource(raw) {
-      if (!raw) return 'other';
-      const s = raw.trim().toLowerCase();
-      if (s.includes('booking.com') || s === 'booking_com' || s === 'bdc') return 'booking_com';
-      if (s.includes('airbnb'))                                              return 'airbnb';
-      if (s.includes('direct'))                                              return 'direct';
-      if (s.includes('phone') || s.includes('tel'))                         return 'phone';
-      if (s.includes('email'))                                               return 'email';
-      if (s.includes('website') || s.includes('web'))                       return 'website';
-      if (s.includes('walk'))                                                return 'walk_in';
-      return 'other';
-    }
+    // normaliseSource() + splitName() now live in utils/normaliseSource.js so the
+    // Channex inbound sync (Phase 2, slice 5) shares the exact same mapping.
 
     // deposit_paid CSV column is smart: a number → deposit_amount + flag;
     // a yes/no word → flag only, no amount.
@@ -713,12 +704,6 @@ bookingsRouter.post('/import', (req, res) => {
         return `${yr}-${mon}-${day}`;
       }
       return null;
-    }
-
-    function splitName(full) {
-      const parts = (full ?? '').trim().split(/\s+/);
-      if (parts.length === 1) return { first: parts[0], last: '.' };
-      return { first: parts.slice(0, -1).join(' '), last: parts[parts.length - 1] };
     }
 
     let imported = 0, skipped = 0;

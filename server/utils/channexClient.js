@@ -209,3 +209,51 @@ export async function updateRates(values) {
     raw: true,
   });
 }
+
+// ── Webhooks (Phase 2, slice 5 — inbound reservation sync) ───────────────────
+// Channex webhooks are NOT HMAC-signed. Authentication is a shared-secret header
+// we set here at registration time and the receiver validates on every request
+// (docs.channex.io "Webhook Collection", confirmed 2026-09-08). For a
+// multi-property account (NestBook at the platform level) Channex recommends ONE
+// global webhook (property_id: null, is_global: true) rather than one per
+// property.
+
+/**
+ * Register a webhook. `attributes`:
+ *   { callback_url, event_mask, property_id, is_global, headers, is_active, send_data }
+ * @returns {Promise<object>} the created webhook's `data` (includes `id`)
+ */
+export async function createWebhook(attributes) {
+  return channexRequest('/api/v1/webhooks', {
+    method: 'POST',
+    body: { webhook: attributes },
+  });
+}
+
+/** List every webhook registered on the account. Returns the full body ({ data, meta }). */
+export async function listWebhooks() {
+  return channexRequest('/api/v1/webhooks', { raw: true });
+}
+
+/** Delete a webhook by id. */
+export async function deleteWebhook(id) {
+  return channexRequest(`/api/v1/webhooks/${id}`, { method: 'DELETE' });
+}
+
+/**
+ * Retrieve the authoritative current state of a booking revision. The webhook
+ * body is only a pointer — Channex delivery is unordered and unsigned, so the
+ * receiver must always PULL (research §12).
+ * @returns {Promise<object>} the revision's `attributes`
+ */
+export async function getBookingRevision(revisionId) {
+  const data = await channexRequest(`/api/v1/booking_revisions/${encodeURIComponent(revisionId)}`);
+  return data?.attributes ?? data;
+}
+
+/** Retrieve a booking (latest state) by its stable booking_id. Fallback when a
+ *  webhook payload carries only booking_id. @returns {Promise<object>} attributes */
+export async function getBooking(bookingId) {
+  const data = await channexRequest(`/api/v1/bookings/${encodeURIComponent(bookingId)}`);
+  return data?.attributes ?? data;
+}

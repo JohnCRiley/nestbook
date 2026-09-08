@@ -347,12 +347,137 @@ the next slice and needs the public-HTTPS-endpoint gap from
 
 ---
 
-## Next — Slice 5 (not started)
+## Slice 5 — inbound booking sync (Channex webhook → NestBook booking)  ✅ DONE (2026-09-08)
 
-- Inbound: receive a booking from Channex via webhook and create it in NestBook
-  (research §9/§12 — single global webhook, no payload signing, pull current
-  state rather than trusting the webhook body). **Blocked** on a public HTTPS
-  endpoint for local/staging webhook testing.
-- Rate re-push + seasonal `rate_periods` (`getRateForDate` in
-  `server/utils/ratePeriods.js`).
-- Room-type reconciliation and a disconnect path.
+**Problem it fixes:** slices 3–4 push availability OUT; nothing came back. An OTA
+booking made through Channex had no NestBook representation — no booking row, no
+guest, and it never blocked NestBook's own availability.
+
+### Investigation (confirmed against docs.channex.io AND the live staging API)
+
+- **Events:** `booking`, `booking_new`, `booking_modification`,
+  `booking_cancellation`. We register for `booking` only (one event per revision)
+  and branch on the pulled revision's `status` — avoids double-handling.
+- **Webhook body is a POINTER, not the data:**
+  `{ event, payload: { booking_id, property_id, revision_id }, timestamp }`.
+  The handler PULLS `GET /api/v1/booking_revisions/:revision_id` (verified live —
+  returns the full reservation) and acts on that. Never trusts the body /
+  ordering (research §12).
+- **Registration:** single **global** webhook — `POST /api/v1/webhooks`
+  `{ webhook: { callback_url, event_mask:'booking', property_id:null,
+  is_global:true, headers:{…}, is_active:true, send_data:true } }`. Confirmed
+  via a real `422` from staging that `property_id` is required unless
+  `is_global:true`.
+- **No HMAC / signing.** Auth is a **shared-secret header** we set at
+  registration (`headers.X-Channex-Webhook-Secret`) and validate on every
+  request. `CHANNEX_WEBHOOK_SECRET` added to `server/.env` (32 random bytes).
+  **Zero relation to the Stripe webhook** — different mechanism, different route,
+  `stripe.js` untouched.
+- **Multi-room: YES.** `rooms` is an array; per-room `room_type_id`,
+  `rate_plan_id` (nullable when unmapped), `checkin_date`, `checkout_date`,
+  `amount`, `days`, `occupancy{adults,children,infants}`, `guests[]`,
+  `is_cancelled`, `booking_room_id`. Top level: `booking_id` (stable across
+  revisions), `id` (= revision id), `status`, `ota_name` ("BookingCom"),
+  `ota_reservation_code`, `arrival_date`, `departure_date`, `currency`, `amount`,
+  `customer{name,surname,mail,phone,country,…}`.
+- `POST /api/v1/bookings` (CRS create) → **403** with our key — can't create
+  test reservations that way. No `/ack` endpoint (`non_acked_booking` just fires
+  a reminder webhook 30 min later — harmless, deferred).
+
+### Built
+
+- **Schema** (`server/db/schema.js`): `bookings.channex_reservation_id TEXT`
+  (nullable, indexed, NOT unique — a multi-room reservation = several bookings
+  sharing the value). Guarded `ALTER TABLE` per house convention.
+- **`server/utils/normaliseSource.js`** (new): `normaliseSource()` + `splitName()`
+  **extracted** from the CSV Booking Import Wizard's inline closures in
+  `routes/bookings.js` (which now imports them). Behaviour-preserving superset —
+  also strips separators so Channex's `"BookingCom"` resolves to `booking_com`.
+  15/15 + 4/4 unit assertions.
+- **`server/utils/channexInboundSync.js`** (new): `fetchRevision()` (pull) +
+  `syncReservationFromRevision(revision)` (all DB work). Per revision `status`:
+  - `new` → one `confirmed` booking per non-cancelled room. `source =
+    normaliseSource(ota_name)`. Guest deduped by `(lower(email), property_id,
+    deleted=0)` exactly like the Import Wizard. `channex_reservation_id` =
+    `booking_id`. Reverse mapping lookup `channex_room_mappings` by
+    `(property_id, channex_room_type_id)` → `nestbook_ref_type`:
+    `room` → the room; `whole_property` → property's first room;
+    `category` → `assignRoomForCategoryBooking(…, {respectBuffer:false})`
+    (synchronous, immediately before INSERT — race-free; oversold ⇒ pin to
+    lowest-id room in category + loud warn, never NULL).
+  - `modified` → single active booking + single room ⇒ UPDATE in place (dates,
+    occupancy, room). This branch ALSO absorbs an at-least-once redelivery of
+    the original `new` event — idempotent, never churns rows. Multi-room / room
+    count change ⇒ cancel the reservation's bookings and recreate.
+  - `cancelled` → `status='cancelled'` on every booking with that
+    `channex_reservation_id`. Idempotent (2nd delivery = no-op).
+  - Unmapped Channex property ⇒ logged + skipped, 200. Unmapped room type ⇒
+    that room skipped with a warning; whole reservation skipped only if NO room
+    maps.
+  - All writes in one `db.exec('BEGIN')`…`COMMIT`/`ROLLBACK` (node:sqlite, no
+    `db.transaction()`).
+  - **Loop prevention:** after writing, calls `pushAvailabilityUpdate()` from
+    slice 4 for every (room, range) touched — Channex lowers availability so
+    OTHER OTAs stop selling the room. **Nothing else is sent to Channex.** There
+    is NO reservation-create call anywhere in the file (grep-confirmed; staging
+    booking count unchanged through all testing).
+- **`server/routes/channex.js`** (new), mounted `app.use('/api/channex', …)`
+  BEFORE `requireAuth` (public — Channex has no NestBook session):
+  - `POST /webhook` — constant-time `X-Channex-Webhook-Secret` check → `401` if
+    missing/wrong (or if secret unset). Missing `booking_id`/`revision_id` →
+    `400`. Non-booking event → `200 {ignored}`. Else pull + sync → `200`.
+    Genuine pull/DB failure → `500` (Channex retries on 5xx w/ backoff).
+  - `channexAdminRouter` (mounted `/api/admin/channex` under
+    `requireSuperAdminSession`): `POST /register-webhook` (idempotent — dedups
+    on `callback_url`; refuses a non-HTTPS / localhost URL — set
+    `CHANNEX_WEBHOOK_URL` to the deployed origin), `GET /webhooks`,
+    `DELETE /webhooks/:id`. Same "Super Admin manual trigger" pattern as slices
+    2–4.
+- **`server/utils/channexClient.js`**: added `createWebhook`, `listWebhooks`,
+  `deleteWebhook`, `getBookingRevision`, `getBooking`.
+
+### Verified (2026-09-08)
+
+- **Real pull leg:** `getBookingRevision('b3d1cd3c-…')` against staging returns
+  the full Jim Beam / BookingCom reservation.
+- **Full sync** (harness, real staging pull retargeted onto the real connected
+  property `a50e441f` / room 341, all cleaned up):
+  - `new` → 1 booking, `status=confirmed`, `source=booking_com`, `room_id=341`,
+    dates from `room.checkin_date`/`checkout_date`, `num_guests=2`,
+    `channex_reservation_id` set, guest "Jim Beam" created. Room 341 then shows
+    BOOKED for those nights (hasOverlap-style query).
+  - `modified` (date shift) → SAME booking row updated, no duplicate.
+  - `cancelled` → booking → `cancelled`; re-delivery = no-op.
+  - unmapped property → `skipped: unmapped_property`.
+- **HTTP** (`POST /api/channex/webhook`, dev server): no secret → `401`; wrong
+  secret → `401`; empty body → `400`; `event:'ari'` → `200 ignored`; real
+  revision pointer for an **unconnected** property → `200 skipped`; real
+  revision pointer for a **connected** property → `200 created`, booking #186
+  appears (room 341, confirmed, booking_com, correct dates/guest); redeliver ×2
+  → `200 updated`, same row, no churn.
+- **Availability push-back fired** on every create/modify/cancel
+  (`[channex-sync] property #1 room:341 … — N segment(s)`), **no Channex
+  reservation created** (staging booking count stayed 1 throughout).
+- `node --check` clean on all changed/new files. CSV importer still wired
+  (`normaliseSource`/`splitName` imported), 19 unit assertions pass.
+
+### Not verified locally (same DB limitation as slices 3–4)
+
+- WP / Units / IR-Categories inbound — no such property exists locally. The
+  category branch (`assignRoomForCategoryBooking`) and WP branch (first-room)
+  are written from the data model + reused engines but not end-to-end tested.
+- **Channex's actual webhook delivery** — needs the public-HTTPS-endpoint gap
+  (research §9/§13) solved. The receiver + registration route are ready; John
+  registers the global webhook once a public origin exists:
+  set `CHANNEX_WEBHOOK_URL` in prod `server/.env`, then Super Admin
+  `POST /api/admin/channex/register-webhook`. Then run the task's live
+  verification (create/modify/cancel a reservation on Channex staging for
+  room 341 / `a50e441f`).
+
+### Deferred (unchanged)
+
+- Rate re-push + seasonal `rate_periods`; room-type reconciliation; disconnect
+  path; the Holiday-Rentals one-Channex-property-per-unit split;
+  `non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state
+  (research §10) — inbound currently tolerates `rate_plan_id: null` (it only
+  keys off `room_type_id`).

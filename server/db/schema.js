@@ -2622,6 +2622,17 @@ John`
     ON channex_room_mappings(property_id, nestbook_ref_type, IFNULL(nestbook_ref_id, -1))
   `);
 
+  // channex_reservation_id (Phase 2, slice 5 — INBOUND sync) — the Channex
+  // reservation UUID (`booking_id`, stable across revisions) for a booking that
+  // originated from an OTA and arrived via the Channex webhook. NULL for every
+  // NestBook-native booking. A multi-room OTA reservation produces several
+  // bookings that all carry the same value. A later booking_modification /
+  // booking_cancellation webhook finds the existing row(s) by this id instead of
+  // creating a duplicate. Not unique (multi-room), indexed for the lookup.
+  // See docs/in-progress/channex-integration-phase2.md slice 5.
+  try { db.exec(`ALTER TABLE bookings ADD COLUMN channex_reservation_id TEXT`); } catch (e) {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_channex_reservation ON bookings(channex_reservation_id)`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
