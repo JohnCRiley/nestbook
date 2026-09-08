@@ -476,8 +476,104 @@ guest, and it never blocked NestBook's own availability.
 
 ### Deferred (unchanged)
 
-- Rate re-push + seasonal `rate_periods`; room-type reconciliation; disconnect
-  path; the Holiday-Rentals one-Channex-property-per-unit split;
-  `non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state
-  (research §10) — inbound currently tolerates `rate_plan_id: null` (it only
-  keys off `room_type_id`).
+- ~~Rate re-push + seasonal `rate_periods`~~ — **done, slice 6.**
+- Room-type reconciliation; disconnect path; the Holiday-Rentals
+  one-Channex-property-per-unit split; `non_acked_booking` acknowledgement; the
+  "unmapped rate" Live-Feed state (research §10) — inbound currently tolerates
+  `rate_plan_id: null` (it only keys off `room_type_id`).
+
+---
+
+## Slice 6 — seasonal rate push + ongoing rate sync  ✅ DONE (2026-09-08)
+
+**Problem it fixes:** slices 3–4 pushed ONE flat rate
+(`price_per_night` / `whole_property_rate`) across the whole 90-day window per
+rate plan. Any `rate_periods` an owner configured (Christmas, Summer Peak, …)
+were ignored — every OTA saw the wrong price for those nights.
+
+### Investigation (confirmed against the codebase + docs.channex.io)
+
+- **`getRateForDate()`** (`server/utils/ratePeriods.js`) is the app's single
+  source of truth for a night's price (booking modal, checkout, widget all use
+  it). Signature `getRateForDate(propertyId, roomId, checkInDate, baseRateOverride = null)`
+  → `{ rate, periodName }` | `null`. Needs a real `rooms` row. Priority:
+  `rate_period_rooms.amount` override > matching `rate_periods` row (flat, or
+  `multiplier` × base, rounded to cents) > base. Periods scanned
+  `ORDER BY priority ASC, id ASC`, first match wins. `date_from`/`date_to` are
+  `MM-DD` (annual, Dec→Jan wrap) or `YYYY-MM-DD` (one-off).
+- **WP pattern** (from widget.js `GET /api/widget/rate-range`): resolve against
+  the property's first room by id + `baseRateOverride = whole_property_rate`.
+- **`rate_periods` mutation routes** (`grep -rn "rate_period" server/routes/`):
+  only `server/routes/ratePeriods.js` (`POST /`, `PUT /:id`, `DELETE /:id`).
+  widget.js is GET-only. `admin.js:990` deletes `rate_periods` inside the
+  Super-Admin "delete user + all their properties" cascade — the property + its
+  `channex_room_mappings` are destroyed in the same txn, so **deliberately NOT
+  wired** (nothing to sync to).
+- **Channex `POST /api/v1/restrictions`** — `values` IS an array; each element
+  carries its own `date_from`/`date_to`/`rate` → segmented rates in ONE call
+  (same as `/availability`). Last-Win, FIFO. `rate` must be `> 0`. Rate limit
+  ~40/min per property. `channexClient.updateRates()` already existed.
+
+### Built
+
+- **`server/utils/channexPushInventory.js`:**
+  - `buildTargets()` targets now carry `rateForDate(date) -> number>0 | null`
+    instead of `baseRate`:
+    - room → `getRateForDate(pid, room.id, date).rate`
+    - category → **lowest positive** `getRateForDate()` across the category's
+      rooms (keeps the old flat "lowest room price" rule, now per-night &
+      season-aware)
+    - whole_property → `getRateForDate(pid, firstRoomId, date, whole_property_rate)`,
+      plain `whole_property_rate` fallback
+  - `rateSegments(dates, rateForDate)` helper — `coalesce()` into contiguous
+    `{date_from, date_to, rate:"0.00"|null}`; a `null` segment ⇒ caller skips +
+    warns (per-segment, mirroring slice 3's per-property zero-rate skip).
+  - `pushInitialInventory` step 3b rewritten to push one `/restrictions` row per
+    rate segment. `rates.skippedZeroRate` entries are now
+    `"<title> (<from>..<to>)"`.
+  - **New `pushRateUpdate(propertyId, refType, refId, dateFrom, dateTo)`** — the
+    rate twin of `pushAvailabilityUpdate()`. Same contract: no-op if unmapped /
+    no `channex_property_id`, **never throws / never rejects**, window-clamped,
+    reuses `affectedMappings()` + `buildTargets()` + `coalesce()`. Rate-period
+    callers pass `('property', null, null, null)` → recompute + re-push real
+    seasonal rates for EVERY mapped rate plan across the full window. No diffing:
+    Channex Last-Win means a full re-push inherently reverts a stale segment left
+    by an edited/deleted period.
+- **`server/routes/ratePeriods.js`:** imports `pushRateUpdate`; fires it
+  fire-and-forget (`.catch(()=>{})`, **after** `res.json()` / `res.status(204)`,
+  never awaited) in `POST /`, `PUT /:id`, `DELETE /:id`.
+
+### Verified (2026-09-08)
+
+- **Unit harness** (BEGIN/ROLLBACK against `server/nestbook.db`, property #1
+  IR-Named room 341 @ €95): baseline → one `95.00` segment; flat one-off 150 →
+  `95 / 150 / 95` coalesced; `multiplier` 1.5 → `142.50`; `rate_period_rooms`
+  override 200 → `200.00`; period with `rate_value 0` → falls back to base
+  `95.00` (no skip); priority (p0=120 vs p1=999 overlap) → `120` wins; annual
+  `01-01..12-31` → `175.00` across the whole window.
+- **Live Channex staging** (real API, connected property #1 `a50e441f`, rate
+  plan `e4f3f2a6` = room 341, all cleaned up):
+  - **CREATE** a seasonal period (flat 150, 2026-10-08..17) → `pushRateUpdate`
+    logged `12 segment(s) across 4 rate plan(s)`; `GET /api/v1/restrictions`
+    showed `95.00 / 150.00 [10-08..17] / 95.00` ✅
+  - **EDIT** (price 150→175, range shifted to 10-11..20) → `GET` showed
+    `95.00 / 175.00 [10-11..20] / 95.00` — **old 150 range fully reverted, no
+    stale segment** ✅
+  - **DELETE** → `GET` showed flat `95.00` across the whole window ✅
+  - Final staging state: all 4 rate plans back to flat base (95/85/145/65) ✅
+  - **Non-connected property #3** + `pushRateUpdate` → **0 `fetch` calls**
+    (silent no-op) ✅
+- `node --check` clean on `channexPushInventory.js` + `ratePeriods.js`.
+
+### Not verified locally (same DB limitation as slices 3–5)
+
+WP / Units / IR-Categories — no such property in the local DB. Those
+`rateForDate` branches are written from the data model + `widget.js` /
+`bookings.js` reading and unit-checkable via `buildTargets`, but not
+end-to-end tested against live Channex.
+
+### Deferred (unchanged)
+
+Room-type reconciliation (add/rename/delete a NestBook room after the initial
+push); disconnect path; Holiday-Rentals one-Channex-property-per-unit split;
+`non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state.

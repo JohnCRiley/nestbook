@@ -6,6 +6,16 @@
 // room types + rate plans + a forward window of availability and base rates.
 // Super Admin manual trigger ONLY (POST /api/admin/properties/:id/channex-push).
 //
+// Slice 6: rate resolution is now season-aware. buildTargets() targets carry a
+// rateForDate(date) resolver (backed by getRateForDate() — the app's single
+// source of truth for a night's price, shared with the booking modal, checkout
+// and widget) instead of one flat baseRate, and pushInitialInventory() pushes
+// one /restrictions row per contiguous same-rate segment across the window.
+// pushRateUpdate() mirrors pushAvailabilityUpdate() for ongoing rate sync: it is
+// called fire-and-forget whenever a rate_period / rate_period_rooms override is
+// created, edited or deleted, and refreshes every rate plan across the window
+// (Channex Last-Win reverts stale segments — no diffing needed).
+//
 // Slice 4: pushAvailabilityUpdate() — ongoing OUTBOUND availability sync. Called
 // fire-and-forget from every place a NestBook booking is created / cancelled /
 // declined / date-edited, so a connected property's OTA-visible availability
@@ -14,8 +24,8 @@
 // overwhelmingly common case), and it NEVER throws — a Channex API failure is
 // logged, never allowed to block or roll back a real booking action.
 //
-// No rate re-push and no room-type reconciliation here — that is still later
-// work. This slice keeps availability honest, nothing more.
+// Slice 4 note: no room-type reconciliation here (add/rename/delete a NestBook
+// room after the initial push) — that is still later work.
 //
 // Source-of-truth notes:
 //   - Room selection / availability per mode mirrors server/routes/widget.js's
@@ -24,9 +34,12 @@
 //     cancelled / checked_out / cancelled_unpaid / declined) and `ical_blocks`
 //     (room_id IS NULL = property-wide). Categories mode reuses the shared
 //     getAvailableRoomsInCategory() helper directly.
-//   - Base rate is NestBook's current flat rate (rooms.price_per_night, or
-//     properties.whole_property_rate for WP). Seasonal rate_periods are NOT
-//     reflected here — that belongs in the ongoing-sync slice.
+//   - Nightly rate resolution goes through getRateForDate()
+//     (server/utils/ratePeriods.js) exactly as the booking modal / checkout /
+//     widget do: room-specific rate_period_rooms override → matching rate_period
+//     (flat or multiplier) → base (rooms.price_per_night, or
+//     properties.whole_property_rate for WP). Per-night values are coalesced into
+//     contiguous same-rate segments, same as availability.
 //
 // Channex API shapes used (verified against docs.channex.io, 2026-09-07):
 //   POST /api/v1/room_types   { room_type:  { property_id, title, count_of_rooms,
@@ -47,6 +60,7 @@ import {
   ChannexError,
 } from './channexClient.js';
 import { getAvailableRoomsInCategory } from './categoryAvailability.js';
+import { getRateForDate } from './ratePeriods.js';
 
 const WINDOW_DAYS = 90;
 const EXCLUDED_BOOKING_STATUSES = ['cancelled', 'checked_out', 'cancelled_unpaid', 'declined'];
@@ -143,10 +157,35 @@ function wholePropertyBlockers(propertyId) {
   return { bookings, blocks };
 }
 
+// ── nightly rate resolution (season-aware; getRateForDate is the app's single
+//    source of truth — booking modal / checkout / widget all resolve a night's
+//    price through it) ───────────────────────────────────────────────────────
+
+/** getRateForDate(...).rate as a positive number, or null when unset / <= 0. */
+function positiveRate(propertyId, roomId, date, baseOverride = null) {
+  const r = getRateForDate(propertyId, roomId, date, baseOverride);
+  const v = Number(r?.rate);
+  return v > 0 ? v : null;
+}
+
+/**
+ * Coalesce a per-night rate resolver into contiguous {date_from, date_to, rate}
+ * segments (rate = a "0.00" decimal string). A night whose rate is null (unset
+ * or <= 0) becomes a segment with rate === null — the caller skips + warns for
+ * it, exactly as slice 3 does for a fully-zero property rate, but per-segment.
+ */
+function rateSegments(dates, rateForDate) {
+  return coalesce(dates, (date) => {
+    const v = rateForDate(date);
+    return v == null ? null : v.toFixed(2);
+  }).map((seg) => ({ date_from: seg.date_from, date_to: seg.date_to, rate: seg.value }));
+}
+
 // ── target building (one entry == one Channex room type) ─────────────────────
 //
 // target: { refType, refId, title, countOfRooms, occAdults, defaultOccupancy,
-//           baseRate|null, availabilityForDate(date) -> int 0..countOfRooms }
+//           rateForDate(date) -> number>0 | null,
+//           availabilityForDate(date) -> int 0..countOfRooms }
 
 export function buildTargets(property) {
   const pid = property.id;
@@ -155,7 +194,13 @@ export function buildTargets(property) {
 
   if (rentalType === 'whole_property') {
     const cap = Math.max(1, Number(property.total_capacity) || 1);
-    const rate = Number(property.whole_property_rate);
+    const wpBase = Number(property.whole_property_rate) > 0 ? Number(property.whole_property_rate) : null;
+    // WP seasonal rates resolve against the property's first room + the
+    // whole_property_rate base override — the same pattern widget.js's
+    // GET /api/widget/rate-range and bookings.js use.
+    const firstRoom = db.prepare(
+      'SELECT id FROM rooms WHERE property_id = ? ORDER BY id ASC LIMIT 1'
+    ).get(pid);
     const blockers = wholePropertyBlockers(pid);
     return [{
       refType: 'whole_property',
@@ -164,7 +209,8 @@ export function buildTargets(property) {
       countOfRooms: 1,
       occAdults: cap,
       defaultOccupancy: cap,
-      baseRate: rate > 0 ? rate : null,
+      rateForDate: (date) =>
+        (firstRoom ? positiveRate(pid, firstRoom.id, date, wpBase) : null) ?? wpBase,
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
     }];
   }
@@ -185,8 +231,7 @@ export function buildTargets(property) {
         1,
         ...rooms.map((r) => Number(r.max_occupancy) || Number(r.capacity) || 1)
       );
-      const positivePrices = rooms.map((r) => Number(r.price_per_night)).filter((n) => n > 0);
-      const baseRate = positivePrices.length ? Math.min(...positivePrices) : null;
+      const catRoomIds = rooms.map((r) => r.id);
       targets.push({
         refType: 'category',
         refId: cat.id,
@@ -194,7 +239,14 @@ export function buildTargets(property) {
         countOfRooms: rooms.length,
         occAdults,
         defaultOccupancy: occAdults,
-        baseRate,
+        // Keep the flat-rate rule ("lowest positive room price"), now resolved
+        // per night and season-aware via getRateForDate() per room.
+        rateForDate: (date) => {
+          const vals = catRoomIds
+            .map((rid) => positiveRate(pid, rid, date))
+            .filter((n) => n != null);
+          return vals.length ? Math.min(...vals) : null;
+        },
         availabilityForDate: (date) =>
           getAvailableRoomsInCategory(db, cat.id, date, nextDay(date), { respectBuffer: false }).length,
       });
@@ -216,7 +268,6 @@ export function buildTargets(property) {
 
   return rooms.map((room) => {
     const { occAdults, defaultOccupancy } = occFromRoom(room);
-    const rate = Number(room.price_per_night);
     const blockers = roomBlockers(pid, room.id);
     return {
       refType: 'room',
@@ -225,7 +276,7 @@ export function buildTargets(property) {
       countOfRooms: 1,
       occAdults,
       defaultOccupancy,
-      baseRate: rate > 0 ? rate : null,
+      rateForDate: (date) => positiveRate(pid, room.id, date),
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
     };
   });
@@ -358,11 +409,111 @@ export async function pushAvailabilityUpdate(propertyId, refType, refId, dateFro
   }
 }
 
+// ── ongoing outbound rate sync (slice 6) ───────────────────────────────────
+
+/**
+ * Fire-and-forget outbound RATE sync for one NestBook seasonal-pricing change.
+ *
+ * The rate-sync twin of pushAvailabilityUpdate(): same contract — NEVER throws
+ * and NEVER returns a rejected promise (callers must not await it in a
+ * rate_period save/delete's response path), silently no-ops when the property
+ * has no channex_room_mappings rows / no channex_property_id.
+ *
+ * rate_periods are property-scoped, so the normal call is
+ * pushRateUpdate(propertyId, 'property', null, null, null) — it recomputes real
+ * seasonal rates for EVERY mapped rate plan across the whole initial-push window
+ * and re-pushes them. Channex processes /restrictions Last-Win, so a full
+ * re-push inherently reverts any stale segment left by an edited or deleted
+ * period — no diffing needed. The (refType, refId, dateFrom, dateTo) params
+ * mirror pushAvailabilityUpdate() for a future narrower call.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'whole_property'|'property'} refType
+ * @param {number|null} refId
+ * @param {string|null} dateFrom  'YYYY-MM-DD' inclusive (ignored for 'property')
+ * @param {string|null} dateTo    'YYYY-MM-DD' inclusive (ignored for 'property')
+ * @returns {Promise<void>}
+ */
+export async function pushRateUpdate(propertyId, refType, refId, dateFrom, dateTo) {
+  try {
+    if (!propertyId) return;
+
+    const mappings = db.prepare(
+      'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+    ).all(propertyId);
+    if (mappings.length === 0) return; // not Channex-connected — nothing to do
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    if (!property || !property.channex_property_id) return;
+
+    const win = windowDates();
+    const winFrom = win[0];
+    const winTo = win[win.length - 1];
+    let from = winFrom;
+    let to = winTo;
+    if (refType !== 'property' && dateFrom && dateTo) {
+      from = dateFrom > winFrom ? dateFrom : winFrom;
+      to = dateTo < winTo ? dateTo : winTo;
+    }
+    if (from > to) return;
+    const nights = win.filter((d) => d >= from && d <= to);
+    if (nights.length === 0) return;
+
+    const affected = affectedMappings(property, mappings, refType, refId);
+    if (affected.length === 0) return;
+
+    // Reuse buildTargets() so rate resolution stays identical to the initial
+    // push / the booking modal / checkout / widget.
+    const byRef = new Map(
+      buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+    );
+
+    const values = [];
+    let skippedSegments = 0;
+    for (const m of affected) {
+      const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+      if (!t || !m.channex_rate_plan_id) continue; // room/category gone, or no plan
+      for (const seg of rateSegments(nights, t.rateForDate)) {
+        if (seg.rate == null) { skippedSegments += 1; continue; }
+        values.push({
+          property_id: property.channex_property_id,
+          rate_plan_id: m.channex_rate_plan_id,
+          date_from: seg.date_from,
+          date_to: seg.date_to,
+          rate: seg.rate,
+        });
+      }
+    }
+    if (values.length === 0) {
+      if (skippedSegments) {
+        console.warn(
+          `[channex-sync] property #${propertyId} rate push — every night unset/zero ` +
+          `across ${affected.length} rate plan(s); nothing sent`
+        );
+      }
+      return;
+    }
+
+    const result = await updateRates(values);
+    const warnings = result?.meta?.warnings ?? [];
+    console.log(
+      `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} rates — ` +
+      `${values.length} segment(s) across ${affected.length} rate plan(s)` +
+      (skippedSegments ? `, ${skippedSegments} zero-rate segment(s) skipped` : '') +
+      (warnings.length ? ` (${warnings.length} warning(s))` : '')
+    );
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} rate push failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 /**
  * Push a connected property's room types, rate plans and an initial
- * {WINDOW_DAYS}-day window of availability + base rates to Channex.
+ * {WINDOW_DAYS}-day window of availability + real (seasonal) rates to Channex.
  *
  * Caller (the admin route) is responsible for the "already connected" and
  * "already pushed" guards — this function assumes property.channex_property_id
@@ -450,17 +601,22 @@ export async function pushInitialInventory(property) {
         });
       }
 
-      // 3b: base rate across the whole window (flat — seasons are a later slice).
-      if (t.baseRate && t.baseRate > 0) {
+      // 3b: real nightly rates across the window — seasonal rate_periods
+      // resolved via getRateForDate() and coalesced into contiguous same-rate
+      // segments. A segment whose rate is unset / <= 0 is skipped + reported
+      // (Channex requires rate > 0), per-segment rather than per-property.
+      for (const seg of rateSegments(dates, t.rateForDate)) {
+        if (seg.rate == null) {
+          rateSkipped.push(`${t.title} (${seg.date_from}..${seg.date_to})`);
+          continue;
+        }
         rateValues.push({
           property_id: channexPropertyId,
           rate_plan_id: ratePlanId,
-          date_from: windowFrom,
-          date_to: windowTo,
-          rate: t.baseRate.toFixed(2),
+          date_from: seg.date_from,
+          date_to: seg.date_to,
+          rate: seg.rate,
         });
-      } else {
-        rateSkipped.push(t.title);
       }
     }
 
