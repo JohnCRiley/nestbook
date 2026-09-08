@@ -560,3 +560,398 @@ inbound booking create → inbound booking cancel → room-type reconciliation
 → disconnect. Next step is Channex's certification process (efficiency
 review + live session with their team) before any real OTA channel can go
 live — no further engineering work is required to reach that point.
+- ~~Rate re-push + seasonal `rate_periods`~~ — **done, slice 6.**
+- Room-type reconciliation; disconnect path; the Holiday-Rentals
+  one-Channex-property-per-unit split; `non_acked_booking` acknowledgement; the
+  "unmapped rate" Live-Feed state (research §10) — inbound currently tolerates
+  `rate_plan_id: null` (it only keys off `room_type_id`).
+
+---
+
+## Slice 6 — seasonal rate push + ongoing rate sync  ✅ DONE (2026-09-08)
+
+**Problem it fixes:** slices 3–4 pushed ONE flat rate
+(`price_per_night` / `whole_property_rate`) across the whole 90-day window per
+rate plan. Any `rate_periods` an owner configured (Christmas, Summer Peak, …)
+were ignored — every OTA saw the wrong price for those nights.
+
+### Investigation (confirmed against the codebase + docs.channex.io)
+
+- **`getRateForDate()`** (`server/utils/ratePeriods.js`) is the app's single
+  source of truth for a night's price (booking modal, checkout, widget all use
+  it). Signature `getRateForDate(propertyId, roomId, checkInDate, baseRateOverride = null)`
+  → `{ rate, periodName }` | `null`. Needs a real `rooms` row. Priority:
+  `rate_period_rooms.amount` override > matching `rate_periods` row (flat, or
+  `multiplier` × base, rounded to cents) > base. Periods scanned
+  `ORDER BY priority ASC, id ASC`, first match wins. `date_from`/`date_to` are
+  `MM-DD` (annual, Dec→Jan wrap) or `YYYY-MM-DD` (one-off).
+- **WP pattern** (from widget.js `GET /api/widget/rate-range`): resolve against
+  the property's first room by id + `baseRateOverride = whole_property_rate`.
+- **`rate_periods` mutation routes** (`grep -rn "rate_period" server/routes/`):
+  only `server/routes/ratePeriods.js` (`POST /`, `PUT /:id`, `DELETE /:id`).
+  widget.js is GET-only. `admin.js:990` deletes `rate_periods` inside the
+  Super-Admin "delete user + all their properties" cascade — the property + its
+  `channex_room_mappings` are destroyed in the same txn, so **deliberately NOT
+  wired** (nothing to sync to).
+- **Channex `POST /api/v1/restrictions`** — `values` IS an array; each element
+  carries its own `date_from`/`date_to`/`rate` → segmented rates in ONE call
+  (same as `/availability`). Last-Win, FIFO. `rate` must be `> 0`. Rate limit
+  ~40/min per property. `channexClient.updateRates()` already existed.
+
+### Built
+
+- **`server/utils/channexPushInventory.js`:**
+  - `buildTargets()` targets now carry `rateForDate(date) -> number>0 | null`
+    instead of `baseRate`:
+    - room → `getRateForDate(pid, room.id, date).rate`
+    - category → **lowest positive** `getRateForDate()` across the category's
+      rooms (keeps the old flat "lowest room price" rule, now per-night &
+      season-aware)
+    - whole_property → `getRateForDate(pid, firstRoomId, date, whole_property_rate)`,
+      plain `whole_property_rate` fallback
+  - `rateSegments(dates, rateForDate)` helper — `coalesce()` into contiguous
+    `{date_from, date_to, rate:"0.00"|null}`; a `null` segment ⇒ caller skips +
+    warns (per-segment, mirroring slice 3's per-property zero-rate skip).
+  - `pushInitialInventory` step 3b rewritten to push one `/restrictions` row per
+    rate segment. `rates.skippedZeroRate` entries are now
+    `"<title> (<from>..<to>)"`.
+  - **New `pushRateUpdate(propertyId, refType, refId, dateFrom, dateTo)`** — the
+    rate twin of `pushAvailabilityUpdate()`. Same contract: no-op if unmapped /
+    no `channex_property_id`, **never throws / never rejects**, window-clamped,
+    reuses `affectedMappings()` + `buildTargets()` + `coalesce()`. Rate-period
+    callers pass `('property', null, null, null)` → recompute + re-push real
+    seasonal rates for EVERY mapped rate plan across the full window. No diffing:
+    Channex Last-Win means a full re-push inherently reverts a stale segment left
+    by an edited/deleted period.
+- **`server/routes/ratePeriods.js`:** imports `pushRateUpdate`; fires it
+  fire-and-forget (`.catch(()=>{})`, **after** `res.json()` / `res.status(204)`,
+  never awaited) in `POST /`, `PUT /:id`, `DELETE /:id`.
+
+### Verified (2026-09-08)
+
+- **Unit harness** (BEGIN/ROLLBACK against `server/nestbook.db`, property #1
+  IR-Named room 341 @ €95): baseline → one `95.00` segment; flat one-off 150 →
+  `95 / 150 / 95` coalesced; `multiplier` 1.5 → `142.50`; `rate_period_rooms`
+  override 200 → `200.00`; period with `rate_value 0` → falls back to base
+  `95.00` (no skip); priority (p0=120 vs p1=999 overlap) → `120` wins; annual
+  `01-01..12-31` → `175.00` across the whole window.
+- **Live Channex staging** (real API, connected property #1 `a50e441f`, rate
+  plan `e4f3f2a6` = room 341, all cleaned up):
+  - **CREATE** a seasonal period (flat 150, 2026-10-08..17) → `pushRateUpdate`
+    logged `12 segment(s) across 4 rate plan(s)`; `GET /api/v1/restrictions`
+    showed `95.00 / 150.00 [10-08..17] / 95.00` ✅
+  - **EDIT** (price 150→175, range shifted to 10-11..20) → `GET` showed
+    `95.00 / 175.00 [10-11..20] / 95.00` — **old 150 range fully reverted, no
+    stale segment** ✅
+  - **DELETE** → `GET` showed flat `95.00` across the whole window ✅
+  - Final staging state: all 4 rate plans back to flat base (95/85/145/65) ✅
+  - **Non-connected property #3** + `pushRateUpdate` → **0 `fetch` calls**
+    (silent no-op) ✅
+- `node --check` clean on `channexPushInventory.js` + `ratePeriods.js`.
+
+### Not verified locally (same DB limitation as slices 3–5)
+
+WP / Units / IR-Categories — no such property in the local DB. Those
+`rateForDate` branches are written from the data model + `widget.js` /
+`bookings.js` reading and unit-checkable via `buildTargets`, but not
+end-to-end tested against live Channex.
+
+### Deferred (unchanged)
+
+- ~~Room-type reconciliation~~ — **done, slice 7.**
+- Disconnect path; Holiday-Rentals one-Channex-property-per-unit split;
+  `non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state.
+
+---
+
+## Slice 7 — room-type reconciliation  ✅ DONE (2026-09-08)
+
+**Problem it fixes:** `channex_room_mappings` was populated once, at initial
+push. After that a **renamed** room kept its old Channex title, a **new** room
+got no Channex room type (invisible to OTAs), and a **deleted** room left an
+orphan mapping whose Channex room type stayed frozen at its last availability
+(usually 1) → **OTAs kept selling a room that no longer exists.**
+
+### Investigation (confirmed against the codebase + docs.channex.io)
+
+- **Room CRUD** — `server/routes/rooms.js`: `POST /` (create), `PUT /:id`
+  (name = rename; also capacity / max_occupancy / category_id / status),
+  `DELETE /:id` (`409 {booking_count}` unless `?force`; then hard-deletes),
+  + 4 bulk importers (`bulk-import` Named, `bulk-import-categories` — also
+  creates `room_categories`, `bulk-import-wp` sections, `bulk-import-units`).
+- **Category CRUD** — `server/routes/roomCategories.js`: `POST
+  /properties/:pid/room-categories`, `PUT /room-categories/:id`,
+  `DELETE /room-categories/:id` (**`409` if any room still references it** → a
+  category delete only ever fires on an empty category). `createRoomCategory()`
+  shared helper — wired the routes, not the helper.
+- **Channex docs:**
+  - `PUT /api/v1/room_types/:id` **exists** — `title` updatable in place; body
+    `{room_type:{…}}`, all create fields except `property_id`. (Dropping a
+    channel-mapped occupancy option 422s — we only bump title/count/occ.)
+  - `PUT /api/v1/rate_plans/:id` **exists** — `title` updatable (≤255).
+  - `DELETE /api/v1/room_types/:id` — refuses if channel-associated unless
+    `?force=true`; **docs silent on booking/ARI history**. `DELETE
+    /api/v1/rate_plans/:id` — **irreversible** ("can't restore it").
+    → **auto-delete is NOT confirmed safe** → orphan-mark + zero availability +
+    loud warn; never an automatic `DELETE`.
+- **Stale mapping today:** a deleted room's mapping lingers;
+  `pushAvailabilityUpdate`/`pushRateUpdate` → `affectedMappings()` returns it,
+  `buildTargets()` has no target → `byRef.get()` undefined → `continue` →
+  **silent no-op, no crash** — but the Channex room type is frozen → overselling.
+- **IR-Categories nuance (confirmed):** the *category* is the Channex room type,
+  not the room. Adding/removing a room within a mapped category → just an
+  availability + lowest-price refresh; only category created / emptied / deleted
+  is a room-type-level change. `buildTargets()` already `continue`s past a
+  0-room category, so an emptied category = treated as a delete.
+
+### Built
+
+- **Schema** (`server/db/schema.js`): `channex_room_mappings.orphaned_at TEXT`
+  (nullable, guarded `ALTER`). NULL = live; set = NestBook side gone, excluded
+  from create/rename reconcile + ongoing ARI's "live" set, kept for the audit
+  trail.
+- **`server/utils/channexClient.js`:** `updateRoomType(id, attrs)` (PUT),
+  `updateRatePlan(id, attrs)` (PUT). Delete helpers gained doc-comments on the
+  channel guard / irreversibility.
+- **`server/utils/channexPushInventory.js`:**
+  - Extracted `roomTypeAttributes(target)`, `ratePlanCreateAttributes(...)`,
+    `createTargetOnChannex(cxPropId, currency, target)` (create room type +
+    rate plan, self-cleaning on partial failure). `pushInitialInventory`'s inner
+    loop now calls `createTargetOnChannex` instead of its inline creates.
+  - **`pushRoomTypeReconcile(propertyId, refType, refId, changeType, opts)`** —
+    `refType` ∈ `room|category|property`, `changeType` ∈
+    `created|renamed|deleted`, `opts` = `{categoryId, parentUnitId}` (captured
+    by the caller before a delete). Same contract as slices 4/6: never
+    throws/rejects, silent no-op unless the property has `channex_property_id` +
+    ≥1 mapping row, never awaited.
+    - `syncTarget(property, target, mapping|null)` — null ⇒ `createTargetOnChannex`
+      + insert mapping (BEGIN/COMMIT/ROLLBACK, Channex cleanup on insert
+      failure) + push its 90-day ARI (reuses slices 4 + 6); mapping ⇒ PUT
+      room-type attrs + rate-plan title, then ARI refresh.
+    - `orphanTarget(property, mapping, reason)` — `SET orphaned_at`, push
+      `availability 0` across the window for its `channex_room_type_id`,
+      `console.warn` loudly. **No Channex DELETE.**
+    - Dispatch: `property`+`created` → `syncTarget` every target; WP room
+      changes → no-op (single property-level room type); Categories → resolve
+      to the `category:` ref (create/refresh, or orphan when emptied);
+      IR-Named/Units → the `room:` ref (internal unit rooms skipped);
+      `deleted` → `orphanTarget` (or refresh if a category still has rooms);
+      a reappeared ref whose mapping is orphaned → warn, don't auto-duplicate.
+- **Wiring** (all fire-and-forget after the response, `.catch(()=>{})`):
+  - `rooms.js`: `POST /` → `('room', id, 'created', {categoryId, parentUnitId})`;
+    `PUT /:id` → `('room', id, 'renamed', …)` when name/capacity/max_occupancy/
+    category_id/status changed (+ a `('category', oldCatId, 'deleted')` refresh
+    when a room moved out of a category); `DELETE /:id` →
+    `('room', id, 'deleted', {…})` (room row read before the delete); each of the
+    4 `bulk-import*` → `('property', null, 'created')`.
+  - `roomCategories.js`: `POST …/room-categories` → `('category', id, 'created')`;
+    `PUT /room-categories/:id` → `('category', id, 'renamed')` when name changed;
+    `DELETE /room-categories/:id` → `('category', id, 'deleted')`.
+
+### Verified (2026-09-08 — live Channex staging, connected property #1 `a50e441f`)
+
+Harness inserted a real room, ran each reconcile against the real API, cleaned up:
+- **CREATE** room #359 → new Channex room type `67dddbff…` ("CX Slice7 Test"),
+  `channex_room_mappings` row #6 inserted, availability pushed (`[1]`), rate
+  pushed. ✅
+- **RENAME** + capacity 2→4 / max_occ 3→5 → Channex room type title →
+  "CX Slice7 Renamed", `occ_adults` 3→5, **in place (PUT)** — no new room type. ✅
+- **DELETE** (no bookings) → mapping row `orphaned_at` set, loud warn logged,
+  Channex room type **still exists** (NOT deleted), availability → `[0]`. ✅
+- **Delete WITH bookings** → the route's own `409 {booking_count}` guard fires
+  before reconcile; `?force` path routes through the same orphan logic — nothing
+  crashes (route reads the room row before deleting, so `opts` is intact). ✅
+- **Non-connected property #3** → `pushRoomTypeReconcile` made **0 Channex fetch
+  calls**. ✅
+- `node --check` clean on all 5 changed files.
+
+### Not verified locally (same DB limitation as slices 3–6)
+
+WP / Units / IR-Categories — no such property exists locally. Their dispatch
+branches are written from the data model + `buildTargets()` reading; the
+IR-Named create/rename/delete/orphan path is the one exercised end-to-end.
+
+### Deferred
+
+Property rename → WP room-type title (separate route, separate concern);
+automatic `DELETE` of an orphaned Channex room type / rate plan (needs a human);
+un-orphaning a mapping when the owner re-creates a same-named room.
+(~~disconnect surface~~ — done, slice 8.)
+
+---
+
+## Slice 8 — disconnect path  ✅ DONE (2026-09-08)
+
+**Problem it fixes:** slices 2–7 are one-way. No way to clear
+`properties.channex_property_id` + `channex_room_mappings` if an owner stops
+using Channel Manager, switches providers, or connected the wrong property.
+
+### Investigation (confirmed 2026-09-08)
+
+- **Nothing half-built** — `grep channex` across `client/src` → only
+  `admin/pages/Properties.jsx`; no disconnect anywhere in `server/routes`.
+- **Channex `DELETE /api/v1/properties/:id`** (hotels-collection.md): exists but
+  *"can't be reverted … create it again from scratch"*, blocked if the property
+  has ≥1 channel unless `?force=true`, cascade to room types / rate plans
+  **undocumented**.
+- **Decision: disconnect severs the NestBook side ONLY — no Channex API call.**
+  Clear `channex_property_id`, delete the property's `channex_room_mappings`
+  rows (orphaned rows included). Leave the Channex property + room types + rate
+  plans intact (owner manages them in their own Channex account). Matches the
+  standing "never auto-destroy OTA-side history" rule (slices 5 + 7).
+- **`channex_reservation_id` bookings are safe:** plain nullable TEXT on
+  `bookings`, no FK, no trigger; nothing joins `bookings` →
+  `channex_room_mappings`; the property row itself is never deleted (only its one
+  column nulled). OTA-origin bookings stay real; the column is kept as the
+  historical record.
+- **Post-disconnect no-op is automatic** — `pushAvailabilityUpdate` /
+  `pushRateUpdate` / `pushRoomTypeReconcile` all bail on
+  `mappings.length === 0`; `channexInboundSync` can't resolve the property
+  (`channex_property_id` NULL) → its existing "unmapped property → skip" path.
+
+### Built
+
+- **`server/utils/channexPushInventory.js`:** `disconnectChannexProperty(property)`
+  — **pure DB, synchronous, no API calls.** Reads the mapping rows for the
+  summary, then `BEGIN` → `DELETE FROM channex_room_mappings WHERE property_id`
+  → `UPDATE properties SET channex_property_id = NULL` → `COMMIT`
+  (`ROLLBACK` + rethrow on error). Returns `{ priorChannexPropertyId,
+  mappingsDeleted, orphanedMappingsDeleted, roomTypeIds, ratePlanIds,
+  channexSide: 'untouched' }`.
+- **`server/routes/admin.js`:** `POST /api/admin/properties/:id/channex-disconnect`
+  (Super Admin only — same mount as `channex-create` / `channex-push`;
+  owner-facing is Phase 4). 400 invalid id / not-connected; 404 no property;
+  else disconnect + `logAction` `CHANNEX_DISCONNECTED` (detail spells out
+  NestBook-side cleared + Channex-side left intact) + `res.json({ success,
+  cleared: { channex_property_id, mappings_deleted }, channex_side })`. No 502
+  branch (no API call).
+- **`client/src/admin/pages/Properties.jsx`:** `disconnectChannex()` callback —
+  `window.confirm` (internal SA debug tool; reconnect is possible so no full
+  modal), `POST …/channex-disconnect`, toast, `fetchProperties()`. New
+  danger-coloured **"Disconnect"** button in the connected branch of the Channex
+  cell, next to the room-type count / Push Inventory button. After disconnect
+  the cell falls back to "Create in Channex" (the SELECT already returns the
+  now-NULL `channex_property_id` + 0 `channex_mapping_count`).
+
+### Verified (2026-09-08 — harness against connected property #1 `a50e441f`, restored to exact pre-slice-8 state after)
+
+- **Disconnect** → `channex_property_id` NULL, 4 mapping rows deleted,
+  **0 Channex API calls**. ✅
+- Seeded booking #187 with a `channex_reservation_id` → **unchanged** (resv id +
+  `confirmed` status intact) after disconnect. ✅
+- Post-disconnect: `pushAvailabilityUpdate` + `pushRateUpdate` +
+  `pushRoomTypeReconcile` (×2) → **0 fetch calls**. ✅
+- **Reconnect** from scratch: `createChannexProperty` → new UUID
+  `17deedb0…` (≠ old, no collision) → `pushInitialInventory` → 4 room types +
+  4 rate plans + 4 fresh mappings, no leftover-state collision. ✅
+- Cleanup: new Channex property force-deleted; local DB restored to the exact
+  original 4 mapping rows + `channex_property_id`. The original `a50e441f`
+  Channex property was never touched.
+- `node --check` clean on `admin.js` + `channexPushInventory.js`; `Properties.jsx`
+  JSX transform-checks clean.
+
+### Deferred
+
+Owner-facing disconnect (Phase 4 Settings UI); an optional "also delete on
+Channex" checkbox for the empty-property case where the owner confirms nothing
+of value is on the Channex side.
+
+---
+
+## Slice 9 — certification prep (500-day/2-call Full Sync · booking ack · queue + rate limiter + retry)  ✅ DONE (2026-09-08)
+
+Closes the three gaps between the integration and Channex's PMS certification
+(docs.channex.io/.../pms-certification-tests).
+
+### Investigation (confirmed against the codebase + docs)
+- **Full Sync call count** — `pushInitialInventory` already batches: ONE
+  `POST /availability` across every room type + ONE `POST /restrictions` across
+  every rate plan (the object creates are separate). The only gap was the
+  window: `WINDOW_DAYS = 90` (the sole hardcode). Rates already vary (seasonal,
+  slice 6) — not the "1 availability / 100 USD" anti-pattern.
+- **Cert test 1:** *"2 API calls: 1 x 500 days for Availability (All Rooms), 1 x
+  500 days Rates & restrictions"*.
+- **Cert anti-patterns:** full-sync-on-a-timer (we never do — manual trigger
+  only), per-date/per-rate calls where "1 API call" is specified, integration
+  logic in test files.  *"Full sync is allowed once every 24h … off-peak"* — so
+  keep it manual.
+- **Ack endpoint** (bookings-collection.md): `POST /api/v1/booking_revisions/:id/ack`,
+  **empty body**, `200 { meta: { message: "Success" } }`. Un-acked → 30-min
+  reminder email. Cert test 11 also: *"do not use `GET api/v1/bookings…`, use
+  `GET api/v1/booking_revisions…`"*.
+- **Rate limits** (rate-limits.md), **per property per minute**: 10 availability,
+  10 restrictions, **20 ARI total**. Breach → `429`
+  `{"errors":{"code":"http_too_many_requests"}}`. No documented `Retry-After`.
+- **No ack today** — `grep` of `channexInboundSync.js` / `channex.js`: none.
+  Slice 5's deferral confirmed. `getBooking()` (`GET /bookings/:id`) existed as a
+  dead fallback → removed.
+
+### Built
+- **`server/utils/channexQueue.js` (NEW):** `submitChannexJob({ kind:'ari'|'other',
+  ariType, propertyId, dedupeKey, label, run })` → `Promise`. One array-backed
+  FIFO + one async worker. **Per-property ARI sliding-window limiter**
+  (9 availability / 9 restrictions / 18 total per trailing 60 s — a hair under
+  the documented 10/10/20), **250 ms global min-gap**, **retry-backoff**
+  `[2s,8s,30s,60s]` × 5 attempts on `429`/`5xx`/network (honours `Retry-After`),
+  immediate reject on other 4xx, **dedupe** of not-yet-started jobs by
+  `dedupeKey`. Test hooks: `__setChannexQueueConfig`, `__resetChannexQueue`,
+  `channexQueueStats`, `drainChannexQueue`. Real infra — not a test shim.
+  A job's `run()` must never call `submitChannexJob` (single worker → deadlock).
+- **`server/utils/channexClient.js`:** `ChannexError.retryAfter` +
+  `channexRequest` reads the `Retry-After` header. Every **write** now routes
+  through the queue — `updateAvailability`/`updateRates` as `kind:'ari'`
+  (`{propertyId, dedupeKey}` opts); `create/update/deleteRoomType` /
+  `…RatePlan` / `createProperty` / `createWebhook` / `deleteWebhook` as
+  `kind:'other'`. **Reads stay direct** (`getBookingRevision`, `listWebhooks`)
+  so a webhook pull never waits behind a backed-up ARI burst. New
+  `acknowledgeBookingRevision(revisionId)`. `getBooking()` removed.
+- **`server/utils/channexPushInventory.js`:** `WINDOW_DAYS = 90 → 500` (the one
+  place; delta paths widen with it — still one change-triggered call each, never
+  a timer). `pushAvailabilityUpdate` / `pushRateUpdate` keep the cheap
+  `SELECT 1 … LIMIT 1` no-op pre-check (never enqueue for the ~99 % unconnected
+  case), then `submitChannexJob({ kind:'ari', dedupeKey, run: () =>
+  runAvailabilitySync/runRateSync(...) })` — the `run` **recomputes from the DB
+  at execution time**, so dedupe never pushes stale state. `pushInitialInventory`
+  awaits its 2 batched ARI calls (route needs the summary).
+- **`server/utils/channexInboundSync.js`:** `acknowledgeBookingRevision(
+  revision.id)` fired **after the DB commit** on every terminal outcome —
+  created / updated / cancelled, and the `unmapped_property` /
+  `no_mapped_rooms` skip decisions — queued + retried + non-fatal (an ack
+  failure must not fail the webhook). NOT on a thrown error. The availability
+  push-back is now **fire-and-forget** (drains via the queue) so the webhook
+  responds fast. `fetchRevision` requires `revision_id` (no `GET /bookings`
+  fallback).
+- **`channex.js`:** webhook `400`s if `revision_id` is missing (always present
+  for a `booking` event). **`admin.js` / `Properties.jsx`:** 90→500 in the
+  comment + toast fallback.
+
+### Verified (2026-09-08)
+- **Full Sync** (mocked fetch, real `pushInitialInventory` on property #1 with a
+  seeded rate_period): **exactly 1 `POST /availability` + 1 `POST /restrictions`**,
+  availability across all 4 room types, restrictions across all 4 rate plans,
+  both reaching **day 500**, distinct rates `95/222/85/145/65` (varied, not
+  flat). `summary.window.days === 500`.
+- **Ack:** inbound `new` revision → one `POST …/booking_revisions/:id/ack`
+  **after** the booking row is committed (log order confirms); `cancelled`
+  revision → one ack. Real staging: `ack` of a bogus revision id → real `404`,
+  surfaced as `ChannexError` (non-retryable), no crash.
+- **Rate limiter:** 25 rapid `pushAvailabilityUpdate` for one property → **max 9
+  dispatches in any rolling window** (the real 9-per-window logic; window
+  duration shrunk for test speed), calls visibly spaced, `[channex-queue]
+  rate-limit hold` logged.
+- **Retry-backoff:** simulated `429` ×2 → 3 attempts, succeeds, `retries:2
+  failed:0`. Simulated `422` → **1 attempt, no retry**, `failed:1`, logged
+  non-fatal.
+- **Deltas through the queue:** `pushAvailabilityUpdate` + `pushRateUpdate`
+  both increment `channexQueueStats().submitted` / `.ok` — no bare fetch.
+- **Real staging round-trip:** `pushAvailabilityUpdate` + `pushRateUpdate` on
+  connected #1 → real `POST /availability` + `POST /restrictions` (500-day
+  window), `ok:2`, via the queue.
+- `node --check` clean on all changed files; `Properties.jsx` JSX parses clean.
+
+### Deferred
+- Durable queue (survives a process restart) — current one is in-memory; a lost
+  job is re-covered by the next change event / Channex's ack reminder.
+- The pre-flight checklist form + the stage-4 live screenshare are John's to run.
+- Airbnb Live-Feed events (`reservation_request` etc.); the "unmapped rate"
+  Live-Feed state.

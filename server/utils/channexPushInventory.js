@@ -6,6 +6,16 @@
 // room types + rate plans + a forward window of availability and base rates.
 // Super Admin manual trigger ONLY (POST /api/admin/properties/:id/channex-push).
 //
+// Slice 6: rate resolution is now season-aware. buildTargets() targets carry a
+// rateForDate(date) resolver (backed by getRateForDate() — the app's single
+// source of truth for a night's price, shared with the booking modal, checkout
+// and widget) instead of one flat baseRate, and pushInitialInventory() pushes
+// one /restrictions row per contiguous same-rate segment across the window.
+// pushRateUpdate() mirrors pushAvailabilityUpdate() for ongoing rate sync: it is
+// called fire-and-forget whenever a rate_period / rate_period_rooms override is
+// created, edited or deleted, and refreshes every rate plan across the window
+// (Channex Last-Win reverts stale segments — no diffing needed).
+//
 // Slice 4: pushAvailabilityUpdate() — ongoing OUTBOUND availability sync. Called
 // fire-and-forget from every place a NestBook booking is created / cancelled /
 // declined / date-edited, so a connected property's OTA-visible availability
@@ -14,8 +24,29 @@
 // overwhelmingly common case), and it NEVER throws — a Channex API failure is
 // logged, never allowed to block or roll back a real booking action.
 //
-// No rate re-push and no room-type reconciliation here — that is still later
-// work. This slice keeps availability honest, nothing more.
+// Slice 9 (certification prep): the sync window is 500 days (cert test 1), the
+// Full Sync's ARI push is exactly 2 calls (1 batched /availability spanning
+// every room type + 1 batched /restrictions spanning every rate plan), and
+// EVERY outbound write goes through channexQueue (per-property rate limiter +
+// 429/5xx retry-backoff). pushAvailabilityUpdate / pushRateUpdate submit an ARI
+// job whose run() RE-COMPUTES from the DB at execution time, so the queue can
+// safely dedupe rapid repeats without pushing stale state. Delta-on-change is
+// preserved — nothing here runs on a timer.
+//
+// Slice 8: disconnectChannexProperty() — clears properties.channex_property_id +
+// deletes the property's channex_room_mappings rows. NestBook-side only: no
+// Channex API call (a property DELETE is irreversible; room types may hold OTA
+// booking history). Bookings untouched. See admin.js channex-disconnect route.
+//
+// Slice 7: pushRoomTypeReconcile() — keeps channex_room_mappings + the
+// Channex-side room types / rate plans in sync when an owner adds, renames or
+// deletes a room / category / unit AFTER the initial push. Same fire-and-forget,
+// never-throws contract as slices 4–6. A created ref gets a fresh Channex room
+// type + rate plan + full-window ARI; a renamed ref is PUT in place (Channex supports
+// updating a room-type / rate-plan title); a deleted ref is ORPHAN-MARKED
+// (channex_room_mappings.orphaned_at) with its Channex availability pushed to 0 —
+// never an automatic DELETE, because that call can be irreversible and the room
+// type may carry OTA booking history a human must reconcile.
 //
 // Source-of-truth notes:
 //   - Room selection / availability per mode mirrors server/routes/widget.js's
@@ -24,9 +55,12 @@
 //     cancelled / checked_out / cancelled_unpaid / declined) and `ical_blocks`
 //     (room_id IS NULL = property-wide). Categories mode reuses the shared
 //     getAvailableRoomsInCategory() helper directly.
-//   - Base rate is NestBook's current flat rate (rooms.price_per_night, or
-//     properties.whole_property_rate for WP). Seasonal rate_periods are NOT
-//     reflected here — that belongs in the ongoing-sync slice.
+//   - Nightly rate resolution goes through getRateForDate()
+//     (server/utils/ratePeriods.js) exactly as the booking modal / checkout /
+//     widget do: room-specific rate_period_rooms override → matching rate_period
+//     (flat or multiplier) → base (rooms.price_per_night, or
+//     properties.whole_property_rate for WP). Per-night values are coalesced into
+//     contiguous same-rate segments, same as availability.
 //
 // Channex API shapes used (verified against docs.channex.io, 2026-09-07):
 //   POST /api/v1/room_types   { room_type:  { property_id, title, count_of_rooms,
@@ -40,15 +74,23 @@ import db from '../db/database.js';
 import {
   createRoomType,
   createRatePlan,
+  updateRoomType,
+  updateRatePlan,
   deleteRoomType,
   deleteRatePlan,
   updateAvailability,
   updateRates,
+  channexRequest,
   ChannexError,
 } from './channexClient.js';
+import { submitChannexJob } from './channexQueue.js';
 import { getAvailableRoomsInCategory } from './categoryAvailability.js';
+import { getRateForDate } from './ratePeriods.js';
 
-const WINDOW_DAYS = 90;
+// Channex certification (test 1) requires the Full Sync to cover 500 days.
+// This is the ONLY place the window is defined; the delta paths widen with it
+// (still 1 change-triggered call each, never a timer — cert-compliant).
+const WINDOW_DAYS = 500;
 const EXCLUDED_BOOKING_STATUSES = ['cancelled', 'checked_out', 'cancelled_unpaid', 'declined'];
 
 // ── date helpers ────────────────────────────────────────────────────────────
@@ -143,10 +185,35 @@ function wholePropertyBlockers(propertyId) {
   return { bookings, blocks };
 }
 
+// ── nightly rate resolution (season-aware; getRateForDate is the app's single
+//    source of truth — booking modal / checkout / widget all resolve a night's
+//    price through it) ───────────────────────────────────────────────────────
+
+/** getRateForDate(...).rate as a positive number, or null when unset / <= 0. */
+function positiveRate(propertyId, roomId, date, baseOverride = null) {
+  const r = getRateForDate(propertyId, roomId, date, baseOverride);
+  const v = Number(r?.rate);
+  return v > 0 ? v : null;
+}
+
+/**
+ * Coalesce a per-night rate resolver into contiguous {date_from, date_to, rate}
+ * segments (rate = a "0.00" decimal string). A night whose rate is null (unset
+ * or <= 0) becomes a segment with rate === null — the caller skips + warns for
+ * it, exactly as slice 3 does for a fully-zero property rate, but per-segment.
+ */
+function rateSegments(dates, rateForDate) {
+  return coalesce(dates, (date) => {
+    const v = rateForDate(date);
+    return v == null ? null : v.toFixed(2);
+  }).map((seg) => ({ date_from: seg.date_from, date_to: seg.date_to, rate: seg.value }));
+}
+
 // ── target building (one entry == one Channex room type) ─────────────────────
 //
 // target: { refType, refId, title, countOfRooms, occAdults, defaultOccupancy,
-//           baseRate|null, availabilityForDate(date) -> int 0..countOfRooms }
+//           rateForDate(date) -> number>0 | null,
+//           availabilityForDate(date) -> int 0..countOfRooms }
 
 export function buildTargets(property) {
   const pid = property.id;
@@ -155,7 +222,13 @@ export function buildTargets(property) {
 
   if (rentalType === 'whole_property') {
     const cap = Math.max(1, Number(property.total_capacity) || 1);
-    const rate = Number(property.whole_property_rate);
+    const wpBase = Number(property.whole_property_rate) > 0 ? Number(property.whole_property_rate) : null;
+    // WP seasonal rates resolve against the property's first room + the
+    // whole_property_rate base override — the same pattern widget.js's
+    // GET /api/widget/rate-range and bookings.js use.
+    const firstRoom = db.prepare(
+      'SELECT id FROM rooms WHERE property_id = ? ORDER BY id ASC LIMIT 1'
+    ).get(pid);
     const blockers = wholePropertyBlockers(pid);
     return [{
       refType: 'whole_property',
@@ -164,7 +237,8 @@ export function buildTargets(property) {
       countOfRooms: 1,
       occAdults: cap,
       defaultOccupancy: cap,
-      baseRate: rate > 0 ? rate : null,
+      rateForDate: (date) =>
+        (firstRoom ? positiveRate(pid, firstRoom.id, date, wpBase) : null) ?? wpBase,
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
     }];
   }
@@ -185,8 +259,7 @@ export function buildTargets(property) {
         1,
         ...rooms.map((r) => Number(r.max_occupancy) || Number(r.capacity) || 1)
       );
-      const positivePrices = rooms.map((r) => Number(r.price_per_night)).filter((n) => n > 0);
-      const baseRate = positivePrices.length ? Math.min(...positivePrices) : null;
+      const catRoomIds = rooms.map((r) => r.id);
       targets.push({
         refType: 'category',
         refId: cat.id,
@@ -194,7 +267,14 @@ export function buildTargets(property) {
         countOfRooms: rooms.length,
         occAdults,
         defaultOccupancy: occAdults,
-        baseRate,
+        // Keep the flat-rate rule ("lowest positive room price"), now resolved
+        // per night and season-aware via getRateForDate() per room.
+        rateForDate: (date) => {
+          const vals = catRoomIds
+            .map((rid) => positiveRate(pid, rid, date))
+            .filter((n) => n != null);
+          return vals.length ? Math.min(...vals) : null;
+        },
         availabilityForDate: (date) =>
           getAvailableRoomsInCategory(db, cat.id, date, nextDay(date), { respectBuffer: false }).length,
       });
@@ -216,7 +296,6 @@ export function buildTargets(property) {
 
   return rooms.map((room) => {
     const { occAdults, defaultOccupancy } = occFromRoom(room);
-    const rate = Number(room.price_per_night);
     const blockers = roomBlockers(pid, room.id);
     return {
       refType: 'room',
@@ -225,7 +304,7 @@ export function buildTargets(property) {
       countOfRooms: 1,
       occAdults,
       defaultOccupancy,
-      baseRate: rate > 0 ? rate : null,
+      rateForDate: (date) => positiveRate(pid, room.id, date),
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
     };
   });
@@ -275,85 +354,525 @@ function affectedMappings(property, mappings, refType, refId) {
   return [];
 }
 
+/** Cheap "is this property Channex-connected?" check — keeps pushXUpdate() a
+ *  silent, zero-cost no-op (and never enqueues) for the ~99% unconnected case. */
+function isChannexConnected(propertyId) {
+  return !!db.prepare(
+    'SELECT 1 FROM channex_room_mappings WHERE property_id = ? LIMIT 1'
+  ).get(propertyId);
+}
+
 /**
  * Fire-and-forget outbound availability sync for one NestBook change.
  *
  * NEVER throws and NEVER returns a rejected promise — callers must not await it
  * in a booking's response path. Silently no-ops when the property isn't
- * Channex-connected (no channex_room_mappings rows).
+ * Channex-connected.
+ *
+ * The actual push runs as a channexQueue `availability` job so it is
+ * per-property rate-limited and retried on 429/5xx. The job's run() RE-COMPUTES
+ * availability from the DB at execution time, so the queue can safely dedupe
+ * rapid identical calls (same property/ref/range) without ever pushing stale
+ * state — the surviving job picks up every intervening change.
  *
  * @param {number} propertyId          NestBook properties.id
  * @param {'room'|'category'|'whole_property'|'property'} refType
- *        what changed — 'room' with the booking's room_id is the usual call;
- *        'property' refreshes every mapping (bulk import)
  * @param {number|null} refId          rooms.id / room_categories.id / null
  * @param {string|null} dateFrom       'YYYY-MM-DD' inclusive (booking check-in)
- * @param {string|null} dateTo         'YYYY-MM-DD' inclusive (booking check-out;
- *                                     the extra night is harmless — availability
- *                                     is recomputed from source either way)
+ * @param {string|null} dateTo         'YYYY-MM-DD' inclusive (booking check-out)
  * @returns {Promise<void>}
  */
 export async function pushAvailabilityUpdate(propertyId, refType, refId, dateFrom, dateTo) {
   try {
+    if (!propertyId || !isChannexConnected(propertyId)) return;
+    await submitChannexJob({
+      kind: 'ari',
+      ariType: 'availability',
+      propertyId,
+      dedupeKey: `avail:${propertyId}:${refType}:${refId ?? ''}:${dateFrom ?? ''}:${dateTo ?? ''}`,
+      label: `availability sync property #${propertyId} ${refType}:${refId ?? ''}`,
+      run: () => runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo),
+    });
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} availability push failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
+/** The work behind pushAvailabilityUpdate — runs inside the queue worker.
+ *  Recomputes from the DB, then ONE direct POST /availability. Throws on an API
+ *  failure so the queue can retry. */
+async function runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo) {
+  const mappings = db.prepare(
+    'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propertyId);
+  if (mappings.length === 0) return;
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+  if (!property || !property.channex_property_id) return;
+
+  // Clamp the affected range to the sync window; Channex also rejects past dates.
+  const win = windowDates();
+  const winFrom = win[0];
+  const winTo = win[win.length - 1];
+  let from = winFrom;
+  let to = winTo;
+  if (refType !== 'property' && dateFrom && dateTo) {
+    from = dateFrom > winFrom ? dateFrom : winFrom;
+    to = dateTo < winTo ? dateTo : winTo;
+  }
+  if (from > to) return;
+  const nights = win.filter((d) => d >= from && d <= to);
+  if (nights.length === 0) return;
+
+  const affected = affectedMappings(property, mappings, refType, refId);
+  if (affected.length === 0) return;
+
+  const byRef = new Map(
+    buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+  );
+
+  const values = [];
+  for (const m of affected) {
+    const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+    if (!t) continue; // mapping exists but its room/category is gone — skip
+    for (const seg of coalesce(nights, t.availabilityForDate)) {
+      values.push({
+        property_id: property.channex_property_id,
+        room_type_id: m.channex_room_type_id,
+        date_from: seg.date_from,
+        date_to: seg.date_to,
+        availability: seg.value,
+      });
+    }
+  }
+  if (values.length === 0) return;
+
+  const result = await channexRequest('/api/v1/availability', { method: 'POST', body: { values }, raw: true });
+  const warnings = result?.meta?.warnings ?? [];
+  console.log(
+    `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} — ` +
+    `${values.length} availability segment(s) across ${affected.length} room type(s)` +
+    (warnings.length ? ` (${warnings.length} warning(s))` : '')
+  );
+  return result;
+}
+
+// ── ongoing outbound rate sync (slice 6) ───────────────────────────────────
+
+/**
+ * Fire-and-forget outbound RATE sync for one NestBook seasonal-pricing change.
+ *
+ * The rate-sync twin of pushAvailabilityUpdate(): same contract — NEVER throws
+ * and NEVER returns a rejected promise (callers must not await it in a
+ * rate_period save/delete's response path), silently no-ops when the property
+ * has no channex_room_mappings rows / no channex_property_id.
+ *
+ * rate_periods are property-scoped, so the normal call is
+ * pushRateUpdate(propertyId, 'property', null, null, null) — it recomputes real
+ * seasonal rates for EVERY mapped rate plan across the whole sync window and
+ * re-pushes them. Channex processes /restrictions Last-Win, so a full re-push
+ * inherently reverts any stale segment left by an edited or deleted period — no
+ * diffing needed.
+ *
+ * Runs as a channexQueue `restrictions` job (per-property rate-limited, retried
+ * on 429/5xx); the job's run() recomputes from the DB so the queue can safely
+ * dedupe rapid identical calls.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'whole_property'|'property'} refType
+ * @param {number|null} refId
+ * @param {string|null} dateFrom  'YYYY-MM-DD' inclusive (ignored for 'property')
+ * @param {string|null} dateTo    'YYYY-MM-DD' inclusive (ignored for 'property')
+ * @returns {Promise<void>}
+ */
+export async function pushRateUpdate(propertyId, refType, refId, dateFrom, dateTo) {
+  try {
+    if (!propertyId || !isChannexConnected(propertyId)) return;
+    await submitChannexJob({
+      kind: 'ari',
+      ariType: 'restrictions',
+      propertyId,
+      dedupeKey: `rate:${propertyId}:${refType}:${refId ?? ''}:${dateFrom ?? ''}:${dateTo ?? ''}`,
+      label: `rate sync property #${propertyId} ${refType}:${refId ?? ''}`,
+      run: () => runRateSync(propertyId, refType, refId, dateFrom, dateTo),
+    });
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} rate push failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
+/** The work behind pushRateUpdate — runs inside the queue worker. Recomputes
+ *  seasonal rates from the DB, then ONE direct POST /restrictions. Throws on an
+ *  API failure so the queue can retry. */
+async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
+  const mappings = db.prepare(
+    'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propertyId);
+  if (mappings.length === 0) return;
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+  if (!property || !property.channex_property_id) return;
+
+  const win = windowDates();
+  const winFrom = win[0];
+  const winTo = win[win.length - 1];
+  let from = winFrom;
+  let to = winTo;
+  if (refType !== 'property' && dateFrom && dateTo) {
+    from = dateFrom > winFrom ? dateFrom : winFrom;
+    to = dateTo < winTo ? dateTo : winTo;
+  }
+  if (from > to) return;
+  const nights = win.filter((d) => d >= from && d <= to);
+  if (nights.length === 0) return;
+
+  const affected = affectedMappings(property, mappings, refType, refId);
+  if (affected.length === 0) return;
+
+  // Reuse buildTargets() so rate resolution stays identical to the initial
+  // push / the booking modal / checkout / widget.
+  const byRef = new Map(
+    buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+  );
+
+  const values = [];
+  let skippedSegments = 0;
+  for (const m of affected) {
+    const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+    if (!t || !m.channex_rate_plan_id) continue; // room/category gone, or no plan
+    for (const seg of rateSegments(nights, t.rateForDate)) {
+      if (seg.rate == null) { skippedSegments += 1; continue; }
+      values.push({
+        property_id: property.channex_property_id,
+        rate_plan_id: m.channex_rate_plan_id,
+        date_from: seg.date_from,
+        date_to: seg.date_to,
+        rate: seg.rate,
+      });
+    }
+  }
+  if (values.length === 0) {
+    if (skippedSegments) {
+      console.warn(
+        `[channex-sync] property #${propertyId} rate push — every night unset/zero ` +
+        `across ${affected.length} rate plan(s); nothing sent`
+      );
+    }
+    return;
+  }
+
+  const result = await channexRequest('/api/v1/restrictions', { method: 'POST', body: { values }, raw: true });
+  const warnings = result?.meta?.warnings ?? [];
+  console.log(
+    `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} rates — ` +
+    `${values.length} segment(s) across ${affected.length} rate plan(s)` +
+    (skippedSegments ? `, ${skippedSegments} zero-rate segment(s) skipped` : '') +
+    (warnings.length ? ` (${warnings.length} warning(s))` : '')
+  );
+  return result;
+}
+
+// ── Channex room-type / rate-plan creation (shared: initial push + slice 7) ──
+
+/** Channex room_type attributes for a buildTargets() target (minus property_id,
+ *  which PUT rejects and POST takes separately). */
+function roomTypeAttributes(target) {
+  return {
+    title: target.title,
+    count_of_rooms: target.countOfRooms,
+    occ_adults: target.occAdults,
+    occ_children: 0,
+    occ_infants: 0,
+    default_occupancy: target.defaultOccupancy,
+    room_kind: 'room',
+  };
+}
+
+/** Channex rate_plan attributes for the initial create of a target's plan. */
+function ratePlanCreateAttributes(target, channexPropertyId, roomTypeId, currency) {
+  return {
+    title: `${target.title} — Standard`.slice(0, 255),
+    property_id: channexPropertyId,
+    room_type_id: roomTypeId,
+    currency,
+    sell_mode: 'per_room',
+    rate_mode: 'manual',
+    options: [{ occupancy: target.defaultOccupancy, is_primary: true, rate: 0 }],
+  };
+}
+
+/**
+ * Create one Channex room type + its rate plan for a target. Shared by
+ * pushInitialInventory() and pushRoomTypeReconcile(). Best-effort cleanup of a
+ * half-created pair on failure, then rethrow.
+ * @returns {Promise<{channexRoomTypeId: string, channexRatePlanId: string}>}
+ */
+async function createTargetOnChannex(channexPropertyId, currency, target) {
+  const roomTypeData = await createRoomType({
+    property_id: channexPropertyId,
+    ...roomTypeAttributes(target),
+  });
+  const channexRoomTypeId = roomTypeData?.id ?? roomTypeData?.attributes?.id;
+  if (!channexRoomTypeId) {
+    throw new ChannexError(`Channex created a room type for "${target.title}" but returned no id`, { details: roomTypeData });
+  }
+
+  let channexRatePlanId;
+  try {
+    const ratePlanData = await createRatePlan(
+      ratePlanCreateAttributes(target, channexPropertyId, channexRoomTypeId, currency)
+    );
+    channexRatePlanId = ratePlanData?.id ?? ratePlanData?.attributes?.id;
+    if (!channexRatePlanId) {
+      throw new ChannexError(`Channex created a rate plan for "${target.title}" but returned no id`, { details: ratePlanData });
+    }
+  } catch (err) {
+    try { await deleteRoomType(channexRoomTypeId, { force: true }); } catch { /* noop */ }
+    throw err;
+  }
+
+  return { channexRoomTypeId, channexRatePlanId };
+}
+
+// ── ongoing room-type reconciliation (slice 7) ─────────────────────────────
+
+const CHANNEX_TITLE_MAX = 255;
+
+/** Push availability 0 across the whole window for one (now-orphaned) room type
+ *  so OTAs stop selling a room NestBook no longer has. Queued as an ARI job. */
+async function zeroOutRoomType(propertyId, channexPropertyId, channexRoomTypeId) {
+  const dates = windowDates();
+  await updateAvailability([{
+    property_id: channexPropertyId,
+    room_type_id: channexRoomTypeId,
+    date_from: dates[0],
+    date_to: dates[dates.length - 1],
+    availability: 0,
+  }], { propertyId });
+}
+
+/**
+ * Ensure a live Channex room type matches a NestBook target.
+ *  - mapping == null  → create room type + rate plan, insert the mapping row,
+ *                       push its full-window availability + rates
+ *  - mapping present  → PUT the room-type attributes (title / occ / count) and
+ *                       the rate-plan title if they drifted, then refresh ARI
+ */
+async function syncTarget(property, target, mapping) {
+  const cxPropId = property.channex_property_id;
+
+  if (!mapping) {
+    const currency = (property.currency ?? 'EUR').trim().toUpperCase();
+    const { channexRoomTypeId, channexRatePlanId } =
+      await createTargetOnChannex(cxPropId, currency, target);
+
+    const insert = db.prepare(`
+      INSERT INTO channex_room_mappings
+        (property_id, channex_property_id, nestbook_ref_type, nestbook_ref_id,
+         channex_room_type_id, channex_rate_plan_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    try {
+      db.exec('BEGIN');
+      try {
+        insert.run(property.id, cxPropId, target.refType, target.refId,
+          channexRoomTypeId, channexRatePlanId);
+        db.exec('COMMIT');
+      } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+      }
+    } catch (err) {
+      // The DB row is the source of truth for "already pushed" — if we can't
+      // record it, undo the Channex side so it isn't silently duplicated later.
+      try { await deleteRatePlan(channexRatePlanId, { force: true }); } catch { /* noop */ }
+      try { await deleteRoomType(channexRoomTypeId, { force: true }); } catch { /* noop */ }
+      throw err;
+    }
+
+    console.log(
+      `[channex-sync] property #${property.id} ${target.refType}:${target.refId ?? ''} ` +
+      `— created Channex room type ${channexRoomTypeId} ("${target.title}")`
+    );
+  } else {
+    await updateRoomType(mapping.channex_room_type_id, roomTypeAttributes(target));
+    const planTitle = `${target.title} — Standard`.slice(0, CHANNEX_TITLE_MAX);
+    try {
+      await updateRatePlan(mapping.channex_rate_plan_id, { title: planTitle });
+    } catch (err) {
+      // Rate-plan title is cosmetic (channels map on id) — don't fail the sync.
+      console.warn(
+        `[channex-sync] property #${property.id} ${target.refType}:${target.refId ?? ''} ` +
+        `— rate-plan title update skipped (non-fatal): ${err.message}`
+      );
+    }
+    console.log(
+      `[channex-sync] property #${property.id} ${target.refType}:${target.refId ?? ''} ` +
+      `— updated Channex room type ${mapping.channex_room_type_id} ("${target.title}")`
+    );
+  }
+
+  // Fresh ARI for the (new or updated) target — reuses slices 4 + 6, which
+  // re-query the mappings table so a just-inserted row is visible.
+  await pushAvailabilityUpdate(property.id, target.refType, target.refId, null, null);
+  await pushRateUpdate(property.id, target.refType, target.refId, null, null);
+}
+
+/**
+ * The NestBook side of a mapping is gone. DO NOT delete on Channex (irreversible;
+ * may hold OTA booking history). Mark the row orphaned, push availability 0 so
+ * OTAs stop selling it, and warn loudly so a human can force-remove on Channex.
+ */
+async function orphanTarget(property, mapping, reason) {
+  if (mapping.orphaned_at) return; // already handled
+  db.prepare(
+    `UPDATE channex_room_mappings SET orphaned_at = datetime('now') WHERE id = ?`
+  ).run(mapping.id);
+
+  try {
+    await zeroOutRoomType(property.id, property.channex_property_id, mapping.channex_room_type_id);
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${property.id} — could not zero availability for ` +
+      `orphaned room type ${mapping.channex_room_type_id} (non-fatal): ${err.message}`
+    );
+  }
+
+  console.warn(
+    `[channex-sync] property #${property.id} — ${reason}. Channex room type ` +
+    `${mapping.channex_room_type_id} / rate plan ${mapping.channex_rate_plan_id} ` +
+    `orphan-marked and its availability set to 0. It was NOT deleted from Channex ` +
+    `(a room type with OTA booking history needs a human to force-remove it). ` +
+    `Mapping row #${mapping.id}.`
+  );
+}
+
+/**
+ * Fire-and-forget room-type reconciliation for one NestBook room/category/unit
+ * change on an already-Channex-connected property.
+ *
+ * Same contract as pushAvailabilityUpdate() / pushRateUpdate(): NEVER throws /
+ * never rejects, silent no-op when the property has no channex_room_mappings
+ * rows or no channex_property_id. Callers must NOT await it in a CRUD response
+ * path.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'property'} refType  what changed in NestBook
+ * @param {number|null} refId                     rooms.id / room_categories.id
+ * @param {'created'|'renamed'|'deleted'} changeType
+ * @param {{categoryId?: number|null, parentUnitId?: number|null}} [opts]
+ *        for a room in Categories mode / a deleted room, captured by the caller
+ *        BEFORE the row is gone.
+ * @returns {Promise<void>}
+ */
+export async function pushRoomTypeReconcile(propertyId, refType, refId, changeType, opts = {}) {
+  try {
     if (!propertyId) return;
 
-    const mappings = db.prepare(
+    const allMappings = db.prepare(
       'SELECT * FROM channex_room_mappings WHERE property_id = ?'
     ).all(propertyId);
-    if (mappings.length === 0) return; // not Channex-connected — nothing to do
+    if (allMappings.length === 0) return; // not Channex-connected — nothing to do
 
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
     if (!property || !property.channex_property_id) return;
 
-    // Clamp the affected range to the window the initial push covered
-    // ([today, today+WINDOW_DAYS-1]); Channex also rejects past dates.
-    const win = windowDates();
-    const winFrom = win[0];
-    const winTo = win[win.length - 1];
-    let from = winFrom;
-    let to = winTo;
-    if (refType !== 'property' && dateFrom && dateTo) {
-      from = dateFrom > winFrom ? dateFrom : winFrom;
-      to = dateTo < winTo ? dateTo : winTo;
-    }
-    if (from > to) return;
-    const nights = win.filter((d) => d >= from && d <= to);
-    if (nights.length === 0) return;
+    const rentalType = property.rental_type ?? 'rooms';
+    const irMode = property.ir_room_mode ?? 'named';
+    const liveMappings = allMappings.filter((m) => !m.orphaned_at);
 
-    const affected = affectedMappings(property, mappings, refType, refId);
-    if (affected.length === 0) return;
+    const targets = buildTargets(property);
+    const targetByRef = new Map(targets.map((t) => [`${t.refType}:${t.refId ?? ''}`, t]));
+    const liveByRef = new Map(liveMappings.map((m) => [`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`, m]));
 
-    // Reuse buildTargets() for the per-mode availability computation.
-    const byRef = new Map(
-      buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
-    );
-
-    const values = [];
-    for (const m of affected) {
-      const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
-      if (!t) continue; // mapping exists but its room/category is gone — skip
-      for (const seg of coalesce(nights, t.availabilityForDate)) {
-        values.push({
-          property_id: property.channex_property_id,
-          room_type_id: m.channex_room_type_id,
-          date_from: seg.date_from,
-          date_to: seg.date_to,
-          availability: seg.value,
-        });
+    // ── bulk: a room/category import created several refs at once ────────────
+    if (refType === 'property') {
+      let created = 0;
+      let updated = 0;
+      for (const t of targets) {
+        const m = liveByRef.get(`${t.refType}:${t.refId ?? ''}`);
+        await syncTarget(property, t, m ?? null);
+        if (m) updated += 1; else created += 1;
       }
+      console.log(
+        `[channex-sync] property #${propertyId} bulk reconcile — ${created} created, ${updated} refreshed`
+      );
+      return;
     }
-    if (values.length === 0) return;
 
-    const result = await updateAvailability(values);
-    const warnings = result?.meta?.warnings ?? [];
-    console.log(
-      `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} — ` +
-      `${values.length} segment(s) across ${affected.length} room type(s)` +
-      (warnings.length ? ` (${warnings.length} warning(s))` : '')
+    // WP: room/section changes never move a Channex room type (the single WP
+    // room type is property-level; occ = total_capacity).
+    if (rentalType === 'whole_property') return;
+
+    const categoriesMode = rentalType === 'rooms' && irMode === 'categories';
+
+    // Resolve which Channex ref this change maps to.
+    let ref;
+    if (categoriesMode) {
+      let categoryId = refType === 'category'
+        ? Number(refId)
+        : (opts.categoryId != null
+            ? Number(opts.categoryId)
+            : db.prepare('SELECT category_id FROM rooms WHERE id = ?').get(Number(refId))?.category_id ?? null);
+      if (categoryId == null) return; // uncategorised room — not OTA-visible
+      ref = `category:${categoryId}`;
+    } else {
+      // IR-Named / Units: internal unit rooms (parent_unit_id set) are not their
+      // own Channex room type.
+      if (refType === 'room' && opts.parentUnitId != null) return;
+      ref = `${refType}:${refId}`;
+    }
+
+    const mapping = liveByRef.get(ref);
+    const orphaned = allMappings.find(
+      (m) => `${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}` === ref && m.orphaned_at
     );
+    const target = targetByRef.get(ref);
+
+    if (changeType === 'deleted') {
+      // Categories mode: a room delete only orphans the category when it emptied
+      // the category (buildTargets drops a 0-room category → no target).
+      if (mapping && !target) {
+        const reason = refType === 'category'
+          ? `room category #${refId} has no bookable rooms left`
+          : categoriesMode
+            ? `the last room in Channex-mapped category ${ref} was deleted`
+            : `room #${refId} was deleted`;
+        await orphanTarget(property, mapping, reason);
+      } else if (mapping && target) {
+        // Category still has rooms — just refresh its ARI + occ/count.
+        await syncTarget(property, target, mapping);
+      }
+      return;
+    }
+
+    // created / renamed → ensure the Channex room type exists and matches.
+    if (!target) {
+      // Nothing bookable yet (e.g. a brand-new empty category, or a maintenance
+      // room) — nothing to create.
+      return;
+    }
+    if (mapping) {
+      await syncTarget(property, target, mapping);
+    } else if (orphaned) {
+      // The ref exists again but its old mapping is orphaned. Leave the orphan
+      // for a human (its Channex room type may still carry booking history);
+      // just note it rather than silently spawning a duplicate room type.
+      console.warn(
+        `[channex-sync] property #${propertyId} ${ref} — a NestBook ref reappeared but its ` +
+        `mapping (row #${orphaned.id}) is orphaned. Not auto-creating a duplicate Channex room ` +
+        `type; a human should un-orphan or force-remove on Channex.`
+      );
+    } else {
+      await syncTarget(property, target, null);
+    }
   } catch (err) {
     console.error(
-      `[channex-sync] property #${propertyId} availability push failed (non-fatal): ${err.message}`
+      `[channex-sync] property #${propertyId} room-type reconcile failed (non-fatal): ${err.message}`
     );
   }
 }
@@ -362,7 +881,7 @@ export async function pushAvailabilityUpdate(propertyId, refType, refId, dateFro
 
 /**
  * Push a connected property's room types, rate plans and an initial
- * {WINDOW_DAYS}-day window of availability + base rates to Channex.
+ * {WINDOW_DAYS}-day window of availability + real (seasonal) rates to Channex.
  *
  * Caller (the admin route) is responsible for the "already connected" and
  * "already pushed" guards — this function assumes property.channex_property_id
@@ -403,41 +922,15 @@ export async function pushInitialInventory(property) {
   const rateSkipped = [];   // titles whose base rate was <= 0
 
   try {
-    // 1 + 2: create a room type and a rate plan for each target.
+    // 1 + 2: create a room type and a rate plan for each target (shared with
+    // slice 7's pushRoomTypeReconcile via createTargetOnChannex).
     for (const t of targets) {
-      const roomTypeData = await createRoomType({
-        property_id: channexPropertyId,
-        title: t.title,
-        count_of_rooms: t.countOfRooms,
-        occ_adults: t.occAdults,
-        occ_children: 0,
-        occ_infants: 0,
-        default_occupancy: t.defaultOccupancy,
-        room_kind: 'room',
-      });
-      const roomTypeId = roomTypeData?.id ?? roomTypeData?.attributes?.id;
-      if (!roomTypeId) {
-        throw new ChannexError(`Channex created a room type for "${t.title}" but returned no id`, { details: roomTypeData });
-      }
+      const { channexRoomTypeId: roomTypeId, channexRatePlanId: ratePlanId } =
+        await createTargetOnChannex(channexPropertyId, currency, t);
       created.push({
         refType: t.refType, refId: t.refId, title: t.title,
-        channexRoomTypeId: roomTypeId, channexRatePlanId: null, countOfRooms: t.countOfRooms,
+        channexRoomTypeId: roomTypeId, channexRatePlanId: ratePlanId, countOfRooms: t.countOfRooms,
       });
-
-      const ratePlanData = await createRatePlan({
-        title: `${t.title} — Standard`.slice(0, 255),
-        property_id: channexPropertyId,
-        room_type_id: roomTypeId,
-        currency,
-        sell_mode: 'per_room',
-        rate_mode: 'manual',
-        options: [{ occupancy: t.defaultOccupancy, is_primary: true, rate: 0 }],
-      });
-      const ratePlanId = ratePlanData?.id ?? ratePlanData?.attributes?.id;
-      if (!ratePlanId) {
-        throw new ChannexError(`Channex created a rate plan for "${t.title}" but returned no id`, { details: ratePlanData });
-      }
-      created[created.length - 1].channexRatePlanId = ratePlanId;
 
       // 3a: availability segments (real NestBook availability for the window).
       for (const seg of coalesce(dates, t.availabilityForDate)) {
@@ -450,17 +943,22 @@ export async function pushInitialInventory(property) {
         });
       }
 
-      // 3b: base rate across the whole window (flat — seasons are a later slice).
-      if (t.baseRate && t.baseRate > 0) {
+      // 3b: real nightly rates across the window — seasonal rate_periods
+      // resolved via getRateForDate() and coalesced into contiguous same-rate
+      // segments. A segment whose rate is unset / <= 0 is skipped + reported
+      // (Channex requires rate > 0), per-segment rather than per-property.
+      for (const seg of rateSegments(dates, t.rateForDate)) {
+        if (seg.rate == null) {
+          rateSkipped.push(`${t.title} (${seg.date_from}..${seg.date_to})`);
+          continue;
+        }
         rateValues.push({
           property_id: channexPropertyId,
           rate_plan_id: ratePlanId,
-          date_from: windowFrom,
-          date_to: windowTo,
-          rate: t.baseRate.toFixed(2),
+          date_from: seg.date_from,
+          date_to: seg.date_to,
+          rate: seg.rate,
         });
-      } else {
-        rateSkipped.push(t.title);
       }
     }
 
@@ -500,10 +998,14 @@ export async function pushInitialInventory(property) {
     throw err;
   }
 
-  // Push ARI. Availability + rates are separate endpoints, one call each
-  // (well under the 10/min/property limit).
-  const availabilityResult = await updateAvailability(availabilityValues);
-  const rateResult = rateValues.length ? await updateRates(rateValues) : { meta: { warnings: [] } };
+  // Full Sync ARI — cert test 1 requires EXACTLY 2 calls: one batched
+  // POST /availability spanning every room type, one batched POST /restrictions
+  // spanning every rate plan, each 500 days. Both go through the queue
+  // (per-property rate-limited + retried); awaited so the route gets the summary.
+  const availabilityResult = await updateAvailability(availabilityValues, { propertyId: property.id });
+  const rateResult = rateValues.length
+    ? await updateRates(rateValues, { propertyId: property.id })
+    : { meta: { warnings: [] } };
 
   return {
     window: { from: windowFrom, to: windowTo, days: WINDOW_DAYS },
@@ -519,5 +1021,65 @@ export async function pushInitialInventory(property) {
       skippedZeroRate: rateSkipped,
       warnings: rateResult?.meta?.warnings ?? [],
     },
+  };
+}
+
+// ── disconnect (slice 8) ───────────────────────────────────────────────────
+
+/**
+ * Sever a property's Channex link on the NestBook side ONLY.
+ *
+ * Deliberately makes NO Channex API call. Channex's DELETE /properties/:id is
+ * irreversible and its cascade to room types / rate plans is undocumented, and
+ * those room types may carry OTA booking history — same standing rule as slices
+ * 5 + 7: NestBook never auto-destroys OTA-side data. The Channex property + its
+ * room types + rate plans are left intact for the owner to remove from their own
+ * Channex account.
+ *
+ * Clears `properties.channex_property_id` and deletes every
+ * `channex_room_mappings` row for the property (including slice-7 orphaned rows)
+ * in one transaction. Does NOT touch `bookings` — an OTA-origin booking stays a
+ * real NestBook booking and keeps its `channex_reservation_id` as the historical
+ * record.
+ *
+ * After this, pushAvailabilityUpdate / pushRateUpdate / pushRoomTypeReconcile all
+ * no-op for the property (no mapping rows), and channexInboundSync can't resolve
+ * it (no channex_property_id) so inbound webhooks for the old Channex property
+ * hit its existing "unmapped property → skip" path.
+ *
+ * @param {object} property  a full NestBook `properties` row
+ * @returns {{ priorChannexPropertyId: string|null, mappingsDeleted: number,
+ *             orphanedMappingsDeleted: number, roomTypeIds: string[],
+ *             ratePlanIds: string[], channexSide: 'untouched' }}
+ * @throws {Error} only on an unexpected DB failure (transaction is rolled back)
+ */
+export function disconnectChannexProperty(property) {
+  if (!property || typeof property !== 'object' || !property.id) {
+    throw new Error('disconnectChannexProperty: a property record is required');
+  }
+  const propId = property.id;
+  const priorChannexPropertyId = property.channex_property_id ?? null;
+
+  const mappings = db.prepare(
+    'SELECT channex_room_type_id, channex_rate_plan_id, orphaned_at FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propId);
+
+  db.exec('BEGIN');
+  try {
+    db.prepare('DELETE FROM channex_room_mappings WHERE property_id = ?').run(propId);
+    db.prepare('UPDATE properties SET channex_property_id = NULL WHERE id = ?').run(propId);
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+
+  return {
+    priorChannexPropertyId,
+    mappingsDeleted: mappings.length,
+    orphanedMappingsDeleted: mappings.filter((m) => m.orphaned_at).length,
+    roomTypeIds: mappings.map((m) => m.channex_room_type_id),
+    ratePlanIds: mappings.map((m) => m.channex_rate_plan_id),
+    channexSide: 'untouched',
   };
 }

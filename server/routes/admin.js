@@ -17,7 +17,7 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
 import { createChannexProperty } from '../utils/createChannexProperty.js';
 import { ChannexError } from '../utils/channexClient.js';
-import { pushInitialInventory } from '../utils/channexPushInventory.js';
+import { pushInitialInventory, disconnectChannexProperty } from '../utils/channexPushInventory.js';
 
 export const adminRouter = Router();
 
@@ -770,10 +770,11 @@ adminRouter.post('/properties/:id/channex-create', async (req, res) => {
 });
 
 // ── POST /api/admin/properties/:id/channex-push ──────────────────────────────
-// Channex integration (Phase 2, slice 3) — Super Admin manual trigger ONLY.
-// First-time push of a connected property's room types + rate plans + a 90-day
-// window of availability and base rates to Channex. Real API calls against
-// Channex staging.
+// Channex integration (Phase 2, slice 3; slice 9 — 500-day / 2-call Full Sync)
+// — Super Admin manual trigger ONLY. First-time push of a connected property's
+// room types + rate plans + a 500-day window of availability and seasonal rates
+// to Channex (cert test 1: exactly 1 batched POST /availability + 1 batched
+// POST /restrictions). Real API calls against Channex staging, via channexQueue.
 //
 // Guards: property must exist, must be connected (channex_property_id set), and
 // must NOT already have channex_room_mappings rows — re-push / ongoing sync is a
@@ -828,6 +829,73 @@ adminRouter.post('/properties/:id/channex-push', async (req, res) => {
     else if (/no bookable rooms\/units\/categories/.test(err.message)) status = 422;
     console.error(`[admin] channex-push failed for property #${propId}:`, err.message);
     return res.status(status).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/properties/:id/channex-disconnect ────────────────────────
+// Channex integration (Phase 2, slice 8) — Super Admin manual trigger ONLY.
+// The way back out: severs the NestBook-side link so an owner can stop using
+// Channel Manager / switch providers / undo a wrong connection.
+//
+// NestBook-side ONLY — makes NO Channex API call. Channex's own
+// DELETE /properties/:id is irreversible and its cascade to room types / rate
+// plans is undocumented, and those may carry OTA booking history (same standing
+// rule as slices 5 + 7). The Channex property + room types + rate plans are left
+// intact for the owner to remove from their own Channex account.
+//
+// Clears properties.channex_property_id and deletes every channex_room_mappings
+// row for the property (orphaned rows from slice 7 included). Bookings are NOT
+// touched — an OTA-origin booking stays a real NestBook booking and keeps its
+// channex_reservation_id as the historical record.
+adminRouter.post('/properties/:id/channex-disconnect', (req, res) => {
+  const propId = Number(req.params.id);
+  if (!Number.isInteger(propId)) {
+    return res.status(400).json({ error: 'Invalid property id' });
+  }
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+
+  const mappingCount = db.prepare(
+    'SELECT COUNT(*) AS n FROM channex_room_mappings WHERE property_id = ?'
+  ).get(propId).n;
+  if (!property.channex_property_id && mappingCount === 0) {
+    return res.status(400).json({ error: 'This property is not connected to Channex.' });
+  }
+
+  try {
+    const summary = disconnectChannexProperty(property);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user?.userId ?? null,
+      action:     'CHANNEX_DISCONNECTED',
+      category:   'admin',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Disconnected from Channex — cleared channex_property_id ` +
+                  `(${summary.priorChannexPropertyId ?? 'none'}) and deleted ${summary.mappingsDeleted} ` +
+                  `room-type mapping(s)${summary.orphanedMappingsDeleted ? ` (${summary.orphanedMappingsDeleted} already orphaned)` : ''}. ` +
+                  `Channex property + room types + rate plans left INTACT (no API call). Bookings untouched.`,
+      ipAddress:  getIp(req),
+    });
+
+    console.log(
+      `[admin] Channex disconnected for #${propId} (${property.name}) — ` +
+      `${summary.mappingsDeleted} mapping(s) removed, Channex side untouched`
+    );
+    return res.json({
+      success: true,
+      cleared: {
+        channex_property_id: summary.priorChannexPropertyId,
+        mappings_deleted: summary.mappingsDeleted,
+      },
+      channex_side: 'left intact — the Channex property and its room types / rate plans still exist; remove them from your Channex account if unwanted',
+    });
+  } catch (err) {
+    console.error(`[admin] channex-disconnect failed for property #${propId}:`, err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 

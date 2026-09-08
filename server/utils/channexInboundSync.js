@@ -29,9 +29,14 @@
 //     slice 4 so Channex lowers the room's availability and OTHER OTAs stop
 //     selling it — but we NEVER push the reservation itself back to Channex.
 //     There is no reservation-create call anywhere in this file.
+//   - Slice 9 (certification prep): once a revision is SUCCESSFULLY processed
+//     (DB committed) we POST /booking_revisions/:id/ack — required for
+//     certification (cert test 11). Fired only after the commit, so a failed
+//     sync never falsely acks. The availability push-back is now
+//     fire-and-forget (drains via channexQueue) so the webhook responds fast.
 
 import db from '../db/database.js';
-import { getBookingRevision, getBooking } from './channexClient.js';
+import { getBookingRevision, acknowledgeBookingRevision } from './channexClient.js';
 import { assignRoomForCategoryBooking } from './categoryAvailability.js';
 import { pushAvailabilityUpdate } from './channexPushInventory.js';
 import { normaliseSource, splitName } from './normaliseSource.js';
@@ -40,11 +45,24 @@ import { normaliseSource, splitName } from './normaliseSource.js';
 // and channexPushInventory.js EXCLUDED_BOOKING_STATUSES).
 const INACTIVE_STATUSES = ['cancelled', 'checked_out', 'cancelled_unpaid', 'declined'];
 
-/** Re-export the pull helper so the route can `import { fetchRevision }`. */
-export async function fetchRevision({ revisionId, bookingId }) {
-  if (revisionId) return getBookingRevision(revisionId);
-  if (bookingId)  return getBooking(bookingId);
-  throw new Error('fetchRevision: need revisionId or bookingId');
+/** Re-export the pull helper so the route can `import { fetchRevision }`.
+ *  revision_id is ALWAYS present in a Channex booking-webhook payload
+ *  (research §12); we deliberately do NOT fall back to GET /api/v1/bookings/:id
+ *  — the cert guide (test 11) says to use booking_revisions, not bookings. */
+export async function fetchRevision({ revisionId }) {
+  if (!revisionId) throw new Error('fetchRevision: revision_id missing from the webhook payload');
+  return getBookingRevision(revisionId);
+}
+
+/** Acknowledge a successfully-processed revision to Channex (cert test 11).
+ *  Queued (retried) + fire-and-forget — an ack failure must not fail the
+ *  webhook (the DB write already succeeded; Channex just re-reminds). */
+function ackRevision(revision) {
+  const rid = revision?.id;
+  if (!rid) return;
+  acknowledgeBookingRevision(rid)
+    .then(() => console.log(`[channex-inbound] acknowledged revision ${rid}`))
+    .catch((e) => console.error(`[channex-inbound] ack failed for revision ${rid} (non-fatal): ${e.message}`));
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
@@ -132,7 +150,7 @@ function guestsCount(occupancy) {
 
 /**
  * @param {object} revision  a Channex booking-revision `attributes` object
- *                            (from getBookingRevision / getBooking)
+ *                            (from getBookingRevision)
  * @returns {Promise<object>} summary { action, reservationId, propertyId,
  *                            bookingIds:[], cancelledIds:[], skipped?, warnings:[] }
  */
@@ -152,6 +170,7 @@ export async function syncReservationFromRevision(revision) {
   const property = db.prepare('SELECT * FROM properties WHERE channex_property_id = ?').get(channexPropertyId);
   if (!property) {
     console.warn(`[channex-inbound] reservation ${reservationId}: Channex property ${channexPropertyId} is not connected to any NestBook property — ignored`);
+    ackRevision(revision); // we received it and made a terminal decision — stop the reminders
     return { action: 'skipped', skipped: 'unmapped_property', reservationId, warnings };
   }
 
@@ -182,7 +201,8 @@ export async function syncReservationFromRevision(revision) {
     } else {
       warnings.push('cancellation for a reservation with no NestBook booking — nothing to cancel');
     }
-    await pushForRooms(property.id, toPush);
+    pushForRooms(property.id, toPush).catch(() => {}); // fire-and-forget — drains via channexQueue
+    ackRevision(revision);
     console.log(`[channex-inbound] reservation ${reservationId} CANCELLED — ${cancelledIds.length} booking(s) freed`);
     return { action: 'cancelled', reservationId, propertyId: property.id, cancelledIds, warnings };
   }
@@ -318,6 +338,7 @@ export async function syncReservationFromRevision(revision) {
       if (createdIds.length === 0) {
         db.exec('ROLLBACK');
         console.warn(`[channex-inbound] reservation ${reservationId}: no rooms could be mapped — nothing created`);
+        ackRevision(revision); // terminal decision — nothing to retry
         return { action: 'skipped', skipped: 'no_mapped_rooms', reservationId, propertyId: property.id, warnings };
       }
     }
@@ -329,7 +350,12 @@ export async function syncReservationFromRevision(revision) {
   }
 
   // ── loop prevention: availability push-back ONLY, never a reservation echo ──
-  await pushForRooms(property.id, toPush);
+  // Fire-and-forget — the DB write is committed; the availability push drains
+  // through channexQueue so the webhook responds fast.
+  pushForRooms(property.id, toPush).catch(() => {});
+
+  // Acknowledge to Channex ONLY now that the booking rows are committed.
+  ackRevision(revision);
 
   const action = existing.length ? 'updated' : 'created';
   console.log(`[channex-inbound] reservation ${reservationId} ${action.toUpperCase()} — booking(s) ${createdIds.join(', ')}` +

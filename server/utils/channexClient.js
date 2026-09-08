@@ -23,17 +23,26 @@
 // This file deliberately implements only enough to support property creation
 // (utils/createChannexProperty.js). The rest of the API surface — room types,
 // rate plans, ARI, webhooks — is later slices.
+//
+// Slice 9 (certification prep): every OUTBOUND WRITE here routes through
+// channexQueue.submitChannexJob() — a per-property ARI rate limiter + retry/
+// backoff (cert test 12). channexRequest() itself stays a single raw request;
+// GET reads (booking revisions, webhook list) call it directly so a webhook
+// pull never waits behind a queued ARI burst.
+
+import { submitChannexJob } from './channexQueue.js';
 
 const DEFAULT_BASE_URL = 'https://staging.channex.io';
 
 /** Error type for every Channex failure — missing key, network, non-2xx, bad body. */
 export class ChannexError extends Error {
-  constructor(message, { status = null, code = null, details = null } = {}) {
+  constructor(message, { status = null, code = null, details = null, retryAfter = null } = {}) {
     super(message);
     this.name = 'ChannexError';
-    this.status = status;
-    this.code = code;
+    this.status = status;      // HTTP status, or null for a network failure
+    this.code = code;          // Channex errors.code, e.g. 'http_too_many_requests'
     this.details = details;
+    this.retryAfter = retryAfter; // seconds, from a Retry-After header if present
   }
 }
 
@@ -119,10 +128,11 @@ export async function channexRequest(path, { method = 'GET', body, query, raw = 
 
   if (!res.ok) {
     const e = parsed?.errors ?? {};
+    const retryAfter = Number(res.headers.get('retry-after')) || null;
     throw new ChannexError(
       `Channex ${res.status} — ${e.title || 'request failed'} (${method} ${path})` +
       (e.details ? `: ${JSON.stringify(e.details)}` : ''),
-      { status: res.status, code: e.code ?? null, details: e.details ?? null }
+      { status: res.status, code: e.code ?? null, details: e.details ?? null, retryAfter }
     );
   }
 
@@ -139,11 +149,17 @@ export async function channexRequest(path, { method = 'GET', body, query, raw = 
  * @param {object} attributes   property attributes (title, currency, property_type, …)
  * @returns {Promise<object>}   the created property's `data` object (includes `id`)
  */
+/** Route one outbound WRITE through the queue (rate-limit + retry/backoff). */
+function queuedWrite(label, run, extra = {}) {
+  return submitChannexJob({ kind: 'other', label, run, ...extra });
+}
+
 export async function createProperty(attributes) {
-  return channexRequest('/api/v1/properties', {
-    method: 'POST',
-    body: { property: attributes },
-  });
+  return queuedWrite(`create property "${attributes.title ?? '?'}"`, () =>
+    channexRequest('/api/v1/properties', {
+      method: 'POST',
+      body: { property: attributes },
+    }));
 }
 
 /**
@@ -154,10 +170,11 @@ export async function createProperty(attributes) {
  * @returns {Promise<object>} the created room type's `data` (includes `id`)
  */
 export async function createRoomType(attributes) {
-  return channexRequest('/api/v1/room_types', {
-    method: 'POST',
-    body: { room_type: attributes },
-  });
+  return queuedWrite(`create room type "${attributes.title ?? '?'}"`, () =>
+    channexRequest('/api/v1/room_types', {
+      method: 'POST',
+      body: { room_type: attributes },
+    }));
 }
 
 /**
@@ -167,46 +184,91 @@ export async function createRoomType(attributes) {
  * @returns {Promise<object>} the created rate plan's `data` (includes `id`)
  */
 export async function createRatePlan(attributes) {
-  return channexRequest('/api/v1/rate_plans', {
-    method: 'POST',
-    body: { rate_plan: attributes },
-  });
+  return queuedWrite(`create rate plan "${attributes.title ?? '?'}"`, () =>
+    channexRequest('/api/v1/rate_plans', {
+      method: 'POST',
+      body: { rate_plan: attributes },
+    }));
 }
 
-/** Delete a Room Type. `force` also removes dependent rate plans/mappings. */
+/**
+ * Update a Room Type in place. `attributes` mirrors createRoomType's (title,
+ * count_of_rooms, occ_adults/children/infants, default_occupancy, …) minus
+ * property_id. `title` IS updatable this way (docs.channex.io "Room Types
+ * Collection", confirmed 2026-09-08). Removing a *channel-mapped* occupancy
+ * option would 422 — we never drop options, only bump the title/count/occupancy.
+ * @returns {Promise<object>} the updated room type's `data`
+ */
+export async function updateRoomType(id, attributes) {
+  return queuedWrite(`update room type ${id}`, () =>
+    channexRequest(`/api/v1/room_types/${id}`, {
+      method: 'PUT',
+      body: { room_type: attributes },
+    }));
+}
+
+/**
+ * Update a Rate Plan in place. `title` IS updatable (≤255 chars). Pass just the
+ * fields to change.
+ * @returns {Promise<object>} the updated rate plan's `data`
+ */
+export async function updateRatePlan(id, attributes) {
+  return queuedWrite(`update rate plan ${id}`, () =>
+    channexRequest(`/api/v1/rate_plans/${id}`, {
+      method: 'PUT',
+      body: { rate_plan: attributes },
+    }));
+}
+
+/**
+ * Delete a Room Type. Without `force` Channex REFUSES if the room type is
+ * associated with a channel; `force: true` un-maps it from the channel first.
+ * Docs are silent on what happens to existing bookings/ARI history, so slice 7's
+ * reconciliation never calls this automatically — an owner-deleted room's
+ * mapping is orphan-marked and a human force-removes here if needed.
+ */
 export async function deleteRoomType(id, { force = false } = {}) {
-  return channexRequest(`/api/v1/room_types/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' });
+  return queuedWrite(`delete room type ${id}`, () =>
+    channexRequest(`/api/v1/room_types/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' }));
 }
 
-/** Delete a Rate Plan. `force` also removes dependent objects. */
+/** Delete a Rate Plan. `force` un-maps from the channel first. IRREVERSIBLE —
+ *  "once Rate Plan was removed we can't restore it" (docs). Not called
+ *  automatically by reconciliation. */
 export async function deleteRatePlan(id, { force = false } = {}) {
-  return channexRequest(`/api/v1/rate_plans/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' });
+  return queuedWrite(`delete rate plan ${id}`, () =>
+    channexRequest(`/api/v1/rate_plans/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' }));
 }
 
 /**
- * Push availability for room types. `values` is an array of
- * { property_id, room_type_id, date | (date_from & date_to), availability }.
- * Channex processes this asynchronously (returns task ids). Past dates rejected.
+ * Push availability for room types — ONE call, `values` may span many
+ * room_type_id (cert "1 API call with multiple details inside"). Routed through
+ * the queue as an `availability` ARI job: per-property rate-limited, retried on
+ * 429/5xx.
+ * @param {Array} values  [{ property_id, room_type_id, date_from, date_to, availability }, …]
+ * @param {{propertyId?: string|number, dedupeKey?: string}} [opts]
  */
-export async function updateAvailability(values) {
-  return channexRequest('/api/v1/availability', {
-    method: 'POST',
-    body: { values },
-    raw: true,
+export async function updateAvailability(values, { propertyId, dedupeKey } = {}) {
+  return submitChannexJob({
+    kind: 'ari', ariType: 'availability', propertyId, dedupeKey,
+    label: `POST /availability (${values.length} row(s), property ${propertyId ?? '?'})`,
+    run: () => channexRequest('/api/v1/availability', { method: 'POST', body: { values }, raw: true }),
   });
 }
 
 /**
- * Push rates / restrictions for rate plans. `values` is an array of
- * { property_id, rate_plan_id, date | (date_from & date_to), rate?, min_stay_arrival?, … }.
- * `rate` must be > 0; accepts a decimal string ("120.00") or integer minor units.
- * Validation problems come back as `meta.warnings` on a 200, not as an error.
+ * Push rates / restrictions for rate plans — ONE call, `values` may span many
+ * rate_plan_id. `rate` must be > 0 (decimal string or minor units). Validation
+ * problems come back as `meta.warnings` on a 200. Routed through the queue as a
+ * `restrictions` ARI job.
+ * @param {Array} values  [{ property_id, rate_plan_id, date_from, date_to, rate }, …]
+ * @param {{propertyId?: string|number, dedupeKey?: string}} [opts]
  */
-export async function updateRates(values) {
-  return channexRequest('/api/v1/restrictions', {
-    method: 'POST',
-    body: { values },
-    raw: true,
+export async function updateRates(values, { propertyId, dedupeKey } = {}) {
+  return submitChannexJob({
+    kind: 'ari', ariType: 'restrictions', propertyId, dedupeKey,
+    label: `POST /restrictions (${values.length} row(s), property ${propertyId ?? '?'})`,
+    run: () => channexRequest('/api/v1/restrictions', { method: 'POST', body: { values }, raw: true }),
   });
 }
 
@@ -224,10 +286,8 @@ export async function updateRates(values) {
  * @returns {Promise<object>} the created webhook's `data` (includes `id`)
  */
 export async function createWebhook(attributes) {
-  return channexRequest('/api/v1/webhooks', {
-    method: 'POST',
-    body: { webhook: attributes },
-  });
+  return queuedWrite('register webhook', () =>
+    channexRequest('/api/v1/webhooks', { method: 'POST', body: { webhook: attributes } }));
 }
 
 /** List every webhook registered on the account. Returns the full body ({ data, meta }). */
@@ -237,13 +297,15 @@ export async function listWebhooks() {
 
 /** Delete a webhook by id. */
 export async function deleteWebhook(id) {
-  return channexRequest(`/api/v1/webhooks/${id}`, { method: 'DELETE' });
+  return queuedWrite(`delete webhook ${id}`, () =>
+    channexRequest(`/api/v1/webhooks/${id}`, { method: 'DELETE' }));
 }
 
 /**
  * Retrieve the authoritative current state of a booking revision. The webhook
  * body is only a pointer — Channex delivery is unordered and unsigned, so the
- * receiver must always PULL (research §12).
+ * receiver must always PULL (research §12). Read — called directly, NOT queued
+ * (a webhook pull must not wait behind a backed-up ARI burst).
  * @returns {Promise<object>} the revision's `attributes`
  */
 export async function getBookingRevision(revisionId) {
@@ -251,9 +313,18 @@ export async function getBookingRevision(revisionId) {
   return data?.attributes ?? data;
 }
 
-/** Retrieve a booking (latest state) by its stable booking_id. Fallback when a
- *  webhook payload carries only booking_id. @returns {Promise<object>} attributes */
-export async function getBooking(bookingId) {
-  const data = await channexRequest(`/api/v1/bookings/${encodeURIComponent(bookingId)}`);
-  return data?.attributes ?? data;
+/**
+ * Acknowledge receipt of a booking revision — REQUIRED for certification
+ * (cert test 11). POST /api/v1/booking_revisions/:id/ack, empty body, success
+ * `200 { meta: { message: "Success" } }`. Once acked, the revision drops out of
+ * Channex's non-acked feed and the 30-minute reminder email stops. Routed
+ * through the queue so a transient failure is retried, not lost.
+ * @returns {Promise<object>} the `{ meta }` body
+ */
+export async function acknowledgeBookingRevision(revisionId) {
+  return queuedWrite(`ack booking revision ${revisionId}`, () =>
+    channexRequest(`/api/v1/booking_revisions/${encodeURIComponent(revisionId)}/ack`, {
+      method: 'POST',
+      raw: true,
+    }));
 }

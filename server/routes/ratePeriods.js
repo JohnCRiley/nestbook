@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
+import { pushRateUpdate } from '../utils/channexPushInventory.js';
 
 export const ratePeriodsRouter = Router();
 
@@ -116,6 +117,10 @@ ratePeriodsRouter.post('/', (req, res) => {
 
     const period = db.prepare('SELECT * FROM rate_periods WHERE id = ?').get(newId);
     res.status(201).json(attachRoomRates(period));
+
+    // Fire-and-forget — push the new seasonal rate to any Channel-connected
+    // OTAs. Never awaited: a slow/failed Channex call must not delay the save.
+    pushRateUpdate(Number(property_id), 'property', null, null, null).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -164,6 +169,10 @@ ratePeriodsRouter.put('/:id', (req, res) => {
 
     const updated = db.prepare('SELECT * FROM rate_periods WHERE id = ?').get(id);
     res.json(attachRoomRates(updated));
+
+    // Fire-and-forget — re-push rates so edited dates/prices reach connected
+    // OTAs and any stale segment from the old range is reverted (Last-Win).
+    pushRateUpdate(Number(updated.property_id), 'property', null, null, null).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -180,6 +189,10 @@ ratePeriodsRouter.delete('/:id', (req, res) => {
     }
     db.prepare('DELETE FROM rate_periods WHERE id = ?').run(id);
     res.status(204).end();
+
+    // Fire-and-forget — the deleted period's nights fall back to the base rate
+    // on connected OTAs. Never awaited.
+    pushRateUpdate(Number(period.property_id), 'property', null, null, null).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
