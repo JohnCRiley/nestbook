@@ -131,7 +131,7 @@ export default function Properties() {
     }
   }, [fetchProperties, showToast]);
 
-  // Channex: real API call — pushes room types + rate plans + 90 days of ARI
+  // Channex: real API call — pushes room types + rate plans + 500 days of ARI
   // to Channex staging. Only offered once a property is connected. The
   // "already pushed" guard lives server-side; its error shows via the toast.
   const pushChannexInventory = useCallback(async (property) => {
@@ -141,7 +141,7 @@ export default function Properties() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? 'Channex inventory push failed');
       const rt = data.roomTypes?.length ?? 0;
-      showToast(`Pushed to Channex — ${rt} room type${rt === 1 ? '' : 's'}, ${data.window?.days ?? 90} days ARI`);
+      showToast(`Pushed to Channex — ${rt} room type${rt === 1 ? '' : 's'}, ${data.window?.days ?? 500} days ARI`);
       fetchProperties();
     } catch (err) {
       showToast(err.message, 'error');

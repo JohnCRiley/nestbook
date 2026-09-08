@@ -771,3 +771,103 @@ using Channel Manager, switches providers, or connected the wrong property.
 Owner-facing disconnect (Phase 4 Settings UI); an optional "also delete on
 Channex" checkbox for the empty-property case where the owner confirms nothing
 of value is on the Channex side.
+
+---
+
+## Slice 9 — certification prep (500-day/2-call Full Sync · booking ack · queue + rate limiter + retry)  ✅ DONE (2026-09-08)
+
+Closes the three gaps between the integration and Channex's PMS certification
+(docs.channex.io/.../pms-certification-tests).
+
+### Investigation (confirmed against the codebase + docs)
+- **Full Sync call count** — `pushInitialInventory` already batches: ONE
+  `POST /availability` across every room type + ONE `POST /restrictions` across
+  every rate plan (the object creates are separate). The only gap was the
+  window: `WINDOW_DAYS = 90` (the sole hardcode). Rates already vary (seasonal,
+  slice 6) — not the "1 availability / 100 USD" anti-pattern.
+- **Cert test 1:** *"2 API calls: 1 x 500 days for Availability (All Rooms), 1 x
+  500 days Rates & restrictions"*.
+- **Cert anti-patterns:** full-sync-on-a-timer (we never do — manual trigger
+  only), per-date/per-rate calls where "1 API call" is specified, integration
+  logic in test files.  *"Full sync is allowed once every 24h … off-peak"* — so
+  keep it manual.
+- **Ack endpoint** (bookings-collection.md): `POST /api/v1/booking_revisions/:id/ack`,
+  **empty body**, `200 { meta: { message: "Success" } }`. Un-acked → 30-min
+  reminder email. Cert test 11 also: *"do not use `GET api/v1/bookings…`, use
+  `GET api/v1/booking_revisions…`"*.
+- **Rate limits** (rate-limits.md), **per property per minute**: 10 availability,
+  10 restrictions, **20 ARI total**. Breach → `429`
+  `{"errors":{"code":"http_too_many_requests"}}`. No documented `Retry-After`.
+- **No ack today** — `grep` of `channexInboundSync.js` / `channex.js`: none.
+  Slice 5's deferral confirmed. `getBooking()` (`GET /bookings/:id`) existed as a
+  dead fallback → removed.
+
+### Built
+- **`server/utils/channexQueue.js` (NEW):** `submitChannexJob({ kind:'ari'|'other',
+  ariType, propertyId, dedupeKey, label, run })` → `Promise`. One array-backed
+  FIFO + one async worker. **Per-property ARI sliding-window limiter**
+  (9 availability / 9 restrictions / 18 total per trailing 60 s — a hair under
+  the documented 10/10/20), **250 ms global min-gap**, **retry-backoff**
+  `[2s,8s,30s,60s]` × 5 attempts on `429`/`5xx`/network (honours `Retry-After`),
+  immediate reject on other 4xx, **dedupe** of not-yet-started jobs by
+  `dedupeKey`. Test hooks: `__setChannexQueueConfig`, `__resetChannexQueue`,
+  `channexQueueStats`, `drainChannexQueue`. Real infra — not a test shim.
+  A job's `run()` must never call `submitChannexJob` (single worker → deadlock).
+- **`server/utils/channexClient.js`:** `ChannexError.retryAfter` +
+  `channexRequest` reads the `Retry-After` header. Every **write** now routes
+  through the queue — `updateAvailability`/`updateRates` as `kind:'ari'`
+  (`{propertyId, dedupeKey}` opts); `create/update/deleteRoomType` /
+  `…RatePlan` / `createProperty` / `createWebhook` / `deleteWebhook` as
+  `kind:'other'`. **Reads stay direct** (`getBookingRevision`, `listWebhooks`)
+  so a webhook pull never waits behind a backed-up ARI burst. New
+  `acknowledgeBookingRevision(revisionId)`. `getBooking()` removed.
+- **`server/utils/channexPushInventory.js`:** `WINDOW_DAYS = 90 → 500` (the one
+  place; delta paths widen with it — still one change-triggered call each, never
+  a timer). `pushAvailabilityUpdate` / `pushRateUpdate` keep the cheap
+  `SELECT 1 … LIMIT 1` no-op pre-check (never enqueue for the ~99 % unconnected
+  case), then `submitChannexJob({ kind:'ari', dedupeKey, run: () =>
+  runAvailabilitySync/runRateSync(...) })` — the `run` **recomputes from the DB
+  at execution time**, so dedupe never pushes stale state. `pushInitialInventory`
+  awaits its 2 batched ARI calls (route needs the summary).
+- **`server/utils/channexInboundSync.js`:** `acknowledgeBookingRevision(
+  revision.id)` fired **after the DB commit** on every terminal outcome —
+  created / updated / cancelled, and the `unmapped_property` /
+  `no_mapped_rooms` skip decisions — queued + retried + non-fatal (an ack
+  failure must not fail the webhook). NOT on a thrown error. The availability
+  push-back is now **fire-and-forget** (drains via the queue) so the webhook
+  responds fast. `fetchRevision` requires `revision_id` (no `GET /bookings`
+  fallback).
+- **`channex.js`:** webhook `400`s if `revision_id` is missing (always present
+  for a `booking` event). **`admin.js` / `Properties.jsx`:** 90→500 in the
+  comment + toast fallback.
+
+### Verified (2026-09-08)
+- **Full Sync** (mocked fetch, real `pushInitialInventory` on property #1 with a
+  seeded rate_period): **exactly 1 `POST /availability` + 1 `POST /restrictions`**,
+  availability across all 4 room types, restrictions across all 4 rate plans,
+  both reaching **day 500**, distinct rates `95/222/85/145/65` (varied, not
+  flat). `summary.window.days === 500`.
+- **Ack:** inbound `new` revision → one `POST …/booking_revisions/:id/ack`
+  **after** the booking row is committed (log order confirms); `cancelled`
+  revision → one ack. Real staging: `ack` of a bogus revision id → real `404`,
+  surfaced as `ChannexError` (non-retryable), no crash.
+- **Rate limiter:** 25 rapid `pushAvailabilityUpdate` for one property → **max 9
+  dispatches in any rolling window** (the real 9-per-window logic; window
+  duration shrunk for test speed), calls visibly spaced, `[channex-queue]
+  rate-limit hold` logged.
+- **Retry-backoff:** simulated `429` ×2 → 3 attempts, succeeds, `retries:2
+  failed:0`. Simulated `422` → **1 attempt, no retry**, `failed:1`, logged
+  non-fatal.
+- **Deltas through the queue:** `pushAvailabilityUpdate` + `pushRateUpdate`
+  both increment `channexQueueStats().submitted` / `.ok` — no bare fetch.
+- **Real staging round-trip:** `pushAvailabilityUpdate` + `pushRateUpdate` on
+  connected #1 → real `POST /availability` + `POST /restrictions` (500-day
+  window), `ok:2`, via the queue.
+- `node --check` clean on all changed files; `Properties.jsx` JSX parses clean.
+
+### Deferred
+- Durable queue (survives a process restart) — current one is in-memory; a lost
+  job is re-covered by the next change event / Channex's ack reminder.
+- The pre-flight checklist form + the stage-4 live screenshare are John's to run.
+- Airbnb Live-Feed events (`reservation_request` etc.); the "unmapped rate"
+  Live-Feed state.

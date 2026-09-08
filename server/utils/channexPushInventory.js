@@ -24,6 +24,15 @@
 // overwhelmingly common case), and it NEVER throws — a Channex API failure is
 // logged, never allowed to block or roll back a real booking action.
 //
+// Slice 9 (certification prep): the sync window is 500 days (cert test 1), the
+// Full Sync's ARI push is exactly 2 calls (1 batched /availability spanning
+// every room type + 1 batched /restrictions spanning every rate plan), and
+// EVERY outbound write goes through channexQueue (per-property rate limiter +
+// 429/5xx retry-backoff). pushAvailabilityUpdate / pushRateUpdate submit an ARI
+// job whose run() RE-COMPUTES from the DB at execution time, so the queue can
+// safely dedupe rapid repeats without pushing stale state. Delta-on-change is
+// preserved — nothing here runs on a timer.
+//
 // Slice 8: disconnectChannexProperty() — clears properties.channex_property_id +
 // deletes the property's channex_room_mappings rows. NestBook-side only: no
 // Channex API call (a property DELETE is irreversible; room types may hold OTA
@@ -33,7 +42,7 @@
 // Channex-side room types / rate plans in sync when an owner adds, renames or
 // deletes a room / category / unit AFTER the initial push. Same fire-and-forget,
 // never-throws contract as slices 4–6. A created ref gets a fresh Channex room
-// type + rate plan + 90-day ARI; a renamed ref is PUT in place (Channex supports
+// type + rate plan + full-window ARI; a renamed ref is PUT in place (Channex supports
 // updating a room-type / rate-plan title); a deleted ref is ORPHAN-MARKED
 // (channex_room_mappings.orphaned_at) with its Channex availability pushed to 0 —
 // never an automatic DELETE, because that call can be irreversible and the room
@@ -71,12 +80,17 @@ import {
   deleteRatePlan,
   updateAvailability,
   updateRates,
+  channexRequest,
   ChannexError,
 } from './channexClient.js';
+import { submitChannexJob } from './channexQueue.js';
 import { getAvailableRoomsInCategory } from './categoryAvailability.js';
 import { getRateForDate } from './ratePeriods.js';
 
-const WINDOW_DAYS = 90;
+// Channex certification (test 1) requires the Full Sync to cover 500 days.
+// This is the ONLY place the window is defined; the delta paths widen with it
+// (still 1 change-triggered call each, never a timer — cert-compliant).
+const WINDOW_DAYS = 500;
 const EXCLUDED_BOOKING_STATUSES = ['cancelled', 'checked_out', 'cancelled_unpaid', 'declined'];
 
 // ── date helpers ────────────────────────────────────────────────────────────
@@ -340,87 +354,109 @@ function affectedMappings(property, mappings, refType, refId) {
   return [];
 }
 
+/** Cheap "is this property Channex-connected?" check — keeps pushXUpdate() a
+ *  silent, zero-cost no-op (and never enqueues) for the ~99% unconnected case. */
+function isChannexConnected(propertyId) {
+  return !!db.prepare(
+    'SELECT 1 FROM channex_room_mappings WHERE property_id = ? LIMIT 1'
+  ).get(propertyId);
+}
+
 /**
  * Fire-and-forget outbound availability sync for one NestBook change.
  *
  * NEVER throws and NEVER returns a rejected promise — callers must not await it
  * in a booking's response path. Silently no-ops when the property isn't
- * Channex-connected (no channex_room_mappings rows).
+ * Channex-connected.
+ *
+ * The actual push runs as a channexQueue `availability` job so it is
+ * per-property rate-limited and retried on 429/5xx. The job's run() RE-COMPUTES
+ * availability from the DB at execution time, so the queue can safely dedupe
+ * rapid identical calls (same property/ref/range) without ever pushing stale
+ * state — the surviving job picks up every intervening change.
  *
  * @param {number} propertyId          NestBook properties.id
  * @param {'room'|'category'|'whole_property'|'property'} refType
- *        what changed — 'room' with the booking's room_id is the usual call;
- *        'property' refreshes every mapping (bulk import)
  * @param {number|null} refId          rooms.id / room_categories.id / null
  * @param {string|null} dateFrom       'YYYY-MM-DD' inclusive (booking check-in)
- * @param {string|null} dateTo         'YYYY-MM-DD' inclusive (booking check-out;
- *                                     the extra night is harmless — availability
- *                                     is recomputed from source either way)
+ * @param {string|null} dateTo         'YYYY-MM-DD' inclusive (booking check-out)
  * @returns {Promise<void>}
  */
 export async function pushAvailabilityUpdate(propertyId, refType, refId, dateFrom, dateTo) {
   try {
-    if (!propertyId) return;
-
-    const mappings = db.prepare(
-      'SELECT * FROM channex_room_mappings WHERE property_id = ?'
-    ).all(propertyId);
-    if (mappings.length === 0) return; // not Channex-connected — nothing to do
-
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
-    if (!property || !property.channex_property_id) return;
-
-    // Clamp the affected range to the window the initial push covered
-    // ([today, today+WINDOW_DAYS-1]); Channex also rejects past dates.
-    const win = windowDates();
-    const winFrom = win[0];
-    const winTo = win[win.length - 1];
-    let from = winFrom;
-    let to = winTo;
-    if (refType !== 'property' && dateFrom && dateTo) {
-      from = dateFrom > winFrom ? dateFrom : winFrom;
-      to = dateTo < winTo ? dateTo : winTo;
-    }
-    if (from > to) return;
-    const nights = win.filter((d) => d >= from && d <= to);
-    if (nights.length === 0) return;
-
-    const affected = affectedMappings(property, mappings, refType, refId);
-    if (affected.length === 0) return;
-
-    // Reuse buildTargets() for the per-mode availability computation.
-    const byRef = new Map(
-      buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
-    );
-
-    const values = [];
-    for (const m of affected) {
-      const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
-      if (!t) continue; // mapping exists but its room/category is gone — skip
-      for (const seg of coalesce(nights, t.availabilityForDate)) {
-        values.push({
-          property_id: property.channex_property_id,
-          room_type_id: m.channex_room_type_id,
-          date_from: seg.date_from,
-          date_to: seg.date_to,
-          availability: seg.value,
-        });
-      }
-    }
-    if (values.length === 0) return;
-
-    const result = await updateAvailability(values);
-    const warnings = result?.meta?.warnings ?? [];
-    console.log(
-      `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} — ` +
-      `${values.length} segment(s) across ${affected.length} room type(s)` +
-      (warnings.length ? ` (${warnings.length} warning(s))` : '')
-    );
+    if (!propertyId || !isChannexConnected(propertyId)) return;
+    await submitChannexJob({
+      kind: 'ari',
+      ariType: 'availability',
+      propertyId,
+      dedupeKey: `avail:${propertyId}:${refType}:${refId ?? ''}:${dateFrom ?? ''}:${dateTo ?? ''}`,
+      label: `availability sync property #${propertyId} ${refType}:${refId ?? ''}`,
+      run: () => runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo),
+    });
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} availability push failed (non-fatal): ${err.message}`
     );
   }
+}
+
+/** The work behind pushAvailabilityUpdate — runs inside the queue worker.
+ *  Recomputes from the DB, then ONE direct POST /availability. Throws on an API
+ *  failure so the queue can retry. */
+async function runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo) {
+  const mappings = db.prepare(
+    'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propertyId);
+  if (mappings.length === 0) return;
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+  if (!property || !property.channex_property_id) return;
+
+  // Clamp the affected range to the sync window; Channex also rejects past dates.
+  const win = windowDates();
+  const winFrom = win[0];
+  const winTo = win[win.length - 1];
+  let from = winFrom;
+  let to = winTo;
+  if (refType !== 'property' && dateFrom && dateTo) {
+    from = dateFrom > winFrom ? dateFrom : winFrom;
+    to = dateTo < winTo ? dateTo : winTo;
+  }
+  if (from > to) return;
+  const nights = win.filter((d) => d >= from && d <= to);
+  if (nights.length === 0) return;
+
+  const affected = affectedMappings(property, mappings, refType, refId);
+  if (affected.length === 0) return;
+
+  const byRef = new Map(
+    buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+  );
+
+  const values = [];
+  for (const m of affected) {
+    const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+    if (!t) continue; // mapping exists but its room/category is gone — skip
+    for (const seg of coalesce(nights, t.availabilityForDate)) {
+      values.push({
+        property_id: property.channex_property_id,
+        room_type_id: m.channex_room_type_id,
+        date_from: seg.date_from,
+        date_to: seg.date_to,
+        availability: seg.value,
+      });
+    }
+  }
+  if (values.length === 0) return;
+
+  const result = await channexRequest('/api/v1/availability', { method: 'POST', body: { values }, raw: true });
+  const warnings = result?.meta?.warnings ?? [];
+  console.log(
+    `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} — ` +
+    `${values.length} availability segment(s) across ${affected.length} room type(s)` +
+    (warnings.length ? ` (${warnings.length} warning(s))` : '')
+  );
+  return result;
 }
 
 // ── ongoing outbound rate sync (slice 6) ───────────────────────────────────
@@ -435,11 +471,14 @@ export async function pushAvailabilityUpdate(propertyId, refType, refId, dateFro
  *
  * rate_periods are property-scoped, so the normal call is
  * pushRateUpdate(propertyId, 'property', null, null, null) — it recomputes real
- * seasonal rates for EVERY mapped rate plan across the whole initial-push window
- * and re-pushes them. Channex processes /restrictions Last-Win, so a full
- * re-push inherently reverts any stale segment left by an edited or deleted
- * period — no diffing needed. The (refType, refId, dateFrom, dateTo) params
- * mirror pushAvailabilityUpdate() for a future narrower call.
+ * seasonal rates for EVERY mapped rate plan across the whole sync window and
+ * re-pushes them. Channex processes /restrictions Last-Win, so a full re-push
+ * inherently reverts any stale segment left by an edited or deleted period — no
+ * diffing needed.
+ *
+ * Runs as a channexQueue `restrictions` job (per-property rate-limited, retried
+ * on 429/5xx); the job's run() recomputes from the DB so the queue can safely
+ * dedupe rapid identical calls.
  *
  * @param {number} propertyId
  * @param {'room'|'category'|'whole_property'|'property'} refType
@@ -450,77 +489,91 @@ export async function pushAvailabilityUpdate(propertyId, refType, refId, dateFro
  */
 export async function pushRateUpdate(propertyId, refType, refId, dateFrom, dateTo) {
   try {
-    if (!propertyId) return;
-
-    const mappings = db.prepare(
-      'SELECT * FROM channex_room_mappings WHERE property_id = ?'
-    ).all(propertyId);
-    if (mappings.length === 0) return; // not Channex-connected — nothing to do
-
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
-    if (!property || !property.channex_property_id) return;
-
-    const win = windowDates();
-    const winFrom = win[0];
-    const winTo = win[win.length - 1];
-    let from = winFrom;
-    let to = winTo;
-    if (refType !== 'property' && dateFrom && dateTo) {
-      from = dateFrom > winFrom ? dateFrom : winFrom;
-      to = dateTo < winTo ? dateTo : winTo;
-    }
-    if (from > to) return;
-    const nights = win.filter((d) => d >= from && d <= to);
-    if (nights.length === 0) return;
-
-    const affected = affectedMappings(property, mappings, refType, refId);
-    if (affected.length === 0) return;
-
-    // Reuse buildTargets() so rate resolution stays identical to the initial
-    // push / the booking modal / checkout / widget.
-    const byRef = new Map(
-      buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
-    );
-
-    const values = [];
-    let skippedSegments = 0;
-    for (const m of affected) {
-      const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
-      if (!t || !m.channex_rate_plan_id) continue; // room/category gone, or no plan
-      for (const seg of rateSegments(nights, t.rateForDate)) {
-        if (seg.rate == null) { skippedSegments += 1; continue; }
-        values.push({
-          property_id: property.channex_property_id,
-          rate_plan_id: m.channex_rate_plan_id,
-          date_from: seg.date_from,
-          date_to: seg.date_to,
-          rate: seg.rate,
-        });
-      }
-    }
-    if (values.length === 0) {
-      if (skippedSegments) {
-        console.warn(
-          `[channex-sync] property #${propertyId} rate push — every night unset/zero ` +
-          `across ${affected.length} rate plan(s); nothing sent`
-        );
-      }
-      return;
-    }
-
-    const result = await updateRates(values);
-    const warnings = result?.meta?.warnings ?? [];
-    console.log(
-      `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} rates — ` +
-      `${values.length} segment(s) across ${affected.length} rate plan(s)` +
-      (skippedSegments ? `, ${skippedSegments} zero-rate segment(s) skipped` : '') +
-      (warnings.length ? ` (${warnings.length} warning(s))` : '')
-    );
+    if (!propertyId || !isChannexConnected(propertyId)) return;
+    await submitChannexJob({
+      kind: 'ari',
+      ariType: 'restrictions',
+      propertyId,
+      dedupeKey: `rate:${propertyId}:${refType}:${refId ?? ''}:${dateFrom ?? ''}:${dateTo ?? ''}`,
+      label: `rate sync property #${propertyId} ${refType}:${refId ?? ''}`,
+      run: () => runRateSync(propertyId, refType, refId, dateFrom, dateTo),
+    });
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} rate push failed (non-fatal): ${err.message}`
     );
   }
+}
+
+/** The work behind pushRateUpdate — runs inside the queue worker. Recomputes
+ *  seasonal rates from the DB, then ONE direct POST /restrictions. Throws on an
+ *  API failure so the queue can retry. */
+async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
+  const mappings = db.prepare(
+    'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propertyId);
+  if (mappings.length === 0) return;
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+  if (!property || !property.channex_property_id) return;
+
+  const win = windowDates();
+  const winFrom = win[0];
+  const winTo = win[win.length - 1];
+  let from = winFrom;
+  let to = winTo;
+  if (refType !== 'property' && dateFrom && dateTo) {
+    from = dateFrom > winFrom ? dateFrom : winFrom;
+    to = dateTo < winTo ? dateTo : winTo;
+  }
+  if (from > to) return;
+  const nights = win.filter((d) => d >= from && d <= to);
+  if (nights.length === 0) return;
+
+  const affected = affectedMappings(property, mappings, refType, refId);
+  if (affected.length === 0) return;
+
+  // Reuse buildTargets() so rate resolution stays identical to the initial
+  // push / the booking modal / checkout / widget.
+  const byRef = new Map(
+    buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+  );
+
+  const values = [];
+  let skippedSegments = 0;
+  for (const m of affected) {
+    const t = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+    if (!t || !m.channex_rate_plan_id) continue; // room/category gone, or no plan
+    for (const seg of rateSegments(nights, t.rateForDate)) {
+      if (seg.rate == null) { skippedSegments += 1; continue; }
+      values.push({
+        property_id: property.channex_property_id,
+        rate_plan_id: m.channex_rate_plan_id,
+        date_from: seg.date_from,
+        date_to: seg.date_to,
+        rate: seg.rate,
+      });
+    }
+  }
+  if (values.length === 0) {
+    if (skippedSegments) {
+      console.warn(
+        `[channex-sync] property #${propertyId} rate push — every night unset/zero ` +
+        `across ${affected.length} rate plan(s); nothing sent`
+      );
+    }
+    return;
+  }
+
+  const result = await channexRequest('/api/v1/restrictions', { method: 'POST', body: { values }, raw: true });
+  const warnings = result?.meta?.warnings ?? [];
+  console.log(
+    `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} rates — ` +
+    `${values.length} segment(s) across ${affected.length} rate plan(s)` +
+    (skippedSegments ? `, ${skippedSegments} zero-rate segment(s) skipped` : '') +
+    (warnings.length ? ` (${warnings.length} warning(s))` : '')
+  );
+  return result;
 }
 
 // ── Channex room-type / rate-plan creation (shared: initial push + slice 7) ──
@@ -590,8 +643,8 @@ async function createTargetOnChannex(channexPropertyId, currency, target) {
 const CHANNEX_TITLE_MAX = 255;
 
 /** Push availability 0 across the whole window for one (now-orphaned) room type
- *  so OTAs stop selling a room NestBook no longer has. */
-async function zeroOutRoomType(channexPropertyId, channexRoomTypeId) {
+ *  so OTAs stop selling a room NestBook no longer has. Queued as an ARI job. */
+async function zeroOutRoomType(propertyId, channexPropertyId, channexRoomTypeId) {
   const dates = windowDates();
   await updateAvailability([{
     property_id: channexPropertyId,
@@ -599,13 +652,13 @@ async function zeroOutRoomType(channexPropertyId, channexRoomTypeId) {
     date_from: dates[0],
     date_to: dates[dates.length - 1],
     availability: 0,
-  }]);
+  }], { propertyId });
 }
 
 /**
  * Ensure a live Channex room type matches a NestBook target.
  *  - mapping == null  → create room type + rate plan, insert the mapping row,
- *                       push its 90-day availability + rates
+ *                       push its full-window availability + rates
  *  - mapping present  → PUT the room-type attributes (title / occ / count) and
  *                       the rate-plan title if they drifted, then refresh ARI
  */
@@ -681,7 +734,7 @@ async function orphanTarget(property, mapping, reason) {
   ).run(mapping.id);
 
   try {
-    await zeroOutRoomType(property.channex_property_id, mapping.channex_room_type_id);
+    await zeroOutRoomType(property.id, property.channex_property_id, mapping.channex_room_type_id);
   } catch (err) {
     console.error(
       `[channex-sync] property #${property.id} — could not zero availability for ` +
@@ -945,10 +998,14 @@ export async function pushInitialInventory(property) {
     throw err;
   }
 
-  // Push ARI. Availability + rates are separate endpoints, one call each
-  // (well under the 10/min/property limit).
-  const availabilityResult = await updateAvailability(availabilityValues);
-  const rateResult = rateValues.length ? await updateRates(rateValues) : { meta: { warnings: [] } };
+  // Full Sync ARI — cert test 1 requires EXACTLY 2 calls: one batched
+  // POST /availability spanning every room type, one batched POST /restrictions
+  // spanning every rate plan, each 500 days. Both go through the queue
+  // (per-property rate-limited + retried); awaited so the route gets the summary.
+  const availabilityResult = await updateAvailability(availabilityValues, { propertyId: property.id });
+  const rateResult = rateValues.length
+    ? await updateRates(rateValues, { propertyId: property.id })
+    : { meta: { warnings: [] } };
 
   return {
     window: { from: windowFrom, to: windowTo, days: WINDOW_DAYS },

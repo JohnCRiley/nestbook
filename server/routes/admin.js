@@ -770,10 +770,11 @@ adminRouter.post('/properties/:id/channex-create', async (req, res) => {
 });
 
 // ── POST /api/admin/properties/:id/channex-push ──────────────────────────────
-// Channex integration (Phase 2, slice 3) — Super Admin manual trigger ONLY.
-// First-time push of a connected property's room types + rate plans + a 90-day
-// window of availability and base rates to Channex. Real API calls against
-// Channex staging.
+// Channex integration (Phase 2, slice 3; slice 9 — 500-day / 2-call Full Sync)
+// — Super Admin manual trigger ONLY. First-time push of a connected property's
+// room types + rate plans + a 500-day window of availability and seasonal rates
+// to Channex (cert test 1: exactly 1 batched POST /availability + 1 batched
+// POST /restrictions). Real API calls against Channex staging, via channexQueue.
 //
 // Guards: property must exist, must be connected (channex_property_id set), and
 // must NOT already have channex_room_mappings rows — re-push / ongoing sync is a

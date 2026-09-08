@@ -53,18 +53,20 @@ channexRouter.post('/webhook', async (req, res) => {
   const event   = body.event ?? null;
   const payload = (body.payload && typeof body.payload === 'object') ? body.payload : {};
   const revisionId = payload.revision_id ?? payload.booking_revision_id ?? null;
-  const bookingId  = payload.booking_id ?? body.booking_id ?? null;
 
   // Non-booking events (ari, review, channel lifecycle, …) — ack and ignore.
   if (event && !BOOKING_EVENTS.has(event)) {
     return res.status(200).json({ ok: true, ignored: event });
   }
-  if (!revisionId && !bookingId) {
-    return res.status(400).json({ error: 'payload missing booking_id / revision_id' });
+  // A booking webhook always carries revision_id (research §12). We pull the
+  // authoritative state from GET /booking_revisions/:id — never GET /bookings
+  // (cert test 11 forbids the bookings endpoint).
+  if (!revisionId) {
+    return res.status(400).json({ error: 'payload missing revision_id' });
   }
 
   try {
-    const revision = await fetchRevision({ revisionId, bookingId });
+    const revision = await fetchRevision({ revisionId });
     const result   = await syncReservationFromRevision(revision);
     return res.status(200).json({ ok: true, result });
   } catch (err) {
