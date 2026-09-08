@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
+import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
@@ -436,6 +437,13 @@ roomsRouter.post('/', (req, res) => {
       targetName: created.name,
       ipAddress: getIp(req),
     });
+
+    // Fire-and-forget — give the new room a Channex room type if this property
+    // is channel-connected (no-op otherwise). Never awaited.
+    pushRoomTypeReconcile(
+      Number(property_id), 'room', created.id, 'created',
+      { categoryId: created.category_id, parentUnitId: created.parent_unit_id },
+    ).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -574,6 +582,10 @@ roomsRouter.post('/bulk-import', async (req, res) => {
         ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} rooms. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited rooms.`
         : null,
     });
+
+    // Fire-and-forget — create Channex room types for every newly imported room
+    // (no-op if the property isn't channel-connected). Never awaited.
+    pushRoomTypeReconcile(Number(property_id), 'property', null, 'created').catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -795,6 +807,10 @@ roomsRouter.post('/bulk-import-categories', async (req, res) => {
         ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} rooms. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited rooms.`
         : null,
     });
+
+    // Fire-and-forget — create Channex room types for every category/room this
+    // import added (no-op if the property isn't channel-connected). Never awaited.
+    pushRoomTypeReconcile(Number(property_id), 'property', null, 'created').catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -915,6 +931,11 @@ roomsRouter.post('/bulk-import-wp', async (req, res) => {
         ? `Your ${plan} plan is limited to ${FREE_PLAN_ROOM_LIMIT} sections. Row${skippedForLimit.length === 1 ? '' : 's'} ${skippedForLimit.join(', ')} could not be imported — upgrade to Pro for unlimited sections.`
         : null,
     });
+
+    // Fire-and-forget — refresh the WP Channex room type (no-op if the property
+    // isn't channel-connected). WP is a single property-level room type, so
+    // showcase sections don't add room types; this just keeps it in sync.
+    pushRoomTypeReconcile(Number(property_id), 'property', null, 'created').catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1189,6 +1210,11 @@ roomsRouter.post('/bulk-import-units', async (req, res) => {
       currency_symbol:     currSym,
       limit_message:       limitParts.join(' ') || null,
     });
+
+    // Fire-and-forget — create Channex room types for every top-level unit this
+    // import added (internal rooms aren't their own room type; no-op if the
+    // property isn't channel-connected). Never awaited.
+    pushRoomTypeReconcile(Number(property_id), 'property', null, 'created').catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1297,6 +1323,30 @@ roomsRouter.put('/:id', (req, res) => {
       afterValue:  { status: updated.status,  price_per_night: updated.price_per_night },
       ipAddress: getIp(req),
     });
+
+    // Fire-and-forget — a rename / capacity / occupancy / category / status
+    // change alters the Channex room-type attributes or its category's roll-up;
+    // reconcile in place (no-op if the property isn't channel-connected). Never
+    // awaited.
+    const roomTypeChanged =
+      updated.name !== existing.name ||
+      updated.capacity !== existing.capacity ||
+      updated.max_occupancy !== existing.max_occupancy ||
+      updated.category_id !== existing.category_id ||
+      updated.status !== existing.status;
+    if (roomTypeChanged) {
+      pushRoomTypeReconcile(
+        updated.property_id, 'room', updated.id, 'renamed',
+        { categoryId: updated.category_id, parentUnitId: updated.parent_unit_id },
+      ).catch(() => {});
+      // Moved between categories → the OLD category's Channex room type also
+      // needs its roll-up refreshed (or orphaned if that emptied it).
+      if (existing.category_id != null && existing.category_id !== updated.category_id) {
+        pushRoomTypeReconcile(
+          updated.property_id, 'category', existing.category_id, 'deleted',
+        ).catch(() => {});
+      }
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1443,6 +1493,15 @@ roomsRouter.delete('/:id', (req, res) => {
       targetName: room.name,
       ipAddress: getIp(req),
     });
+
+    // Fire-and-forget — orphan-mark this room's Channex mapping and zero its
+    // OTA availability so it stops being sold (no automatic Channex DELETE).
+    // `room` was read before the row was removed, so category_id / parent_unit_id
+    // are still available. No-op if the property isn't channel-connected.
+    pushRoomTypeReconcile(
+      room.property_id, 'room', rid, 'deleted',
+      { categoryId: room.category_id, parentUnitId: room.parent_unit_id },
+    ).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

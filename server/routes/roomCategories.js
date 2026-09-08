@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
+import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
 
 export const roomCategoriesRouter = Router();
 
@@ -82,6 +83,11 @@ roomCategoriesRouter.post('/properties/:propertyId/room-categories', requireVeri
       description,
     });
     res.status(201).json(created);
+
+    // Fire-and-forget — a category is the bookable unit in Categories mode, so a
+    // new one needs a Channex room type once it has rooms (no-op if the property
+    // isn't channel-connected, and syncTarget skips a still-empty category).
+    pushRoomTypeReconcile(propId, 'category', created.id, 'created').catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -117,6 +123,12 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
 
     const updated = db.prepare('SELECT * FROM room_categories WHERE id = ?').get(id);
     res.json(updated);
+
+    // Fire-and-forget — push a renamed category's title to its Channex room type
+    // in place (no-op if unchanged / not channel-connected). Never awaited.
+    if (updated.name !== existing.name) {
+      pushRoomTypeReconcile(existing.property_id, 'category', id, 'renamed').catch(() => {});
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -143,6 +155,11 @@ roomCategoriesRouter.delete('/room-categories/:id', requireVerified, (req, res) 
 
     db.prepare('DELETE FROM room_categories WHERE id = ?').run(id);
     res.status(204).end();
+
+    // Fire-and-forget — the category (always already empty here, per the guard
+    // above) is gone: orphan-mark its Channex mapping + zero its OTA
+    // availability. No automatic Channex DELETE. No-op if not channel-connected.
+    pushRoomTypeReconcile(existing.property_id, 'category', id, 'deleted').catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -24,8 +24,15 @@
 // overwhelmingly common case), and it NEVER throws — a Channex API failure is
 // logged, never allowed to block or roll back a real booking action.
 //
-// Slice 4 note: no room-type reconciliation here (add/rename/delete a NestBook
-// room after the initial push) — that is still later work.
+// Slice 7: pushRoomTypeReconcile() — keeps channex_room_mappings + the
+// Channex-side room types / rate plans in sync when an owner adds, renames or
+// deletes a room / category / unit AFTER the initial push. Same fire-and-forget,
+// never-throws contract as slices 4–6. A created ref gets a fresh Channex room
+// type + rate plan + 90-day ARI; a renamed ref is PUT in place (Channex supports
+// updating a room-type / rate-plan title); a deleted ref is ORPHAN-MARKED
+// (channex_room_mappings.orphaned_at) with its Channex availability pushed to 0 —
+// never an automatic DELETE, because that call can be irreversible and the room
+// type may carry OTA booking history a human must reconcile.
 //
 // Source-of-truth notes:
 //   - Room selection / availability per mode mirrors server/routes/widget.js's
@@ -53,6 +60,8 @@ import db from '../db/database.js';
 import {
   createRoomType,
   createRatePlan,
+  updateRoomType,
+  updateRatePlan,
   deleteRoomType,
   deleteRatePlan,
   updateAvailability,
@@ -509,6 +518,307 @@ export async function pushRateUpdate(propertyId, refType, refId, dateFrom, dateT
   }
 }
 
+// ── Channex room-type / rate-plan creation (shared: initial push + slice 7) ──
+
+/** Channex room_type attributes for a buildTargets() target (minus property_id,
+ *  which PUT rejects and POST takes separately). */
+function roomTypeAttributes(target) {
+  return {
+    title: target.title,
+    count_of_rooms: target.countOfRooms,
+    occ_adults: target.occAdults,
+    occ_children: 0,
+    occ_infants: 0,
+    default_occupancy: target.defaultOccupancy,
+    room_kind: 'room',
+  };
+}
+
+/** Channex rate_plan attributes for the initial create of a target's plan. */
+function ratePlanCreateAttributes(target, channexPropertyId, roomTypeId, currency) {
+  return {
+    title: `${target.title} — Standard`.slice(0, 255),
+    property_id: channexPropertyId,
+    room_type_id: roomTypeId,
+    currency,
+    sell_mode: 'per_room',
+    rate_mode: 'manual',
+    options: [{ occupancy: target.defaultOccupancy, is_primary: true, rate: 0 }],
+  };
+}
+
+/**
+ * Create one Channex room type + its rate plan for a target. Shared by
+ * pushInitialInventory() and pushRoomTypeReconcile(). Best-effort cleanup of a
+ * half-created pair on failure, then rethrow.
+ * @returns {Promise<{channexRoomTypeId: string, channexRatePlanId: string}>}
+ */
+async function createTargetOnChannex(channexPropertyId, currency, target) {
+  const roomTypeData = await createRoomType({
+    property_id: channexPropertyId,
+    ...roomTypeAttributes(target),
+  });
+  const channexRoomTypeId = roomTypeData?.id ?? roomTypeData?.attributes?.id;
+  if (!channexRoomTypeId) {
+    throw new ChannexError(`Channex created a room type for "${target.title}" but returned no id`, { details: roomTypeData });
+  }
+
+  let channexRatePlanId;
+  try {
+    const ratePlanData = await createRatePlan(
+      ratePlanCreateAttributes(target, channexPropertyId, channexRoomTypeId, currency)
+    );
+    channexRatePlanId = ratePlanData?.id ?? ratePlanData?.attributes?.id;
+    if (!channexRatePlanId) {
+      throw new ChannexError(`Channex created a rate plan for "${target.title}" but returned no id`, { details: ratePlanData });
+    }
+  } catch (err) {
+    try { await deleteRoomType(channexRoomTypeId, { force: true }); } catch { /* noop */ }
+    throw err;
+  }
+
+  return { channexRoomTypeId, channexRatePlanId };
+}
+
+// ── ongoing room-type reconciliation (slice 7) ─────────────────────────────
+
+const CHANNEX_TITLE_MAX = 255;
+
+/** Push availability 0 across the whole window for one (now-orphaned) room type
+ *  so OTAs stop selling a room NestBook no longer has. */
+async function zeroOutRoomType(channexPropertyId, channexRoomTypeId) {
+  const dates = windowDates();
+  await updateAvailability([{
+    property_id: channexPropertyId,
+    room_type_id: channexRoomTypeId,
+    date_from: dates[0],
+    date_to: dates[dates.length - 1],
+    availability: 0,
+  }]);
+}
+
+/**
+ * Ensure a live Channex room type matches a NestBook target.
+ *  - mapping == null  → create room type + rate plan, insert the mapping row,
+ *                       push its 90-day availability + rates
+ *  - mapping present  → PUT the room-type attributes (title / occ / count) and
+ *                       the rate-plan title if they drifted, then refresh ARI
+ */
+async function syncTarget(property, target, mapping) {
+  const cxPropId = property.channex_property_id;
+
+  if (!mapping) {
+    const currency = (property.currency ?? 'EUR').trim().toUpperCase();
+    const { channexRoomTypeId, channexRatePlanId } =
+      await createTargetOnChannex(cxPropId, currency, target);
+
+    const insert = db.prepare(`
+      INSERT INTO channex_room_mappings
+        (property_id, channex_property_id, nestbook_ref_type, nestbook_ref_id,
+         channex_room_type_id, channex_rate_plan_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    try {
+      db.exec('BEGIN');
+      try {
+        insert.run(property.id, cxPropId, target.refType, target.refId,
+          channexRoomTypeId, channexRatePlanId);
+        db.exec('COMMIT');
+      } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+      }
+    } catch (err) {
+      // The DB row is the source of truth for "already pushed" — if we can't
+      // record it, undo the Channex side so it isn't silently duplicated later.
+      try { await deleteRatePlan(channexRatePlanId, { force: true }); } catch { /* noop */ }
+      try { await deleteRoomType(channexRoomTypeId, { force: true }); } catch { /* noop */ }
+      throw err;
+    }
+
+    console.log(
+      `[channex-sync] property #${property.id} ${target.refType}:${target.refId ?? ''} ` +
+      `— created Channex room type ${channexRoomTypeId} ("${target.title}")`
+    );
+  } else {
+    await updateRoomType(mapping.channex_room_type_id, roomTypeAttributes(target));
+    const planTitle = `${target.title} — Standard`.slice(0, CHANNEX_TITLE_MAX);
+    try {
+      await updateRatePlan(mapping.channex_rate_plan_id, { title: planTitle });
+    } catch (err) {
+      // Rate-plan title is cosmetic (channels map on id) — don't fail the sync.
+      console.warn(
+        `[channex-sync] property #${property.id} ${target.refType}:${target.refId ?? ''} ` +
+        `— rate-plan title update skipped (non-fatal): ${err.message}`
+      );
+    }
+    console.log(
+      `[channex-sync] property #${property.id} ${target.refType}:${target.refId ?? ''} ` +
+      `— updated Channex room type ${mapping.channex_room_type_id} ("${target.title}")`
+    );
+  }
+
+  // Fresh ARI for the (new or updated) target — reuses slices 4 + 6, which
+  // re-query the mappings table so a just-inserted row is visible.
+  await pushAvailabilityUpdate(property.id, target.refType, target.refId, null, null);
+  await pushRateUpdate(property.id, target.refType, target.refId, null, null);
+}
+
+/**
+ * The NestBook side of a mapping is gone. DO NOT delete on Channex (irreversible;
+ * may hold OTA booking history). Mark the row orphaned, push availability 0 so
+ * OTAs stop selling it, and warn loudly so a human can force-remove on Channex.
+ */
+async function orphanTarget(property, mapping, reason) {
+  if (mapping.orphaned_at) return; // already handled
+  db.prepare(
+    `UPDATE channex_room_mappings SET orphaned_at = datetime('now') WHERE id = ?`
+  ).run(mapping.id);
+
+  try {
+    await zeroOutRoomType(property.channex_property_id, mapping.channex_room_type_id);
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${property.id} — could not zero availability for ` +
+      `orphaned room type ${mapping.channex_room_type_id} (non-fatal): ${err.message}`
+    );
+  }
+
+  console.warn(
+    `[channex-sync] property #${property.id} — ${reason}. Channex room type ` +
+    `${mapping.channex_room_type_id} / rate plan ${mapping.channex_rate_plan_id} ` +
+    `orphan-marked and its availability set to 0. It was NOT deleted from Channex ` +
+    `(a room type with OTA booking history needs a human to force-remove it). ` +
+    `Mapping row #${mapping.id}.`
+  );
+}
+
+/**
+ * Fire-and-forget room-type reconciliation for one NestBook room/category/unit
+ * change on an already-Channex-connected property.
+ *
+ * Same contract as pushAvailabilityUpdate() / pushRateUpdate(): NEVER throws /
+ * never rejects, silent no-op when the property has no channex_room_mappings
+ * rows or no channex_property_id. Callers must NOT await it in a CRUD response
+ * path.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'property'} refType  what changed in NestBook
+ * @param {number|null} refId                     rooms.id / room_categories.id
+ * @param {'created'|'renamed'|'deleted'} changeType
+ * @param {{categoryId?: number|null, parentUnitId?: number|null}} [opts]
+ *        for a room in Categories mode / a deleted room, captured by the caller
+ *        BEFORE the row is gone.
+ * @returns {Promise<void>}
+ */
+export async function pushRoomTypeReconcile(propertyId, refType, refId, changeType, opts = {}) {
+  try {
+    if (!propertyId) return;
+
+    const allMappings = db.prepare(
+      'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+    ).all(propertyId);
+    if (allMappings.length === 0) return; // not Channex-connected — nothing to do
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    if (!property || !property.channex_property_id) return;
+
+    const rentalType = property.rental_type ?? 'rooms';
+    const irMode = property.ir_room_mode ?? 'named';
+    const liveMappings = allMappings.filter((m) => !m.orphaned_at);
+
+    const targets = buildTargets(property);
+    const targetByRef = new Map(targets.map((t) => [`${t.refType}:${t.refId ?? ''}`, t]));
+    const liveByRef = new Map(liveMappings.map((m) => [`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`, m]));
+
+    // ── bulk: a room/category import created several refs at once ────────────
+    if (refType === 'property') {
+      let created = 0;
+      let updated = 0;
+      for (const t of targets) {
+        const m = liveByRef.get(`${t.refType}:${t.refId ?? ''}`);
+        await syncTarget(property, t, m ?? null);
+        if (m) updated += 1; else created += 1;
+      }
+      console.log(
+        `[channex-sync] property #${propertyId} bulk reconcile — ${created} created, ${updated} refreshed`
+      );
+      return;
+    }
+
+    // WP: room/section changes never move a Channex room type (the single WP
+    // room type is property-level; occ = total_capacity).
+    if (rentalType === 'whole_property') return;
+
+    const categoriesMode = rentalType === 'rooms' && irMode === 'categories';
+
+    // Resolve which Channex ref this change maps to.
+    let ref;
+    if (categoriesMode) {
+      let categoryId = refType === 'category'
+        ? Number(refId)
+        : (opts.categoryId != null
+            ? Number(opts.categoryId)
+            : db.prepare('SELECT category_id FROM rooms WHERE id = ?').get(Number(refId))?.category_id ?? null);
+      if (categoryId == null) return; // uncategorised room — not OTA-visible
+      ref = `category:${categoryId}`;
+    } else {
+      // IR-Named / Units: internal unit rooms (parent_unit_id set) are not their
+      // own Channex room type.
+      if (refType === 'room' && opts.parentUnitId != null) return;
+      ref = `${refType}:${refId}`;
+    }
+
+    const mapping = liveByRef.get(ref);
+    const orphaned = allMappings.find(
+      (m) => `${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}` === ref && m.orphaned_at
+    );
+    const target = targetByRef.get(ref);
+
+    if (changeType === 'deleted') {
+      // Categories mode: a room delete only orphans the category when it emptied
+      // the category (buildTargets drops a 0-room category → no target).
+      if (mapping && !target) {
+        const reason = refType === 'category'
+          ? `room category #${refId} has no bookable rooms left`
+          : categoriesMode
+            ? `the last room in Channex-mapped category ${ref} was deleted`
+            : `room #${refId} was deleted`;
+        await orphanTarget(property, mapping, reason);
+      } else if (mapping && target) {
+        // Category still has rooms — just refresh its ARI + occ/count.
+        await syncTarget(property, target, mapping);
+      }
+      return;
+    }
+
+    // created / renamed → ensure the Channex room type exists and matches.
+    if (!target) {
+      // Nothing bookable yet (e.g. a brand-new empty category, or a maintenance
+      // room) — nothing to create.
+      return;
+    }
+    if (mapping) {
+      await syncTarget(property, target, mapping);
+    } else if (orphaned) {
+      // The ref exists again but its old mapping is orphaned. Leave the orphan
+      // for a human (its Channex room type may still carry booking history);
+      // just note it rather than silently spawning a duplicate room type.
+      console.warn(
+        `[channex-sync] property #${propertyId} ${ref} — a NestBook ref reappeared but its ` +
+        `mapping (row #${orphaned.id}) is orphaned. Not auto-creating a duplicate Channex room ` +
+        `type; a human should un-orphan or force-remove on Channex.`
+      );
+    } else {
+      await syncTarget(property, target, null);
+    }
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} room-type reconcile failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 
 /**
@@ -554,41 +864,15 @@ export async function pushInitialInventory(property) {
   const rateSkipped = [];   // titles whose base rate was <= 0
 
   try {
-    // 1 + 2: create a room type and a rate plan for each target.
+    // 1 + 2: create a room type and a rate plan for each target (shared with
+    // slice 7's pushRoomTypeReconcile via createTargetOnChannex).
     for (const t of targets) {
-      const roomTypeData = await createRoomType({
-        property_id: channexPropertyId,
-        title: t.title,
-        count_of_rooms: t.countOfRooms,
-        occ_adults: t.occAdults,
-        occ_children: 0,
-        occ_infants: 0,
-        default_occupancy: t.defaultOccupancy,
-        room_kind: 'room',
-      });
-      const roomTypeId = roomTypeData?.id ?? roomTypeData?.attributes?.id;
-      if (!roomTypeId) {
-        throw new ChannexError(`Channex created a room type for "${t.title}" but returned no id`, { details: roomTypeData });
-      }
+      const { channexRoomTypeId: roomTypeId, channexRatePlanId: ratePlanId } =
+        await createTargetOnChannex(channexPropertyId, currency, t);
       created.push({
         refType: t.refType, refId: t.refId, title: t.title,
-        channexRoomTypeId: roomTypeId, channexRatePlanId: null, countOfRooms: t.countOfRooms,
+        channexRoomTypeId: roomTypeId, channexRatePlanId: ratePlanId, countOfRooms: t.countOfRooms,
       });
-
-      const ratePlanData = await createRatePlan({
-        title: `${t.title} — Standard`.slice(0, 255),
-        property_id: channexPropertyId,
-        room_type_id: roomTypeId,
-        currency,
-        sell_mode: 'per_room',
-        rate_mode: 'manual',
-        options: [{ occupancy: t.defaultOccupancy, is_primary: true, rate: 0 }],
-      });
-      const ratePlanId = ratePlanData?.id ?? ratePlanData?.attributes?.id;
-      if (!ratePlanId) {
-        throw new ChannexError(`Channex created a rate plan for "${t.title}" but returned no id`, { details: ratePlanData });
-      }
-      created[created.length - 1].channexRatePlanId = ratePlanId;
 
       // 3a: availability segments (real NestBook availability for the window).
       for (const seg of coalesce(dates, t.availabilityForDate)) {

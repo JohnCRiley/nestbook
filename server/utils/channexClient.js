@@ -173,12 +173,47 @@ export async function createRatePlan(attributes) {
   });
 }
 
-/** Delete a Room Type. `force` also removes dependent rate plans/mappings. */
+/**
+ * Update a Room Type in place. `attributes` mirrors createRoomType's (title,
+ * count_of_rooms, occ_adults/children/infants, default_occupancy, …) minus
+ * property_id. `title` IS updatable this way (docs.channex.io "Room Types
+ * Collection", confirmed 2026-09-08). Removing a *channel-mapped* occupancy
+ * option would 422 — we never drop options, only bump the title/count/occupancy.
+ * @returns {Promise<object>} the updated room type's `data`
+ */
+export async function updateRoomType(id, attributes) {
+  return channexRequest(`/api/v1/room_types/${id}`, {
+    method: 'PUT',
+    body: { room_type: attributes },
+  });
+}
+
+/**
+ * Update a Rate Plan in place. `title` IS updatable (≤255 chars). Pass just the
+ * fields to change.
+ * @returns {Promise<object>} the updated rate plan's `data`
+ */
+export async function updateRatePlan(id, attributes) {
+  return channexRequest(`/api/v1/rate_plans/${id}`, {
+    method: 'PUT',
+    body: { rate_plan: attributes },
+  });
+}
+
+/**
+ * Delete a Room Type. Without `force` Channex REFUSES if the room type is
+ * associated with a channel; `force: true` un-maps it from the channel first.
+ * Docs are silent on what happens to existing bookings/ARI history, so slice 7's
+ * reconciliation never calls this automatically — an owner-deleted room's
+ * mapping is orphan-marked and a human force-removes here if needed.
+ */
 export async function deleteRoomType(id, { force = false } = {}) {
   return channexRequest(`/api/v1/room_types/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' });
 }
 
-/** Delete a Rate Plan. `force` also removes dependent objects. */
+/** Delete a Rate Plan. `force` un-maps from the channel first. IRREVERSIBLE —
+ *  "once Rate Plan was removed we can't restore it" (docs). Not called
+ *  automatically by reconciliation. */
 export async function deleteRatePlan(id, { force = false } = {}) {
   return channexRequest(`/api/v1/rate_plans/${id}${force ? '?force=true' : ''}`, { method: 'DELETE' });
 }

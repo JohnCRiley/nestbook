@@ -2621,6 +2621,14 @@ John`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_channex_room_mappings_ref
     ON channex_room_mappings(property_id, nestbook_ref_type, IFNULL(nestbook_ref_id, -1))
   `);
+  // orphaned_at (Phase 2, slice 7 — room-type reconciliation). NULL = live
+  // mapping. Set to a timestamp when the NestBook side (room / category) is
+  // deleted after the initial push: the Channex room type is NOT auto-removed
+  // (a DELETE can be irreversible and the room type may carry OTA booking
+  // history — a human decides), but its availability is pushed to 0 so OTAs stop
+  // selling it, and the row is skipped by create/rename reconcile + ongoing ARI
+  // sync while kept for the audit trail. See channex-room-type-reconciliation.md.
+  try { db.exec(`ALTER TABLE channex_room_mappings ADD COLUMN orphaned_at TEXT`); } catch (e) {}
 
   // channex_reservation_id (Phase 2, slice 5 — INBOUND sync) — the Channex
   // reservation UUID (`booking_id`, stable across revisions) for a booking that

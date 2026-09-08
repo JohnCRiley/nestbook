@@ -574,6 +574,122 @@ end-to-end tested against live Channex.
 
 ### Deferred (unchanged)
 
-Room-type reconciliation (add/rename/delete a NestBook room after the initial
-push); disconnect path; Holiday-Rentals one-Channex-property-per-unit split;
-`non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state.
+- ~~Room-type reconciliation~~ — **done, slice 7.**
+- Disconnect path; Holiday-Rentals one-Channex-property-per-unit split;
+  `non_acked_booking` acknowledgement; the "unmapped rate" Live-Feed state.
+
+---
+
+## Slice 7 — room-type reconciliation  ✅ DONE (2026-09-08)
+
+**Problem it fixes:** `channex_room_mappings` was populated once, at initial
+push. After that a **renamed** room kept its old Channex title, a **new** room
+got no Channex room type (invisible to OTAs), and a **deleted** room left an
+orphan mapping whose Channex room type stayed frozen at its last availability
+(usually 1) → **OTAs kept selling a room that no longer exists.**
+
+### Investigation (confirmed against the codebase + docs.channex.io)
+
+- **Room CRUD** — `server/routes/rooms.js`: `POST /` (create), `PUT /:id`
+  (name = rename; also capacity / max_occupancy / category_id / status),
+  `DELETE /:id` (`409 {booking_count}` unless `?force`; then hard-deletes),
+  + 4 bulk importers (`bulk-import` Named, `bulk-import-categories` — also
+  creates `room_categories`, `bulk-import-wp` sections, `bulk-import-units`).
+- **Category CRUD** — `server/routes/roomCategories.js`: `POST
+  /properties/:pid/room-categories`, `PUT /room-categories/:id`,
+  `DELETE /room-categories/:id` (**`409` if any room still references it** → a
+  category delete only ever fires on an empty category). `createRoomCategory()`
+  shared helper — wired the routes, not the helper.
+- **Channex docs:**
+  - `PUT /api/v1/room_types/:id` **exists** — `title` updatable in place; body
+    `{room_type:{…}}`, all create fields except `property_id`. (Dropping a
+    channel-mapped occupancy option 422s — we only bump title/count/occ.)
+  - `PUT /api/v1/rate_plans/:id` **exists** — `title` updatable (≤255).
+  - `DELETE /api/v1/room_types/:id` — refuses if channel-associated unless
+    `?force=true`; **docs silent on booking/ARI history**. `DELETE
+    /api/v1/rate_plans/:id` — **irreversible** ("can't restore it").
+    → **auto-delete is NOT confirmed safe** → orphan-mark + zero availability +
+    loud warn; never an automatic `DELETE`.
+- **Stale mapping today:** a deleted room's mapping lingers;
+  `pushAvailabilityUpdate`/`pushRateUpdate` → `affectedMappings()` returns it,
+  `buildTargets()` has no target → `byRef.get()` undefined → `continue` →
+  **silent no-op, no crash** — but the Channex room type is frozen → overselling.
+- **IR-Categories nuance (confirmed):** the *category* is the Channex room type,
+  not the room. Adding/removing a room within a mapped category → just an
+  availability + lowest-price refresh; only category created / emptied / deleted
+  is a room-type-level change. `buildTargets()` already `continue`s past a
+  0-room category, so an emptied category = treated as a delete.
+
+### Built
+
+- **Schema** (`server/db/schema.js`): `channex_room_mappings.orphaned_at TEXT`
+  (nullable, guarded `ALTER`). NULL = live; set = NestBook side gone, excluded
+  from create/rename reconcile + ongoing ARI's "live" set, kept for the audit
+  trail.
+- **`server/utils/channexClient.js`:** `updateRoomType(id, attrs)` (PUT),
+  `updateRatePlan(id, attrs)` (PUT). Delete helpers gained doc-comments on the
+  channel guard / irreversibility.
+- **`server/utils/channexPushInventory.js`:**
+  - Extracted `roomTypeAttributes(target)`, `ratePlanCreateAttributes(...)`,
+    `createTargetOnChannex(cxPropId, currency, target)` (create room type +
+    rate plan, self-cleaning on partial failure). `pushInitialInventory`'s inner
+    loop now calls `createTargetOnChannex` instead of its inline creates.
+  - **`pushRoomTypeReconcile(propertyId, refType, refId, changeType, opts)`** —
+    `refType` ∈ `room|category|property`, `changeType` ∈
+    `created|renamed|deleted`, `opts` = `{categoryId, parentUnitId}` (captured
+    by the caller before a delete). Same contract as slices 4/6: never
+    throws/rejects, silent no-op unless the property has `channex_property_id` +
+    ≥1 mapping row, never awaited.
+    - `syncTarget(property, target, mapping|null)` — null ⇒ `createTargetOnChannex`
+      + insert mapping (BEGIN/COMMIT/ROLLBACK, Channex cleanup on insert
+      failure) + push its 90-day ARI (reuses slices 4 + 6); mapping ⇒ PUT
+      room-type attrs + rate-plan title, then ARI refresh.
+    - `orphanTarget(property, mapping, reason)` — `SET orphaned_at`, push
+      `availability 0` across the window for its `channex_room_type_id`,
+      `console.warn` loudly. **No Channex DELETE.**
+    - Dispatch: `property`+`created` → `syncTarget` every target; WP room
+      changes → no-op (single property-level room type); Categories → resolve
+      to the `category:` ref (create/refresh, or orphan when emptied);
+      IR-Named/Units → the `room:` ref (internal unit rooms skipped);
+      `deleted` → `orphanTarget` (or refresh if a category still has rooms);
+      a reappeared ref whose mapping is orphaned → warn, don't auto-duplicate.
+- **Wiring** (all fire-and-forget after the response, `.catch(()=>{})`):
+  - `rooms.js`: `POST /` → `('room', id, 'created', {categoryId, parentUnitId})`;
+    `PUT /:id` → `('room', id, 'renamed', …)` when name/capacity/max_occupancy/
+    category_id/status changed (+ a `('category', oldCatId, 'deleted')` refresh
+    when a room moved out of a category); `DELETE /:id` →
+    `('room', id, 'deleted', {…})` (room row read before the delete); each of the
+    4 `bulk-import*` → `('property', null, 'created')`.
+  - `roomCategories.js`: `POST …/room-categories` → `('category', id, 'created')`;
+    `PUT /room-categories/:id` → `('category', id, 'renamed')` when name changed;
+    `DELETE /room-categories/:id` → `('category', id, 'deleted')`.
+
+### Verified (2026-09-08 — live Channex staging, connected property #1 `a50e441f`)
+
+Harness inserted a real room, ran each reconcile against the real API, cleaned up:
+- **CREATE** room #359 → new Channex room type `67dddbff…` ("CX Slice7 Test"),
+  `channex_room_mappings` row #6 inserted, availability pushed (`[1]`), rate
+  pushed. ✅
+- **RENAME** + capacity 2→4 / max_occ 3→5 → Channex room type title →
+  "CX Slice7 Renamed", `occ_adults` 3→5, **in place (PUT)** — no new room type. ✅
+- **DELETE** (no bookings) → mapping row `orphaned_at` set, loud warn logged,
+  Channex room type **still exists** (NOT deleted), availability → `[0]`. ✅
+- **Delete WITH bookings** → the route's own `409 {booking_count}` guard fires
+  before reconcile; `?force` path routes through the same orphan logic — nothing
+  crashes (route reads the room row before deleting, so `opts` is intact). ✅
+- **Non-connected property #3** → `pushRoomTypeReconcile` made **0 Channex fetch
+  calls**. ✅
+- `node --check` clean on all 5 changed files.
+
+### Not verified locally (same DB limitation as slices 3–6)
+
+WP / Units / IR-Categories — no such property exists locally. Their dispatch
+branches are written from the data model + `buildTargets()` reading; the
+IR-Named create/rename/delete/orphan path is the one exercised end-to-end.
+
+### Deferred
+
+Property rename → WP room-type title (separate route, separate concern);
+automatic `DELETE` of an orphaned Channex room type / rate plan (needs a human +
+a "disconnect" surface); un-orphaning a mapping when the owner re-creates a
+same-named room.
