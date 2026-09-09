@@ -362,6 +362,7 @@ export default function Calendar() {
                 todayIso={today}
                 bookings={bookings}
                 externalBlocks={externalBlocks}
+                ratePeriods={ratePeriods}
                 selectedBookingId={selectedBooking?.id}
                 onBookedClick={handleBookedClick}
                 onEmptyClick={handleEmptyClick}
@@ -592,9 +593,31 @@ function WholePropertyCalendar({ bookings, externalBlocks, today, t, locale, onB
   );
 }
 
+// ── RateDot ───────────────────────────────────────────────────────────────────
+
+/** Amber "seasonal rate active" marker. Absolute-positioned in the cell's
+ *  top-right corner (every .cal-cell / .wpc-cell is position:relative), white
+ *  border + z-index so it stays visible on any tile colour. Rendered on every
+ *  B&B tile type — available, booked, in-house, checked-out, external block,
+ *  maintenance — mirroring the whole-property MonthGrid. */
+function RateDot({ period }) {
+  if (!period) return null;
+  return (
+    <span
+      style={{
+        position: 'absolute', top: 3, right: 3,
+        width: 7, height: 7, borderRadius: '50%',
+        background: '#f59e0b', border: '1.5px solid white',
+        zIndex: 10, display: 'block', pointerEvents: 'none',
+      }}
+      title={period.name}
+    />
+  );
+}
+
 // ── RoomRow ───────────────────────────────────────────────────────────────────
 
-function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property, isMobile }) {
+function RoomRow({ room, days, today, bookings, externalBlocks, ratePeriods, selectedBookingId, onBookedClick, onEmptyClick, t, locale, todayIso, property, isMobile }) {
   const isMaintenance = room.status === 'maintenance';
 
   return (
@@ -610,8 +633,16 @@ function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingI
         const iso    = toIso(day);
         const info   = isMaintenance ? null : cellInfo(bookings, room.id, iso);
 
+        // Seasonal-rate marker — computed once here, rendered by whichever cell
+        // branch runs below so it appears uniformly on every tile type (not
+        // just booked ones). Skipped for past days, like the WP calendar.
+        const activePeriod = (ratePeriods && iso >= today)
+          ? getActivePeriod(ratePeriods, iso)
+          : null;
+        const rateDot = <RateDot period={activePeriod} />;
+
         if (isMaintenance) {
-          return <div key={iso} className="cal-cell is-maintenance" />;
+          return <div key={iso} className="cal-cell is-maintenance">{rateDot}</div>;
         }
 
         if (info && !info.historical) {
@@ -627,6 +658,7 @@ function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingI
               t={t}
               property={property}
               isMobile={isMobile}
+              rateDot={rateDot}
             />
           );
         }
@@ -637,6 +669,7 @@ function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingI
               key={iso}
               booking={info.booking}
               onClick={() => onEmptyClick(room.id, iso)}
+              rateDot={rateDot}
             />
           );
         }
@@ -649,7 +682,7 @@ function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingI
             (bl.room_id === null || bl.room_id === room.id)
         );
         if (extBlock) {
-          return <ExternalBlockCell key={iso} block={extBlock} />;
+          return <ExternalBlockCell key={iso} block={extBlock} rateDot={rateDot} />;
         }
 
         return (
@@ -657,6 +690,7 @@ function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingI
             key={iso}
             isPast={iso < today}
             onClick={() => onEmptyClick(room.id, iso)}
+            rateDot={rateDot}
           />
         );
       })}
@@ -666,7 +700,7 @@ function RoomRow({ room, days, today, bookings, externalBlocks, selectedBookingI
 
 // ── BookedCell ────────────────────────────────────────────────────────────────
 
-function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t, property, isMobile }) {
+function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, cellDate, t, property, isMobile, rateDot = null }) {
   const statusClass =
     b.status === 'checked_out' ? 'is-checked-out' : 'is-booked';
 
@@ -694,6 +728,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
           {showCiBadge ? (t ? t('calCiBadge') : 'CI') : (t ? t('calCoBadge') : 'CO')}
         </span>
       )}
+      {rateDot}
       <div className="cal-cell-inner">
         <div className="cal-guest-name">
           {isMobile && b.guest_last_name
@@ -708,7 +743,7 @@ function BookedCell({ booking: b, isSelected, onClick, locale = 'en', todayIso, 
 
 // ── EmptyCell ─────────────────────────────────────────────────────────────────
 
-function EmptyCell({ isPast, onClick }) {
+function EmptyCell({ isPast, onClick, rateDot = null }) {
   // Past empty cells are not clickable — can't book in the past
   return (
     <div
@@ -716,6 +751,7 @@ function EmptyCell({ isPast, onClick }) {
       style={isPast ? { cursor: 'default', opacity: 0.5 } : {}}
       onClick={isPast ? undefined : onClick}
     >
+      {rateDot}
       {!isPast && (
         <div className="cal-cell-inner" style={{ alignItems: 'center' }}>
           <span className="cal-empty-hint">+</span>
@@ -727,13 +763,14 @@ function EmptyCell({ isPast, onClick }) {
 
 // ── HistoricalCell ────────────────────────────────────────────────────────────
 
-function HistoricalCell({ booking: b, onClick }) {
+function HistoricalCell({ booking: b, onClick, rateDot = null }) {
   return (
     <div
       className="cal-cell is-checked-out cal-cell-historical"
       onClick={onClick}
       title={`${b.guest_first_name} ${b.guest_last_name} — checked out\nClick to book`}
     >
+      {rateDot}
       <div className="cal-cell-inner">
         <div className="cal-guest-name" style={{ textDecoration: 'line-through', opacity: 0.5 }}>
           {`${b.guest_first_name} ${b.guest_last_name}`.trim()}
@@ -745,12 +782,13 @@ function HistoricalCell({ booking: b, onClick }) {
 
 // ── ExternalBlockCell ─────────────────────────────────────────────────────────
 
-function ExternalBlockCell({ block }) {
+function ExternalBlockCell({ block, rateDot = null }) {
   return (
     <div
       className="cal-cell is-external-block"
       title={`${block.feed_name || 'External'}: ${block.summary || 'External booking'}`}
     >
+      {rateDot}
       <div className="cal-cell-inner">
         <div className="cal-guest-name" style={{ color: 'white', opacity: 0.9 }}>
           {block.feed_name || 'External'}
