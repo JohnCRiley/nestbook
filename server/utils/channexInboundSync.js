@@ -32,8 +32,12 @@
 //   - Slice 9 (certification prep): once a revision is SUCCESSFULLY processed
 //     (DB committed) we POST /booking_revisions/:id/ack — required for
 //     certification (cert test 11). Fired only after the commit, so a failed
-//     sync never falsely acks. The availability push-back is now
-//     fire-and-forget (drains via channexQueue) so the webhook responds fast.
+//     sync never falsely acks. The ack goes out DIRECTLY (its own retry in
+//     channexClient), NOT through channexQueue — it must never be stalled
+//     behind a slow/retrying ARI push on that single worker. It is also
+//     submitted before the (fire-and-forget) availability push-back. If it
+//     still somehow fails, Channex's non_acked_booking reminder ~30 min later
+//     re-drives this same path (routes/channex.js).
 
 import db from '../db/database.js';
 import { getBookingRevision, acknowledgeBookingRevision } from './channexClient.js';
@@ -201,8 +205,8 @@ export async function syncReservationFromRevision(revision) {
     } else {
       warnings.push('cancellation for a reservation with no NestBook booking — nothing to cancel');
     }
-    pushForRooms(property.id, toPush).catch(() => {}); // fire-and-forget — drains via channexQueue
     ackRevision(revision);
+    pushForRooms(property.id, toPush).catch(() => {}); // fire-and-forget — drains via channexQueue
     console.log(`[channex-inbound] reservation ${reservationId} CANCELLED — ${cancelledIds.length} booking(s) freed`);
     return { action: 'cancelled', reservationId, propertyId: property.id, cancelledIds, warnings };
   }
@@ -349,13 +353,17 @@ export async function syncReservationFromRevision(revision) {
     throw e;
   }
 
+  // Acknowledge to Channex ONLY now that the booking rows are committed.
+  // Submitted BEFORE the availability push-back so the ack job is first in the
+  // channexQueue (it also has priority there over ARI jobs) — the ack is
+  // certification-critical and must not wait behind a burst of availability
+  // updates or their retry/backoff.
+  ackRevision(revision);
+
   // ── loop prevention: availability push-back ONLY, never a reservation echo ──
   // Fire-and-forget — the DB write is committed; the availability push drains
   // through channexQueue so the webhook responds fast.
   pushForRooms(property.id, toPush).catch(() => {});
-
-  // Acknowledge to Channex ONLY now that the booking rows are committed.
-  ackRevision(revision);
 
   const action = existing.length ? 'updated' : 'created';
   console.log(`[channex-inbound] reservation ${reservationId} ${action.toUpperCase()} — booking(s) ${createdIds.join(', ')}` +

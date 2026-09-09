@@ -25,6 +25,11 @@ export const channexRouter = Router();
 
 const BOOKING_EVENTS = new Set([
   'booking', 'booking_new', 'booking_modification', 'booking_cancellation',
+  // Channex re-sends this ~30 min after a booking it still sees as un-acked.
+  // Its payload carries booking_revision_id, so we re-run the (idempotent) pull
+  // → sync → ack path: the safety net if the inline ack after the first webhook
+  // ever failed every retry or was lost to a process restart before it ran.
+  'non_acked_booking',
 ]);
 
 function getConfiguredSecret() {

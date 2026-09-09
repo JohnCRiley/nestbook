@@ -24,11 +24,14 @@
 // (utils/createChannexProperty.js). The rest of the API surface — room types,
 // rate plans, ARI, webhooks — is later slices.
 //
-// Slice 9 (certification prep): every OUTBOUND WRITE here routes through
+// Slice 9 (certification prep): ARI writes and object CRUD here route through
 // channexQueue.submitChannexJob() — a per-property ARI rate limiter + retry/
-// backoff (cert test 12). channexRequest() itself stays a single raw request;
-// GET reads (booking revisions, webhook list) call it directly so a webhook
-// pull never waits behind a queued ARI burst.
+// backoff (cert test 12). channexRequest() itself stays a single raw request
+// (with a hard timeout so a stalled call can never wedge the queue's one
+// worker). GET reads (booking revisions, webhook list) call it directly so a
+// webhook pull never waits behind a queued ARI burst; the booking ack
+// (acknowledgeBookingRevision) also calls it directly, with its own retry, for
+// the same reason — it must never be stalled behind ARI.
 
 import { submitChannexJob } from './channexQueue.js';
 
@@ -81,11 +84,19 @@ export function getChannexBaseUrl() {
  *                                 instead of just `data` — needed for the ARI
  *                                 endpoints, which report per-row problems in
  *                                 `meta.warnings` on an otherwise-200 response
+ * @param {number} [opts.timeoutMs=30000] abort (and throw a network-class
+ *                                 ChannexError) if Channex has not responded in
+ *                                 this long. A hung request must NEVER stall
+ *                                 forever — every write goes through the single
+ *                                 channexQueue worker, so one wedged fetch would
+ *                                 otherwise block every later ARI push AND the
+ *                                 booking acknowledgment behind it.
  * @returns {Promise<object|null>} the parsed `data` (or the full body when raw)
- * @throws {ChannexError}          on missing key, network failure, non-2xx, or an
- *                                 unparseable body — it never resolves silently
+ * @throws {ChannexError}          on missing key, network failure, timeout,
+ *                                 non-2xx, or an unparseable body — it never
+ *                                 resolves silently
  */
-export async function channexRequest(path, { method = 'GET', body, query, raw = false } = {}) {
+export async function channexRequest(path, { method = 'GET', body, query, raw = false, timeoutMs = 30_000 } = {}) {
   const apiKey = getChannexApiKey();
 
   let url = `${getChannexBaseUrl()}${path}`;
@@ -108,9 +119,15 @@ export async function channexRequest(path, { method = 'GET', body, query, raw = 
         accept: 'application/json',
       },
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
-    throw new ChannexError(`Channex request failed (${method} ${path}): ${err.message}`);
+    const timedOut = err?.name === 'TimeoutError' || err?.name === 'AbortError';
+    throw new ChannexError(
+      timedOut
+        ? `Channex request timed out after ${timeoutMs}ms (${method} ${path})`
+        : `Channex request failed (${method} ${path}): ${err.message}`
+    );
   }
 
   const rawBody = await res.text();
@@ -317,14 +334,35 @@ export async function getBookingRevision(revisionId) {
  * Acknowledge receipt of a booking revision — REQUIRED for certification
  * (cert test 11). POST /api/v1/booking_revisions/:id/ack, empty body, success
  * `200 { meta: { message: "Success" } }`. Once acked, the revision drops out of
- * Channex's non-acked feed and the 30-minute reminder email stops. Routed
- * through the queue so a transient failure is retried, not lost.
+ * Channex's non-acked feed and the 30-minute reminder email stops.
+ *
+ * NOT routed through channexQueue: the queue is a single-worker FIFO built for
+ * per-property ARI rate limiting, and a slow/failing ARI push there would stall
+ * the ack behind it — exactly the bug this call must not have (the ack is the
+ * one write Channex actively watches for during certification). `/ack` is not
+ * ARI-rate-limited and fires at most once per reservation, so it runs directly
+ * with its own small bounded retry on transient failures.
  * @returns {Promise<object>} the `{ meta }` body
  */
 export async function acknowledgeBookingRevision(revisionId) {
-  return queuedWrite(`ack booking revision ${revisionId}`, () =>
-    channexRequest(`/api/v1/booking_revisions/${encodeURIComponent(revisionId)}/ack`, {
-      method: 'POST',
-      raw: true,
-    }));
+  const path = `/api/v1/booking_revisions/${encodeURIComponent(revisionId)}/ack`;
+  const maxAttempts = 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await channexRequest(path, { method: 'POST', raw: true });
+    } catch (err) {
+      lastErr = err;
+      const status = err?.status;
+      const transient = status == null || status === 429 || (status >= 500 && status <= 599);
+      if (!transient || attempt === maxAttempts) throw err;
+      const backoffMs = Number(err?.retryAfter) > 0 ? Number(err.retryAfter) * 1000 : attempt * 2_000;
+      console.warn(
+        `[channex] ack booking revision ${revisionId} — attempt ${attempt}/${maxAttempts} ` +
+        `failed ("${err.message}"); retrying in ${Math.ceil(backoffMs / 1000)}s`
+      );
+      await new Promise((r) => setTimeout(r, backoffMs));
+    }
+  }
+  throw lastErr;
 }

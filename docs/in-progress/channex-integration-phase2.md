@@ -951,7 +951,77 @@ Closes the three gaps between the integration and Channex's PMS certification
 
 ### Deferred
 - Durable queue (survives a process restart) — current one is in-memory; a lost
-  job is re-covered by the next change event / Channex's ack reminder.
+  job is re-covered by the next change event / Channex's ack reminder (the
+  reminder path is now actually wired — see slice 9a).
 - The pre-flight checklist form + the stage-4 live screenshare are John's to run.
 - Airbnb Live-Feed events (`reservation_request` etc.); the "unmapped rate"
   Live-Feed state.
+
+---
+
+## Slice 9a — booking ack was silently not reaching Channex  ✅ FIXED (2026-09-09)
+
+**Symptom:** a real staging reservation (property #110 `OFL-1TESTNESTBOOK`,
+revision `424776d2-…`) synced into NestBook fine (`[channex-inbound] … CREATED`)
+but the Channex "Acked" column stayed grey `?` and **neither**
+`[channex-inbound] acknowledged revision …` **nor** `… ack failed …` ever
+logged. The ack wasn't failing — it was never completing.
+
+**Root cause (confirmed by reproduction):** the ack was a fire-and-forget job on
+`channexQueue` — a **single-worker FIFO**. Slice 9 submitted it *after* the
+fire-and-forget availability push-back, so it sat behind an ARI job. And
+`channexRequest` had **no timeout** — a stalled/slow `fetch` in that ARI job's
+`run()` leaves the worker `running: true` forever, so the ack job behind it
+never runs and nothing logs (reproduced exactly: `pending:1, running:true`, zero
+log output). Even without a full stall, an ARI job that hit the retry-backoff
+(`[2s,8s,30s,60s]`) held the ack for ~100 s; a process restart in that window
+dropped it entirely, and `non_acked_booking` reminders were being `200 ignored`
+so there was no recovery.
+
+Contributing: `isRetryable()` treated **any** non-`ChannexError` (a plain bug,
+`status` undefined) as retryable → 5 attempts / ~100 s to fail anyway.
+
+**Fix:**
+- **`channexClient.channexRequest`** — hard `AbortSignal.timeout` (default
+  30 s, `opts.timeoutMs`). A stalled call now throws a network-class
+  `ChannexError` instead of hanging the queue worker forever.
+- **`channexClient.acknowledgeBookingRevision`** — **no longer goes through
+  `channexQueue`.** Runs directly with its own small bounded retry (3 ×, 2/4 s,
+  transient-only). The ack is not ARI-rate-limited and fires once per
+  reservation; it must never queue behind ARI. `queuedWrite` still carries the
+  object-CRUD calls.
+- **`channexInboundSync`** — `ackRevision()` is now called *before* the
+  availability push-back at every terminal site.
+- **`channexQueue.worker`** — non-`ari` jobs (room-type / rate-plan / property
+  CRUD) are picked ahead of `ari` jobs (FIFO preserved within each class); a
+  create is a prerequisite for the ARI that follows it. `isRetryable()` now
+  requires `err.name === 'ChannexError'` for the null-status case. `__reset…`
+  also clears `running`.
+- **`routes/channex.js`** — `non_acked_booking` added to `BOOKING_EVENTS`; its
+  payload carries `booking_revision_id`, so the reminder re-drives the
+  idempotent pull → sync → ack path as the real recovery net.
+
+**Verified (2026-09-09, real Channex staging):**
+- Booking #259's revision (`424776d2-…` / `OFL-1TESTNESTBOOK`) → manual ack →
+  Channex `acknowledge_status: acknowledged` (revision **and** booking). The
+  "Acked" `?` is now cleared. ✅
+- Full HTTP webhook flow (real `channexRouter`, real revision pulled from
+  staging, retargeted onto connected property #1): `event:booking` → `CREATED`
+  **then** `[channex-inbound] acknowledged revision 424776d2-…` **then** the ARI
+  `[channex-sync]` line — correct order, ack fired automatically, Channex shows
+  `acknowledged`. ✅
+- `non_acked_booking` reminder POST → re-runs idempotently (`UPDATED`, same
+  booking row, no churn), re-acks (idempotent `{meta:{message:"Success"}}`). ✅
+- Ack completes **while an ARI job is wedged** (hung `run()`) — proved the two
+  are now independent. ✅
+- Regression: rate limiter still caps 9/window (25 rapid → 9 then spaced); `429`
+  retried→ok; `422` fails fast (1 attempt); a plain bug `Error` now fails fast
+  (1 attempt, was 5); timeout throws `ChannexError status:null` at ~timeoutMs. ✅
+- `node --check` clean on all 4 changed files. Local DB + staging property #1
+  ARI restored to pre-test state; no leftover rows.
+
+**Couldn't test locally:** creating a fresh reservation *on Channex* via the API
+(`POST /api/v1/bookings` → 500/403 with the staging key, same as slice 5's
+finding) — used John's existing real revision + the retargeted-property harness
+instead. A brand-new Channex-side reservation → auto-ack is John's to spot-check
+from the dashboard.

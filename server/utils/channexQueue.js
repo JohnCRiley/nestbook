@@ -5,11 +5,18 @@
 // A single in-process outbox for every OUTBOUND Channex write. This is real
 // infrastructure in the main codebase — the certification guide explicitly
 // rejects "integration logic in test files and not in the main PMS codebase"
-// and requires a queue/limiter (test 12). Every write
-// (pushAvailabilityUpdate / pushRateUpdate / pushRoomTypeReconcile, the Full
-// Sync, room-type/rate-plan CRUD, booking acknowledgment) reaches Channex
-// through submitChannexJob(); reads (GET booking_revisions) stay direct so a
-// webhook pull never queues behind a backed-up ARI burst.
+// and requires a queue/limiter (test 12). Every ARI write and every room-type /
+// rate-plan CRUD call (pushAvailabilityUpdate / pushRateUpdate /
+// pushRoomTypeReconcile, the Full Sync, createProperty / …RoomType / …RatePlan)
+// reaches Channex through submitChannexJob().
+//
+// Two things stay OUT of the queue on purpose:
+//   - reads (GET booking_revisions, webhook list) — a webhook pull must never
+//     queue behind a backed-up ARI burst;
+//   - the booking acknowledgment (POST booking_revisions/:id/ack) — it is
+//     certification-critical, is not ARI-rate-limited, and must not be stalled
+//     behind a slow/retrying ARI push on this single worker. It runs directly
+//     with its own small retry (see channexClient.acknowledgeBookingRevision).
 //
 // Why it exists:
 //   - Channex rate-limits ARI PER PROPERTY per minute: 10 availability, 10
@@ -52,6 +59,7 @@ export function __resetChannexQueue() {
   queue.length = 0;
   ariHits.clear();
   lastDispatchAt = 0;
+  running = false;
   stats = { submitted: 0, deduped: 0, ok: 0, failed: 0, retries: 0 };
   cfg = { ...DEFAULTS };
 }
@@ -64,12 +72,16 @@ let stats = { submitted: 0, deduped: 0, ok: 0, failed: 0, retries: 0 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, Math.max(0, ms)));
 
-/** 429, any 5xx, or a network failure (ChannexError with status null). */
+/** 429, any 5xx, or a genuine transport failure (network error / timeout —
+ *  surfaced as a ChannexError with a null status). A non-ChannexError escaping a
+ *  job's run() is a programming bug, not a transient fault: retrying it just
+ *  burns the whole backoff schedule (~100s) to fail anyway, so let it reject
+ *  fast. */
 function isRetryable(err) {
   const s = err?.status;
   if (s === 429) return true;
   if (typeof s === 'number' && s >= 500 && s <= 599) return true;
-  if (s == null) return true;
+  if (s == null && err?.name === 'ChannexError') return true;
   return false;
 }
 
@@ -119,7 +131,13 @@ async function worker() {
   running = true;
   try {
     while (queue.length) {
-      const job = queue.shift();
+      // Non-ARI jobs (room-type / rate-plan / property CRUD) jump ahead of ARI
+      // pushes: ARI is the high-volume, rate-limited, retry-heavy traffic, while
+      // an object create (e.g. a new room type) is a prerequisite for the ARI
+      // that follows it and should not wait behind a backed-up availability
+      // burst. FIFO is preserved within each class.
+      const idx = queue.findIndex((j) => j.kind !== 'ari');
+      const job = queue.splice(idx === -1 ? 0 : idx, 1)[0];
       job.startedAt = Date.now();
 
       const sinceLast = Date.now() - lastDispatchAt;
