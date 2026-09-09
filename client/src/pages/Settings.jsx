@@ -1431,6 +1431,7 @@ export default function Settings() {
             <PlanGate requiredPlan="pro" title={t('settings.seasonalPricing')} detail={t('settings.seasonalPricingHint')}>
               <SeasonalPricingSection
                 t={t}
+                locale={locale}
                 ratePeriods={ratePeriods}
                 currencySymbol={currencySymbol}
                 onAdd={() => { setEditingRatePeriod(null); setShowRatePeriodModal(true); }}
@@ -3386,6 +3387,44 @@ function ToggleRow({ label, desc, checked, onChange, disabled = false }) {
 
 // ── SeasonalPricingSection ────────────────────────────────────────────────────
 
+// rate_periods stores dates as either 'MM-DD' (recurs every year) or
+// 'YYYY-MM-DD' (a one-off dated range) — told apart purely by length (see
+// server/utils/ratePeriods.js dateInRange + Calendar.jsx). Native
+// <input type="date"> only emits 'YYYY-MM-DD', so RatePeriodModal carries an
+// explicit "Repeats every year" toggle and normalises on save. The placeholder
+// year only gives the picker something to show for a recurring period; it is
+// stripped before saving and never persisted.
+const RP_PLACEHOLDER_YEAR = String(new Date().getFullYear());
+
+/** stored value ('MM-DD' | 'YYYY-MM-DD' | '') → a YYYY-MM-DD the date input can show */
+function rpToPickerDate(stored) {
+  if (!stored) return '';
+  return stored.length === 5 ? `${RP_PLACEHOLDER_YEAR}-${stored}` : stored;
+}
+/** picker's YYYY-MM-DD → stored form: 'MM-DD' when recurring, unchanged otherwise */
+function rpToStoredDate(picker, recurring) {
+  if (!picker) return '';
+  return recurring ? picker.slice(5) : picker;
+}
+
+/** Readable date range for a rate-period row. Annual periods show day+month
+ *  with a "yearly" tag; one-off periods show the full date. */
+function fmtRatePeriodRange(p, locale, t) {
+  const annual = (p.date_from ?? '').length === 5;
+  const loc = LOCALE_MAP[locale] || 'en-GB';
+  const one = (v) => {
+    // parse as local midnight (y, m-1, d) — never `new Date('YYYY-MM-DD')`, which
+    // is UTC and shifts the day in western timezones.
+    const [y, m, d] = (annual ? `${RP_PLACEHOLDER_YEAR}-${v}` : v).split('-').map(Number);
+    if (!y || !m || !d) return v;
+    return new Date(y, m - 1, d).toLocaleDateString(loc, annual
+      ? { day: 'numeric', month: 'short' }
+      : { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+  const range = `${one(p.date_from)} → ${one(p.date_to)}`;
+  return annual ? `${range} · ${t('ratePeriodYearlyTag')}` : range;
+}
+
 function isRatePeriodActive(p) {
   const today = new Date();
   const mmdd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -3398,7 +3437,7 @@ function isRatePeriodActive(p) {
   return iso >= p.date_from && iso <= p.date_to;
 }
 
-function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit, onDelete }) {
+function SeasonalPricingSection({ t, locale, ratePeriods, currencySymbol, onAdd, onEdit, onDelete }) {
   return (
     <div className="settings-card">
       <div className="settings-card-header">
@@ -3440,7 +3479,7 @@ function SeasonalPricingSection({ t, ratePeriods, currencySymbol, onAdd, onEdit,
                       )}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
-                      {p.date_from} → {p.date_to}
+                      {fmtRatePeriodRange(p, locale, t)}
                       {p.priority > 0 && ` · priority ${p.priority}`}
                     </div>
                     {(preview || p.rate_value > 0) && (
@@ -3491,13 +3530,14 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
 
   const [form, setForm] = useState(period ? {
     name:        period.name,
-    date_from:   period.date_from,
-    date_to:     period.date_to,
+    recurring:   period.date_from.length === 5,
+    date_from:   rpToPickerDate(period.date_from),
+    date_to:     rpToPickerDate(period.date_to),
     priority:    String(period.priority),
     defaultRate: String(period.rate_value),
     roomRates:   initialRoomRates,
   } : {
-    name: '', date_from: '', date_to: '', priority: '0', defaultRate: '0', roomRates: {},
+    name: '', recurring: true, date_from: '', date_to: '', priority: '0', defaultRate: '0', roomRates: {},
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState(null);
@@ -3535,6 +3575,14 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
       setError(t('requiredFields'));
       return;
     }
+    const dateFrom = rpToStoredDate(form.date_from, form.recurring);
+    const dateTo   = rpToStoredDate(form.date_to,   form.recurring);
+    // A one-off range can't run backwards. A recurring range legitimately can
+    // (12-24 → 01-06 wraps the year end), so only guard the one-off case.
+    if (!form.recurring && dateTo < dateFrom) {
+      setError(t('ratePeriodEndBeforeStart'));
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -3550,8 +3598,8 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
           body: JSON.stringify({
             property_id: propertyId,
             name:        form.name.trim(),
-            date_from:   form.date_from.trim(),
-            date_to:     form.date_to.trim(),
+            date_from:   dateFrom,
+            date_to:     dateTo,
             rate_type:   'flat',
             rate_value:  parseFloat(form.defaultRate) || 0,
             priority:    Number(form.priority ?? 0),
@@ -3586,18 +3634,29 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
                 placeholder={t('ratePeriodNamePlaceholder')} />
             </div>
 
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: '0.85rem', color: '#334155', cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={form.recurring}
+                onChange={e => setForm(p => ({ ...p, recurring: e.target.checked }))}
+              />
+              {t('ratePeriodRecurringLabel')}
+            </label>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: 12 }}>
               <div className="form-group">
                 <label className="form-label">{t('ratePeriodFrom')} *</label>
-                <input className="form-control" value={form.date_from}
-                  onChange={e => setForm(p => ({ ...p, date_from: e.target.value }))}
-                  placeholder="MM-DD or YYYY-MM-DD" />
+                <input type="date" className="form-control" value={form.date_from}
+                  onChange={e => setForm(p => ({ ...p, date_from: e.target.value }))} />
               </div>
               <div className="form-group">
                 <label className="form-label">{t('ratePeriodTo')} *</label>
-                <input className="form-control" value={form.date_to}
-                  onChange={e => setForm(p => ({ ...p, date_to: e.target.value }))}
-                  placeholder="MM-DD or YYYY-MM-DD" />
+                <input type="date" className="form-control" value={form.date_to}
+                  min={(!form.recurring && form.date_from) ? form.date_from : undefined}
+                  onChange={e => setForm(p => ({ ...p, date_to: e.target.value }))} />
               </div>
               <div className="form-group">
                 <label className="form-label">{t('ratePeriodPriority')}</label>
@@ -3608,7 +3667,7 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
             </div>
 
             <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: -8 }}>
-              {t('ratePeriodFormatHint')}
+              {form.recurring ? t('ratePeriodRecurringHint') : t('ratePeriodFormatHint')}
             </div>
 
             {/* Per-room pricing table */}
