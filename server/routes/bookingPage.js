@@ -1119,9 +1119,12 @@ ${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidP
     : `<button class="btn-primary-large" onclick="scrollToEnquiry()" data-i18n="page.sendEnquiry">Send a booking enquiry</button>`;
 
   const cancellationDays = property.cancellation_days ?? 7;
-  const cancellationText = cancellationDays > 0
-    ? `Free cancellation up to ${cancellationDays} days before arrival`
-    : 'Flexible cancellation — contact owner';
+  // Enforcement (bookings.js DELETE) blocks cancellation once
+  // daysUntil <= cancellation_days, so free cancellation applies strictly
+  // *more than* N days before arrival.
+  const cancellationHtml = cancellationDays > 0
+    ? `<span data-i18n-n="page.freeCancellation" data-n="${esc(String(cancellationDays))}">Free cancellation more than ${esc(String(cancellationDays))} days before arrival</span>`
+    : `<span data-i18n="page.flexibleCancellation">Flexible cancellation — contact the owner</span>`;
 
   let ctaSection;
   if (isWholeProperty) {
@@ -1131,11 +1134,9 @@ ${categoryShowcase(catsWithRooms, categoriesById, photosByRoom, currSym, isPaidP
     <h2 data-i18n="page.bookNow">Ready to book?</h2>
     <p data-i18n="page.ctaHint">Book directly with us for the best rates — no booking fees, no hidden extras.</p>
     ${bookOrEnquiryBtn}
-    <div class="nb-step-item" style="margin-top:16px;display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#475569;">
-      <span class="nb-step-num" style="display:flex;align-items:center;">
-        <i class="ti ti-shield-check" style="font-size:1.1rem;color:${esc(palette.dark)};"></i>
-      </span>
-      <span>${esc(cancellationText)}</span>
+    <div style="margin-top:16px;display:flex;justify-content:center;align-items:center;gap:8px;font-size:0.85rem;color:rgba(255,255,255,0.85);">
+      <i class="ti ti-shield-check" style="font-size:1.1rem;"></i>
+      ${cancellationHtml}
     </div>
   </div>
 </section>`;
@@ -2865,6 +2866,8 @@ var I18N = {
     "page.available":         "Available",
     "page.booked":            "Booked",
     "page.ctaHint":           "Book directly with us for the best rates — no booking fees, no hidden extras.",
+    "page.freeCancellation":  "Free cancellation more than {n} days before arrival",
+    "page.flexibleCancellation": "Flexible cancellation — contact the owner",
     "page.checkAvailability": "Check availability & book →",
     "page.poweredBy":         "Powered by",
     "page.demoNotice":        "This is a NestBook demonstration page — rooms shown are for illustration only. No real bookings will be processed.",
@@ -2958,6 +2961,8 @@ var I18N = {
     "page.available":         "Disponible",
     "page.booked":            "Réservé",
     "page.ctaHint":           "Réservez directement avec nous pour les meilleurs tarifs — sans frais de réservation, sans frais cachés.",
+    "page.freeCancellation":  "Annulation gratuite plus de {n} jours avant l'arrivée",
+    "page.flexibleCancellation": "Annulation flexible — contactez le propriétaire",
     "page.checkAvailability": "Vérifier les disponibilités →",
     "page.poweredBy":         "Propulsé par",
     "page.demoNotice":        "Ceci est une page de démonstration NestBook — les chambres affichées sont à titre d'illustration uniquement.",
@@ -3051,6 +3056,8 @@ var I18N = {
     "page.available":         "Verfügbar",
     "page.booked":            "Gebucht",
     "page.ctaHint":           "Buchen Sie direkt bei uns für die besten Preise — keine Buchungsgebühren, keine versteckten Kosten.",
+    "page.freeCancellation":  "Kostenlose Stornierung bei mehr als {n} Tagen vor der Anreise",
+    "page.flexibleCancellation": "Flexible Stornierung — kontaktieren Sie den Gastgeber",
     "page.checkAvailability": "Verfügbarkeit prüfen →",
     "page.poweredBy":         "Unterstützt von",
     "page.demoNotice":        "Dies ist eine NestBook-Demonstrationsseite — die gezeigten Zimmer dienen nur zur Illustration.",
@@ -3144,6 +3151,8 @@ var I18N = {
     "page.available":         "Disponible",
     "page.booked":            "Reservado",
     "page.ctaHint":           "Reserve directamente con nosotros para las mejores tarifas — sin gastos de reserva, sin costes ocultos.",
+    "page.freeCancellation":  "Cancelación gratuita con más de {n} días de antelación a la llegada",
+    "page.flexibleCancellation": "Cancelación flexible — contacte con el propietario",
     "page.checkAvailability": "Comprobar disponibilidad →",
     "page.poweredBy":         "Desarrollado por",
     "page.demoNotice":        "Esta es una página de demostración de NestBook — las habitaciones mostradas son solo ilustrativas.",
@@ -3237,6 +3246,8 @@ var I18N = {
     "page.available":         "Beschikbaar",
     "page.booked":            "Geboekt",
     "page.ctaHint":           "Boek rechtstreeks bij ons voor de beste tarieven — geen boekingskosten, geen verborgen kosten.",
+    "page.freeCancellation":  "Gratis annulering meer dan {n} dagen voor aankomst",
+    "page.flexibleCancellation": "Flexibele annulering — neem contact op met de eigenaar",
     "page.checkAvailability": "Beschikbaarheid controleren →",
     "page.poweredBy":         "Mogelijk gemaakt door",
     "page.demoNotice":        "Dit is een NestBook-demonstratiepagina — de getoonde kamers zijn alleen ter illustratie.",

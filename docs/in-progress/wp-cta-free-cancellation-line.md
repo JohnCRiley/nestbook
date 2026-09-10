@@ -1,6 +1,21 @@
 # WP CTA "Free cancellation up to N days before arrival" line
 
-Status: **investigation complete, awaiting John's decision** (fix styling / make consistent across modes / remove). Do not fix yet.
+Status: **display + wording + i18n fixed and verified (commit below). WP-only
+scoping deliberately left as-is — that's AUDIT_MASTER_LIST.md M5, a separate
+open product decision.** This doc can be deleted once M5 is also resolved.
+
+## Fix applied (2026-09-10)
+
+`server/routes/bookingPage.js`:
+- Colour: inline `color:#475569` → `color:rgba(255,255,255,0.85)` (matches `.cta-section p`); icon lost its `color:${palette.dark}` (invisible on the dark bg) and now inherits the same white.
+- Alignment: added `justify-content:center` to the flex row — now centered like the rest of `.cta-inner`.
+- Dead classes `nb-step-item` / `nb-step-num` removed; inner icon `<span>` wrapper dropped (only existed to hold `nb-step-num`).
+- Wording: "up to {n} days" → "more than {n} days before arrival" (matches the `daysUntil <= cancellation_days` enforcement boundary in bookings.js).
+- i18n: `<span>` now carries `data-i18n-n="page.freeCancellation"` / `data-n` (or `data-i18n="page.flexibleCancellation"` for the `cancellation_days === 0` branch). Both keys added to all 5 language dicts (en/fr/de/es/nl).
+
+Verified locally by temporarily flipping property id 1 to `whole_property` (DB restored after): both branches render, computed colour `rgba(255,255,255,0.85)` on `rgb(64,84,64)` bg, `justify-content:center`, `{n}` interpolates in all 5 langs, no `nb-step-*` in DOM. Browser screenshots unavailable (pane not displayed) — verified via `getComputedStyle` / `applyLang()` per [[local_dev_test_credentials]].
+
+## Original investigation (kept for M5 context)
 
 ## The line in question
 
