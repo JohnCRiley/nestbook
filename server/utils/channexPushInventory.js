@@ -362,6 +362,20 @@ function isChannexConnected(propertyId) {
   ).get(propertyId);
 }
 
+/** Pull the async-task id(s) out of a raw ARI response body — Channex answers
+ *  POST /availability and POST /restrictions with
+ *  { data: [{ id, type: "task" }, …], meta: { message: "Success" } }. Logging
+ *  the id(s) makes an ARI push traceable through to Channex's task processor
+ *  (and is what their PMS certification asks us to record per test scenario).
+ *  Returns a comma-separated list, or '-' when the body carries none. */
+function channexTaskIds(result) {
+  const data = Array.isArray(result?.data)
+    ? result.data
+    : (result?.data ? [result.data] : []);
+  const ids = data.map((d) => d?.id).filter(Boolean);
+  return ids.length ? ids.join(', ') : '-';
+}
+
 /**
  * Fire-and-forget outbound availability sync for one NestBook change.
  *
@@ -454,6 +468,7 @@ async function runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo)
   console.log(
     `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} — ` +
     `${values.length} availability segment(s) across ${affected.length} room type(s)` +
+    ` — task_id(s): ${channexTaskIds(result)}` +
     (warnings.length ? ` (${warnings.length} warning(s))` : '')
   );
   return result;
@@ -570,6 +585,7 @@ async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
   console.log(
     `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} ${from}..${to} rates — ` +
     `${values.length} segment(s) across ${affected.length} rate plan(s)` +
+    ` — task_id(s): ${channexTaskIds(result)}` +
     (skippedSegments ? `, ${skippedSegments} zero-rate segment(s) skipped` : '') +
     (warnings.length ? ` (${warnings.length} warning(s))` : '')
   );
@@ -1006,6 +1022,12 @@ export async function pushInitialInventory(property) {
   const rateResult = rateValues.length
     ? await updateRates(rateValues, { propertyId: property.id })
     : { meta: { warnings: [] } };
+
+  console.log(
+    `[channex-sync] property #${property.id} full sync — ` +
+    `availability task_id(s): ${channexTaskIds(availabilityResult)}; ` +
+    `rates task_id(s): ${channexTaskIds(rateResult)}`
+  );
 
   return {
     window: { from: windowFrom, to: windowTo, days: WINDOW_DAYS },

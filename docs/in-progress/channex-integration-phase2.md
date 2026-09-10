@@ -1025,3 +1025,48 @@ Contributing: `isRetryable()` treated **any** non-`ChannexError` (a plain bug,
 finding) — used John's existing real revision + the retargeted-property harness
 instead. A brand-new Channex-side reservation → auto-ack is John's to spot-check
 from the dashboard.
+
+---
+
+## Slice 9b — log the Channex async-task id on every ARI push  ✅ DONE (2026-09-10)
+
+**Why:** Channex's PMS certification form asks for the `task` id from the real
+API response for each test scenario (availability update, rate update, full
+sync, …). `channexRequest(..., { raw: true })` already returns the whole body
+(`{ data: [{ id, type: "task" }], meta }`) — nothing was discarded — but every
+caller only read `result.meta.warnings` and logged a friendly summary, so the id
+was never written anywhere. No separate cert-only script/tool (their explicit
+anti-pattern) — just add the id to the log line the real sync code already emits.
+
+**Built (`server/utils/channexPushInventory.js` only — purely additive logging):**
+- New `channexTaskIds(result)` helper — pulls `data[].id` out of a raw ARI body,
+  returns a comma-separated list or `-`.
+- `runAvailabilitySync()` / `runRateSync()` (the ongoing delta pushes wired into
+  `bookings.js`, `widget.js`, `enquiries.js`, `stripe.js`, `ratePeriods.js`,
+  `rooms.js`, `roomCategories.js`) — existing `[channex-sync] …` line gains
+  `— task_id(s): <uuid>`.
+- `pushInitialInventory()` (Full Sync, cert test 1) — new line after the 2
+  batched ARI calls: `[channex-sync] property #N full sync — availability
+  task_id(s): <uuid>; rates task_id(s): <uuid>`.
+- No behaviour change: same requests, same bodies, same queue routing, same
+  return values. Only `console.log` strings changed.
+
+**Verified (2026-09-10, real Channex staging, connected property #1 `a50e441f`):**
+- `pushAvailabilityUpdate(1,'room',341,…)` →
+  `[channex-sync] property #1 room:341 2026-10-20..2026-10-23 — 1 availability
+  segment(s) across 1 room type(s) — task_id(s): 8ffab1e8-e5fa-44c4-a618-b80a850b8f04`
+- `pushRateUpdate(1,'property',…)` →
+  `… rates — 4 segment(s) across 4 rate plan(s) — task_id(s):
+  fd533469-c8ea-4312-955e-a1f3736ebade`
+- Both ids are real, from the actual staging `POST /availability` /
+  `POST /restrictions` responses. No DB writes (both recompute + re-assert
+  current state, Last-Win). `node --check` clean.
+- Full-sync line not exercised end-to-end (property #1 already has mappings) —
+  it calls the same helper on the same-shaped `updateAvailability`/`updateRates`
+  return as slice 9's mocked-fetch full-sync test; John can confirm it on the
+  next real `channex-push` of a fresh property.
+
+**For the cert form:** trigger the scenario on a connected property (real
+booking / cancel / date-edit → availability; seasonal rate period save → rates;
+Super Admin "Push Inventory" → full sync), then `pm2 logs --lines 200 | grep
+task_id` (prod) or read the server log — copy the uuid(s).
