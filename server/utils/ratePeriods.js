@@ -11,7 +11,7 @@ function toMmDd(dateIso) {
  *   MM-DD  — annual, repeats every year (length 5)
  *   YYYY-MM-DD — one-off specific year (length 10)
  */
-function dateInRange(dateIso, from, to) {
+export function dateInRange(dateIso, from, to) {
   const annual = from.length === 5;
   if (annual) {
     const mmdd = toMmDd(dateIso);

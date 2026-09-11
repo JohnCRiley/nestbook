@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
-import { pushRateUpdate } from '../utils/channexPushInventory.js';
+import { pushRateUpdateForRanges } from '../utils/channexPushInventory.js';
 
 export const ratePeriodsRouter = Router();
 
@@ -119,8 +119,9 @@ ratePeriodsRouter.post('/', (req, res) => {
     res.status(201).json(attachRoomRates(period));
 
     // Fire-and-forget — push the new seasonal rate to any Channel-connected
-    // OTAs. Never awaited: a slow/failed Channex call must not delay the save.
-    pushRateUpdate(Number(property_id), 'property', null, null, null).catch(() => {});
+    // OTAs, scoped to just the nights this period actually affects. Never
+    // awaited: a slow/failed Channex call must not delay the save.
+    pushRateUpdateForRanges(Number(property_id), [{ from: period.date_from, to: period.date_to }]).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -172,7 +173,13 @@ ratePeriodsRouter.put('/:id', (req, res) => {
 
     // Fire-and-forget — re-push rates so edited dates/prices reach connected
     // OTAs and any stale segment from the old range is reverted (Last-Win).
-    pushRateUpdate(Number(updated.property_id), 'property', null, null, null).catch(() => {});
+    // Cover BOTH the pre- and post-edit ranges: a night that left the period's
+    // range (e.g. date_from moved later) needs re-resolving too, not just the
+    // period's new range.
+    pushRateUpdateForRanges(Number(updated.property_id), [
+      { from: period.date_from, to: period.date_to },
+      { from: updated.date_from, to: updated.date_to },
+    ]).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -191,8 +198,8 @@ ratePeriodsRouter.delete('/:id', (req, res) => {
     res.status(204).end();
 
     // Fire-and-forget — the deleted period's nights fall back to the base rate
-    // on connected OTAs. Never awaited.
-    pushRateUpdate(Number(period.property_id), 'property', null, null, null).catch(() => {});
+    // (or next-highest-priority period) on connected OTAs. Never awaited.
+    pushRateUpdateForRanges(Number(period.property_id), [{ from: period.date_from, to: period.date_to }]).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

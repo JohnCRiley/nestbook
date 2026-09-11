@@ -85,7 +85,7 @@ import {
 } from './channexClient.js';
 import { submitChannexJob } from './channexQueue.js';
 import { getAvailableRoomsInCategory } from './categoryAvailability.js';
-import { getRateForDate } from './ratePeriods.js';
+import { getRateForDate, dateInRange } from './ratePeriods.js';
 
 // Channex certification (test 1) requires the Full Sync to cover 500 days.
 // This is the ONLY place the window is defined; the delta paths widen with it
@@ -484,12 +484,18 @@ async function runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo)
  * rate_period save/delete's response path), silently no-ops when the property
  * has no channex_room_mappings rows / no channex_property_id.
  *
- * rate_periods are property-scoped, so the normal call is
- * pushRateUpdate(propertyId, 'property', null, null, null) — it recomputes real
- * seasonal rates for EVERY mapped rate plan across the whole sync window and
- * re-pushes them. Channex processes /restrictions Last-Win, so a full re-push
- * inherently reverts any stale segment left by an edited or deleted period — no
- * diffing needed.
+ * rate_periods are property-scoped (a period can apply to every room, or
+ * override specific ones via rate_period_rooms), so refType is always
+ * 'property' for a rate_periods.js call — but dateFrom/dateTo now DO clamp
+ * the push to the affected nights: pass null/null for a genuine full sync
+ * (initial connect, slice-7 reconcile, manual Push Inventory — still
+ * recomputes EVERY mapped rate plan across the whole window), or real dates
+ * to narrow it. Channex processes /restrictions Last-Win, so re-pushing a
+ * period's own affected range inherently reverts any stale segment left by
+ * an edit/delete — no diffing needed. For a create/edit/delete of an actual
+ * rate_periods row, prefer pushRateUpdateForRanges() below, which resolves
+ * the real calendar nights (handling the annual MM-DD / one-off YYYY-MM-DD
+ * distinction) instead of assuming date_from/date_to are literal dates.
  *
  * Runs as a channexQueue `restrictions` job (per-property rate-limited, retried
  * on 429/5xx); the job's run() recomputes from the DB so the queue can safely
@@ -498,8 +504,8 @@ async function runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo)
  * @param {number} propertyId
  * @param {'room'|'category'|'whole_property'|'property'} refType
  * @param {number|null} refId
- * @param {string|null} dateFrom  'YYYY-MM-DD' inclusive (ignored for 'property')
- * @param {string|null} dateTo    'YYYY-MM-DD' inclusive (ignored for 'property')
+ * @param {string|null} dateFrom  'YYYY-MM-DD' inclusive — null for a full sync
+ * @param {string|null} dateTo    'YYYY-MM-DD' inclusive — null for a full sync
  * @returns {Promise<void>}
  */
 export async function pushRateUpdate(propertyId, refType, refId, dateFrom, dateTo) {
@@ -537,7 +543,14 @@ async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
   const winTo = win[win.length - 1];
   let from = winFrom;
   let to = winTo;
-  if (refType !== 'property' && dateFrom && dateTo) {
+  // Clamp whenever real dates are given, regardless of refType — a genuine
+  // full sync (initial connect, slice-7 reconcile, manual Push Inventory)
+  // always passes dateFrom/dateTo as null and still gets the full window.
+  // The old `refType !== 'property'` guard here meant every rate_periods.js
+  // edit (which always calls refType:'property') skipped the clamp and
+  // re-pushed the entire ~500-day window on every save (see docs/in-progress
+  // channex-cert-rateplan-mapping-111.md, finding #4).
+  if (dateFrom && dateTo) {
     from = dateFrom > winFrom ? dateFrom : winFrom;
     to = dateTo < winTo ? dateTo : winTo;
   }
@@ -590,6 +603,45 @@ async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
     (warnings.length ? ` (${warnings.length} warning(s))` : '')
   );
   return result;
+}
+
+/**
+ * Fire-and-forget rate sync for an actual rate_periods.js create/edit/delete.
+ *
+ * `ranges` is one or more {from, to} pairs taken straight from rate_periods
+ * rows — each may be 'MM-DD' (annual, recurs every year) or 'YYYY-MM-DD'
+ * (one-off), exactly as stored. Rather than assume those strings are literal
+ * push-window dates (an annual period can match zero, one or two real
+ * calendar spans inside the WINDOW_DAYS push window, and a year-wrap like
+ * '12-24'..'01-06' isn't a literal date range at all), this resolves the real
+ * affected nights with the same dateInRange() the rate engine itself uses
+ * (server/utils/ratePeriods.js — the single source of truth also used by
+ * getRateForDate), then re-pushes one narrow pushRateUpdate() per contiguous
+ * affected span.
+ *
+ * Pass the period's OWN range for a create/delete. For an edit, pass BOTH the
+ * pre-update and post-update ranges — a night that leaves the period's range
+ * (e.g. date_from moved later) needs to be re-pushed too, so it reverts to
+ * whatever period/base rate now applies.
+ *
+ * @param {number} propertyId
+ * @param {{from: string, to: string}[]} ranges
+ * @returns {Promise<void>}
+ */
+export async function pushRateUpdateForRanges(propertyId, ranges) {
+  try {
+    if (!propertyId || !ranges?.length || !isChannexConnected(propertyId)) return;
+    const win = windowDates();
+    const segments = coalesce(win, (d) => ranges.some((r) => dateInRange(d, r.from, r.to)))
+      .filter((seg) => seg.value === true);
+    for (const seg of segments) {
+      await pushRateUpdate(propertyId, 'property', null, seg.date_from, seg.date_to);
+    }
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} rate-period push failed (non-fatal): ${err.message}`
+    );
+  }
 }
 
 // ── Channex room-type / rate-plan creation (shared: initial push + slice 7) ──

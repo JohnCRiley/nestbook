@@ -1,6 +1,9 @@
 # Channex certification failure — property 111 rate-plan mapping + payload batching
 
-**Status: DIAGNOSIS ONLY (2026-09-11). No code changed. Awaiting production data from John.**
+**Status (2026-09-11): finding #4 (500-day rate-sync flood) FIXED — see below.
+The primary hypothesis (stale `channex_room_mappings` IDs) is still DIAGNOSIS
+ONLY, no code changed there. Still awaiting production data from John (queries
+#1–#3 below) to confirm/rule that out.**
 
 Channex certification review rejected the submission. Every rate-related test failure
 cites: our pushes targeted `def240dc-832a-4377-8c94-1f1d3a8200b3` and
@@ -81,15 +84,33 @@ segments. ONE `POST /availability` with a `values[]` array spanning every
 affected room_type; ONE `POST /restrictions` with `values[]` spanning every
 affected rate_plan. Never one object per date.
 
-**500-day flood cause:** `ratePeriods.js` (L123/175/195) always calls
+**500-day flood cause — FIXED (2026-09-11).** `ratePeriods.js` always called
 `pushRateUpdate(pid, 'property', null, null, null)`. In `runRateSync` the clamp
-`if (refType !== 'property' && dateFrom && dateTo)` is skipped for
+`if (refType !== 'property' && dateFrom && dateTo)` was skipped for
 `refType==='property'` → `from/to` = full 500-day window → every rate plan
-re-pushed across 500 days on ANY rate-period create/edit/delete. By design
-(Channex Last-Win reverts stale segments) but reads as a flood to a reviewer who
-changed one night. Same for null-date delta calls: `bookings.js:786` (import),
-slice-7 `syncTarget`'s `pushAvailabilityUpdate(..., null, null)`. A normal
-booking create/cancel passes real check-in/out → narrow segment, not 500 days.
+re-pushed across 500 days on ANY rate-period create/edit/delete.
+
+Fix: the clamp now applies whenever `dateFrom`/`dateTo` are given, regardless of
+`refType` (`server/utils/channexPushInventory.js` `runRateSync`). A genuine full
+sync still passes `null, null` explicitly (initial connect, slice-7 reconcile's
+`syncTarget`, the Super Admin "Push Inventory" button's `pushInitialInventory` —
+none of those call sites were touched) and still gets the full window.
+`ratePeriods.js`'s three handlers now call a new
+`pushRateUpdateForRanges(propertyId, ranges)` instead of `pushRateUpdate`
+directly — it resolves the period's real affected calendar nights via the same
+`dateInRange()` the rate engine uses (now exported from
+`server/utils/ratePeriods.js`), correctly handling the annual `MM-DD` vs
+one-off `YYYY-MM-DD` distinction (see [[rate-periods-date-format]]) and
+year-wrap, then pushes one narrow `pushRateUpdate()` call per contiguous
+affected span. An edit passes BOTH the pre- and post-update ranges (so a night
+that leaves the period's range on a shrink/move still gets re-resolved, not
+just the new range) — verified locally against Channex staging (property #1)
+with a shrink case (coalesces to one segment covering the old span) and a move
+case (two disjoint narrow segments), plus confirming a direct
+`pushRateUpdate(pid, 'property', null, null, null)` call still logs the full
+~500-day window. Availability path (`pushAvailabilityUpdate` / `bookings.js` /
+slice-7's `syncTarget` ARI calls) was NOT touched — it was already correctly
+scoped.
 
 ### Room-type quantity (finding #5)
 
@@ -146,16 +167,22 @@ cleanly (disconnect + create + push) AFTER the failed submission — which would
 have generated fresh, matching rows and left the old Channex objects deleted.
 Confirm with query #1 + #2.
 
-Secondary, independent issue regardless of the above: the rate-sync always
-pushes the full 500-day window (finding #4) and IR-Named can only ever send
-0/1 availability (finding #5) — both will trip cert tests that expect a
-single-date push or a multi-unit quantity.
+Secondary, independent issue regardless of the above: ~~the rate-sync always
+pushes the full 500-day window (finding #4)~~ **FIXED 2026-09-11, see above** —
+and IR-Named can only ever send 0/1 availability (finding #5), which will still
+trip a cert test that expects a multi-unit quantity. Finding #5 is NOT fixed —
+needs a Channex conversation, not a code change (NestBook's 1-physical-room
+model can't emit pooled counts).
 
-## Files in play (no edits made)
+## Files in play
 
 - `server/utils/channexPushInventory.js` — `buildTargets`, `runAvailabilitySync`,
-  `runRateSync`, `pushInitialInventory`, `syncTarget`, `disconnectChannexProperty`
+  `runRateSync`, `pushInitialInventory`, `syncTarget`, `disconnectChannexProperty`,
+  `pushRateUpdateForRanges` (new, 2026-09-11) — no edits made here for the
+  mapping-ID issue (still open, see "NOT yet confirmed" above)
 - `server/utils/channexClient.js` — `updateAvailability`, `updateRates`
 - `server/routes/admin.js` L720-833 — channex-create / channex-push / channex-disconnect
-- `server/routes/ratePeriods.js` L123/175/195 — the `'property'` full-window rate push
+- `server/routes/ratePeriods.js` — create/edit/delete now call
+  `pushRateUpdateForRanges` (fixed 2026-09-11, was the `'property'` full-window
+  rate push)
 - `server/db/schema.js` L2586-2631 — channex_property_id column, channex_room_mappings table
