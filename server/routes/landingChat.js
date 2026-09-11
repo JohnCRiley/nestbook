@@ -14,8 +14,10 @@
 // still responds, with a friendly localized "not available right now" message.
 
 import { Router } from 'express';
+import db from '../db/database.js';
 import { readKnowledge } from '../utils/helpContent.js';
 import { getIp } from '../utils/auditLog.js';
+import { logAiChatQuestion } from '../utils/aiChatLog.js';
 
 export const landingChatRouter = Router();
 
@@ -122,6 +124,10 @@ landingChatRouter.post('/', async (req, res) => {
   if (message.length > 2000) {
     return res.status(400).json({ error: 'That message is too long.' });
   }
+
+  // Usage logging — question text + language only, nothing identifying (no
+  // IP, no session id). Never blocks or fails the actual response.
+  logAiChatQuestion(db, { source: 'landing_chat', question: message.trim(), language: lang });
 
   if (!checkRateLimit(getIp(req))) {
     return res.json({ reply: RATE_LIMITED_MSG[lang] ?? RATE_LIMITED_MSG.en, rate_limited: true });

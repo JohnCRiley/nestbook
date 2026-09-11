@@ -18,6 +18,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { readHelpKnowledge } from '../utils/helpContent.js';
+import { logAiChatQuestion } from '../utils/aiChatLog.js';
 
 export const helpChatRouter = Router();
 
@@ -173,6 +174,16 @@ helpChatRouter.post('/', async (req, res) => {
   if (message.length > 2000) {
     return res.status(400).json({ error: 'That message is too long.' });
   }
+
+  // Usage logging — question text only, never the answer. Never blocks or
+  // fails the actual response (see logAiChatQuestion's own try/catch).
+  logAiChatQuestion(db, {
+    source: 'help_chat',
+    question: message.trim(),
+    language: lang,
+    plan: ctx?.plan ?? null,
+    mode: describeMode(ctx),
+  });
 
   if (userId && !checkRateLimit(userId)) {
     return res.json({ reply: RATE_LIMITED_MSG[lang] ?? RATE_LIMITED_MSG.en, rate_limited: true });

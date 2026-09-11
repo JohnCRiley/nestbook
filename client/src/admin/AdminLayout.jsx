@@ -18,6 +18,7 @@ import FeatureInterest   from './pages/FeatureInterest.jsx';
 import LandingImages     from './pages/LandingImages.jsx';
 import ContentReview     from './pages/ContentReview.jsx';
 import UserMailer        from './pages/UserMailer.jsx';
+import AiAssistant       from './pages/AiAssistant.jsx';
 import { clearSASession, saApiFetch } from './saApiFetch.js';
 
 const NAV = [
@@ -33,6 +34,7 @@ const NAV = [
   { to: '/super-admin/prospect-finder',  label: 'Prospect Finder',             icon: <IconSearch /> },
   { to: '/super-admin/phone-outreach',   label: 'Phone outreach',              icon: <IconPhone /> },
   { to: '/super-admin/content-review',   label: 'Content Review',              icon: <IconFlag />, badgeKey: 'contentReview' },
+  { to: '/super-admin/ai-assistant',      label: 'AI Assistant',                icon: <IconChat /> },
   { to: '/super-admin/error-reports',     label: 'Error Reports',               icon: <IconBug />, badgeKey: 'errorReports' },
   { to: '/super-admin/settings',          label: 'Settings',                    icon: <IconSettings /> },
   { to: '/super-admin/business-finances', label: 'NestBook Business',           icon: <IconFinances /> },
@@ -167,6 +169,7 @@ export default function AdminLayout() {
           <Route path="feature-interest"  element={<FeatureInterest    />} />
           <Route path="landing-images"    element={<LandingImages      />} />
           <Route path="content-review"    element={<ContentReview      />} />
+          <Route path="ai-assistant"      element={<AiAssistant        />} />
         </Routes>
       </main>
     </div>
@@ -346,6 +349,14 @@ function IconSearch() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="10" cy="10" r="7"/>
       <line x1="21" y1="21" x2="15" y2="15"/>
+    </svg>
+  );
+}
+
+function IconChat() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   );
 }

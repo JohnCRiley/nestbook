@@ -2641,6 +2641,28 @@ John`
   try { db.exec(`ALTER TABLE bookings ADD COLUMN channex_reservation_id TEXT`); } catch (e) {}
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_bookings_channex_reservation ON bookings(channex_reservation_id)`); } catch (e) {}
 
+  // ── AI assistant usage logging (help chat + landing chat) ────────────────
+  // Question text only — the bot's answer is deliberately never logged. For
+  // help_chat, plan/mode is context for reading a question later (e.g. "a
+  // Free user asking about a Pro feature") — never user_id/email/property
+  // name. landing_chat logs nothing identifying beyond the question/language.
+  // See server/utils/aiChatLog.js. No auto-expiry — kept indefinitely.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS ai_chat_logs (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        source     TEXT NOT NULL CHECK(source IN ('help_chat','landing_chat')),
+        question   TEXT NOT NULL,
+        language   TEXT,
+        plan       TEXT,
+        mode       TEXT
+      )
+    `);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_ai_chat_logs_source_created ON ai_chat_logs(source, created_at)`);
+    console.log('✓ ai_chat_logs table ready');
+  } catch (e) { console.error('ai_chat_logs table error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

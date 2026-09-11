@@ -10,6 +10,7 @@ import db from '../db/database.js';
 import { outreachRouter } from './outreach.js';
 import { prospectFinderRouter } from './prospectFinder.js';
 import { userMailerRouter } from './userMailer.js';
+import { aiAssistantLogsRouter } from './aiAssistantLogs.js';
 import { ROOM_UPLOAD_DIR } from './roomPhotos.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
@@ -25,6 +26,7 @@ export const adminRouter = Router();
 adminRouter.use('/outreach', outreachRouter);
 adminRouter.use('/prospect-finder', prospectFinderRouter);
 adminRouter.use('/user-mailer', userMailerRouter);
+adminRouter.use('/ai-assistant', aiAssistantLogsRouter);
 
 const PLAN_MRR  = { pro: 19, multi: 39 };
 
