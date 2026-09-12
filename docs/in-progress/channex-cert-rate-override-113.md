@@ -156,7 +156,146 @@ Double $312.66; 1 Dec–1 May Twin $432 / Double $342. Specifically check:
   Channex side dropped/ignored it — different investigation) or "every night
   unset/zero … nothing sent" (confirms mechanism above).
 
+## Session 2 (2026-09-12) — real production data + executed-code verification
+
+John supplied the actual `rate_periods` / `rate_period_rooms` / `rooms` rows
+for property 113 (still no direct production DB access this session). Rather
+than keep reasoning about `getRateForDate()` / `buildTargets()` abstractly, I
+replicated the exact rows (same relative id ordering: 22 Christmas, 23
+Easter, 24 TEST#2, 25 TEST#3A, 26 TEST#3B, 27 TEST#4A, 28 TEST#4B, 29 TEST#8,
+all `priority=0`; overrides: 27→Twin $241, 28→Double $312.66) against a
+throwaway property in the local dev DB, wrapped in `BEGIN`/`ROLLBACK` (nothing
+persisted), and called the **real, imported** `getRateForDate()` and
+`buildTargets()` — not a re-implementation — for every date Nov 1–16 2026.
+
+**Result — both are CORRECT**, with one confirmed minor exception:
+
+```
+date        Twin        Double
+11-01..09   $241 (4A)   $100 (base, correct — no override in 4A)
+11-10       $241 (4A)   $100 (base — 4A wins tie-break, correct per below)
+11-11..16   $100 (base) $312.66 (4B)
+```
+
+`buildTargets()`'s resolvers, coalesced into segments exactly as
+`runRateSync()` would build them, produced:
+```
+Twin:   [2026-11-01..10: $241] [2026-11-11..16: $100]
+Double: [2026-11-01..10: $100] [2026-11-11..16: $312.66]
+```
+
+Answering the numbered checks directly:
+
+1. **Tie-break confirmed, and it's per-date-property-wide, not per-room.**
+   `getRateForDate()`'s period loop (`ratePeriods.js:42-65`) picks ONE winning
+   period per `(propertyId, date)` — `ORDER BY priority ASC, id ASC`, first
+   `dateInRange()` match, full stop — then looks up that ONE period's
+   room-specific override. It does NOT search forward through other
+   date-matching periods looking for one that has an answer for the room in
+   question. So on Nov 10 (where TEST#4A id 27 and TEST#4B id 28 both match),
+   TEST#4A wins for **both** rooms' resolution: Twin gets its override
+   (coincidentally correct, since Twin's override lives in the winning
+   period), but Double gets **TEST#4A's own `rate_value` (0)** → base $100,
+   even though TEST#4B (which has Double's real override) also covers that
+   date. This is a real, confirmed, narrow bug — but it only affects the
+   single overlapping day, not the ranges either period exclusively covers.
+2. **Nov 1–9: Twin → $241 ✅. Double → $100 ✅ (expected, no override).**
+   Confirmed by direct execution.
+3. **Nov 11–16: Double → $312.66 ✅. Twin → $100 ✅ (expected, no override).**
+   Confirmed by direct execution.
+4. **Segment-merging is NOT collapsing anything.** `buildTargets()`'s
+   `rateForDate` resolvers, coalesced exactly as the real push does, produce
+   two distinct, correctly-valued segments per room (shown above) — not one
+   flat wrong value across the combined range. This hypothesis is **ruled
+   out** by direct execution, not just review.
+5. TEST#8 (2026-12-01..2027-05-01) cannot match any November 2026 date —
+   confirmed by inspection, not even reachable by `dateInRange()` for those
+   dates. Not a factor here.
+
+**This means the reported symptom — "$100 across the ENTIRE 1–16 Nov range
+for BOTH rooms" — cannot be reproduced from `getRateForDate()` or
+`buildTargets()`/segment construction with this exact data.** Both are
+proven correct (bar the 1-day Nov 10 edge case, which alone doesn't explain a
+16-day-wide, both-rooms failure). The divergence between "what the code would
+correctly compute and send" and "what Channex actually shows" must be
+happening **downstream of payload construction** — i.e. in actual delivery:
+
+- **Leading candidate: stale `channex_room_mappings.channex_rate_plan_id`
+  for property 113** — the same still-unconfirmed root-cause class already
+  flagged for property 111 in
+  `docs/in-progress/channex-cert-rateplan-mapping-111.md`. If the stored
+  mapping row points at an old/orphaned Channex rate plan (from an earlier
+  connect/rebuild) rather than the one the cert reviewer is actually reading,
+  `runRateSync()` posts the (correct!) resolved values to the wrong
+  `rate_plan_id` — the live rate plan Channex/the reviewer checks never
+  receives the write and stays at whatever its LAST real value was: the
+  **initial flat base push ($100 for both, per slice 3)** for the "$100
+  observed" periods, and **nothing at all** for TEST#8 if that particular
+  rate plan's initial flat-rate push also never landed on the current live
+  object (e.g. reconnect happened after slice-3's initial push ran once).
+  This single explanation accounts for both reported symptoms uniformly —
+  the resolved values are right, they're just being confirmed against the
+  wrong live object.
+- Alternative candidates, not yet ruled out: the fire-and-forget
+  `.catch(() => {})` in `ratePeriods.js` swallows a real push failure with no
+  trace beyond a `console.error` — need server logs to confirm the pushes for
+  these specific periods actually executed and check what they logged
+  (`[channex-sync] property #113 … rate push failed (non-fatal): …` vs a
+  normal `N segment(s) across N rate plan(s)` success line).
+
+**Root cause verdict (for the question asked): the fix, if the stale-mapping
+hypothesis confirms, does NOT belong in `getRateForDate()` or in
+`pushRateUpdateForRanges()`'s segment-merging — both are verified correct.**
+It belongs wherever `channex_room_mappings` gets reconciled/kept in sync with
+what Channex actually has (same area flagged, still open, for property 111).
+The Nov-10 tie-break bug is real but separate and narrower — see below.
+
+## Separate, confirmed, minor bug: same-priority tie-break is per-date, not
+## per-room
+
+Every one of property 113's 8 periods has `priority=0`
+(`client/src/pages/Settings.jsx:3542` hardcodes `priority: '0'` as the
+new-period default). The priority field **is** user-editable — a plain
+`<input type="number" min="0">` at `Settings.jsx:3665-3667` — but nothing in
+the UI explains what it does or when to set it, and no period in production
+has ever had it changed from 0. So in practice, any two overlapping periods
+resolve by **creation order alone** (`id ASC`), and — per the harness above —
+that winner is picked once per date and applies to **every room**, not
+re-evaluated per room per period. A tester creating adjacent single-room
+periods (exactly this cert workflow) will hit this on any boundary date they
+share. Worth fixing regardless of the Channex investigation, but it is NOT
+sufficient on its own to explain the reported "$100 across the whole 1–16
+range" — only the single Nov 10 boundary is affected by it.
+
+## Still needed from production to close this out
+
+```sql
+SELECT id, nestbook_ref_type, nestbook_ref_id, channex_room_type_id,
+       channex_rate_plan_id, orphaned_at, created_at
+FROM channex_room_mappings WHERE property_id = 113;
+```
+Plus: (a) a live Channex API read of property 113's current rate plans /
+their rates (mirrors the property-111 investigation's staging check) to see
+if they match `channex_rate_plan_id` above and what value they currently
+hold; (b) server/pm2 logs for `[channex-sync] property #113` around the
+period-27/28/29 creation timestamps, to confirm each push actually executed
+and see its logged segment count / any failure line.
+
 ## Files in play
+
+- `server/utils/ratePeriods.js:42-65` — confirmed correct by direct
+  execution against replicated prod data; the Nov-10 tie-break is real but
+  narrow (per-date winner, not per-room)
+- `server/utils/channexPushInventory.js:218` (`buildTargets`), `:532`
+  (`runRateSync`) — confirmed correct by direct execution; segment-merging
+  hypothesis ruled out
+- `channex_room_mappings` (schema.js ~L2586-2631) — NOT yet queried for
+  property 113; leading hypothesis for the actual discrepancy, same class as
+  the still-open property-111 finding
+- `client/src/pages/Settings.jsx:3542,3663-3668` — priority defaults to '0',
+  editable but unexplained in the UI; every prod period left at 0
+
+## Files in play (session 1)
 
 - `server/utils/ratePeriods.js:35-68` — `getRateForDate()`, first-match-wins
   priority loop (traced, no bug — behaves exactly as designed)
