@@ -6,7 +6,7 @@ import { applyConnectAccountState } from '../lib/connectStatus.js';
 import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromoPaymentConfirmedEmail, sendBookingConfirmation, sendPaymentAssistanceEmail, sendBookingConflictAlert, sendBookingConflictHoldingEmail } from '../email/emailService.js';
 import { logEmailFailureReport } from './errorReports.js';
 import { logAction, getIp } from '../utils/auditLog.js';
-import { pushAvailabilityUpdate } from '../utils/channexPushInventory.js';
+import { scheduleAvailabilityPush } from '../utils/channexDebounce.js';
 
 export const stripeRouter = Router();
 
@@ -1074,7 +1074,7 @@ export async function stripeWebhookHandler(req, res) {
         console.log(`[stripe] Abandoned booking #${expiredBooking.id} soft-cancelled (cancelled_unpaid) — session ${expiredSession.id} expired`);
 
         // Fire-and-forget — the expired hold frees these dates on connected OTAs
-        pushAvailabilityUpdate(
+        scheduleAvailabilityPush(
           expiredBooking.property_id, 'room', expiredBooking.room_id,
           expiredBooking.check_in_date, expiredBooking.check_out_date,
         ).catch(() => {});

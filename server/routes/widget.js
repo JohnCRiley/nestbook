@@ -9,7 +9,7 @@ import { stripe } from '../lib/stripeClient.js';
 import { getRateForDate, calcSeasonalBreakdown } from '../utils/ratePeriods.js';
 import { recoveryUrl, verifyRecoveryToken, makeRecoveryToken } from '../lib/recoveryToken.js';
 import { assignRoomForCategoryBooking, getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
-import { pushAvailabilityUpdate } from '../utils/channexPushInventory.js';
+import { scheduleAvailabilityPush } from '../utils/channexDebounce.js';
 import {
   sendBookingConfirmation,
   sendApprovalRequestEmail,
@@ -761,7 +761,7 @@ widgetRouter.post('/bookings', async (req, res) => {
         console.log(`[widget] Booking #${bookingId} pending_payment — Stripe session ${session.id}`);
         res.status(201).json({ checkoutUrl: session.url, bookingId, exp: rExp, t: rTok });
         // Fire-and-forget — a pending_payment hold blocks the dates on connected OTAs
-        pushAvailabilityUpdate(Number(property_id), 'room', Number(room_id), check_in_date, check_out_date).catch(() => {});
+        scheduleAvailabilityPush(Number(property_id), 'room', Number(room_id), check_in_date, check_out_date).catch(() => {});
         return;
       }
     }
@@ -810,7 +810,7 @@ widgetRouter.post('/bookings', async (req, res) => {
 
     // Fire-and-forget — a new hold/booking (confirmed or pending_owner_approval)
     // blocks these dates on connected OTAs. No-op when not Channex-connected.
-    pushAvailabilityUpdate(
+    scheduleAvailabilityPush(
       newBooking.property_id, 'room', newBooking.room_id,
       newBooking.check_in_date, newBooking.check_out_date,
     ).catch(() => {});
@@ -892,7 +892,7 @@ widgetRouter.get('/bookings/:id/decline', (req, res) => {
     res.send(approvalPage(`Booking declined. ${booking.guest_first_name} ${booking.guest_last_name} has been notified.`, false));
 
     // Fire-and-forget — declining an approval request frees the dates on OTAs
-    pushAvailabilityUpdate(
+    scheduleAvailabilityPush(
       booking.property_id, 'room', booking.room_id,
       booking.check_in_date, booking.check_out_date,
     ).catch(() => {});

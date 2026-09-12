@@ -9,7 +9,7 @@ import { requireVerified } from '../middleware/requireVerified.js';
 import { recoveryUrl } from '../lib/recoveryToken.js';
 import { assignRoomForCategoryBooking } from '../utils/categoryAvailability.js';
 import { countBreakfastMornings } from '../utils/breakfast.js';
-import { pushAvailabilityUpdate } from '../utils/channexPushInventory.js';
+import { scheduleAvailabilityPush } from '../utils/channexDebounce.js';
 import { normaliseSource, splitName } from '../utils/normaliseSource.js';
 
 export const bookingsRouter = Router();
@@ -783,7 +783,7 @@ bookingsRouter.post('/import', (req, res) => {
     // Fire-and-forget — a bulk import can touch many rooms/dates; refresh every
     // Channex room type for this property (no-op when it isn't connected).
     if (imported > 0) {
-      pushAvailabilityUpdate(Number(property_id), 'property', null, null, null).catch(() => {});
+      scheduleAvailabilityPush(Number(property_id), 'property', null, null, null).catch(() => {});
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -909,7 +909,7 @@ bookingsRouter.post('/', (req, res) => {
     sendBookingConfirmation(newBooking, property).catch(() => {});
 
     // Fire-and-forget — keep Channex availability in sync (no-op if not connected)
-    pushAvailabilityUpdate(
+    scheduleAvailabilityPush(
       newBooking.property_id, 'room', newBooking.room_id,
       newBooking.check_in_date, newBooking.check_out_date,
     ).catch(() => {});
@@ -983,7 +983,7 @@ bookingsRouter.post('/:id/decline', async (req, res) => {
     res.json(updated);
 
     // Fire-and-forget — declining frees the dates on Channel-connected OTAs
-    pushAvailabilityUpdate(
+    scheduleAvailabilityPush(
       existing.property_id, 'room', existing.room_id,
       existing.check_in_date, existing.check_out_date,
     ).catch(() => {});
@@ -1045,7 +1045,7 @@ bookingsRouter.put('/:id', (req, res) => {
         const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(updated.property_id);
         sendBookingDeclinedEmail(updated, property).catch(() => {});
         // Fire-and-forget — declining a WP request frees the dates on OTAs
-        pushAvailabilityUpdate(
+        scheduleAvailabilityPush(
           existing.property_id, 'room', existing.room_id,
           existing.check_in_date, existing.check_out_date,
         ).catch(() => {});
@@ -1083,7 +1083,7 @@ bookingsRouter.put('/:id', (req, res) => {
       res.json(updated);
 
       // Fire-and-forget — check-out frees the dates on connected OTAs
-      pushAvailabilityUpdate(
+      scheduleAvailabilityPush(
         existing.property_id, 'room', existing.room_id,
         existing.check_in_date, existing.check_out_date,
       ).catch(() => {});
@@ -1230,14 +1230,14 @@ bookingsRouter.put('/:id', (req, res) => {
     // "blocks availability" set can change Channex-visible availability on both
     // the old and the new (room, range). Push both; the helper recomputes the
     // true state and no-ops when the property isn't Channex-connected.
-    pushAvailabilityUpdate(
+    scheduleAvailabilityPush(
       existing.property_id, 'room', existing.room_id,
       existing.check_in_date, existing.check_out_date,
     ).catch(() => {});
     if (updated.room_id !== existing.room_id ||
         updated.check_in_date !== existing.check_in_date ||
         updated.check_out_date !== existing.check_out_date) {
-      pushAvailabilityUpdate(
+      scheduleAvailabilityPush(
         updated.property_id, 'room', updated.room_id,
         updated.check_in_date, updated.check_out_date,
       ).catch(() => {});
@@ -1706,7 +1706,7 @@ bookingsRouter.delete('/:id', (req, res) => {
     res.status(204).end();
 
     // Fire-and-forget — deleting a booking frees its dates on connected OTAs
-    pushAvailabilityUpdate(
+    scheduleAvailabilityPush(
       booking.property_id, 'room', booking.room_id,
       booking.check_in_date, booking.check_out_date,
     ).catch(() => {});

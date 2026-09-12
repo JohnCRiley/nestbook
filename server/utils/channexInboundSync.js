@@ -25,9 +25,10 @@
 //     non-cancelled room becomes one booking, sharing guest + reservation id.
 //   - IR-Categories: the mapped ref is a category, so a concrete physical room
 //     is assigned via assignRoomForCategoryBooking() (never left NULL).
-//   - LOOP PREVENTION: after writing, we call pushAvailabilityUpdate() from
-//     slice 4 so Channex lowers the room's availability and OTHER OTAs stop
-//     selling it — but we NEVER push the reservation itself back to Channex.
+//   - LOOP PREVENTION: after writing, we call scheduleAvailabilityPush()
+//     (channexDebounce.js, wrapping slice 4's pushAvailabilityUpdate()) so
+//     Channex lowers the room's availability and OTHER OTAs stop selling it —
+//     but we NEVER push the reservation itself back to Channex.
 //     There is no reservation-create call anywhere in this file.
 //   - Slice 9 (certification prep): once a revision is SUCCESSFULLY processed
 //     (DB committed) we POST /booking_revisions/:id/ack — required for
@@ -42,7 +43,7 @@
 import db from '../db/database.js';
 import { getBookingRevision, acknowledgeBookingRevision } from './channexClient.js';
 import { assignRoomForCategoryBooking } from './categoryAvailability.js';
-import { pushAvailabilityUpdate } from './channexPushInventory.js';
+import { scheduleAvailabilityPush } from './channexDebounce.js';
 import { normaliseSource, splitName } from './normaliseSource.js';
 
 // Bookings in these states do not block a room (mirrors bookings.js hasOverlap
@@ -375,9 +376,12 @@ export async function syncReservationFromRevision(revision) {
 
 /**
  * Fire the slice-4 outbound availability sync for every (room, range) touched.
- * Deduped, sequential, never throws (pushAvailabilityUpdate already swallows
- * its own errors). This is the ONLY thing sent back to Channex — the reservation
- * is never echoed.
+ * Deduped, sequential, never throws (scheduleAvailabilityPush already
+ * swallows its own errors). This is the ONLY thing sent back to Channex — the
+ * reservation is never echoed. Routed through channexDebounce.js rather than
+ * pushed immediately, so several webhook deliveries landing close together
+ * coalesce into one outbound call; the `await` here just returns once each
+ * change is enqueued, not once Channex has actually replied.
  */
 async function pushForRooms(propertyId, entries) {
   const seen = new Set();
@@ -386,6 +390,6 @@ async function pushForRooms(propertyId, entries) {
     const key = `${e.roomId}|${e.from}|${e.to}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    await pushAvailabilityUpdate(propertyId, 'room', e.roomId, e.from, e.to);
+    await scheduleAvailabilityPush(propertyId, 'room', e.roomId, e.from, e.to);
   }
 }

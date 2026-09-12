@@ -2,6 +2,7 @@ import { Router } from 'express';
 import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { pushRateUpdateForRanges } from '../utils/channexPushInventory.js';
+import { scheduleRatePush } from '../utils/channexDebounce.js';
 
 export const ratePeriodsRouter = Router();
 
@@ -120,8 +121,11 @@ ratePeriodsRouter.post('/', (req, res) => {
 
     // Fire-and-forget — push the new seasonal rate to any Channel-connected
     // OTAs, scoped to just the nights this period actually affects. Never
-    // awaited: a slow/failed Channex call must not delay the save.
-    pushRateUpdateForRanges(Number(property_id), [{ from: period.date_from, to: period.date_to }]).catch(() => {});
+    // awaited: a slow/failed Channex call must not delay the save. Routed
+    // through scheduleRatePush() (channexDebounce.js) rather than pushed
+    // immediately, so a burst of rate-period saves seconds apart — the
+    // certification-flagged scenario — coalesces into one outbound call.
+    pushRateUpdateForRanges(Number(property_id), [{ from: period.date_from, to: period.date_to }], scheduleRatePush).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -179,7 +183,7 @@ ratePeriodsRouter.put('/:id', (req, res) => {
     pushRateUpdateForRanges(Number(updated.property_id), [
       { from: period.date_from, to: period.date_to },
       { from: updated.date_from, to: updated.date_to },
-    ]).catch(() => {});
+    ], scheduleRatePush).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -199,7 +203,7 @@ ratePeriodsRouter.delete('/:id', (req, res) => {
 
     // Fire-and-forget — the deleted period's nights fall back to the base rate
     // (or next-highest-priority period) on connected OTAs. Never awaited.
-    pushRateUpdateForRanges(Number(period.property_id), [{ from: period.date_from, to: period.date_to }]).catch(() => {});
+    pushRateUpdateForRanges(Number(period.property_id), [{ from: period.date_from, to: period.date_to }], scheduleRatePush).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

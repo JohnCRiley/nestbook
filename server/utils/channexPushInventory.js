@@ -355,8 +355,10 @@ function affectedMappings(property, mappings, refType, refId) {
 }
 
 /** Cheap "is this property Channex-connected?" check — keeps pushXUpdate() a
- *  silent, zero-cost no-op (and never enqueues) for the ~99% unconnected case. */
-function isChannexConnected(propertyId) {
+ *  silent, zero-cost no-op (and never enqueues) for the ~99% unconnected case.
+ *  Exported for channexDebounce.js, which needs the same cheap check to avoid
+ *  ever starting a batch/timer for an unconnected property. */
+export function isChannexConnected(propertyId) {
   return !!db.prepare(
     'SELECT 1 FROM channex_room_mappings WHERE property_id = ? LIMIT 1'
   ).get(propertyId);
@@ -624,18 +626,27 @@ async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
  * (e.g. date_from moved later) needs to be re-pushed too, so it reverts to
  * whatever period/base rate now applies.
  *
+ * `pushFn` defaults to the immediate pushRateUpdate() above (unchanged
+ * behavior for any caller that doesn't pass one). server/routes/ratePeriods.js
+ * passes channexDebounce.js's scheduleRatePush() instead, so that back-to-back
+ * rate-period saves (the certification-flagged scenario — Tests #3/#4/#9/#10)
+ * coalesce into one outbound call instead of one per save. Injected rather
+ * than imported directly here to avoid a circular import (channexDebounce.js
+ * itself calls pushRateUpdate()).
+ *
  * @param {number} propertyId
  * @param {{from: string, to: string}[]} ranges
+ * @param {typeof pushRateUpdate} [pushFn]
  * @returns {Promise<void>}
  */
-export async function pushRateUpdateForRanges(propertyId, ranges) {
+export async function pushRateUpdateForRanges(propertyId, ranges, pushFn = pushRateUpdate) {
   try {
     if (!propertyId || !ranges?.length || !isChannexConnected(propertyId)) return;
     const win = windowDates();
     const segments = coalesce(win, (d) => ranges.some((r) => dateInRange(d, r.from, r.to)))
       .filter((seg) => seg.value === true);
     for (const seg of segments) {
-      await pushRateUpdate(propertyId, 'property', null, seg.date_from, seg.date_to);
+      await pushFn(propertyId, 'property', null, seg.date_from, seg.date_to);
     }
   } catch (err) {
     console.error(

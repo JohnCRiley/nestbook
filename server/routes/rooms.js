@@ -8,7 +8,8 @@ import sharp from 'sharp';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
-import { pushRoomTypeReconcile, pushRateUpdate } from '../utils/channexPushInventory.js';
+import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
+import { scheduleRatePush } from '../utils/channexDebounce.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
@@ -1355,8 +1356,10 @@ roomsRouter.put('/:id', (req, res) => {
     // room's category_id itself); no-op if the property isn't Channex-mapped.
     // Never awaited. Separate from pushRateUpdateForRanges (seasonal periods,
     // property-wide) — this is an additional call site, not a replacement.
+    // Routed through scheduleRatePush() so a rapid run of price edits (or one
+    // landing next to a seasonal-pricing save) coalesces into one outbound call.
     if (Number(updated.price_per_night) !== Number(existing.price_per_night)) {
-      pushRateUpdate(updated.property_id, 'room', updated.id, null, null).catch(() => {});
+      scheduleRatePush(updated.property_id, 'room', updated.id, null, null).catch(() => {});
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
