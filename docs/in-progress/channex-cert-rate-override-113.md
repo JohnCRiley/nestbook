@@ -380,6 +380,43 @@ payload (property_id, rate_plan_id, date_from/to, rate per segment) for the
 next manual test push, for direct comparison against what `getRateForDate()`
 resolved.
 
+## Session 4 (2026-09-12) — pm2 log pull blocked: no production SSH access
+## from this environment
+
+Attempted to reach production directly to pull `[channex-sync] property
+#113` log lines with timestamps (per John's request). No production DB/file
+access was available in sessions 1-3 either, but this session specifically
+tried the SSH path since `.claude/settings.local.json` shows it was
+previously explored:
+
+- `ssh -o BatchMode=yes -o ProxyCommand="cloudflared access ssh --hostname %h" root@ssh.nestbook.io "..."` →
+  `Connection closed by UNKNOWN port 65535`.
+- `cloudflared access ssh --hostname ssh.nestbook.io` alone → exits
+  immediately with `EOF`, no tunnel established.
+- `~/.cloudflared/` (the cert directory `cloudflared access login` creates)
+  does not exist in this environment — the Cloudflare Access browser-based
+  login has never been completed here, and can't be completed headlessly
+  (it opens a browser for SSO).
+
+**This environment cannot reach the production box.** The pm2 log pull, the
+`created_at` timestamps for `rate_periods`/bookings, and every other
+production-only check flagged across sessions 1-3 need either (a) John runs
+the commands himself and pastes the output back, or (b) John completes
+`cloudflared access login ssh.nestbook.io` interactively (opens a browser)
+on a machine this tool has access to, after which the existing SSH path
+should work.
+
+**Exact command for John to run** (matches what was asked for):
+```bash
+pm2 logs nestbook-api --lines 500 --nostream --timestamp | grep -i "channex-sync\|property #113"
+```
+Plus, for the retry/backoff check specifically:
+```bash
+pm2 logs nestbook-api --lines 500 --nostream --timestamp | grep -iE "retry|429|backoff|channex-queue"
+```
+And the two SQL queries already listed below (mapping rows + period/booking
+`created_at`), via whatever DB access John already uses on the box.
+
 ## Still needed from production to close this out
 
 ```sql
