@@ -267,6 +267,119 @@ share. Worth fixing regardless of the Channex investigation, but it is NOT
 sufficient on its own to explain the reported "$100 across the whole 1–16
 range" — only the single Nov 10 boundary is affected by it.
 
+## Session 3 (2026-09-12) — live Channex state check + booking-push hypothesis ruled out
+
+### Part A: Channex staging's CURRENT live rate state for property 113
+
+Queried the real Channex staging API directly (read-only, `GET
+/api/v1/restrictions` — working query shape, after trial and error, is
+`filter[property_id]` + `filter[date]` (singular, one call per date — a
+`date_from`/`date_to` range and a `filter[date][from]/[to]` nested form both
+400 with `"date is required"`) + `filter[rate_plan_id]` +
+`filter[restrictions][]=rate`). No writes made.
+
+**Twin plan `ff106473-4579-47a4-8e44-9c359131c0d9` / Double plan
+`b9ce809b-94e5-4c29-93f8-28700ca0222b`, property `2fdc1ff7-92a3-4aec-b6e0-38ee7aed12a1`, checked right now:**
+
+```
+           Twin       Double
+11-01..10  241.00     100.00
+11-11..16  100.00     312.66
+11-21      333.00     100.00
+11-22      333.00     100.00
+11-25      100.00     444.00
+```
+
+**Every one of these matches the intended value exactly** (Twin $241 Nov1-10,
+Twin $100 Nov11-16 correctly falling to base with no override, Double $100
+Nov1-10 correctly falling to base, Double $312.66 Nov11-16, Twin $333
+Nov21-22 — including Nov 21, which session 2's provided data didn't have a
+listed override for, implying TEST#3A/#3B do carry overrides not included in
+that data dump — Double $444 on Nov 25 matching TEST#3B). **Channex's live
+state right now shows $100 nowhere it shouldn't. The originally reported
+"$100 observed" / "not set" cert findings do not reproduce against the
+current live state.**
+
+Also worth noting: `GET /api/v1/rate_plans/:id` returns `options[0].rate:
+"0.00"` for both plans — this is the STATIC rate set once at
+`createRatePlan()` time (slice 3, `channexPushInventory.js`
+`ratePlanCreateAttributes()`, hardcoded `rate: 0`) and never updated after;
+all real pricing flows through the separate per-date `/restrictions`
+mechanism checked above. Don't mistake this field for "no rate is set" — it's
+inert by design once ARI pushes begin.
+
+This means the discrepancy the cert reviewer saw was most likely a **timing/
+propagation snapshot**, not a persistent bug: `channexQueue.js` rate-limits
+to 9 restrictions/min + 18 ARI/min per property with a 250ms floor between
+dispatches, and a retry backs off 2s/8s/30s/60s on 429/5xx. Creating 8 rate
+periods (some producing 2 pushes each for pre+post edit ranges) plus
+availability/booking tests in a short manual test burst would very plausibly
+still have jobs queued or mid-retry at the exact moment the cert review read
+Channex — by now (hours/days later) the queue has long since drained to the
+correct state. **Still needs confirmation from actual push timestamps vs.
+the cert review's read timestamp** (see "Still needed" below) before ruling
+out an actual code bug entirely — but nothing found this session supports an
+active, still-live discrepancy.
+
+### Part B: does booking creation trigger a rate push? — NO, ruled out by code
+
+Checked the new hypothesis (Test #9's bookings on the same dates as Test
+#2/#3's overrides somehow reverting them via a booking-triggered rate push
+reading raw base price instead of `getRateForDate()`):
+
+- `grep -n "pushRateUpdate\b" server/routes/ server/utils/` → the **only**
+  call sites outside `channexPushInventory.js`'s own internals are
+  `server/routes/rooms.js:1359` (direct `price_per_night` edit via `PUT
+  /api/rooms/:id`) and `server/routes/ratePeriods.js` (`pushRateUpdateForRanges`,
+  already traced). **`server/routes/bookings.js` never imports or calls
+  `pushRateUpdate` anywhere** — grep-confirmed, and independently confirmed
+  by reading the file: it imports and calls only `pushAvailabilityUpdate`
+  (8 call sites: create, import, decline, the `PUT /:id` main path old+new
+  range, `_wp_action` decline/`wp_departure`, `DELETE /:id`).
+- `runAvailabilitySync()` (`channexPushInventory.js:420-475`, the function
+  behind `pushAvailabilityUpdate`) builds its payload from
+  `t.availabilityForDate(date)` only — booking/ical_block presence, 0 or 1 —
+  and POSTs to `/api/v1/availability`. **No `rate` field, no `rate_plan_id`,
+  no call to `getRateForDate()` or `room.price_per_night` anywhere in that
+  function.** The two endpoints (`/availability` vs `/restrictions`) are
+  fully separate; nothing crosses between them.
+- Booking creation also never writes `rooms.price_per_night` — grepped
+  `bookings.js` for `UPDATE rooms` / `price_per_night`: the only hit is a
+  read (line 114, SELECT; line 268, reading `bookingRoom?.price_per_night`
+  for the booking's own total-price calc) — no write. So even the *indirect*
+  route (booking edits base price → base-price-edit handler fires
+  `pushRateUpdate`) doesn't exist either.
+- The one place a **specific room's** full-window `pushRateUpdate` fires
+  outside `ratePeriods.js` is `syncTarget()`
+  (`channexPushInventory.js:789-790`, inside `pushRoomTypeReconcile`) — but
+  that's wired only to room/category **create/rename** events in
+  `rooms.js`/`roomCategories.js`, never to `bookings.js`. And even if it did
+  fire, it still resolves via `buildTargets()` → `getRateForDate()` — it
+  would not read raw base price either.
+
+**Verdict: no code path exists, on any timeline, where creating, editing, or
+cancelling a booking triggers a rate/restrictions push of any kind.** The
+hypothesis as stated — a booking-triggered rate push reverting Test #2/#3's
+overrides — is ruled out by inspection, independent of timestamps. (The
+requested timestamp cross-reference is moot given no such mechanism exists
+to time-check against; if useful for the *separate* timing/propagation
+question in Part A, the actual `created_at` values for periods 24-29 and
+Test #9's bookings, plus pm2 log timestamps for their `[channex-sync]`
+lines, would still help pin down exactly when cert's snapshot was taken
+relative to the queue draining.)
+
+### Temporary debug logging added (uncommitted)
+
+Per the request, added a temp `console.log` of the exact outgoing
+`/restrictions` POST body in `runRateSync()`
+(`server/utils/channexPushInventory.js`, right before the `channexRequest`
+call, ~line 596) — logs `[channex-sync][DEBUG] property #<id> POST
+/restrictions body: <json>`. **Not committed** — local working-tree change
+only, flagged inline as TEMP DEBUG with a removal note. Will show the literal
+payload (property_id, rate_plan_id, date_from/to, rate per segment) for the
+next manual test push, for direct comparison against what `getRateForDate()`
+resolved.
+
 ## Still needed from production to close this out
 
 ```sql
@@ -274,12 +387,17 @@ SELECT id, nestbook_ref_type, nestbook_ref_id, channex_room_type_id,
        channex_rate_plan_id, orphaned_at, created_at
 FROM channex_room_mappings WHERE property_id = 113;
 ```
-Plus: (a) a live Channex API read of property 113's current rate plans /
-their rates (mirrors the property-111 investigation's staging check) to see
-if they match `channex_rate_plan_id` above and what value they currently
-hold; (b) server/pm2 logs for `[channex-sync] property #113` around the
-period-27/28/29 creation timestamps, to confirm each push actually executed
-and see its logged segment count / any failure line.
+Plus: (a) ~~a live Channex API read of property 113's current rate plans /
+their rates~~ — **done, session 3 above: live state matches intent
+everywhere checked, superseding the original stale-mapping hypothesis as the
+leading candidate**; (b) server/pm2 logs for `[channex-sync] property #113`
+around the period-24..29 creation timestamps, to confirm each push actually
+executed, see its logged segment count / any failure line, and get real
+wall-clock timestamps to compare against whenever the cert reviewer's
+snapshot was taken (session 3's leading theory is now queue-drain timing,
+not a persistent resolution/mapping bug — see session 3 Part A); (c) `SELECT
+id, created_at FROM rate_periods WHERE property_id = 113 ORDER BY id;` and
+the `created_at` for Test #9's bookings, to line up against (b).
 
 ## Files in play
 
