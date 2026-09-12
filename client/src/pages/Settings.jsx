@@ -3537,7 +3537,9 @@ function RatePeriodModal({ t, currencySymbol, period, propertyId, property, room
     defaultRate: String(period.rate_value),
     roomRates:   initialRoomRates,
   } : {
-    name: '', recurring: true, date_from: '', date_to: '', priority: '0', defaultRate: '0', roomRates: {},
+    // TEMP (2026-09-12, Channex cert testing): default recurring to false so
+    // every test period is one-off. Revert to `true` once testing is done.
+    name: '', recurring: false, date_from: '', date_to: '', priority: '0', defaultRate: '0', roomRates: {},
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState(null);
