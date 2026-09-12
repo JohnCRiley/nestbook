@@ -8,7 +8,7 @@ import sharp from 'sharp';
 import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
-import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
+import { pushRoomTypeReconcile, pushRateUpdate } from '../utils/channexPushInventory.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
@@ -1346,6 +1346,17 @@ roomsRouter.put('/:id', (req, res) => {
           updated.property_id, 'category', existing.category_id, 'deleted',
         ).catch(() => {});
       }
+    }
+
+    // Fire-and-forget — a direct base-price edit (outside seasonal pricing)
+    // needs to reach Channex too. refType:'room' — affectedMappings() already
+    // resolves this to the room's own rate plan for Named Rooms/Units, or to
+    // its category's shared rate plan in Categories mode (it looks up the
+    // room's category_id itself); no-op if the property isn't Channex-mapped.
+    // Never awaited. Separate from pushRateUpdateForRanges (seasonal periods,
+    // property-wide) — this is an additional call site, not a replacement.
+    if (Number(updated.price_per_night) !== Number(existing.price_per_night)) {
+      pushRateUpdate(updated.property_id, 'room', updated.id, null, null).catch(() => {});
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
