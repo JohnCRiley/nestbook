@@ -134,7 +134,7 @@
   -webkit-overflow-scrolling: touch;
   background: #fff;
   box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-  border-top: 3px solid #e0ecdb;
+  border-top: 3px solid #e5dfd3;
   z-index: 99;
   transform: translateY(-10px);
   opacity: 0;
@@ -163,7 +163,7 @@
   color: #94a3b8;
   padding-bottom: 8px;
   margin-bottom: 4px;
-  border-bottom: 1px solid var(--border, #e0ecdb);
+  border-bottom: 1px solid var(--border, #e5dfd3);
 }
 .mega-col a {
   color: var(--text, #1C1C1E);
@@ -212,7 +212,7 @@
 /* Language buttons in mega menu */
 .mega-lang {
   background: none;
-  border: 1px solid var(--border, #e0ecdb);
+  border: 1px solid var(--border, #e5dfd3);
   padding: 7px 10px;
   border-radius: 6px;
   cursor: pointer;
@@ -247,7 +247,7 @@
   .lang-toggle  { font-size: 0.78rem; padding: 5px 9px; }
   .menu-toggle  { font-size: 0.78rem; padding: 5px 12px; }
   .mega-inner   { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-  .mega-col     { border-bottom: 1px solid #e0ecdb; padding-bottom: 16px; }
+  .mega-col     { border-bottom: 1px solid #e5dfd3; padding-bottom: 16px; }
   .mega-col:last-child { border-bottom: none; }
 }
 

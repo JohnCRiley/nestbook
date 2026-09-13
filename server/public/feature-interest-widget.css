@@ -68,7 +68,7 @@
 .feature-interest .fi-email-input {
   flex: 1 1 200px;
   padding: 9px 12px;
-  border: 1.5px solid var(--border, #e0ecdb);
+  border: 1.5px solid var(--border, #e5dfd3);
   border-radius: 8px;
   font-size: 0.88rem;
   font-family: inherit;
