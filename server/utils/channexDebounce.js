@@ -54,7 +54,7 @@ import { pushRateUpdate, pushAvailabilityUpdate, isChannexConnected } from './ch
 // Provisional — confirm the final value once Channex has replied to the
 // certification follow-up. Kept as named constants (not inlined) so there is
 // exactly one place to tune them.
-const DEBOUNCE_MS = 2_500;      // wait this long after the LAST change before flushing
+const DEBOUNCE_MS = 7_000;      // wait this long after the LAST change before flushing
 const MAX_DEBOUNCE_MS = 10_000; // ...but never let one batch wait longer than this in total
 
 let cfg = { debounceMs: DEBOUNCE_MS, maxDebounceMs: MAX_DEBOUNCE_MS };

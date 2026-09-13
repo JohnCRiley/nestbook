@@ -27,8 +27,10 @@ calls reach it.
 - Pending changes merge per `(propertyId, pushType)` — `pushType` is
   `'rates'` or `'availability'` — into one batch in an in-memory `Map`. Each
   new arrival for the same key resets a short timer (`cfg.debounceMs`,
-  default **2500ms** — provisional, confirm the final value once Channex
-  replies to the follow-up); when it elapses with no new arrivals, the batch
+  default **7000ms** (raised 2026-09-13 from the original 2500ms so a real
+  person's manual two-modal-save timing actually lands inside the window,
+  not just scripted back-to-back calls); when it elapses with no new
+  arrivals, the batch
   flushes as exactly one call. A hard `cfg.maxDebounceMs` cap (default
   **10000ms**) forces a flush even if changes keep arriving, so a busy
   property is never starved. Both are named constants at the top of the
