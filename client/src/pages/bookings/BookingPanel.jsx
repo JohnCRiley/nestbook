@@ -1571,6 +1571,9 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
   const [checkingExtension,  setCheckingExtension]  = useState(false);
   const [extensionData,      setExtensionData]      = useState(null);
   const [showExtendConfirm,  setShowExtendConfirm]  = useState(false);
+  const [checkingShift,      setCheckingShift]      = useState(false);
+  const [shiftPricing,       setShiftPricing]       = useState(null);
+  const [showShiftConfirm,   setShowShiftConfirm]   = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -1580,6 +1583,7 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
     setError(null);
     setShowShortenConfirm(false);
     setShowExtendConfirm(false);
+    setShowShiftConfirm(false);
     try {
       const res = await apiFetch(`/api/bookings/${b.id}`, {
         method: 'PUT',
@@ -1615,8 +1619,23 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
     const oldNights = nightsBetween(b.check_in_date, b.check_out_date);
     const newNights = nightsBetween(form.check_in_date, form.check_out_date);
 
-    // Same-duration date shift (both check-in and check-out move) — reprice normally,
-    // no "extend"/"shorten" framing since the stay length hasn't changed.
+    // Same-duration date shift (both check-in and check-out move) — a plain,
+    // correctly-priced "move" confirmation, not the extend/shorten framing
+    // (the stay length hasn't changed, so neither applies).
+    if (newNights === oldNights && (form.check_in_date !== b.check_in_date || form.check_out_date !== b.check_out_date)) {
+      const roomIdForRate = form.room_id ? Number(form.room_id) : b.room_id;
+      setCheckingShift(true);
+      setError(null);
+      try {
+        const r = await apiFetch(`/api/rooms/${roomIdForRate}/rate-range?check_in=${form.check_in_date}&check_out=${form.check_out_date}`);
+        setShiftPricing(r.ok ? await r.json() : null);
+      } catch {
+        setShiftPricing(null);
+      }
+      setCheckingShift(false);
+      setShowShiftConfirm(true);
+      return;
+    }
     if (newNights === oldNights) {
       doSave();
       return;
@@ -1755,14 +1774,37 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
       </div>
 
       <div className="panel-actions">
-        <button className="btn-panel-primary" onClick={handleSave} disabled={saving || checkingExtension}>
-          {saving ? t('saving') : checkingExtension ? 'Checking availability…' : t('saveChanges')}
+        <button className="btn-panel-primary" onClick={handleSave} disabled={saving || checkingExtension || checkingShift}>
+          {saving ? t('saving') : (checkingExtension || checkingShift) ? 'Checking availability…' : t('saveChanges')}
         </button>
-        <button className="btn-secondary" onClick={onCancel} disabled={saving || checkingExtension}
+        <button className="btn-secondary" onClick={onCancel} disabled={saving || checkingExtension || checkingShift}
           style={{ border: '1.5px solid var(--border)' }}>
           {t('cancel')}
         </button>
       </div>
+
+      {showShiftConfirm && (() => {
+        const nights   = nightsBetween(form.check_in_date, form.check_out_date);
+        const oldTotal = parseFloat(b.total_price) || 0;
+        const newTotal = shiftPricing?.total ?? oldTotal;
+        const sameTotal = Math.abs(newTotal - oldTotal) < 0.005;
+        const priceLine = sameTotal
+          ? `same price (${fmtCurrency(newTotal)})`
+          : `new price ${fmtCurrency(newTotal)} (was ${fmtCurrency(oldTotal)})`;
+        return (
+          <ConfirmModal
+            isOpen={true}
+            title="Move this booking?"
+            message={`Move to ${formatDateMedium(form.check_in_date, locale)} – ${formatDateMedium(form.check_out_date, locale)}? Same ${nights} night${nights !== 1 ? 's' : ''}, ${priceLine}.`}
+            detail="The booking dates will change and a notification email will be sent to the guest."
+            confirmLabel="Yes — move the booking"
+            cancelLabel={t('cancel')}
+            variant="success"
+            onConfirm={() => { setShowShiftConfirm(false); doSave(); }}
+            onCancel={() => setShowShiftConfirm(false)}
+          />
+        );
+      })()}
 
       {showShortenConfirm && (() => {
         const cutNights = nightsBetween(form.check_out_date, b.check_out_date);
