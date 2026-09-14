@@ -1611,10 +1611,23 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
   const handleSave = async () => {
     if (!form.check_in_date || !form.check_out_date) { setError(t('requiredFields')); return; }
     if (form.check_out_date <= form.check_in_date)   { setError(t('checkoutAfterCheckin')); return; }
-    if (form.check_out_date < b.check_out_date) {
+
+    const oldNights = nightsBetween(b.check_in_date, b.check_out_date);
+    const newNights = nightsBetween(form.check_in_date, form.check_out_date);
+
+    // Same-duration date shift (both check-in and check-out move) — reprice normally,
+    // no "extend"/"shorten" framing since the stay length hasn't changed.
+    if (newNights === oldNights) {
+      doSave();
+      return;
+    }
+    if (newNights < oldNights) {
       setShowShortenConfirm(true);
       return;
     }
+    // Genuine extension: only when check-out is pushed later than it currently is —
+    // the check-extension endpoint prices the gap between the OLD and NEW check-out date,
+    // so it's only meaningful when check-out itself has moved further out.
     if (form.check_out_date > b.check_out_date) {
       setCheckingExtension(true);
       setError(null);
@@ -1634,6 +1647,8 @@ function EditMode({ b, rooms, guests, onCancel, onSaved, t }) {
       }
       return;
     }
+    // Duration grew by moving check-in earlier while check-out stayed the same or moved
+    // earlier too — not a check-out extension, just reprice normally.
     doSave();
   };
 
