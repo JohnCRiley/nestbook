@@ -15,6 +15,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { PROPERTY_GROUPS, propTypeLabel } from '../utils/propertyTypes.js';
 import { UN_SUB_TYPES, UN_SUB_TYPE_DEFAULTS } from '../utils/unSubTypes.js';
+import { getTimezoneOptions } from '../utils/timezones.js';
 import {
   HomeIcon, BuildingIcon, BedIcon, LockIcon, BugIcon, CheckIcon, XIcon,
   AlertTriangleIcon, RefreshIcon, TrashIcon, CameraPlusIcon, SparklesIcon,
@@ -218,6 +219,7 @@ export default function Settings() {
         address:            p.address            ?? '',
         city:               p.city               ?? '',
         country:            p.country            ?? '',
+        timezone:           p.timezone           ?? '',
         check_in_time:      p.check_in_time      ?? '15:00',
         check_out_time:     p.check_out_time     ?? '11:00',
         currency:           p.currency           ?? 'EUR',
@@ -681,6 +683,11 @@ export default function Settings() {
                       ? 'Disconnect'
                       : 'Connect and update property'}
                 </button>
+                {property.channex_property_id && !form.timezone && (
+                  <p className="form-hint" style={{ color: '#b45309', marginTop: 10, marginBottom: 0 }}>
+                    {t('settings.timezoneChannexNudge')}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -884,6 +891,28 @@ export default function Settings() {
                       placeholder="France" />
                   </FormField>
                 </div>
+
+                <FormField label={t('timezoneLabel')} hint={t('settings.timezoneHint')}>
+                  <input
+                    name="timezone"
+                    list="timezone-options"
+                    className="form-control"
+                    value={form.timezone}
+                    onChange={handleFormChange}
+                    placeholder="Europe/London"
+                    autoComplete="off"
+                  />
+                  <datalist id="timezone-options">
+                    {getTimezoneOptions().map((tz) => (
+                      <option key={tz} value={tz} />
+                    ))}
+                  </datalist>
+                  {property?.channex_property_id && !form.timezone && (
+                    <p className="form-hint" style={{ color: '#b45309' }}>
+                      {t('settings.timezoneChannexNudge')}
+                    </p>
+                  )}
+                </FormField>
 
                 <div className="settings-form-row">
                   <FormField label={t('checkin')}>

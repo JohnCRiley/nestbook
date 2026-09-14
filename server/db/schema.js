@@ -2663,6 +2663,16 @@ John`
     console.log('✓ ai_chat_logs table ready');
   } catch (e) { console.error('ai_chat_logs table error:', e.message); }
 
+  // properties.timezone — a real per-property IANA timezone (e.g.
+  // "Europe/London"), NULL until the owner sets one in Settings. Closes two
+  // gaps at once: Channex's property-creation payload wants a timezone
+  // (createChannexProperty.js omits the field entirely while this is NULL —
+  // never a guessed value), and it's the fix for John's own "PC/VPN showing
+  // the wrong local time relative to the property" confusion. Deliberately
+  // NOT derived from the free-text `country` column — country doesn't map
+  // 1:1 to a timezone and a wrong guess is worse than no value.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN timezone TEXT`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

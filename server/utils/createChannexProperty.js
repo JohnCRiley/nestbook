@@ -46,10 +46,11 @@ function toIso2Country(raw) {
  * without making an API call.
  *
  * Only `title` and `currency` are required by Channex at creation. `address` /
- * `city` / `country` are included when present. `timezone`, `email`, `phone`
- * and coordinates are intentionally NOT set here: NestBook has no per-property
- * timezone column, and Channex only requires those when connecting the first
- * OTA — handled in a later slice.
+ * `city` / `country` / `timezone` are included when present. `email`, `phone`
+ * and coordinates are intentionally NOT set here: Channex only requires those
+ * when connecting the first OTA — handled in a later slice. `timezone` is only
+ * sent when the owner has set one in Settings (`properties.timezone`) — never
+ * guessed from `country`, since a wrong guess is worse than omitting it.
  *
  * @param {object} property   a NestBook `properties` table row
  * @returns {object}          Channex property attributes
@@ -89,6 +90,9 @@ export function buildChannexPropertyAttributes(property) {
 
   const country = toIso2Country(property.country);
   if (country) attributes.country = country;
+
+  const timezone = (property.timezone ?? '').trim();
+  if (timezone) attributes.timezone = timezone;
 
   return attributes;
 }

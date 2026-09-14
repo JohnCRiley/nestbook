@@ -111,6 +111,18 @@ const propPhotoUpload = multer({
 
 export const propertiesRouter = Router();
 
+// Real IANA timezone names, computed once at module load. Rejects free-text
+// garbage in the `timezone` field (PUT /:id) before it can reach Channex or
+// any per-property "today" calculation.
+const VALID_TIMEZONES = (() => {
+  try {
+    if (typeof Intl.supportedValuesOf === 'function') {
+      return new Set(Intl.supportedValuesOf('timeZone'));
+    }
+  } catch { /* fall through */ }
+  return null; // unsupported Node — skip validation rather than reject everything
+})();
+
 function actorFromReq(req) {
   const u = db.prepare('SELECT name, email, role FROM users WHERE id = ?').get(req.user.userId);
   return { userId: req.user.userId, userName: u?.name, userEmail: u?.email, userRole: u?.role };
@@ -286,7 +298,7 @@ propertiesRouter.put('/:id', (req, res) => {
       return res.status(404).json({ error: 'Property not found.' });
     }
     const {
-      name, type, address, city, country,
+      name, type, address, city, country, timezone,
       check_in_time, check_out_time, currency, locale, theme,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time, breakfast_widget_enabled,
@@ -362,9 +374,13 @@ propertiesRouter.put('/:id', (req, res) => {
     const VALID_BALANCE_DUE = ['checkin', 'days_before'];
     const newDepositType = VALID_DEPOSIT_TYPES.includes(deposit_type) ? deposit_type : 'fixed';
     const newBalanceDue = VALID_BALANCE_DUE.includes(deposit_balance_due) ? deposit_balance_due : 'checkin';
+    const trimmedTimezone = typeof timezone === 'string' ? timezone.trim() : '';
+    const newTimezone = trimmedTimezone && (!VALID_TIMEZONES || VALID_TIMEZONES.has(trimmedTimezone))
+      ? trimmedTimezone
+      : null;
     db.prepare(`
       UPDATE properties
-      SET name = ?, type = ?, address = ?, city = ?, country = ?,
+      SET name = ?, type = ?, address = ?, city = ?, country = ?, timezone = ?,
           check_in_time = ?, check_out_time = ?, currency = ?, locale = ?, theme = ?,
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
           breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?,
@@ -390,7 +406,7 @@ propertiesRouter.put('/:id', (req, res) => {
           servicing_type = ?, entry_method = ?, rental_type_locked = ?, ir_room_mode = ?
       WHERE id = ?
     `).run(
-      name ?? null, type ?? null, address ?? null, city ?? null, country ?? null,
+      name ?? null, type ?? null, address ?? null, city ?? null, country ?? null, newTimezone,
       check_in_time ?? null, check_out_time ?? null, currency ?? null, locale ?? null,
       VALID_THEMES.includes(theme) ? theme : 'forest',
       breakfast_included ? 1 : 0,
