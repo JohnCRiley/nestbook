@@ -244,6 +244,16 @@ const T = {
     stayShortenedIntro2:        'has been shortened.',
     updatedTotalLabel:          'Updated total',
     stayShortenedFooter:        'If you have any questions about your updated booking, please reply to this email to contact the property directly.',
+    // ── Booking dates moved (same length of stay) ──────────────────────────────
+    bookingMovedSubjectPrefix: 'Booking updated',
+    bookingMovedSubjectMid:    'new dates',
+    bookingMovedHeading:       'Your booking dates have changed',
+    bookingMovedIntro1:        'Your stay at',
+    bookingMovedIntro2:        'has moved to new dates. The length of your stay and total price are unchanged.',
+    previousDatesLabel:        'Previous dates',
+    newDatesLabel:             'New dates',
+    totalLabel:                'Total',
+    bookingMovedFooter:        'If you have any questions about your updated booking, please reply to this email to contact the property directly.',
   },
   fr: {
     proUpgradeSubject:    'Bienvenue sur NestBook Pro — tout est prêt !',
@@ -2846,6 +2856,59 @@ export async function sendStayShortenedEmail(booking, property, newCheckOut, new
     console.log(`[stay-shortened] Email sent to ${booking.guest_email}`);
   } catch (err) {
     console.error('[stay-shortened] Email failed:', err.message);
+  }
+}
+
+// ── Booking dates moved (same length of stay) ───────────────────────────────
+// Distinct from extended/shortened: check-in moved too, so the stay is the
+// same number of nights at the same (or recalculated) price — just on new
+// calendar dates. Framing it as an extension/shortening here would be wrong.
+export async function sendBookingDatesMovedEmail(booking, property, oldCheckIn, oldCheckOut, newCheckIn, newCheckOut, total, ownerEmail) {
+  if (!resend) {
+    console.log('[email] SKIPPED booking-dates-moved email to', booking.guest_email);
+    return;
+  }
+  const locale = property?.locale ?? 'en';
+  const currency = property.currency || 'GBP';
+
+  const body = `
+    <h2 style="color:#405440;font-size:20px;margin:0 0 8px;">${t(locale, 'bookingMovedHeading')}</h2>
+    <p style="color:#405440;font-size:14px;margin:0 0 24px;line-height:1.6;">
+      ${t(locale, 'bookingMovedIntro1')} <strong>${property.name}</strong> ${t(locale, 'bookingMovedIntro2')}
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+      <tr>
+        <td style="padding:8px 0;color:#405440;font-size:14px;width:160px;">${t(locale, 'property')}</td>
+        <td style="padding:8px 0;font-weight:600;font-size:14px;">${property.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 0;color:#405440;font-size:14px;">${t(locale, 'previousDatesLabel')}</td>
+        <td style="padding:8px 0;font-size:14px;color:#405440;text-decoration:line-through;">${fmtDate(oldCheckIn, locale)} – ${fmtDate(oldCheckOut, locale)}</td>
+      </tr>
+      <tr style="background:#f0ede8;">
+        <td style="padding:10px 12px;color:#405440;font-size:14px;font-weight:700;">${t(locale, 'newDatesLabel')}</td>
+        <td style="padding:10px 12px;font-weight:700;font-size:14px;color:#405440;">${fmtDate(newCheckIn, locale)} – ${fmtDate(newCheckOut, locale)}</td>
+      </tr>
+      <tr style="border-top:2px solid #e2e8f0;">
+        <td style="padding:12px 0;color:#405440;font-size:14px;font-weight:700;">${t(locale, 'totalLabel')}</td>
+        <td style="padding:12px 0;font-weight:800;font-size:18px;color:#405440;">${fmtDepositAmount(total, currency)}</td>
+      </tr>
+    </table>
+    <p style="color:#405440;font-size:14px;line-height:1.6;">
+      ${t(locale, 'bookingMovedFooter')}
+    </p>`;
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to: booking.guest_email,
+      replyTo: ownerEmail || undefined,
+      subject: `${t(locale, 'bookingMovedSubjectPrefix')} — ${property.name} · ${t(locale, 'bookingMovedSubjectMid')}`,
+      html: guestMailerHtml(body, property),
+    });
+    console.log(`[booking-dates-moved] Email sent to ${booking.guest_email}`);
+  } catch (err) {
+    console.error('[booking-dates-moved] Email failed:', err.message);
   }
 }
 

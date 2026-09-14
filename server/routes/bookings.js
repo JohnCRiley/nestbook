@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import db from '../db/database.js';
 import { stripe } from '../lib/stripeClient.js';
-import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail, sendStayExtendedEmail, sendStayShortenedEmail } from '../email/emailService.js';
+import { sendBookingConfirmation, sendDepositRequest, sendDepositConfirmation, sendBookingApprovedEmail, sendBookingDeclinedEmail, sendChargesSummaryEmail, sendReceiptEmail, sendBalanceDueEmail, sendStayExtendedEmail, sendStayShortenedEmail, sendBookingDatesMovedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { calcSeasonalTotal, calcSeasonalBreakdown, getRateForDate } from '../utils/ratePeriods.js';
 import { calculateDeposit } from '../utils/deposits.js';
@@ -1157,15 +1157,23 @@ bookingsRouter.put('/:id', (req, res) => {
       return res.status(409).json({ error: OVERLAP_ERROR });
     }
 
-    const isExtension  = check_out_date != null && check_out_date > existing.check_out_date;
-    const isShortening = check_out_date != null && check_out_date < existing.check_out_date;
-
     // Recalculate total_price and rate_breakdown when dates change
     let finalTotalPrice = total_price;
     let rateBreakdownStr = null;
     const newCheckIn  = check_in_date  ?? existing.check_in_date;
     const newCheckOut = check_out_date ?? existing.check_out_date;
     const datesChanged = newCheckIn !== existing.check_in_date || newCheckOut !== existing.check_out_date;
+
+    // Duration-based classification (mirrors the frontend's EditMode logic in
+    // client/src/pages/bookings/BookingPanel.jsx): compare total nights
+    // before/after, not just the new checkout date, so a same-duration date
+    // shift (both check-in and check-out move) is never mistaken for an
+    // extension or a shortening — each drives a different guest email below.
+    const oldNights = Math.round((new Date(existing.check_out_date) - new Date(existing.check_in_date)) / 86400000);
+    const newNights = Math.round((new Date(newCheckOut) - new Date(newCheckIn)) / 86400000);
+    const isSameDurationShift = datesChanged && newNights === oldNights;
+    const isShortening        = datesChanged && newNights < oldNights;
+    const isExtension         = datesChanged && newNights > oldNights && newCheckOut > existing.check_out_date;
     // Breakfast-morning counts, captured for the audit detail below. Only set
     // for a paid breakfast whose subtotal is folded back into total_price.
     let bfMorningsBefore = null;
@@ -1285,16 +1293,22 @@ bookingsRouter.put('/:id', (req, res) => {
       ipAddress: getIp(req),
     });
 
-    // Fire-and-forget guest email when check-out date changed
-    if ((isExtension || isShortening) && updated.guest_email) {
+    // Fire-and-forget guest email when dates changed
+    if ((isExtension || isShortening || isSameDurationShift) && updated.guest_email) {
       const propFull   = db.prepare('SELECT * FROM properties WHERE id = ?').get(existing.property_id);
       const ownerEmail = db.prepare('SELECT email FROM users WHERE id = ?').get(propFull?.owner_id)?.email ?? '';
-      // Pass old check_out_date so email shows "previous check-out" correctly
-      const emailBooking = { ...updated, check_out_date: existing.check_out_date };
-      if (isExtension) {
-        sendStayExtendedEmail(emailBooking, propFull, newCheckOut, finalTotalPrice, ownerEmail).catch(() => {});
+      if (isSameDurationShift) {
+        sendBookingDatesMovedEmail(
+          updated, propFull, existing.check_in_date, existing.check_out_date, newCheckIn, newCheckOut, finalTotalPrice, ownerEmail
+        ).catch(() => {});
       } else {
-        sendStayShortenedEmail(emailBooking, propFull, newCheckOut, finalTotalPrice, ownerEmail).catch(() => {});
+        // Pass old check_out_date so email shows "previous check-out" correctly
+        const emailBooking = { ...updated, check_out_date: existing.check_out_date };
+        if (isExtension) {
+          sendStayExtendedEmail(emailBooking, propFull, newCheckOut, finalTotalPrice, ownerEmail).catch(() => {});
+        } else {
+          sendStayShortenedEmail(emailBooking, propFull, newCheckOut, finalTotalPrice, ownerEmail).catch(() => {});
+        }
       }
     }
   } catch (err) {
