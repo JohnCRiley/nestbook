@@ -16,6 +16,9 @@ import { cleanupFile } from '../utils/fileCleanup.js';
 import { processRoomPhoto } from '../utils/processRoomPhoto.js';
 import { attachPoolPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { computePoolCap, poolCount, adoptFileIntoPool } from '../utils/mediaPool.js';
+import { ChannexError } from '../utils/channexClient.js';
+import { createChannexProperty } from '../utils/createChannexProperty.js';
+import { pushInitialInventory, disconnectChannexProperty } from '../utils/channexPushInventory.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -1127,5 +1130,150 @@ propertiesRouter.put('/:id/mailer-signature', (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Channex "Connect to Channel Manager" — owner-facing (Multi plan only) ────
+// Same underlying functions as Super Admin's channex-create / channex-push /
+// channex-disconnect (server/routes/admin.js) — no new Channex/DB logic here,
+// just an owner-level auth + plan gate in front of the same calls. Lets a
+// Multi-plan owner do it themselves from Settings instead of only via Super
+// Admin — built for Channex certification Stage 4 live demo of the real
+// owner workflow.
+function requireOwnerMultiPlanAccess(req, res, propId) {
+  if (!Number.isInteger(propId)) {
+    res.status(400).json({ error: 'Invalid property id' });
+    return null;
+  }
+  if (!canAccess(req.user.userId, req.user.role, propId)) {
+    res.status(403).json({ error: 'Access denied.' });
+    return null;
+  }
+  if (req.user.role !== 'owner') {
+    res.status(403).json({ error: 'Only account owners can manage Channel Manager.' });
+    return null;
+  }
+  const owner = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+  if (owner?.plan !== 'multi') {
+    res.status(403).json({ error: 'A Multi plan is required to use Channel Manager.' });
+    return null;
+  }
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+  if (!property) {
+    res.status(404).json({ error: 'Property not found' });
+    return null;
+  }
+  return property;
+}
+
+// ── POST /api/properties/:id/channex-connect ──────────────────────────────────
+// Combines Super Admin's "Create in Channex" + "Push Inventory" into one click:
+// creates the Channex property (if not already connected) then pushes initial
+// room-type/rate-plan/500-day-ARI inventory, reusing createChannexProperty()
+// and pushInitialInventory() exactly as admin.js's two separate routes do.
+propertiesRouter.post('/:id/channex-connect', async (req, res) => {
+  const propId = Number(req.params.id);
+  let property = requireOwnerMultiPlanAccess(req, res, propId);
+  if (!property) return;
+
+  try {
+    if (!property.channex_property_id) {
+      const { id: channexId, propertyType } = await createChannexProperty(property);
+      db.prepare('UPDATE properties SET channex_property_id = ? WHERE id = ?').run(channexId, propId);
+
+      logAction(db, {
+        propertyId: propId,
+        userId:     req.user.userId,
+        action:     'CHANNEX_PROPERTY_CREATED',
+        category:   'owner',
+        targetType: 'property',
+        targetId:   propId,
+        targetName: property.name,
+        detail:     `Created Channex property ${channexId} (property_type: ${propertyType}) — via Settings`,
+        ipAddress:  getIp(req),
+      });
+
+      property = { ...property, channex_property_id: channexId };
+    }
+
+    const existingMappings = db.prepare(
+      'SELECT COUNT(*) AS n FROM channex_room_mappings WHERE property_id = ?'
+    ).get(propId).n;
+    if (existingMappings > 0) {
+      return res.status(409).json({
+        error: `Inventory has already been pushed for this property (${existingMappings} room type${existingMappings === 1 ? '' : 's'} mapped).`,
+      });
+    }
+
+    const summary = await pushInitialInventory(property);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_INVENTORY_PUSHED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Pushed ${summary.roomTypes.length} room type(s) + rate plans + ` +
+                  `${summary.window.days}-day ARI to Channex ${property.channex_property_id} — via Settings`,
+      ipAddress:  getIp(req),
+    });
+
+    return res.json({ success: true, channex_property_id: property.channex_property_id, ...summary });
+  } catch (err) {
+    let status = 500;
+    if (err instanceof ChannexError && err.status) status = 502;
+    else if (/no bookable rooms\/units\/categories/.test(err.message)) status = 422;
+    console.error(`[properties] channex-connect failed for property #${propId}:`, err.message);
+    return res.status(status).json({ error: err.message });
+  }
+});
+
+// ── POST /api/properties/:id/channex-disconnect ───────────────────────────────
+// NestBook-side only — reuses disconnectChannexProperty() exactly as admin.js's
+// route does. No Channex API call; the Channex property + room types + rate
+// plans are left intact (owner manages them in their own Channex account).
+propertiesRouter.post('/:id/channex-disconnect', (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerMultiPlanAccess(req, res, propId);
+  if (!property) return;
+
+  const mappingCount = db.prepare(
+    'SELECT COUNT(*) AS n FROM channex_room_mappings WHERE property_id = ?'
+  ).get(propId).n;
+  if (!property.channex_property_id && mappingCount === 0) {
+    return res.status(400).json({ error: 'This property is not connected to Channex.' });
+  }
+
+  try {
+    const summary = disconnectChannexProperty(property);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_DISCONNECTED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Disconnected from Channex — cleared channex_property_id ` +
+                  `(${summary.priorChannexPropertyId ?? 'none'}) and deleted ${summary.mappingsDeleted} ` +
+                  `room-type mapping(s)${summary.orphanedMappingsDeleted ? ` (${summary.orphanedMappingsDeleted} already orphaned)` : ''}. ` +
+                  `Channex property + room types + rate plans left INTACT (no API call). Bookings untouched. — via Settings`,
+      ipAddress:  getIp(req),
+    });
+
+    return res.json({
+      success: true,
+      cleared: {
+        channex_property_id: summary.priorChannexPropertyId,
+        mappings_deleted: summary.mappingsDeleted,
+      },
+      channex_side: 'left intact — the Channex property and its room types / rate plans still exist; remove them from your Channex account if unwanted',
+    });
+  } catch (err) {
+    console.error(`[properties] channex-disconnect failed for property #${propId}:`, err.message);
+    return res.status(500).json({ error: err.message });
   }
 });

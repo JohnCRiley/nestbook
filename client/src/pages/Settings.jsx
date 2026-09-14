@@ -171,6 +171,7 @@ export default function Settings() {
   const [rentalTypeHint, setRentalTypeHint] = useState(null);
   const [billingMessage, setBillingMessage] = useState(null); // { type, text }
   const [deletingSampleData, setDeletingSampleData] = useState(false);
+  const [channexBusy, setChannexBusy] = useState(false);
 
   // Bug report form
   const [bugReportingEnabled, setBugReportingEnabled] = useState(false);
@@ -633,6 +634,56 @@ export default function Settings() {
 
         {/* ── LEFT COLUMN — Property details ────────────────────────────── */}
         <div>
+
+          {/* Connect to Channel Manager — Multi plan only. Owner-facing
+              equivalent of Super Admin's Channex controls (Properties.jsx),
+              combined into one button. Absent (not greyed out) for Free/Pro —
+              this isn't a real feature launch yet. */}
+          {user?.role === 'owner' && plan === 'multi' && property && (
+            <div className="settings-card" style={{ marginBottom: 20 }}>
+              <div className="settings-card-header">
+                <h2>Connect to Channel Manager</h2>
+              </div>
+              <div className="settings-card-body">
+                <button
+                  className={property.channex_property_id ? 'btn-danger-outline' : 'btn-primary'}
+                  style={{ width: '100%' }}
+                  disabled={channexBusy}
+                  onClick={async () => {
+                    setChannexBusy(true);
+                    try {
+                      const connected = !!property.channex_property_id;
+                      const res = await apiFetch(
+                        `/api/properties/${property.id}/channex-${connected ? 'disconnect' : 'connect'}`,
+                        { method: 'POST' }
+                      );
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error ?? 'Channel Manager request failed');
+                      const fresh = await apiFetch(`/api/properties/${property.id}`).then((r) => r.json());
+                      setProperty(fresh);
+                      setContextProperty(fresh);
+                      updatePropertyInList(fresh);
+                      setToast({
+                        msg: connected
+                          ? 'Disconnected from Channel Manager.'
+                          : 'Connected to Channel Manager and pushed inventory.',
+                        type: 'success',
+                      });
+                    } catch (err) {
+                      setToast({ msg: err.message, type: 'error' });
+                    }
+                    setChannexBusy(false);
+                  }}
+                >
+                  {channexBusy
+                    ? '…'
+                    : property.channex_property_id
+                      ? 'Disconnect'
+                      : 'Connect and update property'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ── Sample data banner ───────────────────────────────────────── */}
           {property?.has_sample_data === 1 && (
