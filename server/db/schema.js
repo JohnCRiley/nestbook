@@ -2717,6 +2717,14 @@ John`
     ON channex_room_type_photos(channex_room_type_id, source_key)
   `);
 
+  // properties.email / properties.phone (Slice D — property contact details
+  // for Channel Management, see docs/completed/channex-property-contact-details-slice-d.md).
+  // Both nullable, blank until the owner explicitly sets them — deliberately
+  // NEVER defaulted from users.email (the owner's login credential), which
+  // must not be silently exposed as a public listing contact.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN email TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN phone TEXT`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

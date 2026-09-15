@@ -71,11 +71,13 @@ function toIso2Country(raw) {
  * without making an API call.
  *
  * Only `title` and `currency` are required by Channex at creation. `address` /
- * `city` / `country` / `timezone` are included when present. `email`, `phone`
- * and coordinates are intentionally NOT set here: Channex only requires those
- * when connecting the first OTA — handled in a later slice. `timezone` is only
- * sent when the owner has set one in Settings (`properties.timezone`) — never
- * guessed from `country`, since a wrong guess is worse than omitting it.
+ * `city` / `country` / `timezone` / `website` are included when present.
+ * `email` / `phone` (Slice D) are always included, even as `null` — see the
+ * comment at their assignment below. Coordinates are intentionally NOT set
+ * here: Channex only requires those when connecting the first OTA — handled
+ * in a later slice. `timezone` is only sent when the owner has set one in
+ * Settings (`properties.timezone`) — never guessed from `country`, since a
+ * wrong guess is worse than omitting it.
  *
  * @param {object} property   a NestBook `properties` table row
  * @returns {object}          Channex property attributes
@@ -129,6 +131,29 @@ export function buildChannexPropertyAttributes(property) {
   // this must always be sent, unlike address/city/country/timezone above
   // which are fine to omit (there's no "clear it" requirement for those yet).
   attributes.content = { description: (property.description ?? '').trim() || null };
+
+  // Slice D — property contact details. email/phone are always included,
+  // even as null, for the same reason as content.description above
+  // (confirmed live 2026-09-15): omitting them on an update leaves the OLD
+  // value in place rather than clearing it, and an owner clearing a
+  // previously-set contact detail must actually clear it on Channex too.
+  // Deliberately sourced ONLY from properties.email/phone (the owner's own
+  // public listing contact, set explicitly in Settings) — NEVER from
+  // users.email (their login credential), which must never be silently
+  // exposed as a public contact address.
+  attributes.email = (property.email ?? '').trim() || null;
+  attributes.phone = (property.phone ?? '').trim() || null;
+
+  // website — derived from the property's own always-present public booking
+  // page, not a Settings field. Unlike email/phone this is never "cleared"
+  // by an owner (every property has a booking_slug), so the simpler
+  // omit-when-empty convention (matching address/city/country/timezone
+  // above) is fine — there's no legitimate empty state to preserve.
+  const bookingSlug = (property.booking_slug ?? '').trim();
+  if (bookingSlug) {
+    const base = (process.env.APP_URL ?? 'https://nestbook.io').replace(/\/+$/, '');
+    attributes.website = `${base}/book/${bookingSlug}`;
+  }
 
   return attributes;
 }

@@ -1263,22 +1263,24 @@ export async function pushRoomTypePhotos(propertyId, refType, refId) {
   }
 }
 
-// ── property-details sync (Slice B) ──────────────────────────────────────────
+// ── property-details sync (Slice B, extended in Slice D) ─────────────────────
 
 /**
  * Fire-and-forget re-sync of a property's Channex-side details — title,
- * currency, property_type, timezone, country, address, city, and (Slice B)
- * description. Reuses updateChannexProperty() (createChannexProperty.js) —
- * the exact same function the owner-facing "Update Property Details" button
- * and its Super Admin equivalent already call — so this is never a second,
- * divergent way of building the payload.
+ * currency, property_type, timezone, country, address, city, description
+ * (Slice B), and email/phone/website (Slice D). Reuses updateChannexProperty()
+ * (createChannexProperty.js) — the exact same function the owner-facing
+ * "Update Property Details" button and its Super Admin equivalent already
+ * call — so this is never a second, divergent way of building the payload.
  *
- * Fired automatically when the property's own description changes in
- * Settings (properties.js), unlike other property-level fields (timezone/
- * country/currency/…) which still require the manual resync button — a
- * deliberate scope choice for this slice, not an inconsistency: the task
- * asked specifically for description-edit auto-push, not a general
- * "auto-resync everything" change.
+ * Fired automatically when the property's own description or email/phone
+ * changes in Settings (properties.js), unlike other property-level fields
+ * (timezone/country/currency/…) which still require the manual resync
+ * button — a deliberate scope choice for these two slices, not an
+ * inconsistency: the tasks asked specifically for auto-push on these
+ * fields, not a general "auto-resync everything" change. website has no
+ * Settings input at all (Slice D derives it from booking_slug), so it just
+ * rides along on every property-details push automatically.
  *
  * Same contract as every other push* function: never throws, never rejects,
  * silent no-op for an unconnected property (checked via
@@ -1295,7 +1297,7 @@ export async function pushPropertyDetails(propertyId) {
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
     if (!property || !property.channex_property_id) return;
     await updateChannexProperty(property);
-    console.log(`[channex-sync] property #${propertyId} — details re-synced (description update)`);
+    console.log(`[channex-sync] property #${propertyId} — details re-synced (description/contact update)`);
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} details push failed (non-fatal): ${err.message}`

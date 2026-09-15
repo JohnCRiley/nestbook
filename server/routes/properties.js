@@ -299,7 +299,7 @@ propertiesRouter.put('/:id', (req, res) => {
       return res.status(404).json({ error: 'Property not found.' });
     }
     const {
-      name, type, address, city, country, timezone,
+      name, type, address, city, country, timezone, email, phone,
       check_in_time, check_out_time, currency, locale, theme,
       breakfast_included, require_deposit, deposit_amount, breakfast_price,
       breakfast_start_time, breakfast_end_time, breakfast_widget_enabled,
@@ -321,7 +321,7 @@ propertiesRouter.put('/:id', (req, res) => {
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
       lock_rental_type, ir_room_mode,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method, custom_section_title, custom_section_body FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, email, phone, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method, custom_section_title, custom_section_body FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     // Same not-sent-vs-cleared pattern as ir_room_mode below: only overwritten
@@ -382,6 +382,7 @@ propertiesRouter.put('/:id', (req, res) => {
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?, timezone = ?,
+          email = ?, phone = ?,
           check_in_time = ?, check_out_time = ?, currency = ?, locale = ?, theme = ?,
           breakfast_included = ?, require_deposit = ?, deposit_amount = ?,
           breakfast_price = ?, breakfast_start_time = ?, breakfast_end_time = ?,
@@ -408,6 +409,7 @@ propertiesRouter.put('/:id', (req, res) => {
       WHERE id = ?
     `).run(
       name ?? null, type ?? null, address ?? null, city ?? null, country ?? null, newTimezone,
+      email?.trim() || null, phone?.trim() || null,
       check_in_time ?? null, check_out_time ?? null, currency ?? null, locale ?? null,
       VALID_THEMES.includes(theme) ? theme : 'forest',
       breakfast_included ? 1 : 0,
@@ -482,6 +484,16 @@ propertiesRouter.put('/:id', (req, res) => {
       if (newRentalType === 'whole_property') {
         pushRoomTypeReconcile(Number(req.params.id), 'property', null, 'created').catch(() => {});
       }
+    }
+
+    // Fire-and-forget (Slice D) — email/phone are property-only fields (no
+    // room-type equivalent, unlike description), so this only ever needs the
+    // debounced property-level push — never a WP room-type reconcile. Same
+    // debounce key ('property-details') as the description trigger above, so
+    // saving both in one request still collapses into a single outbound call.
+    if ((email?.trim() || null) !== (existing?.email ?? null)
+        || (phone?.trim() || null) !== (existing?.phone ?? null)) {
+      schedulePropertyDetailsPush(Number(req.params.id)).catch(() => {});
     }
 
     // Custom Section — flag on every edit, same "diff against previous value"

@@ -219,6 +219,8 @@ export default function Settings() {
         city:               p.city               ?? '',
         country:            p.country            ?? '',
         timezone:           p.timezone           ?? '',
+        email:              p.email              ?? '',
+        phone:              p.phone              ?? '',
         check_in_time:      p.check_in_time      ?? '15:00',
         check_out_time:     p.check_out_time     ?? '11:00',
         currency:           p.currency           ?? 'EUR',
@@ -865,6 +867,19 @@ export default function Settings() {
                     </p>
                   )}
                 </FormField>
+
+                <div className="settings-form-row">
+                  <FormField label={t('settings.propertyEmailLabel')} hint={t('settings.propertyEmailHint')}>
+                    <input name="email" type="email" className="form-control"
+                      value={form.email} onChange={handleFormChange}
+                      placeholder="reception@yourproperty.com" />
+                  </FormField>
+                  <FormField label={t('settings.propertyPhoneLabel')} hint={t('settings.propertyPhoneHint')}>
+                    <input name="phone" type="tel" className="form-control"
+                      value={form.phone} onChange={handleFormChange}
+                      placeholder="+33 6 12 34 56 78" />
+                  </FormField>
+                </div>
 
                 <div className="settings-form-row">
                   <FormField label={t('checkin')}>
