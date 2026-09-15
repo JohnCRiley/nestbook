@@ -60,6 +60,29 @@ export function addDays(dateStr, n) {
   ].join('-');
 }
 
+/** "3 hours ago" / "in 2 days" — accepts a SQLite `datetime('now')` string
+ *  ("YYYY-MM-DD HH:MM:SS", UTC, no offset) or a real ISO string. Returns null
+ *  for null/invalid input so callers can show their own "never" copy. */
+export function formatRelativeTime(datetimeStr, locale = 'en') {
+  if (!datetimeStr) return null;
+  const iso = datetimeStr.includes('T') ? datetimeStr : `${datetimeStr.replace(' ', 'T')}Z`;
+  const then = new Date(iso);
+  if (isNaN(then.getTime())) return null;
+
+  const diffSeconds = (then.getTime() - Date.now()) / 1000;
+  const rtf = new Intl.RelativeTimeFormat(LOCALE_MAP[locale] ?? 'en-GB', { numeric: 'auto' });
+  const UNITS = [
+    ['year', 31536000], ['month', 2592000], ['week', 604800],
+    ['day', 86400], ['hour', 3600], ['minute', 60],
+  ];
+  for (const [unit, secs] of UNITS) {
+    if (Math.abs(diffSeconds) >= secs) {
+      return rtf.format(Math.round(diffSeconds / secs), unit);
+    }
+  }
+  return rtf.format(Math.round(diffSeconds), 'second');
+}
+
 /** "€900" or "€1,850" — returns "—" for null/undefined/NaN. */
 export function formatCurrency(amount, currency = 'EUR') {
   if (amount == null) return '—';

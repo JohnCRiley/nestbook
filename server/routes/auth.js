@@ -375,7 +375,7 @@ authRouter.post('/reset-password', async (req, res) => {
 // ── GET /api/auth/me ──────────────────────────────────────────────────────
 authRouter.get('/me', requireAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent, onboarding_completed, has_charges_addon FROM users WHERE id = ?'
+    'SELECT id, email, name, role, property_id, plan, email_verified, trial_ends_at, stripe_subscription_id, language, discount_ends_at, discount_percent, onboarding_completed, has_charges_addon, has_channel_manager_addon FROM users WHERE id = ?'
   ).get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
   res.json({ ...user, email_verified: !!user.email_verified, onboarding_completed: !!user.onboarding_completed });
@@ -506,16 +506,20 @@ authRouter.patch('/dev/switch-plan', requireAuth, (req, res) => {
     return res.status(404).json({ error: 'Not found' });
   }
   const VALID_PLANS = ['free', 'pro', 'multi'];
-  const { plan, has_charges_addon } = req.body;
+  const { plan, has_charges_addon, has_channel_manager_addon } = req.body;
   if (plan !== undefined && !VALID_PLANS.includes(plan)) {
     return res.status(400).json({ error: 'Invalid plan' });
   }
   const userId = req.user.userId;
-  const current = db.prepare('SELECT plan, has_charges_addon FROM users WHERE id = ?').get(userId);
+  const current = db.prepare('SELECT plan, has_charges_addon, has_channel_manager_addon FROM users WHERE id = ?').get(userId);
   const newPlan  = plan              !== undefined ? plan                       : current.plan;
   const newAddon = has_charges_addon !== undefined ? (has_charges_addon ? 1 : 0) : current.has_charges_addon;
+  const newChannelManagerAddon = has_channel_manager_addon !== undefined
+    ? (has_channel_manager_addon ? 1 : 0)
+    : current.has_channel_manager_addon;
 
-  db.prepare('UPDATE users SET plan = ?, has_charges_addon = ? WHERE id = ?').run(newPlan, newAddon, userId);
+  db.prepare('UPDATE users SET plan = ?, has_charges_addon = ?, has_channel_manager_addon = ? WHERE id = ?')
+    .run(newPlan, newAddon, newChannelManagerAddon, userId);
 
   // Keep subscriptions.plan in sync — non-Stripe fields only, no webhook/billing side effects
   const sub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
@@ -523,6 +527,6 @@ authRouter.patch('/dev/switch-plan', requireAuth, (req, res) => {
     db.prepare('UPDATE subscriptions SET plan = ? WHERE user_id = ?').run(newPlan, userId);
   }
 
-  console.log(`[dev] Plan switched → ${newPlan}, has_charges_addon=${newAddon} for user ${userId}`);
-  return res.json({ success: true, plan: newPlan, has_charges_addon: newAddon });
+  console.log(`[dev] Plan switched → ${newPlan}, has_charges_addon=${newAddon}, has_channel_manager_addon=${newChannelManagerAddon} for user ${userId}`);
+  return res.json({ success: true, plan: newPlan, has_charges_addon: newAddon, has_channel_manager_addon: newChannelManagerAddon });
 });

@@ -18,6 +18,7 @@ import Settings         from './pages/Settings.jsx';
 import Pricing          from './pages/Pricing.jsx';
 import ActivityLog      from './pages/ActivityLog.jsx';
 import Charges          from './pages/Charges.jsx';
+import ChannelManager   from './pages/ChannelManager.jsx';
 import PaymentSuccess   from './pages/PaymentSuccess.jsx';
 import PaymentCancel    from './pages/PaymentCancel.jsx';
 import Billing          from './pages/Billing.jsx';
@@ -242,6 +243,7 @@ function AppLayout() {
           <Route path="/info-sheet"   element={<InfoSheet    />} />
           <Route path="/activity-log" element={<ActivityLog  />} />
           <Route path="/billing"   element={<Billing   />} />
+          <Route path="/channel-manager" element={<ChannelManager />} />
           <Route path="/settings"  element={<Settings  />} />
           <Route path="/pricing"   element={<Pricing   />} />
           <Route path="/charges"   element={<Charges   />} />

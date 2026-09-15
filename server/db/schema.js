@@ -2673,6 +2673,20 @@ John`
   // 1:1 to a timezone and a wrong guess is worse than no value.
   try { db.exec(`ALTER TABLE properties ADD COLUMN timezone TEXT`); } catch (e) {}
 
+  // Channel Manager add-on flag — same pattern as has_charges_addon (set by a
+  // future Stripe webhook once billing for this add-on exists; a dev-only
+  // switch in Settings flips it locally for now). Gates the "Channel Manager"
+  // nav item/page: visible only when this is true AND plan is pro/multi.
+  try { db.exec(`ALTER TABLE users ADD COLUMN has_channel_manager_addon INTEGER DEFAULT 0`); } catch (e) {}
+
+  // Last-synced timestamps for the Channel Manager page's "Recent activity"
+  // section. Populated at the exact point runAvailabilitySync()/runRateSync()/
+  // pushInitialInventory() (server/utils/channexPushInventory.js) already log
+  // a successful push — purely additive persistence of data that previously
+  // only existed as a transient console.log line, not a new logging system.
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_availability_sync_at TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_rate_sync_at TEXT`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

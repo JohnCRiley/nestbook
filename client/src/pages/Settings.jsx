@@ -172,7 +172,6 @@ export default function Settings() {
   const [rentalTypeHint, setRentalTypeHint] = useState(null);
   const [billingMessage, setBillingMessage] = useState(null); // { type, text }
   const [deletingSampleData, setDeletingSampleData] = useState(false);
-  const [channexBusy, setChannexBusy] = useState(false);
 
   // Bug report form
   const [bugReportingEnabled, setBugReportingEnabled] = useState(false);
@@ -604,16 +603,24 @@ export default function Settings() {
 </script>
 <div id="nestbook-widget"></div>`;
 
-  async function handleDevSwitchPlan(newPlan, newChargesAddon) {
+  async function handleDevSwitchPlan(newPlan, newChargesAddon, newChannelManagerAddon) {
     setDevBusy(true);
     try {
       const res = await apiFetch('/api/auth/dev/switch-plan', {
         method: 'PATCH',
-        body: JSON.stringify({ plan: newPlan, has_charges_addon: newChargesAddon ? 1 : 0 }),
+        body: JSON.stringify({
+          plan: newPlan,
+          has_charges_addon: newChargesAddon ? 1 : 0,
+          has_channel_manager_addon: newChannelManagerAddon ? 1 : 0,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
-        updateUser({ plan: data.plan, has_charges_addon: data.has_charges_addon });
+        updateUser({
+          plan: data.plan,
+          has_charges_addon: data.has_charges_addon,
+          has_channel_manager_addon: data.has_channel_manager_addon,
+        });
       }
     } finally {
       setDevBusy(false);
@@ -636,61 +643,6 @@ export default function Settings() {
 
         {/* ── LEFT COLUMN — Property details ────────────────────────────── */}
         <div>
-
-          {/* Connect to Channel Manager — Multi plan only. Owner-facing
-              equivalent of Super Admin's Channex controls (Properties.jsx),
-              combined into one button. Absent (not greyed out) for Free/Pro —
-              this isn't a real feature launch yet. */}
-          {user?.role === 'owner' && plan === 'multi' && property && (
-            <div className="settings-card" style={{ marginBottom: 20 }}>
-              <div className="settings-card-header">
-                <h2>Connect to Channel Manager</h2>
-              </div>
-              <div className="settings-card-body">
-                <button
-                  className={property.channex_property_id ? 'btn-danger-outline' : 'btn-primary'}
-                  style={{ width: '100%' }}
-                  disabled={channexBusy}
-                  onClick={async () => {
-                    setChannexBusy(true);
-                    try {
-                      const connected = !!property.channex_property_id;
-                      const res = await apiFetch(
-                        `/api/properties/${property.id}/channex-${connected ? 'disconnect' : 'connect'}`,
-                        { method: 'POST' }
-                      );
-                      const data = await res.json();
-                      if (!res.ok) throw new Error(data.error ?? 'Channel Manager request failed');
-                      const fresh = await apiFetch(`/api/properties/${property.id}`).then((r) => r.json());
-                      setProperty(fresh);
-                      setContextProperty(fresh);
-                      updatePropertyInList(fresh);
-                      setToast({
-                        msg: connected
-                          ? 'Disconnected from Channel Manager.'
-                          : 'Connected to Channel Manager and pushed inventory.',
-                        type: 'success',
-                      });
-                    } catch (err) {
-                      setToast({ msg: err.message, type: 'error' });
-                    }
-                    setChannexBusy(false);
-                  }}
-                >
-                  {channexBusy
-                    ? '…'
-                    : property.channex_property_id
-                      ? 'Disconnect'
-                      : 'Connect and update property'}
-                </button>
-                {property.channex_property_id && !form.timezone && (
-                  <p className="form-hint" style={{ color: '#b45309', marginTop: 10, marginBottom: 0 }}>
-                    {t('settings.timezoneChannexNudge')}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* ── Sample data banner ───────────────────────────────────────── */}
           {property?.has_sample_data === 1 && (
@@ -1293,7 +1245,7 @@ export default function Settings() {
                       <button
                         key={p}
                         disabled={devBusy || plan === p}
-                        onClick={() => handleDevSwitchPlan(p, !!user?.has_charges_addon)}
+                        onClick={() => handleDevSwitchPlan(p, !!user?.has_charges_addon, !!user?.has_channel_manager_addon)}
                         style={{
                           padding: '7px 18px', borderRadius: 6, border: '2px solid',
                           borderColor: plan === p ? '#f59e0b' : 'var(--border)',
@@ -1313,15 +1265,25 @@ export default function Settings() {
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Add-ons</div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: devBusy ? 'default' : 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: devBusy ? 'default' : 'pointer', marginBottom: 10 }}>
                     <input
                       type="checkbox"
                       checked={!!user?.has_charges_addon}
                       disabled={devBusy}
-                      onChange={(e) => handleDevSwitchPlan(plan, e.target.checked)}
+                      onChange={(e) => handleDevSwitchPlan(plan, e.target.checked, !!user?.has_channel_manager_addon)}
                       style={{ width: 16, height: 16, accentColor: '#f59e0b', cursor: 'inherit' }}
                     />
                     <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Charges &amp; Bar add-on</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: devBusy ? 'default' : 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!user?.has_channel_manager_addon}
+                      disabled={devBusy}
+                      onChange={(e) => handleDevSwitchPlan(plan, !!user?.has_charges_addon, e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: '#f59e0b', cursor: 'inherit' }}
+                    />
+                    <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Channel Manager add-on</span>
                   </label>
                 </div>
               </div>

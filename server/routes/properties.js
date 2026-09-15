@@ -18,7 +18,7 @@ import { attachPoolPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { computePoolCap, poolCount, adoptFileIntoPool } from '../utils/mediaPool.js';
 import { ChannexError } from '../utils/channexClient.js';
 import { createChannexProperty } from '../utils/createChannexProperty.js';
-import { pushInitialInventory, disconnectChannexProperty } from '../utils/channexPushInventory.js';
+import { pushInitialInventory, disconnectChannexProperty, buildTargets } from '../utils/channexPushInventory.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -1149,14 +1149,17 @@ propertiesRouter.put('/:id/mailer-signature', (req, res) => {
   }
 });
 
-// ── Channex "Connect to Channel Manager" — owner-facing (Multi plan only) ────
+// ── Channel Manager — owner-facing (Pro/Multi + add-on) ───────────────────────
 // Same underlying functions as Super Admin's channex-create / channex-push /
 // channex-disconnect (server/routes/admin.js) — no new Channex/DB logic here,
-// just an owner-level auth + plan gate in front of the same calls. Lets a
-// Multi-plan owner do it themselves from Settings instead of only via Super
-// Admin — built for Channex certification Stage 4 live demo of the real
-// owner workflow.
-function requireOwnerMultiPlanAccess(req, res, propId) {
+// just an owner-level auth + plan/add-on gate in front of the same calls. Lets
+// an owner with the Channel Manager add-on do this themselves from the
+// dedicated Channel Manager page instead of only via Super Admin. Originally
+// gated Multi-only (built for Channex certification Stage 4); now gated by
+// the real product shape — `has_channel_manager_addon` (mirrors
+// has_charges_addon) AND plan pro/multi — ahead of the Stripe/billing work
+// for this add-on, which hasn't been built yet.
+function requireOwnerChannelManagerAccess(req, res, propId) {
   if (!Number.isInteger(propId)) {
     res.status(400).json({ error: 'Invalid property id' });
     return null;
@@ -1169,9 +1172,10 @@ function requireOwnerMultiPlanAccess(req, res, propId) {
     res.status(403).json({ error: 'Only account owners can manage Channel Manager.' });
     return null;
   }
-  const owner = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
-  if (owner?.plan !== 'multi') {
-    res.status(403).json({ error: 'A Multi plan is required to use Channel Manager.' });
+  const owner = db.prepare('SELECT plan, has_channel_manager_addon FROM users WHERE id = ?').get(req.user.userId);
+  const planOk = owner?.plan === 'pro' || owner?.plan === 'multi';
+  if (!planOk || !owner?.has_channel_manager_addon) {
+    res.status(403).json({ error: 'The Channel Manager add-on is required.' });
     return null;
   }
   const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
@@ -1182,6 +1186,45 @@ function requireOwnerMultiPlanAccess(req, res, propId) {
   return property;
 }
 
+// ── GET /api/properties/:id/channex-status ────────────────────────────────────
+// Backs the Channel Manager page: connection state (from the `property` object
+// the caller already has via GET /api/properties/:id), the per-unit mapping
+// list, and the last-synced timestamps. No new business logic — buildTargets()
+// is the exact same "what should be mapped" list pushInitialInventory() uses,
+// cross-referenced against the real channex_room_mappings rows.
+propertiesRouter.get('/:id/channex-status', (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+
+  const mappingRows = db.prepare(
+    'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+  ).all(propId);
+  const mappingByRef = new Map(
+    mappingRows.map((m) => [`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`, m])
+  );
+
+  let targets = [];
+  try { targets = buildTargets(property); } catch { targets = []; }
+
+  const units = targets.map((t) => {
+    const mapping = mappingByRef.get(`${t.refType}:${t.refId ?? ''}`);
+    return {
+      ref_type: t.refType,
+      ref_id: t.refId,
+      title: t.title,
+      mapped: !!mapping && !mapping.orphaned_at,
+      orphaned: !!mapping?.orphaned_at,
+    };
+  });
+
+  res.json({
+    units,
+    last_availability_sync_at: property.channex_last_availability_sync_at,
+    last_rate_sync_at: property.channex_last_rate_sync_at,
+  });
+});
+
 // ── POST /api/properties/:id/channex-connect ──────────────────────────────────
 // Combines Super Admin's "Create in Channex" + "Push Inventory" into one click:
 // creates the Channex property (if not already connected) then pushes initial
@@ -1189,7 +1232,7 @@ function requireOwnerMultiPlanAccess(req, res, propId) {
 // and pushInitialInventory() exactly as admin.js's two separate routes do.
 propertiesRouter.post('/:id/channex-connect', async (req, res) => {
   const propId = Number(req.params.id);
-  let property = requireOwnerMultiPlanAccess(req, res, propId);
+  let property = requireOwnerChannelManagerAccess(req, res, propId);
   if (!property) return;
 
   try {
@@ -1259,7 +1302,7 @@ propertiesRouter.post('/:id/channex-connect', async (req, res) => {
 // plans are left intact (owner manages them in their own Channex account).
 propertiesRouter.post('/:id/channex-disconnect', (req, res) => {
   const propId = Number(req.params.id);
-  const property = requireOwnerMultiPlanAccess(req, res, propId);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
   if (!property) return;
 
   const mappingCount = db.prepare(

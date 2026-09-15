@@ -25,6 +25,7 @@ import {
   IconSocialKit,
   IconGuestMailer,
   IconInfoSheet,
+  IconChannelManager,
 } from './Icons.jsx';
 import { AlertTriangleIcon } from './TablerIcons.jsx';
 
@@ -42,6 +43,7 @@ const ALL_NAV_ITEMS = [
   { to: '/info-sheet',    key: 'infoSheet',    Icon: IconInfoSheet,   ownerOnly: true },
   { to: '/activity-log', key: 'activityLog',  Icon: IconActivityLog, ownerOnly: true },
   { to: '/billing',   key: 'billing',   Icon: IconBilling,  ownerOnly: true },
+  { to: '/channel-manager', key: 'channelManager', Icon: IconChannelManager, ownerOnly: true, requiresChannelManagerAddon: true },
   { to: '/settings',  key: 'settings',  Icon: IconSettings  },
   { to: '/pricing',   key: 'pricing',   Icon: IconPricing   },
 ];
@@ -125,11 +127,15 @@ export default function Sidebar() {
 
   const hasChargesAddon = !!user?.has_charges_addon;
   const canSeeCharges = (i) => !i.multiOnly || plan === 'multi' || (i.key === 'charges' && hasChargesAddon);
+  const hasChannelManagerAddon = !!user?.has_channel_manager_addon;
+  const canSeeChannelManager = (i) =>
+    !i.requiresChannelManagerAddon || (hasChannelManagerAddon && (plan === 'pro' || plan === 'multi'));
   const navItems = user?.role === 'reception'
     ? ALL_NAV_ITEMS.filter((i) => RECEPTION_NAV_KEYS.has(i.key) && canSeeCharges(i))
     : ALL_NAV_ITEMS.filter((i) =>
         (!i.ownerOnly || user?.role === 'owner') &&
-        canSeeCharges(i)
+        canSeeCharges(i) &&
+        canSeeChannelManager(i)
       );
 
   function handleLogout() {

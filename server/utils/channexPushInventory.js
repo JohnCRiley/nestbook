@@ -473,6 +473,10 @@ async function runAvailabilitySync(propertyId, refType, refId, dateFrom, dateTo)
     ` — task_id(s): ${channexTaskIds(result)}` +
     (warnings.length ? ` (${warnings.length} warning(s))` : '')
   );
+  // Persisted so the Channel Manager page can show "Availability last updated
+  // …" — this was previously only a transient console.log line.
+  db.prepare(`UPDATE properties SET channex_last_availability_sync_at = datetime('now') WHERE id = ?`)
+    .run(propertyId);
   return result;
 }
 
@@ -604,6 +608,10 @@ async function runRateSync(propertyId, refType, refId, dateFrom, dateTo) {
     (skippedSegments ? `, ${skippedSegments} zero-rate segment(s) skipped` : '') +
     (warnings.length ? ` (${warnings.length} warning(s))` : '')
   );
+  // Persisted so the Channel Manager page can show "Rates last updated …" —
+  // this was previously only a transient console.log line.
+  db.prepare(`UPDATE properties SET channex_last_rate_sync_at = datetime('now') WHERE id = ?`)
+    .run(propertyId);
   return result;
 }
 
@@ -1091,6 +1099,14 @@ export async function pushInitialInventory(property) {
     `availability task_id(s): ${channexTaskIds(availabilityResult)}; ` +
     `rates task_id(s): ${channexTaskIds(rateResult)}`
   );
+  // Persisted so the Channel Manager page can show both "last updated" times
+  // right after the initial connect, not just after a later delta sync.
+  db.prepare(`
+    UPDATE properties
+    SET channex_last_availability_sync_at = datetime('now'),
+        channex_last_rate_sync_at = datetime('now')
+    WHERE id = ?
+  `).run(property.id);
 
   return {
     window: { from: windowFrom, to: windowTo, days: WINDOW_DAYS },
@@ -1152,7 +1168,13 @@ export function disconnectChannexProperty(property) {
   db.exec('BEGIN');
   try {
     db.prepare('DELETE FROM channex_room_mappings WHERE property_id = ?').run(propId);
-    db.prepare('UPDATE properties SET channex_property_id = NULL WHERE id = ?').run(propId);
+    db.prepare(`
+      UPDATE properties
+      SET channex_property_id = NULL,
+          channex_last_availability_sync_at = NULL,
+          channex_last_rate_sync_at = NULL
+      WHERE id = ?
+    `).run(propId);
     db.exec('COMMIT');
   } catch (err) {
     db.exec('ROLLBACK');
