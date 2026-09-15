@@ -119,6 +119,17 @@ export function buildChannexPropertyAttributes(property) {
   const timezone = (property.timezone ?? '').trim();
   if (timezone) attributes.timezone = timezone;
 
+  // Always included, even as null — Slice B (docs/completed/
+  // channex-photo-parity-slice-a.md's replace-vs-merge lesson applies here
+  // too, confirmed live 2026-09-15): content.description is a genuine scalar
+  // with normal replace semantics, but OMITTING it entirely on an update
+  // leaves the OLD value in place rather than clearing it (content's
+  // sub-fields are preserved independently when absent from the payload).
+  // Since a NestBook description can legitimately be cleared back to empty,
+  // this must always be sent, unlike address/city/country/timezone above
+  // which are fine to omit (there's no "clear it" requirement for those yet).
+  attributes.content = { description: (property.description ?? '').trim() || null };
+
   return attributes;
 }
 

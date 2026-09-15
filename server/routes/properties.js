@@ -18,7 +18,8 @@ import { attachPoolPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { computePoolCap, poolCount, adoptFileIntoPool } from '../utils/mediaPool.js';
 import { ChannexError } from '../utils/channexClient.js';
 import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
-import { pushInitialInventory, disconnectChannexProperty, buildTargets } from '../utils/channexPushInventory.js';
+import { pushInitialInventory, disconnectChannexProperty, buildTargets, pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
+import { schedulePropertyDetailsPush } from '../utils/channexDebounce.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -463,6 +464,24 @@ propertiesRouter.put('/:id', (req, res) => {
     if (description && description !== existing?.description) {
       db.prepare(`INSERT INTO content_flags (property_id, content_type, preview_text) VALUES (?, 'property_description', ?)`)
         .run(req.params.id, description);
+    }
+
+    // Fire-and-forget (Slice B) — a description change (including clearing it
+    // back to empty, hence the ?? null comparison rather than reusing the
+    // content_flags check above, which only fires for new non-empty text)
+    // needs to reach Channex: always the property-level content.description
+    // (via the same updateChannexProperty() the manual "Update Property
+    // Details" button uses), and for Whole Property mode specifically, also
+    // the one Channex room type that mirrors this exact text (buildTargets()
+    // sources a WP target's description from properties.description
+    // directly — pushRoomTypeReconcile's refType:'property' bulk path is the
+    // only entry point that actually reaches it; WP has exactly one target,
+    // so this is never wasted work). Never awaited.
+    if ((description?.trim() || null) !== (existing?.description ?? null)) {
+      schedulePropertyDetailsPush(Number(req.params.id)).catch(() => {});
+      if (newRentalType === 'whole_property') {
+        pushRoomTypeReconcile(Number(req.params.id), 'property', null, 'created').catch(() => {});
+      }
     }
 
     // Custom Section — flag on every edit, same "diff against previous value"

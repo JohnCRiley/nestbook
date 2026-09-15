@@ -124,9 +124,10 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
     const updated = db.prepare('SELECT * FROM room_categories WHERE id = ?').get(id);
     res.json(updated);
 
-    // Fire-and-forget — push a renamed category's title to its Channex room type
-    // in place (no-op if unchanged / not channel-connected). Never awaited.
-    if (updated.name !== existing.name) {
+    // Fire-and-forget — push a renamed category's title, or (Slice B) its
+    // changed description, to its Channex room type in place (no-op if
+    // unchanged / not channel-connected). Never awaited.
+    if (updated.name !== existing.name || updated.description !== existing.description) {
       pushRoomTypeReconcile(existing.property_id, 'category', id, 'renamed').catch(() => {});
     }
   } catch (err) {

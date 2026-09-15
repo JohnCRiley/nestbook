@@ -50,7 +50,14 @@
 // acceptable tradeoff the queue itself already documents, since the next
 // real NestBook change re-pushes fresh state from the DB regardless.
 
-import { pushRateUpdate, pushAvailabilityUpdate, pushRoomTypePhotos, isChannexConnected } from './channexPushInventory.js';
+import {
+  pushRateUpdate,
+  pushAvailabilityUpdate,
+  pushRoomTypePhotos,
+  pushPropertyDetails,
+  isChannexConnected,
+  isChannexPropertyConnected,
+} from './channexPushInventory.js';
 
 // Provisional — confirm the final value once Channex has replied to the
 // certification follow-up. Kept as named constants (not inlined) so there is
@@ -111,11 +118,14 @@ async function flush(key, pushFn) {
   await pushFn(batch.propertyId, batch.refType, batch.refId, batch.dateFrom, batch.dateTo);
 }
 
-function schedule(pushType, pushFn, propertyId, refType, refId, dateFrom, dateTo) {
+function schedule(pushType, pushFn, propertyId, refType, refId, dateFrom, dateTo, isConnectedFn = isChannexConnected) {
   // Same cheap check pushRateUpdate()/pushAvailabilityUpdate() already do —
   // duplicated here so an unconnected property never starts a batch/timer at
   // all, not even a short-lived one. No behavior change for the ~99% case.
-  if (!propertyId || !isChannexConnected(propertyId)) return;
+  // isConnectedFn is overridable (Slice B: schedulePropertyDetailsPush() uses
+  // isChannexPropertyConnected — channex_property_id alone, no mapping rows
+  // required — since property-level details don't need any room type to exist).
+  if (!propertyId || !isConnectedFn(propertyId)) return;
 
   const key = `${propertyId}:${pushType}`;
   let batch = pending.get(key);
@@ -189,6 +199,30 @@ export function scheduleRoomTypePhotosPush(propertyId, refType, refId) {
     schedule('photos', pushRoomTypePhotos, propertyId, refType, refId, null, null);
   } catch (err) {
     console.error(`[channex-debounce] property #${propertyId} photo schedule failed (non-fatal): ${err.message}`);
+  }
+  return Promise.resolve();
+}
+
+/**
+ * Property-details twin (Slice B) — same coalescing benefit as the others
+ * (a rapid run of Settings saves while iterating on a description collapses
+ * into one outbound property PUT). No refType/refId scoping — a property-
+ * details push is always "the whole property" — so this passes fixed
+ * ('property', null) into the shared batch shape; pushPropertyDetails()
+ * itself only takes a propertyId, ignoring the extra args flush() passes.
+ *
+ * Uses isChannexPropertyConnected (channex_property_id alone) instead of the
+ * default isChannexConnected (which requires channex_room_mappings rows) —
+ * property-level details don't depend on any room type existing yet.
+ *
+ * @param {number} propertyId
+ * @returns {Promise<void>}
+ */
+export function schedulePropertyDetailsPush(propertyId) {
+  try {
+    schedule('property-details', pushPropertyDetails, propertyId, 'property', null, null, null, isChannexPropertyConnected);
+  } catch (err) {
+    console.error(`[channex-debounce] property #${propertyId} details schedule failed (non-fatal): ${err.message}`);
   }
   return Promise.resolve();
 }

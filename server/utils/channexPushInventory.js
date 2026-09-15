@@ -103,6 +103,7 @@ import {
 import { submitChannexJob } from './channexQueue.js';
 import { getAvailableRoomsInCategory } from './categoryAvailability.js';
 import { getRateForDate, dateInRange } from './ratePeriods.js';
+import { updateChannexProperty } from './createChannexProperty.js';
 
 // Channex certification (test 1) requires the Full Sync to cover 500 days.
 // This is the ONLY place the window is defined; the delta paths widen with it
@@ -291,7 +292,9 @@ function rateSegments(dates, rateForDate) {
 //           availabilityForDate(date) -> int 0..countOfRooms,
 //           photos: [{ sourceKey, url }]  -- absolute URLs, already in display
 //                     order; sourceKey identifies "which NestBook photo" for
-//                     reconcileRoomTypePhotos()'s create/update/delete diff }
+//                     reconcileRoomTypePhotos()'s create/update/delete diff,
+//           description: string | null  -- Slice B: mirrors whatever the
+//                     guest-facing booking page shows for this exact target }
 
 export function buildTargets(property) {
   const pid = property.id;
@@ -334,12 +337,15 @@ export function buildTargets(property) {
         (firstRoom ? positiveRate(pid, firstRoom.id, date, wpBase) : null) ?? wpBase,
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
       photos: [...heroPhotos, ...wpRoomPhotos],
+      // The property IS the bookable unit in WP mode — same source the
+      // guest-facing property page uses (bookingPage.js's "About" section).
+      description: (property.description ?? '').trim() || null,
     }];
   }
 
   if (rentalType === 'rooms' && irMode === 'categories') {
     const cats = db.prepare(
-      `SELECT id, name FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC`
+      `SELECT id, name, description FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC`
     ).all(pid);
     const targets = [];
     for (const cat of cats) {
@@ -376,6 +382,13 @@ export function buildTargets(property) {
         availabilityForDate: (date) =>
           getAvailableRoomsInCategory(db, cat.id, date, nextDay(date), { respectBuffer: false }).length,
         photos: representativeCategoryPhotos(catRoomIds),
+        // The category's OWN description — guests book a category, not a
+        // specific room, so this (not any one room's) is what the booking
+        // page actually shows (bookingPage.js wsAlternatingShowcase's
+        // catDescHtml). Consistent with photos using a representative room,
+        // but description already lives at the category level in NestBook's
+        // own data model — no representative-room fallback needed here.
+        description: (cat.description ?? '').trim() || null,
       });
     }
     return targets;
@@ -384,7 +397,7 @@ export function buildTargets(property) {
   // IR-Named and Units: one Channex room type per top-level bookable room/unit.
   // parent_unit_id IS NULL excludes a unit's internal display-only sub-rooms.
   const rooms = db.prepare(`
-    SELECT id, name, capacity, max_occupancy, price_per_night
+    SELECT id, name, description, capacity, max_occupancy, price_per_night
     FROM rooms
     WHERE property_id = ?
       AND parent_unit_id IS NULL
@@ -406,6 +419,7 @@ export function buildTargets(property) {
       rateForDate: (date) => positiveRate(pid, room.id, date),
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
       photos: photosForRoom(room.id),
+      description: (room.description ?? '').trim() || null,
     };
   });
 }
@@ -461,6 +475,20 @@ function affectedMappings(property, mappings, refType, refId) {
 export function isChannexConnected(propertyId) {
   return !!db.prepare(
     'SELECT 1 FROM channex_room_mappings WHERE property_id = ? LIMIT 1'
+  ).get(propertyId);
+}
+
+/** Property-level connectivity check (Slice B) — deliberately DIFFERENT from
+ *  isChannexConnected() above: a property-details push (title/currency/
+ *  description/…) only needs channex_property_id set, not any
+ *  channex_room_mappings rows — those don't exist yet in the narrow window
+ *  between "Create in Channex" and "Push Inventory". Passed as the custom
+ *  isConnectedFn to channexDebounce.js's schedule() for the 'property-details'
+ *  pushType — the default isChannexConnected() would otherwise wrongly skip a
+ *  connected-but-not-yet-mapped property. */
+export function isChannexPropertyConnected(propertyId) {
+  return !!db.prepare(
+    'SELECT 1 FROM properties WHERE id = ? AND channex_property_id IS NOT NULL'
   ).get(propertyId);
 }
 
@@ -768,6 +796,14 @@ export async function pushRateUpdateForRanges(propertyId, ranges, pushFn = pushR
 /** Channex room_type attributes for a buildTargets() target (minus property_id,
  *  which PUT rejects and POST takes separately).
  *
+ * content.description (Slice B) IS safe to set here, unlike content.photos —
+ * confirmed live against staging (2026-09-15) that it's a genuine scalar
+ * field with normal replace semantics (resending it overwrites the old
+ * value, never accumulates), and that a partial `content` object containing
+ * only `description` does NOT clear sibling `photos` entries. Always
+ * included (even as `null`) so clearing a description in NestBook actually
+ * clears it on Channex too, rather than leaving a stale value behind.
+ *
  * Deliberately does NOT set content.photos here. Confirmed live against
  * staging (2026-09-15): the room-type endpoint's embedded content.photos
  * field only ever ADDS photos on a PUT — a submitted list that omits a
@@ -785,6 +821,7 @@ function roomTypeAttributes(target) {
     occ_infants: 0,
     default_occupancy: target.defaultOccupancy,
     room_kind: 'room',
+    content: { description: target.description ?? null },
   };
 }
 
@@ -1222,6 +1259,46 @@ export async function pushRoomTypePhotos(propertyId, refType, refId) {
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} photo push failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
+// ── property-details sync (Slice B) ──────────────────────────────────────────
+
+/**
+ * Fire-and-forget re-sync of a property's Channex-side details — title,
+ * currency, property_type, timezone, country, address, city, and (Slice B)
+ * description. Reuses updateChannexProperty() (createChannexProperty.js) —
+ * the exact same function the owner-facing "Update Property Details" button
+ * and its Super Admin equivalent already call — so this is never a second,
+ * divergent way of building the payload.
+ *
+ * Fired automatically when the property's own description changes in
+ * Settings (properties.js), unlike other property-level fields (timezone/
+ * country/currency/…) which still require the manual resync button — a
+ * deliberate scope choice for this slice, not an inconsistency: the task
+ * asked specifically for description-edit auto-push, not a general
+ * "auto-resync everything" change.
+ *
+ * Same contract as every other push* function: never throws, never rejects,
+ * silent no-op for an unconnected property (checked via
+ * isChannexPropertyConnected() — channex_property_id alone, no mapping rows
+ * required, since property-level details don't depend on any room type
+ * existing yet).
+ *
+ * @param {number} propertyId
+ * @returns {Promise<void>}
+ */
+export async function pushPropertyDetails(propertyId) {
+  try {
+    if (!propertyId || !isChannexPropertyConnected(propertyId)) return;
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    if (!property || !property.channex_property_id) return;
+    await updateChannexProperty(property);
+    console.log(`[channex-sync] property #${propertyId} — details re-synced (description update)`);
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} details push failed (non-fatal): ${err.message}`
     );
   }
 }

@@ -1325,16 +1325,18 @@ roomsRouter.put('/:id', (req, res) => {
       ipAddress: getIp(req),
     });
 
-    // Fire-and-forget — a rename / capacity / occupancy / category / status
-    // change alters the Channex room-type attributes or its category's roll-up;
-    // reconcile in place (no-op if the property isn't channel-connected). Never
-    // awaited.
+    // Fire-and-forget — a rename / capacity / occupancy / category / status /
+    // description change alters the Channex room-type attributes (Slice B:
+    // description now flows into content.description via roomTypeAttributes())
+    // or its category's roll-up; reconcile in place (no-op if the property
+    // isn't channel-connected). Never awaited.
     const roomTypeChanged =
       updated.name !== existing.name ||
       updated.capacity !== existing.capacity ||
       updated.max_occupancy !== existing.max_occupancy ||
       updated.category_id !== existing.category_id ||
-      updated.status !== existing.status;
+      updated.status !== existing.status ||
+      updated.description !== existing.description;
     if (roomTypeChanged) {
       pushRoomTypeReconcile(
         updated.property_id, 'room', updated.id, 'renamed',
