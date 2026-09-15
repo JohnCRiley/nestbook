@@ -1280,6 +1280,10 @@ propertiesRouter.get('/:id/channex-status', (req, res) => {
     units,
     last_availability_sync_at: property.channex_last_availability_sync_at,
     last_rate_sync_at: property.channex_last_rate_sync_at,
+    last_photos_sync_at: property.channex_last_photos_sync_at,
+    last_description_sync_at: property.channex_last_description_sync_at,
+    last_facilities_sync_at: property.channex_last_facilities_sync_at,
+    last_contact_sync_at: property.channex_last_contact_sync_at,
   });
 });
 
@@ -1296,7 +1300,17 @@ propertiesRouter.post('/:id/channex-connect', async (req, res) => {
   try {
     if (!property.channex_property_id) {
       const { id: channexId, propertyType } = await createChannexProperty(property);
-      db.prepare('UPDATE properties SET channex_property_id = ? WHERE id = ?').run(channexId, propId);
+      // description/facilities/contact are sent as part of this same create
+      // call (buildChannexPropertyAttributes) — stamp all three now, same as
+      // updateChannexProperty()'s later resync stamp.
+      db.prepare(`
+        UPDATE properties
+        SET channex_property_id = ?,
+            channex_last_description_sync_at = datetime('now'),
+            channex_last_facilities_sync_at = datetime('now'),
+            channex_last_contact_sync_at = datetime('now')
+        WHERE id = ?
+      `).run(channexId, propId);
 
       logAction(db, {
         propertyId: propId,

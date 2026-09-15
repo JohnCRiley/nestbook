@@ -21,6 +21,7 @@ import frCountries from 'i18n-iso-countries/langs/fr.json' with { type: 'json' }
 import deCountries from 'i18n-iso-countries/langs/de.json' with { type: 'json' };
 import esCountries from 'i18n-iso-countries/langs/es.json' with { type: 'json' };
 import nlCountries from 'i18n-iso-countries/langs/nl.json' with { type: 'json' };
+import db from '../db/database.js';
 import { createProperty, updateProperty, ChannexError } from './channexClient.js';
 import { getChannexPropertyType } from './channexPropertyType.js';
 import { PROPERTY_AMENITIES, parseAmenityKeys, resolveFacilityIds } from './amenityCatalog.js';
@@ -219,5 +220,21 @@ export async function updateChannexProperty(property) {
   }
   const attributes = buildChannexPropertyAttributes(property);
   const data = await updateProperty(property.channex_property_id, attributes);
+
+  // Every call here always resends description/facilities/email/phone in full
+  // (buildChannexPropertyAttributes' always-full-payload convention), so a
+  // successful PUT genuinely means all three just got their current value
+  // pushed — same "stamp on success" pattern as rates/availability. Shared
+  // with the room/category-level stamp in channexPushInventory.js's
+  // syncTarget() for description/facilities (last-write-wins, either path
+  // means "Channex just received our current value").
+  db.prepare(`
+    UPDATE properties
+    SET channex_last_description_sync_at = datetime('now'),
+        channex_last_facilities_sync_at = datetime('now'),
+        channex_last_contact_sync_at = datetime('now')
+    WHERE id = ?
+  `).run(property.id);
+
   return { attributes, data };
 }

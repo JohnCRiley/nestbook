@@ -11,7 +11,7 @@ export default function ChannelManager() {
   const { user } = useAuth();
   const plan = usePlan();
 
-  const [status,    setStatus]    = useState(null); // { units, last_availability_sync_at, last_rate_sync_at }
+  const [status,    setStatus]    = useState(null); // { units, last_availability_sync_at, last_rate_sync_at, last_photos_sync_at, last_description_sync_at, last_facilities_sync_at, last_contact_sync_at }
   const [loading,   setLoading]   = useState(true);
   const [busy,      setBusy]      = useState(false);
   const [resyncing, setResyncing] = useState(false);
@@ -71,6 +71,7 @@ export default function ChannelManager() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t('cmRequestFailed'));
       showToast(t('cmResyncedToast'));
+      fetchStatus();
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -159,6 +160,20 @@ export default function ChannelManager() {
         </div>
       )}
 
+      {/* ── Contact-details nudge ─────────────────────────────────────────── */}
+      {!property?.email && !property?.phone && (
+        <div className="settings-card" style={{ borderLeft: '3px solid #b45309' }}>
+          <div className="settings-card-body">
+            <p style={{ color: '#b45309', margin: '0 0 8px' }}>
+              {t('cmContactNudge')}
+            </p>
+            <a href="/app/settings" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+              {t('cmTimezoneCta')}
+            </a>
+          </div>
+        </div>
+      )}
+
       {connected && (
         <>
           {/* ── Room mapping ──────────────────────────────────────────────── */}
@@ -208,6 +223,18 @@ export default function ChannelManager() {
               </p>
               <p style={{ margin: 0, fontSize: '0.9rem' }}>
                 {t('cmRatesUpdated')(formatRelativeTime(status?.last_rate_sync_at, locale))}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                {t('cmPhotosUpdated')(formatRelativeTime(status?.last_photos_sync_at, locale))}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                {t('cmDescriptionUpdated')(formatRelativeTime(status?.last_description_sync_at, locale))}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                {t('cmFacilitiesUpdated')(formatRelativeTime(status?.last_facilities_sync_at, locale))}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                {t('cmContactUpdated')(formatRelativeTime(status?.last_contact_sync_at, locale))}
               </p>
             </div>
           </div>

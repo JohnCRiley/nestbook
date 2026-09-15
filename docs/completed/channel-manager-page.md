@@ -128,6 +128,96 @@ fully superseded) with its own nav item + page, and adds real visibility
   verification (owner_id reassignments, plan/addon flips) reverted to their
   original values.
 
+## Extended 2026-09-15 — full activity coverage + contact nudge
+
+The initial ship above only persisted `last_availability_sync_at` /
+`last_rate_sync_at`. Extended the same pattern to the other push types the
+task's Recent Activity section asked for (photos, description, facilities,
+contact details), plus a contact-details nudge alongside the existing
+timezone one.
+
+- **4 new nullable `properties` columns**: `channex_last_photos_sync_at`,
+  `channex_last_description_sync_at`, `channex_last_facilities_sync_at`,
+  `channex_last_contact_sync_at`. Same "stamp on success, don't backfill"
+  convention as the original two.
+- **Shared columns, last-write-wins**: description/facilities are stamped
+  from BOTH the property-level push (`updateChannexProperty()`,
+  `createChannexProperty.js`) AND the room/category-level push
+  (`syncTarget()`'s `roomTypeAttributes()` call, which always carries both) —
+  one column per concept rather than splitting by source, since either path
+  genuinely means "Channex just received our current value" for that field.
+  Contact details are property-only (email/phone have no room-type
+  equivalent). Photos are room-level only, and unlike the others, stamped
+  ONLY when `reconcileRoomTypePhotos()` actually performed a create/update/
+  delete — that function is a genuine diff called on every room-type sync
+  (rename, occupancy change, …) whether or not photos themselves changed, so
+  stamping unconditionally would claim a sync that never happened.
+- **`reconcileRoomTypePhotos()` and `createTargetOnChannex()`** both gained a
+  leading `propertyId` param (threaded from all 3/2 call sites respectively)
+  so they can stamp `channex_last_photos_sync_at` themselves.
+- **Property-details create path also stamps now**: both `properties.js`'s
+  owner-facing `channex-connect` and `admin.js`'s Super Admin equivalent
+  extend their existing single `UPDATE properties SET channex_property_id =
+  ?` into one statement that also stamps description/facilities/contact —
+  `createChannexProperty()` sends all three on that same initial create call.
+- **`disconnectChannexProperty()`** now clears all 6 sync-timestamp columns
+  (was 2), so a disconnect/reconnect cycle never shows a stale timestamp from
+  the prior connection.
+- **Fixed a real bug found while verifying this**: `ChannelManager.jsx`'s
+  `handleResync()` never called `fetchStatus()` after a successful "Update
+  Property Details" — the DB stamps landed correctly (verified directly) but
+  the page kept showing "not synced yet" until a manual reload. Added the
+  missing `fetchStatus()` call, same as `handleConnectToggle()` already had.
+- **Contact-details nudge**: shows when `!property.email && !property.phone`
+  (both unset — showing it when only one is set felt noisy), same visual
+  pattern and same `settings.timezoneChannexNudge`-style copy as the existing
+  timezone nudge, reusing its `cmTimezoneCta` link label rather than adding a
+  near-duplicate key.
+- **`cmResyncHint` copy updated** (all 5 languages) — it only mentioned
+  "name, currency, timezone and country" but the same button's underlying
+  call has always also resent description/facilities/contact; the hint was
+  stale even before this change.
+- 8 new i18n keys (`cmContactNudge`, `cmPhotosUpdated`, `cmDescriptionUpdated`,
+  `cmFacilitiesUpdated`, `cmContactUpdated`) × 5 languages.
+
+### Verified (2026-09-15, live dev stack + real Channex staging)
+
+- Schema: all 4 new columns present after a real server boot.
+- **Property-details push** (clicked the real "Update Property Details"
+  button against property #1, live Channex staging): toast confirmed
+  success, fresh DB read showed `channex_last_description_sync_at` /
+  `_facilities_` / `_contact_` all stamped to the same timestamp, and — after
+  the `handleResync()` fix — the page itself showed "Description/Facilities/
+  Contact details last updated 1 second ago" without a manual reload.
+- **Room-level facilities push**: PUT `/api/rooms/341` with
+  `structured_amenities: ['wifi','tv']` → waited for the real 7-10s debounce
+  → server log confirmed `facilities re-synced … (2 facility/facilities)` →
+  `channex_last_facilities_sync_at` advanced to a newer timestamp than the
+  property-level push moments earlier, confirming the shared-column
+  last-write-wins behavior actually works across both code paths. Reverted
+  the room back to `[]` the same way and confirmed the follow-up debounced
+  push landed (`… (0 facility/facilities)`) — no residue left on Channex or
+  in NestBook.
+- **Photos**: verified by code inspection only (all 3 call sites of
+  `reconcileRoomTypePhotos()`/`createTargetOnChannex()` traced and confirmed
+  to pass `propertyId` correctly) — not live-triggered this pass; same
+  well-exercised diff logic Slice A already proved live.
+- **Not live-tested**: `disconnectChannexProperty()`'s clearing of all 6
+  columns — deliberately skipped. Property #1 carries real, non-trivial
+  Channex history (5 real room mappings from earlier Phase 2 testing), and
+  this codebase's own docs confirm disconnect+reconnect is NOT an equivalent
+  no-op (it orphans the existing Channex property and creates a brand-new
+  one) — not an acceptable action to take just for verification. Confirmed
+  by code review instead: the `UPDATE` statement is unconditional and now
+  lists all 6 columns.
+- `cd client && npm run build` clean both before and after. `node --check`
+  clean on every touched server file.
+- White-label check: `grep -i channex` across the new copy → zero
+  rendered-text hits (route paths and JS field names only).
+- Nav item, room mapping, connect/disconnect, and the old Settings card's
+  absence were all re-confirmed unaffected (none of those code paths were
+  touched this pass).
+
 ## Deliberately out of scope (per the task)
 
 - Stripe/billing wiring for the add-on itself — flag exists, nothing charges

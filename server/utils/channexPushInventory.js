@@ -884,11 +884,20 @@ function ratePlanCreateAttributes(target, channexPropertyId, roomTypeId, currenc
  * pushRoomTypePhotos) runs inside the existing never-throw fire-and-forget
  * contract; a photo hiccup must never break a room-type create/rename/sync.
  *
+ * Stamps `properties.channex_last_photos_sync_at` when it actually performed
+ * at least one create/update/delete — deliberately NOT unconditionally on
+ * every call, unlike rates/availability's always-full-resend pattern, since
+ * this function is a genuine diff and is called on every room-type sync
+ * (rename, occupancy change, …) whether or not photos themselves changed;
+ * stamping unconditionally would claim a photo sync that never happened.
+ *
+ * @param {number} propertyId
  * @param {string} channexPropertyId
  * @param {string} channexRoomTypeId
  * @param {{photos?: {sourceKey: string, url: string}[]}} target
  */
-async function reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, target) {
+async function reconcileRoomTypePhotos(propertyId, channexPropertyId, channexRoomTypeId, target) {
+  let changed = false;
   try {
     const desired = target.photos ?? [];
     const desiredBySourceKey = new Map(desired.map((p, i) => [p.sourceKey, { url: p.url, position: i }]));
@@ -902,6 +911,7 @@ async function reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, tar
       if (desiredBySourceKey.has(row.source_key)) continue;
       try {
         await deletePhoto(row.channex_photo_id);
+        changed = true;
       } catch (err) {
         console.error(
           `[channex-sync] room type ${channexRoomTypeId} — failed to delete stale photo ` +
@@ -939,11 +949,17 @@ async function reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, tar
           INSERT INTO channex_room_type_photos (channex_room_type_id, source_key, channex_photo_id, position)
           VALUES (?, ?, ?, ?)
         `).run(channexRoomTypeId, sourceKey, channexPhotoId, wanted.position);
+        changed = true;
       } else if (existing.position !== wanted.position) {
         await updatePhoto(existing.channex_photo_id, { position: wanted.position });
         db.prepare('UPDATE channex_room_type_photos SET position = ? WHERE id = ?')
           .run(wanted.position, existing.id);
+        changed = true;
       }
+    }
+
+    if (changed) {
+      db.prepare(`UPDATE properties SET channex_last_photos_sync_at = datetime('now') WHERE id = ?`).run(propertyId);
     }
   } catch (err) {
     console.error(
@@ -958,7 +974,7 @@ async function reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, tar
  * half-created pair on failure, then rethrow.
  * @returns {Promise<{channexRoomTypeId: string, channexRatePlanId: string}>}
  */
-async function createTargetOnChannex(channexPropertyId, currency, target) {
+async function createTargetOnChannex(propertyId, channexPropertyId, currency, target) {
   const roomTypeData = await createRoomType({
     property_id: channexPropertyId,
     ...roomTypeAttributes(target),
@@ -984,7 +1000,7 @@ async function createTargetOnChannex(channexPropertyId, currency, target) {
 
   // Best-effort — reconcileRoomTypePhotos() never throws; awaited so photos
   // land before the caller's initial-push summary returns, not racing it.
-  await reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, target);
+  await reconcileRoomTypePhotos(propertyId, channexPropertyId, channexRoomTypeId, target);
 
   return { channexRoomTypeId, channexRatePlanId };
 }
@@ -1019,7 +1035,7 @@ async function syncTarget(property, target, mapping) {
   if (!mapping) {
     const currency = (property.currency ?? 'EUR').trim().toUpperCase();
     const { channexRoomTypeId, channexRatePlanId } =
-      await createTargetOnChannex(cxPropId, currency, target);
+      await createTargetOnChannex(property.id, cxPropId, currency, target);
 
     const insert = db.prepare(`
       INSERT INTO channex_room_mappings
@@ -1051,7 +1067,7 @@ async function syncTarget(property, target, mapping) {
     );
   } else {
     await updateRoomType(mapping.channex_room_type_id, roomTypeAttributes(target));
-    await reconcileRoomTypePhotos(cxPropId, mapping.channex_room_type_id, target);
+    await reconcileRoomTypePhotos(property.id, cxPropId, mapping.channex_room_type_id, target);
     const planTitle = `${target.title} — Standard`.slice(0, CHANNEX_TITLE_MAX);
     try {
       await updateRatePlan(mapping.channex_rate_plan_id, { title: planTitle });
@@ -1067,6 +1083,20 @@ async function syncTarget(property, target, mapping) {
       `— updated Channex room type ${mapping.channex_room_type_id} ("${target.title}")`
     );
   }
+
+  // Both branches above always resend title/occupancy/description/facilities
+  // together (roomTypeAttributes()' always-full-payload convention) — a
+  // successful create or update genuinely means Channex just received the
+  // room/category's current description + facilities. Shared column with
+  // updateChannexProperty()'s property-level stamp (createChannexProperty.js)
+  // — last-write-wins, either path means "Channex just received our current
+  // value" for these two fields.
+  db.prepare(`
+    UPDATE properties
+    SET channex_last_description_sync_at = datetime('now'),
+        channex_last_facilities_sync_at = datetime('now')
+    WHERE id = ?
+  `).run(property.id);
 
   // Fresh ARI for the (new or updated) target — reuses slices 4 + 6, which
   // re-query the mappings table so a just-inserted row is visible.
@@ -1278,7 +1308,7 @@ export async function pushRoomTypePhotos(propertyId, refType, refId) {
     for (const m of affected) {
       const target = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
       if (!target) continue; // mapping exists but its room/category is gone — skip, same as ARI sync
-      await reconcileRoomTypePhotos(property.channex_property_id, m.channex_room_type_id, target);
+      await reconcileRoomTypePhotos(propertyId, property.channex_property_id, m.channex_room_type_id, target);
       console.log(
         `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} — photos re-synced ` +
         `for Channex room type ${m.channex_room_type_id} (${target.photos?.length ?? 0} photo(s))`
@@ -1347,6 +1377,9 @@ export async function pushRoomTypeFacilities(propertyId, refType, refId) {
         `for Channex room type ${m.channex_room_type_id} (${target.facilities?.length ?? 0} facility/facilities)`
       );
     }
+    // Reached only if the loop above ran (affected.length > 0, checked above)
+    // without throwing — genuinely pushed the current facilities list.
+    db.prepare(`UPDATE properties SET channex_last_facilities_sync_at = datetime('now') WHERE id = ?`).run(propertyId);
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} facilities push failed (non-fatal): ${err.message}`
@@ -1446,7 +1479,7 @@ export async function pushInitialInventory(property) {
     // slice 7's pushRoomTypeReconcile via createTargetOnChannex).
     for (const t of targets) {
       const { channexRoomTypeId: roomTypeId, channexRatePlanId: ratePlanId } =
-        await createTargetOnChannex(channexPropertyId, currency, t);
+        await createTargetOnChannex(property.id, channexPropertyId, currency, t);
       created.push({
         refType: t.refType, refId: t.refId, title: t.title,
         channexRoomTypeId: roomTypeId, channexRatePlanId: ratePlanId, countOfRooms: t.countOfRooms,
@@ -1532,12 +1565,17 @@ export async function pushInitialInventory(property) {
     `availability task_id(s): ${channexTaskIds(availabilityResult)}; ` +
     `rates task_id(s): ${channexTaskIds(rateResult)}`
   );
-  // Persisted so the Channel Manager page can show both "last updated" times
+  // Persisted so the Channel Manager page can show "last updated" times
   // right after the initial connect, not just after a later delta sync.
+  // description/facilities are included too — every target's room type was
+  // just created with its current description + facilities baked in via
+  // createTargetOnChannex()/roomTypeAttributes() above.
   db.prepare(`
     UPDATE properties
     SET channex_last_availability_sync_at = datetime('now'),
-        channex_last_rate_sync_at = datetime('now')
+        channex_last_rate_sync_at = datetime('now'),
+        channex_last_description_sync_at = datetime('now'),
+        channex_last_facilities_sync_at = datetime('now')
     WHERE id = ?
   `).run(property.id);
 
@@ -1605,7 +1643,11 @@ export function disconnectChannexProperty(property) {
       UPDATE properties
       SET channex_property_id = NULL,
           channex_last_availability_sync_at = NULL,
-          channex_last_rate_sync_at = NULL
+          channex_last_rate_sync_at = NULL,
+          channex_last_photos_sync_at = NULL,
+          channex_last_description_sync_at = NULL,
+          channex_last_facilities_sync_at = NULL,
+          channex_last_contact_sync_at = NULL
       WHERE id = ?
     `).run(propId);
     db.exec('COMMIT');

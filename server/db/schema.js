@@ -2687,6 +2687,19 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_availability_sync_at TEXT`); } catch (e) {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_rate_sync_at TEXT`); } catch (e) {}
 
+  // Same pattern, extended to the other push types the Channel Manager page's
+  // "Recent activity" section now also shows. photos: room-level only
+  // (reconcileRoomTypePhotos). description/facilities: stamped from BOTH the
+  // property-level push (updateChannexProperty) AND the room/category-level
+  // push (syncTarget's roomTypeAttributes, which always carries both) — one
+  // shared column per concept, last-write-wins, since either path genuinely
+  // means "this is when Channex last received our current value". contact:
+  // property-level only (email/phone have no room-type equivalent).
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_photos_sync_at TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_description_sync_at TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_facilities_sync_at TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_contact_sync_at TEXT`); } catch (e) {}
+
   // channex_room_type_photos (Slice A — room photo parity, see
   // docs/completed/channex-photo-parity-slice-a.md) — tracks which NestBook photo
   // ("source_key": 'room_photo:<room_photos.id>' or 'hero:<property_id>' for

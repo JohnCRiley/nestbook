@@ -748,7 +748,17 @@ adminRouter.post('/properties/:id/channex-create', async (req, res) => {
   try {
     const { id: channexId, propertyType } = await createChannexProperty(property);
 
-    db.prepare('UPDATE properties SET channex_property_id = ? WHERE id = ?').run(channexId, propId);
+    // description/facilities/contact ride along on this same create call
+    // (buildChannexPropertyAttributes) — stamp all three, same parity as the
+    // owner-facing channex-connect route (properties.js).
+    db.prepare(`
+      UPDATE properties
+      SET channex_property_id = ?,
+          channex_last_description_sync_at = datetime('now'),
+          channex_last_facilities_sync_at = datetime('now'),
+          channex_last_contact_sync_at = datetime('now')
+      WHERE id = ?
+    `).run(channexId, propId);
 
     logAction(db, {
       propertyId: propId,
