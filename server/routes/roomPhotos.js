@@ -7,6 +7,7 @@ import db from '../db/database.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { processRoomPhoto, PHOTO_LIMITS } from '../utils/processRoomPhoto.js';
 import { computePoolCap, poolCount } from '../utils/mediaPool.js';
+import { scheduleRoomTypePhotosPush } from '../utils/channexDebounce.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOM_UPLOAD_DIR = join(__dirname, '../uploads/rooms');
@@ -136,6 +137,9 @@ roomPhotosRouter.post('/:roomId/photos', upload.single('photo'), async (req, res
       url: `/uploads/rooms/${filename}`,
       displayOrder,
     });
+
+    // Fire-and-forget — keep Channex's room-type photos in sync (no-op if not connected)
+    if (roomRow) scheduleRoomTypePhotosPush(roomRow.property_id, 'room', roomId).catch(() => {});
   } catch (err) {
     if (req.file?.path) {
       cleanupFile(req.file.path);
@@ -167,6 +171,10 @@ roomPhotosRouter.put('/:roomId/photos/reorder', (req, res) => {
     }
 
     res.json({ ok: true });
+
+    // Fire-and-forget — Channex's position values must match the new order
+    const roomRow = db.prepare('SELECT property_id FROM rooms WHERE id = ?').get(roomId);
+    if (roomRow) scheduleRoomTypePhotosPush(roomRow.property_id, 'room', roomId).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -189,6 +197,9 @@ roomPhotosRouter.delete('/:roomId/photos/:photoId', (req, res) => {
       cleanupFile(join(ROOM_UPLOAD_DIR, photo.thumb_filename));
     }
     res.status(204).end();
+
+    // Fire-and-forget — a deleted photo must actually disappear on Channex too
+    scheduleRoomTypePhotosPush(photo.property_id, 'room', roomId).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -217,6 +228,8 @@ roomPhotosRouter.patch('/photos/:photoId', (req, res) => {
       return res.status(400).json({ error: 'roomId must be an integer or null.' });
     }
 
+    const sourceRoomId = photo.room_id; // captured before the move — the room losing this photo, if any
+
     if (destRoomId === null) {
       if (photo.room_id === null) return res.json(shapeMovedPhoto(photo));
       const cap = computePoolCap(photo.property_id);
@@ -242,6 +255,13 @@ roomPhotosRouter.patch('/photos/:photoId', (req, res) => {
 
     const updated = db.prepare('SELECT * FROM room_photos WHERE id = ?').get(photoId);
     res.json(shapeMovedPhoto(updated));
+
+    // Fire-and-forget — a move changes TWO room types' photo sets: the room
+    // losing the photo (if it was assigned to a real room, not already the
+    // unassigned pool) and the room gaining it (if moving to a real room,
+    // not to the pool — nothing bookable shows pool photos).
+    if (sourceRoomId !== null) scheduleRoomTypePhotosPush(photo.property_id, 'room', sourceRoomId).catch(() => {});
+    if (destRoomId !== null) scheduleRoomTypePhotosPush(photo.property_id, 'room', destRoomId).catch(() => {});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

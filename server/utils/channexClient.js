@@ -279,6 +279,53 @@ export async function deleteRatePlan(id, { force = false } = {}) {
 }
 
 /**
+ * Create a Photo (dedicated Photos API — Slice A, see
+ * docs/completed/channex-photo-parity-slice-a.md). `attributes` = { property_id,
+ * room_type_id, url, position, kind }. `url` must be a real, publicly
+ * fetchable address — Channex downloads it themselves and re-hosts it on
+ * their own CDN (the returned `url` is THEIRS, not the one submitted).
+ *
+ * CONFIRMED LIVE (2026-09-15, staging) that the *room-type* endpoint's
+ * embedded `content.photos` field only ever ADDS photos — a PUT that omits a
+ * previously-pushed photo does NOT remove it, and Channex has no concept of
+ * "this is the complete list" for that field. The dedicated Photos API
+ * (create/update/delete, one call per photo) is therefore the ONLY reliable
+ * way to keep NestBook and Channex's photo lists in sync with no drift —
+ * genuinely used for every photo create/update/delete in this integration,
+ * not just as a fallback.
+ * @returns {Promise<object>} the created photo's `data` (includes `id`)
+ */
+export async function createPhoto(attributes) {
+  return queuedWrite(`create photo (room_type ${attributes.room_type_id ?? '?'})`, () =>
+    channexRequest('/api/v1/photos', {
+      method: 'POST',
+      body: { photo: attributes },
+    }));
+}
+
+/**
+ * Update a Photo in place — confirmed live that a position-only PUT works
+ * correctly when there is more than one photo on the room type (a lone
+ * photo's position is otherwise normalised back to 0 regardless of what's
+ * sent, which is harmless — there's nothing to reorder against).
+ * @returns {Promise<object>} the updated photo's `data`
+ */
+export async function updatePhoto(id, attributes) {
+  return queuedWrite(`update photo ${id}`, () =>
+    channexRequest(`/api/v1/photos/${id}`, {
+      method: 'PUT',
+      body: { photo: attributes },
+    }));
+}
+
+/** Delete a Photo. Confirmed live: removes exactly that photo, leaves every
+ *  other photo on the room type untouched. */
+export async function deletePhoto(id) {
+  return queuedWrite(`delete photo ${id}`, () =>
+    channexRequest(`/api/v1/photos/${id}`, { method: 'DELETE' }));
+}
+
+/**
  * Push availability for room types — ONE call, `values` may span many
  * room_type_id (cert "1 API call with multiple details inside"). Routed through
  * the queue as an `availability` ARI job: per-property rate-limited, retried on

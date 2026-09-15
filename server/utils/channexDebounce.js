@@ -1,7 +1,8 @@
 // server/utils/channexDebounce.js
 //
-// Short-window debounce/coalescing layer for outbound Channex rate and
-// availability pushes. Sits IN FRONT of pushRateUpdate()/pushAvailabilityUpdate()
+// Short-window debounce/coalescing layer for outbound Channex rate,
+// availability, and (Slice A) photo pushes. Sits IN FRONT of
+// pushRateUpdate()/pushAvailabilityUpdate()/pushRoomTypePhotos()
 // (channexPushInventory.js), which itself sits in front of channexQueue.js —
 // this module only changes WHEN and HOW MANY of those calls get made, never
 // channexQueue.js's own per-minute sliding window or retry/backoff logic
@@ -17,7 +18,7 @@
 // API calls; this collapses bursts like that into one.
 //
 // Design: pending changes are merged per (propertyId, pushType) — pushType is
-// 'rates' or 'availability' — into ONE batch in an in-memory Map. Each new
+// 'rates', 'availability', or 'photos' — into ONE batch in an in-memory Map. Each new
 // change for the same key resets a short timer (cfg.debounceMs); when it
 // finally elapses with no new arrivals, the batch flushes as exactly one call
 // to pushRateUpdate()/pushAvailabilityUpdate(), which still recomputes fresh
@@ -49,7 +50,7 @@
 // acceptable tradeoff the queue itself already documents, since the next
 // real NestBook change re-pushes fresh state from the DB regardless.
 
-import { pushRateUpdate, pushAvailabilityUpdate, isChannexConnected } from './channexPushInventory.js';
+import { pushRateUpdate, pushAvailabilityUpdate, pushRoomTypePhotos, isChannexConnected } from './channexPushInventory.js';
 
 // Provisional — confirm the final value once Channex has replied to the
 // certification follow-up. Kept as named constants (not inlined) so there is
@@ -165,6 +166,29 @@ export function scheduleAvailabilityPush(propertyId, refType, refId, dateFrom, d
     schedule('availability', pushAvailabilityUpdate, propertyId, refType, refId, dateFrom, dateTo);
   } catch (err) {
     console.error(`[channex-debounce] property #${propertyId} availability schedule failed (non-fatal): ${err.message}`);
+  }
+  return Promise.resolve();
+}
+
+/**
+ * Photo twin of scheduleRatePush()/scheduleAvailabilityPush() — same
+ * contract and same coalescing benefit (a multi-photo upload, or a drag-to-
+ * reorder that fires several rapid saves, collapses into one outbound PUT
+ * instead of one per photo/step). Photos aren't date-scoped, so dateFrom/
+ * dateTo are always null/null here; pushRoomTypePhotos() only takes 3
+ * params, so schedule()'s generic 5-arg flush() call simply passes it two
+ * arguments it ignores — no adapter needed.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'whole_property'|'property'} refType
+ * @param {number|null} refId
+ * @returns {Promise<void>}
+ */
+export function scheduleRoomTypePhotosPush(propertyId, refType, refId) {
+  try {
+    schedule('photos', pushRoomTypePhotos, propertyId, refType, refId, null, null);
+  } catch (err) {
+    console.error(`[channex-debounce] property #${propertyId} photo schedule failed (non-fatal): ${err.message}`);
   }
   return Promise.resolve();
 }

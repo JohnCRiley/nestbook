@@ -33,6 +33,20 @@
 // safely dedupe rapid repeats without pushing stale state. Delta-on-change is
 // preserved — nothing here runs on a timer.
 //
+// Slice A (property parity): reconcileRoomTypePhotos() pushes room photos to
+// Channex — the guest-facing 1200px room_photos variant, via the DEDICATED
+// Photos API (createPhoto/updatePhoto/deletePhoto in channexClient.js), never
+// the room-type endpoint's own content.photos field. Confirmed live against
+// staging that content.photos is add-only (a PUT that omits a previously-
+// pushed photo does not remove it) — the dedicated API is the only way to
+// actually delete a stale photo. Tracked per (channex_room_type_id,
+// source_key) in channex_room_type_photos, since there is no other way to
+// know which Channex photo id corresponds to which NestBook photo. Runs at
+// every existing room-type create/rename trigger (createTargetOnChannex,
+// syncTarget) automatically, plus a new pushRoomTypePhotos() fired from
+// roomPhotos.js's upload/reorder/delete/move routes for a photo-only change.
+// See docs/completed/channex-photo-parity-slice-a.md.
+//
 // Slice 8: disconnectChannexProperty() — clears properties.channex_property_id +
 // deletes the property's channex_room_mappings rows. NestBook-side only: no
 // Channex API call (a property DELETE is irreversible; room types may hold OTA
@@ -78,6 +92,9 @@ import {
   updateRatePlan,
   deleteRoomType,
   deleteRatePlan,
+  createPhoto,
+  updatePhoto,
+  deletePhoto,
   updateAvailability,
   updateRates,
   channexRequest,
@@ -148,6 +165,64 @@ function occFromRoom(room) {
   return { occAdults: adults, defaultOccupancy: dflt };
 }
 
+// ── photos (Slice A — see docs/completed/channex-photo-parity-slice-a.md) ─────────
+
+/** Absolute public URL for a NestBook-hosted file. Channex fetches photos BY
+ *  URL (confirmed against docs.channex.io) — a relative path (fine for the
+ *  guest-facing booking page, browser-resolved) is useless to them. Same
+ *  process.env.APP_URL fallback already used elsewhere in this codebase
+ *  (e.g. routes/channex.js's own webhook URL, widget.js's Stripe return
+ *  URLs) — not a new convention. */
+function absoluteUrl(relativePath) {
+  const base = (process.env.APP_URL ?? 'https://nestbook.io').replace(/\/+$/, '');
+  return `${base}${relativePath}`;
+}
+
+/** Ordered, non-sample-data photos for one room, shaped as { sourceKey, url }
+ *  ready to drop straight into a target's `photos` array. `sourceKey` is a
+ *  stable identifier for "which NestBook photo" — keyed by room_photos.id, so
+ *  it survives a rename/reorder and is exactly what
+ *  reconcileRoomTypePhotos() needs to track create/update/delete against
+ *  Channex's own photo ids. Shared by every buildTargets() branch that
+ *  resolves photos from a single room (IR-Named/Units directly;
+ *  IR-Categories per representativeCategoryPhotos() below). */
+function photosForRoom(roomId) {
+  return db.prepare(
+    `SELECT id, filename FROM room_photos
+     WHERE room_id = ? AND is_sample_data = 0
+     ORDER BY display_order ASC, id ASC`
+  ).all(roomId).map((p) => ({
+    sourceKey: `room_photo:${p.id}`,
+    url: absoluteUrl(`/uploads/rooms/${p.filename}`),
+  }));
+}
+
+/**
+ * Photos for an IR-Categories target: the category's "representative room"
+ * only — the cheapest room that actually has a photo, else just the
+ * cheapest room (possibly with none). Mirrors the exact rule the guest-
+ * facing booking page already uses for a category's main image
+ * (bookingPage.js's wsAlternatingShowcase: "prefer the first room that
+ * actually has a photo").
+ *
+ * Deliberate simplification for this slice: only ONE room's photos are
+ * pushed as the category's Channex room type photos, not every room in the
+ * category combined (the guest-facing page's "show all N photos" overlay
+ * does aggregate across rooms, but doing the same here risks an unbounded
+ * per-category photo count with no Channex-documented ceiling). Combining
+ * every room's photos is a real, deferred option — see
+ * docs/completed/channex-photo-parity-slice-a.md §3 — not a bug.
+ *
+ * @param {number[]} roomIdsByPrice  a category's room ids, cheapest first
+ */
+function representativeCategoryPhotos(roomIdsByPrice) {
+  for (const roomId of roomIdsByPrice) {
+    const photos = photosForRoom(roomId);
+    if (photos.length > 0) return photos;
+  }
+  return roomIdsByPrice.length > 0 ? photosForRoom(roomIdsByPrice[0]) : [];
+}
+
 // ── availability lookups (mirror widget.js / bookings.js) ────────────────────
 
 /** Bookings + property-wide-or-room ical_blocks for one room, fetched once. */
@@ -213,7 +288,10 @@ function rateSegments(dates, rateForDate) {
 //
 // target: { refType, refId, title, countOfRooms, occAdults, defaultOccupancy,
 //           rateForDate(date) -> number>0 | null,
-//           availabilityForDate(date) -> int 0..countOfRooms }
+//           availabilityForDate(date) -> int 0..countOfRooms,
+//           photos: [{ sourceKey, url }]  -- absolute URLs, already in display
+//                     order; sourceKey identifies "which NestBook photo" for
+//                     reconcileRoomTypePhotos()'s create/update/delete diff }
 
 export function buildTargets(property) {
   const pid = property.id;
@@ -230,6 +308,21 @@ export function buildTargets(property) {
       'SELECT id FROM rooms WHERE property_id = ? ORDER BY id ASC LIMIT 1'
     ).get(pid);
     const blockers = wholePropertyBlockers(pid);
+    // Photos: the property's hero photo first (if set), then every room's
+    // photos combined — mirrors the guest-facing priority order
+    // bookingPage.js's wpGallerySection() already uses for Whole Property.
+    const heroPhotos = property.hero_image_url
+      ? [{ sourceKey: `hero:${pid}`, url: absoluteUrl(`/uploads/properties/${property.hero_image_url}`) }]
+      : [];
+    const wpRoomPhotos = db.prepare(`
+      SELECT rp.id, rp.filename FROM room_photos rp
+      JOIN rooms r ON r.id = rp.room_id
+      WHERE r.property_id = ? AND rp.is_sample_data = 0
+      ORDER BY r.id ASC, rp.display_order ASC, rp.id ASC
+    `).all(pid).map((p) => ({
+      sourceKey: `room_photo:${p.id}`,
+      url: absoluteUrl(`/uploads/rooms/${p.filename}`),
+    }));
     return [{
       refType: 'whole_property',
       refId: null,
@@ -240,6 +333,7 @@ export function buildTargets(property) {
       rateForDate: (date) =>
         (firstRoom ? positiveRate(pid, firstRoom.id, date, wpBase) : null) ?? wpBase,
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
+      photos: [...heroPhotos, ...wpRoomPhotos],
     }];
   }
 
@@ -250,9 +344,13 @@ export function buildTargets(property) {
     const targets = [];
     for (const cat of cats) {
       // Match getAvailableRoomsInCategory()'s world-view: status != 'maintenance'.
+      // Ordered cheapest-first — occAdults/catRoomIds/countOfRooms below are all
+      // order-independent, but this order is also exactly what
+      // representativeCategoryPhotos() needs (see its own doc comment).
       const rooms = db.prepare(
         `SELECT id, capacity, max_occupancy, price_per_night FROM rooms
-         WHERE category_id = ? AND status != 'maintenance'`
+         WHERE category_id = ? AND status != 'maintenance'
+         ORDER BY price_per_night ASC, id ASC`
       ).all(cat.id);
       if (rooms.length === 0) continue;
       const occAdults = Math.max(
@@ -277,6 +375,7 @@ export function buildTargets(property) {
         },
         availabilityForDate: (date) =>
           getAvailableRoomsInCategory(db, cat.id, date, nextDay(date), { respectBuffer: false }).length,
+        photos: representativeCategoryPhotos(catRoomIds),
       });
     }
     return targets;
@@ -306,6 +405,7 @@ export function buildTargets(property) {
       defaultOccupancy,
       rateForDate: (date) => positiveRate(pid, room.id, date),
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
+      photos: photosForRoom(room.id),
     };
   });
 }
@@ -666,7 +766,16 @@ export async function pushRateUpdateForRanges(propertyId, ranges, pushFn = pushR
 // ── Channex room-type / rate-plan creation (shared: initial push + slice 7) ──
 
 /** Channex room_type attributes for a buildTargets() target (minus property_id,
- *  which PUT rejects and POST takes separately). */
+ *  which PUT rejects and POST takes separately).
+ *
+ * Deliberately does NOT set content.photos here. Confirmed live against
+ * staging (2026-09-15): the room-type endpoint's embedded content.photos
+ * field only ever ADDS photos on a PUT — a submitted list that omits a
+ * previously-pushed photo does not remove it, so repeatedly resending "the
+ * current list" through this field would accumulate drift, not prevent it.
+ * Photos are managed exclusively through the dedicated Photos API instead
+ * (see reconcileRoomTypePhotos() below), which supports genuine create/
+ * update/delete. */
 function roomTypeAttributes(target) {
   return {
     title: target.title,
@@ -690,6 +799,92 @@ function ratePlanCreateAttributes(target, channexPropertyId, roomTypeId, currenc
     rate_mode: 'manual',
     options: [{ occupancy: target.defaultOccupancy, is_primary: true, rate: 0 }],
   };
+}
+
+/**
+ * Reconcile ONE Channex room type's photos against a buildTargets() target's
+ * CURRENT desired list (target.photos: [{sourceKey, url}], already in
+ * display order) — creates newly-added photos, repositions kept ones whose
+ * order changed, and DELETES ones no longer wanted via the dedicated Photos
+ * API (see channexClient.js's createPhoto/updatePhoto/deletePhoto doc
+ * comments for why: the room-type endpoint's own content.photos field is
+ * add-only and cannot remove anything).
+ *
+ * Tracked in channex_room_type_photos, keyed by (channex_room_type_id,
+ * source_key) — this is the only durable record of "which Channex photo id
+ * corresponds to which NestBook photo", without which a stale photo could
+ * never be identified for deletion.
+ *
+ * Never throws — every caller (createTargetOnChannex, syncTarget,
+ * pushRoomTypePhotos) runs inside the existing never-throw fire-and-forget
+ * contract; a photo hiccup must never break a room-type create/rename/sync.
+ *
+ * @param {string} channexPropertyId
+ * @param {string} channexRoomTypeId
+ * @param {{photos?: {sourceKey: string, url: string}[]}} target
+ */
+async function reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, target) {
+  try {
+    const desired = target.photos ?? [];
+    const desiredBySourceKey = new Map(desired.map((p, i) => [p.sourceKey, { url: p.url, position: i }]));
+
+    const existingRows = db.prepare(
+      'SELECT * FROM channex_room_type_photos WHERE channex_room_type_id = ?'
+    ).all(channexRoomTypeId);
+
+    // Delete anything no longer wanted.
+    for (const row of existingRows) {
+      if (desiredBySourceKey.has(row.source_key)) continue;
+      try {
+        await deletePhoto(row.channex_photo_id);
+      } catch (err) {
+        console.error(
+          `[channex-sync] room type ${channexRoomTypeId} — failed to delete stale photo ` +
+          `${row.channex_photo_id} (non-fatal): ${err.message}`
+        );
+      }
+      db.prepare('DELETE FROM channex_room_type_photos WHERE id = ?').run(row.id);
+    }
+
+    // Create newly-added photos, reposition kept ones whose order changed.
+    const existingBySourceKey = new Map(
+      existingRows
+        .filter((row) => desiredBySourceKey.has(row.source_key))
+        .map((row) => [row.source_key, row])
+    );
+    for (const [sourceKey, wanted] of desiredBySourceKey) {
+      const existing = existingBySourceKey.get(sourceKey);
+      if (!existing) {
+        const created = await createPhoto({
+          property_id: channexPropertyId,
+          room_type_id: channexRoomTypeId,
+          url: wanted.url,
+          position: wanted.position,
+          kind: 'photo',
+        });
+        const channexPhotoId = created?.id ?? created?.attributes?.id;
+        if (!channexPhotoId) {
+          console.error(
+            `[channex-sync] room type ${channexRoomTypeId} — Channex accepted a new photo ` +
+            `but returned no id (non-fatal, not tracked): ${JSON.stringify(created)}`
+          );
+          continue;
+        }
+        db.prepare(`
+          INSERT INTO channex_room_type_photos (channex_room_type_id, source_key, channex_photo_id, position)
+          VALUES (?, ?, ?, ?)
+        `).run(channexRoomTypeId, sourceKey, channexPhotoId, wanted.position);
+      } else if (existing.position !== wanted.position) {
+        await updatePhoto(existing.channex_photo_id, { position: wanted.position });
+        db.prepare('UPDATE channex_room_type_photos SET position = ? WHERE id = ?')
+          .run(wanted.position, existing.id);
+      }
+    }
+  } catch (err) {
+    console.error(
+      `[channex-sync] room type ${channexRoomTypeId} photo reconcile failed (non-fatal): ${err.message}`
+    );
+  }
 }
 
 /**
@@ -721,6 +916,10 @@ async function createTargetOnChannex(channexPropertyId, currency, target) {
     try { await deleteRoomType(channexRoomTypeId, { force: true }); } catch { /* noop */ }
     throw err;
   }
+
+  // Best-effort — reconcileRoomTypePhotos() never throws; awaited so photos
+  // land before the caller's initial-push summary returns, not racing it.
+  await reconcileRoomTypePhotos(channexPropertyId, channexRoomTypeId, target);
 
   return { channexRoomTypeId, channexRatePlanId };
 }
@@ -787,6 +986,7 @@ async function syncTarget(property, target, mapping) {
     );
   } else {
     await updateRoomType(mapping.channex_room_type_id, roomTypeAttributes(target));
+    await reconcileRoomTypePhotos(cxPropId, mapping.channex_room_type_id, target);
     const planTitle = `${target.title} — Standard`.slice(0, CHANNEX_TITLE_MAX);
     try {
       await updateRatePlan(mapping.channex_rate_plan_id, { title: planTitle });
@@ -960,6 +1160,68 @@ export async function pushRoomTypeReconcile(propertyId, refType, refId, changeTy
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} room-type reconcile failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
+// ── ongoing photo sync (Slice A) ─────────────────────────────────────────────
+
+/**
+ * Fire-and-forget push of ONE mapped Channex room type's current photo list.
+ * The trigger for a photo-only change (upload/reorder/delete/move in
+ * roomPhotos.js) — a rename/capacity change already re-syncs photos too,
+ * since syncTarget() above already calls reconcileRoomTypePhotos().
+ *
+ * Unlike pushRoomTypeReconcile(), this never creates or orphans a room type —
+ * it only refreshes an ALREADY-mapped one. An unmapped ref, an unconnected
+ * property, or a ref whose room/category no longer exists is a silent no-op
+ * (same contract as pushAvailabilityUpdate/pushRateUpdate: never throws,
+ * never rejects).
+ *
+ * Reuses affectedMappings() exactly as the availability/rate pushes do — the
+ * caller just says "this room changed" (refType:'room', the room's id) and
+ * the existing resolver walks it up to the right category mapping when
+ * needed; no new resolution logic for photos specifically.
+ *
+ * Recomputes the full target list from the DB at call time (buildTargets()),
+ * so reconcileRoomTypePhotos() always diffs against the CURRENT, complete
+ * desired photo list — never a stale one.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'whole_property'|'property'} refType
+ * @param {number|null} refId
+ * @returns {Promise<void>}
+ */
+export async function pushRoomTypePhotos(propertyId, refType, refId) {
+  try {
+    if (!propertyId || !isChannexConnected(propertyId)) return;
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    if (!property || !property.channex_property_id) return;
+
+    const mappings = db.prepare(
+      'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+    ).all(propertyId);
+    const affected = affectedMappings(property, mappings, refType, refId)
+      .filter((m) => !m.orphaned_at);
+    if (affected.length === 0) return;
+
+    const byRef = new Map(
+      buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+    );
+
+    for (const m of affected) {
+      const target = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+      if (!target) continue; // mapping exists but its room/category is gone — skip, same as ARI sync
+      await reconcileRoomTypePhotos(property.channex_property_id, m.channex_room_type_id, target);
+      console.log(
+        `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} — photos re-synced ` +
+        `for Channex room type ${m.channex_room_type_id} (${target.photos?.length ?? 0} photo(s))`
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} photo push failed (non-fatal): ${err.message}`
     );
   }
 }

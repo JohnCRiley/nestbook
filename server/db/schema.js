@@ -2687,6 +2687,36 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_availability_sync_at TEXT`); } catch (e) {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN channex_last_rate_sync_at TEXT`); } catch (e) {}
 
+  // channex_room_type_photos (Slice A — room photo parity, see
+  // docs/completed/channex-photo-parity-slice-a.md) — tracks which NestBook photo
+  // ("source_key": 'room_photo:<room_photos.id>' or 'hero:<property_id>' for
+  // Whole-Property's cover photo) is currently pushed as which Channex photo
+  // id, on which Channex room type. A dedicated table rather than a column on
+  // room_photos so the same mechanism also covers the WP hero photo (which
+  // isn't a room_photos row at all) with no special-casing.
+  //
+  // Necessary, not optional bookkeeping: confirmed live against staging that
+  // Channex's room-type PUT content.photos field only ever ADDS photos (a
+  // submitted list that omits a previously-pushed photo does not remove it),
+  // so the only reliable way to actually DELETE a stale photo on Channex is
+  // the dedicated Photos API's DELETE /api/v1/photos/:id — which needs
+  // Channex's own photo id, not just the source NestBook photo. Without this
+  // table there would be no way to know which Channex photo to delete.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channex_room_type_photos (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      channex_room_type_id  TEXT    NOT NULL,
+      source_key            TEXT    NOT NULL,
+      channex_photo_id      TEXT    NOT NULL,
+      position              INTEGER NOT NULL,
+      created_at            TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_channex_room_type_photos_unique
+    ON channex_room_type_photos(channex_room_type_id, source_key)
+  `);
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
