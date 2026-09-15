@@ -9,7 +9,7 @@ import db from '../db/database.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { getRateForDate } from '../utils/ratePeriods.js';
 import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
-import { scheduleRatePush } from '../utils/channexDebounce.js';
+import { scheduleRatePush, scheduleRoomTypeFacilitiesPush } from '../utils/channexDebounce.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
 import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
@@ -1374,6 +1374,22 @@ roomsRouter.put('/:id', (req, res) => {
     // landing next to a seasonal-pricing save) coalesces into one outbound call.
     if (Number(updated.price_per_night) !== Number(existing.price_per_night)) {
       scheduleRatePush(updated.property_id, 'room', updated.id, null, null).catch(() => {});
+    }
+
+    // Fire-and-forget (Slice C) — a structured-amenities change needs its own
+    // Channex `facilities` push. Separate from roomTypeChanged above: this
+    // never touches title/occupancy/rate-plan/ARI, just the room type's
+    // facilities array, so it's routed through the lighter
+    // pushRoomTypeFacilities() (affectedMappings()-based, like photos) rather
+    // than the heavier pushRoomTypeReconcile(). affectedMappings() already
+    // resolves refType:'room' to the right mapping for every rental mode —
+    // WP's single whole_property mapping included, since a WP bedroom's
+    // amenities feed the union buildTargets() computes for that one room
+    // type. Compares the normalized values actually written above (both raw
+    // JSON strings or null), not `updated`/`existing`'s shape, since
+    // `updated` has already been JSON-parsed into an array by withParsedRoom().
+    if (newStructuredAmenities !== existing.structured_amenities) {
+      scheduleRoomTypeFacilitiesPush(updated.property_id, 'room', updated.id).catch(() => {});
     }
   } catch (err) {
     res.status(500).json({ error: err.message });

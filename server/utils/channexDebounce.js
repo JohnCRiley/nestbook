@@ -54,6 +54,7 @@ import {
   pushRateUpdate,
   pushAvailabilityUpdate,
   pushRoomTypePhotos,
+  pushRoomTypeFacilities,
   pushPropertyDetails,
   isChannexConnected,
   isChannexPropertyConnected,
@@ -199,6 +200,26 @@ export function scheduleRoomTypePhotosPush(propertyId, refType, refId) {
     schedule('photos', pushRoomTypePhotos, propertyId, refType, refId, null, null);
   } catch (err) {
     console.error(`[channex-debounce] property #${propertyId} photo schedule failed (non-fatal): ${err.message}`);
+  }
+  return Promise.resolve();
+}
+
+/**
+ * Facilities twin of scheduleRoomTypePhotosPush() (Slice C) — same contract
+ * and same coalescing benefit (toggling several checkboxes in the
+ * structured amenities picker before saving still collapses into one
+ * outbound PUT). Not date-scoped, same reason as photos.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'whole_property'|'property'} refType
+ * @param {number|null} refId
+ * @returns {Promise<void>}
+ */
+export function scheduleRoomTypeFacilitiesPush(propertyId, refType, refId) {
+  try {
+    schedule('facilities', pushRoomTypeFacilities, propertyId, refType, refId, null, null);
+  } catch (err) {
+    console.error(`[channex-debounce] property #${propertyId} facilities schedule failed (non-fatal): ${err.message}`);
   }
   return Promise.resolve();
 }

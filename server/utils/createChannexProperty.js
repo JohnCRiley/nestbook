@@ -23,6 +23,7 @@ import esCountries from 'i18n-iso-countries/langs/es.json' with { type: 'json' }
 import nlCountries from 'i18n-iso-countries/langs/nl.json' with { type: 'json' };
 import { createProperty, updateProperty, ChannexError } from './channexClient.js';
 import { getChannexPropertyType } from './channexPropertyType.js';
+import { PROPERTY_AMENITIES, parseAmenityKeys, resolveFacilityIds } from './amenityCatalog.js';
 
 // NestBook stores `country` as free text ("England", "Norway", "USA", …) but
 // Channex wants a real ISO 3166-1 alpha-2 code. A hand-maintained map kept
@@ -72,9 +73,9 @@ function toIso2Country(raw) {
  *
  * Only `title` and `currency` are required by Channex at creation. `address` /
  * `city` / `country` / `timezone` / `website` are included when present.
- * `email` / `phone` (Slice D) are always included, even as `null` — see the
- * comment at their assignment below. Coordinates are intentionally NOT set
- * here: Channex only requires those when connecting the first OTA — handled
+ * `email` / `phone` (Slice D) and `facilities` (Slice C) are always included,
+ * even as `null`/`[]` — see the comments at their assignment below. Coordinates
+ * are intentionally NOT set here: Channex only requires those when connecting the first OTA — handled
  * in a later slice. `timezone` is only sent when the owner has set one in
  * Settings (`properties.timezone`) — never guessed from `country`, since a
  * wrong guess is worse than omitting it.
@@ -154,6 +155,18 @@ export function buildChannexPropertyAttributes(property) {
     const base = (process.env.APP_URL ?? 'https://nestbook.io').replace(/\/+$/, '');
     attributes.website = `${base}/book/${bookingSlug}`;
   }
+
+  // Slice C — structured property amenities (see server/utils/amenityCatalog.js
+  // and docs/completed/channex-facilities-push-slice-c.md). Confirmed live
+  // against staging: `facilities` is a plain top-level array of Channex
+  // facility UUIDs with ordinary replace semantics — a PUT that omits it
+  // leaves the previous value untouched, and `[]` clears it. Always included
+  // here anyway (never conditionally omitted), for the same reason every
+  // other field in this always-full-payload function is: this function
+  // reflects the property's CURRENT complete state on every call, not an
+  // incremental patch, so an owner clearing every amenity must actually see
+  // `[]` sent, not have the key silently dropped.
+  attributes.facilities = resolveFacilityIds(parseAmenityKeys(property.amenities), PROPERTY_AMENITIES);
 
   return attributes;
 }

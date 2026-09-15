@@ -385,6 +385,12 @@ propertiesRouter.put('/:id', (req, res) => {
     const newTimezone = trimmedTimezone && (!VALID_TIMEZONES || VALID_TIMEZONES.has(trimmedTimezone))
       ? trimmedTimezone
       : null;
+    // Structured amenities (Slice C) — same not-sent-vs-cleared pattern as
+    // un_sub_type/entry_method above: omitted entirely leaves the existing
+    // selection untouched, explicitly [] clears it.
+    const newAmenities = amenities !== undefined
+      ? normalizeAmenityKeys(amenities, PROPERTY_AMENITY_KEYS)
+      : existing?.amenities;
     db.prepare(`
       UPDATE properties
       SET name = ?, type = ?, address = ?, city = ?, country = ?, timezone = ?,
@@ -464,7 +470,7 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       normalizeAtAGlanceFacts(at_a_glance_facts),
-      amenities !== undefined ? normalizeAmenityKeys(amenities, PROPERTY_AMENITY_KEYS) : existing?.amenities,
+      newAmenities,
       newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod, newRentalTypeLocked, newIrRoomMode,
       req.params.id,
     );
@@ -501,6 +507,19 @@ propertiesRouter.put('/:id', (req, res) => {
     // saving both in one request still collapses into a single outbound call.
     if ((email?.trim() || null) !== (existing?.email ?? null)
         || (phone?.trim() || null) !== (existing?.phone ?? null)) {
+      schedulePropertyDetailsPush(Number(req.params.id)).catch(() => {});
+    }
+
+    // Fire-and-forget (Slice C) — structured property amenities are also a
+    // property-only field (no per-room-type equivalent), so this reuses the
+    // exact same debounced property-details push as description/email/phone
+    // above — same debounce key ('property-details'), so saving amenities
+    // alongside other property fields in one request still collapses into a
+    // single outbound call. No WP room-type reconcile needed here: property-
+    // level `facilities` is a separate Channex catalog from a WP room type's
+    // own `facilities` (which comes from the bedrooms' structured_amenities,
+    // handled by rooms.js's own trigger), not the same field.
+    if (newAmenities !== (existing?.amenities ?? null)) {
       schedulePropertyDetailsPush(Number(req.params.id)).catch(() => {});
     }
 

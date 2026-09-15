@@ -125,19 +125,14 @@ doc for the full evidence.
 - `cd client && npm run build` clean. `node --check` clean on every touched
   server file.
 
-## Deliberately out of scope (per the task)
+## Deliberately out of scope at the time (per the task) — since shipped
 
-- **The actual Channex `facilities` push is NOT built.** Per the
-  investigation, this is a fast, simple follow-up once this data model
-  exists — `facilities` is a plain top-level array of Channex UUIDs on both
-  room-type and property PUT bodies, clean replace semantics, no tracking
-  table needed (unlike Slice A's photos). The next slice just needs to map
-  each entity's `structured_amenities`/`amenities` keys to their
-  `channexId` via this catalog and send the array — everything else
-  (vocabulary, storage, UI) already exists.
+- **The actual Channex `facilities` push** was deliberately not built in
+  this pass — it has since shipped as its own slice, see
+  `docs/completed/channex-facilities-push-slice-c.md`.
 - Whole-Property mode's "room type" (the property itself, per
-  `buildTargets()`'s `refType: 'whole_property'`) has no dedicated
-  room-level structured-amenities entity of its own — WP bedrooms
-  (`rooms` rows) each carry their own picker, same as Named Rooms. Which
-  bedroom's amenities (if any) should represent the single WP Channex room
-  type is a decision for the push slice, not this one.
+  `buildTargets()`'s `refType: 'whole_property'`) had no dedicated
+  room-level structured-amenities entity of its own at the time — WP
+  bedrooms (`rooms` rows) each carry their own picker, same as Named Rooms.
+  The push slice resolved this as the **union** of every bedroom's
+  `structured_amenities`, deduplicated — see that doc for the reasoning.

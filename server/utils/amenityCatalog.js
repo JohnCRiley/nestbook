@@ -17,9 +17,10 @@
 //
 // `key` is NestBook's own stable identifier (stored in the DB and used for
 // i18n lookups); `channexId` is the exact UUID Channex expects in a
-// `facilities` array — not used by anything yet (that's the Slice C push,
-// deliberately out of scope for this pass), but captured now so no further
-// "guessing" layer is ever needed.
+// `facilities` array — resolved via resolveFacilityIds() below and pushed by
+// server/utils/channexPushInventory.js (room/category level) and
+// server/utils/createChannexProperty.js (property level), see
+// docs/completed/channex-facilities-push-slice-c.md.
 //
 // Client mirror (icon choice only, no Channex IDs): client/src/constants/amenities.js
 // — keys must stay in sync between the two files.
@@ -103,4 +104,18 @@ export function parseAmenityKeys(raw) {
   } catch {
     return [];
   }
+}
+
+/**
+ * Resolves stored catalog keys to their Channex facility UUIDs (Slice C push)
+ * — de-duplicated, in catalog order. Unknown keys are silently skipped rather
+ * than sent to Channex as garbage — shouldn't occur since
+ * normalizeAmenityKeys() already filters at write time, but this is the
+ * function that actually builds the outbound array, so it re-checks
+ * independently rather than trusting the DB value blindly.
+ */
+export function resolveFacilityIds(keys, catalog) {
+  if (!Array.isArray(keys) || keys.length === 0) return [];
+  const wanted = new Set(keys);
+  return catalog.filter(a => wanted.has(a.key)).map(a => a.channexId);
 }

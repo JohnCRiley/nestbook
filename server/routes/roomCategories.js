@@ -3,6 +3,7 @@ import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
 import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
+import { scheduleRoomTypeFacilitiesPush } from '../utils/channexDebounce.js';
 import { ROOM_AMENITY_KEYS, normalizeAmenityKeys, parseAmenityKeys } from '../utils/amenityCatalog.js';
 
 export const roomCategoriesRouter = Router();
@@ -118,6 +119,10 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
       return res.status(400).json({ error: 'name cannot be empty' });
     }
 
+    const newStructuredAmenities = structured_amenities !== undefined
+      ? normalizeAmenityKeys(structured_amenities, ROOM_AMENITY_KEYS)
+      : existing.structured_amenities;
+
     db.prepare(`
       UPDATE room_categories
       SET name = ?, buffer = ?, display_order = ?, amenities = ?, description = ?, structured_amenities = ?
@@ -128,12 +133,21 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
       display_order !== undefined ? Number(display_order) : existing.display_order,
       amenities !== undefined ? (amenities?.trim() || null) : existing.amenities,
       description !== undefined ? (description?.trim() || null) : existing.description,
-      structured_amenities !== undefined ? normalizeAmenityKeys(structured_amenities, ROOM_AMENITY_KEYS) : existing.structured_amenities,
+      newStructuredAmenities,
       id,
     );
 
     const updated = withParsedCategory(db.prepare('SELECT * FROM room_categories WHERE id = ?').get(id));
     res.json(updated);
+
+    // Fire-and-forget (Slice C) — same reasoning as rooms.js's own
+    // structured-amenities trigger: a facilities-only change is routed
+    // through the lighter pushRoomTypeFacilities() (affectedMappings()-based,
+    // like photos) rather than pushRoomTypeReconcile() below, which only
+    // fires for name/description changes.
+    if (newStructuredAmenities !== existing.structured_amenities) {
+      scheduleRoomTypeFacilitiesPush(existing.property_id, 'category', id).catch(() => {});
+    }
 
     // Fire-and-forget — push a renamed category's title, or (Slice B) its
     // changed description, to its Channex room type in place (no-op if

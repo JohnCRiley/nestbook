@@ -104,6 +104,7 @@ import { submitChannexJob } from './channexQueue.js';
 import { getAvailableRoomsInCategory } from './categoryAvailability.js';
 import { getRateForDate, dateInRange } from './ratePeriods.js';
 import { updateChannexProperty } from './createChannexProperty.js';
+import { ROOM_AMENITIES, parseAmenityKeys, resolveFacilityIds } from './amenityCatalog.js';
 
 // Channex certification (test 1) requires the Full Sync to cover 500 days.
 // This is the ONLY place the window is defined; the delta paths widen with it
@@ -294,7 +295,10 @@ function rateSegments(dates, rateForDate) {
 //                     order; sourceKey identifies "which NestBook photo" for
 //                     reconcileRoomTypePhotos()'s create/update/delete diff,
 //           description: string | null  -- Slice B: mirrors whatever the
-//                     guest-facing booking page shows for this exact target }
+//                     guest-facing booking page shows for this exact target
+//           facilities: string[]  -- Slice C: Channex facility UUIDs resolved
+//                     from this target's structured_amenities via
+//                     amenityCatalog.js's ROOM_AMENITIES catalog }
 
 export function buildTargets(property) {
   const pid = property.id;
@@ -326,6 +330,15 @@ export function buildTargets(property) {
       sourceKey: `room_photo:${p.id}`,
       url: absoluteUrl(`/uploads/rooms/${p.filename}`),
     }));
+    // Facilities: the property IS the single bookable unit in WP mode (no
+    // per-bedroom Channex room type to attach each bedroom's own amenities
+    // to), so this is the UNION of every bedroom's structured_amenities —
+    // same "combine across every room" approach photos above already uses
+    // for WP mode, rather than picking one representative bedroom.
+    const wpAmenityRows = db.prepare(
+      `SELECT structured_amenities FROM rooms WHERE property_id = ?`
+    ).all(pid);
+    const wpAmenityKeys = [...new Set(wpAmenityRows.flatMap((r) => parseAmenityKeys(r.structured_amenities)))];
     return [{
       refType: 'whole_property',
       refId: null,
@@ -340,12 +353,13 @@ export function buildTargets(property) {
       // The property IS the bookable unit in WP mode — same source the
       // guest-facing property page uses (bookingPage.js's "About" section).
       description: (property.description ?? '').trim() || null,
+      facilities: resolveFacilityIds(wpAmenityKeys, ROOM_AMENITIES),
     }];
   }
 
   if (rentalType === 'rooms' && irMode === 'categories') {
     const cats = db.prepare(
-      `SELECT id, name, description FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC`
+      `SELECT id, name, description, structured_amenities FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC`
     ).all(pid);
     const targets = [];
     for (const cat of cats) {
@@ -389,6 +403,9 @@ export function buildTargets(property) {
         // but description already lives at the category level in NestBook's
         // own data model — no representative-room fallback needed here.
         description: (cat.description ?? '').trim() || null,
+        // The category's OWN structured_amenities — same reasoning as
+        // description above, no representative-room fallback needed.
+        facilities: resolveFacilityIds(parseAmenityKeys(cat.structured_amenities), ROOM_AMENITIES),
       });
     }
     return targets;
@@ -397,7 +414,7 @@ export function buildTargets(property) {
   // IR-Named and Units: one Channex room type per top-level bookable room/unit.
   // parent_unit_id IS NULL excludes a unit's internal display-only sub-rooms.
   const rooms = db.prepare(`
-    SELECT id, name, description, capacity, max_occupancy, price_per_night
+    SELECT id, name, description, capacity, max_occupancy, price_per_night, structured_amenities
     FROM rooms
     WHERE property_id = ?
       AND parent_unit_id IS NULL
@@ -420,6 +437,7 @@ export function buildTargets(property) {
       availabilityForDate: (date) => (nightIsFree(blockers, date) ? 1 : 0),
       photos: photosForRoom(room.id),
       description: (room.description ?? '').trim() || null,
+      facilities: resolveFacilityIds(parseAmenityKeys(room.structured_amenities), ROOM_AMENITIES),
     };
   });
 }
@@ -811,7 +829,16 @@ export async function pushRateUpdateForRanges(propertyId, ranges, pushFn = pushR
  * current list" through this field would accumulate drift, not prevent it.
  * Photos are managed exclusively through the dedicated Photos API instead
  * (see reconcileRoomTypePhotos() below), which supports genuine create/
- * update/delete. */
+ * update/delete.
+ *
+ * `facilities` (Slice C) — a plain top-level array (NOT nested under
+ * `content`), confirmed live against staging: genuine replace semantics
+ * (resending it overwrites the old set, never accumulates) and, unlike
+ * description, omitting the key on a PUT leaves the old value untouched —
+ * ordinary partial-update behavior. Always included here anyway (never
+ * conditionally omitted), same reasoning as description: this function
+ * always reflects the target's CURRENT complete state, not an incremental
+ * patch, so an owner clearing every amenity must actually send `[]`. */
 function roomTypeAttributes(target) {
   return {
     title: target.title,
@@ -822,6 +849,7 @@ function roomTypeAttributes(target) {
     default_occupancy: target.defaultOccupancy,
     room_kind: 'room',
     content: { description: target.description ?? null },
+    facilities: target.facilities ?? [],
   };
 }
 
@@ -1263,21 +1291,85 @@ export async function pushRoomTypePhotos(propertyId, refType, refId) {
   }
 }
 
-// ── property-details sync (Slice B, extended in Slice D) ─────────────────────
+// ── ongoing facilities sync (Slice C) ────────────────────────────────────────
+
+/**
+ * Fire-and-forget push of ONE mapped Channex room type's current
+ * `facilities` list — the room/category-level twin of pushRoomTypePhotos()
+ * above, same shape and same reasoning: a facilities-only change (the owner
+ * toggles the structured amenities picker) doesn't need the heavier
+ * pushRoomTypeReconcile() path (title/occupancy/rate-plan/ARI refresh), just
+ * a direct PUT of the current facilities array to an ALREADY-mapped room
+ * type. Never creates or orphans a room type.
+ *
+ * Same contract as every other push*: never throws, never rejects, silent
+ * no-op for an unconnected property, an unmapped ref, or a ref whose room/
+ * category no longer exists. Reuses affectedMappings() exactly as photos/
+ * availability/rates do — the caller just says "this room/category changed"
+ * and the resolver walks it up to the right mapping (including WP mode's
+ * single whole_property mapping, and Categories mode's per-category
+ * mapping when a room's own amenities changed).
+ *
+ * Recomputes the full target list from the DB at call time (buildTargets()),
+ * so the facilities array sent is always the CURRENT complete selection —
+ * never a stale one, and always sent explicitly (even `[]`), matching
+ * roomTypeAttributes()' always-full-payload convention.
+ *
+ * @param {number} propertyId
+ * @param {'room'|'category'|'whole_property'|'property'} refType
+ * @param {number|null} refId
+ * @returns {Promise<void>}
+ */
+export async function pushRoomTypeFacilities(propertyId, refType, refId) {
+  try {
+    if (!propertyId || !isChannexConnected(propertyId)) return;
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    if (!property || !property.channex_property_id) return;
+
+    const mappings = db.prepare(
+      'SELECT * FROM channex_room_mappings WHERE property_id = ?'
+    ).all(propertyId);
+    const affected = affectedMappings(property, mappings, refType, refId)
+      .filter((m) => !m.orphaned_at);
+    if (affected.length === 0) return;
+
+    const byRef = new Map(
+      buildTargets(property).map((t) => [`${t.refType}:${t.refId ?? ''}`, t])
+    );
+
+    for (const m of affected) {
+      const target = byRef.get(`${m.nestbook_ref_type}:${m.nestbook_ref_id ?? ''}`);
+      if (!target) continue; // mapping exists but its room/category is gone — skip, same as ARI sync
+      await updateRoomType(m.channex_room_type_id, { facilities: target.facilities ?? [] });
+      console.log(
+        `[channex-sync] property #${propertyId} ${refType}:${refId ?? ''} — facilities re-synced ` +
+        `for Channex room type ${m.channex_room_type_id} (${target.facilities?.length ?? 0} facility/facilities)`
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[channex-sync] property #${propertyId} facilities push failed (non-fatal): ${err.message}`
+    );
+  }
+}
+
+// ── property-details sync (Slice B, extended in Slice D and Slice C) ─────────
 
 /**
  * Fire-and-forget re-sync of a property's Channex-side details — title,
  * currency, property_type, timezone, country, address, city, description
- * (Slice B), and email/phone/website (Slice D). Reuses updateChannexProperty()
- * (createChannexProperty.js) — the exact same function the owner-facing
- * "Update Property Details" button and its Super Admin equivalent already
- * call — so this is never a second, divergent way of building the payload.
+ * (Slice B), email/phone/website (Slice D), and facilities (Slice C).
+ * Reuses updateChannexProperty() (createChannexProperty.js) — the exact
+ * same function the owner-facing "Update Property Details" button and its
+ * Super Admin equivalent already call — so this is never a second,
+ * divergent way of building the payload.
  *
- * Fired automatically when the property's own description or email/phone
- * changes in Settings (properties.js), unlike other property-level fields
- * (timezone/country/currency/…) which still require the manual resync
- * button — a deliberate scope choice for these two slices, not an
- * inconsistency: the tasks asked specifically for auto-push on these
+ * Fired automatically when the property's own description, email/phone, or
+ * structured amenities change in Settings (properties.js), unlike other
+ * property-level fields (timezone/country/currency/…) which still require
+ * the manual resync button — a deliberate scope choice for these slices,
+ * not an inconsistency: the tasks asked specifically for auto-push on these
  * fields, not a general "auto-resync everything" change. website has no
  * Settings input at all (Slice D derives it from booking_slug), so it just
  * rides along on every property-details push automatically.
@@ -1297,7 +1389,7 @@ export async function pushPropertyDetails(propertyId) {
     const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
     if (!property || !property.channex_property_id) return;
     await updateChannexProperty(property);
-    console.log(`[channex-sync] property #${propertyId} — details re-synced (description/contact update)`);
+    console.log(`[channex-sync] property #${propertyId} — details re-synced (description/contact/amenities update)`);
   } catch (err) {
     console.error(
       `[channex-sync] property #${propertyId} details push failed (non-fatal): ${err.message}`
