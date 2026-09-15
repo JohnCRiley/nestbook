@@ -758,7 +758,7 @@ adminRouter.post('/properties/:id/channex-create', async (req, res) => {
       targetType: 'property',
       targetId:   propId,
       targetName: property.name,
-      detail:     `Created Channex property ${channexId} (property_type: ${propertyType})`,
+      detail:     `Connected to Channel Management (id: ${channexId}, property_type: ${propertyType})`,
       ipAddress:  getIp(req),
     });
 
@@ -818,8 +818,8 @@ adminRouter.post('/properties/:id/channex-push', async (req, res) => {
       targetType: 'property',
       targetId:   propId,
       targetName: property.name,
-      detail:     `Pushed ${summary.roomTypes.length} room type(s) + rate plans + ` +
-                  `${summary.window.days}-day ARI to Channex ${property.channex_property_id}`,
+      detail:     `Synced ${summary.roomTypes.length} room type(s) + rate plans + ` +
+                  `${summary.window.days}-day availability/pricing to Channel Management`,
       ipAddress:  getIp(req),
     });
 
@@ -876,10 +876,10 @@ adminRouter.post('/properties/:id/channex-disconnect', (req, res) => {
       targetType: 'property',
       targetId:   propId,
       targetName: property.name,
-      detail:     `Disconnected from Channex — cleared channex_property_id ` +
+      detail:     `Disconnected from Channel Management — cleared connection ` +
                   `(${summary.priorChannexPropertyId ?? 'none'}) and deleted ${summary.mappingsDeleted} ` +
                   `room-type mapping(s)${summary.orphanedMappingsDeleted ? ` (${summary.orphanedMappingsDeleted} already orphaned)` : ''}. ` +
-                  `Channex property + room types + rate plans left INTACT (no API call). Bookings untouched.`,
+                  `Channel Management side left INTACT (no API call). Bookings untouched.`,
       ipAddress:  getIp(req),
     });
 

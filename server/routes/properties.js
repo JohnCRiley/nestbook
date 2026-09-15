@@ -1205,7 +1205,7 @@ propertiesRouter.post('/:id/channex-connect', async (req, res) => {
         targetType: 'property',
         targetId:   propId,
         targetName: property.name,
-        detail:     `Created Channex property ${channexId} (property_type: ${propertyType}) — via Settings`,
+        detail:     `Connected to Channel Management (id: ${channexId}, property_type: ${propertyType}) — via Settings`,
         ipAddress:  getIp(req),
       });
 
@@ -1231,18 +1231,25 @@ propertiesRouter.post('/:id/channex-connect', async (req, res) => {
       targetType: 'property',
       targetId:   propId,
       targetName: property.name,
-      detail:     `Pushed ${summary.roomTypes.length} room type(s) + rate plans + ` +
-                  `${summary.window.days}-day ARI to Channex ${property.channex_property_id} — via Settings`,
+      detail:     `Synced ${summary.roomTypes.length} room type(s) + rate plans + ` +
+                  `${summary.window.days}-day availability/pricing to Channel Management — via Settings`,
       ipAddress:  getIp(req),
     });
 
     return res.json({ success: true, channex_property_id: property.channex_property_id, ...summary });
   } catch (err) {
     let status = 500;
-    if (err instanceof ChannexError && err.status) status = 502;
-    else if (/no bookable rooms\/units\/categories/.test(err.message)) status = 422;
+    let message = err.message;
+    if (err instanceof ChannexError && err.status) {
+      status = 502;
+      // Never surface the vendor's own raw error text to a real customer —
+      // white-labeled. Full detail still goes to the server log below.
+      message = 'Channel Management sync failed. Please try again, or contact support if this continues.';
+    } else if (/no bookable rooms\/units\/categories/.test(err.message)) {
+      status = 422;
+    }
     console.error(`[properties] channex-connect failed for property #${propId}:`, err.message);
-    return res.status(status).json({ error: err.message });
+    return res.status(status).json({ error: message });
   }
 });
 
@@ -1259,7 +1266,7 @@ propertiesRouter.post('/:id/channex-disconnect', (req, res) => {
     'SELECT COUNT(*) AS n FROM channex_room_mappings WHERE property_id = ?'
   ).get(propId).n;
   if (!property.channex_property_id && mappingCount === 0) {
-    return res.status(400).json({ error: 'This property is not connected to Channex.' });
+    return res.status(400).json({ error: 'This property is not connected to Channel Management.' });
   }
 
   try {
@@ -1273,10 +1280,10 @@ propertiesRouter.post('/:id/channex-disconnect', (req, res) => {
       targetType: 'property',
       targetId:   propId,
       targetName: property.name,
-      detail:     `Disconnected from Channex — cleared channex_property_id ` +
+      detail:     `Disconnected from Channel Management — cleared connection ` +
                   `(${summary.priorChannexPropertyId ?? 'none'}) and deleted ${summary.mappingsDeleted} ` +
                   `room-type mapping(s)${summary.orphanedMappingsDeleted ? ` (${summary.orphanedMappingsDeleted} already orphaned)` : ''}. ` +
-                  `Channex property + room types + rate plans left INTACT (no API call). Bookings untouched. — via Settings`,
+                  `Channel Management side left INTACT (no API call). Bookings untouched. — via Settings`,
       ipAddress:  getIp(req),
     });
 
@@ -1286,7 +1293,7 @@ propertiesRouter.post('/:id/channex-disconnect', (req, res) => {
         channex_property_id: summary.priorChannexPropertyId,
         mappings_deleted: summary.mappingsDeleted,
       },
-      channex_side: 'left intact — the Channex property and its room types / rate plans still exist; remove them from your Channex account if unwanted',
+      channex_side: 'left intact — room types / rate plans on the channel manager side still exist; remove them there if unwanted',
     });
   } catch (err) {
     console.error(`[properties] channex-disconnect failed for property #${propId}:`, err.message);

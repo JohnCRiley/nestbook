@@ -36,6 +36,11 @@ const ACTION_LABELS = {
   CHARGE_ADDED:        'Charge added',
   CHARGE_VOIDED:       'Charge voided',
   PLAN_UPGRADED:       'Plan upgraded',
+  // Third-party vendor names never appear in owner-facing copy — see
+  // "Channel Management" framing used everywhere else in Settings.
+  CHANNEX_PROPERTY_CREATED:  'Channel Management connected',
+  CHANNEX_INVENTORY_PUSHED: 'Channel Management inventory synced',
+  CHANNEX_DISCONNECTED:     'Channel Management disconnected',
 };
 
 // Category badge styles
