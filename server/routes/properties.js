@@ -20,6 +20,7 @@ import { ChannexError } from '../utils/channexClient.js';
 import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { pushInitialInventory, disconnectChannexProperty, buildTargets, pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
 import { schedulePropertyDetailsPush } from '../utils/channexDebounce.js';
+import { PROPERTY_AMENITY_KEYS, normalizeAmenityKeys, parseAmenityKeys } from '../utils/amenityCatalog.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
 
@@ -36,13 +37,17 @@ const VALID_BOOKING_FLOWS = ['instant', 'request'];
 // 'rooms', but stored regardless (same as un_sub_type for non-units rows).
 const VALID_IR_ROOM_MODES = ['named', 'categories'];
 
-// Augments a property row with a computed has_sample_data boolean.
+// Augments a property row with a computed has_sample_data boolean, and
+// decodes the structured-amenities JSON column into a plain array (same
+// parse-on-read convention as rooms.js's withParsedRoom for bed_config) so
+// every caller — Settings.jsx's property picker included — gets a ready
+// array rather than a raw JSON string to parse itself.
 function _withSampleFlag(row) {
   if (!row) return row;
   const hit = db.prepare(
     'SELECT 1 FROM rooms WHERE property_id = ? AND is_sample_data = 1 LIMIT 1'
   ).get(row.id);
-  return { ...row, has_sample_data: hit ? 1 : 0 };
+  return { ...row, has_sample_data: hit ? 1 : 0, amenities: parseAmenityKeys(row.amenities) };
 }
 
 // Drops unfilled preset facts and blank custom rows, returning null when
@@ -318,10 +323,11 @@ propertiesRouter.put('/:id', (req, res) => {
       custom_section_title, custom_section_body,
       house_rules, local_tips,
       at_a_glance_facts,
+      amenities,
       un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method,
       lock_rental_type, ir_room_mode,
     } = req.body;
-    const existing = db.prepare('SELECT rental_type, description, email, phone, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method, custom_section_title, custom_section_body FROM properties WHERE id = ?').get(req.params.id);
+    const existing = db.prepare('SELECT rental_type, description, email, phone, amenities, rental_type_locked, ir_room_mode, un_sub_type, walk_in_enabled, booking_flow, servicing_type, entry_method, custom_section_title, custom_section_body FROM properties WHERE id = ?').get(req.params.id);
     const VALID_THEMES = ['forest','royal','ember','ruby','sky','lavender','aero','charcoal','slate','storm','hessian'];
     const VALID_ACCESS_METHODS = ['code', 'keybox', 'keyed', 'app', 'other'];
     // Same not-sent-vs-cleared pattern as ir_room_mode below: only overwritten
@@ -404,6 +410,7 @@ propertiesRouter.put('/:id', (req, res) => {
           custom_section_title = ?, custom_section_body = ?,
           house_rules = ?, local_tips = ?,
           at_a_glance_facts = ?,
+          amenities = ?,
           un_sub_type = ?, walk_in_enabled = ?, booking_flow = ?,
           servicing_type = ?, entry_method = ?, rental_type_locked = ?, ir_room_mode = ?
       WHERE id = ?
@@ -457,6 +464,7 @@ propertiesRouter.put('/:id', (req, res) => {
       house_rules?.trim() || null,
       local_tips?.trim()  || null,
       normalizeAtAGlanceFacts(at_a_glance_facts),
+      amenities !== undefined ? normalizeAmenityKeys(amenities, PROPERTY_AMENITY_KEYS) : existing?.amenities,
       newUnSubType, newWalkIn, newBookingFlow, newServicingType, newEntryMethod, newRentalTypeLocked, newIrRoomMode,
       req.params.id,
     );

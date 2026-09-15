@@ -2725,6 +2725,18 @@ John`
   try { db.exec(`ALTER TABLE properties ADD COLUMN email TEXT`); } catch (e) {}
   try { db.exec(`ALTER TABLE properties ADD COLUMN phone TEXT`); } catch (e) {}
 
+  // Structured amenities — curated checklist (Channex facility IDs baked in,
+  // see server/utils/amenityCatalog.js), the prerequisite for Channex Slice C
+  // and a real NestBook feature in its own right. Each column stores a JSON
+  // array of catalog keys, e.g. '["wifi","tv","safe"]'. The existing free-text
+  // `amenities` columns on rooms/room_categories are UNCHANGED and kept as a
+  // supplementary "anything else" note — not replaced, no lossy migration.
+  // properties.amenities is new: no property-level amenity concept existed
+  // before this (docs/completed/channex-structured-amenities.md).
+  try { db.exec(`ALTER TABLE properties ADD COLUMN amenities TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE rooms ADD COLUMN structured_amenities TEXT`); } catch (e) {}
+  try { db.exec(`ALTER TABLE room_categories ADD COLUMN structured_amenities TEXT`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

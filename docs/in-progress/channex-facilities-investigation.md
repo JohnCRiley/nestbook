@@ -1,8 +1,14 @@
 # Channel Manager parity — facilities/amenities: investigation (no code yet)
 
-**Investigated 2026-09-15. Not built — this slice needs a NestBook-side data
-model change first (see verdict below).** Third slice of the "full property
-parity" project (Slice A = photos, Slice B = descriptions).
+**Investigated 2026-09-15.** The NestBook-side data model change this
+investigation called for (see verdict below) **shipped 2026-09-15** — see
+`docs/completed/channex-structured-amenities.md`. This doc's findings
+(Channex's real field shape, the curated vocabulary, the ruled-out
+text-matching approach) remain the reference; what's still NOT built is the
+actual `facilities` push itself, now a fast, simple follow-up per the
+"Verdict" section below — this file stays in `in-progress/` until that push
+ships. Third slice of the "full property parity" project (Slice A = photos,
+Slice B = descriptions).
 
 ## 1. Channex's real field — confirmed via direct staging tests, not docs alone
 

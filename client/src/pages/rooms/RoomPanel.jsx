@@ -6,6 +6,8 @@ import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import { usePlan } from '../../hooks/usePlan.js';
 import ConfirmModal from '../../components/ConfirmModal.jsx';
 import BedsEditor from '../../components/BedsEditor.jsx';
+import AmenityPicker from '../../components/AmenityPicker.jsx';
+import { ROOM_AMENITIES } from '../../utils/amenityCatalog.js';
 import { CameraPlusIcon } from '../../components/TablerIcons.jsx';
 
 const PHOTO_LIMITS = { free: 3, pro: 5, multi: 10 };
@@ -116,6 +118,7 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
 
   const [description,     setDescription]     = useState(room.description ?? '');
   const [amenities,       setAmenities]       = useState(room.amenities   ?? '');
+  const [structuredAmenities, setStructuredAmenities] = useState(Array.isArray(room.structured_amenities) ? room.structured_amenities : []);
   const [saving,          setSaving]          = useState(false);
   const [error,           setError]           = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -134,6 +137,7 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
           price_per_night:    room.price_per_night ?? 0,
           capacity:           room.capacity,
           amenities:          amenities.trim() || null,
+          structured_amenities: structuredAmenities,
           status:             room.status,
           breakfast_included: 0,
           description:        description.trim() || null,
@@ -199,7 +203,20 @@ function WPBedroomPanel({ room, onClose, onRoomUpdated, onRoomDeleted }) {
           </div>
 
           <div className="panel-section">
-            <div className="panel-section-title">{t('rooms.amenities')}</div>
+            <div className="panel-section-title">{t('settings.roomAmenitiesTitle')}</div>
+            <div style={{ marginTop: 6 }}>
+              <AmenityPicker
+                catalog={ROOM_AMENITIES}
+                selected={structuredAmenities}
+                onChange={setStructuredAmenities}
+                t={t}
+                labelPrefix="amenities.room"
+              />
+            </div>
+          </div>
+
+          <div className="panel-section">
+            <div className="panel-section-title">{t('settings.amenitiesNoteLabel')}</div>
             <input
               className="panel-field-input"
               value={amenities}
@@ -298,8 +315,24 @@ function ViewMode({ room, bookings, today, onEdit, onBook, t, locale, effectiveS
             </span>
           } />
         )}
+        {Array.isArray(room.structured_amenities) && room.structured_amenities.length > 0 && (
+          <PanelRow label={t('settings.roomAmenitiesTitle')} value={
+            <div className="amenity-list" style={{ marginTop: 0, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {room.structured_amenities.map((key) => {
+                const entry = ROOM_AMENITIES.find((a) => a.key === key);
+                if (!entry) return null;
+                return (
+                  <span key={key} className="amenity-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <img src={`/images/guest-icons/${entry.icon}.png`} width={13} height={13} alt="" />
+                    {t(`amenities.room.${key}`)}
+                  </span>
+                );
+              })}
+            </div>
+          } />
+        )}
         {amenities.length > 0 && (
-          <PanelRow label={t('amenities')} value={
+          <PanelRow label={t('settings.amenitiesNoteLabel')} value={
             <div className="amenity-list" style={{ marginTop: 0 }}>
               {amenities.map((a) => <span key={a} className="amenity-tag">{formatAmenity(a)}</span>)}
             </div>
@@ -379,6 +412,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
     price_per_night:    room.price_per_night    ?? '',
     capacity:           room.capacity           ?? 2,
     amenities:          room.amenities          ?? '',
+    structured_amenities: Array.isArray(room.structured_amenities) ? room.structured_amenities : [],
     status:             room.status             ?? 'available',
     breakfast_included: room.breakfast_included ?? 0,
     description:        room.description        ?? '',
@@ -423,6 +457,7 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
           price_per_night:    Number(form.price_per_night),
           capacity:           Number(form.capacity),
           amenities:          form.amenities.trim() || null,
+          structured_amenities: form.structured_amenities,
           status:             form.status,
           breakfast_included: form.breakfast_included ? 1 : 0,
           description:        form.description.trim() || null,
@@ -576,7 +611,20 @@ function EditMode({ room, onCancel, onSaved, onDeleted, t, property }) {
               and Units modes are unaffected. */}
           {!showCategoryField && (
             <div className="panel-field">
-              <label className="panel-field-label">{t('amenities')}</label>
+              <label className="panel-field-label">{t('settings.roomAmenitiesTitle')}</label>
+              <AmenityPicker
+                catalog={ROOM_AMENITIES}
+                selected={form.structured_amenities}
+                onChange={(next) => setForm((prev) => ({ ...prev, structured_amenities: next }))}
+                t={t}
+                labelPrefix="amenities.room"
+              />
+            </div>
+          )}
+
+          {!showCategoryField && (
+            <div className="panel-field">
+              <label className="panel-field-label">{t('settings.amenitiesNoteLabel')}</label>
               <input
                 name="amenities"
                 className="panel-field-input"

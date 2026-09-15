@@ -4,6 +4,8 @@ import { apiFetch } from '../../utils/apiFetch.js';
 import { apiError } from '../../utils/apiError.js';
 import { useLocale, useT } from '../../i18n/LocaleContext.jsx';
 import BedsEditor from '../../components/BedsEditor.jsx';
+import AmenityPicker from '../../components/AmenityPicker.jsx';
+import { ROOM_AMENITIES } from '../../utils/amenityCatalog.js';
 
 const ROOM_TYPES = ['single', 'double', 'twin', 'suite', 'apartment', 'other'];
 
@@ -11,7 +13,7 @@ const BEDROOM_TYPES = ['single', 'double', 'twin', 'bunk', 'master', 'kids', 'su
 
 const EMPTY = {
   name: '', type: 'double', price_per_night: '',
-  capacity: 2, amenities: '', status: 'available', breakfast_included: 0, description: '',
+  capacity: 2, amenities: '', structured_amenities: [], status: 'available', breakfast_included: 0, description: '',
   category_id: '', beds: [],
 };
 
@@ -78,6 +80,7 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
           price_per_night:    isWP ? 0 : Number(form.price_per_night),
           capacity:           (!isWP || isBedroom) ? Number(form.capacity) : 0,
           amenities:          form.amenities.trim() || null,
+          structured_amenities: form.structured_amenities,
           status:             isWP ? 'available' : form.status,
           breakfast_included: isWP ? 0 : (form.breakfast_included ? 1 : 0),
           description:        form.description.trim() || null,
@@ -281,11 +284,24 @@ export default function NewRoomModal({ onClose, onSuccess, parentUnitId = null }
                   and WP/Units modes are unaffected. */}
               {!showCategoryField && (
                 <div className="form-group span-2">
-                  <label className="form-label">{t('amenities')}</label>
+                  <label className="form-label">{t('settings.roomAmenitiesTitle')}</label>
+                  <AmenityPicker
+                    catalog={ROOM_AMENITIES}
+                    selected={form.structured_amenities}
+                    onChange={(next) => setForm((prev) => ({ ...prev, structured_amenities: next }))}
+                    t={t}
+                    labelPrefix="amenities.room"
+                  />
+                </div>
+              )}
+
+              {!showCategoryField && (
+                <div className="form-group span-2">
+                  <label className="form-label">{t('settings.amenitiesNoteLabel')}</label>
                   <input name="amenities" className="form-control"
                     value={form.amenities} onChange={handleChange}
                     placeholder="wifi, ensuite, balcony, parking, minibar…" />
-                  <span className="form-hint">{t('amenitiesHint')}</span>
+                  <span className="form-hint">{t('settings.amenitiesNoteHint')}</span>
                   {amenityPreview.length > 0 && (
                     <div className="amenity-list" style={{ marginTop: 8 }}>
                       {amenityPreview.map((a) => (

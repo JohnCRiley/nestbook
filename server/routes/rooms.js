@@ -16,6 +16,7 @@ import { attachRoomPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { adoptFileIntoPool } from '../utils/mediaPool.js';
 import { PHOTO_LIMITS } from './roomPhotos.js';
 import { createRoomCategory } from './roomCategories.js';
+import { ROOM_AMENITY_KEYS, normalizeAmenityKeys, parseAmenityKeys } from '../utils/amenityCatalog.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // Same physical folder WP's property-level access photos already use
@@ -143,9 +144,12 @@ function parseBedConfig(raw) {
   }
 }
 
-function withParsedBedConfig(room) {
+// Renamed from withParsedBedConfig — now also decodes the structured-amenities
+// JSON column (server/utils/amenityCatalog.js) into a plain array, same
+// parse-on-read convention as bed_config above.
+function withParsedRoom(room) {
   if (!room) return room;
-  return { ...room, bed_config: parseBedConfig(room.bed_config) };
+  return { ...room, bed_config: parseBedConfig(room.bed_config), structured_amenities: parseAmenityKeys(room.structured_amenities) };
 }
 
 // ── Ownership helper (mirrors properties.js) ──────────────────────────────
@@ -238,7 +242,7 @@ roomsRouter.get('/', (req, res) => {
         FROM rooms r ${where} ORDER BY r.id LIMIT ? OFFSET ?
       `).all(...params, pageLimit, offset);
 
-      return res.json({ rooms: rows.map(withParsedBedConfig), total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
+      return res.json({ rooms: rows.map(withParsedRoom), total, page: pageNum, totalPages: Math.ceil(total / pageLimit) });
     }
 
     res.json(db.prepare(`
@@ -247,7 +251,7 @@ roomsRouter.get('/', (req, res) => {
         (SELECT filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_photo,
         (SELECT thumb_filename FROM room_photos WHERE room_id = r.id ORDER BY display_order ASC LIMIT 1) AS primary_thumb
       FROM rooms r ${where} ORDER BY r.id
-    `).all(...params).map(withParsedBedConfig));
+    `).all(...params).map(withParsedRoom));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -332,7 +336,7 @@ roomsRouter.get('/:id', (req, res) => {
     if (!canAccessProperty(req.user.userId, req.user.role, row.property_id)) {
       return res.status(404).json({ error: 'Room not found' });
     }
-    res.json(withParsedBedConfig(row));
+    res.json(withParsedRoom(row));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -341,7 +345,7 @@ roomsRouter.get('/:id', (req, res) => {
 // ── POST /api/rooms ───────────────────────────────────────────────────────────
 roomsRouter.post('/', (req, res) => {
   try {
-    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id, category_id, bed_config } = req.body;
+    const { property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, parent_unit_id, category_id, bed_config, structured_amenities } = req.body;
 
     if (!property_id || !name || !type || price_per_night == null) {
       return res.status(400).json({ error: 'property_id, name, type and price_per_night are required' });
@@ -409,8 +413,8 @@ roomsRouter.post('/', (req, res) => {
 
     const ical_token = crypto.randomBytes(16).toString('hex');
     const result = db.prepare(`
-      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id, category_id, bed_config)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rooms (property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included, description, ical_token, parent_unit_id, category_id, bed_config, structured_amenities)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       property_id, name, type,
       price_per_night,
@@ -422,10 +426,11 @@ roomsRouter.post('/', (req, res) => {
       ical_token,
       parent_unit_id ?? null,
       newCategoryId,
-      bedConfigResult.value
+      bedConfigResult.value,
+      normalizeAmenityKeys(structured_amenities, ROOM_AMENITY_KEYS)
     );
 
-    const created = withParsedBedConfig(db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid));
+    const created = withParsedRoom(db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid));
     res.status(201).json(created);
 
     logAction(db, {
@@ -1233,7 +1238,7 @@ roomsRouter.put('/:id', (req, res) => {
     const {
       name, type, price_per_night, capacity, amenities, status, breakfast_included, description,
       access_method, access_code, arrival_instructions, send_access_hours, staffed_checkin_available, category_id,
-      bed_config,
+      bed_config, structured_amenities,
     } = req.body;
     // property_id is intentionally NOT destructured from the body — a room's
     // property is immutable through this endpoint, always the room's existing
@@ -1289,18 +1294,25 @@ roomsRouter.put('/:id', (req, res) => {
     const newStaffedCheckin = staffed_checkin_available !== undefined
       ? (staffed_checkin_available ? 1 : 0)
       : existing.staffed_checkin_available;
+    // Structured amenities — same not-sent-vs-cleared pattern as bed_config
+    // above: omitted entirely leaves the existing selection untouched,
+    // explicitly [] clears it. Unknown keys are silently dropped rather than
+    // rejected, matching normalizeAtAGlanceFacts' own "clean or null" style.
+    const newStructuredAmenities = structured_amenities !== undefined
+      ? normalizeAmenityKeys(structured_amenities, ROOM_AMENITY_KEYS)
+      : existing.structured_amenities;
 
     db.prepare(`
       UPDATE rooms
       SET property_id = ?, name = ?, type = ?, price_per_night = ?,
           capacity = ?, amenities = ?, status = ?, breakfast_included = ?, description = ?,
           access_method = ?, access_code = ?, arrival_instructions = ?, send_access_hours = ?,
-          staffed_checkin_available = ?, category_id = ?, bed_config = ?
+          staffed_checkin_available = ?, category_id = ?, bed_config = ?, structured_amenities = ?
       WHERE id = ?
     `).run(
       property_id, name, type, price_per_night, capacity, amenities, status, breakfast_included ? 1 : 0, description || null,
       newAccessMethod, newAccessCode, newArrivalInstructions, newSendAccessHours,
-      newStaffedCheckin, newCategoryId, newBedConfig,
+      newStaffedCheckin, newCategoryId, newBedConfig, newStructuredAmenities,
       req.params.id,
     );
 
@@ -1309,7 +1321,7 @@ roomsRouter.put('/:id', (req, res) => {
         .run(property_id, req.params.id, description);
     }
 
-    const updated = withParsedBedConfig(db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id));
+    const updated = withParsedRoom(db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id));
     res.json(updated);
 
     logAction(db, {

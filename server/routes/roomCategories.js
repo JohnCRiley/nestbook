@@ -3,18 +3,26 @@ import db from '../db/database.js';
 import { requireVerified } from '../middleware/requireVerified.js';
 import { getAvailableRoomsInCategory } from '../utils/categoryAvailability.js';
 import { pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
+import { ROOM_AMENITY_KEYS, normalizeAmenityKeys, parseAmenityKeys } from '../utils/amenityCatalog.js';
 
 export const roomCategoriesRouter = Router();
+
+// Decodes the structured-amenities JSON column into a plain array (same
+// parse-on-read convention as rooms.js's withParsedRoom).
+function withParsedCategory(category) {
+  if (!category) return category;
+  return { ...category, structured_amenities: parseAmenityKeys(category.structured_amenities) };
+}
 
 /**
  * Inserts one room_categories row and returns it. Shared by the create route
  * below and the CSV Categories importer (routes/rooms.js) so the column set —
  * crucially including amenities/description — stays in one place.
  */
-export function createRoomCategory(propertyId, { name, buffer = 0, display_order = 0, amenities = null, description = null } = {}) {
+export function createRoomCategory(propertyId, { name, buffer = 0, display_order = 0, amenities = null, description = null, structured_amenities = null } = {}) {
   const result = db.prepare(`
-    INSERT INTO room_categories (property_id, name, buffer, display_order, amenities, description)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO room_categories (property_id, name, buffer, display_order, amenities, description, structured_amenities)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
     Number(propertyId),
     String(name).trim(),
@@ -22,8 +30,9 @@ export function createRoomCategory(propertyId, { name, buffer = 0, display_order
     Number(display_order) || 0,
     (typeof amenities === 'string' ? amenities.trim() : amenities) || null,
     (typeof description === 'string' ? description.trim() : description) || null,
+    normalizeAmenityKeys(structured_amenities, ROOM_AMENITY_KEYS),
   );
-  return db.prepare('SELECT * FROM room_categories WHERE id = ?').get(result.lastInsertRowid);
+  return withParsedCategory(db.prepare('SELECT * FROM room_categories WHERE id = ?').get(result.lastInsertRowid));
 }
 
 // ── Ownership helper (mirrors rooms.js / ratePeriods.js) ──────────────────────
@@ -56,7 +65,7 @@ roomCategoriesRouter.get('/properties/:propertyId/room-categories', (req, res) =
     const rows = db.prepare(
       'SELECT * FROM room_categories WHERE property_id = ? ORDER BY display_order ASC, id ASC'
     ).all(propId);
-    res.json(rows);
+    res.json(rows.map(withParsedCategory));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -69,7 +78,7 @@ roomCategoriesRouter.post('/properties/:propertyId/room-categories', requireVeri
     if (!canAccessProperty(req.user.userId, req.user.role, propId)) {
       return res.status(403).json({ error: 'Access denied.' });
     }
-    const { name, buffer, display_order, amenities, description } = req.body;
+    const { name, buffer, display_order, amenities, description, structured_amenities } = req.body;
     if (!name?.trim()) {
       return res.status(400).json({ error: 'name is required' });
     }
@@ -81,6 +90,7 @@ roomCategoriesRouter.post('/properties/:propertyId/room-categories', requireVeri
       display_order: display_order ?? 0,
       amenities,
       description,
+      structured_amenities,
     });
     res.status(201).json(created);
 
@@ -103,14 +113,14 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
       return res.status(403).json({ error: 'Access denied.' });
     }
 
-    const { name, buffer, display_order, amenities, description } = req.body;
+    const { name, buffer, display_order, amenities, description, structured_amenities } = req.body;
     if (name !== undefined && !name.trim()) {
       return res.status(400).json({ error: 'name cannot be empty' });
     }
 
     db.prepare(`
       UPDATE room_categories
-      SET name = ?, buffer = ?, display_order = ?, amenities = ?, description = ?
+      SET name = ?, buffer = ?, display_order = ?, amenities = ?, description = ?, structured_amenities = ?
       WHERE id = ?
     `).run(
       name !== undefined ? name.trim() : existing.name,
@@ -118,10 +128,11 @@ roomCategoriesRouter.put('/room-categories/:id', requireVerified, (req, res) => 
       display_order !== undefined ? Number(display_order) : existing.display_order,
       amenities !== undefined ? (amenities?.trim() || null) : existing.amenities,
       description !== undefined ? (description?.trim() || null) : existing.description,
+      structured_amenities !== undefined ? normalizeAmenityKeys(structured_amenities, ROOM_AMENITY_KEYS) : existing.structured_amenities,
       id,
     );
 
-    const updated = db.prepare('SELECT * FROM room_categories WHERE id = ?').get(id);
+    const updated = withParsedCategory(db.prepare('SELECT * FROM room_categories WHERE id = ?').get(id));
     res.json(updated);
 
     // Fire-and-forget — push a renamed category's title, or (Slice B) its

@@ -9,6 +9,8 @@ import IconPicker from '../admin/IconPicker.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import ResetStaffPasswordModal from '../components/ResetStaffPasswordModal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
+import AmenityPicker from '../components/AmenityPicker.jsx';
+import { PROPERTY_AMENITIES, ROOM_AMENITIES } from '../utils/amenityCatalog.js';
 import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
@@ -258,6 +260,7 @@ export default function Settings() {
         custom_section_title:        p.custom_section_title ?? '',
         custom_section_body:         p.custom_section_body ?? '',
         at_a_glance_facts:           parsedGlanceFacts,
+        amenities:                   Array.isArray(p.amenities) ? p.amenities : [],
         deposit_enabled:             p.deposit_enabled ? 1 : 0,
         deposit_type:                p.deposit_type ?? 'fixed',
         deposit_percentage:          p.deposit_percentage ?? 30,
@@ -938,6 +941,8 @@ export default function Settings() {
                 )}
 
                 {form && <AtAGlanceSection form={form} setForm={setForm} t={t} />}
+
+                {form && <PropertyAmenitiesSection form={form} setForm={setForm} t={t} />}
 
                 <div className="settings-save-row">
                   <button className="btn-primary" onClick={handleSave} disabled={saving}>
@@ -3893,8 +3898,9 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
     buffer:      String(category.buffer ?? 0),
     amenities:   category.amenities   ?? '',
     description: category.description ?? '',
+    structured_amenities: Array.isArray(category.structured_amenities) ? category.structured_amenities : [],
   } : {
-    name: '', buffer: '0', amenities: '', description: '',
+    name: '', buffer: '0', amenities: '', description: '', structured_amenities: [],
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState(null);
@@ -3938,6 +3944,7 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
             buffer:      Number(form.buffer) || 0,
             amenities:   form.amenities.trim()   || null,
             description: form.description.trim() || null,
+            structured_amenities: form.structured_amenities,
           }),
         }
       );
@@ -3975,11 +3982,22 @@ function RoomCategoryModal({ t, category, propertyId, onClose, onSave }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('amenities')}</label>
+              <label className="form-label">{t('settings.roomAmenitiesTitle')}</label>
+              <AmenityPicker
+                catalog={ROOM_AMENITIES}
+                selected={form.structured_amenities}
+                onChange={(next) => setForm(p => ({ ...p, structured_amenities: next }))}
+                t={t}
+                labelPrefix="amenities.room"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">{t('settings.amenitiesNoteLabel')}</label>
               <input className="form-control" value={form.amenities}
                 onChange={e => setForm(p => ({ ...p, amenities: e.target.value }))}
                 placeholder="wifi, ensuite, balcony, parking, minibar…" />
-              <span className="form-hint">{t('amenitiesHint')}</span>
+              <span className="form-hint">{t('settings.amenitiesNoteHint')}</span>
               {amenityPreview.length > 0 && (
                 <div className="amenity-list" style={{ marginTop: 8 }}>
                   {amenityPreview.map((a) => (
@@ -4636,6 +4654,29 @@ function AtAGlanceSection({ form, setForm, t }) {
           onClose={() => setIconPickerIndex(null)}
         />
       )}
+    </div>
+  );
+}
+
+// ── PropertyAmenitiesSection ─────────────────────────────────────────────────
+// Structured, curated property-level amenities (Channex Slice C prerequisite
+// — see docs/completed/channex-structured-amenities.md). Separate from the
+// free-text room/category amenities notes and from At a Glance above; this
+// list is also shown to guests on the booking page.
+function PropertyAmenitiesSection({ form, setForm, t }) {
+  return (
+    <div className="form-group">
+      <label className="form-label">{t('settings.propertyAmenitiesTitle')}</label>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '2px 0 10px' }}>
+        {t('settings.propertyAmenitiesHint')}
+      </p>
+      <AmenityPicker
+        catalog={PROPERTY_AMENITIES}
+        selected={form.amenities}
+        onChange={(next) => setForm(p => ({ ...p, amenities: next }))}
+        t={t}
+        labelPrefix="amenities.property"
+      />
     </div>
   );
 }
