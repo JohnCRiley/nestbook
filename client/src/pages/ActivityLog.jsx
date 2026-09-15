@@ -40,6 +40,7 @@ const ACTION_LABELS = {
   // "Channel Management" framing used everywhere else in Settings.
   CHANNEX_PROPERTY_CREATED:  'Channel Management connected',
   CHANNEX_INVENTORY_PUSHED: 'Channel Management inventory synced',
+  CHANNEX_PROPERTY_UPDATED: 'Channel Management details updated',
   CHANNEX_DISCONNECTED:     'Channel Management disconnected',
 };
 

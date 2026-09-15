@@ -179,6 +179,26 @@ export default function Properties() {
     }
   }, [fetchProperties, showToast]);
 
+  // Channex: real API call — PUT (not POST), re-sends the property's current
+  // title/currency/property_type/timezone/country/address/city. For
+  // correcting/refreshing details after the initial connect (e.g. a
+  // timezone set in Settings after "Create in Channex" was already clicked)
+  // without disconnecting, which would delete every room mapping.
+  const resyncChannexProperty = useCallback(async (property) => {
+    setChannexBusyId(property.id);
+    try {
+      const res  = await apiFetch(`/api/admin/properties/${property.id}/channex-resync`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Channex resync failed');
+      showToast(`Re-synced to Channex — country: ${data.attributes?.country ?? '—'}, timezone: ${data.attributes?.timezone ?? '—'}`);
+      fetchProperties();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setChannexBusyId(null);
+    }
+  }, [fetchProperties, showToast]);
+
   const openResetModal = useCallback((property) => {
     setResetTarget(property);
     setConfirmInput('');
@@ -311,6 +331,21 @@ export default function Properties() {
                           {channexBusyId === p.id ? 'Pushing…' : 'Push Inventory'}
                         </button>
                       )}
+                      <button
+                        onClick={() => resyncChannexProperty(p)}
+                        disabled={channexBusyId === p.id}
+                        title="Re-send this property's current title/currency/type/timezone/country to Channex"
+                        style={{
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-secondary)',
+                          padding: '3px 10px', borderRadius: 4, fontSize: '0.75rem',
+                          fontWeight: 600, cursor: channexBusyId === p.id ? 'default' : 'pointer',
+                          fontFamily: 'inherit', opacity: channexBusyId === p.id ? 0.6 : 1,
+                        }}
+                      >
+                        {channexBusyId === p.id ? '…' : 'Resync Details'}
+                      </button>
                       <button
                         onClick={() => disconnectChannex(p)}
                         disabled={channexBusyId === p.id}

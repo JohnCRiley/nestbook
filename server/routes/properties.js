@@ -17,7 +17,7 @@ import { processRoomPhoto } from '../utils/processRoomPhoto.js';
 import { attachPoolPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { computePoolCap, poolCount, adoptFileIntoPool } from '../utils/mediaPool.js';
 import { ChannexError } from '../utils/channexClient.js';
-import { createChannexProperty } from '../utils/createChannexProperty.js';
+import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { pushInitialInventory, disconnectChannexProperty, buildTargets } from '../utils/channexPushInventory.js';
 
 const AT_A_GLANCE_KEYS = ['max_guests', 'pets', 'parking', 'accessible', 'children', 'smoking', 'min_stay', 'languages'];
@@ -1292,6 +1292,53 @@ propertiesRouter.post('/:id/channex-connect', async (req, res) => {
       status = 422;
     }
     console.error(`[properties] channex-connect failed for property #${propId}:`, err.message);
+    return res.status(status).json({ error: message });
+  }
+});
+
+// ── POST /api/properties/:id/channex-resync ───────────────────────────────────
+// Re-sends the property's CURRENT title/currency/property_type/timezone/
+// country/address/city to Channex via PUT (never disconnects/reconnects,
+// never touches channex_room_mappings). Closes the specific #118 bug
+// (timezone saved in Settings after the initial connect never reached
+// Channex) and any future case where these details change post-connect —
+// disconnecting first would delete every room mapping and orphan the
+// existing Channex room types/rate plans, which is not an equivalent fix.
+propertiesRouter.post('/:id/channex-resync', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+
+  if (!property.channex_property_id) {
+    return res.status(400).json({ error: 'This property is not connected to Channel Management yet.' });
+  }
+
+  try {
+    const { attributes } = await updateChannexProperty(property);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_PROPERTY_UPDATED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Re-synced property details to Channel Management ` +
+                  `(title, currency, property_type${attributes.country ? ', country' : ''}` +
+                  `${attributes.timezone ? ', timezone' : ''}) — via Channel Manager`,
+      ipAddress:  getIp(req),
+    });
+
+    return res.json({ success: true, attributes });
+  } catch (err) {
+    let status = 500;
+    let message = err.message;
+    if (err instanceof ChannexError && err.status) {
+      status = 502;
+      message = 'Channel Management sync failed. Please try again, or contact support if this continues.';
+    }
+    console.error(`[properties] channex-resync failed for property #${propId}:`, err.message);
     return res.status(status).json({ error: message });
   }
 });

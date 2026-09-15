@@ -180,6 +180,27 @@ export async function createProperty(attributes) {
 }
 
 /**
+ * Update an existing property in Channex (PUT — confirmed against
+ * docs.channex.io/api-v.1-documentation/hotels-collection: accepts the same
+ * attribute set as create, including `timezone` and `country`). Callers
+ * should prefer utils/createChannexProperty.js's updateChannexProperty(),
+ * which builds the attributes from the current NestBook property record —
+ * this lets an already-connected property be corrected/re-synced (e.g. a
+ * timezone set after the initial connect) without disconnecting first.
+ *
+ * @param {string} channexPropertyId
+ * @param {object} attributes
+ * @returns {Promise<object>}   the updated property's `data` object
+ */
+export async function updateProperty(channexPropertyId, attributes) {
+  return queuedWrite(`update property ${channexPropertyId}`, () =>
+    channexRequest(`/api/v1/properties/${channexPropertyId}`, {
+      method: 'PUT',
+      body: { property: attributes },
+    }));
+}
+
+/**
  * Create a Room Type. Required attributes: property_id, title, count_of_rooms,
  * occ_adults, occ_children, occ_infants, default_occupancy.
  * Availability of a new room type defaults to 0 — push real values with

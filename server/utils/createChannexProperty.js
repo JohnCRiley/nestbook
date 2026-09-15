@@ -1,43 +1,68 @@
 // server/utils/createChannexProperty.js
 //
-// Create a Channex property from a NestBook property record. Phase 2, slice 1.
+// Create/update a Channex property from a NestBook property record.
+// Originally Phase 2 slice 1 (create only); updateChannexProperty() added
+// later to let an already-connected property's details (title/currency/
+// property_type/timezone/country/address/city) be re-sent after the fact —
+// closes the case where timezone/country were saved in Settings but never
+// reached Channex because they weren't set (or weren't mappable) at the
+// moment "Connect" was first clicked.
 //
-// NOT wired into any route, button, job or schema yet — callable only from a
-// script or the Node console. The next slice decides where the returned Channex
-// property id is stored on the NestBook side (a new column — deliberately out of
-// scope here).
+// Wired into both server/routes/admin.js (Super Admin) and
+// server/routes/properties.js (owner-facing Channel Manager page) — both
+// call these same functions, never duplicate the attribute-building logic.
 //
-// See docs/in-progress/channex-integration-research.md (section 4, 11) and
+// See docs/completed/channel-manager-page.md and
 // docs/in-progress/channex-integration-phase2.md.
 
-import { createProperty, ChannexError } from './channexClient.js';
+import countries from 'i18n-iso-countries';
+import enCountries from 'i18n-iso-countries/langs/en.json' with { type: 'json' };
+import frCountries from 'i18n-iso-countries/langs/fr.json' with { type: 'json' };
+import deCountries from 'i18n-iso-countries/langs/de.json' with { type: 'json' };
+import esCountries from 'i18n-iso-countries/langs/es.json' with { type: 'json' };
+import nlCountries from 'i18n-iso-countries/langs/nl.json' with { type: 'json' };
+import { createProperty, updateProperty, ChannexError } from './channexClient.js';
 import { getChannexPropertyType } from './channexPropertyType.js';
 
-// NestBook stores `country` as free text ("England", "Norway", "Spain", …) but
-// Channex wants an ISO 3166-1 alpha-2 code. Best-effort conversion for the
-// countries NestBook's European customer base actually uses; anything
-// unrecognised is omitted rather than sent invalid. country is optional at
-// creation and only becomes required at OTA-connect time (a later slice), so a
-// missing value here is safe.
-const COUNTRY_TO_ISO2 = {
-  'united kingdom': 'GB', 'uk': 'GB', 'u.k.': 'GB', 'great britain': 'GB', 'britain': 'GB',
-  'england': 'GB', 'scotland': 'GB', 'wales': 'GB', 'northern ireland': 'GB',
-  'ireland': 'IE', 'republic of ireland': 'IE',
-  'france': 'FR', 'germany': 'DE', 'deutschland': 'DE', 'spain': 'ES', 'españa': 'ES',
-  'netherlands': 'NL', 'the netherlands': 'NL', 'holland': 'NL',
-  'belgium': 'BE', 'italy': 'IT', 'italia': 'IT', 'portugal': 'PT',
-  'norway': 'NO', 'sweden': 'SE', 'denmark': 'DK', 'finland': 'FI',
-  'austria': 'AT', 'switzerland': 'CH', 'luxembourg': 'LU', 'poland': 'PL',
-  'czech republic': 'CZ', 'czechia': 'CZ', 'greece': 'GR', 'croatia': 'HR',
-  'slovenia': 'SI', 'iceland': 'IS',
+// NestBook stores `country` as free text ("England", "Norway", "USA", …) but
+// Channex wants a real ISO 3166-1 alpha-2 code. A hand-maintained map kept
+// silently dropping unrecognised countries (confirmed cause of #118's missing
+// country — the original map was European-only, no US/CA/AU/etc entries at
+// all) — replaced with i18n-iso-countries, which covers every real country in
+// all 5 of NestBook's supported languages, so this only needs to grow for
+// genuine non-ISO informal names going forward, not for whole countries.
+countries.registerLocale(enCountries);
+countries.registerLocale(frCountries);
+countries.registerLocale(deCountries);
+countries.registerLocale(esCountries);
+countries.registerLocale(nlCountries);
+const COUNTRY_LOOKUP_LOCALES = ['en', 'fr', 'de', 'es', 'nl'];
+
+// Names the library genuinely can't resolve: the UK's constituent countries
+// aren't sovereign nations and have no ISO 3166-1 code of their own (Channex
+// only has one option — the UK), plus a couple of common informal names.
+const COUNTRY_ALIASES = {
+  england: 'GB', scotland: 'GB', wales: 'GB', 'northern ireland': 'GB',
+  britain: 'GB', holland: 'NL',
 };
 
 function toIso2Country(raw) {
   if (!raw || typeof raw !== 'string') return null;
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  if (/^[A-Za-z]{2}$/.test(trimmed)) return trimmed.toUpperCase();
-  return COUNTRY_TO_ISO2[trimmed.toLowerCase()] ?? null;
+
+  if (/^[A-Za-z]{2}$/.test(trimmed) && countries.isValid(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+  if (/^[A-Za-z]{3}$/.test(trimmed)) {
+    const fromAlpha3 = countries.alpha3ToAlpha2(trimmed.toUpperCase());
+    if (fromAlpha3) return fromAlpha3;
+  }
+  for (const locale of COUNTRY_LOOKUP_LOCALES) {
+    const code = countries.getAlpha2Code(trimmed, locale);
+    if (code) return code;
+  }
+  return COUNTRY_ALIASES[trimmed.toLowerCase()] ?? null;
 }
 
 /**
@@ -116,4 +141,34 @@ export async function createChannexProperty(property) {
   }
 
   return { id: channexId, propertyType: attributes.property_type, attributes, data };
+}
+
+/**
+ * Re-send a NestBook property's current details to its already-connected
+ * Channex property (PUT, not POST) — for correcting/refreshing title,
+ * currency, property_type, timezone, country, address or city after the
+ * initial connect, without disconnecting (which would delete every
+ * channex_room_mappings row and orphan the existing Channex room types /
+ * rate plans — see disconnectChannexProperty() in channexPushInventory.js).
+ *
+ * Builds attributes exactly the same way createChannexProperty() does, so
+ * "Update Property Details" always reflects whatever the property looks like
+ * right now — never a stale copy of what was true at connect time.
+ *
+ * @param {object} property   a NestBook `properties` table row; must already
+ *                             have `channex_property_id` set
+ * @returns {Promise<{ attributes: object, data: object }>}
+ * @throws {Error}         if the property isn't connected yet
+ * @throws {ChannexError}  on an API failure
+ */
+export async function updateChannexProperty(property) {
+  if (!property?.channex_property_id) {
+    throw new Error(
+      `updateChannexProperty: property ${property?.id ?? '(no id)'} is not connected yet — ` +
+      `connect it first`
+    );
+  }
+  const attributes = buildChannexPropertyAttributes(property);
+  const data = await updateProperty(property.channex_property_id, attributes);
+  return { attributes, data };
 }

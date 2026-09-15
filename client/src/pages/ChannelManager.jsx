@@ -11,10 +11,11 @@ export default function ChannelManager() {
   const { user } = useAuth();
   const plan = usePlan();
 
-  const [status,  setStatus]  = useState(null); // { units, last_availability_sync_at, last_rate_sync_at }
-  const [loading, setLoading] = useState(true);
-  const [busy,    setBusy]    = useState(false);
-  const [toast,   setToast]   = useState(null);
+  const [status,    setStatus]    = useState(null); // { units, last_availability_sync_at, last_rate_sync_at }
+  const [loading,   setLoading]   = useState(true);
+  const [busy,      setBusy]      = useState(false);
+  const [resyncing, setResyncing] = useState(false);
+  const [toast,     setToast]     = useState(null);
 
   // Gate mirrors Sidebar.jsx's canSeeChannelManager() — the nav item is hidden
   // when this is false, but a direct URL visit must not render the page either.
@@ -56,6 +57,24 @@ export default function ChannelManager() {
       showToast(err.message, 'error');
     }
     setBusy(false);
+  }
+
+  // Re-sends the property's CURRENT title/currency/property_type/timezone/
+  // country — for correcting details that changed (or weren't set yet) after
+  // the initial connect, without disconnecting first (which would delete
+  // every room mapping below).
+  async function handleResync() {
+    if (!property?.id) return;
+    setResyncing(true);
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/channex-resync`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? t('cmRequestFailed'));
+      showToast(t('cmResyncedToast'));
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+    setResyncing(false);
   }
 
   if (!allowed) return null;
@@ -107,6 +126,22 @@ export default function ChannelManager() {
               ? '…'
               : connected ? t('cmDisconnectBtn') : t('cmConnectBtn')}
           </button>
+
+          {connected && (
+            <>
+              <button
+                className="btn-secondary"
+                style={{ width: '100%', marginTop: 10 }}
+                disabled={resyncing}
+                onClick={handleResync}
+              >
+                {resyncing ? '…' : t('cmResyncBtn')}
+              </button>
+              <p className="form-hint" style={{ marginTop: 6, marginBottom: 0 }}>
+                {t('cmResyncHint')}
+              </p>
+            </>
+          )}
         </div>
       </div>
 

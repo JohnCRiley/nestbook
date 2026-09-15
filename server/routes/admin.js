@@ -16,7 +16,7 @@ import { cleanupFile } from '../utils/fileCleanup.js';
 import { sendContentRemovedEmail } from '../email/emailService.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
-import { createChannexProperty } from '../utils/createChannexProperty.js';
+import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { ChannexError } from '../utils/channexClient.js';
 import { pushInitialInventory, disconnectChannexProperty } from '../utils/channexPushInventory.js';
 
@@ -767,6 +767,54 @@ adminRouter.post('/properties/:id/channex-create', async (req, res) => {
   } catch (err) {
     const status = err instanceof ChannexError && err.status ? 502 : 500;
     console.error(`[admin] channex-create failed for property #${propId}:`, err.message);
+    return res.status(status).json({ error: err.message });
+  }
+});
+
+// ── POST /api/admin/properties/:id/channex-resync ─────────────────────────────
+// Super Admin equivalent of the owner-facing Channel Manager page's "Update
+// Property Details" — re-sends title/currency/property_type/timezone/country/
+// address/city via PUT for an already-connected property. Same
+// updateChannexProperty() the owner route uses; no duplicated logic. Added
+// alongside channex-create/-push/-disconnect for parity (same reasoning as
+// those three: whichever surface an operator uses, behaviour must match).
+adminRouter.post('/properties/:id/channex-resync', async (req, res) => {
+  const propId = Number(req.params.id);
+  if (!Number.isInteger(propId)) {
+    return res.status(400).json({ error: 'Invalid property id' });
+  }
+
+  const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+
+  if (!property.channex_property_id) {
+    return res.status(400).json({
+      error: 'This property is not connected to Channex yet — use "Create in Channex" first.',
+    });
+  }
+
+  try {
+    const { attributes } = await updateChannexProperty(property);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user?.userId ?? null,
+      action:     'CHANNEX_PROPERTY_UPDATED',
+      category:   'admin',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Re-synced property details to Channel Management ` +
+                  `(title, currency, property_type${attributes.country ? ', country' : ''}` +
+                  `${attributes.timezone ? ', timezone' : ''})`,
+      ipAddress:  getIp(req),
+    });
+
+    console.log(`[admin] Channex property details re-synced for #${propId} (${property.name})`);
+    return res.json({ success: true, attributes });
+  } catch (err) {
+    const status = err instanceof ChannexError && err.status ? 502 : 500;
+    console.error(`[admin] channex-resync failed for property #${propId}:`, err.message);
     return res.status(status).json({ error: err.message });
   }
 });
