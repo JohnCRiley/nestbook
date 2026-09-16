@@ -994,16 +994,13 @@ export const LANGS = {
     cmOtaActivateBtn:           'Activate',
     cmOtaActivating:            'Activating…',
     cmOtaActivatedMsg:          'Connected and activated! Availability and rates will start syncing.',
-    // ── Channel Manager: Airbnb connect (Slice CA-5) — EN ONLY, placeholder.
-    // John is supplying FR/ES/DE/NL for these himself; do not draft them.
-    // The 5-language t() fallback (current locale → en → raw key) means
-    // these render correctly in English everywhere until translated.
+    // ── Channel Manager: Airbnb connect (Slice CA-5) ────────────────────────────
     cmOtaAirbnbConnectBtn:      'Connect Airbnb',
-    cmOtaAirbnbConnecting:      'Redirecting…',
-    cmOtaAirbnbConsentNote:     "You'll be redirected to Airbnb's own site to authorize access. You may briefly see our sync partner's name during this one step — that's expected and outside our control.",
-    cmOtaAirbnbSuccessToast:    'Airbnb connected!',
-    cmOtaAirbnbFailedToast:     "Airbnb connection didn't complete. You can try again.",
-    cmOtaAirbnbGenericError:    'Something went wrong starting the Airbnb connection. Please try again.',
+    cmOtaAirbnbConnecting:      'Connecting…',
+    cmOtaAirbnbConsentNote:     "You'll be asked to log in and approve the connection directly on Airbnb's own site.",
+    cmOtaAirbnbSuccessToast:    'Airbnb connected successfully.',
+    cmOtaAirbnbFailedToast:     "The Airbnb connection wasn't completed. You can try again anytime.",
+    cmOtaAirbnbGenericError:    'Something went wrong connecting to Airbnb. Please try again, or get in touch if it keeps happening.',
     // ── Room Charges ──────────────────────────────────────────────────────────
     charges:              'Room Charges',
     chargesSubtitle:      'Charge services to guest rooms',
@@ -2745,6 +2742,13 @@ planGateProFeature:    'Fonctionnalité Pro',
     cmOtaActivateBtn:           'Activer',
     cmOtaActivating:            'Activation…',
     cmOtaActivatedMsg:          'Connecté et activé ! La disponibilité et les tarifs vont commencer à se synchroniser.',
+    // ── Channel Manager: Airbnb connect (Slice CA-5) ────────────────────────────
+    cmOtaAirbnbConnectBtn:      'Connecter Airbnb',
+    cmOtaAirbnbConnecting:      'Connexion en cours…',
+    cmOtaAirbnbConsentNote:     "Vous devrez vous connecter et approuver la connexion directement sur le site d'Airbnb.",
+    cmOtaAirbnbSuccessToast:    'Airbnb a été connecté avec succès.',
+    cmOtaAirbnbFailedToast:     "La connexion à Airbnb n'a pas abouti. Vous pouvez réessayer à tout moment.",
+    cmOtaAirbnbGenericError:    'Une erreur est survenue lors de la connexion à Airbnb. Veuillez réessayer, ou nous contacter si le problème persiste.',
     // ── Charges ───────────────────────────────────────────────────────────────
     charges:              'Notes de frais',
     chargesSubtitle:      'Facturer des services aux chambres',
@@ -4484,6 +4488,13 @@ planGateProFeature:    'Función Pro',
     cmOtaActivateBtn:           'Activar',
     cmOtaActivating:            'Activando…',
     cmOtaActivatedMsg:          '¡Conectado y activado! La disponibilidad y las tarifas empezarán a sincronizarse.',
+    // ── Channel Manager: Airbnb connect (Slice CA-5) ────────────────────────────
+    cmOtaAirbnbConnectBtn:      'Conectar Airbnb',
+    cmOtaAirbnbConnecting:      'Conectando…',
+    cmOtaAirbnbConsentNote:     'Deberás iniciar sesión y aprobar la conexión directamente en el sitio de Airbnb.',
+    cmOtaAirbnbSuccessToast:    'Airbnb se ha conectado correctamente.',
+    cmOtaAirbnbFailedToast:     'La conexión con Airbnb no se completó. Puedes intentarlo de nuevo cuando quieras.',
+    cmOtaAirbnbGenericError:    'Ha ocurrido un error al conectar con Airbnb. Inténtalo de nuevo o contáctanos si el problema continúa.',
     // ── Cargos ────────────────────────────────────────────────────────────────
     charges:              'Cargos a habitación',
     chargesSubtitle:      'Cargue servicios a las habitaciones de los huéspedes',
@@ -6223,6 +6234,13 @@ planGateProFeature:    'Pro-Funktion',
     cmOtaActivateBtn:           'Aktivieren',
     cmOtaActivating:            'Wird aktiviert…',
     cmOtaActivatedMsg:          'Verbunden und aktiviert! Verfügbarkeit und Preise werden nun synchronisiert.',
+    // ── Channel Manager: Airbnb connect (Slice CA-5) ────────────────────────────
+    cmOtaAirbnbConnectBtn:      'Airbnb verbinden',
+    cmOtaAirbnbConnecting:      'Verbindung wird hergestellt…',
+    cmOtaAirbnbConsentNote:     'Sie werden gebeten, sich direkt auf der Airbnb-Website anzumelden und die Verbindung zu bestätigen.',
+    cmOtaAirbnbSuccessToast:    'Airbnb wurde erfolgreich verbunden.',
+    cmOtaAirbnbFailedToast:     'Die Verbindung mit Airbnb wurde nicht abgeschlossen. Sie können es jederzeit erneut versuchen.',
+    cmOtaAirbnbGenericError:    'Bei der Verbindung mit Airbnb ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut oder kontaktieren Sie uns, falls das Problem weiterhin besteht.',
     // ── Zimmerbelastungen ─────────────────────────────────────────────────────
     charges:              'Zimmerbelastungen',
     chargesSubtitle:      'Leistungen auf Zimmernummer buchen',
@@ -8019,6 +8037,13 @@ planGateProFeature:    'Pro-functie',
     cmOtaActivateBtn:           'Activeren',
     cmOtaActivating:            'Bezig met activeren…',
     cmOtaActivatedMsg:          'Verbonden en geactiveerd! Beschikbaarheid en tarieven worden nu gesynchroniseerd.',
+    // ── Channel Manager: Airbnb connect (Slice CA-5) ────────────────────────────
+    cmOtaAirbnbConnectBtn:      'Airbnb koppelen',
+    cmOtaAirbnbConnecting:      'Verbinden…',
+    cmOtaAirbnbConsentNote:     'Je wordt gevraagd om in te loggen en de koppeling rechtstreeks op de site van Airbnb goed te keuren.',
+    cmOtaAirbnbSuccessToast:    'Airbnb is succesvol gekoppeld.',
+    cmOtaAirbnbFailedToast:     'De koppeling met Airbnb is niet voltooid. Je kunt het op elk moment opnieuw proberen.',
+    cmOtaAirbnbGenericError:    'Er is iets misgegaan bij het koppelen met Airbnb. Probeer het opnieuw, of neem contact met ons op als het probleem aanhoudt.',
     // ── Kamerkosten ───────────────────────────────────────────────────────────
     charges:              'Kamerkosten',
     chargesSubtitle:      'Diensten in rekening brengen bij gastenkamers',
