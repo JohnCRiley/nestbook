@@ -1,3 +1,152 @@
+## CA-7 (Expedia + Agoda) — DONE (2026-09-16) — both confirmed ready to use as-is via the generic form; zero code changes needed; one real-but-narrow operational risk flagged for Agoda, not fixed
+
+Enablement checklist for two more `room_rate_multioccupancy` adapters,
+per §3's CA-7+ plan. Unlike every prior slice, this one required **no code
+changes at all** — pure confirmation, exactly as scoped. Both adapters
+already work correctly through CA-4's existing generic wizard.
+
+**1. Live adapter descriptors — re-confirmed fresh, not assumed from the
+original 56-adapter survey:**
+
+`GET /channels/adapter?code=Expedia` and `?code=Agoda`, both live against
+staging:
+- Both: `kind: "meta"`, `mapping_mode: "room_rate_multioccupancy"`,
+  `property_mapping: "single"` — the exact same cluster shape as
+  Booking.com, confirmed live rather than assumed.
+- **Expedia params**: `hotel_id` (string), `min_stay_type` (select:
+  Arrival/Through), `send_email_notifications` (boolean), `email` (string,
+  hidden-by-rule same as Booking.com's), `booking_amount_settings` (select:
+  3 options). **Agoda params**: `hotel_id` (string),
+  `send_email_notifications` (boolean), `email` (string, same hidden
+  rule), `booking_tax_settings` (select: 3 options). Every field type used
+  by either adapter (`string`/`boolean`/`select`) is already handled by
+  `AdapterField`'s generic renderer (`ChannelConnectWizard.jsx`) — no new
+  field type, no new rule shape.
+- **rate_params — both identical in shape to Booking.com's**: `occupancy`
+  (integer), `rate_plan_code`/`room_type_code` (string), `primary_occ`
+  (boolean). **One real difference worth noting**: `pricing_type` is type
+  `"string"` for both Expedia and Agoda — NOT `type: "select", options:
+  ["Standard","OBP"]` the way Booking.com's is. Confirmed this is handled
+  correctly already: the wizard's `supportsObp` check
+  (`rateParams.pricing_type?.options?.includes('OBP')`) evaluates to
+  `false` when there's no `options` array at all, so the Standard/OBP
+  toggle simply never renders for either adapter — the create payload
+  still sends `pricing_type: 'Standard'` (the state's default), which is
+  correct. **Neither adapter exposes an OBP option** — per instruction,
+  noting this rather than trying to force an OBP test; the OBP branch
+  remains exactly as unverified as it's been since CA-4, unaffected by
+  this slice either way.
+
+**2. Live test-connection / connection-details / mapping-details —
+re-confirmed through CA-4's REAL owner-facing routes (not a bypassed raw
+API call), using plausible fake settings (`hotel_id: 'fake-hotel-id...'`)
+on property #1, then reproduced again by clicking through the actual
+wizard in a real browser:**
+
+- **Expedia**: `test_connection` → clean `200 {success:false,
+  errors:"invalid_credentials_structure"}`. `connection_details` → `400`
+  (a real, non-retryable client error). `mapping_details` → `422` (also
+  non-retryable). All three resolve in well under a second through the
+  owner-facing routes, and the real wizard correctly shows "We couldn't
+  verify these details. Double-check them and try again." within ~2
+  seconds of clicking Test Connection with a fake hotel id — no hang, no
+  crash, no special-casing needed.
+- **Agoda**: `test_connection` → clean `200 {success:false,
+  errors:"implementation_not_defined"}` (a different error string than
+  Expedia's, but still a clean, fast, non-throwing response — this being
+  Channex's own Agoda adapter reporting its `test_connection`
+  implementation isn't fully wired up on their side, not something
+  NestBook's code can or needs to fix). Reproduced live in the browser:
+  clicking Test Connection with a fake hotel id resolves in ~2 seconds to
+  "We couldn't verify these details..." — **the common "owner typed the
+  wrong credentials" path is fast and clean for Agoda too.**
+
+**A real, but narrower-than-first-suspected, operational finding for
+Agoda — flagged, not fixed:** calling `connection_details`/
+`mapping_details` DIRECTLY (bypassing test_connection, i.e. the case where
+a hotel_id passes `test_connection` but a later detail call still fails)
+returns a genuine Channex `500` for Agoda — and because
+`getConnectionDetails()`/`getMappingDetails()` route through the shared
+`channexQueue` (same single-worker retry queue as ARI pushes),
+`isRetryable()` correctly-by-design treats any 5xx as transient and
+retries with the full backoff schedule (2s/8s/30s/60s ≈ 100s) before
+giving up — confirmed live, `channex-queue` logs showed the full 5-attempt
+retry sequence for both calls, each independently burning ~100s, and
+because `channexQueue` is a single serial worker (confirmed via the log
+ordering — `mapping_details`'s retries didn't start until
+`connection_details`'s 5 attempts had already finished), the two calls
+serialize to **~200s total**, during which the shared queue cannot process
+ANY other property's pending Channex writes (ARI pushes, room-type
+creates, etc.) — matching the file's own documented architecture ("one
+array + one async worker").
+
+**Correctly scoped, not overstated**: this is NOT reachable via the common
+"owner enters a wrong Agoda hotel_id" mistake — that path fails at
+`test_connection` (clean, fast `success:false`) before the wizard ever
+calls `connection_details`/`mapping_details` at all (confirmed by reading
+`runTestConnection()`: the detail calls only fire `if
+(data.result?.success)`). It's only reachable in the narrower case where a
+hotel_id passes `test_connection` but then a detail call independently
+500s — not verified live end-to-end (would need a real, valid-shaped
+Agoda credential that happens to trigger this on Channex's side, which
+this environment doesn't have), but the retry-then-500-then-`{available:
+false}` behavior itself IS confirmed real and reproducible through the
+real owner-facing routes. **Recommended fix, not implemented this pass**:
+route `getConnectionDetails()`/`getMappingDetails()` outside
+`channexQueue` (call `channexRequest()` directly, same as the existing
+GET-reads-bypass-the-queue pattern already documented in
+`channexClient.js`'s own top comment) — these are explicitly best-effort
+UI probes with an existing graceful fallback, not writes that need
+guaranteed delivery, so there's no reason for them to share ARI's
+retry-with-backoff budget or its single worker. Left unfixed deliberately:
+this is a queue-wide behavioral change that would also affect
+Booking.com's identical code path, and felt like a decision worth
+surfacing rather than bundling into a "mostly confirmation" pass.
+
+**3. Curated picker — confirmed no change needed:** `ChannelConnectWizard.jsx`
+has no curation/allowlist mechanism — it lists all 56 adapters returned by
+`GET /channex/adapters`, alphabetically sorted, unfiltered (confirmed by
+reading the code — `adapters.slice().sort(...)`, no filter step anywhere).
+Expedia and Agoda already appear in that list today; no code change was
+needed to "add" them. The curated-list product question from the original
+investigation's §5 open question #2 remains open and unrelated to this
+slice.
+
+**4. Adapter-specific copy — confirmed none needed:** both adapters render
+entirely off the generic form (field labels come straight from the live
+descriptor's own `title` values — "Hotel ID", "Min Stay Type", "Tax
+Setting For Bookings", etc. — not hardcoded anywhere in NestBook's code),
+and the existing generic error copy (`cmOtaTestFailed`,
+`cmOtaGenericError`) already reads correctly for both. **No new i18n keys
+were added this slice.**
+
+**Verified live (regression):** no files were changed this slice, so
+regression risk is minimal by construction — still spot-checked the
+Channel Manager page (Room Mapping, Online Travel Agents section with
+CA-4's wizard button, CA-5's Airbnb button, CA-6's per-channel actions
+list) after clicking through both new adapters, confirmed everything
+renders exactly as before.
+
+**Verdict for both, plainly:**
+- **Expedia: ready to use as-is via the generic form.** No blockers, no
+  fixes needed, no OBP to worry about.
+- **Agoda: ready to use as-is via the generic form for the common path**
+  (test_connection fails cleanly and fast on bad credentials, exactly like
+  every other adapter). **Has one real, narrow, unfixed operational risk**
+  (the connection-details/mapping-details retry-storm-blocks-the-shared-
+  queue scenario above) that only bites if a hotel_id passes
+  `test_connection` but a detail call then 500s — flagged with a concrete
+  recommended fix, deliberately not implemented this pass.
+- **Neither could be tested to a real `201`/`activate`** — the exhausted
+  shared-sandbox situation from CA-2/CA-4/CA-6 applies here too, for the
+  same reason (no real Expedia/Agoda hotel/credentials available in this
+  environment, and Channex's adapters validate `hotel_id` against real OTA
+  inventory server-side, confirmed again this slice by Expedia's `400`/
+  Agoda's `500` on an unrecognized-but-plausible hotel_id — neither is a
+  clean "not found" that could be worked around).
+
+---
+
 ## CA-6 follow-up — DONE (2026-09-16) — closed the check-readiness/activate ownership gap CA-6 flagged; CA-6's translations applied
 
 **1. Security fix — IDOR gap on CA-4's check-readiness/activate routes,
