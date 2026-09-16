@@ -1,3 +1,94 @@
+## CA-7 round 8 (Crewdogs, RevChill, Levart) — DONE (2026-09-17) — all 3 usable and genuinely trustworthy; honestly weak-signal picks, as expected with strong-signal names now exhausted
+
+Enablement checklist for 3 more `room_rate_multioccupancy` adapters. Per
+instruction, pulled the full live catalog fresh and cross-referenced
+against all 21 previously-tested adapters before picking, since
+strong-signal names are largely gone. **22 untested `room_rate_
+multioccupancy` adapters remained**: CakrahubBookingEngine, Crewdogs,
+DolceBot, Ostrovok, Gopaddi, GrevonAI, Guirez, Heytrip, HLCPlus,
+JoodBooking, Levart, Goibibo, OpenChannel, Padelbound, RevChill,
+Revenatium, RukiyeZara, CTrip, Tripnera, WebBeds, WeSpeak, WeSpeakOpen.
+
+**Picks and why, honestly weaker signal this round, as instructed:**
+- **Crewdogs** — moderate confidence, the strongest of the three: airline-
+  crew accommodation billeting is a real (if niche) secondary revenue
+  channel some independent guesthouses near airports/transport hubs
+  genuinely use — plausibly relevant to a subset of NestBook's market,
+  not mainstream leisure guests.
+- **RevChill** — low confidence: "Rev" (revenue) + "Chill" (leisure)
+  vaguely suggests revenue-conscious leisure branding — the closest
+  remaining lodging-adjacent-sounding name after Crewdogs.
+- **Levart** — lowest confidence, picked essentially because it was
+  untested and no other remaining name carried a stronger signal (same
+  honest reasoning as round 7's Novoya pick, which was chosen for being
+  new rather than for market fit) — no real signal from the name itself.
+
+**1. Live adapter descriptors:** all three confirmed `kind: meta`,
+`mapping_mode: room_rate_multioccupancy`, `property_mapping: single`,
+sharing the by-now-familiar shape. RevChill and Levart both add `api_key`
+(password), same combination as GuruHotel/ZenithBookingEngine/Novoya;
+RevChill also has `min_stay_type` (select), same as Expedia/Hostelworld.
+No new field types or shapes this round.
+
+**2, 3. Live test-connection / detail-call behavior, with the repeat-call
+discipline (6 calls each: empty + 5 fake):**
+
+- **All three consistently, genuinely validate** — every one of the 18
+  total calls across the three adapters returned a clean
+  `invalid_credentials` at `200`, no flakiness, no leniency. Reproduced
+  live in the browser for all three: fake input → "We couldn't verify
+  these details…" within ~2s each, matching the raw-API behavior exactly
+  (RevChill's and Levart's password-type API Key field both rendered and
+  behaved correctly, consistent with GuruHotel/Novoya).
+- `connection_details`/`mapping_details` for all three return clean
+  `400`/`422` (never `5xx`) — **no queue-contention risk exists for any of
+  the three**.
+
+**4. Both fixed-bug patterns:** neither directly re-testable this round —
+same situation as every other round's well-behaved adapters: all three
+correctly block fake credentials before the mapping step is reachable,
+and none returned a `5xx`. Noted plainly, not assumed covered.
+
+**5. OBP status, noted per instruction:** all three expose `pricing_type:
+{options: ["Standard","OBP"]}` — OBP-capable, consistent with the shared-
+shape family.
+
+**6. Adapter-specific copy — none needed**, same as every prior round.
+
+**Regression check:** no code was changed this pass. Channel Manager and
+the Super Admin debug page (57 adapters, stable) both re-confirmed
+correct after the click-throughs above.
+
+**Verdict for each, plainly:**
+- **Crewdogs**: **ready to use as-is via the generic form.** Genuinely,
+  consistently validates (6/6 calls); Test Connection is trustworthy; no
+  queue risk. Plausible niche relevance (airline-crew billeting) for a
+  subset of independent properties, not mainstream leisure guests.
+- **RevChill**: **ready to use as-is via the generic form**, same
+  reasoning as Crewdogs. Low-confidence market-relevance pick, technically
+  sound regardless.
+- **Levart**: **ready to use as-is via the generic form**, same
+  reasoning — picked with no real market-fit signal, purely to exercise
+  another untested adapter.
+
+**Running total across all CA-7 enablement work (24 adapters tested
+across 8 rounds):** 18 genuinely well-behaved and ready with no caveats;
+5 ready with the known Test-Connection-isn't-trustworthy Channex-side
+caveat (HotelREZ, Wigwam Holidays, OneHotelRez, Hipcamp, Agoda); 1 cleanly
+blocked by an existing safeguard, not a bug (More.com); 1 open question
+carried forward (Hostelworld's unhandled `type` rate_param); 2 real bugs
+found and fixed as their own focused steps (queue-contention,
+mapping-fallback), both confirmed protecting every adapter tested since.
+**19 `room_rate_multioccupancy` adapters remain untested**:
+CakrahubBookingEngine, DolceBot, Ostrovok, Gopaddi, GrevonAI, Guirez,
+Heytrip, HLCPlus, JoodBooking, Goibibo, OpenChannel, Padelbound,
+Revenatium, RukiyeZara, CTrip, Tripnera, WebBeds, WeSpeak, WeSpeakOpen —
+all genuinely weak-signal by name (regional mismatches, likely wholesale/
+B2B, or simply opaque), noted honestly for whenever the next round picks
+up.
+
+---
+
 ## CA-7 round 7 (Novoya, HotelTrader, Travia) — DONE (2026-09-17) — all 3 usable and genuinely trustworthy; caught a new adapter added to Channex's own catalog since round 6; confirmed the generic form handles the sparsest params shape seen yet
 
 Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
