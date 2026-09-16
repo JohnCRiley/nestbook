@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { formatRelativeTime } from '../utils/format.js';
 import ChannelConnectWizard from '../components/ChannelConnectWizard.jsx';
+import ConfirmModal from '../components/ConfirmModal.jsx';
 
 export default function ChannelManager() {
   const t = useT();
@@ -25,6 +26,10 @@ export default function ChannelManager() {
 
   // ── Airbnb OAuth connect — Slice CA-5 ──────────────────────────────────
   const [airbnbConnecting, setAirbnbConnecting] = useState(false);
+
+  // ── Connection management — Slice CA-6 ─────────────────────────────────
+  const [channelActionBusyId, setChannelActionBusyId] = useState(null);
+  const [channelDeleteTarget, setChannelDeleteTarget] = useState(null);
 
   // Gate mirrors Sidebar.jsx's canSeeChannelManager() — the nav item is hidden
   // when this is false, but a direct URL visit must not render the page either.
@@ -92,6 +97,51 @@ export default function ChannelManager() {
       showToast(err.message, 'error');
       setAirbnbConnecting(false);
     }
+  }
+
+  // Only offered while a channel is still active — the server re-confirms
+  // via a real GET that Channex's own side actually stopped syncing before
+  // this resolves, never trusting the 200 alone. No confirmation dialog:
+  // pausing sync is reversible (the channel can be reactivated), unlike
+  // Delete below, which permanently removes the connection.
+  async function handleDeactivateChannel(channel) {
+    if (!property?.id) return;
+    setChannelActionBusyId(channel.id);
+    try {
+      const res = await apiFetch(
+        `/api/properties/${property.id}/channex/channels/${channel.id}/deactivate`,
+        { method: 'POST' }
+      );
+      if (!res.ok) throw new Error(t('cmOtaChannelActionError'));
+      showToast(t('cmOtaDeactivatedToast'));
+      fetchOtaChannels();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+    setChannelActionBusyId(null);
+  }
+
+  // Only offered once a channel is already inactive (Channex itself requires
+  // deactivation before it will allow a delete — confirmed live). Permanent
+  // and irreversible, so it goes through the same ConfirmModal pattern used
+  // for delete elsewhere in the app, unlike the reversible Deactivate above.
+  async function handleDeleteChannel() {
+    if (!property?.id || !channelDeleteTarget) return;
+    const channel = channelDeleteTarget;
+    setChannelActionBusyId(channel.id);
+    try {
+      const res = await apiFetch(
+        `/api/properties/${property.id}/channex/channels/${channel.id}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error(t('cmOtaChannelActionError'));
+      showToast(t('cmOtaDeletedToast'));
+      fetchOtaChannels();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+    setChannelActionBusyId(null);
+    setChannelDeleteTarget(null);
   }
 
   async function handleConnectToggle() {
@@ -283,24 +333,51 @@ export default function ChannelManager() {
                 <p style={{ color: 'var(--text-muted)', margin: '0 0 14px' }}>{t('cmOtaNoConnections')}</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                  {otaChannels.map((c) => (
-                    <div
-                      key={c.id}
-                      style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '9px 14px', borderRadius: 8, background: 'var(--section-bg)',
-                      }}
-                    >
-                      <span style={{ fontSize: '0.9rem' }}>{c.attributes?.title ?? c.attributes?.channel}</span>
-                      <span style={{
-                        fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999,
-                        background: c.attributes?.is_active ? '#dcfce7' : '#f1f5f9',
-                        color:      c.attributes?.is_active ? '#166534' : '#64748b',
-                      }}>
-                        {c.attributes?.is_active ? t('cmOtaConnectedBadgeActive') : t('cmOtaConnectedBadgeInactive')}
-                      </span>
-                    </div>
-                  ))}
+                  {otaChannels.map((c) => {
+                    const isActive = !!c.attributes?.is_active;
+                    const rowBusy = channelActionBusyId === c.id;
+                    return (
+                      <div
+                        key={c.id}
+                        style={{
+                          display: 'flex', flexDirection: 'column', gap: 8,
+                          padding: '9px 14px', borderRadius: 8, background: 'var(--section-bg)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.9rem' }}>{c.attributes?.title ?? c.attributes?.channel}</span>
+                          <span style={{
+                            fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                            background: isActive ? '#dcfce7' : '#f1f5f9',
+                            color:      isActive ? '#166534' : '#64748b',
+                          }}>
+                            {isActive ? t('cmOtaConnectedBadgeActive') : t('cmOtaConnectedBadgeInactive')}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                          {isActive ? (
+                            <button
+                              className="btn-secondary"
+                              style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                              disabled={rowBusy}
+                              onClick={() => handleDeactivateChannel(c)}
+                            >
+                              {rowBusy ? t('cmOtaDeactivating') : t('cmOtaDeactivateBtn')}
+                            </button>
+                          ) : (
+                            <button
+                              className="btn-danger-outline"
+                              style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                              disabled={rowBusy}
+                              onClick={() => setChannelDeleteTarget(c)}
+                            >
+                              {t('cmOtaDeleteBtn')}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setShowWizard(true)}>
@@ -376,6 +453,18 @@ export default function ChannelManager() {
           onConnected={() => { setShowWizard(false); fetchOtaChannels(); showToast(t('cmOtaActivatedMsg')); }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!channelDeleteTarget}
+        title={t('cmOtaDeleteConfirmTitle')}
+        message={t('cmOtaDeleteConfirmMsg')(channelDeleteTarget?.attributes?.title ?? channelDeleteTarget?.attributes?.channel ?? '')}
+        confirmLabel={t('cmOtaDeleteBtn')}
+        cancelLabel={t('cancel')}
+        variant="danger"
+        busy={channelActionBusyId === channelDeleteTarget?.id}
+        onConfirm={handleDeleteChannel}
+        onCancel={() => setChannelDeleteTarget(null)}
+      />
     </div>
   );
 }

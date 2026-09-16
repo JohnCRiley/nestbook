@@ -20,7 +20,7 @@ import {
   ChannexError, listChannelAdapters, listChannelsForProperty,
   testChannelConnection, getMappingDetails, getConnectionDetails,
   createChannel, checkChannelReadiness, activateChannel, resolveSingleGroupId,
-  generateAirbnbConnectionLink,
+  generateAirbnbConnectionLink, getChannel, deactivateChannel, deleteChannel,
 } from '../utils/channexClient.js';
 import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { pushInitialInventory, disconnectChannexProperty, buildTargets, pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
@@ -1795,5 +1795,119 @@ propertiesRouter.post('/:id/channex/airbnb/connection-link', async (req, res) =>
     res.json({ url });
   } catch (e) {
     ownerFacingChannexErrorResponse(res, propId, 'channex/airbnb/connection-link', e);
+  }
+});
+
+// ── Connection management — owner-facing (Slice CA-6) ─────────────────────────
+// Deactivate/delete for a channel this property already has. Live-tested
+// (against a real-but-nonexistent channel id, staging always 404s cleanly —
+// see the investigation doc's CA-6 section for why a real live channel
+// couldn't be used) that deactivate and delete are genuinely TWO DIFFERENT
+// Channex endpoints, not two names for the same call: `POST
+// /channels/{id}/deactivate` stops sync but keeps the connection record;
+// `DELETE /channels/{id}` permanently removes it and, per Channex's own
+// docs, requires the connection to already be deactivated. The owner-facing
+// UI reflects this honestly rather than hiding it behind one "Remove"
+// button: while a channel is active, only Deactivate is offered; Delete
+// only appears once it's inactive — so one click never silently stops a
+// live OTA sync AND deletes the connection in the same action.
+//
+// Neither route trusts Channex's 200 at face value — each re-fetches the
+// channel afterward (getChannel) to confirm the real state changed before
+// touching the local channex_channels mirror or telling the owner it
+// worked, the same "recompute from source, don't trust a cache" discipline
+// this integration uses everywhere else (channexPushInventory.js, the CA-3
+// OAuth callback).
+function verifyChannelBelongsToProperty(property, channelId) {
+  return listChannelsForProperty(property.channex_property_id).then((body) =>
+    (body?.data ?? []).some((c) => c.id === channelId)
+  );
+}
+
+propertiesRouter.post('/:id/channex/channels/:channelId/deactivate', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  const { channelId } = req.params;
+  if (!property.channex_property_id) return res.status(404).json({ error: 'not_found' });
+
+  try {
+    const belongs = await verifyChannelBelongsToProperty(property, channelId);
+    if (!belongs) return res.status(404).json({ error: 'not_found' });
+
+    await deactivateChannel(channelId);
+
+    const fresh = await getChannel(channelId);
+    if (fresh?.attributes?.is_active) {
+      // Channex accepted the call but still reports active — don't update
+      // the local mirror or tell the owner it worked on a hunch.
+      return res.status(502).json({ error: 'channel_connect_failed' });
+    }
+
+    db.prepare(`UPDATE channex_channels SET is_active = 0, updated_at = datetime('now') WHERE channex_channel_id = ?`)
+      .run(channelId);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_CHANNEL_DEACTIVATED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Deactivated Channel Management connection (connection id: ${channelId})`,
+      ipAddress:  getIp(req),
+    });
+
+    res.json({ channel: fresh });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/deactivate', e);
+  }
+});
+
+propertiesRouter.delete('/:id/channex/channels/:channelId', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  const { channelId } = req.params;
+  if (!property.channex_property_id) return res.status(404).json({ error: 'not_found' });
+
+  try {
+    const belongs = await verifyChannelBelongsToProperty(property, channelId);
+    if (!belongs) return res.status(404).json({ error: 'not_found' });
+
+    await deleteChannel(channelId);
+
+    // Confirm the delete genuinely landed — a truly-deleted channel's own
+    // GET should now 404. Any other outcome (still 200, or a non-404 error)
+    // means we can't be sure Channex actually removed it.
+    let stillExists = true;
+    try {
+      await getChannel(channelId);
+    } catch (e) {
+      if (e instanceof ChannexError && e.status === 404) stillExists = false;
+      else throw e;
+    }
+    if (stillExists) {
+      return res.status(502).json({ error: 'channel_connect_failed' });
+    }
+
+    db.prepare(`DELETE FROM channex_channels WHERE channex_channel_id = ?`).run(channelId);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_CHANNEL_DELETED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Deleted Channel Management connection (connection id: ${channelId})`,
+      ipAddress:  getIp(req),
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/delete', e);
   }
 });

@@ -1001,6 +1001,16 @@ export const LANGS = {
     cmOtaAirbnbSuccessToast:    'Airbnb connected successfully.',
     cmOtaAirbnbFailedToast:     "The Airbnb connection wasn't completed. You can try again anytime.",
     cmOtaAirbnbGenericError:    'Something went wrong connecting to Airbnb. Please try again, or get in touch if it keeps happening.',
+    // ── Channel Manager: connection management (Slice CA-6) — EN ONLY, placeholder.
+    // John is supplying FR/ES/DE/NL for these himself; do not draft them.
+    cmOtaDeactivateBtn:         'Deactivate',
+    cmOtaDeactivating:          'Deactivating…',
+    cmOtaDeactivatedToast:      'Channel deactivated.',
+    cmOtaDeleteBtn:             'Delete',
+    cmOtaDeleteConfirmTitle:    'Delete connection',
+    cmOtaDeleteConfirmMsg:      (title) => `Permanently delete the connection to ${title}? This can't be undone.`,
+    cmOtaDeletedToast:          'Connection deleted.',
+    cmOtaChannelActionError:    'Something went wrong. Please try again.',
     // ── Room Charges ──────────────────────────────────────────────────────────
     charges:              'Room Charges',
     chargesSubtitle:      'Charge services to guest rooms',

@@ -604,6 +604,42 @@ export async function getChannel(channelId) {
   return channexRequest(`/api/v1/channels/${channelId}`);
 }
 
+/**
+ * Stop sync for a channel without deleting the connection —
+ * `POST /api/v1/channels/{id}/deactivate`, no request body. Per Channex's
+ * docs (docs.channex.io/api-v.1-documentation/channel-api): "Stop the
+ * exchange with the channel" — the connection record and its mappings stay
+ * intact, only `is_active` flips. This is a DIFFERENT endpoint from
+ * deleteChannel() below, not two names for the same call — confirmed via a
+ * live request against a real-but-nonexistent channel id (clean `404
+ * resource_not_found`, not a 405/redirect to the delete route), see the
+ * investigation doc's CA-6 section. Deactivating against a real live
+ * channel was NOT possible this slice — the shared staging account had zero
+ * connections at build time (sandbox exhaustion, same finding as CA-2/CA-4).
+ * @returns {Promise<object>}
+ */
+export async function deactivateChannel(channelId) {
+  return queuedWrite(`deactivate channel ${channelId}`, () =>
+    channexRequest(`/api/v1/channels/${channelId}/deactivate`, { method: 'POST', raw: true }));
+}
+
+/**
+ * Permanently delete a channel connection — `DELETE /api/v1/channels/{id}`.
+ * Per Channex's docs, the connection must already be deactivated ("Remove
+ * deactivated channel") — deactivate → delete is a two-step sequence, not a
+ * single destructive call; callers should call deactivateChannel() first if
+ * the channel is still active rather than relying on Channex to reject an
+ * out-of-order delete cleanly. Endpoint existence/shape confirmed the same
+ * way as deactivateChannel() above (live 404 against a nonexistent id); a
+ * real delete against a real live channel was NOT possible this slice —
+ * same sandbox-exhaustion reason.
+ * @returns {Promise<object|null>}
+ */
+export async function deleteChannel(channelId) {
+  return queuedWrite(`delete channel ${channelId}`, () =>
+    channexRequest(`/api/v1/channels/${channelId}`, { method: 'DELETE', raw: true }));
+}
+
 // ── Channel API (Slice CA-3 — Airbnb OAuth flow) ──────────────────────────────
 // Field names/shapes re-confirmed fresh for this slice (not reused from CA-1's
 // summary) against https://docs.channex.io/channel-api-examples/airbnb AND a

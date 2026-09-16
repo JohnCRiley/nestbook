@@ -1,3 +1,144 @@
+## CA-6 — DONE (2026-09-16) — owner-facing deactivate/delete; endpoints and UI verified live, but NOT against a real connected channel — sandbox still exhausted, confirmed fresh this session, not just carried over from CA-2/CA-4
+
+Owner-facing list/deactivate/delete for a property's connected channels, in
+the existing "Online Travel Agents" section (CA-4/CA-5), gated by the same
+`requireOwnerChannelManagerAccess`.
+
+**Deactivate vs delete — confirmed as two genuinely different Channex
+endpoints, not assumed:** fetched
+`docs.channex.io/api-v.1-documentation/channel-api` fresh for this slice,
+which states `POST /channels/{id}/deactivate` ("stop the exchange with the
+channel") and `DELETE /channels/{id}` ("remove deactivated channel") are
+separate calls, delete requiring the connection to already be deactivated.
+Live-verified this is real behavior, not just a docs claim: `POST
+/channels/<real-uuid-format-but-nonexistent-id>/deactivate` and `DELETE
+/channels/<same-id>` each returned a clean `404 resource_not_found` —
+proving both paths are real, distinct, live-routed endpoints (a typo'd or
+fake path would 404 differently, e.g. Express's own catch-all, not a real
+Channex JSON error body).
+
+**Files touched:**
+- `server/utils/channexClient.js` — two new functions, same `queuedWrite`
+  pattern as every other Channel API write: `deactivateChannel(channelId)`
+  (`POST /channels/{id}/deactivate`) and `deleteChannel(channelId)`
+  (`DELETE /channels/{id}`).
+- `server/routes/properties.js` — two new owner-facing routes:
+  `POST /:id/channex/channels/:channelId/deactivate` and
+  `DELETE /:id/channex/channels/:channelId`. Both add a
+  `verifyChannelBelongsToProperty()` ownership check (via
+  `listChannelsForProperty`, matching by real Channex id) before calling
+  Channex at all — closes a real IDOR-shaped gap that CA-4's existing
+  `check-readiness`/`activate` routes still have (neither of those verifies
+  the `channelId` param actually belongs to the property being acted on;
+  not fixed here — out of scope for this slice — but worth a follow-up).
+  Confirmed live: both routes 404 immediately on an unowned/nonexistent
+  channel id, never reaching Channex.
+  Neither route trusts Channex's 200 at face value, per instruction: after
+  `deactivateChannel()`, a follow-up `getChannel()` confirms
+  `attributes.is_active` is genuinely `false` before the local
+  `channex_channels.is_active` mirror is updated or the owner is told it
+  worked (a 200-but-still-active response is treated as a failure, not a
+  success). After `deleteChannel()`, a follow-up `getChannel()` is expected
+  to 404 — genuine confirmation the resource is gone — before the local row
+  is hard-deleted; any other outcome (still 200, or a non-404 error) is
+  treated as "can't confirm it worked," not silently assumed successful.
+- `client/src/pages/ChannelManager.jsx` — each connected-channel row (list
+  rendering already existed from CA-4) now shows one action button:
+  **Deactivate** while `is_active`, **Delete** once it isn't. This mirrors
+  Channex's real prerequisite honestly in the UI rather than hiding it
+  behind one "Remove" button that would have to silently deactivate-then-
+  delete on a single click — an owner clicking Delete on a still-active
+  channel never happens, because Delete simply isn't offered until the
+  channel is already inactive. Deactivate fires directly (no confirmation —
+  reversible, the channel can be reconnected/reactivated later). Delete
+  goes through the existing `ConfirmModal` component (danger variant),
+  matching the exact pattern already used for rate-period/room-category
+  deletes in `Settings.jsx` — permanent and irreversible, so it gets the
+  same friction as other real deletes in this app, consistent with how the
+  rest of the codebase treats destructive vs. reversible actions.
+- `client/src/i18n/index.js` — 8 new `cmOta*` keys, **EN block only**,
+  explicitly flagged as not-yet-translated, matching CA-5's pattern.
+  **These need FR/ES/DE/NL from John**: `cmOtaDeactivateBtn`,
+  `cmOtaDeactivating`, `cmOtaDeactivatedToast`, `cmOtaDeleteBtn`,
+  `cmOtaDeleteConfirmTitle`, `cmOtaDeleteConfirmMsg`, `cmOtaDeletedToast`,
+  `cmOtaChannelActionError`.
+
+**Sandbox exhaustion — re-confirmed fresh this session, not assumed
+carried-over from CA-2/CA-4:** before writing any code, checked
+`GET /channels` live — zero channels exist anywhere on the account
+(`{"data": [], "meta": {"total": 0}}`). `test_connection` against both
+shared Booking.com sandbox hotels (`5868189`, `6519420`) succeeds cleanly.
+But a real `POST /channels` create attempt against **both** hotels —once
+through the live UI wizard (hotel `5868189`, full owner click-through:
+selected room/rate, filled a connection name, clicked Create) and once via
+a direct API call (hotel `6519420`, same shape CA-2 used) — **both failed
+with the identical `422`: `"channel with the same settings already
+exists"`**, despite zero live channels existing anywhere on the account.
+This is the exact same finding CA-2 and CA-4 already documented, now
+independently reconfirmed rather than assumed still true. **As a direct
+consequence, there was no way to create a fresh, genuinely real, connected
+channel this session to run Deactivate or Delete against for real** — this
+is a confirmed external Channex sandbox limitation, not a code defect, and
+not worked around.
+
+**What WAS verified live regardless:**
+- Both new Channex client functions' endpoints are real and distinct
+  (404-on-nonexistent-id test above).
+- Both new owner-facing routes correctly reject an unowned/nonexistent
+  `channelId` with a `404` before ever calling Channex — confirmed via curl
+  with a real owner JWT against a syntactically-valid-but-nonexistent UUID.
+- **The Deactivate/Delete UI conditional rendering, action wiring, and
+  ConfirmModal integration** — verified live in the running browser by
+  temporarily intercepting the page's own `fetch` (browser-console-level
+  mock, not a code change) to return two synthetic channel rows, one active
+  one inactive, through the real, unmodified `GET /channex/channels`
+  response shape the frontend actually consumes. Confirmed: the active row
+  shows "Deactivate" and the inactive row shows "Delete"; clicking Delete
+  opens the danger-styled ConfirmModal with the correct title and the
+  channel's real title correctly interpolated into the message
+  ("Permanently delete the connection to Agoda (test)? This can't be
+  undone."); Cancel dismisses it without firing any request; clicking
+  Deactivate on the active row fires the POST immediately to the correct
+  URL (`/api/properties/1/channex/channels/fake-active-1/deactivate`,
+  confirmed by inspecting the intercepted call) with no modal in the way —
+  matching the task's own checklist ("ConfirmModal appears before delete,
+  not before deactivate"). **This proves the frontend code is wired
+  correctly; it does NOT prove a real deactivate/delete round-trip against
+  Channex — that remains the one genuinely unverified piece, exactly per
+  §5's already-known sandbox-exhaustion gap.** Reloaded the page
+  immediately after to clear the mock and confirm the page returns to its
+  real (accurate, empty) state — `GET /channex/channels` against the real
+  account still correctly shows "No channels connected yet."
+- Regression: Super Admin debug page
+  (`/app/super-admin/channex-channel-api`, CA-1/CA-2/CA-3) still loads and
+  renders all 56 adapters and the property selector correctly. CA-4's
+  generic "Connect a channel" wizard and CA-5's "Connect Airbnb" button both
+  still render and function in the same Online Travel Agents section,
+  unaffected. No stray local `channex_channels` rows left behind by the
+  failed create attempts (both 422'd before this codebase's own INSERT,
+  which only runs after a real Channex success).
+
+**Not built / genuinely unverified (needs either the shared sandbox to
+free up, or a real connected channel from CA-5's Airbnb work if one is ever
+completed, to prove for real):**
+1. A real `deactivateChannel()` call against a real live channel, and
+   confirmation that Channex's own side genuinely stops syncing.
+2. A real `deleteChannel()` call against a real, already-deactivated
+   channel, and confirmation via a real follow-up `GET` that it's actually
+   gone (404) rather than just locally removed.
+3. Whether Channex's delete endpoint cleanly rejects an attempt to delete a
+   still-active channel with a clear error (the docs say delete requires
+   prior deactivation, but this codebase's own discipline is "live-test
+   before trusting a docs claim" — not yet possible here).
+
+**Also flagged, not fixed (pre-existing, out of scope for this slice):**
+CA-4's `check-readiness`/`activate` routes don't verify `channelId`
+ownership the way the two new CA-6 routes now do — a minor IDOR-shaped gap
+worth a small follow-up, not urgent (both routes are read-mostly/idempotent
+Channex calls, not destructive), but noted here so it isn't forgotten.
+
+---
+
 ## CA-5 — DONE (2026-09-16) — owner-facing Airbnb connect button; every step verified live except the real Airbnb consent screen + Channex's own code exchange (genuinely blocked, not a code defect)
 
 Owner-facing "Connect Airbnb" button in the existing "Online Travel Agents"
