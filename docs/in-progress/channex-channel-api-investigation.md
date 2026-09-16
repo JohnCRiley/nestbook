@@ -1,3 +1,121 @@
+## CA-3 — DONE (2026-09-16) — Airbnb OAuth flow: link generation + callback plumbing confirmed live; full happy path still blocked on a real Airbnb account
+
+Airbnb OAuth connect flow, Super-Admin debug only, per §1.3/§2.2's original
+scoping. Re-fetched https://docs.channex.io/channel-api-examples/airbnb fresh
+for this slice (not reused from CA-1's summary), per instruction.
+
+**Files touched:**
+- `server/db/schema.js` — new `channex_channel_oauth_links` table (`token`
+  PK, `property_id`, `user_id`, `channel_code`, `created_at`), exactly the
+  shape §2.2 proposed. No dedicated cleanup job — the connection-link route
+  opportunistically sweeps rows older than 4 hours on every call instead
+  (this table is only ever a handful of rows).
+- `server/utils/channexClient.js` — `getChannel()` (generic single-channel
+  fetch, GET, not queued), `generateAirbnbConnectionLink()`,
+  `listAirbnbListings()`, `getAirbnbListingDetails()`, `createAirbnbMapping()`
+  (all queued as `kind: 'other'`, same as CA-2). Unlike Booking.com, Channex
+  itself creates the channel server-side during the OAuth exchange — there is
+  no NestBook-initiated create call for Airbnb; `getChannel()` is how the
+  callback confirms what Channex created.
+- `server/routes/channex.js` — `resolveSingleGroupId()` extracted as a shared
+  helper (was inlined in CA-2's create-channel route, now reused by the new
+  Airbnb connection-link route too). New Super-Admin routes:
+  `POST /airbnb/connection-link`, `GET /channels/:channelId`,
+  `POST /channels/:channelId/airbnb/listings`,
+  `POST /channels/:channelId/airbnb/listing-details`,
+  `POST /channels/:channelId/airbnb/mappings`. `check-readiness`/`activate`
+  are NOT duplicated — CA-2's existing channel-agnostic routes are reused
+  as-is. New **public** route `GET /api/channex/airbnb/callback` (mounted on
+  `channexRouter`, before `requireAuth`, same file as the existing webhook
+  receiver) — resolves the single-use `token`, deletes it, calls
+  `getChannel()` to confirm real state (never trusts the redirect's own query
+  params), upserts `channex_channels`, redirects back into the debug page
+  with `?airbnb=success|failed`.
+- `client/src/admin/pages/ChannexChannelApi.jsx` — "Airbnb Connect (CA-3
+  debug)" section: generate link → paste/auto-fill channel id (read from the
+  callback redirect's query string on mount) → load/confirm channel →
+  list listings → create mapping → check readiness → activate. Same
+  one-button-per-step, raw-response-shown discipline as CA-2.
+
+**Two discrepancies found in the fetched Airbnb docs page — both live-tested
+and found wrong, flagged per instruction rather than force-fit:**
+
+1. **The docs page claims the `connection_link` request body is wrapped
+   under a `"connection_link"` key** (`{"connection_link": {group_id, ...}}`).
+   Live-tested: staging **rejects nothing and works fine with a FLAT body**
+   (`{group_id, properties, redirect_uri, failure_redirect_uri, token}`, no
+   wrapper) — matching what the original CA-1 investigation had already
+   captured from a real call. The implementation uses the flat shape, since
+   it's the one confirmed to actually work.
+2. **The docs page claims the adapter code is lowercase `"airbnb"`.** Live
+   `GET /channels/codes` and `GET /channels/adapter?code=AirBNB` both
+   confirm the real, canonical code is **`AirBNB`** (mixed case) — matching
+   CA-1's already-confirmed fact. Channex's API turned out to be
+   case-insensitive on the `?code=` query param (a lowercase `airbnb` query
+   still resolves to the same adapter), which is almost certainly why the
+   docs page's summary got the casing wrong — but the value actually stored/
+   returned by Channex is `AirBNB`, which is what this codebase uses
+   everywhere (schema, client, routes).
+
+This is the second time in two slices a fetched docs.channex.io page has
+been wrong on a concrete, checkable detail (CA-2 found the pricing_type/
+one-channel-per-property surprises; this doc's own original investigation
+flagged the same risk for `checkin_time` vs `checkin_from_time`/
+`checkin_to_time`). **Live verification is not optional for this
+integration — a fetched summary is a hypothesis to test, not a fact.**
+
+**Verified live against staging:**
+- `generateAirbnbConnectionLink()` → real, valid `airbnb.com/oauth2/auth`
+  URL returned (confirmed twice — once via curl, once via a real UI click),
+  confirmed to create zero Channex-side state (matches CA-1's original
+  finding).
+- The `channex_channel_oauth_links` row was written correctly (`token`,
+  `property_id: 1`, `user_id: 73` — the Super Admin session's own userId,
+  `channel_code: 'AirBNB'`).
+- **The public callback route was exercised end-to-end against a REAL
+  Channex API call**, substituting CA-2's already-real, already-active
+  BookingCom channel id in place of a genuine Airbnb OAuth grant (which
+  needs a real Airbnb account NestBook doesn't have — see §5 unchanged):
+  simulating `GET /api/channex/airbnb/callback?success=true&channel_id=<real
+  id>&token=<real token>` correctly (a) resolved and deleted the single-use
+  token — confirmed by querying `channex_channel_oauth_links` before/after
+  (row present, then gone), (b) called the REAL `GET /channels/{id}` and got
+  the channel's actual current state back, (c) correctly upserted
+  `channex_channels` (updated `updated_at`, left `channel_code` as
+  `BookingCom` rather than clobbering it with `AirBNB` from the oauth link
+  row — the `ON CONFLICT` clause deliberately doesn't touch `channel_code`),
+  (d) redirected to the debug page with the right query string. The
+  failure-path (`success=false`) and unknown/expired-token path were also
+  exercised live and redirect correctly.
+- **`GET /channels/:id`, `check_readiness`, and `activate` all confirmed via
+  real UI clicks** against that same real channel — 200s throughout (reusing
+  CA-2's already-proven readiness/activate routes unmodified, as intended).
+- **`POST /channels/{id}/action/listings` tested against that same real but
+  non-Airbnb channel — Channex correctly rejected it with a clean, real
+  error**: `400 — ["action is not supported"]`. This proves the code calls
+  the real endpoint with the right shape and surfaces the real error
+  end-to-end; it does NOT prove the true Airbnb happy path (listings
+  discovery, mapping creation, activation-with-real-mappings) works, since
+  that requires a channel Airbnb itself actually created via a completed
+  OAuth grant. **This is the one part of CA-3 that remains genuinely
+  unverified — exactly the gap §5 already flagged, unchanged by this slice.**
+- Regression: `git diff --stat` touches only `schema.js`, `channexClient.js`,
+  `routes/channex.js`, and the one page — zero Phase 2 files. Post-change,
+  CA-1's adapters/channels-list endpoints and `GET /api/admin/properties`
+  all still return 200 with correct data; server logs show no unexpected
+  errors across the whole walkthrough.
+
+**Not built** (still CA-4+ per §3, unchanged): the owner-facing wizard for
+either flow, `updateChannel`/`deactivateChannel`/`deleteChannel`, the
+Airbnb-specific "remove every mapping before deactivate, 30-day scheduled
+removal" handling (no code exercises deactivate yet for either channel type).
+§5's open question #1 (a fully-live sandbox to prove Airbnb end-to-end) is
+still open and now the single most useful thing to get from Evan — everything
+else about the Airbnb flow that COULD be verified without a real account has
+been.
+
+---
+
 ## CA-2 — DONE (2026-09-16) — full create → readiness → activate succeeded
 
 Booking.com connect flow, Super-Admin debug only, against Channex's shared

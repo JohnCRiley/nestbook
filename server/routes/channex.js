@@ -18,11 +18,14 @@ import { Router } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 import db from '../db/database.js';
 import { fetchRevision, syncReservationFromRevision } from '../utils/channexInboundSync.js';
+import { randomUUID } from 'node:crypto';
 import {
   createWebhook, listWebhooks, deleteWebhook, ChannexError,
-  listChannelAdapters, listChannelsForProperty, listGroups,
+  listChannelAdapters, listChannelsForProperty, listGroups, getChannel,
   testChannelConnection, getMappingDetails, getConnectionDetails,
   createChannel, checkChannelReadiness, activateChannel,
+  generateAirbnbConnectionLink, listAirbnbListings, getAirbnbListingDetails,
+  createAirbnbMapping,
 } from '../utils/channexClient.js';
 
 export const channexRouter = Router();
@@ -35,6 +38,26 @@ const BOOKING_EVENTS = new Set([
   // ever failed every retry or was lost to a process restart before it ran.
   'non_acked_booking',
 ]);
+
+/**
+ * Every property we've connected shares the one Channex "group" auto-created
+ * for our account (confirmed live, CA-1/CA-2/CA-3) — required on both
+ * POST /channels (CA-2) and POST /meta/airbnb/connection_link (CA-3). Never
+ * guesses which group when there's more than one; that's a real stop, not a
+ * default to fall back on.
+ * @returns {Promise<{groupId: string}|{error: string}>}
+ */
+async function resolveSingleGroupId() {
+  const groupsBody = await listGroups();
+  const groups = groupsBody?.data ?? [];
+  if (groups.length !== 1) {
+    return {
+      error: `Expected exactly one Channex group on this account, found ${groups.length} — ` +
+             `refusing to guess which one. Resolve manually before retrying.`,
+    };
+  }
+  return { groupId: groups[0].id };
+}
 
 function getConfiguredSecret() {
   return (process.env.CHANNEX_WEBHOOK_SECRET ?? '').trim();
@@ -83,6 +106,63 @@ channexRouter.post('/webhook', async (req, res) => {
     // are worth a retry; a bad secret or malformed body (handled above) is not.
     console.error('[channex-webhook] processing failed:', err.message);
     return res.status(500).json({ error: 'processing_failed' });
+  }
+});
+
+// ── GET /api/channex/airbnb/callback — Slice CA-3 (Airbnb OAuth) ─────────────
+// PUBLIC, same reasoning as the webhook above but for a different reason: the
+// browser arrives here after two hops off NestBook's origin (Airbnb, then
+// Channex's own auth_redirect) with no session it can prove — identity is
+// resolved via `token` (channex_channel_oauth_links), single-use, deleted the
+// moment it's read. See investigation doc §1.3 for the full redirect chain.
+// This mirrors the /webhook receiver's "public route, non-session identity"
+// pattern, not the owner-facing Stripe Connect return (single-hop, session
+// already durable before redirecting).
+channexRouter.get('/airbnb/callback', async (req, res) => {
+  const token = String(req.query.token ?? '');
+  const success = String(req.query.success ?? '') === 'true';
+  const channelId = req.query.channel_id ? String(req.query.channel_id) : null;
+
+  const link = token
+    ? db.prepare('SELECT * FROM channex_channel_oauth_links WHERE token = ?').get(token)
+    : null;
+  if (link) {
+    db.prepare('DELETE FROM channex_channel_oauth_links WHERE token = ?').run(token);
+  }
+  db.prepare(`DELETE FROM channex_channel_oauth_links WHERE created_at < datetime('now', '-4 hours')`).run();
+
+  const debugPageUrl = '/app/super-admin/channex-channel-api';
+
+  if (!link) {
+    console.warn(`[channex-airbnb-callback] unknown/expired token (success=${success}, channel_id=${channelId})`);
+    return res.redirect(`${debugPageUrl}?airbnb=failed&reason=unknown_token`);
+  }
+  if (!success || !channelId) {
+    return res.redirect(`${debugPageUrl}?airbnb=failed&property_id=${link.property_id}`);
+  }
+
+  try {
+    // Never trust the redirect's own query params as the final state — pull
+    // the authoritative resource, same "recompute from source" discipline as
+    // every other Channex write in this codebase.
+    const channel = await getChannel(channelId);
+    const groupId = channel?.relationships?.group?.data?.id ?? null;
+
+    db.prepare(`
+      INSERT INTO channex_channels (property_id, channex_channel_id, channex_group_id, channel_code, title, is_active)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(channex_channel_id) DO UPDATE SET
+        title = excluded.title, is_active = excluded.is_active, updated_at = datetime('now')
+    `).run(
+      link.property_id, channelId, groupId ?? '', link.channel_code,
+      channel?.attributes?.title ?? null, channel?.attributes?.is_active ? 1 : 0
+    );
+
+    console.log(`[channex-airbnb-callback] confirmed channel ${channelId} for property #${link.property_id}`);
+    return res.redirect(`${debugPageUrl}?airbnb=success&channel_id=${encodeURIComponent(channelId)}&property_id=${link.property_id}`);
+  } catch (err) {
+    console.error('[channex-airbnb-callback] confirm-state failed:', err.message);
+    return res.redirect(`${debugPageUrl}?airbnb=failed&reason=confirm_failed&property_id=${link.property_id}`);
   }
 });
 
@@ -290,15 +370,9 @@ channexAdminRouter.post('/channels/create', async (req, res) => {
   }
 
   try {
-    const groupsBody = await listGroups();
-    const groups = groupsBody?.data ?? [];
-    if (groups.length !== 1) {
-      return res.status(502).json({
-        error: `Expected exactly one Channex group on this account, found ${groups.length} — ` +
-               `refusing to guess which one. Resolve manually before retrying.`,
-      });
-    }
-    const groupId = groups[0].id;
+    const groupResult = await resolveSingleGroupId();
+    if (groupResult.error) return res.status(502).json({ error: groupResult.error });
+    const groupId = groupResult.groupId;
 
     const created = await createChannel({
       channel: channel_code,
@@ -351,6 +425,121 @@ channexAdminRouter.post('/channels/:channelId/activate', async (req, res) => {
     db.prepare(`UPDATE channex_channels SET is_active = 1, updated_at = datetime('now') WHERE channex_channel_id = ?`)
       .run(req.params.channelId);
     res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+// Generic single-channel fetch — channel-agnostic, reused by both the
+// Airbnb callback (below) and the debug UI to poll/confirm current state.
+channexAdminRouter.get('/channels/:channelId', async (req, res) => {
+  try {
+    const channel = await getChannel(req.params.channelId);
+    res.json({ channel });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+// ── Slice CA-3 — Airbnb OAuth connect flow ────────────────────────────────────
+// See docs/in-progress/channex-channel-api-investigation.md §1.3/§2.2. The
+// public callback (GET /api/channex/airbnb/callback, below on channexRouter,
+// NOT this admin router) is the only piece that can't require a Super Admin
+// session — the browser returns from Airbnb/Channex with no way to carry one.
+// Everything before and after that hop is Super-Admin-gated debug tooling,
+// same as CA-1/CA-2.
+
+const OAUTH_LINK_STALE_HOURS = 4; // link itself expires after 2h per Channex's docs
+
+function sweepStaleOauthLinks() {
+  db.prepare(`DELETE FROM channex_channel_oauth_links WHERE created_at < datetime('now', ?)`)
+    .run(`-${OAUTH_LINK_STALE_HOURS} hours`);
+}
+
+channexAdminRouter.post('/airbnb/connection-link', async (req, res) => {
+  const propId = Number(req.body?.property_id);
+  if (!Number.isInteger(propId)) return res.status(400).json({ error: 'property_id is required' });
+
+  const property = db.prepare('SELECT id, name, channex_property_id FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+  if (!property.channex_property_id) {
+    return res.status(400).json({ error: 'Property is not connected to Channex.' });
+  }
+
+  try {
+    const groupResult = await resolveSingleGroupId();
+    if (groupResult.error) return res.status(502).json({ error: groupResult.error });
+
+    sweepStaleOauthLinks();
+
+    const token = randomUUID();
+    db.prepare(`
+      INSERT INTO channex_channel_oauth_links (token, property_id, user_id, channel_code)
+      VALUES (?, ?, ?, 'AirBNB')
+    `).run(token, propId, req.user?.userId ?? null);
+
+    // Browser-mediated redirect, not a server-to-server call (Channex's own
+    // auth_redirect exchanges the code and redirects the BROWSER back here) —
+    // unlike the webhook receiver, this does NOT need to be a public HTTPS
+    // origin reachable by Channex's servers; it only needs to be reachable by
+    // whoever's browser is doing the connecting, so a local dev origin is
+    // fine for debug testing.
+    const base = `${req.protocol}://${req.get('host')}`;
+    const callbackUrl = `${base}/api/channex/airbnb/callback`;
+
+    const link = await generateAirbnbConnectionLink({
+      group_id: groupResult.groupId,
+      properties: [property.channex_property_id],
+      redirect_uri: `${callbackUrl}?token=${encodeURIComponent(token)}`,
+      failure_redirect_uri: `${callbackUrl}?token=${encodeURIComponent(token)}`,
+      token,
+    });
+
+    res.json({ url: link?.attributes?.url ?? link?.url ?? null, token, raw: link });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/:channelId/airbnb/listings', async (req, res) => {
+  try {
+    const result = await listAirbnbListings(req.params.channelId);
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/:channelId/airbnb/listing-details', async (req, res) => {
+  const { listing_id } = req.body ?? {};
+  if (!listing_id) return res.status(400).json({ error: 'listing_id is required' });
+  try {
+    const result = await getAirbnbListingDetails(req.params.channelId, listing_id);
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/:channelId/airbnb/mappings', async (req, res) => {
+  const { property_id, rate_plan_id, listing_id } = req.body ?? {};
+  const propId = Number(property_id);
+  if (!Number.isInteger(propId)) return res.status(400).json({ error: 'property_id is required' });
+  if (!rate_plan_id || !listing_id) {
+    return res.status(400).json({ error: 'rate_plan_id and listing_id are both required' });
+  }
+
+  const mapping = db.prepare(`
+    SELECT 1 FROM channex_room_mappings
+    WHERE property_id = ? AND channex_rate_plan_id = ? AND orphaned_at IS NULL
+  `).get(propId, rate_plan_id);
+  if (!mapping) {
+    return res.status(400).json({ error: "rate_plan_id does not belong to this property's channex_room_mappings." });
+  }
+
+  try {
+    const result = await createAirbnbMapping(req.params.channelId, { ratePlanId: rate_plan_id, listingId: listing_id });
+    res.status(201).json({ result });
   } catch (e) {
     res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
   }

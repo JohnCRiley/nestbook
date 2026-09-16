@@ -10,6 +10,18 @@ import { saApiFetch as apiFetch } from '../saApiFetch.js';
 // one button per step (not one "just connect it" click) so a failure at any
 // step is visible in isolation, per the doc's step order:
 // docs/in-progress/channex-channel-api-investigation.md.
+//
+// Slice CA-3 — adds the Airbnb OAuth flow below. Genuinely different shape:
+// Channex itself creates the channel server-side during the OAuth exchange
+// (not a NestBook-initiated create call), and the browser leaves NestBook's
+// origin entirely before landing back via the public
+// GET /api/channex/airbnb/callback route (server/routes/channex.js), which
+// redirects back to THIS page with ?airbnb=success|failed — read on mount
+// below. No real Airbnb test account is available in this environment, so
+// only the connection-link generation and the callback/confirm plumbing are
+// verified end-to-end; listings/mapping/activate are exercised against
+// whatever real channel_id is on hand (see the investigation doc's CA-3
+// section for exactly what was and wasn't verified live).
 const TEST_HOTELS = [
   { id: '5868189', label: '5868189 — occupancy-based pricing (OBP)' },
   { id: '6519420', label: '6519420 — per-room pricing (Standard)' },
@@ -67,6 +79,36 @@ export default function ChannexChannelApi() {
   const [caOccupancy,      setCaOccupancy]      = useState('');
   const [caPricingType,    setCaPricingType]    = useState('');
   const [caCreatedChannel, setCaCreatedChannel] = useState(null); // { id, title, ... } from Channex
+
+  // ── CA-3 state ──────────────────────────────────────────────────────────
+  const [abBusyStep,       setAbBusyStep]       = useState(null);
+  const [abResults,        setAbResults]        = useState({}); // { link, loadChannel, listings, mapping, readiness, activate }
+  const [abUrl,            setAbUrl]            = useState('');
+  const [abToken,          setAbToken]          = useState('');
+  const [abChannelId,      setAbChannelId]      = useState('');
+  const [abCallbackStatus, setAbCallbackStatus] = useState(null); // 'success' | 'failed' | null
+  const [abListingId,      setAbListingId]      = useState('');
+  const [abRatePlanId,     setAbRatePlanId]     = useState('');
+
+  // The public callback (server/routes/channex.js) redirects the browser back
+  // to this exact page with ?airbnb=success&channel_id=...&property_id=... (or
+  // ?airbnb=failed) once it lands. Read once on mount, then scrub the query
+  // string so a later refresh doesn't re-trigger the banner.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const airbnb = params.get('airbnb');
+    if (!airbnb) return;
+    if (airbnb === 'success') {
+      setAbCallbackStatus('success');
+      const channelId = params.get('channel_id');
+      const propId = params.get('property_id');
+      if (channelId) setAbChannelId(channelId);
+      if (propId) setPropertyId(propId);
+    } else {
+      setAbCallbackStatus('failed');
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
 
   useEffect(() => {
     apiFetch('/api/admin/properties')
@@ -212,11 +254,69 @@ export default function ChannexChannelApi() {
   const createDisabled = !propertyId || !caRatePlanId || !caOtaRoomId || !caOtaRateId ||
     !caOccupancy || !caPricingType || !caTitle || caBusyStep === 'create';
 
+  // ── CA-3 handlers ─────────────────────────────────────────────────────────
+  async function runAbStep(key, path, { method = 'POST', body } = {}) {
+    setAbBusyStep(key);
+    try {
+      const opts = { method };
+      if (body !== undefined) {
+        opts.headers = { 'Content-Type': 'application/json' };
+        opts.body = JSON.stringify(body);
+      }
+      const res = await apiFetch(path, opts);
+      const data = await res.json();
+      setAbResults((prev) => ({ ...prev, [key]: { ok: res.ok, status: res.status, data } }));
+      return { ok: res.ok, data };
+    } catch (err) {
+      setAbResults((prev) => ({ ...prev, [key]: { ok: false, status: 0, data: { error: err.message } } }));
+      return { ok: false, data: null };
+    } finally {
+      setAbBusyStep(null);
+    }
+  }
+
+  async function generateAirbnbLink() {
+    const { ok, data } = await runAbStep('link', '/api/admin/channex/airbnb/connection-link', {
+      body: { property_id: propertyId },
+    });
+    if (ok && data?.url) { setAbUrl(data.url); setAbToken(data.token ?? ''); }
+  }
+
+  function loadChannel() {
+    if (!abChannelId) return;
+    return runAbStep('loadChannel', `/api/admin/channex/channels/${abChannelId}`, { method: 'GET' });
+  }
+
+  function fetchListings() {
+    if (!abChannelId) return;
+    return runAbStep('listings', `/api/admin/channex/channels/${abChannelId}/airbnb/listings`, { body: {} });
+  }
+
+  function createMapping() {
+    if (!abChannelId || !abRatePlanId || !abListingId) return;
+    return runAbStep('mapping', `/api/admin/channex/channels/${abChannelId}/airbnb/mappings`, {
+      body: { property_id: propertyId, rate_plan_id: abRatePlanId, listing_id: abListingId },
+    });
+  }
+
+  function abCheckReadiness() {
+    if (!abChannelId) return;
+    return runAbStep('readiness', `/api/admin/channex/channels/${abChannelId}/check-readiness`, { body: {} });
+  }
+
+  async function abActivate() {
+    if (!abChannelId) return;
+    const { ok } = await runAbStep('activate', `/api/admin/channex/channels/${abChannelId}/activate`, { body: {} });
+    if (ok) fetchChannels();
+  }
+
+  const abListings = abResults.listings?.data?.result?.listing_id_dictionary?.values ?? [];
+
   return (
     <>
       <div className="page-header">
         <h1>Channex Channel API</h1>
-        <div className="page-date">Slices CA-1/CA-2 — groundwork + Booking.com debug connect flow</div>
+        <div className="page-date">Slices CA-1/CA-2/CA-3 — groundwork + Booking.com + Airbnb debug connect flows</div>
       </div>
 
       <div className="admin-card" style={{ marginBottom: 20 }}>
@@ -446,6 +546,135 @@ export default function ChannexChannelApi() {
             {caBusyStep === 'activate' ? '6. Activating…' : '6. Activate'}
           </button>
           <StepResult result={caResults.activate} />
+        </div>
+      </div>
+
+      <div className="admin-card" style={{ marginTop: 20 }}>
+        <h2 style={{ marginTop: 0 }}>Airbnb Connect (CA-3 debug)</h2>
+        <p className="admin-muted" style={{ marginTop: -6, fontSize: '0.85rem' }}>
+          OAuth-based — genuinely different from Booking.com's credential flow. Channex creates the
+          channel server-side during the OAuth exchange, before the browser even lands back here.
+          Completing a real Airbnb authorization needs a real Airbnb test account (not available in
+          this environment) — the link generation and callback plumbing are verified regardless.
+          Property selected above (<strong>{selectedProperty?.name ?? '—'}</strong>) is used to
+          generate the link.
+        </p>
+
+        {abCallbackStatus === 'success' ? (
+          <div style={{
+            padding: 10, borderRadius: 6, marginBottom: 16, fontSize: '0.85rem',
+            background: '#f0fdf4', border: '1px solid #86efac', color: '#166534',
+          }}>
+            ✓ Callback landed with success — channel id <code>{abChannelId}</code> confirmed via a live GET and upserted into channex_channels.
+          </div>
+        ) : abCallbackStatus === 'failed' ? (
+          <div style={{
+            padding: 10, borderRadius: 6, marginBottom: 16, fontSize: '0.85rem',
+            background: '#fef2f2', border: '1px solid #fca5a5', color: '#991b1b',
+          }}>
+            ✗ Callback reported failure, or an unknown/expired token — check server logs for detail.
+          </div>
+        ) : null}
+
+        {/* Step 1 */}
+        <div style={{ marginBottom: 18 }}>
+          <button onClick={generateAirbnbLink} disabled={!propertyId || abBusyStep === 'link'}
+            style={stepButtonStyle(!propertyId || abBusyStep === 'link')}>
+            {abBusyStep === 'link' ? '1. Generating…' : '1. Generate Connection Link'}
+          </button>
+          <StepResult result={abResults.link} />
+          {abUrl ? (
+            <div style={{ marginTop: 8, fontSize: '0.8rem', wordBreak: 'break-all' }}>
+              <a href={abUrl} target="_blank" rel="noreferrer">{abUrl}</a>
+              <div className="admin-muted" style={{ marginTop: 4 }}>
+                Opening this needs a real Airbnb account to complete authorization — not available
+                here. Token: <code>{abToken}</code>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Step 2 */}
+        <div style={{ marginBottom: 18, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: '0.95rem' }}>2. Load / Confirm Channel</h3>
+          <label style={{ fontSize: '0.8rem', display: 'block', marginBottom: 10 }}>
+            Channex channel id (auto-filled by a real callback, or paste one to exercise these routes
+            against an existing channel)
+            <input type="text" value={abChannelId} onChange={(e) => setAbChannelId(e.target.value)}
+              style={{ display: 'block', width: 340, maxWidth: '100%', padding: '6px 8px', marginTop: 2,
+                       borderRadius: 6, border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '0.8rem' }} />
+          </label>
+          <button onClick={loadChannel} disabled={!abChannelId || abBusyStep === 'loadChannel'}
+            style={stepButtonStyle(!abChannelId || abBusyStep === 'loadChannel')}>
+            {abBusyStep === 'loadChannel' ? 'Loading…' : 'GET /channels/:id'}
+          </button>
+          <StepResult result={abResults.loadChannel} />
+        </div>
+
+        {/* Step 3 */}
+        <div style={{ marginBottom: 18 }}>
+          <button onClick={fetchListings} disabled={!abChannelId || abBusyStep === 'listings'}
+            style={stepButtonStyle(!abChannelId || abBusyStep === 'listings')}>
+            {abBusyStep === 'listings' ? '3. Fetching…' : '3. List Airbnb Listings'}
+          </button>
+          <StepResult result={abResults.listings} />
+        </div>
+
+        {/* Step 4 */}
+        <div style={{ marginBottom: 18, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: '0.95rem' }}>4. Create Mapping</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 10 }}>
+            <label style={{ fontSize: '0.8rem' }}>
+              NestBook rate plan (channex_room_mappings)
+              <select value={abRatePlanId} onChange={(e) => setAbRatePlanId(e.target.value)}
+                style={{ display: 'block', width: '100%', padding: '6px 8px', marginTop: 2, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <option value="">— select —</option>
+                {caRoomMappings.map((m) => (
+                  <option key={m.id} value={m.channex_rate_plan_id}>
+                    {m.nestbook_ref_type} #{m.nestbook_ref_id ?? '—'} → {m.channex_rate_plan_id.slice(0, 8)}…
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={{ fontSize: '0.8rem' }}>
+              Airbnb listing (from step 3, or type an id)
+              <select value={abListingId} onChange={(e) => setAbListingId(e.target.value)} disabled={!abListings.length}
+                style={{ display: 'block', width: '100%', padding: '6px 8px', marginTop: 2, borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                <option value="">{abListings.length ? '— select —' : 'run step 3 first (or type below)'}</option>
+                {abListings.map((l) => <option key={l.id} value={l.id}>{l.title} ({l.id})</option>)}
+              </select>
+              <input type="text" placeholder="or type a listing id" value={abListingId}
+                onChange={(e) => setAbListingId(e.target.value)}
+                style={{ display: 'block', width: '100%', padding: '6px 8px', marginTop: 6, borderRadius: 6, border: '1px solid #e2e8f0', fontSize: '0.8rem' }} />
+            </label>
+          </div>
+          <button onClick={createMapping} disabled={!abChannelId || !abRatePlanId || !abListingId || abBusyStep === 'mapping'}
+            style={stepButtonStyle(!abChannelId || !abRatePlanId || !abListingId || abBusyStep === 'mapping')}>
+            {abBusyStep === 'mapping' ? 'Submitting…' : 'Create Mapping'}
+          </button>
+          <StepResult result={abResults.mapping} />
+          <p className="admin-muted" style={{ fontSize: '0.75rem', marginTop: 6 }}>
+            Per Channex's docs this is asynchronous (~30s for Airbnb's own confirmation) — a success
+            response here means "submitted", not "confirmed live on Airbnb".
+          </p>
+        </div>
+
+        {/* Step 5 */}
+        <div style={{ marginBottom: 18 }}>
+          <button onClick={abCheckReadiness} disabled={!abChannelId || abBusyStep === 'readiness'}
+            style={stepButtonStyle(!abChannelId || abBusyStep === 'readiness')}>
+            {abBusyStep === 'readiness' ? '5. Checking…' : '5. Check Readiness'}
+          </button>
+          <StepResult result={abResults.readiness} />
+        </div>
+
+        {/* Step 6 */}
+        <div>
+          <button onClick={abActivate} disabled={!abChannelId || abBusyStep === 'activate'}
+            style={stepButtonStyle(!abChannelId || abBusyStep === 'activate')}>
+            {abBusyStep === 'activate' ? '6. Activating…' : '6. Activate'}
+          </button>
+          <StepResult result={abResults.activate} />
         </div>
       </div>
     </>

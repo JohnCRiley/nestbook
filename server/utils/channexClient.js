@@ -570,6 +570,99 @@ export async function activateChannel(channelId) {
     channexRequest(`/api/v1/channels/${channelId}/activate`, { method: 'POST', raw: true }));
 }
 
+/**
+ * Fetch a single Channel API connection's current, authoritative state —
+ * `GET /api/v1/channels/{id}`. Not queued (a read). Used after the Airbnb
+ * OAuth callback lands to confirm what Channex actually created, and
+ * generally useful anywhere a single channel_id (not a property filter) is
+ * the only thing on hand.
+ * @returns {Promise<object>} the channel's `data` (id, attributes, relationships)
+ */
+export async function getChannel(channelId) {
+  return channexRequest(`/api/v1/channels/${channelId}`);
+}
+
+// ── Channel API (Slice CA-3 — Airbnb OAuth flow) ──────────────────────────────
+// Field names/shapes re-confirmed fresh for this slice (not reused from CA-1's
+// summary) against https://docs.channex.io/channel-api-examples/airbnb AND a
+// real live call — the fetched doc page claimed the connection_link request
+// body is wrapped under a `"connection_link"` key and that the adapter code
+// is lowercase `"airbnb"`; BOTH were live-tested and found wrong (see the
+// investigation doc's CA-3 section for the full discrepancy write-up). The
+// shapes below are the ones that actually work against staging.
+//
+// Unlike Booking.com, Channex itself creates the channel resource server-side
+// during the OAuth exchange (step 2 of the redirect, before the browser ever
+// comes back to us) — there is no NestBook-initiated createChannel() call for
+// Airbnb. getChannel() above is how the callback route confirms what Channex
+// created. checkChannelReadiness()/activateChannel() above are channel-
+// agnostic and reused as-is for Airbnb — no Airbnb-specific versions needed.
+
+/**
+ * Generate an Airbnb OAuth authorization URL — confirmed live: this does NOT
+ * create any Channex-side state (`GET /channels` stays empty until the owner
+ * actually completes the OAuth grant), so it's always safe to call, including
+ * speculatively. `attributes`: `{ group_id, properties: [channexPropertyId],
+ * redirect_uri, failure_redirect_uri, token }` — a FLAT object, NOT wrapped
+ * under a `connection_link` key (contradicts the docs page fetched for this
+ * slice; the flat shape is what staging actually accepts). `token` is
+ * NestBook's own opaque value, confirmed live to be echoed back verbatim as a
+ * query param on the final redirect — see `channex_channel_oauth_links`.
+ * @returns {Promise<{url: string}>}
+ */
+export async function generateAirbnbConnectionLink(attributes) {
+  return queuedWrite('generate Airbnb connection link', () =>
+    channexRequest('/api/v1/meta/airbnb/connection_link', {
+      method: 'POST',
+      body: attributes,
+    }));
+}
+
+/**
+ * List the real Airbnb listings on an already-OAuth-connected channel —
+ * `GET /api/v1/channels/{channel_id}/action/listings`. Per docs, response
+ * shape is `{ listing_id_dictionary: { values: [{ id, title, occupancies,
+ * city, country_code, quality_status, ... }] } }` — NOT independently
+ * re-verified live for this slice (needs a real Airbnb account to complete
+ * the OAuth grant first — see investigation doc §5).
+ * @returns {Promise<object>}
+ */
+export async function listAirbnbListings(channelId) {
+  return channexRequest(`/api/v1/channels/${channelId}/action/listings`);
+}
+
+/**
+ * Fetch one Airbnb listing's full metadata (booking_settings,
+ * pricing_settings, availability_rules, …) —
+ * `GET /api/v1/channels/{channel_id}/action/listing_details?listing_id=`.
+ * Not independently re-verified live (same reason as listAirbnbListings).
+ * @returns {Promise<object>}
+ */
+export async function getAirbnbListingDetails(channelId, listingId) {
+  return channexRequest(`/api/v1/channels/${channelId}/action/listing_details`, {
+    query: { listing_id: listingId },
+  });
+}
+
+/**
+ * Map a NestBook/Channex rate plan to a real Airbnb listing —
+ * `POST /api/v1/channels/{channel_id}/mappings`, body `{ mapping: {
+ * rate_plan_id, settings: { listing_id } } }`. Per docs this is submitted to
+ * Airbnb immediately (an Airbnb-side rejection cancels the mapping) and is
+ * ASYNCHRONOUS (~30s for Airbnb's own confirmation) — callers should treat a
+ * success response here as "submitted", not "confirmed live on Airbnb", and
+ * poll/re-fetch the channel afterward. Not independently re-verified live
+ * (needs a real Airbnb account — see investigation doc §5).
+ * @returns {Promise<object>} the created mapping's `data`
+ */
+export async function createAirbnbMapping(channelId, { ratePlanId, listingId }) {
+  return queuedWrite(`create Airbnb mapping (channel ${channelId})`, () =>
+    channexRequest(`/api/v1/channels/${channelId}/mappings`, {
+      method: 'POST',
+      body: { mapping: { rate_plan_id: ratePlanId, settings: { listing_id: listingId } } },
+    }));
+}
+
 export async function acknowledgeBookingRevision(revisionId) {
   const path = `/api/v1/booking_revisions/${encodeURIComponent(revisionId)}/ack`;
   const maxAttempts = 3;

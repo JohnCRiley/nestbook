@@ -2794,6 +2794,41 @@ John`
     console.log('✓ channex_channels table ready');
   } catch (e) { console.error('channex_channels table error:', e.message); }
 
+  // channex_channel_oauth_links (Slice CA-3 — Airbnb OAuth flow, see
+  // docs/in-progress/channex-channel-api-investigation.md §1.3/§2.2). The
+  // Airbnb connect flow leaves NestBook's origin for TWO hops (Airbnb, then
+  // Channex's own auth_redirect) before the browser comes back — a session
+  // cookie (or, here, the Super Admin bearer token in sessionStorage) cannot
+  // survive that round-trip, so identity is resolved via this table's `token`
+  // instead: written right before generating the connection_link, read (and
+  // deleted — single-use) by the public callback route
+  // (GET /api/channex/airbnb/callback) when the browser lands back.
+  //
+  // `token` is a NestBook-generated opaque value (crypto.randomUUID()), not a
+  // Channex/Airbnb value — passed as the `token` field on
+  // POST /meta/airbnb/connection_link and confirmed live (2026-09-16) to be
+  // echoed back verbatim as a query param on the final redirect.
+  //
+  // No separate cleanup job: the OAuth URL is only valid 2 hours per Channex's
+  // docs, so a stale row is harmless dead weight, not a security exposure
+  // (each token is single-use and deleted the moment it's redeemed). The
+  // connection-link route opportunistically sweeps rows older than 4 hours on
+  // every call rather than running a dedicated interval — this table is only
+  // ever a handful of rows at a time.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS channex_channel_oauth_links (
+        token         TEXT PRIMARY KEY,
+        property_id   INTEGER NOT NULL,
+        user_id       INTEGER,
+        channel_code  TEXT NOT NULL,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('✓ channex_channel_oauth_links table ready');
+  } catch (e) { console.error('channex_channel_oauth_links table error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }
