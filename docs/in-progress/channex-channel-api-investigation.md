@@ -1,3 +1,114 @@
+## CA-7 round 4 (GlampingHub, OneHotelRez, Stayinto) — DONE (2026-09-16) — self-picked directly from the real catalog; both fixed-bug patterns re-confirmed on independent adapters; all 3 usable, one with the same test_connection caveat as HotelREZ/Wigwam/OneHotelRez's siblings
+
+Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
+**picked directly from Channex's live 56-adapter catalog this time**
+(CA-7 round 3 found none of that round's named requests actually existed).
+**Picks and why, reasoned from name/code alone, not assumed real-world
+brand identity:**
+- **GlampingHub** — name directly signals self-catering/alternative-stay
+  accommodation, the strongest, most literal name-based match for
+  NestBook's stated market of any adapter picked across all CA-7 rounds.
+- **OneHotelRez** (`code`, title `1HotelRez`) — "hotel reservation"
+  naming pattern, same logic as HotelREZ (already confirmed relevant and
+  well-tested) — plausible small/independent-hotel distribution tool.
+- **Stayinto** — lower-confidence pick, disclosed as such: "Stay"-prefixed
+  branding suggests boutique/short-stay positioning; picked as the best
+  remaining signal among the untested adapters, not a confident brand
+  match.
+
+**1. Live adapter descriptors:** all three confirmed `kind: meta`,
+`mapping_mode: room_rate_multioccupancy`, `property_mapping: single`.
+**All three share the exact same `params`/`rate_params` shape as
+HotelREZ/Wigwam Holidays/Julian Alps Booking/GuruHotel** (`hotel_code`,
+`send_email_notifications`, hidden-by-rule `email`; `rate_params`:
+`readonly`, `occupancy`, `rate_plan_code`, `room_type_code`,
+`pricing_type` [select, `Standard`/`OBP`], `primary_occ`) — this shared
+descriptor shape is now confirmed common across at least 7 of the
+catalog's ~56 adapters, reinforcing (not just repeating) CA-7 round 3's
+finding that shape never predicts sandbox validation behavior on its own.
+
+**2, 3, 4. Live test-connection / detail-call behavior, "does
+test_connection genuinely validate," and both previously-fixed bug
+patterns — through CA-4's real owner-facing routes and a live browser
+click-through, tested independently per adapter, not inferred from the
+shared shape:**
+
+- **GlampingHub — genuinely validates, well-behaved.** `test_connection`
+  cleanly fails for both an empty and a nonsense `hotel_code`
+  (`invalid_credentials`, `200`). Reproduced live: fake Hotel Code →
+  "We couldn't verify these details…" within ~2s (one click hit a
+  transient `node --watch` dev-server restart mid-request, surfaced as a
+  one-off `500`/`ECONNRESET` in the browser network log — confirmed as
+  environment noise, not a real finding, by retrying immediately and
+  getting the correct clean result). `connection_details`/
+  `mapping_details` both return clean `400`/`422` (never `5xx`) — **no
+  queue-contention risk exists for this adapter** (the retry-storm pattern
+  only applies when Channex answers with a `5xx`).
+- **OneHotelRez — reproduces BOTH previously-fixed bug shapes
+  independently, both fixes confirmed still holding:**
+  `test_connection` returns `success:true` for any non-empty
+  `hotel_code` — the same Channex-side no-op behavior as HotelREZ/Wigwam
+  Holidays, confirmed live in the real browser wizard ("✓ Connection
+  verified." for a garbage Hotel Code). Its `mapping_details` independently
+  returns `available:true` with an **empty `rooms: []`** array (the exact
+  shape that caused the original dead-end bug for Wigwam Holidays) —
+  **confirmed live that the `hasOtaRooms` fix correctly protects this
+  independent adapter too**: continuing to the mapping step shows the
+  manual-entry fallback ("We couldn't automatically fetch this channel's
+  rooms — enter the codes manually…"), not an empty dead-end dropdown.
+  This is the fix's third independent confirmation (Wigwam Holidays →
+  fix built and verified; then re-verified generally in code review; now
+  empirically reproduced and confirmed a second time on a completely
+  unrelated adapter that happens to share the same failure shape). Its
+  `connection_details` also returns `available:true` with `currency:
+  null` — sparse-but-technically-successful data, rendered correctly
+  (the currency banner simply doesn't show, since the render condition
+  already checks for a real `currency` value, not just `available`).
+- **Stayinto — genuinely validates, well-behaved,** same as GlampingHub:
+  clean `invalid_credentials` on both empty and nonsense input, clean
+  `400`/`422` on detail calls, no `5xx`, no queue-contention risk,
+  reproduced live in the browser (fails within ~2s, correct copy).
+- **No adapter this round happened to return a `5xx` from a bad-credential
+  detail call**, so the queue-contention fix (item 3 of the checklist)
+  wasn't re-demonstrated against a fresh `5xx` this round — it remains
+  confirmed generally (CA-7's original Agoda/Hostelworld findings, and
+  CA-7 round 3's More.com confirmation) rather than re-proven against a
+  new case here. Noted plainly rather than silently assumed covered.
+
+**5. OBP status, noted per instruction:** all three expose `pricing_type:
+{options: ["Standard","OBP"]}` — OBP-capable, consistent with every
+adapter sharing this descriptor shape so far.
+
+**6. Adapter-specific copy — none needed:** same conclusion as every
+prior CA-7 round.
+
+**Regression check:** no code was changed this pass. Channel Manager's
+Room Mapping/Online Travel Agents section and the Super Admin debug page
+(56 adapters, CA-1/2/3 unaffected) both re-confirmed correct after the
+click-throughs above; no stray local or remote channel data left behind
+(only settings/test-connection calls were made this round, no
+create attempts).
+
+**Verdict for each, plainly:**
+- **GlampingHub**: **ready to use as-is via the generic form.** Genuine
+  validation, clean fast failures, no queue risk, OBP-capable but
+  unresolved as expected. The strongest name-based market fit of any
+  adapter picked across all CA-7 rounds.
+- **OneHotelRez**: **ready to use as-is via the generic form** — both
+  previously-fixed bugs confirmed protected, no dead end, no queue
+  blocking. **Carries the same caveat as HotelREZ/Wigwam Holidays**:
+  Test Connection is not a trustworthy signal on Channex's own sandbox for
+  this adapter (any non-empty value "verifies"), so it can't be honestly
+  presented to an owner as proof their credentials are correct — an
+  external Channex-side limitation, not fixable here, now confirmed to
+  affect at least 3 of the catalog's ~7 similarly-shaped adapters.
+- **Stayinto**: **ready to use as-is via the generic form**, same
+  reasoning as GlampingHub — genuine validation, no queue risk. Flagged,
+  per instruction, as the round's lowest-confidence market-relevance pick;
+  technically sound regardless of that uncertainty.
+
+---
+
 ## CA-7 round 3 (MoreCom, Julian Alps Booking, GuruHotel — substituted for HRS/Splendia/Weekendesk) — DONE (2026-09-16) — none of the three requested adapters exist in Channex's catalog; one new "cleanly blocked" case found (not a bug), two adapters confirmed genuinely well-behaved
 
 **None of HRS, Splendia, or Weekendesk exist in Channex's 56-adapter
