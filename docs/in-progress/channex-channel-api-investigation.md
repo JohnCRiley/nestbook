@@ -1,3 +1,175 @@
+## CA-7 round 2 (Hostelworld, HotelREZ, Wigwam Holidays) — DONE (2026-09-16) — mixed results; two real, previously-unknown Channex sandbox/code gaps found and confirmed live, neither fixed this pass (reported per instruction)
+
+Enablement checklist for 3 more `room_rate_multioccupancy` adapters.
+**Adapter choice and why**, per instruction to pick ones genuinely relevant
+to NestBook's actual market (independent UK/EU B&Bs, guesthouses, small
+hotels), not obscure/regional ones:
+- **Hostelworld** — one of the largest pan-European OTAs specifically for
+  independent, budget-conscious small properties (hostels, guesthouses) —
+  a very natural fit for exactly NestBook's target customer profile.
+- **HotelREZ** (`code: HotelRez`) — a real, UK-based marketing/booking
+  consortium built specifically FOR independent hotels — arguably a more
+  precise match for "independent UK hotels" than any adapter enabled so
+  far, including Booking.com/Expedia.
+- **Wigwam Holidays** (`code: WigwamHolidays`) — a recognized UK brand for
+  small independent glamping/unique-stay operators, representing the
+  alternative-accommodation niche many small UK properties (including
+  NestBook's own target segment) increasingly diversify into.
+
+Excluded from consideration: adapters with `mapping_mode` other than
+`room_rate_multioccupancy` (e.g. `GoogleHotelARI`'s `mapping_mode:
+"direct"` was tempting given its relevance to independents' direct-booking
+strategy, but doesn't match the shape this checklist is scoped to), and
+the clearly wholesale/regional-niche/unclear-origin adapters (WebBeds,
+CTrip, Goibibo, JoodBooking, etc.) that don't fit NestBook's stated UK/EU
+independent-property market.
+
+**1. Live adapter descriptors — all three confirmed `room_rate_multioccupancy`/`meta`/`single`,
+but with real, concrete differences from the Booking.com/Expedia/Agoda
+shape already handled, not assumed identical:**
+
+- **Hostelworld**: `params` — `hotel_id`, `min_stay_type` (select),
+  `send_email_notifications` (boolean), `email` (hidden-by-rule), `booking_amount_settings`
+  (select) — all within the generic form's supported types, same as
+  Expedia. **`rate_params` has NO `pricing_type` key at all** (unlike
+  Booking.com/Expedia/Agoda, which all have one, select or plain string) —
+  instead it has a genuinely new key never seen in this codebase's
+  Channel API work: **`type`** (`{"position":2,"type":"string","title":"Type"}`,
+  no default). CA-4's `createConnection()` payload builder
+  (`ChannelConnectWizard.jsx`) hardcodes exactly 5 possible `rate_plans[].settings`
+  keys (`room_type_code`, `rate_plan_code`, `occupancy`, `pricing_type`,
+  `primary_occ`) — it has no path to collect or send an arbitrary
+  additional key like `type`. **Not confirmed live whether Hostelworld's
+  real create endpoint actually requires `type`** (would need a real
+  Hostelworld hotel_id to get far enough to test — not available in this
+  environment) — flagged as a genuine open question, not silently assumed
+  either way.
+- **HotelREZ**: `params` uses **`hotel_code`, not `hotel_id`** — already
+  correctly handled by existing code (`createConnection()`'s
+  `hotel_id: settings.hotel_id ?? settings.hotel_code ?? ''` fallback,
+  written during CA-4, already anticipates exactly this). `rate_params`
+  matches Booking.com's shape exactly, including `pricing_type: {type:
+  "select", options: ["Standard","OBP"]}` — **HotelREZ is OBP-capable**
+  (noting per instruction, not resolving).
+- **Wigwam Holidays**: identical shape to HotelREZ in every respect —
+  `hotel_code` (same fallback applies), same `rate_params` including
+  OBP-capable `pricing_type`.
+
+**2 & 3. Live test-connection / detail-call behavior AND the queue-contention
+check, through CA-4's real owner-facing routes and a live browser
+click-through — this round surfaced two genuinely new findings beyond
+"does it work":**
+
+- **Hostelworld behaves like the well-behaved adapters (Booking.com/
+  Expedia/Agoda)**: `test_connection` genuinely validates — a fake hotel_id
+  cleanly fails (`200 {success:false, errors:"authentication_failed"}`),
+  confirmed with three different nonsense values, none of which
+  false-positived. Live in the browser: entering a fake Hotel ID and
+  clicking Test Connection resolves in ~2s to "We couldn't verify these
+  details..." — clean, no hang. **Queue-contention check, specifically**:
+  `connection_details` returns a real Channex `500` for bad input (same
+  failure class CA-7 found for Agoda) — confirmed this is now protected by
+  the CA-7 queue fix: called the owner-facing route directly with a
+  bad hotel_id, resolved in **1.6s** (`connection-details`) and **0.7s**
+  (`mapping-details`), zero `[channex-queue]` retry log lines. The fix
+  applies to every adapter sharing this code path, confirmed concretely
+  for a second one here, not just assumed from Agoda's case.
+- **HotelREZ and Wigwam Holidays — a genuinely new finding, not seen with
+  any adapter enabled so far**: their `test_connection` does **NOT**
+  validate against real inventory at all — confirmed live with 3 separate
+  nonsense values (`'totally-nonsense-value-999888777'`, `'   '`, and a
+  real UI click-through with garbage in the Hotel Code field) — **every
+  non-empty value returns `success:true`**; only a genuinely empty string
+  returns `false`. Reproduced live in the actual browser for both
+  adapters: typing garbage into "Hotel Code" and clicking Test Connection
+  shows **"✓ Connection verified."** — a false positive, confirmed through
+  the real wizard, not a raw-API artifact. This is a Channex-side sandbox/
+  adapter-implementation limitation (their own `test_connection` stub for
+  these two adapters doesn't check real inventory) — **not something
+  NestBook's code can fix**, but a real product risk worth knowing about
+  before offering either adapter to real owners: the one signal the wizard
+  gives an owner to catch a typo ("Connection verified") is meaningless
+  for these two.
+- **A confirmed, reproducible CA-4 code bug for Wigwam Holidays specifically**:
+  its `mapping_details` returns a **`200` with `available:true` but an
+  EMPTY `rooms: []` array** for any fake credential (confirmed live, not
+  hypothetical — this is exactly the "empty/null but HTTP 200" case CA-4's
+  own doc flagged as "not independently observed live... low risk but not
+  itself witnessed," now actually witnessed). Reproduced through the real
+  browser wizard: the mapping step shows the "Channel room" dropdown with
+  **only the placeholder option, zero real rooms to pick** — and critically,
+  the manual-entry fallback ("We couldn't automatically fetch this
+  channel's rooms — enter the codes manually") does **NOT** appear,
+  because that fallback only triggers when `mappingDetails.available` is
+  `false` — here it's `true`, just empty. **The owner is stuck**: no room
+  to select, no manual-entry alternative offered, `mappingReady` can never
+  become true, "Create connection" stays effectively unreachable. This is
+  a genuine, confirmed dead-end in CA-4's own code — **needs a small fix**
+  (the manual-entry fallback condition should also trigger when `rooms` is
+  empty, not only when `available` is false) — **not implemented this
+  pass**, reported per instruction for a decision, matching how CA-7's
+  Agoda queue finding was handled (reported first, fixed in a separate
+  follow-up).
+- HotelREZ does NOT have this dead-end: its `connection_details`/
+  `mapping_details` both return real `400`/`422` errors (not a
+  `200`-with-empty-data), so the existing `available:false` fallback
+  correctly engages — confirmed live through the browser: after the false
+  "✓ Connection verified.", continuing to the mapping step correctly shows
+  the manual room/rate code entry fields, not a dead end.
+- **A related, confirmed-live discovery about Channex's own sandbox
+  completeness for Wigwam Holidays, worth flagging even though it's not a
+  NestBook code issue**: `POST /channels` (create) was tested directly
+  with a completely fabricated `hotel_code` and fabricated room/rate
+  codes for Wigwam Holidays — **it returned a real `201`**, creating a
+  genuine (if meaningless) channel connection on the live account. This
+  confirms the leniency isn't limited to `test_connection`/detail calls —
+  Channex's own adapter for this brand doesn't validate the create step
+  against real inventory either, in this staging environment. **Deleted
+  immediately after confirming** (via CA-6's now-existing delete
+  mechanism) to avoid leaving junk data — confirmed genuinely gone via a
+  follow-up `GET` (`404`) and the account's total channel count back to
+  `0`.
+
+**4. OBP status — noted, not resolved, per instruction:** HotelREZ and
+Wigwam Holidays both expose `pricing_type: {options: ["Standard","OBP"]}`
+— OBP-capable. Hostelworld does not expose `pricing_type` at all (see
+finding above). None of the three were used to resolve the still-open OBP
+verification gap from CA-4.
+
+**5. Adapter-specific copy — none added:** same conclusion as the
+Expedia/Agoda round — every string shown for all three adapters is
+already generic form copy (field labels come from the live descriptor's
+own `title` values). No new i18n keys this pass.
+
+**Regression check:** no code was changed this pass (pure investigation,
+like the original CA-7 round) — Channel Manager's Room Mapping, Online
+Travel Agents section (CA-4/5/6), and the Super Admin debug page all
+re-confirmed rendering correctly after the click-throughs above.
+
+**Verdict for each, plainly:**
+- **Hostelworld**: behaves correctly for the common path and is protected
+  by the CA-7 queue fix, but has one genuinely open question — the
+  unhandled `type` rate_param — that couldn't be resolved without a real
+  Hostelworld credential. **Needs investigation before being called
+  "ready"** — not blocked, not confirmed-broken, genuinely unclear.
+- **HotelREZ**: mechanically fully compatible with the generic form
+  (hotel_code fallback already exists, OBP toggle renders, manual-entry
+  fallback engages correctly when detail calls fail) — **ready to use
+  mechanically**, but flagged with a real caveat: its Test Connection
+  step is not a trustworthy signal on Channex's own sandbox (accepts any
+  non-empty value) — an external limitation, not something to fix in this
+  codebase, but worth knowing before recommending this adapter to an
+  owner.
+- **Wigwam Holidays**: same Test-Connection-is-meaningless caveat as
+  HotelREZ, **plus a confirmed, reproducible stuck-UI bug** (empty-rooms-
+  but-available:true dead end) that's a genuine CA-4 code gap — **needs a
+  small fix**, not implemented this pass. Given both this bug and
+  Channex's confirmed-lenient `create` behavior for this specific adapter,
+  **recommend not offering Wigwam Holidays to real owners yet**, pending
+  at minimum the mapping-fallback fix.
+
+---
+
 ## CA-7 follow-up — DONE (2026-09-16) — fixed the channexQueue retry-blocking risk CA-7 flagged for Agoda (and, identically, Booking.com)
 
 CA-7 found that `getConnectionDetails()`/`getMappingDetails()` routed
