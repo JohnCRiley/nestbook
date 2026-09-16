@@ -25,7 +25,7 @@ import {
   testChannelConnection, getMappingDetails, getConnectionDetails,
   createChannel, checkChannelReadiness, activateChannel,
   generateAirbnbConnectionLink, listAirbnbListings, getAirbnbListingDetails,
-  createAirbnbMapping,
+  createAirbnbMapping, resolveSingleGroupId,
 } from '../utils/channexClient.js';
 
 export const channexRouter = Router();
@@ -38,26 +38,6 @@ const BOOKING_EVENTS = new Set([
   // ever failed every retry or was lost to a process restart before it ran.
   'non_acked_booking',
 ]);
-
-/**
- * Every property we've connected shares the one Channex "group" auto-created
- * for our account (confirmed live, CA-1/CA-2/CA-3) — required on both
- * POST /channels (CA-2) and POST /meta/airbnb/connection_link (CA-3). Never
- * guesses which group when there's more than one; that's a real stop, not a
- * default to fall back on.
- * @returns {Promise<{groupId: string}|{error: string}>}
- */
-async function resolveSingleGroupId() {
-  const groupsBody = await listGroups();
-  const groups = groupsBody?.data ?? [];
-  if (groups.length !== 1) {
-    return {
-      error: `Expected exactly one Channex group on this account, found ${groups.length} — ` +
-             `refusing to guess which one. Resolve manually before retrying.`,
-    };
-  }
-  return { groupId: groups[0].id };
-}
 
 function getConfiguredSecret() {
   return (process.env.CHANNEX_WEBHOOK_SECRET ?? '').trim();

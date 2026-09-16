@@ -462,6 +462,28 @@ export async function listGroups() {
   return channexRequest('/api/v1/groups', { raw: true });
 }
 
+/**
+ * Every property we've connected shares the one Channex "group" auto-created
+ * for our account (confirmed live, CA-1/CA-2/CA-3) — required on both
+ * POST /channels (CA-2) and POST /meta/airbnb/connection_link (CA-3). Never
+ * guesses which group when there's more than one; that's a real stop, not a
+ * default to fall back on. Shared by the Super Admin debug routes (CA-2/CA-3)
+ * and the owner-facing connect routes (CA-4) — moved here from
+ * routes/channex.js so both can import it from one place.
+ * @returns {Promise<{groupId: string}|{error: string}>}
+ */
+export async function resolveSingleGroupId() {
+  const groupsBody = await listGroups();
+  const groups = groupsBody?.data ?? [];
+  if (groups.length !== 1) {
+    return {
+      error: `Expected exactly one Channex group on this account, found ${groups.length} — ` +
+             `refusing to guess which one. Resolve manually before retrying.`,
+    };
+  }
+  return { groupId: groups[0].id };
+}
+
 // ── Channel API (Slice CA-2 — Booking.com connect flow) ───────────────────────
 // Field names/shapes below are taken verbatim from
 // https://docs.channex.io/channel-api-examples/booking.com (re-fetched fresh

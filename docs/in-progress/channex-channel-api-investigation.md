@@ -1,3 +1,175 @@
+## CA-4 — DONE (2026-09-16) — generic descriptor-driven owner-facing wizard; every step verified live except a fresh 201 (see below — genuinely blocked, not a code defect)
+
+Generic, adapter-descriptor-driven Channel Manager connect wizard, moved from
+Super-Admin-only debug (CA-1/CA-2/CA-3) to real owner-facing UI, gated by the
+existing `requireOwnerChannelManagerAccess`. Built and proven against
+Booking.com only, per scope — other adapters are CA-7+.
+
+**Files touched:**
+- `server/routes/properties.js` — 8 new owner-facing routes alongside the
+  existing 4 Channel Manager routes: `GET /:id/channex/adapters`,
+  `GET /:id/channex/channels`, `GET /:id/channex/room-mappings`,
+  `POST /:id/channex/test-connection`, `POST /:id/channex/mapping-details`,
+  `POST /:id/channex/connection-details`, `POST /:id/channex/channels`
+  (create — accepts an ARRAY of rate-plan rows, not one, to support OBP
+  tiers), `POST /:id/channex/channels/:channelId/check-readiness`,
+  `POST /:id/channex/channels/:channelId/activate`. All reuse CA-1/2/3's
+  existing `channexClient.js` functions verbatim — no new Channex API
+  surface, no new queue/rate-limit logic.
+- `server/utils/channexClient.js` — `resolveSingleGroupId()` moved here from
+  `routes/channex.js` (was a private helper on the Super-Admin router) so
+  both the debug routes and these new owner routes share one implementation.
+- `client/src/components/ChannelConnectWizard.jsx` — new. A generic field
+  renderer (`AdapterField`) mapping all 8 descriptor field types (string,
+  boolean, integer, number, select, switch, password, hidden, slug) to the
+  right control, respecting `position` ordering and the conditional `rules`
+  mechanism (a field hidden/shown — and forced to `with_value` when hidden —
+  based on another field's current value). A 4-step wizard (adapter →
+  settings/test → mapping → activate) wired to the routes above.
+- `client/src/pages/ChannelManager.jsx` — new "Online Travel Agents" section
+  (below Room Mapping, per the original §2.2 placement), listing existing
+  connections and a "Connect a channel" button opening the wizard.
+- `client/src/i18n/index.js` — ~54 new `cmOta*` keys × 5 languages
+  (EN/FR/ES/DE/NL). **FR/ES/DE/NL are my own draft translations, explicitly
+  flagged in a code comment above each block as needing native review** — no
+  verbatim translations were supplied for this slice.
+
+**OBP/occupancy UI (§5 of the task, building on the CA-4 rescoping
+investigation's Risk 1 finding):** when the selected adapter's
+`rate_params.pricing_type` is a `select` whose `options` include `"OBP"`,
+the mapping step offers a Standard/OBP toggle. Choosing OBP reveals a
+repeatable tier list (guests count, one of the 4 documented
+`derived_option` rules — `increase_by_percent` / `decrease_by_percent` /
+`increase_by_amount` / `decrease_by_amount` — a numeric value, and a
+"Default" radio marking `primary_occ`), submitted as one `rate_plans[]` row
+per tier, each carrying `{ derived_option: { rate: [[rule, value]] } }`
+alongside the shared `rate_plan_id`. **This remains exactly as unverified as
+the rescoping investigation found it** — no safe live OBP-configured channel
+exists to prove the mechanism against — flagged both in the owner-facing
+copy (`cmOtaObpNote`: "double-check the prices shown in this channel's own
+dashboard match what you expect") and in code comments on both the frontend
+tier-building logic and the backend's `derived_option` passthrough.
+
+**Two bugs caught by live browser testing, fixed before considering this
+done (neither would have been caught by curl alone or by code review):**
+
+1. **White-label violation**: the raw `ChannexError.message` (literally
+   `"Channex 422 — Validation Error…"`) was rendering verbatim in the
+   owner-facing wizard's error state on a failed create — a direct breach of
+   the no-Channex-branding requirement. Root cause: every new route's catch
+   block did `{ error: e.message }`, and the frontend displayed
+   `data.error` directly. Fixed with a new
+   `ownerFacingChannexErrorResponse()` helper in `properties.js` — every
+   owner-facing catch block now logs the real message server-side (for
+   diagnosis) and returns only a brand-neutral `error: 'channel_connect_failed'`
+   code; the frontend never renders `data.error` as text, always falling
+   back to the translated `cmOtaGenericError` string. Confirmed live: the
+   wizard now shows "Something went wrong. Please try again." while the
+   server log still carries the real Channex error for debugging.
+2. **`connection_details`'s currency wasn't rendering**: the frontend read
+   `connectionDetails.result.currency`, but the real response (confirmed via
+   curl during CA-2/CA-3 and reconfirmed here) nests it under
+   `result.attributes.currency` — the same "extra/missing `.data` envelope
+   layer" class of bug CA-2 caught once already. Fixed; confirmed live
+   (`Currency: GBP` now renders in the mapping step).
+
+**A significant, previously-unknown discovery about the shared Booking.com
+sandbox test hotels — corrects CA-2's original conclusion:**
+
+CA-2 concluded Channex enforces "only ONE active channel per (channel_code,
+property)". Live testing during this slice's verification shows that's
+**not the actual scope** — it's closer to **(channel_code, hotel_id),
+tracked by Channex independently of both the channel object's lifecycle and
+the property**:
+- The BookingCom channel created and activated during CA-2/CA-3's testing
+  (hotel `5868189`, property #1) is now **completely gone** — `GET /channels`
+  (filtered or unfiltered) returns empty, and `GET /channels/{id}` 404s.
+  Confirmed genuinely deleted, not just deactivated (likely routine staging
+  cleanup between sessions, outside our control).
+- Despite that, **`POST /channels` with `channel_code: "BookingCom",
+  settings: {hotel_id: "5868189"}` still 422s** with `"channel with the same
+  settings already exists"` — on property #1 (its original property) AND on
+  a completely fresh, never-before-connected property (#2, created fresh for
+  this test). Property scope makes no difference.
+- The **other** shared test hotel (`6519420`) — used once, briefly, during
+  CA-2's testing — is **equally blocked**, on both properties, despite never
+  having been deleted+recreated the way `5868189` was.
+- No live channel with either hotel_id is visible anywhere on the account
+  (`GET /channels` with no filter returns `total: 0`), yet both remain
+  blocked. This strongly suggests Channex retains a hidden "settings
+  fingerprint" per hotel_id, independent of the channel resource itself, for
+  some retention window we can't see or query via the API.
+
+**Practical consequence**: as of this session, **neither shared public
+Booking.com test hotel can be used to prove a fresh `POST /channels` 201 for
+BookingCom**, on any property, for an unknown period. This is a genuine
+external constraint, not a defect in this slice's code.
+
+**What WAS verified live regardless (via both curl and real browser
+click-through as an actual owner, not Super Admin — `demo@nestbook.io`,
+property #1, plan `multi` + `has_channel_manager_addon`):**
+- `GET /channex/adapters` → all 56 real adapters, alphabetically sorted,
+  through the owner-facing route.
+- The generic field renderer against Booking.com's real descriptor: "Hotel
+  ID" and "Send Property Notification" render; "Property Email" is
+  correctly HIDDEN by its conditional rule (tied to the notification
+  toggle's current `false` value) — **confirms the `rules` mechanism works
+  correctly**, not just the field-type mapping.
+- `test-connection` → real `{success:true}` against hotel `5868189`,
+  through the owner-facing route, as the owner.
+- `mapping-details` (available:true path) → real room/rate data renders in
+  the Channel room/Channel rate dropdowns.
+- `connection-details`, all 3 outcome paths: **populated** (real `GBP`
+  currency + 7 connection-type rows, Booking.com, now rendering correctly
+  post-fix), **error → treated as unavailable** (Agoda with a fake
+  `hotel_id` → a real Channex `500`, correctly caught and normalized to
+  `{available:false}` at HTTP 200 — never surfaced as a hard failure). The
+  distinct "empty/null but HTTP 200" case was not independently observed
+  live (every real adapter tried either populated or threw) — the code path
+  is symmetric and treats a null `result` the same as a missing field
+  (nothing renders), so this is low-risk but not itself independently
+  witnessed.
+- The OBP tier UI end-to-end through real clicks: toggling to "Occupancy-based",
+  adding a second tier, both rule dropdowns showing correctly translated
+  labels, the "Default" radio's mutual-exclusivity working, both rows'
+  values persisting into the (blocked, but correctly-attempted) create call.
+- `resolveSingleGroupId()` still works correctly post-refactor (shared by
+  CA-2/CA-3's admin routes and this slice's owner routes) — confirmed via
+  both the create-channel attempt reaching Channex successfully (proving
+  group resolution succeeded before the 422) and a direct CA-3 Airbnb
+  connection-link regression check.
+- The pre-emptive "already connected" check (`listChannelsForProperty` →
+  `.find()` by `channel_code`) executed correctly every time (returned
+  empty, allowed the attempt to proceed) — but **the 409 branch itself was
+  never triggered live this session**, since no live BookingCom channel
+  existed on any property throughout testing (see the sandbox-exhaustion
+  finding above). Code-reviewed, not click-tested.
+- Regression: `GET /api/admin/channex/adapters` and `/channex/channels` (CA-1),
+  Airbnb connection-link generation (CA-3) all still return correct live data
+  post-refactor. Phase 2 itself was genuinely exercised (not just
+  code-reviewed) via a real `channex-push` call made to set up property #2
+  as a clean test fixture — 1 room type created, 500 days of availability
+  pushed (1 segment, 0 warnings), 1 rate pushed (0 warnings) — Phase 2 is
+  unaffected.
+
+**Test fixtures left in local dev DB** (harmless, local-only, not
+production): property #2 ("Test Property")'s owner
+(`test@localdev.example`) now has `has_channel_manager_addon = 1` and
+password `ca4test1234` (was previously an unknown/unset password) — set
+deliberately to get a second clean owner login for testing. Property #2 also
+now has a real room ("CA-4 Test Room") and a fresh Channex property
+connection. Left in place rather than reverted, matching this project's
+existing pattern of leaving CA-2/CA-3 test channels in place.
+
+**Not built** (still CA-6/CA-7+ per §3, unchanged): connection
+management (list/deactivate/reactivate/update-mapping/delete) for
+already-created connections, the Airbnb owner-facing UI (CA-5), a curated
+adapter list (still shows all 56, including car-rental/metasearch adapters
+irrelevant to NestBook's market — §5's open question, still open), and any
+other adapter's real connect flow beyond Booking.com.
+
+---
+
 ## CA-3 — DONE (2026-09-16) — Airbnb OAuth flow: link generation + callback plumbing confirmed live; full happy path still blocked on a real Airbnb account
 
 Airbnb OAuth connect flow, Super-Admin debug only, per §1.3/§2.2's original

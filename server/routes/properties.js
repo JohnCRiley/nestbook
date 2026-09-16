@@ -16,7 +16,11 @@ import { cleanupFile } from '../utils/fileCleanup.js';
 import { processRoomPhoto } from '../utils/processRoomPhoto.js';
 import { attachPoolPhotoFromUrl } from '../utils/attachRoomPhotoFromUrl.js';
 import { computePoolCap, poolCount, adoptFileIntoPool } from '../utils/mediaPool.js';
-import { ChannexError } from '../utils/channexClient.js';
+import {
+  ChannexError, listChannelAdapters, listChannelsForProperty,
+  testChannelConnection, getMappingDetails, getConnectionDetails,
+  createChannel, checkChannelReadiness, activateChannel, resolveSingleGroupId,
+} from '../utils/channexClient.js';
 import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { pushInitialInventory, disconnectChannexProperty, buildTargets, pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
 import { schedulePropertyDetailsPush } from '../utils/channexDebounce.js';
@@ -1460,5 +1464,262 @@ propertiesRouter.post('/:id/channex-disconnect', (req, res) => {
   } catch (err) {
     console.error(`[properties] channex-disconnect failed for property #${propId}:`, err.message);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Channel API connect — owner-facing generic connect wizard (Slice CA-4) ────
+// Same requireOwnerChannelManagerAccess gate as the four routes above, and the
+// exact same Channel API functions/queue as the Super Admin debug tooling
+// (CA-1/CA-2/CA-3, server/routes/channex.js) — no new auth or rate-limit
+// logic. The form itself is generic (driven by whatever adapter descriptor
+// the owner picks), but this pass is only PROVEN end-to-end against
+// Booking.com — see docs/in-progress/channex-channel-api-investigation.md's
+// CA-4 section. Requires the property to already be connected
+// (property.channex_property_id) — same prerequisite as the existing Room
+// Mapping section above.
+//
+// White-label: ChannexError.message is built from the raw Channex API
+// response (e.g. "Channex 422 — Validation Error…") — fine for the Super
+// Admin debug routes (channex.js), never fine here. Every catch block below
+// logs the real e.message server-side but sends the owner only a brand-
+// neutral code; the frontend maps unrecognized codes to a generic translated
+// string. Caught live during this slice's own browser verification — the
+// raw message was rendering in the wizard before this helper existed.
+function ownerFacingChannexErrorResponse(res, propId, label, e) {
+  console.error(`[properties] ${label} failed for property #${propId}:`, e.message);
+  const status = e instanceof ChannexError && e.status ? 502 : 500;
+  res.status(status).json({ error: 'channel_connect_failed' });
+}
+
+propertiesRouter.get('/:id/channex/adapters', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  try {
+    const adapters = await listChannelAdapters();
+    res.json({ adapters: Array.isArray(adapters) ? adapters : [] });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/adapters', e);
+  }
+});
+
+propertiesRouter.get('/:id/channex/channels', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  if (!property.channex_property_id) return res.json({ channels: [] });
+  try {
+    const body = await listChannelsForProperty(property.channex_property_id);
+    res.json({ channels: body?.data ?? [] });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/channels', e);
+  }
+});
+
+propertiesRouter.get('/:id/channex/room-mappings', (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  const rows = db.prepare(`
+    SELECT id, nestbook_ref_type, nestbook_ref_id, channex_room_type_id, channex_rate_plan_id
+    FROM channex_room_mappings WHERE property_id = ? AND orphaned_at IS NULL ORDER BY id
+  `).all(propId);
+  res.json({ mappings: rows });
+});
+
+propertiesRouter.post('/:id/channex/test-connection', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  const { channel_code, settings } = req.body ?? {};
+  if (!channel_code) return res.status(400).json({ error: 'channel_code is required' });
+  try {
+    const result = await testChannelConnection(channel_code, settings ?? {});
+    res.json({ result });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/test-connection', e);
+  }
+});
+
+// mapping_details is a convenience, not a requirement — many adapters may
+// error or return nothing meaningful here. Never a hard failure: the wizard
+// falls back to manual room/rate entry when `available` is false.
+propertiesRouter.post('/:id/channex/mapping-details', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  const { channel_code, settings } = req.body ?? {};
+  if (!channel_code) return res.status(400).json({ error: 'channel_code is required' });
+  try {
+    const result = await getMappingDetails(channel_code, settings ?? {});
+    res.json({ available: true, result });
+  } catch (e) {
+    console.error(`[properties] channex/mapping-details failed for property #${propId}:`, e.message);
+    res.json({ available: false });
+  }
+});
+
+// Channex's own docs claim only 3 adapters support connection_details —
+// confirmed WRONG by live testing (investigation doc, CA-4 §"Risk 2"): at
+// least one adapter outside that list returns real data, and one ON that
+// list 500s on bad input. So: never gate on an allowlist, call it for
+// whatever adapter is selected, and treat ANY failure (400/404/500/timeout)
+// as "unavailable" rather than a hard error — the wizard falls back to
+// manual settings entry either way.
+propertiesRouter.post('/:id/channex/connection-details', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  const { channel_code, settings } = req.body ?? {};
+  if (!channel_code) return res.status(400).json({ error: 'channel_code is required' });
+  try {
+    const result = await getConnectionDetails(channel_code, settings ?? {});
+    res.json({ available: true, result });
+  } catch (e) {
+    console.error(`[properties] channex/connection-details failed for property #${propId}:`, e.message);
+    res.json({ available: false });
+  }
+});
+
+// Creates the real Channel API connection. `rate_plans` is an ARRAY (not a
+// single object like CA-2's Super-Admin-only debug route) — needed to support
+// the OBP occupancy-tier UI (Slice CA-4 §5), where one NestBook rate plan maps
+// into several rows (one per occupancy), each optionally carrying a
+// `derived_option` adjustment. For a Standard-pricing adapter this is simply
+// an array of length 1. Every rate_plan_id is verified to genuinely belong to
+// this property before anything is sent to Channex.
+propertiesRouter.post('/:id/channex/channels', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  if (!property.channex_property_id) {
+    return res.status(400).json({ error: 'Connect this property to Channel Management first.' });
+  }
+
+  const { channel_code, hotel_id, title, rate_plans } = req.body ?? {};
+  if (!channel_code || !hotel_id || !title) {
+    return res.status(400).json({ error: 'channel_code, hotel_id, and title are required' });
+  }
+
+  // Channex allows only ONE active connection per (channel_code, property) —
+  // pre-empt the 422 with a clean "already connected" response the wizard can
+  // show instead of a raw error.
+  try {
+    const existingBody = await listChannelsForProperty(property.channex_property_id);
+    const existing = (existingBody?.data ?? []).find((c) => c.attributes?.channel === channel_code);
+    if (existing) {
+      return res.status(409).json({ error: 'already_connected', channel: existing });
+    }
+  } catch { /* can't check — fall through; Channex's own 422 still guards this */ }
+
+  if (!Array.isArray(rate_plans) || rate_plans.length === 0) {
+    return res.status(400).json({ error: 'At least one rate plan mapping is required' });
+  }
+  for (const rp of rate_plans) {
+    if (!rp.rate_plan_id || rp.room_type_code === undefined || rp.rate_plan_code === undefined ||
+        rp.occupancy === undefined || !rp.pricing_type) {
+      return res.status(400).json({
+        error: 'Each rate plan mapping needs rate_plan_id, room_type_code, rate_plan_code, occupancy, and pricing_type',
+      });
+    }
+    const mapping = db.prepare(`
+      SELECT 1 FROM channex_room_mappings WHERE property_id = ? AND channex_rate_plan_id = ? AND orphaned_at IS NULL
+    `).get(propId, rp.rate_plan_id);
+    if (!mapping) {
+      return res.status(400).json({ error: `rate_plan_id ${rp.rate_plan_id} does not belong to this property.` });
+    }
+  }
+
+  try {
+    const groupResult = await resolveSingleGroupId();
+    if (groupResult.error) return res.status(502).json({ error: groupResult.error });
+
+    const created = await createChannel({
+      channel: channel_code,
+      group_id: groupResult.groupId,
+      title,
+      properties: [property.channex_property_id],
+      settings: { hotel_id: String(hotel_id) },
+      rate_plans: rate_plans.map((rp) => ({
+        rate_plan_id: rp.rate_plan_id,
+        settings: {
+          room_type_code: rp.room_type_code,
+          rate_plan_code: rp.rate_plan_code,
+          occupancy: Number(rp.occupancy),
+          pricing_type: rp.pricing_type,
+          primary_occ: rp.primary_occ ?? true,
+          readonly: rp.readonly ?? false,
+          // UNVERIFIED against a real OBP-configured channel — see the
+          // investigation doc's CA-4 §5. Passed through as-is per Channex's
+          // documented mapping-level mechanism; never fabricated here.
+          ...(rp.derived_option ? { derived_option: rp.derived_option } : {}),
+        },
+      })),
+    });
+
+    const channexChannelId = created?.id;
+    if (!channexChannelId) {
+      return res.status(502).json({ error: 'Channel Management did not return a connection id.' });
+    }
+
+    db.prepare(`
+      INSERT INTO channex_channels (property_id, channex_channel_id, channex_group_id, channel_code, title, is_active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(propId, channexChannelId, groupResult.groupId, channel_code, title, created?.is_active ? 1 : 0);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_CHANNEL_CREATED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Connected ${channel_code} via Channel Management (connection id: ${channexChannelId})`,
+      ipAddress:  getIp(req),
+    });
+
+    res.status(201).json({ channel: created });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/channels (create)', e);
+  }
+});
+
+propertiesRouter.post('/:id/channex/channels/:channelId/check-readiness', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  try {
+    const result = await checkChannelReadiness(req.params.channelId);
+    res.json({ result });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/check-readiness', e);
+  }
+});
+
+propertiesRouter.post('/:id/channex/channels/:channelId/activate', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  try {
+    const result = await activateChannel(req.params.channelId);
+    db.prepare(`UPDATE channex_channels SET is_active = 1, updated_at = datetime('now') WHERE channex_channel_id = ?`)
+      .run(req.params.channelId);
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_CHANNEL_ACTIVATED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     `Activated Channel Management connection (connection id: ${req.params.channelId})`,
+      ipAddress:  getIp(req),
+    });
+
+    res.json({ result });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/activate', e);
   }
 });

@@ -4,6 +4,7 @@ import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
 import { formatRelativeTime } from '../utils/format.js';
+import ChannelConnectWizard from '../components/ChannelConnectWizard.jsx';
 
 export default function ChannelManager() {
   const t = useT();
@@ -16,6 +17,11 @@ export default function ChannelManager() {
   const [busy,      setBusy]      = useState(false);
   const [resyncing, setResyncing] = useState(false);
   const [toast,     setToast]     = useState(null);
+
+  // ── Online Travel Agents — Slice CA-4 ──────────────────────────────────
+  const [otaChannels, setOtaChannels] = useState([]);
+  const [otaLoading,  setOtaLoading]  = useState(false);
+  const [showWizard,  setShowWizard]  = useState(false);
 
   // Gate mirrors Sidebar.jsx's canSeeChannelManager() — the nav item is hidden
   // when this is false, but a direct URL visit must not render the page either.
@@ -31,6 +37,18 @@ export default function ChannelManager() {
   }, [allowed, property?.id]);
 
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
+
+  const fetchOtaChannels = useCallback(() => {
+    if (!allowed || !property?.id || !property?.channex_property_id) { setOtaChannels([]); return; }
+    setOtaLoading(true);
+    apiFetch(`/api/properties/${property.id}/channex/channels`)
+      .then((r) => (r.ok ? r.json() : { channels: [] }))
+      .then((data) => setOtaChannels(data.channels ?? []))
+      .catch(() => setOtaChannels([]))
+      .finally(() => setOtaLoading(false));
+  }, [allowed, property?.id, property?.channex_property_id]);
+
+  useEffect(() => { fetchOtaChannels(); }, [fetchOtaChannels]);
 
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
@@ -212,6 +230,45 @@ export default function ChannelManager() {
             </div>
           </div>
 
+          {/* ── Online Travel Agents ──────────────────────────────────────── */}
+          <div className="settings-card">
+            <div className="settings-card-header">
+              <h2>{t('cmOtaTitle')}</h2>
+              <p>{t('cmOtaSubtitle')}</p>
+            </div>
+            <div className="settings-card-body">
+              {otaLoading ? (
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>{t('cmLoading')}</p>
+              ) : otaChannels.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', margin: '0 0 14px' }}>{t('cmOtaNoConnections')}</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                  {otaChannels.map((c) => (
+                    <div
+                      key={c.id}
+                      style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '9px 14px', borderRadius: 8, background: 'var(--section-bg)',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.9rem' }}>{c.attributes?.title ?? c.attributes?.channel}</span>
+                      <span style={{
+                        fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999,
+                        background: c.attributes?.is_active ? '#dcfce7' : '#f1f5f9',
+                        color:      c.attributes?.is_active ? '#166534' : '#64748b',
+                      }}>
+                        {c.attributes?.is_active ? t('cmOtaConnectedBadgeActive') : t('cmOtaConnectedBadgeInactive')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setShowWizard(true)}>
+                {t('cmOtaConnectBtn')}
+              </button>
+            </div>
+          </div>
+
           {/* ── Recent activity ───────────────────────────────────────────── */}
           <div className="settings-card">
             <div className="settings-card-header">
@@ -254,6 +311,15 @@ export default function ChannelManager() {
       )}
 
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+
+      {showWizard && property?.id && (
+        <ChannelConnectWizard
+          property={property}
+          t={t}
+          onClose={() => setShowWizard(false)}
+          onConnected={() => { setShowWizard(false); fetchOtaChannels(); showToast(t('cmOtaActivatedMsg')); }}
+        />
+      )}
     </div>
   );
 }
