@@ -1690,7 +1690,16 @@ propertiesRouter.post('/:id/channex/channels/:channelId/check-readiness', async 
   const propId = Number(req.params.id);
   const property = requireOwnerChannelManagerAccess(req, res, propId);
   if (!property) return;
+  if (!property.channex_property_id) return res.status(404).json({ error: 'not_found' });
   try {
+    // Slice CA-6 security fix: this route previously called Channex with
+    // whatever channelId was in the URL without confirming it actually
+    // belonged to this property — any owner with Channel Manager access on
+    // ANY property could probe/act on another property's channel by id.
+    // Same ownership check CA-6's deactivate/delete routes use below.
+    const belongs = await verifyChannelBelongsToProperty(property, req.params.channelId);
+    if (!belongs) return res.status(404).json({ error: 'not_found' });
+
     const result = await checkChannelReadiness(req.params.channelId);
     res.json({ result });
   } catch (e) {
@@ -1702,7 +1711,13 @@ propertiesRouter.post('/:id/channex/channels/:channelId/activate', async (req, r
   const propId = Number(req.params.id);
   const property = requireOwnerChannelManagerAccess(req, res, propId);
   if (!property) return;
+  if (!property.channex_property_id) return res.status(404).json({ error: 'not_found' });
   try {
+    // Same CA-6 security fix as check-readiness above — verify ownership
+    // before ever calling Channex, not after.
+    const belongs = await verifyChannelBelongsToProperty(property, req.params.channelId);
+    if (!belongs) return res.status(404).json({ error: 'not_found' });
+
     const result = await activateChannel(req.params.channelId);
     db.prepare(`UPDATE channex_channels SET is_active = 1, updated_at = datetime('now') WHERE channex_channel_id = ?`)
       .run(req.params.channelId);

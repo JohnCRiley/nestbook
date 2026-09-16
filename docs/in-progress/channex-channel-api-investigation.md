@@ -1,3 +1,84 @@
+## CA-6 follow-up — DONE (2026-09-16) — closed the check-readiness/activate ownership gap CA-6 flagged; CA-6's translations applied
+
+**1. Security fix — IDOR gap on CA-4's check-readiness/activate routes,
+closed:** CA-6 flagged (but didn't fix) that its own new
+deactivate/delete routes verify a `channelId` belongs to the calling
+property before calling Channex, while CA-4's existing
+`POST /:id/channex/channels/:channelId/check-readiness` and
+`POST /:id/channex/channels/:channelId/activate` routes
+(`server/routes/properties.js`) did not — any owner with Channel Manager
+access on ANY property could call either route with another property's
+real `channelId` and Channex would happily act on it, since only the
+`propId` in the URL was checked against the caller's own access, never
+whether that specific channel actually belonged to that property.
+
+Fixed by reusing CA-6's existing `verifyChannelBelongsToProperty()` helper
+verbatim (not reinvented) — both routes now call it immediately after the
+`requireOwnerChannelManagerAccess` gate and before calling Channex at all,
+404ing on a mismatch exactly like CA-6's deactivate/delete routes already
+did.
+
+**Live-verified — real exploit shape, not just a fake id:** confirmed via
+curl with a real owner JWT that both routes reject a syntactically-valid,
+nonexistent channel UUID with `404` before ever reaching Channex (same test
+CA-6 already used for its own two routes). Attempted to go further and test
+against a channelId genuinely belonging to a DIFFERENT property (the actual
+exploit shape asked for) — this requires at least one real, live Channex
+channel to exist somewhere on the account to use as the "victim" id.
+**None exists, for the same reason CA-6 already documented (sandbox
+exhaustion), reconfirmed independently three separate ways this session:**
+1. Reusing either known Booking.com sandbox test hotel (`5868189`,
+   `6519420`) on property #2 (a different property than CA-6's earlier
+   attempts used) — still `422 "channel with the same settings already
+   exists"`, confirming this is a whole-account fingerprint block, not
+   scoped per property, matching CA-2/CA-4/CA-6's existing finding.
+2. A fresh, never-used Booking.com `hotel_id` — Channex's own adapter
+   round-trips to real Booking.com sandbox inventory to validate it, not
+   just a local uniqueness check: this returned a real `500 Internal Server
+   Error`, not a clean validation response, confirming creation cannot be
+   faked with an arbitrary hotel_id.
+3. HopperHomes' `create_host` endpoint (flagged during CA-5 as
+   "supposedly no credentials to collect from the user") — still requires
+   a real, pre-verified email on Channex/Hopper's own side: `400 "No
+   verified user found with provided email"`.
+
+**Conclusion: there is genuinely no way to create a second real,
+independently-owned Channex channel in this environment right now** — not
+a gap in effort, an external sandbox constraint affecting every adapter
+tried. Given that, correctness here rests on the ownership check's
+construction rather than an empirical cross-property test: `verifyChannelBelongsToProperty()`
+calls `listChannelsForProperty(property.channex_property_id)` — Channex's
+own authoritative `filter[property_id]=` query — and checks membership by
+real Channex UUID against ONLY that list. A channelId belonging to a
+different property cannot structurally appear in this property's own
+filtered list, so there is no code path by which a cross-property id could
+incorrectly pass; this isn't weaker evidence than an empirical test would
+give, since the check's correctness follows directly from Channex's own
+query semantics, not from application logic that could hide a bug. Still
+explicitly flagged as unverified-in-the-strongest-sense (a real cross-
+property live call) until the sandbox frees up or a real Airbnb-connected
+channel exists from CA-5.
+
+**2. CA-6's translations applied:** replaced the EN-only placeholders for
+all 8 `cmOtaDeactivate*`/`cmOtaDelete*`/`cmOtaChannelActionError` keys with
+real FR/ES/DE/NL text across `client/src/i18n/index.js`, matching CA-5's
+translation pass. One shape change: `cmOtaDeleteConfirmMsg`'s new text
+doesn't reference the channel name (unlike the placeholder draft, which
+interpolated `${title}`), so it's now a plain string in all 5 languages
+instead of a function — `ChannelManager.jsx`'s `ConfirmModal` call site
+updated to match (`t('cmOtaDeleteConfirmMsg')`, no longer called as a
+function). Verified live via the same browser-fetch-mock technique CA-6
+used: the ConfirmModal renders the new copy correctly ("Delete this
+connection? … This will permanently remove this channel connection. You
+can reconnect later, but you'll need to set it up again from scratch.").
+
+**Files touched:** `server/routes/properties.js` (ownership check on the
+two CA-4 routes), `client/src/i18n/index.js` (CA-6 translations, all 5
+languages), `client/src/pages/ChannelManager.jsx` (one-line call-site fix
+for the now-non-interpolated message).
+
+---
+
 ## CA-6 — DONE (2026-09-16) — owner-facing deactivate/delete; endpoints and UI verified live, but NOT against a real connected channel — sandbox still exhausted, confirmed fresh this session, not just carried over from CA-2/CA-4
 
 Owner-facing list/deactivate/delete for a property's connected channels, in

@@ -457,7 +457,7 @@ export default function ChannelManager() {
       <ConfirmModal
         isOpen={!!channelDeleteTarget}
         title={t('cmOtaDeleteConfirmTitle')}
-        message={t('cmOtaDeleteConfirmMsg')(channelDeleteTarget?.attributes?.title ?? channelDeleteTarget?.attributes?.channel ?? '')}
+        message={t('cmOtaDeleteConfirmMsg')}
         confirmLabel={t('cmOtaDeleteBtn')}
         cancelLabel={t('cancel')}
         variant="danger"
