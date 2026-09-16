@@ -1,3 +1,96 @@
+## CA-7 round 6 (OutReserve, RoomPanda, SelahComfort) — DONE (2026-09-16) — final batch of the day; all 3 usable and genuinely trustworthy; one new field type (`switch`) confirmed already handled correctly
+
+Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
+self-picked directly from the live catalog, closing out today's CA-7
+enablement work. **Picks and why**, reasoned from name/code alone:
+- **OutReserve** — "Out" (outdoor) + "Reserve" continues the self-
+  catering/outdoor-stay thread already confirmed relevant via GlampingHub/
+  Hipcamp.
+- **RoomPanda** — "Room" directly signals accommodation relevance, the
+  most literally lodging-related remaining name in the catalog at the
+  time of picking.
+- **SelahComfort** — "Comfort" evokes small/independent hotel branding
+  (mid-scale "Comfort"-style naming); a reasonable, if generic, pick among
+  what remained untested.
+
+**1. Live adapter descriptors:** all three confirmed `kind: meta`,
+`mapping_mode: room_rate_multioccupancy`, `property_mapping: single`,
+sharing the by-now-familiar shape. **RoomPanda introduces a genuinely new
+field-type combination**: its `min_stay_type` field is `type: "switch"`
+(Expedia/Hostelworld's equivalent field is `type: "select"`) — the first
+live adapter encountered using `switch` for anything other than the
+`AdapterField` renderer's already-documented (but never-yet-exercised)
+`switch` case. Confirmed live: `AdapterField`'s `case 'select': case
+'switch':` already renders both identically (a dropdown built from
+`field.options`) — no code change needed, this is the first live
+confirmation that branch actually fires correctly, not just a plausible
+reading of the source.
+
+**2, 3. Live test-connection / detail-call behavior, with the new
+repeat-call discipline from round 5's Hipcamp surprise:**
+
+- **All three adapters consistently, genuinely validate — confirmed via 5
+  calls each, not 1**: an empty `hotel_code` plus 4 repeat calls with an
+  identical nonsense value, every single call across all three adapters
+  returned a clean `invalid_credentials` at `200` — no flakiness, no
+  leniency, unlike Hipcamp/HotelREZ/Wigwam/OneHotelRez. Reproduced live in
+  the browser for all three: fake Hotel Code → "We couldn't verify these
+  details…" within ~2s each, matching the raw-API behavior exactly.
+  RoomPanda's settings step also correctly rendered its `switch`-typed
+  "Min Stay Type" field as a working Arrival/Through dropdown before the
+  test.
+- `connection_details`/`mapping_details` for all three return clean
+  `400`/`422` (never `5xx`) — **no queue-contention risk exists for any of
+  the three**.
+
+**4. Both fixed-bug patterns:** neither was directly re-testable this
+round — all three adapters correctly block fake credentials before the
+mapping step is ever reachable (same as every other genuinely-validating
+adapter across CA-7), and none returned a `5xx` to test the queue fix
+against. Noted plainly, not assumed covered — consistent with how rounds
+3–5 handled the same situation for well-behaved adapters.
+
+**5. OBP status, noted per instruction:** all three expose `pricing_type:
+{options: ["Standard","OBP"]}` — OBP-capable, consistent with the whole
+shared-shape family.
+
+**6. Adapter-specific copy — none needed**, same as every prior round.
+
+**Regression check:** no code was changed this pass. Channel Manager and
+the Super Admin debug page (57 adapters, stable since round 5's catalog
+change) both re-confirmed correct after the click-throughs above.
+
+**Verdict for each, plainly:**
+- **OutReserve**: **ready to use as-is via the generic form.** Genuinely,
+  consistently validates (5/5 calls); Test Connection is trustworthy; no
+  queue risk.
+- **RoomPanda**: **ready to use as-is via the generic form**, same
+  reasoning as OutReserve — plus confirms the `switch` field type renders
+  and behaves correctly, the first live adapter to exercise that code
+  path.
+- **SelahComfort**: **ready to use as-is via the generic form**, same
+  reasoning as OutReserve.
+
+**Summary across all of today's CA-7 enablement work (18 adapters tested
+across 6 rounds, plus the 2 bugs found and fixed along the way):**
+genuinely well-behaved and ready: Booking.com, Expedia, Hostelworld,
+Julian Alps Booking, GuruHotel, GlampingHub, Stayinto, BookDirectOpen,
+ZenithBookingEngine, OutReserve, RoomPanda, SelahComfort (12 adapters).
+Ready but with the "Test Connection isn't trustworthy" Channex-side
+caveat: HotelREZ, Wigwam Holidays, OneHotelRez, Hipcamp, Agoda (5
+adapters — Agoda's caveat is a milder version, a real but wrong
+`test_connection` result rather than pure leniency, from the original
+CA-7 pass). Cleanly blocked by existing safeguards, not a bug: More.com
+(`rate_params: null`). Genuinely unresolved/needs investigation:
+Hostelworld's unhandled `type` rate_param (flagged in round 3, not yet
+followed up). Two real bugs found and fixed as their own focused steps:
+the `channexQueue` retry-blocking risk (protects every adapter tested
+since, confirmed live on Agoda, Hostelworld, MoreCom) and the
+mapping-fallback dead end (protects every adapter tested since, confirmed
+live on Wigwam Holidays and independently on OneHotelRez).
+
+---
+
 ## CA-7 round 5 (Hipcamp, BookDirectOpen, ZenithBookingEngine) — DONE (2026-09-16) — all 3 usable; one adapter (Hipcamp) gave a genuinely inconsistent first reading, resolved by repeat-testing rather than trusted on a single call — a methodology note worth carrying into future rounds
 
 Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
