@@ -1,3 +1,86 @@
+## CA-7 follow-up — DONE (2026-09-16) — fixed the channexQueue retry-blocking risk CA-7 flagged for Agoda (and, identically, Booking.com)
+
+CA-7 found that `getConnectionDetails()`/`getMappingDetails()` routed
+through `channexQueue`'s shared single-worker retry queue, and that a
+genuine Channex `500` (confirmed live for Agoda) would burn the full
+retry/backoff schedule (`[2s, 8s, 30s, 60s]` × up to 5 attempts, ≈100s per
+call) before giving up — serialized through the queue's one worker, so two
+back-to-back detail calls could block every OTHER property's pending
+Channex writes (ARI pushes included) for ~200s over a single bad response.
+Fixed by reusing the codebase's own existing bypass pattern, not inventing
+a new one.
+
+**Fix — `server/utils/channexClient.js` only:** `getMappingDetails()` and
+`getConnectionDetails()` now call `channexRequest()` directly instead of
+wrapping the call in `queuedWrite()` — the exact same pattern
+`listChannelAdapters()`/`listChannelsForProperty()`/`getChannel()` already
+use for best-effort reads that shouldn't wait behind (or retry through)
+the ARI write queue. No new function, no new bypass mechanism — literally
+the same shape, applied to two more functions. `channexQueue.js` itself
+was **not touched at all** (confirmed via `git diff --stat` showing zero
+lines changed in that file) — the fix is entirely about which functions
+opt into the queue, not any change to the queue's rate-limiting, dedup, or
+retry logic.
+
+**Scope, exactly as instructed:** `testChannelConnection()` was left
+unchanged (still queued) — it was never part of the reported issue (it
+returns a clean `200 {success:false}` even on bad credentials for both
+Booking.com and Agoda, never a 5xx, so it was never at risk of the retry
+storm), and the task scoped the fix to `connection_details`/
+`mapping_details` specifically. This one shared function in
+`channexClient.js` is used by both `server/routes/channex.js` (CA-2's
+Super-Admin debug routes) and `server/routes/properties.js` (CA-4's
+owner-facing routes) — fixing it here fixes both call sites, and both
+adapters (Agoda, where the 500 was found, and Booking.com, which shares
+the identical code path) at once, with no route-level changes needed.
+
+**Verified live (not just code review):**
+- **The retry storm is gone**: called the owner-facing
+  `connection-details`/`mapping-details` routes for Agoda with a
+  bad-but-plausible `hotel_id` (the same input that previously triggered
+  ~100s of retries each). Both now resolve in under 5 seconds
+  (`connection-details`: 4.5s, `mapping-details`: 0.8s — the small
+  remaining latency is just the real Channex round-trip, not a retry).
+  Confirmed via the server's own log output that **zero**
+  `[channex-queue]` retry lines appear for either call — each 500 is
+  logged once by the route's own error handler and resolved immediately,
+  down from the 10 retry-attempt log lines (5 for each call) seen during
+  CA-7's original investigation.
+- **Successful calls still work identically**: re-ran `connection-details`
+  and `mapping-details` for Booking.com's real test hotel `5868189`
+  through the owner-facing routes — same real `GBP` currency + 7
+  connection-type rows, same real 3-room/9-rate mapping data as every
+  prior slice. Reproduced again through an actual browser click-through of
+  CA-4's real wizard (not a bypassed API call): selected Booking.com,
+  entered `5868189`, clicked Test Connection → "✓ Connection verified.",
+  continued to the mapping step → "Currency: GBP" and the real
+  Single/Double/Suite room options rendered correctly, exactly as before
+  this fix.
+- **The Super Admin debug route (CA-2) also still works**: called
+  `POST /api/admin/channex/channels/mapping-details` (Booking.com, hotel
+  `5868189`) with a real Super Admin session — `200`, real room/rate data,
+  resolved in ~1.3s.
+- **Phase 2's ARI push queue confirmed completely unaffected — the most
+  important regression check**: (a) static — `channexQueue.js` has zero
+  diff, so its rate limiter, per-property ARI sliding window, dedup, and
+  retry/backoff logic for actual writes are untouched by construction; (b)
+  dynamic — ran a real `updateAvailability()` call (the same `kind: 'ari'`
+  job type every availability push in the app uses) against property #1's
+  real Channex room type, through the same unmodified `channexQueue.js`
+  this fix didn't touch: real `200`, `{"data":[{"id":"...","type":"task"}],
+  "meta":{"message":"Success"}}` — the queue dispatches, rate-limits, and
+  completes real ARI jobs exactly as before.
+- Regression: Channel Manager's Online Travel Agents section, CA-5's
+  Airbnb button, and CA-6's per-channel actions all still render correctly
+  after this change (no UI files were touched — the fix is
+  backend-only, in `channexClient.js`).
+
+**Not changed, deliberately:** the recommended-but-deferred fix noted in
+CA-7 is now done; no further follow-up items from that finding remain
+open.
+
+---
+
 ## CA-7 (Expedia + Agoda) — DONE (2026-09-16) — both confirmed ready to use as-is via the generic form; zero code changes needed; one real-but-narrow operational risk flagged for Agoda, not fixed
 
 Enablement checklist for two more `room_rate_multioccupancy` adapters,

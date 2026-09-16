@@ -519,27 +519,42 @@ export async function testChannelConnection(channelCode, settings) {
  * title, occupancies, ... }] }] }`. This is the OTA's own numeric ids (not
  * Channex UUIDs) — used as `room_type_code`/`rate_plan_code` in
  * `createChannel()`'s `rate_plans[].settings` below.
+ *
+ * NOT queued (CA-7 fix) — same reasoning as the GET reads above
+ * (listChannelAdapters/listChannelsForProperty/getChannel): this is a
+ * best-effort, read-only probe during the connect wizard's settings step,
+ * already with its own "unavailable → fall back to manual entry" handling
+ * at the route level (server/routes/properties.js). Confirmed live during
+ * CA-7 that a bad-but-plausible Agoda credential returns a real Channex
+ * 500 here, which `channexQueue`'s `isRetryable()` correctly treats as
+ * transient and retries with the full backoff (~100s) — since this call
+ * used to share the queue's single worker with ARI pushes, one bad detail
+ * call could block every OTHER property's pending Channex writes for the
+ * whole retry window. This call has nothing to do with ARI rate limits or
+ * write ordering, so it has no reason to share that queue or its retry
+ * budget — a failure here already resolves to "unavailable" at the caller,
+ * same outcome whether it fails fast or after 5 queued retries.
  * @returns {Promise<object>}
  */
 export async function getMappingDetails(channelCode, settings) {
-  return queuedWrite(`channel mapping details (${channelCode})`, () =>
-    channexRequest('/api/v1/channels/mapping_details', {
-      method: 'POST',
-      body: { channel: channelCode, settings },
-    }));
+  return channexRequest('/api/v1/channels/mapping_details', {
+    method: 'POST',
+    body: { channel: channelCode, settings },
+  });
 }
 
 /**
  * Fetch the OTA-side connection state (currency, connection types) for
  * `channelCode` + `settings`. Booking.com's shape: `{ currency, ... }`.
+ *
+ * NOT queued (CA-7 fix) — same reasoning as getMappingDetails() above.
  * @returns {Promise<object>}
  */
 export async function getConnectionDetails(channelCode, settings) {
-  return queuedWrite(`channel connection details (${channelCode})`, () =>
-    channexRequest('/api/v1/channels/connection_details', {
-      method: 'POST',
-      body: { channel: channelCode, settings },
-    }));
+  return channexRequest('/api/v1/channels/connection_details', {
+    method: 'POST',
+    body: { channel: channelCode, settings },
+  });
 }
 
 /**
