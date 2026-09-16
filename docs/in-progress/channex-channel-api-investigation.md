@@ -1,3 +1,121 @@
+## CA-7 round 5 (Hipcamp, BookDirectOpen, ZenithBookingEngine) — DONE (2026-09-16) — all 3 usable; one adapter (Hipcamp) gave a genuinely inconsistent first reading, resolved by repeat-testing rather than trusted on a single call — a methodology note worth carrying into future rounds
+
+Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
+self-picked directly from Channex's live catalog again. **Picks and why**,
+reasoned from name/code alone:
+- **Hipcamp** — camping/outdoor accommodation, same self-catering/
+  alternative-stay genre already confirmed relevant via GlampingHub.
+- **BookDirectOpen** — "direct booking, open" naming suggests relevance to
+  independent properties' direct-booking strategy, a real, meaningful
+  interest for small operators trying to reduce OTA commission dependency.
+- **ZenithBookingEngine** — "booking engine" naming, similar direct-
+  booking-engine angle to BookDirectOpen — flagged upfront as the weaker,
+  more speculative pick of the three, since "booking engine" products
+  sometimes represent a property's own site rather than a genuine
+  demand-generating OTA (checked this nuance live, see below).
+
+**1. Live adapter descriptors:** all three confirmed `kind: meta`,
+`mapping_mode: room_rate_multioccupancy`, `property_mapping: single`,
+sharing the now-familiar shared shape (`hotel_code`,
+`send_email_notifications`, hidden-by-rule `email`; `rate_params`:
+`readonly`, `occupancy`, `rate_plan_code`, `room_type_code`,
+`pricing_type` [select, `Standard`/`OBP`], `primary_occ`) — now confirmed
+common across at least 10 of the catalog's adapters. ZenithBookingEngine
+additionally has `api_key` (`type: password`), same combination as
+GuruHotel — confirmed live the password field renders correctly a second
+time. On `ZenithBookingEngine`'s "own booking engine vs. real OTA" concern
+specifically: its descriptor carries no signal either way (`actions: []`,
+same generic shape as every other adapter here) — genuinely can't be
+resolved from the descriptor alone, noted as unresolved rather than
+guessed.
+
+**2, 3. Live test-connection / detail-call behavior — through CA-4's real
+owner-facing routes and a live browser click-through — and a genuine
+methodology finding along the way:**
+
+- **BookDirectOpen and ZenithBookingEngine: consistently, genuinely
+  validate.** Confirmed via 4 repeat raw-API calls each with the identical
+  fake payload (not just one call) — every call cleanly returned
+  `invalid_credentials` at `200`, never a false positive. Reproduced live
+  in the browser for both: fake input → "We couldn't verify these
+  details…" within ~2s, matching the raw-API behavior exactly.
+- **Hipcamp — a real, worth-flagging inconsistency, resolved by
+  re-testing rather than trusted on the first read:** the FIRST raw-API
+  call (as part of the initial 3-adapter batch) returned a clean
+  `success:false, errors:"invalid_credentials"` for a nonsense
+  `hotel_code` — suggesting genuine validation, like GlampingHub/
+  BookDirectOpen/ZenithBookingEngine. But the live browser click-through
+  immediately after (same session, same nonsense value in a fresh field)
+  showed **"✓ Connection verified."** — contradicting that first read.
+  Investigated rather than picked whichever result was more convenient:
+  called `test_connection` **6 more times in a row with the exact same
+  payload** — all 6 returned `success:true`; a follow-up empty-string call
+  still correctly returned `success:false`. **Conclusion: Hipcamp's real,
+  reproducible steady-state behavior is the same Channex-side leniency
+  as HotelREZ/Wigwam Holidays/OneHotelRez** (empty fails, anything else
+  "succeeds") — the one contradictory read was very likely a genuine,
+  one-off Channex-side transient blip (not reproducible, not explained by
+  a code change on NestBook's side — no files were touched between the two
+  calls), not a real "flaky by design" adapter. **Re-tested
+  BookDirectOpen/ZenithBookingEngine 4× each specifically because of this
+  surprise**, to rule out the same pattern before trusting their
+  single-call reads — both stayed perfectly consistent across all 4 calls.
+  **Carrying this forward as a methodology note**: a single test call is
+  usually enough, but a genuinely surprising or shape-inconsistent result
+  is worth a quick repeat-call sanity check before being reported as fact
+  — this is exactly how the discrepancy above was caught rather than
+  silently misreported either way.
+
+**4. Both fixed-bug patterns, re-checked where each adapter's actual
+response shape allowed it:**
+- **Queue-contention (any `5xx`)**: none of the three ever returned a
+  `5xx` on detail calls (Hipcamp/BookDirectOpen/ZenithBookingEngine all
+  return clean `400`/`422`) — **not re-demonstrated this round**, same
+  honest gap as round 4, noted plainly rather than assumed still covered.
+  Remains confirmed via CA-7's original Agoda/Hostelworld findings and
+  round 3's More.com case.
+- **Mapping-fallback (`hasOtaRooms`)**: Hipcamp's `connection_details`/
+  `mapping_details` return `available:false` (clean `400`/`422`), so the
+  already-proven `available:false` fallback path applies (not the
+  empty-rooms-but-`available:true` shape specifically) — confirmed live:
+  continuing past Hipcamp's false-positive Test Connection to the mapping
+  step correctly shows the manual-entry fallback, not a dead end.
+  BookDirectOpen/ZenithBookingEngine's genuine validation means their
+  mapping step is never reachable with fake input (same as
+  JulianAlpsBooking/GuruHotel/BookDirectOpen's well-behaved siblings) —
+  not directly re-tested for the same reason those were skipped in round
+  3.
+
+**5. OBP status, noted per instruction:** all three expose `pricing_type:
+{options: ["Standard","OBP"]}` — OBP-capable, consistent with the whole
+shared-shape family.
+
+**6. Adapter-specific copy — none needed**, same as every prior round.
+
+**Regression check:** no code was changed this pass. Channel Manager and
+the Super Admin debug page both re-confirmed correct after the
+click-throughs above. **Unrelated observation, not a regression**: the
+Super Admin debug page now reports **57 of 57 adapters** (was 56
+throughout every earlier CA-7 round) — Channex's live catalog gained one
+adapter between sessions, an external change on their side, not caused by
+or related to anything in this codebase.
+
+**Verdict for each, plainly:**
+- **Hipcamp**: **ready to use as-is via the generic form.** Carries the
+  same Test-Connection-isn't-trustworthy caveat as HotelREZ/Wigwam/
+  OneHotelRez (confirmed, not assumed, via repeat testing after an
+  initially contradictory read) — no dead end, no queue risk.
+- **BookDirectOpen**: **ready to use as-is via the generic form.**
+  Genuinely, consistently validates; Test Connection is trustworthy; no
+  queue risk.
+- **ZenithBookingEngine**: **ready to use as-is via the generic form**,
+  same reasoning as BookDirectOpen. One open, honestly-unresolved
+  question carried forward rather than guessed at: whether this adapter
+  represents a genuine third-party demand channel or a property's own
+  booking-engine integration — the descriptor gives no signal either way.
+
+---
+
 ## CA-7 round 4 (GlampingHub, OneHotelRez, Stayinto) — DONE (2026-09-16) — self-picked directly from the real catalog; both fixed-bug patterns re-confirmed on independent adapters; all 3 usable, one with the same test_connection caveat as HotelREZ/Wigwam/OneHotelRez's siblings
 
 Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
