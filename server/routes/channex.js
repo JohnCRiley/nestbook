@@ -16,9 +16,11 @@
 
 import { Router } from 'express';
 import { timingSafeEqual } from 'node:crypto';
+import db from '../db/database.js';
 import { fetchRevision, syncReservationFromRevision } from '../utils/channexInboundSync.js';
 import {
   createWebhook, listWebhooks, deleteWebhook, ChannexError,
+  listChannelAdapters, listChannelsForProperty,
 } from '../utils/channexClient.js';
 
 export const channexRouter = Router();
@@ -139,6 +141,38 @@ channexAdminRouter.delete('/webhooks/:id', async (req, res) => {
   try {
     await deleteWebhook(req.params.id);
     res.json({ ok: true });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message });
+  }
+});
+
+// ── Slice CA-1 — Channel API groundwork, read-only debug endpoints ───────────
+// See docs/in-progress/channex-channel-api-investigation.md. No connect/
+// activate here — CA-2. channex_channels stays untouched by these reads (it's
+// only ever written by the CA-2 create flow).
+
+channexAdminRouter.get('/adapters', async (_req, res) => {
+  try {
+    const adapters = await listChannelAdapters();
+    res.json({ adapters: Array.isArray(adapters) ? adapters : [] });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message });
+  }
+});
+
+channexAdminRouter.get('/channels', async (req, res) => {
+  const propId = Number(req.query.property_id);
+  if (!Number.isInteger(propId)) {
+    return res.status(400).json({ error: 'property_id query param is required' });
+  }
+  const property = db.prepare('SELECT id, name, channex_property_id FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+  if (!property.channex_property_id) {
+    return res.json({ channels: [], total: 0, notConnected: true });
+  }
+  try {
+    const body = await listChannelsForProperty(property.channex_property_id);
+    res.json({ channels: body?.data ?? [], total: body?.meta?.total ?? (body?.data?.length ?? 0) });
   } catch (e) {
     res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message });
   }

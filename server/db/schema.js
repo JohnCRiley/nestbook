@@ -2750,6 +2750,50 @@ John`
   try { db.exec(`ALTER TABLE rooms ADD COLUMN structured_amenities TEXT`); } catch (e) {}
   try { db.exec(`ALTER TABLE room_categories ADD COLUMN structured_amenities TEXT`); } catch (e) {}
 
+  // channex_channels (Slice CA-1 — Channel API groundwork, see
+  // docs/in-progress/channex-channel-api-investigation.md §2.2/§3). One row per
+  // OTA connection (Booking.com, Airbnb, …) created for a property via Channex's
+  // Channel API — a genuinely different Channex resource from
+  // channex_room_mappings above (that's the PMS-side room/rate-plan pairing;
+  // this is the OTA-connection-level object that owns those pairings).
+  //
+  // Deliberately NOT the source of truth for is_active or OTA-side room/rate
+  // mapping — Channex is (GET /channels/{id} returns it fresh). This table
+  // exists purely so a debug/management view has something to list without an
+  // extra round-trip on every page load, same "cache, not authority" discipline
+  // as channex_property_id elsewhere in this file. Empty until CA-2 builds the
+  // actual create flow — CA-1 only adds the table + read-only listing.
+  //
+  // channex_group_id: confirmed live 2026-09-16 against staging (GET /groups)
+  // — a real Channex UUID (e.g. "3ff837fb-b83e-4961-9def-204de1a325a2"),
+  // auto-created by Channex per account, not something NestBook manages. Every
+  // property we've connected already belongs to the same one group on our
+  // staging account. Required on POST /channels (CA-2), so captured here
+  // rather than a separate table per John's CA-1 instructions.
+  //
+  // channel_code: Channex's own adapter code, e.g. "BookingCom", "AirBNB"
+  // (exact casing — confirmed live via /channels/list, see confirmed-facts
+  // section of the investigation doc) — NOT a NestBook-invented slug.
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS channex_channels (
+        id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id          INTEGER NOT NULL,
+        channex_channel_id   TEXT    NOT NULL,
+        channex_group_id     TEXT    NOT NULL,
+        channel_code         TEXT    NOT NULL,
+        title                TEXT,
+        is_active            INTEGER NOT NULL DEFAULT 0,
+        created_at           TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at           TEXT    NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+      )
+    `);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_channex_channels_property ON channex_channels(property_id)`);
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_channex_channels_channel_id ON channex_channels(channex_channel_id)`);
+    console.log('✓ channex_channels table ready');
+  } catch (e) { console.error('channex_channels table error:', e.message); }
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

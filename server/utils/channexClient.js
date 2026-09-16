@@ -412,6 +412,45 @@ export async function getBookingRevision(revisionId) {
  * with its own small bounded retry on transient failures.
  * @returns {Promise<object>} the `{ meta }` body
  */
+// ── Channel API (Slice CA-1 — groundwork only) ────────────────────────────────
+// Self-service OTA connect (Booking.com, Airbnb, …) is a genuinely different
+// Channex resource family from everything above — see
+// docs/in-progress/channex-channel-api-investigation.md. CA-1 adds ONLY the
+// read-only listing calls needed for a Super Admin debug view; the actual
+// connect flow (test_connection, mapping_details, create, activate) is CA-2.
+// Both calls below are GETs — like listWebhooks()/getBookingRevision() above,
+// they run directly, not through channexQueue (a read must never queue behind
+// a backed-up ARI burst).
+
+/**
+ * List every Channel API adapter Channex supports (56 as of 2026-09-16 on
+ * staging — Booking.com, Airbnb, Agoda, …). Each entry's `params`/`rate_params`
+ * is a self-describing form schema for that adapter's connect flow (CA-2 will
+ * render a form from it); CA-1 just surfaces the raw list.
+ * @returns {Promise<Array>} the adapter array
+ */
+export async function listChannelAdapters() {
+  return channexRequest('/api/v1/channels/list');
+}
+
+/**
+ * List Channel API connections already created for one Channex property.
+ * Confirmed live (2026-09-16, staging): paginated,
+ * `{ data: [...], meta: { total, limit, page, order_by, order_direction } }`.
+ * Empty until CA-2 builds the create flow — an empty list here is the
+ * expected, correct result for every property today.
+ * @param {string} channexPropertyId  Channex's property UUID
+ *                                    (properties.channex_property_id) — NOT
+ *                                    the NestBook property id.
+ * @returns {Promise<object>} the full body ({ data, meta })
+ */
+export async function listChannelsForProperty(channexPropertyId) {
+  return channexRequest('/api/v1/channels', {
+    query: { 'filter[property_id]': channexPropertyId },
+    raw: true,
+  });
+}
+
 export async function acknowledgeBookingRevision(revisionId) {
   const path = `/api/v1/booking_revisions/${encodeURIComponent(revisionId)}/ack`;
   const maxAttempts = 3;

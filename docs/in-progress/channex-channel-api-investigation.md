@@ -1,3 +1,80 @@
+## CA-1 — DONE (2026-09-16)
+
+Built exactly the groundwork scope from §3's table: schema table, two
+read-only client functions, Super-Admin-only debug view. No connect flow —
+that's still CA-2, untouched.
+
+**Files touched:**
+- `server/db/schema.js` — new `channex_channels` table (id, property_id,
+  channex_channel_id, channex_group_id, channel_code, title, is_active,
+  created_at, updated_at) + property index + unique index on
+  channex_channel_id. Wrapped in try/catch per John's instruction (most
+  `CREATE TABLE IF NOT EXISTS` blocks elsewhere in this file don't need it
+  since the table doesn't exist yet on a fresh DB either way, but this
+  matches the `ai_chat_logs` table's belt-and-braces pattern). **Deliberately
+  named the column `channel_code`, not `channel_type`** — Channex's own field
+  is called `code` (confirmed live: `"code": "BookingCom"` from
+  `/channels/list`), and `channel_code` is what §2.2 of this doc already
+  proposed. Empty table — stays empty until CA-2 writes to it.
+- `server/utils/channexClient.js` — two new functions, both plain GETs
+  (not routed through channexQueue, same as `listWebhooks`/
+  `getBookingRevision` above them — a read must never queue behind a
+  backed-up ARI burst):
+  - `listChannelAdapters()` → `GET /channels/list`
+  - `listChannelsForProperty(channexPropertyId)` → `GET /channels?
+    filter[property_id]=`, `raw: true` (need `meta.total` for the debug view)
+- `server/routes/channex.js` — two new routes on the existing
+  `channexAdminRouter` (already mounted at `/api/admin/channex` under
+  `requireSuperAdminSession` for the webhook admin endpoints — reused rather
+  than creating a new router file):
+  - `GET /api/admin/channex/adapters`
+  - `GET /api/admin/channex/channels?property_id=<nestbook id>` — resolves
+    the NestBook id to `properties.channex_property_id` itself; returns
+    `{ channels: [], total: 0, notConnected: true }` (200, not an error) for
+    a property with no `channex_property_id` yet.
+- `client/src/admin/pages/ChannexChannelApi.jsx` — new page. Two cards:
+  "Available Adapters" (searchable table, all 56) and "Connected Channels"
+  (property `<select>`, sourced from the existing `GET /api/admin/properties`
+  — no new properties-list endpoint needed). Read-only, no buttons.
+- `client/src/admin/AdminLayout.jsx` — nav entry ("Channex Channel API",
+  plug icon) + route, same pattern as every other Super Admin page.
+
+**group_id, confirmed again on a second live call (2026-09-16, same as the
+original investigation pass):** `GET /groups` still returns exactly the one
+`"3ff837fb-b83e-4961-9def-204de1a325a2"` group for our staging account, a
+36-char UUID string, `title: "User Group"`, with both connected properties
+(`Local Dev`, `Tester's place`) listed under it. Stored as `channex_group_id
+TEXT` on `channex_channels` — no separate table, per instruction. Not
+populated by anything yet (CA-1 has no create flow); CA-2 will need to fetch
+it live (`GET /groups`, take the first/only one — this account has never had
+more than one) and stash it in this column when it creates a channel.
+
+**Verified live against staging, not just reviewed:**
+- `GET /groups` → real group UUID, format as above.
+- `listChannelAdapters()` → 56 adapters via the running server, `BookingCom`
+  present with the same `params` shape §1.2 already documented.
+- `listChannelsForProperty()` → ran against property #1 (`Local Dev`,
+  `a50e441f-…`) with zero errors, correctly empty (`{data: [], meta: {total:
+  0, ...}}`) — expected, no channel exists yet.
+- Debug view (`/super-admin/channex-channel-api`) — loaded in-browser via a
+  real Super Admin session: adapter table renders and filters (tested
+  "booking" → 5 matches incl. `BookingCom`/`Booking.com`), property selector
+  switches between a not-yet-Channex-connected property (correct "connect it
+  first" message) and `Local Dev` (correct "no connections yet (0 total)"
+  message, not the not-connected one).
+- Regression check: Super Admin Properties page still renders normally
+  (8 properties, Channex column intact, no console/server errors) — this
+  build touched no existing Channex read/write path.
+
+**Not built (still CA-2+, unchanged from §3):** `testChannelConnection`,
+`getMappingDetails`, `getConnectionDetails`, `createChannel`,
+`checkChannelReadiness`, `activateChannel`, `deactivateChannel`,
+`updateChannel`, `deleteChannel`, the Airbnb OAuth functions, and all owner-
+facing UI. §5's open questions for Evan are all still open — nothing in CA-1
+touched them.
+
+---
+
 # Channex Channel API — self-service OTA connect: investigation (no code yet)
 
 **Investigated 2026-09-15.** Scoping-only pass, requested after Evan (Channex

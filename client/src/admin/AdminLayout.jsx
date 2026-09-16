@@ -19,6 +19,7 @@ import LandingImages     from './pages/LandingImages.jsx';
 import ContentReview     from './pages/ContentReview.jsx';
 import UserMailer        from './pages/UserMailer.jsx';
 import AiAssistant       from './pages/AiAssistant.jsx';
+import ChannexChannelApi from './pages/ChannexChannelApi.jsx';
 import { clearSASession, saApiFetch } from './saApiFetch.js';
 
 const NAV = [
@@ -41,6 +42,7 @@ const NAV = [
   { to: '/super-admin/blog-images',       label: 'Blog Images',                  icon: <IconPhoto /> },
   { to: '/super-admin/feature-interest', label: 'Feature Interest',             icon: <IconThumbsUp /> },
   { to: '/super-admin/landing-images',   label: 'Landing Images',               icon: <IconPhotoStar /> },
+  { to: '/super-admin/channex-channel-api', label: 'Channex Channel API',       icon: <IconPlug /> },
 ];
 
 export default function AdminLayout() {
@@ -170,6 +172,7 @@ export default function AdminLayout() {
           <Route path="landing-images"    element={<LandingImages      />} />
           <Route path="content-review"    element={<ContentReview      />} />
           <Route path="ai-assistant"      element={<AiAssistant        />} />
+          <Route path="channex-channel-api" element={<ChannexChannelApi />} />
         </Routes>
       </main>
     </div>
@@ -366,6 +369,16 @@ function IconFlag() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
       <line x1="4" y1="22" x2="4" y2="15"/>
+    </svg>
+  );
+}
+
+function IconPlug() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22v-5"/>
+      <path d="M9 8V2"/><path d="M15 8V2"/>
+      <path d="M18 8v3a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/>
     </svg>
   );
 }
