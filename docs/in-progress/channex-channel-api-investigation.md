@@ -1,3 +1,90 @@
+## CA-7 round 7 (Novoya, HotelTrader, Travia) — DONE (2026-09-17) — all 3 usable and genuinely trustworthy; caught a new adapter added to Channex's own catalog since round 6; confirmed the generic form handles the sparsest params shape seen yet
+
+Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
+self-picked directly from the live catalog. **Picks and why**, reasoned
+from name/code alone:
+- **Novoya** — genuinely new: re-fetched the live catalog's full code list
+  before picking and diffed it against round 3's fully-enumerated 56-code
+  list (the last time every code was captured in full, during the
+  HRS/Splendia/Weekendesk non-existence check) — `Novoya` is not in that
+  list. Round 5 first noticed the adapter *count* had grown to 57 without
+  identifying which code was new; this round's full re-fetch confirms it's
+  `Novoya` — Channex added it to their catalog sometime between sessions.
+  Picked precisely because it's previously-unseen territory, not for a
+  confident market-fit signal (the name gives none).
+- **HotelTrader** — "Hotel" relevance, generic marketplace/distribution
+  naming plausible for independent hotels; previously passed over in
+  earlier rounds in favor of stronger-signal names, picked now that the
+  clearer options are exhausted.
+- **Travia** — "Trav" (travel)-prefixed, the best remaining generic-but-
+  plausible signal among untested adapters.
+
+**1. Live adapter descriptors:** all three confirmed `kind: meta`,
+`mapping_mode: room_rate_multioccupancy`, `property_mapping: single`.
+Novoya and HotelTrader share the familiar shape exactly (Novoya adds
+`api_key`/password, same combination as GuruHotel/ZenithBookingEngine).
+**Travia's `params` is the sparsest seen yet — literally only `hotel_code`,
+no `email`, no `send_email_notifications` at all** (every other adapter
+tested across all 7 rounds has had at least those two). Confirmed live
+this renders correctly: the settings step shows just the one "Hotel Code"
+field, no missing-field layout issues, no crash — the generic form
+degrades gracefully to a single-field form exactly as cleanly as it
+handles Booking.com's 5-field one.
+
+**2, 3. Live test-connection / detail-call behavior, with the repeat-call
+discipline (5–6 calls each, not 1):**
+
+- **All three consistently, genuinely validate** — confirmed via an empty
+  call plus 5 repeat calls with an identical nonsense payload each (6
+  total per adapter): every single call across all three returned a clean
+  `invalid_credentials` at `200` — no flakiness (unlike round 5's Hipcamp
+  surprise), no leniency (unlike HotelREZ/Wigwam/OneHotelRez/Hipcamp).
+  Reproduced live in the browser for all three: fake input → "We couldn't
+  verify these details…" within ~2s each, matching the raw-API behavior
+  exactly, including Travia's single-field form.
+- `connection_details`/`mapping_details` for all three return clean
+  `400`/`422` (never `5xx`) — **no queue-contention risk exists for any of
+  the three**.
+
+**4. Both fixed-bug patterns:** neither directly re-testable this round —
+same situation as rounds 3, 5, and 6's well-behaved adapters: all three
+correctly block fake credentials before the mapping step is reachable,
+and none returned a `5xx`. Noted plainly, not assumed covered.
+
+**5. OBP status, noted per instruction:** all three expose `pricing_type:
+{options: ["Standard","OBP"]}` — OBP-capable, consistent with the shared-
+shape family.
+
+**6. Adapter-specific copy — none needed**, same as every prior round.
+
+**Regression check:** no code was changed this pass. Channel Manager and
+the Super Admin debug page (57 adapters, stable) both re-confirmed
+correct after the click-throughs above.
+
+**Verdict for each, plainly:**
+- **Novoya**: **ready to use as-is via the generic form.** Genuinely,
+  consistently validates (6/6 calls); Test Connection is trustworthy; no
+  queue risk. No confirmed market-relevance signal from its name — tested
+  purely because it's new to the catalog.
+- **HotelTrader**: **ready to use as-is via the generic form**, same
+  reasoning as Novoya.
+- **Travia**: **ready to use as-is via the generic form**, same
+  reasoning — plus confirms the generic settings-form renderer handles a
+  single-field adapter cleanly, the sparsest shape exercised across all 7
+  rounds.
+
+**Running total across all CA-7 enablement work (21 adapters tested
+across 7 rounds):** 15 genuinely well-behaved and ready with no caveats
+(adding Novoya, HotelTrader, Travia to round 6's tally); 5 ready with the
+known Test-Connection-isn't-trustworthy Channex-side caveat (HotelREZ,
+Wigwam Holidays, OneHotelRez, Hipcamp, Agoda); 1 cleanly blocked by an
+existing safeguard, not a bug (More.com); 1 open question carried forward
+(Hostelworld's unhandled `type` rate_param); 2 real bugs found and fixed
+as their own focused steps (queue-contention, mapping-fallback), both
+confirmed protecting every adapter tested since.
+
+---
+
 ## CA-7 round 6 (OutReserve, RoomPanda, SelahComfort) — DONE (2026-09-16) — final batch of the day; all 3 usable and genuinely trustworthy; one new field type (`switch`) confirmed already handled correctly
 
 Enablement checklist for 3 more `room_rate_multioccupancy` adapters,
