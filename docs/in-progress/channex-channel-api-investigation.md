@@ -1,3 +1,114 @@
+## CA-2 — DONE (2026-09-16) — full create → readiness → activate succeeded
+
+Booking.com connect flow, Super-Admin debug only, against Channex's shared
+public staging test hotels. **Every step succeeded, including activate** —
+better than the pessimistic framing in §3's CA-2 row ("Not live-tested past
+[create]"). Re-fetched
+https://docs.channex.io/channel-api-examples/booking.com fresh for this slice
+(not reused from CA-1's summary) to confirm exact payload shapes before
+writing any code, per instruction.
+
+**Files touched:**
+- `server/utils/channexClient.js` — `listGroups()`, `testChannelConnection()`,
+  `getMappingDetails()`, `getConnectionDetails()`, `createChannel()`,
+  `checkChannelReadiness()`, `activateChannel()`. All six connect-flow
+  functions route through `channexQueue` as `kind: 'other'` (same as
+  `createProperty`/`createRoomType`) — `listGroups()` is a GET, called
+  directly like the CA-1 reads.
+- `server/routes/channex.js` — on the existing `channexAdminRouter`:
+  `GET /room-mappings`, `GET /groups`, `POST /channels/test-connection`,
+  `POST /channels/mapping-details`, `POST /channels/connection-details`,
+  `POST /channels/create` (validates `rate_plan_id` genuinely belongs to the
+  property's `channex_room_mappings` before calling Channex; writes the
+  `channex_channels` row only after a real 201), `POST /channels/:id/
+  check-readiness`, `POST /channels/:id/activate` (updates local `is_active`
+  only after a real success response).
+- `client/src/admin/pages/ChannexChannelApi.jsx` — "Booking.com Connect
+  (CA-2 debug)" section: one button per step, raw JSON shown for every
+  response (success or error), dropdowns for room/rate (sourced live from
+  step 2's response) and NestBook rate plan (sourced from the property's
+  existing `channex_room_mappings` via the new `/room-mappings` endpoint).
+
+**Two discrepancies found — flagged per instruction, not force-fit:**
+
+1. **Both test hotels report `pricing_type: "Standard"` live, not the
+   OBP/Standard split this task's own brief (and §3 of this doc) described.**
+   Live `mapping_details` for hotel `5868189` (labelled "occupancy-based
+   pricing" in the brief) returns `"pricing_type": "Standard"` and every
+   rate's own `"pricing": "Standard"`, with `"occupancies": []` (empty, not
+   populated) on every rate. Hotel `6519420` reports the same. This may mean
+   Channex's shared sandbox hotels have been reconfigured since whoever wrote
+   the original brief looked at them, or the OBP/Standard labels were never
+   about `pricing_type` in the first place. Either way: the create payload's
+   `pricing_type` field is populated from whatever `mapping_details` actually
+   returns for the selected hotel (not hardcoded), so this cost nothing
+   functionally — just noting the docs/brief and live behavior disagree.
+2. **Channex allows only one active channel per `(channel_code, property)`
+   pair, not one per `(channel_code, hotel_id)`.** Discovered live: after
+   successfully creating+activating a BookingCom channel for property #1
+   against hotel `5868189`, a second create attempt against the *other* test
+   hotel (`6519420`, same property) failed with a real `422`: `{"settings":
+   ["channel with the same settings already exists"]}`. This is sensible
+   real-world behavior (a property can only be listed on Booking.com once)
+   but means CA-4's eventual owner-facing wizard needs a pre-check ("this
+   property already has an active Booking.com connection") rather than
+   assuming a fresh create always succeeds. Not documented on either Channex
+   page fetched for this slice — found only by triggering it live.
+
+**Verified live against staging (not just code review) — full walkthrough
+done twice: once via direct API calls, once via real clicks in the running
+UI:**
+- `testChannelConnection('BookingCom', {hotel_id:'5868189'})` → `{success:
+  true, errors:null}`.
+- `createChannel(...)` → real `201`, Channex UUID
+  `01660349-9f5e-4c6b-a634-8b91f0a2569c` (first run, via curl) — confirmed
+  via an independent follow-up `GET /channels?filter[property_id]=`, not
+  just trusting the `201`.
+- **`checkChannelReadiness()` → `{data: [], meta:{message:"Success"}}`
+  (empty = no blockers) and `activateChannel()` → `{meta:{message:
+  "Success"}}`, both HTTP 200 — activation genuinely succeeded**, confirmed
+  by a follow-up `GET /channels` showing `is_active: true` on Channex's side,
+  matching the local `channex_channels` row.
+- Repeated the entire 6-step sequence a second time through actual browser
+  clicks (not curl) against hotel `5868189` again (after deleting the first
+  test channel to free the property's one-BookingCom-connection slot — see
+  discrepancy #2): real `201`, real empty readiness, real activate success,
+  local DB row landed with `is_active: 1`. Screenshots/HTTP traces confirm
+  every step's raw response rendered correctly in the debug UI.
+- **One real bug caught by this live UI pass, fixed before considering CA-2
+  done**: the frontend read the mapping-details/connection-details responses
+  as `data.result.data.rooms` — an extra `.data` that doesn't exist, because
+  `getMappingDetails()`/`getConnectionDetails()` call `channexRequest()`
+  WITHOUT `raw:true`, which already unwraps Channex's outer `data` envelope.
+  The room/rate dropdowns silently stayed empty ("run step 2 first") even
+  after step 2 succeeded until this was caught — a pure curl-based
+  verification would have missed it, since the API responses were correct
+  the whole time; only the browser walkthrough surfaced it.
+- Regression: `git diff --stat` for this slice touches only
+  `channexClient.js`, `routes/channex.js`, and the new page — zero Phase 2
+  files. Post-change, `GET /api/admin/properties` and CA-1's
+  `GET /api/admin/channex/channels` both still return `200` with correct
+  data, and server logs show only the two expected/intentional 422s from
+  testing discrepancy #2, no unexpected errors.
+
+**Unrelated pre-existing bug noticed in passing (NOT fixed — out of scope):**
+`GET /api/admin/properties` returns property #1 ("Local Dev") twice in its
+list — visible as a duplicate dropdown option in both CA-1's and CA-2's
+property selectors. Root cause not investigated, but the endpoint's `LEFT
+JOIN users u ON u.property_id = p.id AND u.role = 'owner'` (admin.js) would
+produce exactly this symptom if property #1 has two `role='owner'` user
+rows. Flagged for a separate fix, not touched here.
+
+**Not built** (still CA-3+ per §3, unchanged): Airbnb OAuth flow,
+`updateChannel`/`deactivateChannel`/`deleteChannel`, the owner-facing wizard
+(CA-4), any UI beyond Super-Admin debug. §5's open questions are still open
+except item 1, now partially answered by this slice: create → readiness →
+activate all work against the shared test hotels — Evan's help is likely
+only still needed for a *third* hotel/property scenario or real OTA
+credentials for channels beyond Booking.com's shared sandbox.
+
+---
+
 ## CA-1 — DONE (2026-09-16)
 
 Built exactly the groundwork scope from §3's table: schema table, two

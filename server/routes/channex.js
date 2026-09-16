@@ -20,7 +20,9 @@ import db from '../db/database.js';
 import { fetchRevision, syncReservationFromRevision } from '../utils/channexInboundSync.js';
 import {
   createWebhook, listWebhooks, deleteWebhook, ChannexError,
-  listChannelAdapters, listChannelsForProperty,
+  listChannelAdapters, listChannelsForProperty, listGroups,
+  testChannelConnection, getMappingDetails, getConnectionDetails,
+  createChannel, checkChannelReadiness, activateChannel,
 } from '../utils/channexClient.js';
 
 export const channexRouter = Router();
@@ -147,9 +149,7 @@ channexAdminRouter.delete('/webhooks/:id', async (req, res) => {
 });
 
 // ── Slice CA-1 — Channel API groundwork, read-only debug endpoints ───────────
-// See docs/in-progress/channex-channel-api-investigation.md. No connect/
-// activate here — CA-2. channex_channels stays untouched by these reads (it's
-// only ever written by the CA-2 create flow).
+// See docs/in-progress/channex-channel-api-investigation.md.
 
 channexAdminRouter.get('/adapters', async (_req, res) => {
   try {
@@ -175,5 +175,183 @@ channexAdminRouter.get('/channels', async (req, res) => {
     res.json({ channels: body?.data ?? [], total: body?.meta?.total ?? (body?.data?.length ?? 0) });
   } catch (e) {
     res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message });
+  }
+});
+
+// ── Slice CA-2 — Booking.com Channel API connect flow ────────────────────────
+// See docs/in-progress/channex-channel-api-investigation.md. Debug/Super-Admin
+// only, click-through-each-step (no single "just connect it" button) so a
+// failure at any step is visible in isolation. Uses Channex's shared public
+// staging test hotels (5868189 OBP, 6519420 Standard) — no owner-facing UI,
+// no real OTA credentials involved.
+
+// NestBook's own room-plan mappings for a property (Phase 2's existing
+// channex_room_mappings) — the debug UI needs these to pick a real
+// `rate_plan_id` for the create step. Read-only, local DB only, no Channex call.
+channexAdminRouter.get('/room-mappings', (req, res) => {
+  const propId = Number(req.query.property_id);
+  if (!Number.isInteger(propId)) {
+    return res.status(400).json({ error: 'property_id query param is required' });
+  }
+  const rows = db.prepare(`
+    SELECT id, nestbook_ref_type, nestbook_ref_id, channex_room_type_id, channex_rate_plan_id
+    FROM channex_room_mappings
+    WHERE property_id = ? AND orphaned_at IS NULL
+    ORDER BY id
+  `).all(propId);
+  res.json({ mappings: rows });
+});
+
+channexAdminRouter.get('/groups', async (_req, res) => {
+  try {
+    const body = await listGroups();
+    res.json({ groups: body?.data ?? [] });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message });
+  }
+});
+
+channexAdminRouter.post('/channels/test-connection', async (req, res) => {
+  const { channel_code, hotel_id } = req.body ?? {};
+  if (!channel_code || !hotel_id) {
+    return res.status(400).json({ error: 'channel_code and hotel_id are required' });
+  }
+  try {
+    const result = await testChannelConnection(channel_code, { hotel_id: String(hotel_id) });
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/mapping-details', async (req, res) => {
+  const { channel_code, hotel_id } = req.body ?? {};
+  if (!channel_code || !hotel_id) {
+    return res.status(400).json({ error: 'channel_code and hotel_id are required' });
+  }
+  try {
+    const result = await getMappingDetails(channel_code, { hotel_id: String(hotel_id) });
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/connection-details', async (req, res) => {
+  const { channel_code, hotel_id } = req.body ?? {};
+  if (!channel_code || !hotel_id) {
+    return res.status(400).json({ error: 'channel_code and hotel_id are required' });
+  }
+  try {
+    const result = await getConnectionDetails(channel_code, { hotel_id: String(hotel_id) });
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+// Creates the real Channex channel (POST /channels) AND writes the local
+// channex_channels row on success. `rate_plan_id` must genuinely belong to
+// the given property's existing channex_room_mappings — never trust a
+// client-supplied Channex UUID blind. `group_id` is resolved live (not
+// stored anywhere yet — see CA-1 notes): staging currently has exactly one
+// group, so more than one is treated as a hard stop rather than a guess.
+channexAdminRouter.post('/channels/create', async (req, res) => {
+  const {
+    property_id, channel_code, hotel_id, title,
+    rate_plan_id, room_type_code, rate_plan_code,
+    occupancy, pricing_type, primary_occ, readonly,
+  } = req.body ?? {};
+
+  const propId = Number(property_id);
+  if (!Number.isInteger(propId)) return res.status(400).json({ error: 'property_id is required' });
+  if (!channel_code || !hotel_id || !title) {
+    return res.status(400).json({ error: 'channel_code, hotel_id, and title are required' });
+  }
+  if (!rate_plan_id || room_type_code === undefined || rate_plan_code === undefined ||
+      occupancy === undefined || !pricing_type) {
+    return res.status(400).json({
+      error: 'rate_plan_id, room_type_code, rate_plan_code, occupancy, and pricing_type are all required',
+    });
+  }
+
+  const property = db.prepare('SELECT id, name, channex_property_id FROM properties WHERE id = ?').get(propId);
+  if (!property) return res.status(404).json({ error: 'Property not found' });
+  if (!property.channex_property_id) {
+    return res.status(400).json({ error: 'Property is not connected to Channex.' });
+  }
+
+  const mapping = db.prepare(`
+    SELECT 1 FROM channex_room_mappings
+    WHERE property_id = ? AND channex_rate_plan_id = ? AND orphaned_at IS NULL
+  `).get(propId, rate_plan_id);
+  if (!mapping) {
+    return res.status(400).json({ error: "rate_plan_id does not belong to this property's channex_room_mappings." });
+  }
+
+  try {
+    const groupsBody = await listGroups();
+    const groups = groupsBody?.data ?? [];
+    if (groups.length !== 1) {
+      return res.status(502).json({
+        error: `Expected exactly one Channex group on this account, found ${groups.length} — ` +
+               `refusing to guess which one. Resolve manually before retrying.`,
+      });
+    }
+    const groupId = groups[0].id;
+
+    const created = await createChannel({
+      channel: channel_code,
+      group_id: groupId,
+      title,
+      properties: [property.channex_property_id],
+      settings: { hotel_id: String(hotel_id) },
+      rate_plans: [{
+        rate_plan_id,
+        settings: {
+          room_type_code,
+          rate_plan_code,
+          occupancy: Number(occupancy),
+          pricing_type,
+          primary_occ: primary_occ ?? true,
+          readonly: readonly ?? false,
+        },
+      }],
+    });
+
+    const channexChannelId = created?.id;
+    if (!channexChannelId) {
+      return res.status(502).json({ error: 'Channex did not return a channel id.', raw: created });
+    }
+
+    db.prepare(`
+      INSERT INTO channex_channels (property_id, channex_channel_id, channex_group_id, channel_code, title, is_active)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(propId, channexChannelId, groupId, channel_code, title, created?.is_active ? 1 : 0);
+
+    console.log(`[admin] Channel API channel created for property #${propId} (${property.name}) → ${channexChannelId} (${channel_code})`);
+    res.status(201).json({ channel: created });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/:channelId/check-readiness', async (req, res) => {
+  try {
+    const result = await checkChannelReadiness(req.params.channelId);
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
+  }
+});
+
+channexAdminRouter.post('/channels/:channelId/activate', async (req, res) => {
+  try {
+    const result = await activateChannel(req.params.channelId);
+    db.prepare(`UPDATE channex_channels SET is_active = 1, updated_at = datetime('now') WHERE channex_channel_id = ?`)
+      .run(req.params.channelId);
+    res.json({ result });
+  } catch (e) {
+    res.status(e instanceof ChannexError && e.status ? 502 : 500).json({ error: e.message, details: e.details ?? null });
   }
 });

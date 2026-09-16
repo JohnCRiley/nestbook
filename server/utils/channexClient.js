@@ -451,6 +451,125 @@ export async function listChannelsForProperty(channexPropertyId) {
   });
 }
 
+/**
+ * List Channex "groups" for our account. A `group_id` is required on
+ * `createChannel()` below — confirmed live (Slice CA-1 investigation, and
+ * re-confirmed for CA-2) that our staging account has exactly one group, auto-
+ * created by Channex, shared by every connected property. GET — not queued.
+ * @returns {Promise<object>} the full body ({ data, meta })
+ */
+export async function listGroups() {
+  return channexRequest('/api/v1/groups', { raw: true });
+}
+
+// ── Channel API (Slice CA-2 — Booking.com connect flow) ───────────────────────
+// Field names/shapes below are taken verbatim from
+// https://docs.channex.io/channel-api-examples/booking.com (re-fetched fresh
+// for this slice, not assumed from CA-1's earlier summary) and
+// https://docs.channex.io/api-v.1-documentation/channel-api (check_readiness,
+// which the Booking.com-specific page doesn't mention at all). Debug/Super-
+// Admin use only — no owner-facing wizard yet (CA-4). These ARE queued
+// (`kind: 'other'`, same as createProperty/createRoomType): unlike the CA-1
+// reads above, every one of these either mutates real Channex state
+// (createChannel, activate) or is the credential-probing step immediately
+// before one, so they get the same retry/backoff protection as every other
+// outbound write in this file.
+
+/**
+ * Test whether `settings` (e.g. `{ hotel_id }` for Booking.com) are valid for
+ * `channelCode` (e.g. "BookingCom") — confirmed live: a wrong hotel_id fails
+ * cleanly (`{success:false, errors:null}`, 200, never throws for a bad
+ * credential). Does not create anything on Channex's side.
+ * @returns {Promise<{success: boolean, errors: any}>}
+ */
+export async function testChannelConnection(channelCode, settings) {
+  return queuedWrite(`test channel connection (${channelCode})`, () =>
+    channexRequest('/api/v1/channels/test_connection', {
+      method: 'POST',
+      body: { channel: channelCode, settings },
+    }));
+}
+
+/**
+ * Fetch the OTA-side rooms/rates available to map, for `channelCode` +
+ * `settings`. Booking.com's shape (confirmed live via docs):
+ * `{ pricing_type: "OBP"|"Standard", rooms: [{ id, title, rates: [{ id,
+ * title, occupancies, ... }] }] }`. This is the OTA's own numeric ids (not
+ * Channex UUIDs) — used as `room_type_code`/`rate_plan_code` in
+ * `createChannel()`'s `rate_plans[].settings` below.
+ * @returns {Promise<object>}
+ */
+export async function getMappingDetails(channelCode, settings) {
+  return queuedWrite(`channel mapping details (${channelCode})`, () =>
+    channexRequest('/api/v1/channels/mapping_details', {
+      method: 'POST',
+      body: { channel: channelCode, settings },
+    }));
+}
+
+/**
+ * Fetch the OTA-side connection state (currency, connection types) for
+ * `channelCode` + `settings`. Booking.com's shape: `{ currency, ... }`.
+ * @returns {Promise<object>}
+ */
+export async function getConnectionDetails(channelCode, settings) {
+  return queuedWrite(`channel connection details (${channelCode})`, () =>
+    channexRequest('/api/v1/channels/connection_details', {
+      method: 'POST',
+      body: { channel: channelCode, settings },
+    }));
+}
+
+/**
+ * Create a Channel API connection — POST /api/v1/channels. `attributes`
+ * (confirmed live shape, Booking.com example):
+ *   { channel, group_id, title, properties: [channexPropertyId],
+ *     settings: { hotel_id }, rate_plans: [{ rate_plan_id, settings:
+ *     { room_type_code, rate_plan_code, occupancy, pricing_type,
+ *       primary_occ, readonly } }] }
+ * `rate_plan_id` is NestBook's OWN Channex rate-plan UUID (from
+ * channex_room_mappings, i.e. Phase 2's existing pairing) — NOT a
+ * Booking.com id. `room_type_code`/`rate_plan_code` ARE the OTA's numeric
+ * ids, from getMappingDetails() above. Created with `is_active: false`;
+ * activateChannel() below turns sync on.
+ * @returns {Promise<object>} the created channel's `data` (includes `id`)
+ */
+export async function createChannel(attributes) {
+  return queuedWrite(`create channel "${attributes.title ?? '?'}"`, () =>
+    channexRequest('/api/v1/channels', {
+      method: 'POST',
+      body: { channel: attributes },
+    }));
+}
+
+/**
+ * List the problems blocking activation for a channel (empty = ready).
+ * `POST /api/v1/channels/{id}/check_readiness`, no request body — confirmed
+ * via docs.channex.io/api-v.1-documentation/channel-api (this endpoint is
+ * NOT documented on the Booking.com-specific page at all).
+ * @returns {Promise<object>} the full body — shape not documented in detail
+ *                            by Channex; callers should treat any non-empty
+ *                            array/list as blockers and log the raw response
+ */
+export async function checkChannelReadiness(channelId) {
+  return queuedWrite(`check readiness (channel ${channelId})`, () =>
+    channexRequest(`/api/v1/channels/${channelId}/check_readiness`, { method: 'POST', raw: true }));
+}
+
+/**
+ * Turn on sync for a channel — `POST /api/v1/channels/{id}/activate`, no
+ * request body. Per docs: "requires the connection to have at least one
+ * property and at least one rate plan mapping" (both already true by the
+ * time createChannel() above has succeeded). Triggers Channex's own full
+ * resync using whatever ARI Phase 2's existing push already put on the
+ * mapped rate plans — no new NestBook-side sync logic needed.
+ * @returns {Promise<object>}
+ */
+export async function activateChannel(channelId) {
+  return queuedWrite(`activate channel ${channelId}`, () =>
+    channexRequest(`/api/v1/channels/${channelId}/activate`, { method: 'POST', raw: true }));
+}
+
 export async function acknowledgeBookingRevision(revisionId) {
   const path = `/api/v1/booking_revisions/${encodeURIComponent(revisionId)}/ack`;
   const maxAttempts = 3;
