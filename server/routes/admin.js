@@ -384,6 +384,15 @@ adminRouter.get('/properties', (req, res) => {
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
+    // u is a derived table, not a plain LEFT JOIN, so a property with more than
+    // one role='owner' user still produces exactly one result row per property
+    // instead of fanning out one row per matching user. This is a real,
+    // legitimate case — not just bad data — e.g. property #1 in local dev has
+    // both its actual owner AND demo@nestbook.io (NestBook's widget demo
+    // account) as role='owner'. MIN(id) picks the earliest-created one
+    // deterministically. Previously this endpoint silently duplicated such a
+    // property in every list it returned (surfaced as a duplicated dropdown
+    // entry in the Channex CA-1/CA-2 debug pages, but affects every consumer).
     const BASE_SELECT = `
       SELECT p.id, p.name, p.type, p.country, p.created_at, p.is_demo,
              p.channex_property_id,
@@ -392,7 +401,10 @@ adminRouter.get('/properties', (req, res) => {
              (SELECT COUNT(*) FROM rooms    r WHERE r.property_id = p.id) as rooms_count,
              (SELECT COUNT(*) FROM bookings b WHERE b.property_id = p.id) as bookings_count
       FROM properties p
-      LEFT JOIN users u ON u.property_id = p.id AND u.role = 'owner'
+      LEFT JOIN (
+        SELECT property_id, email, plan FROM users
+        WHERE role = 'owner' AND id IN (SELECT MIN(id) FROM users WHERE role = 'owner' GROUP BY property_id)
+      ) u ON u.property_id = p.id
     `;
 
     if (page) {
