@@ -2829,6 +2829,20 @@ John`
     console.log('✓ channex_channel_oauth_links table ready');
   } catch (e) { console.error('channex_channel_oauth_links table error:', e.message); }
 
+  // channex_channel_oauth_links.return_path (Slice CA-5 — owner-facing Airbnb
+  // connect). CA-3 built the OAuth mechanism Super-Admin-only, so the public
+  // callback route always redirected back to the Super Admin debug page —
+  // fine when only Super Admin could start the flow, but an owner-initiated
+  // connection needs the browser sent back to the Channel Manager page
+  // instead (the owner has no access to the admin page at all). This column,
+  // written at link-creation time by whichever route generated it, is how
+  // the callback (which cannot otherwise tell who/what started the flow —
+  // that's the whole reason this table exists) knows where to send the
+  // browser back. NULL for any pre-existing rows keeps working — the
+  // callback falls back to the Super Admin page, same as before this column
+  // existed.
+  try { db.exec(`ALTER TABLE channex_channel_oauth_links ADD COLUMN return_path TEXT`); } catch (e) {}
+
   console.log('✓ Database schema ready.');
   return dunningRows; // caller sends downgrade emails asynchronously
 }

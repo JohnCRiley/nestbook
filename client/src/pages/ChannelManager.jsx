@@ -23,6 +23,9 @@ export default function ChannelManager() {
   const [otaLoading,  setOtaLoading]  = useState(false);
   const [showWizard,  setShowWizard]  = useState(false);
 
+  // ── Airbnb OAuth connect — Slice CA-5 ──────────────────────────────────
+  const [airbnbConnecting, setAirbnbConnecting] = useState(false);
+
   // Gate mirrors Sidebar.jsx's canSeeChannelManager() — the nav item is hidden
   // when this is false, but a direct URL visit must not render the page either.
   const allowed = user?.role === 'owner' && (plan === 'pro' || plan === 'multi') && !!user?.has_channel_manager_addon;
@@ -53,6 +56,42 @@ export default function ChannelManager() {
   function showToast(msg, type = 'success') {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  }
+
+  // The public callback (server/routes/channex.js) redirects the browser
+  // back here with ?airbnb=success|failed once the two-hop OAuth round-trip
+  // lands — read once on mount, then scrub the query string so a later
+  // refresh doesn't re-show the toast. Denial/failure partway through the
+  // Airbnb flow (or the owner just closing that tab) lands here too, as
+  // ?airbnb=failed — never a silent dead end.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const airbnb = params.get('airbnb');
+    if (!airbnb) return;
+    if (airbnb === 'success') {
+      showToast(t('cmOtaAirbnbSuccessToast'));
+      fetchOtaChannels();
+    } else {
+      showToast(t('cmOtaAirbnbFailedToast'), 'error');
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleConnectAirbnb() {
+    if (!property?.id) return;
+    setAirbnbConnecting(true);
+    try {
+      const res = await apiFetch(`/api/properties/${property.id}/channex/airbnb/connection-link`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(t('cmOtaAirbnbGenericError'));
+      // Full-page navigation, not a new tab — this is the first hop of a
+      // real two-hop OAuth redirect (Airbnb, then Channex's own callback,
+      // then back here), not a popup flow.
+      window.location.href = data.url;
+    } catch (err) {
+      showToast(err.message, 'error');
+      setAirbnbConnecting(false);
+    }
   }
 
   async function handleConnectToggle() {
@@ -101,6 +140,7 @@ export default function ChannelManager() {
   const connected = !!property?.channex_property_id;
   const units = status?.units ?? [];
   const allUnmapped = connected && !loading && units.length > 0 && units.every((u) => !u.mapped);
+  const hasAirbnbChannel = otaChannels.some((c) => c.attributes?.channel === 'AirBNB');
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: 720, margin: '0 auto' }}>
@@ -266,6 +306,22 @@ export default function ChannelManager() {
               <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setShowWizard(true)}>
                 {t('cmOtaConnectBtn')}
               </button>
+
+              {!hasAirbnbChannel && (
+                <>
+                  <button
+                    className="btn-secondary"
+                    style={{ width: '100%', marginTop: 10 }}
+                    disabled={airbnbConnecting}
+                    onClick={handleConnectAirbnb}
+                  >
+                    {airbnbConnecting ? t('cmOtaAirbnbConnecting') : t('cmOtaAirbnbConnectBtn')}
+                  </button>
+                  <p className="form-hint" style={{ marginTop: 6, marginBottom: 0 }}>
+                    {t('cmOtaAirbnbConsentNote')}
+                  </p>
+                </>
+              )}
             </div>
           </div>
 

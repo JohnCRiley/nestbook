@@ -111,14 +111,21 @@ channexRouter.get('/airbnb/callback', async (req, res) => {
   }
   db.prepare(`DELETE FROM channex_channel_oauth_links WHERE created_at < datetime('now', '-4 hours')`).run();
 
+  // Where to send the browser back — written at link-creation time by
+  // whichever route (Super Admin debug vs. owner-facing Channel Manager)
+  // generated this token, since that's the only place that knows who
+  // started the flow (see schema.js's return_path comment). Falls back to
+  // the Super Admin page for the unknown-token case (nothing to read) and
+  // for any pre-existing row from before this column existed.
   const debugPageUrl = '/app/super-admin/channex-channel-api';
+  const returnTo = link?.return_path || debugPageUrl;
 
   if (!link) {
     console.warn(`[channex-airbnb-callback] unknown/expired token (success=${success}, channel_id=${channelId})`);
     return res.redirect(`${debugPageUrl}?airbnb=failed&reason=unknown_token`);
   }
   if (!success || !channelId) {
-    return res.redirect(`${debugPageUrl}?airbnb=failed&property_id=${link.property_id}`);
+    return res.redirect(`${returnTo}?airbnb=failed&property_id=${link.property_id}`);
   }
 
   try {
@@ -139,10 +146,10 @@ channexRouter.get('/airbnb/callback', async (req, res) => {
     );
 
     console.log(`[channex-airbnb-callback] confirmed channel ${channelId} for property #${link.property_id}`);
-    return res.redirect(`${debugPageUrl}?airbnb=success&channel_id=${encodeURIComponent(channelId)}&property_id=${link.property_id}`);
+    return res.redirect(`${returnTo}?airbnb=success&channel_id=${encodeURIComponent(channelId)}&property_id=${link.property_id}`);
   } catch (err) {
     console.error('[channex-airbnb-callback] confirm-state failed:', err.message);
-    return res.redirect(`${debugPageUrl}?airbnb=failed&reason=confirm_failed&property_id=${link.property_id}`);
+    return res.redirect(`${returnTo}?airbnb=failed&reason=confirm_failed&property_id=${link.property_id}`);
   }
 });
 
@@ -454,8 +461,8 @@ channexAdminRouter.post('/airbnb/connection-link', async (req, res) => {
 
     const token = randomUUID();
     db.prepare(`
-      INSERT INTO channex_channel_oauth_links (token, property_id, user_id, channel_code)
-      VALUES (?, ?, ?, 'AirBNB')
+      INSERT INTO channex_channel_oauth_links (token, property_id, user_id, channel_code, return_path)
+      VALUES (?, ?, ?, 'AirBNB', '/app/super-admin/channex-channel-api')
     `).run(token, propId, req.user?.userId ?? null);
 
     // Browser-mediated redirect, not a server-to-server call (Channex's own

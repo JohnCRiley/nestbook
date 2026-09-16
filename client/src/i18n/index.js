@@ -994,6 +994,16 @@ export const LANGS = {
     cmOtaActivateBtn:           'Activate',
     cmOtaActivating:            'Activating…',
     cmOtaActivatedMsg:          'Connected and activated! Availability and rates will start syncing.',
+    // ── Channel Manager: Airbnb connect (Slice CA-5) — EN ONLY, placeholder.
+    // John is supplying FR/ES/DE/NL for these himself; do not draft them.
+    // The 5-language t() fallback (current locale → en → raw key) means
+    // these render correctly in English everywhere until translated.
+    cmOtaAirbnbConnectBtn:      'Connect Airbnb',
+    cmOtaAirbnbConnecting:      'Redirecting…',
+    cmOtaAirbnbConsentNote:     "You'll be redirected to Airbnb's own site to authorize access. You may briefly see our sync partner's name during this one step — that's expected and outside our control.",
+    cmOtaAirbnbSuccessToast:    'Airbnb connected!',
+    cmOtaAirbnbFailedToast:     "Airbnb connection didn't complete. You can try again.",
+    cmOtaAirbnbGenericError:    'Something went wrong starting the Airbnb connection. Please try again.',
     // ── Room Charges ──────────────────────────────────────────────────────────
     charges:              'Room Charges',
     chargesSubtitle:      'Charge services to guest rooms',

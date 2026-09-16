@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import multer from 'multer';
 import sharp from 'sharp';
 import db from '../db/database.js';
@@ -20,6 +20,7 @@ import {
   ChannexError, listChannelAdapters, listChannelsForProperty,
   testChannelConnection, getMappingDetails, getConnectionDetails,
   createChannel, checkChannelReadiness, activateChannel, resolveSingleGroupId,
+  generateAirbnbConnectionLink,
 } from '../utils/channexClient.js';
 import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { pushInitialInventory, disconnectChannexProperty, buildTargets, pushRoomTypeReconcile } from '../utils/channexPushInventory.js';
@@ -1721,5 +1722,78 @@ propertiesRouter.post('/:id/channex/channels/:channelId/activate', async (req, r
     res.json({ result });
   } catch (e) {
     ownerFacingChannexErrorResponse(res, propId, 'channex/activate', e);
+  }
+});
+
+// ── Airbnb OAuth connect — owner-facing (Slice CA-5) ──────────────────────────
+// CA-3 built the OAuth mechanism (channex_channel_oauth_links, the public
+// GET /api/channex/airbnb/callback, generateAirbnbConnectionLink()) but only
+// wired a Super-Admin-gated route to it. This is the owner-facing equivalent
+// — same requireOwnerChannelManagerAccess gate as every other CA-4/CA-5
+// route, same token-based identity mechanism, unchanged. The only new piece
+// is `return_path`: written here as '/app/channel-manager' so the public
+// callback (which owns no session and cannot otherwise know who started the
+// flow) sends the browser back to a page this owner can actually see,
+// instead of the Super Admin debug page CA-3 hardcoded.
+//
+// Real end-to-end OAuth (an owner actually completing Airbnb's consent
+// screen) has NOT been live-tested — per Evan, there is no fake-credential
+// Airbnb sandbox, and creating a fake listing to test with is explicitly
+// against Airbnb's own rules. This route's own logic (group resolution,
+// token write, redirect_uri construction, calling the real
+// connection_link endpoint) IS live-tested — see the investigation doc's
+// CA-5 section for exactly what was and wasn't verified.
+propertiesRouter.post('/:id/channex/airbnb/connection-link', async (req, res) => {
+  const propId = Number(req.params.id);
+  const property = requireOwnerChannelManagerAccess(req, res, propId);
+  if (!property) return;
+  if (!property.channex_property_id) {
+    return res.status(400).json({ error: 'Connect this property to Channel Management first.' });
+  }
+
+  try {
+    const groupResult = await resolveSingleGroupId();
+    if (groupResult.error) return res.status(502).json({ error: 'channel_connect_failed' });
+
+    // Same opportunistic 4-hour sweep as the Super Admin route — this table
+    // is only ever a handful of rows, not worth a shared helper across files
+    // for one DELETE statement.
+    db.prepare(`DELETE FROM channex_channel_oauth_links WHERE created_at < datetime('now', '-4 hours')`).run();
+
+    const token = randomUUID();
+    db.prepare(`
+      INSERT INTO channex_channel_oauth_links (token, property_id, user_id, channel_code, return_path)
+      VALUES (?, ?, ?, 'AirBNB', '/app/channel-manager')
+    `).run(token, propId, req.user.userId);
+
+    const base = `${req.protocol}://${req.get('host')}`;
+    const callbackUrl = `${base}/api/channex/airbnb/callback?token=${encodeURIComponent(token)}`;
+
+    const link = await generateAirbnbConnectionLink({
+      group_id: groupResult.groupId,
+      properties: [property.channex_property_id],
+      redirect_uri: callbackUrl,
+      failure_redirect_uri: callbackUrl,
+      token,
+    });
+
+    const url = link?.attributes?.url ?? link?.url ?? null;
+    if (!url) return res.status(502).json({ error: 'channel_connect_failed' });
+
+    logAction(db, {
+      propertyId: propId,
+      userId:     req.user.userId,
+      action:     'CHANNEX_AIRBNB_LINK_GENERATED',
+      category:   'owner',
+      targetType: 'property',
+      targetId:   propId,
+      targetName: property.name,
+      detail:     'Generated an Airbnb connect link (owner about to be redirected out) — via Channel Manager',
+      ipAddress:  getIp(req),
+    });
+
+    res.json({ url });
+  } catch (e) {
+    ownerFacingChannexErrorResponse(res, propId, 'channex/airbnb/connection-link', e);
   }
 });

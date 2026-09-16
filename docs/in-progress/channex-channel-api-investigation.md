@@ -1,3 +1,138 @@
+## CA-5 — DONE (2026-09-16) — owner-facing Airbnb connect button; every step verified live except the real Airbnb consent screen + Channex's own code exchange (genuinely blocked, not a code defect)
+
+Owner-facing "Connect Airbnb" button in the existing "Online Travel Agents"
+section (CA-4), wired to CA-3's OAuth mechanism, gated by the same
+`requireOwnerChannelManagerAccess`. Reused CA-3's token mechanism unchanged
+rather than re-solving identity correlation a different way.
+
+**Investigation done before writing any code, per instruction:** read
+`server/routes/channex.js` in full. Found the CA-3 public callback
+(`GET /api/channex/airbnb/callback`) already correctly resolves the
+single-use token and confirms real state via `getChannel()` — genuinely
+solid plumbing — but hardcoded its redirect target to the Super Admin debug
+page, and the only route that generates a connection-link
+(`POST /api/admin/channex/airbnb/connection-link`) was Super-Admin-only.
+There was no owner-facing route or UI at all. Everything else (the token
+table, the two-hop-redirect handling, `getChannel()` confirmation) was
+already real and reusable as-is.
+
+**Files touched:**
+- `server/db/schema.js` — added `return_path TEXT` to
+  `channex_channel_oauth_links` (idempotent `ALTER TABLE` in a try/catch,
+  matching this file's existing pattern). Written at link-creation time by
+  whichever route generated the token (Super Admin debug page vs. owner
+  Channel Manager page); read by the one shared public callback route to
+  decide where to send the browser back — since the callback has no other
+  way to know who/what started the flow. `NULL` on any pre-existing rows
+  falls back to the Super Admin page, unchanged from CA-3 behavior.
+- `server/routes/channex.js` — the Super-Admin connection-link route's
+  INSERT now explicitly writes `return_path: '/app/super-admin/channex-channel-api'`
+  (unchanged behavior, just explicit). The public callback route now reads
+  `link.return_path` and redirects there (falling back to the debug page
+  only when there's no `link` row at all to read from, e.g. an unknown/
+  expired token).
+- `server/routes/properties.js` — new owner-facing route
+  `POST /:id/channex/airbnb/connection-link`, gated by
+  `requireOwnerChannelManagerAccess`, alongside CA-4's 8 routes. Sweeps
+  stale token rows (same 4-hour pattern as CA-3), writes a fresh token with
+  `return_path: '/app/channel-manager'`, calls the existing
+  `generateAirbnbConnectionLink()` from `channexClient.js` unchanged, and
+  wraps errors in the CA-4 `ownerFacingChannexErrorResponse()` helper (no
+  new error-sanitization logic needed).
+- `client/src/pages/ChannelManager.jsx` — "Connect Airbnb" button in the
+  existing Online Travel Agents section (only shown when no `AirBNB` channel
+  is already connected), a `?airbnb=success|failed` URL-param handler on
+  mount (toast + re-fetch on success, toast on failure, then
+  `history.replaceState` to strip the query string), and the
+  `handleConnectAirbnb()` handler that POSTs for the URL and does a full
+  `window.location.href` redirect (matching the Stripe Connect onboarding
+  pattern already in this codebase).
+- `client/src/i18n/index.js` — 6 new `cmOtaAirbnb*` keys, **EN block only**,
+  explicitly flagged in a code comment as not-yet-translated. **These need
+  FR/ES/DE/NL from John**: `cmOtaAirbnbConnectBtn`, `cmOtaAirbnbConnecting`,
+  `cmOtaAirbnbConsentNote`, `cmOtaAirbnbSuccessToast`,
+  `cmOtaAirbnbFailedToast`, `cmOtaAirbnbGenericError`. The 5-language `t()`
+  fallback chain means these render correctly in English on every locale
+  until translated — nothing is broken in the meantime.
+
+**HopperHomes — confirmed, not assumed, per instruction item 4:** despite
+sharing Airbnb's exact `kind: 'ota'`, `mapping_mode: 'listing'`, and a
+similar `rate_params` shape, HopperHomes does **not** share Airbnb's OAuth
+mechanism and is **not** covered by this button. Confirmed two ways: (a)
+`https://docs.channex.io/channel-api-examples/hopper-homes` states a Hopper
+Homes connection begins by creating a **host** — Channex registers the host
+with Hopper Homes and stores the returned token itself, "no credentials to
+collect from the user" — via `POST /api/v1/channels/create_host`, explicitly
+called out in Channex's own docs as one of the exceptions to the shared flow;
+(b) live `GET /api/v1/channels/adapter?code=HopperHomes` confirmed its
+descriptor has no `payload`/`client_id`/`redirect_uri` fields at all, unlike
+AirBNB's descriptor which does. **HopperHomes needs its own dedicated
+`create_host`-based build** — CA-7+ scope, not touched here.
+
+**Denial/failure path — built and verified live, not a dead end:** the
+public callback redirects `?airbnb=failed&property_id=<id>` back to
+`/app/channel-manager` (not the Super Admin page an owner can't reach) on
+both `success=false` and an unknown/expired token with a real link row.
+`ChannelManager.jsx` renders `cmOtaAirbnbFailedToast` ("Airbnb connection
+didn't complete. You can try again.") and leaves the page in its normal
+state — no crash, no blank state, the owner can immediately retry.
+
+**Verified live (browser click-through, not just code review), after
+restarting the dev stack mid-session — logged in as `demo@nestbook.io`,
+property #1:**
+- "Connect Airbnb" button renders correctly in the Online Travel Agents
+  section, alongside CA-4's "Connect a channel" button, with the consent
+  note underneath.
+- Clicking it genuinely navigated the browser's origin to `https://airbnb.com`,
+  landing on a real "Log In / Sign Up - Airbnb" page — confirmed via
+  `read_network_requests` filtered to `airbnb.com` (real tracking/analytics
+  calls, not a mock). The redirect URL's `client_id=vkchvl6nyv0...` matches
+  the same Channex Airbnb OAuth app documented since CA-3. Deliberately did
+  not proceed past this real login page — no credentials entered, nothing
+  submitted, per instruction (no fake-credential sandbox exists, per Evan).
+- Confirmed the DB-stored `token` (used for the callback's own identity
+  resolution) and the `state` query param on the Airbnb URL are **two
+  different values** — this is expected, not a bug: Channex tracks its own
+  internal `state` for the Airbnb round trip and separately echoes
+  NestBook's `token` back verbatim on its own subsequent redirect to our
+  callback URL (documented behavior since the original investigation §1.3).
+- Denial path: generated a real token via the new owner route, then called
+  the public callback directly with `success=false` — confirmed `302` to
+  `/app/channel-manager?airbnb=failed&property_id=1`, and confirmed in a
+  real browser that the failure toast renders correctly on that page.
+- Unknown-token path: confirmed `302` falls back to the Super Admin debug
+  page (expected — there's no link row to read `return_path` from).
+- Callback route registration: confirmed `/api/channex` (containing the
+  public callback) is mounted at `server/index.js:161`, well before the
+  global `requireAuth` gate at line 189 — reachable without a session, as
+  required.
+- Regression: the Super Admin debug page (`/app/super-admin/channex-channel-api`,
+  CA-1/CA-2/CA-3) still loads and renders correctly post-change. CA-4's
+  generic "Connect a channel" wizard button still renders in the same
+  section, unaffected.
+
+**Not built / genuinely unverified (needs a real Airbnb host account with a
+real live listing to prove — cannot be faked, per Evan; creating fake
+listings is against Airbnb's rules):**
+1. Completing the actual consent screen (clicking "Continue"/authorizing on
+   Airbnb's real login+consent flow).
+2. Channex's own server-side code exchange at its `auth_redirect` endpoint
+   and the channel object it creates as a result.
+3. The final success-path redirect actually landing with a real,
+   non-substituted `channel_id` and the success toast + OTA list refresh
+   that follows (the toast/refresh *code path* was exercised via CA-3's
+   substituted-channel-id method previously and is unchanged here, but the
+   genuinely-real end-to-end round trip has not been proven).
+4. The post-connect listings-discovery/mapping/activate flow for a real
+   Airbnb channel — CA-3 already flagged this as its one unverified gap;
+   still open, unchanged by this slice (this slice only adds the entry
+   point, not the post-OAuth mapping UI, which stays CA-6+ scope).
+
+HopperHomes' own connect flow (`create_host`-based, no OAuth) — new scope,
+not previously estimated, budget as its own CA-7+ slice.
+
+---
+
 ## CA-4 — DONE (2026-09-16) — generic descriptor-driven owner-facing wizard; every step verified live except a fresh 201 (see below — genuinely blocked, not a code defect)
 
 Generic, adapter-descriptor-driven Channel Manager connect wizard, moved from
