@@ -1,3 +1,71 @@
+## CA-7 round 2 follow-up — DONE (2026-09-16) — fixed the empty-rooms manual-entry-fallback gap CA-7 round 2 found for Wigwam Holidays; confirmed general, not adapter-specific; Wigwam Holidays re-flagged as ready to offer
+
+**Investigated first, per instruction, whether this was Wigwam-specific or a
+general gap in CA-4's fallback logic — it's general.** Read
+`ChannelConnectWizard.jsx`'s mapping step in full: the decision between
+showing the OTA room/rate dropdowns vs. the manual-entry fallback, in
+**three separate places** (which UI branch to render, and the `roomCode`/
+`rateCode` values fed into `mappingReady`/`createConnection()`), was gated
+purely on `mappingDetails?.available` — a flag that only means "Channex
+answered the request," not "Channex returned anything to pick from." Any
+adapter can come back with a populated-but-empty `rooms` array (a
+genuinely empty inventory on the OTA's side, a scoping mismatch, etc.) —
+this was never specific to Wigwam Holidays' particular sandbox behavior,
+it was a structural gap in what "available" was being used to mean.
+
+**Fix — `client/src/components/ChannelConnectWizard.jsx` only:** introduced
+`hasOtaRooms = mappingRooms.length > 0` (where `mappingRooms` is the
+existing, unchanged derivation) as the one signal for "is there actually
+something here to select," and replaced all three prior uses of
+`mappingDetails?.available` for this decision (the render branch, and the
+`roomCode`/`rateCode` fallback values) with it. `mappingRooms` itself is
+untouched, so this naturally covers both failure shapes — `available:
+false` (unchanged behavior, still falls back) and `available: true` with
+zero rooms (the bug, now also falls back) — with a single check, not two
+adapter-specific branches.
+
+**The "slow-but-successful load shouldn't show a false fallback" concern —
+already structurally impossible, confirmed by reading the code, not
+patched around:** the step 1→2 "Continue" button is already
+`disabled={testOutcome !== 'success' || fetchingDetails}` — the owner
+cannot reach the mapping step until the mapping/connection-details fetch
+has fully settled (success OR failure). `mappingDetails` is therefore
+guaranteed non-null and settled by the time `hasOtaRooms` is evaluated;
+there is no mid-flight state for the fix to misread as "empty." No change
+was needed to guard against this — it already can't happen.
+
+**Verified live against real Channex:**
+- **Reproduced the exact original bug scenario and confirmed the fix**:
+  selected Wigwam Holidays, entered a fake Hotel Code, Test Connection
+  showed the (separately-flagged, unrelated, Channex-side) false "✓
+  Connection verified.", continued to the mapping step — **now correctly
+  shows the manual-entry fallback** ("We couldn't automatically fetch this
+  channel's rooms — enter the codes manually…") with real Room
+  code/Rate code inputs, instead of the previous empty, dead-end dropdown.
+- **Confirmed no regression for adapters with real rooms**: Booking.com's
+  real test hotel `5868189` — Test Connection succeeded, mapping step
+  still correctly shows **"Currency: GBP"** and the real Channel
+  room/Channel rate dropdowns (Single Room/Double Room/Suite), not the
+  fallback — `hasOtaRooms` correctly evaluates `true` when real rooms
+  come back, unchanged from the pre-fix behavior for this case.
+- Regression: Channel Manager's Room Mapping section, CA-5's Airbnb
+  button, and CA-6's per-channel actions all still render correctly; no
+  other files were touched by this fix.
+
+**Wigwam Holidays — re-flagged, per instruction:** now **ready to offer**,
+with its one remaining caveat unchanged and explicitly accepted rather
+than blocking: Channex's own `test_connection`/`create` implementation for
+this adapter doesn't validate against real inventory (confirmed in CA-7
+round 2 — any non-empty Hotel Code returns a false "verified", and even
+`POST /channels` accepted fully fabricated settings). That's a Channex-side
+sandbox/adapter-completeness limitation, not fixable in this codebase, and
+is now a known, documented, accepted limitation rather than a blocker —
+the dead-end code bug that made it actively unsafe to offer is fixed.
+HotelREZ's earlier verdict (mechanically ready, same test-connection
+caveat, no dead-end) is unchanged by this fix.
+
+---
+
 ## CA-7 round 2 (Hostelworld, HotelREZ, Wigwam Holidays) — DONE (2026-09-16) — mixed results; two real, previously-unknown Channex sandbox/code gaps found and confirmed live, neither fixed this pass (reported per instruction)
 
 Enablement checklist for 3 more `room_rate_multioccupancy` adapters.

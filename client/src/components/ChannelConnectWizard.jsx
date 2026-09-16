@@ -214,6 +214,17 @@ export default function ChannelConnectWizard({ property, onClose, onConnected, t
   const hasRateMapping = Object.keys(rateParams).length > 0;
   const supportsObp = rateParams.pricing_type?.options?.includes('OBP');
   const mappingRooms = mappingDetails?.available ? (mappingDetails.result?.rooms ?? []) : [];
+  // A general gap, not adapter-specific (confirmed live for Wigwam Holidays,
+  // CA-7 round 2): `available: true` only means Channex answered, not that
+  // it returned anything to pick from — any adapter can come back with a
+  // populated-but-empty `rooms` array (a genuinely empty inventory, a
+  // scoping mismatch on the OTA's own side, etc.). Gating the manual-entry
+  // fallback on `available` alone leaves the owner staring at an empty
+  // dropdown with no way forward. `hasOtaRooms` is the real signal — "is
+  // there actually something here to select" — and correctly covers both
+  // failure shapes (available:false, or available:true with zero rooms)
+  // with the one check.
+  const hasOtaRooms = mappingRooms.length > 0;
   const selectedOtaRoom = mappingRooms.find((r) => String(r.id) === String(otaRoomId));
   const otaRates = selectedOtaRoom?.rates ?? [];
 
@@ -241,8 +252,8 @@ export default function ChannelConnectWizard({ property, onClose, onConnected, t
     }));
   }
 
-  const roomCode = mappingDetails?.available ? otaRoomId : manualRoomCode;
-  const rateCode = mappingDetails?.available ? otaRateId : manualRateCode;
+  const roomCode = hasOtaRooms ? otaRoomId : manualRoomCode;
+  const rateCode = hasOtaRooms ? otaRateId : manualRateCode;
 
   const mappingReady = hasRateMapping && ratePlanId && roomCode && rateCode && title.trim() && (
     pricingType === 'OBP'
@@ -425,7 +436,7 @@ export default function ChannelConnectWizard({ property, onClose, onConnected, t
                     </select>
                   </div>
 
-                  {mappingDetails?.available ? (
+                  {hasOtaRooms ? (
                     <>
                       <div style={{ marginBottom: 14 }}>
                         <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 4 }}>{t('cmOtaOtaRoom')}</label>
