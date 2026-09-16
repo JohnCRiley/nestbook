@@ -1,3 +1,176 @@
+## CA-7 round 3 (MoreCom, Julian Alps Booking, GuruHotel — substituted for HRS/Splendia/Weekendesk) — DONE (2026-09-16) — none of the three requested adapters exist in Channex's catalog; one new "cleanly blocked" case found (not a bug), two adapters confirmed genuinely well-behaved
+
+**None of HRS, Splendia, or Weekendesk exist in Channex's 56-adapter
+catalog** — confirmed live via `GET /channels/list` against the full code
+list (`OneHotelRez, Agoda, AirBNB, AscendTravel, Avis, BookDirectOpen,
+BookingCom, Budget, CakrahubBookingEngine, Crewdogs, DolceBot, Ostrovok,
+Europcar, Expedia, GlampingHub, GoogleHotelARI, Gopaddi, GrevonAI, Guirez,
+GuruHotel, Hertz, Heytrip, Hipcamp, HLCPlus, Hopper, HopperHomes,
+Hostelworld, HotelPoint, HotelRez, HotelTrader, JoodBooking,
+JulianAlpsBooking, Levart, Goibibo, MoreCom, OpenChannel, OpenShopping,
+OutReserve, Padelbound, Payless, Reserva, RevChill, Revenatium, RoomPanda,
+RukiyeZara, SelahComfort, Stayinto, Travia, CTrip, Tripnera, WebBeds,
+WeSpeak, WeSpeakOpen, WigwamHolidays, Yatra, ZenithBookingEngine` — none of
+these codes or titles matches HRS, Splendia, or Weekendesk by name or
+partial match). Per instruction, substituted — honestly, not forcing a
+confident-sounding match where none exists:
+
+- **More.com** (`code: MoreCom`) — a real, recognizable Mediterranean/
+  Greek OTA for independent hotels, substituted for Splendia's
+  "independent/boutique European hotels" niche.
+- **Julian Alps Booking** (`code: JulianAlpsBooking`) — a real regional
+  booking engine for the Julian Alps (Slovenia, bordering Austria) —
+  **disclosed as an imperfect substitute**: it's Alpine leisure tourism,
+  not HRS's actual corporate-travel-management specialty, but it's the
+  closest genuinely-identifiable DACH-adjacent match in the catalog.
+- **GuruHotel** — **disclosed as the lowest-confidence pick of the three**:
+  after checking every remaining untested adapter's live `title` field for
+  any recognizable French, DACH, or boutique-European signal, none carried
+  one strongly enough to substitute confidently for Weekendesk's
+  "French short-break specialist" niche. GuruHotel was included only to
+  round out the requested count of 3, tested purely on its technical
+  merits (a normal `room_rate_multioccupancy` adapter), not because of any
+  confirmed market relevance — flagged explicitly rather than silently
+  presented as a real match.
+
+**1. Live adapter descriptors:**
+
+- **More.com**: `kind: meta`, `mapping_mode: room_rate_multioccupancy`,
+  `property_mapping: single` — matches the cluster. **But `rate_params` is
+  literally `null`** — no rate-mapping shape at all, a genuinely new case
+  not seen in any adapter enabled so far. `params` has no `hotel_id`/
+  `hotel_code` field either — only `send_email_notifications`, its
+  hidden-by-rule `email`, and a `type: "hidden"` `request_credit_card`
+  field (correctly never rendered, per existing `isFieldHidden`/
+  `buildSettingsPayload` logic).
+- **Julian Alps Booking**: `kind: meta`, `mapping_mode:
+  room_rate_multioccupancy`, `property_mapping: single`. `params`:
+  `hotel_code`, `min_stay_type` (select), `send_email_notifications`
+  (boolean), hidden-by-rule `email` — all supported types.
+  `rate_params`: same shape as HotelREZ/Wigwam Holidays exactly
+  (`occupancy`, `rate_plan_code`, `room_type_code`, `pricing_type` —
+  select with `Standard`/`OBP` — `primary_occ`, `readonly`).
+- **GuruHotel**: same shape as Julian Alps Booking, plus one new field
+  type combination not seen before — `api_key` (`type: "password"`),
+  alongside `hotel_code`. Confirmed the generic `AdapterField` renderer
+  already handles `password` correctly (it's one of the 8 documented
+  types) — rendered live as a genuine masked password input.
+
+**2, 3, 6. Live test-connection / detail-call behavior, queue-contention
+check, and "does test_connection genuinely validate" — through CA-4's
+real owner-facing routes and a live browser click-through:**
+
+- **More.com — genuinely a no-op, confirmed live, not assumed**:
+  `test_connection` returns `success:true` even with **every field left
+  blank** (there's nothing to fill in — no hotel identifier field exists
+  at all). Reproduced live in the browser: opened the settings step,
+  which correctly shows only "Send Property Notification" (no hotel field
+  — the generic renderer correctly handles an adapter with zero
+  identifying params), clicked Test Connection with nothing filled in →
+  **"✓ Connection verified."** — a signal that means literally nothing for
+  this adapter. **Cannot honestly be recommended to an owner as a "test
+  your credentials" step** — though this is somewhat moot given the next
+  finding.
+- **More.com's `mapping_details` returns `{"data": null}` at the top
+  level** (not `{"data": {"rooms": [...]}}` or even `{"data":
+  {"rooms":[]}}` — literally `data: null`). **`connection_details` returns
+  a real `500`** — confirmed this IS protected by the CA-7 queue fix:
+  called the owner-facing route directly, resolved in **2.6s**, zero
+  `[channex-queue]` retry log lines (verified against the full server log
+  for this session — not a single retry line appears anywhere).
+- **More.com is cleanly blocked at the mapping step by EXISTING code —
+  correct behavior, not a bug**: since `rate_params` is `null`,
+  `hasRateMapping` (`Object.keys(rateParams).length > 0`) is `false`, so
+  the wizard shows `t('cmOtaUnsupportedAdapter')` ("This wizard doesn't
+  fully support this channel yet.") and disables "Create connection" —
+  confirmed live via the real browser click-through (settings → Test
+  Connection succeeds → mapping step correctly shows the unsupported
+  message, `Create connection` button confirmed `disabled: true` via a
+  direct DOM check). **This is the existing `!hasRateMapping` safeguard
+  working exactly as designed** — Channex's own More.com adapter simply
+  doesn't declare a rate-mapping capability, so there's nothing CA-4's
+  wizard (or the CA-7-round-2 `hasOtaRooms` fix) could offer here even in
+  principle; not reachable by, or relevant to, either previously-fixed bug
+  pattern.
+- **Julian Alps Booking and GuruHotel both genuinely validate** — a
+  meaningful contrast with HotelREZ/Wigwam Holidays, which share the
+  **exact same params/rate_params shape** but don't validate at all.
+  **Confirms shape alone never predicts sandbox validation behavior** —
+  each adapter's real backend differs independently, worth re-checking
+  per-adapter every time, not inferring from a sibling adapter's shape.
+  Both confirmed live: fake `hotel_code` (Julian Alps Booking) and fake
+  `hotel_code` + `api_key` (GuruHotel) both cleanly fail
+  `test_connection` (`invalid_credentials`, `200`) within ~2s through the
+  real browser wizard — "We couldn't verify these details…" — and the
+  step 1→2 "Continue" button is correctly `disabled` since `testOutcome`
+  never reaches `'success'` with fake input. **Consequence**: unlike
+  HotelREZ/Wigwam (whose false positives let a fake credential reach the
+  mapping step), these two correctly BLOCK a bad credential before the
+  mapping step is ever reachable — confirmed via a direct DOM check
+  (`Continue` button `disabled: true`). Their `connection_details`/
+  `mapping_details` were still probed directly via the raw API for
+  completeness: both return clean `400`/`422` (never a `5xx`) — **no
+  queue-contention risk exists for either adapter** (the retry-storm
+  pattern only applies when Channex itself answers with a `5xx`, which
+  neither does) — the mapping-fallback pattern (item 4) was therefore not
+  directly click-through-tested for these two (the UI correctly never
+  lets fake credentials reach that step), but their error shape matches
+  HotelREZ's already-proven `available:false` case exactly, so the
+  existing fallback is expected — not empirically re-demonstrated here —
+  to engage correctly if real credentials were entered and later details
+  calls failed.
+
+**4. Mapping-fallback pattern (`hasOtaRooms`, from the CA-7-round-2
+follow-up) — re-checked against a genuinely different response shape, not
+just re-confirmed on an identical one:** More.com's `mapping_details`
+returning the whole body as `{"data": null}` (rather than Wigwam's
+`{"rooms": []}`) is a shape the fix hadn't been exercised against before.
+Traced it through: `mappingDetails.result?.rooms` → `{data:null}.rooms` →
+`undefined` → `?? []` → `mappingRooms = []` → `hasOtaRooms = false` — the
+fix handles this correctly too, though in practice it's moot for More.com
+specifically since `!hasRateMapping` already blocks the mapping step
+before `hasOtaRooms` is ever evaluated. Still a useful robustness
+confirmation: the fix isn't narrowly matched to Wigwam's exact empty-array
+shape, it correctly treats "nothing usable" broadly.
+
+**5. OBP status, noted per instruction:** Julian Alps Booking and
+GuruHotel both expose `pricing_type: {options: ["Standard","OBP"]}` —
+OBP-capable, matching HotelREZ/Wigwam. More.com has no `rate_params` at
+all, so the question doesn't apply.
+
+**7. Adapter-specific copy — none needed:** same conclusion as every prior
+CA-7 round — all three render entirely from generic form copy and the
+existing `cmOtaUnsupportedAdapter`/`cmOtaTestFailed` strings. No new i18n
+keys.
+
+**Regression check:** no code was changed this pass (pure investigation).
+Channel Manager's Room Mapping/Online Travel Agents section and the Super
+Admin debug page (all 56 adapters, CA-1/2/3 unaffected) both re-confirmed
+rendering correctly after the click-throughs above.
+
+**Verdict for each, plainly:**
+- **More.com**: **blocked — cleanly, by design, not a bug.** Channex's own
+  adapter declares no rate-mapping shape at all (`rate_params: null`);
+  CA-4's existing `!hasRateMapping` safeguard correctly refuses to let an
+  owner proceed, with a clear message and a disabled create button. Not
+  fixable or completable through this integration model regardless of any
+  NestBook-side change — a genuine capability gap on Channex's side, not
+  ours.
+- **Julian Alps Booking**: **ready to use as-is via the generic form.**
+  Test Connection is trustworthy (genuinely validates), the common
+  wrong-credential path fails fast and cleanly, no queue-contention risk
+  (never 5xxs), OBP-capable but unresolved as expected. The one caveat is
+  editorial, not technical: it's a niche Alpine regional booking engine,
+  a looser fit for NestBook's stated market than HRS would have been.
+- **GuruHotel**: **ready to use as-is via the generic form**, same
+  reasoning as Julian Alps Booking (genuine validation, clean errors, no
+  queue risk, OBP-capable) — but flagged as the pick with the least
+  confirmed market relevance of the three; included to satisfy the
+  requested count of 3, not because any real-world relevance to NestBook's
+  target market could be confirmed.
+
+---
+
 ## CA-7 round 2 follow-up — DONE (2026-09-16) — fixed the empty-rooms manual-entry-fallback gap CA-7 round 2 found for Wigwam Holidays; confirmed general, not adapter-specific; Wigwam Holidays re-flagged as ready to offer
 
 **Investigated first, per instruction, whether this was Wigwam-specific or a
