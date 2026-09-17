@@ -4,7 +4,7 @@ import { apiFetch } from '../utils/apiFetch.js';
 import { useLocale, useT } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
-import { CircleCheckIcon, CreditCardIcon, BuildingBankIcon } from '../components/TablerIcons.jsx';
+import { CircleCheckIcon, CreditCardIcon, BuildingBankIcon, GlassFullIcon, WorldIcon } from '../components/TablerIcons.jsx';
 
 const PLAN_LABELS = { free: 'Free', pro: 'Pro', multi: 'Multi-property' };
 const LOCALE_MAP  = { en: 'en-GB', fr: 'fr-FR', es: 'es-ES', de: 'de-DE', nl: 'nl-NL' };
@@ -513,7 +513,7 @@ function AccountSubscriptionCard() {
       {user?.plan === 'pro' && (
         <div className="billing-card">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-            <div style={{ fontSize: '1.5rem', lineHeight: 1 }}>🍺</div>
+            <GlassFullIcon size={24} style={{ flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('chargesAddonTitle')}</h3>
@@ -573,7 +573,7 @@ function AccountSubscriptionCard() {
       {(user?.plan === 'pro' || user?.plan === 'multi') && (
         <div className="billing-card">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-            <div style={{ fontSize: '1.5rem', lineHeight: 1 }}>🌐</div>
+            <WorldIcon size={24} style={{ flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('channelAddonTitle')}</h3>
