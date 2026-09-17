@@ -1,3 +1,159 @@
+## CA-7 follow-up — Klook/Traveloka/HRS merge fix + enablement — DONE (2026-09-17) — fixed the `/channels/list` omission found in investigation; Klook and Traveloka genuinely usable and merged in; HRS corrected to `direct` mapping_mode (out of the room_rate_multioccupancy scope this whole sweep targeted) and doubly blocked regardless
+
+**The fix — `server/utils/channexClient.js` only.** `listChannelAdapters()`
+now fetches the base `/channels/list` array as before, then separately
+fetches `GET /channels/adapter?code=` for `Klook`, `Traveloka`, and `HRS`,
+merging any that aren't already present (deduped by `code`, so if Channex
+ever fixes this on their end and one starts appearing naturally, it won't
+be double-added). Each supplemental lookup has its own `.catch` — a bad
+day on Channex's side for one (or all three) degrades to "just don't merge
+that one in," never to a broken adapter list for everyone. Both call sites
+(`properties.js`, `channex.js`) needed zero changes, exactly as
+anticipated — they already pass this function's return value straight
+through.
+
+**Verified live, not just code review:**
+- **The merge works end-to-end**: the owner-facing `/channex/adapters`
+  route now returns 60 adapters (57 + 3), and the real CA-4 wizard's
+  "Choose a channel" dropdown correctly lists **HRS**, **Klook**, and
+  **Traveloka** alongside everything else, alphabetically sorted. The
+  Super Admin debug page independently confirms the same 60-of-60 count
+  through its own separate route (`channex.js`), proving the fix benefits
+  both call sites without touching either.
+- **Dedup confirmed**: called the owner-facing adapters route twice in a
+  row — both times exactly 60 total, exactly one `Klook` entry, no
+  duplication.
+- **Graceful degradation confirmed against real Channex, not simulated**:
+  ran the exact same merge logic with one of the three codes swapped for a
+  guaranteed-bad one (`TotallyMadeUpXyz123`) — the bad lookup failed with
+  a logged warning (not a thrown exception), while Klook and HRS still
+  resolved and were correctly included; `.filter(Boolean)` correctly drops
+  only the failed one. A failure in the base `/channels/list` call itself
+  still propagates as before (unchanged, pre-existing behavior — the
+  owner-facing route's existing `ownerFacingChannexErrorResponse` already
+  handles that case).
+
+**CA-7 enablement checklist, run on all three now that they're reachable:**
+
+**1. Descriptors — one important correction to the investigation's own
+findings:** Klook and Traveloka are both confirmed genuinely
+`room_rate_multioccupancy`/`meta`/`single`, matching the dominant shape
+this whole sweep has targeted. **HRS is not** — its real `mapping_mode` is
+`"direct"`, not `room_rate_multioccupancy`. This wasn't caught during the
+investigation because only a truncated 150-character preview of HRS's
+descriptor was printed at the time, cut off before the `mapping_mode`
+field — the investigation's own conclusion that HRS was a normal
+room_rate_multioccupancy adapter was wrong, caught here by reading the
+full descriptor. **HRS's `rate_params` shape is also genuinely different**
+from every adapter tested in this sweep: `rate_plan_code`, `room_type_code`,
+`base_room_code` — no `occupancy`, `pricing_type`, or `primary_occ` at
+all. HRS belongs in the same excluded category as GoogleHotelARI/Hopper/
+HotelPoint/OpenShopping/Reserva (`direct` mapping_mode) that every prior
+CA-7 round has explicitly ruled out up front — it was never actually in
+scope for "the room_rate_multioccupancy cluster," it just wasn't caught
+until now. Still tested below since it's now reachable and the task asked
+for it, but flagged honestly rather than silently treated as another
+normal cluster member.
+
+Klook's two new fields (`extra_adult_price`, `extra_child_price`) are
+**`rate_params`, not `params`** — a distinction that matters here: CA-4's
+generic settings-step renderer (`AdapterField`) genuinely is driven
+generically by whatever `params` an adapter declares, but the **mapping
+step is NOT genuinely generic** — it only ever renders a fixed set of
+controls (NestBook rate-plan picker, OTA room/rate picker or manual entry,
+the `pricing_type`/OBP toggle if `supportsObp`, and the OBP tier builder).
+There is no code path that iterates over arbitrary `rate_params` keys the
+way `AdapterField` iterates over `params`. **Correcting the task's premise
+here rather than reporting a false "yes"**: these two fields do not render
+anywhere in the current wizard, and would not be sent in a create payload
+either — the same class of gap as Hostelworld's unhandled `type`
+rate_param from round 3, now confirmed a second time on a different
+adapter. Not a new bug pattern (same root cause, same category), so not
+fixed inline per instruction, but worth flagging plainly: an owner
+connecting Klook has no way to set per-age-tier price adjustments through
+this wizard, even though Klook's own adapter supports them.
+
+**2. Live test-connection behavior — all three share the exact same
+never-functional pattern, confirmed via repeat AND spaced re-testing:**
+Klook, Traveloka, and HRS all consistently return `success: false,
+errors: "implementation_not_defined"` — for empty input, for a nonsense
+value repeated 5 times each, and (per this task's specific instruction) a
+deliberate spaced re-test run after a long real-time gap later in the
+session, using the identical values. **Zero drift observed for any of the
+three** — unlike ~12% of the full sweep, these three are firmly in the
+same category as Goibibo and WeSpeak: `test_connection` is simply never
+functional for them on Channex's staging sandbox, regardless of input or
+elapsed time. Reproduced live in the real browser for all three: Klook
+and Traveloka's settings forms render correctly (including Klook/
+Traveloka's shared `max_stay_type` `switch` field and Traveloka's
+`booking_tax_settings` select), HRS's form renders correctly too (`min_
+stay_type` switch) — all three consistently show "We couldn't verify
+these details…" within ~2–3s (one Klook click hit a one-off `testOutcome:
+'error'`, not reproducible on immediate retry, consistent with this
+session's other transient dev-server hiccups — not a real finding).
+
+**3. Detail-call test — the queue-contention fix, confirmed on 3 more
+adapters:** all three (`Klook`, `Traveloka`, `HRS`) return a genuine `500`
+from `mapping_details` with fake settings. **Confirmed live through the
+real owner-facing route that the CA-7 queue fix protects all three**:
+resolved in 0.97s, 0.88s, and 0.87s respectively, `{"available":false}`
+each time, zero `[channex-queue]` retry lines in the server log for any of
+them. The fix now has 7 confirmed adapters (Agoda, Hostelworld, MoreCom,
+Goibibo, Klook, Traveloka, HRS). The mapping-fallback fix was not
+click-through-reachable for any of the three, since `test_connection`
+never succeeds — same treatment as Goibibo/WeSpeak.
+
+**4. OBP status, noted in passing:** none of the three expose an
+OBP-capable `pricing_type` — Klook's and HRS's `rate_params` don't have a
+`pricing_type` key with `options` at all (HRS has no `pricing_type` key
+whatsoever; Traveloka's own descriptor also lacks the `select`-with-OBP
+shape, matching the Expedia/Agoda/Ostrovok family instead).
+
+**5. Adapter-specific copy — none needed**, same conclusion as every
+prior round — all three render entirely from generic form copy.
+
+**Regression check:** Channel Manager, the Super Admin debug page (now 60
+adapters, up from 57, exactly as expected), and a direct re-check of
+Booking.com's `connection-details` (still returns real GBP/7-connection-
+type data) all confirmed correct after this change.
+
+**Verdict for each, plainly:**
+- **Klook**: **blocked, not a NestBook bug** — same as Goibibo/WeSpeak,
+  `test_connection` is never functional on Channex's staging sandbox
+  regardless of input or elapsed time. Now correctly surfaced in the
+  owner-facing picker thanks to the merge fix, and its 500-ing detail
+  calls are confirmed protected by the queue fix — but an owner could
+  never actually get past Test Connection here. **Separately flagged**:
+  its two extra rate_params fields (`extra_adult_price`,
+  `extra_child_price`) have no rendering path anywhere in the wizard,
+  joining Hostelworld's unhandled `type` field as a second confirmed
+  instance of the same open question.
+- **Traveloka**: **blocked, not a NestBook bug** — identical situation to
+  Klook (never-functional Test Connection, queue fix confirmed protecting
+  its 500s, no extra unhandled fields).
+- **HRS**: **out of scope for this sweep, and blocked regardless** — its
+  real `mapping_mode` is `direct`, not `room_rate_multioccupancy` (a
+  correction to the investigation's own earlier read), so it was never
+  actually part of "the room_rate_multioccupancy cluster" this whole
+  sweep exists to enable. Also shares Klook/Traveloka's never-functional
+  Test Connection. Now correctly surfaced in the picker by the merge fix
+  regardless, since the fix itself doesn't filter by mapping_mode — but
+  whether the generic wizard's mapping step would even work correctly for
+  a `direct`-mode adapter with HRS's genuinely different `rate_params`
+  shape (no `occupancy`/`pricing_type`/`primary_occ`) is untested and
+  unresolved, since Test Connection blocks reaching that step regardless.
+
+**Updated running tally**: the merge adds 3 adapters to the catalog (60
+total surfaced, up from 57). Of the 3: 0 ready with no caveats, 0 with the
+leniency/drift caveat, and all 3 join the "cleanly blocked, not a bug"
+category (now 5 total: More.com, WeSpeak, Goibibo, Klook, Traveloka — HRS
+makes 6, though for a different, additional reason on top of sharing the
+Test-Connection block). The queue-contention fix is now confirmed on 7
+adapters; the "unhandled optional rate_params field" open question
+(Hostelworld) now has a second confirmed instance (Klook).
+
+---
+
 ## CA-7 round 10 (final 9: OpenChannel, Padelbound, Revenatium, RukiyeZara, CTrip, Tripnera, WebBeds, WeSpeak, WeSpeakOpen) — DONE (2026-09-17) — closes out the full room_rate_multioccupancy sweep; the session-instability pattern turned out to be far more common than round 9 suggested (3 of 34 → now 8 of 43)
 
 Final batch of the `room_rate_multioccupancy` cluster sweep. **Descriptors

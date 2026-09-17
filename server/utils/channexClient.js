@@ -422,15 +422,62 @@ export async function getBookingRevision(revisionId) {
 // they run directly, not through channexQueue (a read must never queue behind
 // a backed-up ARI burst).
 
+// CA-7 fix (2026-09-17): `GET /channels/list` — despite Channex's own docs
+// claiming it returns "every supported channel adapter" — genuinely omits
+// at least Klook, Traveloka, and HRS. Confirmed live: all three return a
+// clean 200 with a full, well-formed descriptor from
+// `GET /channels/adapter?code=`, and all three are listed with no
+// tier/access restrictions on Channex's own public integrations page
+// (which advertises 68 OTA channels total — 11 more than the 57
+// `/channels/list` returns to this account). Ruled out: Super Admin/CA-4
+// aren't filtering anything client-side (both call sites pass this
+// function's return value straight through); a separate `/channels/codes`
+// endpoint returns 739 entries that DOES include these three by name, but
+// under a completely different 3-letter code namespace (`KHS` for Klook,
+// not `Klook`) with zero overlap with `/channels/list`'s codes — a
+// different Channex reference table entirely, not a fix for this gap.
+// Root cause on Channex's side is unconfirmed (a real API bug, a staging-
+// vs-production difference, or something account-specific) — flagged for
+// Evan, not something this codebase can fix upstream. This merge papers
+// over it defensively: any of these three showing up naturally in
+// `/channels/list` later (if Channex fixes it) is deduped by code, not
+// double-added.
+const SUPPLEMENTAL_ADAPTER_CODES = ['Klook', 'Traveloka', 'HRS'];
+
 /**
- * List every Channel API adapter Channex supports (56 as of 2026-09-16 on
- * staging — Booking.com, Airbnb, Agoda, …). Each entry's `params`/`rate_params`
- * is a self-describing form schema for that adapter's connect flow (CA-2 will
- * render a form from it); CA-1 just surfaces the raw list.
+ * List every Channel API adapter Channex supports (57 as of 2026-09-16 on
+ * staging via `/channels/list` alone — Booking.com, Airbnb, Agoda, … — plus
+ * Klook/Traveloka/HRS merged in below, since Channex's own endpoint omits
+ * them). Each entry's `params`/`rate_params` is a self-describing form
+ * schema for that adapter's connect flow (CA-2 will render a form from it);
+ * CA-1 just surfaces the raw list.
+ *
+ * The three supplemental lookups run in parallel, each wrapped in its own
+ * `.catch` so a rejection never propagates to the outer `Promise.all` — a
+ * bad day on Channex's side for one of
+ * them (or all three) degrades to "just don't merge that one in," never to
+ * a broken adapter list for everyone. Not queued — same reasoning as the
+ * base call: a read must never wait behind a backed-up ARI burst.
  * @returns {Promise<Array>} the adapter array
  */
 export async function listChannelAdapters() {
-  return channexRequest('/api/v1/channels/list');
+  const base = await channexRequest('/api/v1/channels/list');
+  const list = Array.isArray(base) ? base : [];
+
+  const existingCodes = new Set(list.map((a) => a?.code));
+  const missingCodes = SUPPLEMENTAL_ADAPTER_CODES.filter((code) => !existingCodes.has(code));
+  if (missingCodes.length === 0) return list;
+
+  const fetched = await Promise.all(
+    missingCodes.map((code) =>
+      channexRequest('/api/v1/channels/adapter', { query: { code } }).catch((e) => {
+        console.warn(`[channex] supplemental adapter fetch failed for code "${code}" — omitting from the list:`, e.message);
+        return null;
+      })
+    )
+  );
+
+  return [...list, ...fetched.filter(Boolean)];
 }
 
 /**
