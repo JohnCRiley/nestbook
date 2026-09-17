@@ -1,3 +1,107 @@
+## CA-7 follow-up — Vrbo investigation — DONE (2026-09-17) — exists, production-only (same `implementation_not_defined` pattern as Klook/Traveloka/HRS), AND out of the room_rate_multioccupancy cluster this whole sweep targeted (`mapping_mode: "listing"`) — a genuinely new, more severe class of mapping-step gap than Hostelworld/Klook's "one ignored field"
+
+**Investigation-only, no code changes**, run the same way as the Klook/
+Traveloka investigation: `/channels/list` alone is known to be
+incomplete (already proven for Klook/Traveloka/HRS), so existence was
+checked both via the merged 60-adapter list AND a direct
+`GET /channels/adapter?code=` lookup with case variants.
+
+**Exists — confirmed via direct lookup, absent from `/channels/list`,
+same omission pattern as Klook/Traveloka/HRS.** Not present anywhere in
+the 60-adapter merged list. `GET /channels/adapter?code=Vrbo` (and
+`vrbo`, `VRBO`) all resolve cleanly to the identical descriptor, with
+Channex's real canonical code reported as **`VRBO`** (all-caps — note
+this is a third different casing convention seen across these
+supplemental lookups, after `Klook`/`Traveloka` title-case and `HRS`
+all-caps-but-short; Channex's `?code=` param is confirmed case-
+insensitive here too, same as CA-3's `AirBNB` finding). `HomeAway` (the
+pre-rebrand name) was also tried, both cased — both return a genuine
+Channex **500 Internal Server Error**, not a clean "not found." Not
+chased further since it's out of scope for an investigation-only task
+and the current, real adapter name Channex's own descriptor reports is
+`VRBO` regardless — but worth flagging that `HomeAway` isn't a silently-
+unsupported alias, it's an actual server error on Channex's side.
+
+**Descriptor — genuinely different shape from every adapter tested in
+this sweep so far:**
+```json
+{
+  "code": "VRBO", "title": "VRBO", "kind": "meta",
+  "mapping_mode": "listing", "property_mapping": "multiple",
+  "connection_params": {"mode": "meta"},
+  "params": {
+    "username": {"type": "string"}, "password": {"type": "password"},
+    "email": {"type": "string", "rules": [...hidden unless notifications on...]},
+    "send_email_notifications": {"type": "boolean", "default": false},
+    "min_stay_type": {"type": "switch", "options": ["Arrival","Through"]},
+    "payout_type": {"type": "select", "options": ["Total Booking Amount","Payout Amount"]},
+    "sync_days": {"type": "select", "options": ["180","365","400","500","720"]}
+  },
+  "rate_params": {"property_id": {"type": "string", "title": "PropertyId"}}
+}
+```
+`mapping_mode: "listing"` — never seen before in this sweep, and NOT
+`room_rate_multioccupancy` — so, same as HRS's correction, **VRBO was
+never actually a member of the cluster this whole 43-adapter sweep
+targeted.** `rate_params` is a single `property_id` string field — no
+`room_type_code`/`rate_plan_code`/`occupancy`/`pricing_type`/
+`primary_occ` at all. No `pricing_type` key means no OBP toggle would
+ever show (`supportsObp` is false) — consistent with a listing-based,
+not room-and-rate-based, mapping model.
+
+**Production-only, confirmed the same way as Klook/Traveloka/HRS**: one
+`test_connection` call with empty settings, then one with plausible-
+looking fake credentials (`username`/`password`) — **both returned
+`{"success":false,"errors":"implementation_not_defined"}`**, identical
+to the other three. Per this round's instruction, the full repeat/spaced
+battery was skipped once this pattern was confirmed — it would only
+reconfirm what's already conclusive, the same as it was for Klook/
+Traveloka/HRS. Genuine verification needs real production VRBO
+credentials, same caveat as those three.
+
+**A genuinely new, more severe bug — flagged plainly, not fixed inline,
+per instruction (this is NOT either of the two already-fixed patterns —
+not the queue-contention fix, not the `hasOtaRooms` fallback fix):**
+CA-4's mapping step (`client/src/components/ChannelConnectWizard.jsx`)
+unconditionally builds its create payload with `room_type_code`/
+`rate_plan_code` keys (~lines 271-272, 281-282) no matter what the
+selected adapter's `rate_params` actually declares — this was already
+known to be "not genuinely generic" (Hostelworld's unhandled `type`
+field, Klook's unhandled `extra_adult_price`/`extra_child_price`), but
+those were both cases of "an extra field the schema declares gets
+silently ignored." VRBO is a **worse case**: its `rate_params` schema
+doesn't contain `room_type_code`/`rate_plan_code` at all, so the wizard
+would send keys VRBO's schema never asked for, while the one field it
+actually needs — `property_id` — is never collected or sent anywhere.
+`hasRateMapping` (`Object.keys(rateParams).length > 0`) still evaluates
+`true` since `property_id` exists, so the wizard's existing "this wizard
+doesn't fully support this channel yet" block (the one that correctly
+catches `rate_params: null` for MoreCom/WeSpeak) would NOT trigger for
+VRBO — an owner would be let into a mapping step whose room/rate
+dropdowns have no real meaning for this adapter, and a create call built
+on the wrong field model. Root cause is `mapping_mode: "listing"`
+diverging from the `room_rate_multioccupancy` shape the mapping step's
+hardcoded controls assume — the first confirmed case in this whole sweep
+where the *mapping mode itself*, not just one extra param key, is
+incompatible.
+
+**Not done, per instruction (investigation only)**: VRBO was NOT added to
+`OWNER_HIDDEN_ADAPTER_CODES` in `server/routes/properties.js` (the
+owner-facing curation list from the prior follow-up) despite fitting the
+"cannot be successfully completed" criterion that list is for on two
+independent grounds (production-only test_connection, AND a mapping-step
+field-model mismatch worse than Klook/Hostelworld's). It currently isn't
+reachable by an owner anyway (absent from `/channels/list`, and never
+merged into `listChannelAdapters()` the way Klook/Traveloka/HRS were —
+no merge fix was requested or implemented for VRBO this round), so there
+is no live exposure to curate yet. Flagging for whoever picks this up
+next: if VRBO is ever merged in the same way Klook/Traveloka/HRS were,
+it should almost certainly be added to that hidden-codes list on the
+same pass — its gap is strictly worse than two of the four codes
+already on it.
+
+---
+
 ## CA-7 follow-up — owner-facing adapter curation, ahead of launch — DONE (2026-09-17) — hides the 5 confirmed-broken adapters from owners while keeping Super Admin's debug view fully unfiltered
 
 **The fix — `server/routes/properties.js` only.** A new `OWNER_HIDDEN_
