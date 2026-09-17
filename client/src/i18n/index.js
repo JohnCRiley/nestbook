@@ -1060,13 +1060,10 @@ export const LANGS = {
     chargesAddonRemove:   'Remove add-on',
     chargesAddonRemoving: 'Removing…',
     // English placeholders only — translations supplied separately, same
-    // convention as the rest of this feature. channelAddonPrice is a
-    // deliberate placeholder, not a real price — pending confirmation of
-    // the actual GBP/EUR monthly amount before this ships to real
-    // customers; do not replace with a guessed number.
+    // convention as the rest of this feature.
     channelAddonTitle:    'Channel Manager add-on',
     channelAddonDesc:     'Connect this property to online travel agents and sync your availability and rates automatically — no more manually updating each channel by hand.',
-    channelAddonPrice:    'Price coming soon',
+    channelAddonPrice:    '£9/mo · €10/mo',
     channelAddonAdd:      'Add to my plan',
     channelAddonAdding:   'Adding…',
     channelAddonActive:   'Add-on active',

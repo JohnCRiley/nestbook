@@ -69,13 +69,14 @@ already uses — no new Stripe pattern invented.
   from earlier slices, not Bar & Charges' shortcut, without touching
   Bar & Charges' existing (untranslated) strings.
 
-**Deliberately left as a flagged placeholder, not guessed:** the actual
-GBP/EUR monthly price to display (`channelAddonPrice`) — no
-`STRIPE_SECRET_KEY` is configured in this local checkout to look the two
-price ids up against the real Stripe API, and the task didn't state the
-amount, only the price ids. Shows literal "Price coming soon" in the UI
-right now rather than a fabricated number — asked John for the real amount;
-a one-line follow-up edit once given.
+**Follow-up — DONE:** the placeholder "Price coming soon" was flagged, not
+guessed (no `STRIPE_SECRET_KEY` in this local checkout to look the two price
+ids up against the real Stripe API). John confirmed the real amounts — GBP
+£9.00/mo, EUR €10.00/mo — and `channelAddonPrice` now reads `'£9/mo ·
+€10/mo'`, matching `chargesAddonPrice`'s exact static dual-currency display
+format (both currencies always shown together, not switched by the owner's
+actual billing currency — that's how Bar & Charges' own price string already
+works too, confirmed by re-reading its code rather than assumed).
 
 **Full gating audit — every location checked, not just one:**
 
