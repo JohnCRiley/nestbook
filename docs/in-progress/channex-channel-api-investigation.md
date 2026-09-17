@@ -1,3 +1,186 @@
+## CA-7 round 10 (final 9: OpenChannel, Padelbound, Revenatium, RukiyeZara, CTrip, Tripnera, WebBeds, WeSpeak, WeSpeakOpen) — DONE (2026-09-17) — closes out the full room_rate_multioccupancy sweep; the session-instability pattern turned out to be far more common than round 9 suggested (3 of 34 → now 8 of 43)
+
+Final batch of the `room_rate_multioccupancy` cluster sweep. **Descriptors
+— all confirmed `kind: meta`, `mapping_mode: room_rate_multioccupancy`,
+`property_mapping: single`.** Two flagged:
+- **OpenChannel** has a genuinely new field, `endpoint` (title "API
+  Endpoint") — but it's plain `type: "string"`, nothing new for the
+  renderer to handle; confirmed live it renders and behaves like any other
+  text field.
+- **WeSpeak** has `rate_params: null` — the second adapter after More.com
+  with no rate-mapping capability at all — same `params` shape as
+  More.com too (`email`, `send_email_notifications`, `request_credit_card`
+  hidden field). Confirmed live: settings step shows only "Send Property
+  Notification", no hotel field.
+
+**Test-connection — initial pass, 5–6 calls each:** 9/9 consistently
+returned `success:false` in the first raw-API batch — no leniency
+detected on the first read for any of them. **The picture changed
+substantially once the browser click-through pass began minutes later**
+(see below).
+
+**The session-instability pattern (Hipcamp round 5, Guirez round 9) is
+now confirmed FAR more widespread than previously understood — 4 more
+adapters drifted mid-round:**
+- **Padelbound, RukiyeZara, and Tripnera** all initially read as
+  genuinely validating (consistent `invalid_credentials` across the
+  5-call raw-API batch), then showed **"✓ Connection verified."** for a
+  fake credential minutes later in the live browser — each investigated
+  immediately per the established Hipcamp/Guirez precedent: re-running
+  the exact value that had failed 5/5 or 6/6 times earlier now
+  consistently succeeds, while an empty string still correctly fails.
+  Genuine, reproducible mid-session drift, not one-off flakiness or
+  value-dependence.
+- **A systemic sanity check, not just adapter-by-adapter**: re-tested
+  Booking.com and Expedia (both long-established, repeatedly-confirmed
+  "genuinely validates" adapters from round 1) at the same point in the
+  session — **both still validate correctly**, ruling out a global,
+  environment-wide shift affecting every adapter. **This drift is real but
+  adapter-specific** — confined so far to a subset that, notably, all
+  share very similar or identical descriptor shapes with each other (and
+  with some adapters that DON'T drift), so shape still doesn't predict it
+  either way.
+- **A deliberate spaced re-test, per this round's specific instruction**:
+  picked 3 adapters that read as stable on their first pass (OpenChannel,
+  CTrip, WeSpeakOpen), did other work (regression checks, doc drafting)
+  for several minutes, then re-ran their original fake value. **All three
+  remained consistently `false`** — no further drift caught by this
+  specific spaced check, but this doesn't rule out drift on a longer
+  timescale or under different conditions; it's a reasonable spot-check,
+  not exhaustive proof of stability.
+- **Practical consequence for the mapping-fallback fix**: Padelbound,
+  RukiyeZara, and Tripnera all correctly reached the mapping step once
+  "verified" and all three showed the manual-entry fallback (their
+  `mapping_details` all return clean `422`s, not the empty-rooms shape) —
+  confirmed live, no dead end for any of them.
+- **WeSpeak — same `implementation_not_defined` pattern as Goibibo**:
+  consistently `false` across all calls (initial batch, no drift
+  observed), regardless of input. Combined with its `rate_params: null`,
+  it's doubly blocked — even if Test Connection somehow passed, there's no
+  rate-mapping step to reach anyway.
+- **The remaining 5 — OpenChannel, Revenatium, CTrip, WebBeds,
+  WeSpeakOpen — stayed consistently genuine throughout** (initial batch
+  and, for 3 of them, the deliberate spaced re-test too).
+
+**Detail-call test, one call each with fake settings:**
+- **7 return clean `422`** (OpenChannel, Padelbound, Revenatium,
+  RukiyeZara, Tripnera, WeSpeakOpen, and CTrip's `422` with a `null`
+  `errors` body — an unusual shape but still a clean non-`5xx`, handled
+  correctly regardless since the owner route only cares whether the call
+  threw, not the exact error body). **WebBeds returns a `422` with a
+  nested `{success, warnings, errors}` nested object** — another unusual
+  shape, same conclusion: still a clean `422`, generically handled. **No
+  queue-contention risk for any of these 8.**
+- **WeSpeak's `mapping_details` returns a real `500`** — but since
+  `rate_params: null` blocks the mapping step from ever being reached
+  (same as More.com), this is functionally moot; not re-tested through
+  the owner route for the queue-fix specifically, since the code path that
+  would call it is unreachable via the actual wizard regardless of this
+  fix.
+
+**OBP status, noted in passing:** all 9 expose `pricing_type` with
+`options: ["Standard","OBP"]` except CTrip, whose `pricing_type` is a
+plain string (Expedia/Agoda/Ostrovok/Goibibo-family shape) and WeSpeak,
+which has no `rate_params` at all.
+
+**Adapter-specific copy — none needed**, consistent with every prior
+round.
+
+**Regression check:** no code was changed this pass. Channel Manager and
+the Super Admin debug page (57 adapters, stable) both re-confirmed correct
+after the click-throughs above.
+
+**Verdict for each, plainly:**
+- **OpenChannel, Revenatium, CTrip, WebBeds, WeSpeakOpen**: **ready to use
+  as-is via the generic form.** Genuinely, consistently validate
+  (including a deliberate spaced re-check for 3 of these 5); no queue
+  risk.
+- **Padelbound, RukiyeZara, Tripnera**: **ready to use as-is via the
+  generic form**, mechanically sound (mapping fallback confirmed live, no
+  dead end, no queue risk) — but flagged with the **session-instability
+  caveat**, same as Hipcamp/Guirez: don't trust a clean read as proof
+  these will behave consistently for a real owner.
+- **WeSpeak**: **blocked, not a NestBook bug** — same as More.com
+  (`rate_params: null`, no rate-mapping capability) AND same as Goibibo
+  (`test_connection` never functional on staging, `implementation_not_
+  defined` regardless of input). Doubly blocked by two independent,
+  already-understood Channex-side limitations.
+
+---
+
+## FULL `room_rate_multioccupancy` SWEEP — COMPLETE (2026-09-17). 43 of
+**~46 candidate adapters tested across 10 rounds** (3 excluded up front as
+wrong `mapping_mode`/OAuth: AirBNB and HopperHomes are `listing`,
+GoogleHotelARI/Hopper/HotelPoint/OpenShopping/Reserva are `direct`,
+AscendTravel/Yatra are `tree` — none in the `room_rate_multioccupancy`
+cluster this sweep targeted).
+
+**Final tallies (43 adapters, carefully recounted from every round's
+verdict — see the full per-adapter list below, not just a running total
+carried forward):**
+- **29 genuinely well-behaved, ready to use as-is, no caveats**:
+  Booking.com, Expedia, Julian Alps Booking, GuruHotel, GlampingHub,
+  Stayinto, BookDirectOpen, ZenithBookingEngine, OutReserve, RoomPanda,
+  SelahComfort, Novoya, HotelTrader, Travia, Crewdogs, RevChill, Levart,
+  CakrahubBookingEngine, DolceBot, Ostrovok, Gopaddi, GrevonAI, HLCPlus,
+  JoodBooking, OpenChannel, Revenatium, CTrip, WebBeds, WeSpeakOpen.
+  (Hostelworld is deliberately NOT in this list — see "open question"
+  below; it's ready for the common path but carries its own unresolved
+  caveat, kept separate rather than folded into "no caveats.")
+- **10 ready to use, but with a Test-Connection-isn't-trustworthy
+  caveat** — treat all of these the same way regardless of sub-type:
+  don't rely on a clean Test Connection result as proof of anything.
+  - *Persistently lenient* (4): HotelREZ, Wigwam Holidays, OneHotelRez,
+    Heytrip.
+  - *Session-drift, confirmed via investigation not assumed* (5): Hipcamp,
+    Guirez, Padelbound, RukiyeZara, Tripnera.
+  - *Milder variant* (1): Agoda — a real but wrong `test_connection` error
+    string from the original CA-7 pass, not leniency, but still not a
+    fully trustworthy signal.
+- **3 cleanly blocked by Channex-side limitations, not NestBook bugs**:
+  More.com and WeSpeak (`rate_params: null`, no rate-mapping capability at
+  all — WeSpeak is also doubly blocked by the next point); Goibibo and
+  WeSpeak (`test_connection` never functional on staging,
+  `implementation_not_defined` regardless of input).
+- **1 open question, not yet resolved**: Hostelworld — ready for the
+  common path (genuinely validates, no queue risk), but its `rate_params`
+  includes an unhandled `type` key that CA-4's generic create-payload
+  builder doesn't collect or send. Flagged in round 3, never followed up
+  since it needs a real Hostelworld credential to test meaningfully.
+  29 + 10 + 3 + 1 = **43**, matching the total tested.
+- **2 real bugs found this sweep, both fixed as their own focused steps,
+  both now confirmed protecting multiple adapters**: the `channexQueue`
+  retry-blocking risk (confirmed protecting 4 adapters whose detail calls
+  genuinely `5xx`: Agoda, Hostelworld, MoreCom, Goibibo — and by
+  construction protects every other adapter sharing
+  `getConnectionDetails()`/`getMappingDetails()`, whether or not they
+  happened to `5xx` during testing), and the mapping-fallback dead end
+  (confirmed protecting 6 adapters whose `mapping_details` returned an
+  empty-rooms-but-`available:true` shape or were reachable via a
+  false-positive Test Connection: Wigwam Holidays, OneHotelRez, Heytrip,
+  Padelbound, RukiyeZara, Tripnera).
+- **1 genuinely new finding from this sweep, not a bug but worth carrying
+  forward**: the session-instability pattern itself. **5 of 43 tested
+  adapters (≈12%)** — Hipcamp (round 5), Guirez (round 9), Padelbound,
+  RukiyeZara, and Tripnera (round 10) — showed Test Connection behavior
+  that changed within a single session, independent of the exact
+  credential value entered. Confirmed via investigation (repeat calls,
+  spaced re-tests, a cross-check against known-stable Booking.com/Expedia
+  to rule out a global environment shift) rather than assumed. Common
+  enough across this sweep (roughly 1 in 8–9 adapters) that it should be
+  treated as an expected category of Channex sandbox behavior for a
+  meaningful minority of adapters, not a rare fluke — worth remembering if
+  this integration is ever extended to adapters beyond what CA-7 already
+  tested.
+
+**What was never resolved, by design, per every round's instruction**: the
+OBP/occupancy-based-pricing branch remains exactly as unverified as CA-4
+left it — no round in this sweep attempted to force that resolution, since
+doing so needs a real, live OBP-configured channel that doesn't exist in
+this environment.
+
+---
+
 ## CA-7 round 9 (first half of the remaining 19: CakrahubBookingEngine, DolceBot, Ostrovok, Gopaddi, GrevonAI, Guirez, Heytrip, HLCPlus, JoodBooking, Goibibo) — DONE (2026-09-17) — 10 adapters, mostly ready; one genuinely blocked (Goibibo), one newly-discovered session-inconsistent adapter (Guirez, joining Hipcamp), two exercise the mapping-fallback fix live (Heytrip, Ostrovok)
 
 Streamlined pass through the first 9–10 of the 19 remaining untested
