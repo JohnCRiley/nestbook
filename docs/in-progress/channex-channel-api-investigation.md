@@ -1,3 +1,163 @@
+## CA-7 round 9 (first half of the remaining 19: CakrahubBookingEngine, DolceBot, Ostrovok, Gopaddi, GrevonAI, Guirez, Heytrip, HLCPlus, JoodBooking, Goibibo) — DONE (2026-09-17) — 10 adapters, mostly ready; one genuinely blocked (Goibibo), one newly-discovered session-inconsistent adapter (Guirez, joining Hipcamp), two exercise the mapping-fallback fix live (Heytrip, Ostrovok)
+
+Streamlined pass through the first 9–10 of the 19 remaining untested
+`room_rate_multioccupancy` adapters (no selection reasoning this round,
+per instruction — worked through the list in order). This round surfaced
+more genuinely new findings than several recent rounds combined.
+
+**1. Descriptors — all confirmed `kind: meta`, `mapping_mode:
+room_rate_multioccupancy`, `property_mapping: single`. Two flagged as
+genuinely unusual, not deep-dived beyond confirming they're still handled
+correctly:**
+- **Ostrovok** uses `hotel_id` (not `hotel_code`) and a plain-`string`
+  `pricing_type` (not a `select`) — the Expedia/Agoda shape, not the
+  HotelREZ-family shape most of this batch shares. Nothing new for the
+  code to handle (both variants already proven), just a different
+  combination than its neighbors.
+- **Goibibo** (title "Make My Trip") has by far the richest descriptor
+  seen across all 9 CA-7 rounds: `hotel_id`, `access_token` (password),
+  `send_email_notifications`, `booking_amount_settings` (select), and
+  **two independent conditional toggle pairs** (`sync_b2b_rate_type` →
+  reveals `b2b_rate_type_modifier`; `sync_my_biz_rate_type` → reveals
+  `my_biz_rate_type_modifier`) — the first adapter with more than one
+  such pair. Confirmed live in the browser: both modifiers correctly
+  hidden by default, and toggling `Sync B2B Rate Type` on correctly reveals
+  only `B2B Rate Type Modifier (%)` while `MyBiz Rate Type Modifier (%)`
+  stays hidden — the two rules operate independently, not entangled. No
+  code change needed; existing `isFieldHidden`/`buildSettingsPayload`
+  logic already generalizes correctly to N independent pairs, now proven
+  live for N=2, not just N=1.
+
+**2, 3. Test-connection behavior, 5–6 calls each:**
+- **7 of 10 genuinely, consistently validate** (empty + fake all
+  `invalid_credentials`): CakrahubBookingEngine, DolceBot, Ostrovok,
+  Gopaddi, GrevonAI, HLCPlus, JoodBooking. Reproduced live for all 7 —
+  clean fail within ~2–3s each (one HLCPlus click hit a one-off
+  `testOutcome: 'error'`, not reproducible on immediate retry — logged
+  nothing server-side, most likely transient noise from this session
+  being paused/resumed mid-round, not a real finding — confirmed clean on
+  retry).
+- **Heytrip is lenient** — `success:true` for any non-empty value, `false`
+  only for empty — same class as HotelREZ/Wigwam/OneHotelRez/Hipcamp.
+  Confirmed live: fake input → "✓ Connection verified." for a value that
+  isn't real.
+- **Guirez — a second adapter now shown to be genuinely
+  session-inconsistent, joining Hipcamp (round 5):** an early raw-API
+  check (6 calls: empty + 5 identical fake) returned consistent
+  `invalid_credentials` — looked like a well-behaved adapter. A later
+  browser click-through with the same class of fake value showed **"✓
+  Connection verified."** Investigated immediately per the Hipcamp
+  precedent rather than trusting either read: re-ran the *exact* fake
+  value that had earlier failed 6/6 times — now succeeded 6/6 times, and
+  alternating between two different fake values plus new ones (`abc`,
+  `123`, a 50-char string) all returned `success:true`, while an empty
+  string still correctly returned `false` throughout. **Guirez's
+  `test_connection` genuinely changes behavior over the course of a
+  session** — not value-dependent, not simple one-off flakiness, but a
+  real, reproducible shift from "validates" to "lenient" with no code
+  change on our side. This is now a confirmed pattern across 2 of 26
+  tested adapters — worth treating as its own caveat category going
+  forward (distinct from "always lenient" and "genuinely validates"):
+  **"observed to be unstable — don't trust a single session's read even
+  if it looked clean."**
+- **Goibibo — always `false`, with `errors: "implementation_not_defined"`,
+  regardless of input** (6/6 calls, empty and fake alike). Unlike every
+  leniency case above, this isn't a false-positive risk — it's the
+  opposite problem: **Test Connection can never succeed for this adapter
+  on Channex's staging sandbox, even with hypothetically correct
+  credentials**, because the check itself isn't implemented. Confirmed
+  live: the real form correctly shows "We couldn't verify these
+  details…" and never lets the owner past this step, no matter what they
+  enter.
+
+**Detail-call test, one call each with fake settings — the two
+already-fixed patterns:**
+- **7 return clean `422`/`400`** (Cakrahub, DolceBot, Gopaddi, GrevonAI,
+  HLCPlus, JoodBooking, and Guirez's current-session state) — no
+  queue-contention risk.
+- **Ostrovok and Heytrip both return `200` with `available:true` and an
+  empty `rooms: []`** — the exact dead-end shape the CA-7-round-2 fix
+  targets. **Heytrip's fix confirmed live end-to-end**: since it's
+  lenient, a fake credential genuinely reaches the mapping step in the
+  real browser, which correctly shows the manual-entry fallback, not an
+  empty dropdown. **Ostrovok's fix is confirmed by the same code path**
+  but not click-through-demonstrated the same way, since Ostrovok
+  genuinely validates and correctly blocks the mapping step from ever
+  being reached with fake input (confirmed via a disabled `Continue`) —
+  same treatment as every other well-behaved adapter whose fallback case
+  could only be reached via a raw API call, not the live UI.
+- **Goibibo's `connection_details` and `mapping_details` BOTH return real
+  `500`s** — a genuine queue-contention test case. **Confirmed live
+  through the real owner-facing route that the CA-7 queue fix protects
+  it**: `connection-details` resolved in **0.47s**, `mapping-details` in
+  **1.6s**, both returning `{"available":false}` — zero `[channex-queue]`
+  retry lines anywhere in the server log for the whole session. The fix
+  holds for a 6th confirmed adapter (after Agoda, Hostelworld, MoreCom
+  from earlier rounds).
+
+**4. OBP status, noted in passing:** all 10 expose `pricing_type` with
+`options: ["Standard","OBP"]` except Ostrovok and Goibibo, whose
+`pricing_type` is a plain string (matching the Expedia/Agoda-family
+shape) — consistent with what that shape has always meant (no OBP toggle
+renders, `Standard` is sent by default).
+
+**5. Adapter-specific copy — none needed**, consistent with every prior
+round.
+
+**Regression check:** no code was changed this pass. Channel Manager and
+the Super Admin debug page (57 adapters, stable) both re-confirmed correct
+after the click-throughs above; no channel data left behind (no create
+attempts this round).
+
+**Verdict for each, plainly:**
+- **CakrahubBookingEngine, DolceBot, Gopaddi, GrevonAI, HLCPlus,
+  JoodBooking**: **ready to use as-is via the generic form.** Genuinely,
+  consistently validate; no queue risk.
+- **Ostrovok**: **ready to use as-is via the generic form.** Genuinely
+  validates; uses the Expedia/Agoda-family shape (`hotel_id`, string
+  `pricing_type`); its empty-rooms mapping shape is protected by the
+  already-fixed `hasOtaRooms` logic (confirmed by code path, not a live
+  click-through, since it correctly blocks fake credentials before
+  reaching that step).
+- **Heytrip**: **ready to use as-is via the generic form**, with the known
+  Test-Connection-isn't-trustworthy caveat (leniency) — AND its
+  empty-rooms mapping-fallback protection confirmed live end-to-end, one
+  of the few adapters where both fixed-bug patterns were directly
+  demonstrated together in one real click-through.
+- **Guirez**: **ready to use as-is via the generic form** — mechanically
+  sound (mapping fallback engages correctly, no dead end, no queue risk)
+  — but flagged with a **new caveat**: its Test Connection result has
+  been directly observed to change within a single session, independent
+  of the value entered. Treat it like Hipcamp — don't trust a clean read
+  as proof the adapter will behave the same way for a real owner later.
+- **Goibibo**: **blocked/unclear, not a NestBook bug.** Test Connection
+  cannot succeed on Channex's staging sandbox regardless of input
+  correctness (`implementation_not_defined`) — an owner can never get
+  past this step for real. Everything downstream that COULD be tested
+  (the rich settings form, two independent hidden-field rules, the
+  queue-contention fix on its 500-ing detail calls) works correctly; the
+  adapter itself is simply not functional to validate against in this
+  environment.
+
+**Running total across all CA-7 enablement work (34 adapters tested
+across 9 rounds):** 24 genuinely well-behaved and ready with no caveats;
+7 ready with a known caveat (5 with the leniency/Test-Connection-isn't-
+trustworthy pattern — HotelREZ, Wigwam Holidays, OneHotelRez, Hipcamp,
+Heytrip — plus Agoda's milder version; 2 with the newly-named
+session-instability pattern — Hipcamp, Guirez, which also carry the
+leniency label since that's what's been observed in-session); 2 cleanly
+blocked, not bugs (More.com — no rate-mapping shape; Goibibo — Test
+Connection non-functional on staging); 1 open question carried forward
+(Hostelworld's unhandled `type` rate_param); 2 real bugs found and fixed
+as their own focused steps (queue-contention, now confirmed on 6
+adapters; mapping-fallback, now confirmed on 4 — Wigwam Holidays,
+OneHotelRez, Heytrip, and by code-path for Ostrovok). **9 `room_rate_
+multioccupancy` adapters remain untested**: OpenChannel, Padelbound,
+Revenatium, RukiyeZara, CTrip, Tripnera, WebBeds, WeSpeak, WeSpeakOpen —
+carried over plainly for the next round.
+
+---
+
 ## CA-7 round 8 (Crewdogs, RevChill, Levart) — DONE (2026-09-17) — all 3 usable and genuinely trustworthy; honestly weak-signal picks, as expected with strong-signal names now exhausted
 
 Enablement checklist for 3 more `room_rate_multioccupancy` adapters. Per
