@@ -875,22 +875,28 @@ img { display: block; max-width: 100%; }
 }
 .cm-columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1.25fr;
   align-items: center;
   gap: 40px;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 .cm-copy {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
+/* Matches .which-plan-tile .pricing-price ("Free Forever") exactly —
+   font-size/weight/letter-spacing/color all inherited from the base
+   .pricing-price rule — since this section is a bigger selling point and
+   needs to read "beefier" than the rest of the page, not just match body
+   copy weight. */
 .cm-line {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--dark);
-  line-height: 1.4;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--mid);
+  line-height: 1.25;
   margin: 0;
 }
 .cm-graphic {
