@@ -945,6 +945,10 @@ img { display: block; max-width: 100%; }
     gap: 28px;
   }
   .cm-copy { text-align: center; }
+  /* .cm-title shrinks to its clamp() floor (1.75rem) on mobile, putting it
+     close enough to .cm-line's 1.6rem that the two lost their hierarchy —
+     dial the body copy back down while keeping it bold, not body-text-sized. */
+  .cm-line { font-size: 1.2rem; }
 }
 
 /* ── Pricing ──────────────────────────────────────────────────────────────── */
