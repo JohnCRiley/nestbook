@@ -1492,13 +1492,60 @@ function ownerFacingChannexErrorResponse(res, propId, label, e) {
   res.status(status).json({ error: 'channel_connect_failed' });
 }
 
+// Owner-facing adapter curation, ahead of launch (CA-7 follow-up). These
+// adapters exist in Channex's catalog — `listChannelAdapters()` surfaces
+// them fine — but cannot be successfully connected under any real-world
+// input right now, so showing them to an owner only invites confused
+// support tickets. Super Admin's own debug view
+// (`GET /api/admin/channex/adapters`, `server/routes/channex.js`)
+// deliberately does NOT apply this filter — it needs the full, unfiltered
+// list for troubleshooting, which is exactly why this list lives here in
+// the owner-facing route file, not inside `listChannelAdapters()` itself
+// or channexClient.js generally.
+//
+// Each entry's root cause is confirmed live in the CA-7 investigation
+// (docs/in-progress/channex-channel-api-investigation.md) — update THIS
+// list, not the reasoning below, the moment any of these is actually
+// fixed (by Channex or by us):
+//   - MoreCom, WeSpeak — `rate_params` is null on Channex's own
+//     descriptor: no rate-mapping capability exists at all, so the
+//     wizard's mapping step can never be completed regardless of
+//     credentials.
+//   - Goibibo — `test_connection` consistently returns
+//     `implementation_not_defined` on Channex's staging sandbox
+//     (confirmed via repeated + spaced live testing) — an owner can never
+//     pass Test Connection here.
+//   - Hostelworld — reachable past Test Connection, but its
+//     `rate_params` includes an unhandled `type` key CA-4's generic
+//     create-payload builder never collects or sends (flagged since
+//     round 3, still unresolved).
+//   - Klook — the same class of gap as Hostelworld: its
+//     `extra_adult_price`/`extra_child_price` rate_params fields have no
+//     rendering path in the mapping step, which isn't genuinely generic
+//     the way the settings step is.
+//
+// Deliberately NOT hidden, despite carrying a caveat of their own:
+//   - HotelREZ, Wigwam Holidays, OneHotelRez, Agoda, Hipcamp, Guirez,
+//     Padelbound, RukiyeZara, Tripnera — Test Connection can give a false
+//     read (a persistent false-positive, or one observed to drift within
+//     a session), but a real credential still connects successfully; the
+//     caveat only affects setup feedback quality, not final success.
+//   - Traveloka, HRS — share Goibibo's `implementation_not_defined`
+//     result, but per Evan this is a confirmed Channex sandbox-only
+//     limitation; both are reported to work correctly in production, so
+//     hiding them here would be premature.
+const OWNER_HIDDEN_ADAPTER_CODES = new Set(['MoreCom', 'WeSpeak', 'Goibibo', 'Hostelworld', 'Klook']);
+
 propertiesRouter.get('/:id/channex/adapters', async (req, res) => {
   const propId = Number(req.params.id);
   const property = requireOwnerChannelManagerAccess(req, res, propId);
   if (!property) return;
   try {
     const adapters = await listChannelAdapters();
-    res.json({ adapters: Array.isArray(adapters) ? adapters : [] });
+    const visible = (Array.isArray(adapters) ? adapters : []).filter(
+      (a) => !OWNER_HIDDEN_ADAPTER_CODES.has(a?.code)
+    );
+    res.json({ adapters: visible });
   } catch (e) {
     ownerFacingChannexErrorResponse(res, propId, 'channex/adapters', e);
   }

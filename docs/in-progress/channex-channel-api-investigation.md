@@ -1,3 +1,95 @@
+## CA-7 follow-up — owner-facing adapter curation, ahead of launch — DONE (2026-09-17) — hides the 5 confirmed-broken adapters from owners while keeping Super Admin's debug view fully unfiltered
+
+**The fix — `server/routes/properties.js` only.** A new `OWNER_HIDDEN_
+ADAPTER_CODES` `Set`, declared immediately above the
+`GET /:id/channex/adapters` route (colocated with its only use site,
+rather than inside `listChannelAdapters()`/`channexClient.js`, since this
+is owner-facing UX curation, not a Channex-client-level concern), filters
+the array that route returns. `listChannelAdapters()` itself is
+completely unchanged — it still returns the full, unfiltered 60-adapter
+list (57 native + Klook/Traveloka/HRS merged in by the prior follow-up) —
+and Super Admin's own route (`GET /api/admin/channex/adapters`,
+`server/routes/channex.js`) was never touched, so it keeps consuming that
+same unfiltered list directly, exactly as required.
+
+**Hidden from the owner-facing picker (5), each with its confirmed root
+cause commented directly above the `Set` declaration for future
+maintainers:**
+- `MoreCom`, `WeSpeak` — `rate_params` is `null` on Channex's own
+  descriptor; no rate-mapping capability exists at all.
+- `Goibibo` — `test_connection` consistently returns
+  `implementation_not_defined` on Channex's staging sandbox.
+- `Hostelworld` — reachable past Test Connection, but its `rate_params`
+  includes an unhandled `type` key the generic create-payload builder
+  never collects or sends.
+- `Klook` — the same class of gap as Hostelworld: its
+  `extra_adult_price`/`extra_child_price` rate_params fields have no
+  rendering path in the (non-generic) mapping step.
+
+**Deliberately kept visible, with the reasoning recorded in the same
+comment block** — 9 adapters whose Test Connection result can be
+misleading (persistent false-positive or observed session-drift) but
+which still connect successfully with a real credential: HotelREZ, Wigwam
+Holidays, OneHotelRez, Agoda, Hipcamp, Guirez, Padelbound, RukiyeZara,
+Tripnera. Plus Traveloka and HRS, whose `implementation_not_defined`
+result is a confirmed Channex staging-sandbox-only limitation (per Evan,
+both work correctly in production) — hiding them now would be premature
+ahead of NestBook's own production Channex key being configured for this
+feature.
+
+**Deliberately NOT done, to stay within scope**: no server-side block was
+added to the `POST /:id/channex/channels` create route for the 5 hidden
+codes. The task scoped this to the owner-facing *picker* specifically; a
+determined client bypassing the UI entirely and POSTing a hidden adapter
+code directly is a separate, narrower concern (and for 4 of the 5, the
+create call would already fail on its own merits — no rate mapping
+possible for MoreCom/WeSpeak, Test Connection never passes for Goibibo).
+Not implemented here since it wasn't asked for; flagged in case a future
+slice wants defense-in-depth at the create route too.
+
+**Verified live, not just code review:**
+- **The 5 hidden adapters confirmed absent from the real owner-facing
+  route**: `GET /:id/channex/adapters` now returns exactly 55 (60 − 5),
+  confirmed via direct API call with a real owner JWT — none of
+  `MoreCom`/`WeSpeak`/`Goibibo`/`Hostelworld`/`Klook` present.
+- **The same 5 confirmed absent from CA-4's real "Choose a channel"
+  dropdown** in a live browser session — read the full option list off
+  the actual rendered `<select>`: 55 options, none of the 5 hidden codes
+  present (`Klook`/`Make My Trip`/`More.com`/`WeSpeak`/`Hostelworld` all
+  correctly missing; `WeSpeakOpen` — a different adapter — correctly
+  still present, confirming the filter matches by exact code, not a
+  substring).
+- **Super Admin's debug view confirmed still fully unfiltered**, twice:
+  once via a direct API call (`GET /api/admin/channex/adapters` → 60,
+  all 5 "hidden" codes present), once live in the browser (the debug
+  page's own "60 of 60 adapters" summary line, unchanged from before this
+  fix).
+- **A caveat adapter and a sandbox-limited adapter both spot-checked
+  end-to-end through the real form, not just confirmed present in the
+  list**: selected HotelREZ — its settings step (Hotel Code, Send
+  Property Notification) rendered correctly, unaffected. Selected
+  Traveloka — its settings step (Hotel Code, Tax Setting For Bookings,
+  Max Stay Type) also rendered correctly, unaffected.
+- Regression: Channel Manager's Room Mapping section and CA-5's "Connect
+  Airbnb" button both still render correctly after this change.
+
+**Updated tallies — owner-facing visibility, not adapter behavior
+(behavior tallies from the prior entries are unchanged)**: of the 60
+adapters `listChannelAdapters()` returns, **55 are shown to owners** and
+**5 are hidden** pending a fix on either Channex's side (Klook's/
+Hostelworld's rate_params gap, Goibibo's non-functional sandbox check) or
+ours (nothing currently planned for MoreCom/WeSpeak's missing rate-mapping
+capability — that's Channex's own adapter limitation, not something this
+codebase can add). This list should be revisited: if Hostelworld's or
+Klook's mapping-step gap is ever fixed (would need the wizard's mapping
+step to genuinely generically render arbitrary `rate_params` keys, not
+just the hardcoded set it handles today), if Goibibo's sandbox
+implementation ever becomes functional, or if Channex's `/channels/list`
+omission is ever fixed on their end (irrelevant to this specific list, but
+worth remembering it's a separate, still-open item).
+
+---
+
 ## CA-7 follow-up — Klook/Traveloka/HRS merge fix + enablement — DONE (2026-09-17) — fixed the `/channels/list` omission found in investigation; Klook and Traveloka genuinely usable and merged in; HRS corrected to `direct` mapping_mode (out of the room_rate_multioccupancy scope this whole sweep targeted) and doubly blocked regardless
 
 **The fix — `server/utils/channexClient.js` only.** `listChannelAdapters()`
