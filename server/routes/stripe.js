@@ -602,6 +602,78 @@ stripeRouter.post('/addon/charges/remove', async (req, res) => {
   }
 });
 
+// ── POST /api/stripe/addon/channel-manager/add ────────────────────────────────
+// Adds the Channel Manager add-on as a second line item on the user's existing
+// subscription — same pattern as addon/charges/add above, different price IDs.
+// The webhook confirms the add and flips has_channel_manager_addon — we don't
+// set it here.
+stripeRouter.post('/addon/channel-manager/add', async (req, res) => {
+  try {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
+
+    const sub = db.prepare(`
+      SELECT stripe_subscription_id, stripe_customer_id
+      FROM subscriptions
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY created_at DESC LIMIT 1
+    `).get(req.user.userId);
+    if (!sub?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
+
+    const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+    const currency = subscription.currency ?? 'gbp';
+    const addonPriceId = currency === 'gbp'
+      ? process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP
+      : process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR;
+
+    if (!addonPriceId) return res.status(500).json({ error: 'Channel Manager add-on price not configured.' });
+
+    // Check not already subscribed
+    const alreadyHas = subscription.items.data.some(
+      item => item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP ||
+              item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR
+    );
+    if (alreadyHas) return res.status(400).json({ error: 'Channel Manager add-on already active.' });
+
+    await stripe.subscriptionItems.create({ subscription: sub.stripe_subscription_id, price: addonPriceId });
+    console.log(`[stripe] Channel Manager add-on added for user ${req.user.userId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[stripe] addon/channel-manager/add error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/stripe/addon/channel-manager/remove ─────────────────────────────
+// Removes the Channel Manager add-on line item from the user's subscription.
+// The webhook confirms the removal and clears has_channel_manager_addon.
+stripeRouter.post('/addon/channel-manager/remove', async (req, res) => {
+  try {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
+
+    const sub = db.prepare(`
+      SELECT stripe_subscription_id, stripe_customer_id
+      FROM subscriptions
+      WHERE user_id = ? AND status = 'active'
+      ORDER BY created_at DESC LIMIT 1
+    `).get(req.user.userId);
+    if (!sub?.stripe_subscription_id) return res.status(400).json({ error: 'No active subscription found.' });
+
+    const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+    const addonItem = subscription.items.data.find(
+      item => item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP ||
+              item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR
+    );
+    if (!addonItem) return res.status(400).json({ error: 'Channel Manager add-on not found on subscription.' });
+
+    await stripe.subscriptionItems.del(addonItem.id);
+    console.log(`[stripe] Channel Manager add-on removed for user ${req.user.userId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[stripe] addon/channel-manager/remove error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/stripe/webhook ──────────────────────────────────────────────────
 // Exported as a plain handler and mounted directly in index.js BEFORE
 // requireAuth and express.json(). Stripe uses its own signature verification
@@ -924,6 +996,11 @@ export async function stripeWebhookHandler(req, res) {
                   item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
         ) ? 1 : 0;
 
+        const hasChannelManagerAddon = sub.items.data.some(
+          item => item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP ||
+                  item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR
+        ) ? 1 : 0;
+
         db.prepare(`
           UPDATE subscriptions
           SET plan = ?, status = ?, current_period_end = ?, cancel_at_period_end = ?
@@ -935,9 +1012,9 @@ export async function stripeWebhookHandler(req, res) {
         // so it's a good opportunistic place to correct it if it was ever
         // missed by the checkout-completion path.
         db.prepare(`
-          UPDATE users SET plan = ?, has_charges_addon = ?, stripe_subscription_id = ?
+          UPDATE users SET plan = ?, has_charges_addon = ?, has_channel_manager_addon = ?, stripe_subscription_id = ?
           WHERE id = (SELECT user_id FROM subscriptions WHERE stripe_subscription_id = ?)
-        `).run(plan, hasAddon, sub.id, sub.id);
+        `).run(plan, hasAddon, hasChannelManagerAddon, sub.id, sub.id);
         break;
       }
 

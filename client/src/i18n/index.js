@@ -1059,6 +1059,23 @@ export const LANGS = {
     chargesAddonActive:   'Add-on active',
     chargesAddonRemove:   'Remove add-on',
     chargesAddonRemoving: 'Removing…',
+    // English placeholders only — translations supplied separately, same
+    // convention as the rest of this feature. channelAddonPrice is a
+    // deliberate placeholder, not a real price — pending confirmation of
+    // the actual GBP/EUR monthly amount before this ships to real
+    // customers; do not replace with a guessed number.
+    channelAddonTitle:    'Channel Manager add-on',
+    channelAddonDesc:     'Connect this property to online travel agents and sync your availability and rates automatically — no more manually updating each channel by hand.',
+    channelAddonPrice:    'Price coming soon',
+    channelAddonAdd:      'Add to my plan',
+    channelAddonAdding:   'Adding…',
+    channelAddonActive:   'Add-on active',
+    channelAddonRemove:   'Remove add-on',
+    channelAddonRemoving: 'Removing…',
+    channelAddonRemoveConfirm: 'Removing the add-on will disconnect Channel Manager at the end of your current billing period. Are you sure?',
+    channelAddonActivated:    'Channel Manager add-on activated.',
+    channelAddonRemoved:      'Channel Manager add-on removed.',
+    channelAddonGenericError: 'Could not update the Channel Manager add-on. Please try again.',
     chargesAddonCatBlank: 'Add your first category to start logging charges.',
     chargesViewBtn:       'View charges',
     chargesViewBtnCount:  (n) => `View charges (${n})`,

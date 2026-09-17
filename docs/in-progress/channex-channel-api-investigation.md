@@ -1,3 +1,159 @@
+## Channel Manager add-on — Stripe billing wired up — DONE (2026-09-17) — mirrors Bar & Charges' second-line-item pattern exactly; one item (the displayed price) deliberately left as a flagged placeholder pending a real amount from John
+
+The Channel Manager nav/page/server-route gating (`has_channel_manager_addon`
++ plan pro/multi) already existed, built ahead of time in commit `b04a8b5`
+("no Stripe/billing wiring yet, that's a later phase" — this is that phase).
+This round wires up the actual monetization: two live Stripe price IDs
+(EUR `price_1UGdaHEDtEo3wapD8ItG42VC`, GBP `price_1UGddGEDtEo3wapDyFIioETG`)
+added as a second subscription line item, same mechanism Bar & Charges
+already uses — no new Stripe pattern invented.
+
+**Investigated first, per instruction — full audit before writing code:**
+- Confirmed Bar & Charges' exact env var names
+  (`STRIPE_PRICE_CHARGES_ADDON_GBP`/`EUR`), DB column
+  (`users.has_charges_addon INTEGER DEFAULT 0`, added via the same
+  try/ALTER-TABLE/catch pattern every other schema.js migration uses), addon
+  add/remove routes (`POST /api/stripe/addon/charges/add|remove`), and the
+  webhook recognition logic (`customer.subscription.updated`, searching
+  `sub.items.data` for either currency's addon price id) — all read from the
+  real code, not assumed.
+- Full list of every `has_charges_addon` reference across the codebase was
+  pulled and reviewed (27 hits, server + client) to separate what's genuinely
+  Bar & Charges-specific (Charges.jsx, Rooms.jsx, BookingPanel.jsx,
+  Reports.jsx, InviteStaffModal.jsx, users.js — none of these are Channel-
+  Manager-relevant, deliberately not touched) from what's a reusable
+  methodology (the gating helper pattern, the addon route pattern, the
+  webhook pattern) worth mirroring for this different feature.
+- Discovered the Channel Manager gating is already far more centralized than
+  Charges' scattered checks ever were: every one of the 16
+  owner-facing Channex routes in `properties.js` goes through a single
+  `requireOwnerChannelManagerAccess()` helper (not 16 separate inline
+  checks) — listed exhaustively below, not just spot-checked.
+
+**Files touched:**
+- `server/.env` (gitignored, local-only) — added
+  `STRIPE_PRICE_CHANNEL_ADDON_GBP`/`EUR` with the two live price ids given.
+  Doesn't make this exercisable locally (no `STRIPE_SECRET_KEY` configured
+  in this checkout at all — Stripe's genuinely out of scope for local dev)
+  but keeps `process.env.STRIPE_PRICE_CHANNEL_ADDON_*` non-undefined for
+  anyone reading/grepping this file later, and documents what the real
+  production `.env` (a separate file, on the deployed host) needs set.
+- `server/routes/stripe.js` — `POST /api/stripe/addon/channel-manager/add`
+  and `/remove`, byte-for-byte structural mirror of the charges routes
+  (owner-only, look up the active subscription, branch GBP/EUR by
+  `subscription.currency`, guard against double-add/missing-item). The
+  `customer.subscription.updated` webhook case now also computes
+  `hasChannelManagerAddon` the same way `hasAddon` (charges) already was,
+  and both are written in the same `UPDATE users` statement.
+- `server/db/schema.js` — no new column (already existed); updated the
+  now-stale "future Stripe webhook... hasn't been built yet" comment to
+  point at the real webhook code.
+- `server/routes/properties.js` — same stale-comment cleanup on
+  `requireOwnerChannelManagerAccess()`'s doc comment, no logic change (the
+  gate itself was already correct).
+- `client/src/pages/Billing.jsx` — new "Channel Manager add-on" card,
+  structurally identical to the Bar & Charges card immediately above it,
+  with one deliberate difference: gated on `plan === 'pro' || plan ===
+  'multi'` (Bar & Charges' card is pro-only, since Multi gets Charges
+  included free — Channel Manager's add-on flag is required on BOTH tiers,
+  confirmed against `requireOwnerChannelManagerAccess()`'s own condition,
+  not assumed from the sibling card). New `handleAddChannelManagerAddon`/
+  `handleRemoveChannelManagerAddon` + their own `channelAddonLoading`/
+  `showRemoveChannelAddon` state, independent of Charges' equivalents.
+- `client/src/i18n/index.js` — new EN-only keys (`channelAddon*`), same
+  "placeholder now, translations supplied separately" convention as every
+  other slice of this feature. Toasts and the confirm-modal message use
+  `t()` (proper i18n) rather than copying Bar & Charges' own hardcoded-
+  English toast strings — a deliberate choice to hold this new code to the
+  Channel Manager feature's own established "full 5-language support" bar
+  from earlier slices, not Bar & Charges' shortcut, without touching
+  Bar & Charges' existing (untranslated) strings.
+
+**Deliberately left as a flagged placeholder, not guessed:** the actual
+GBP/EUR monthly price to display (`channelAddonPrice`) — no
+`STRIPE_SECRET_KEY` is configured in this local checkout to look the two
+price ids up against the real Stripe API, and the task didn't state the
+amount, only the price ids. Shows literal "Price coming soon" in the UI
+right now rather than a fabricated number — asked John for the real amount;
+a one-line follow-up edit once given.
+
+**Full gating audit — every location checked, not just one:**
+
+*Server (all 16 routes, all through the single
+`requireOwnerChannelManagerAccess()` helper in properties.js — confirmed via
+an exhaustive line-by-line pull, not sampled):* `GET /:id/channex-status`,
+`POST /:id/channex-connect`, `POST /:id/channex-resync`,
+`POST /:id/channex-disconnect`, `GET /:id/channex/adapters`,
+`GET /:id/channex/channels`, `GET /:id/channex/room-mappings`,
+`POST /:id/channex/test-connection`, `POST /:id/channex/mapping-details`,
+`POST /:id/channex/connection-details`, `POST /:id/channex/channels`
+(create), `POST /:id/channex/channels/:channelId/check-readiness`,
+`POST /:id/channex/channels/:channelId/activate`,
+`POST /:id/channex/airbnb/connection-link`,
+`POST /:id/channex/channels/:channelId/deactivate`,
+`DELETE /:id/channex/channels/:channelId`.
+
+*Client:* `Sidebar.jsx`'s `canSeeChannelManager()` (nav item hidden unless
+`has_channel_manager_addon && (plan === 'pro' || plan === 'multi')`),
+`ChannelManager.jsx`'s `allowed` gate (`return null` on direct URL visit,
+matching Sidebar's condition exactly — confirmed, not assumed, by reading
+both side by side), `ChannelConnectWizard.jsx` (confirmed it has no other
+entry point anywhere in the codebase — only ever rendered from inside the
+already-gated `ChannelManager.jsx`).
+
+**Explicitly NOT touched, flagged rather than silently changed or ignored:**
+- Super Admin's own Channex routes (`server/routes/channex.js`) — correctly
+  unrestricted by design (a troubleshooting tool), confirmed already correct
+  per earlier CA-7 work, out of scope for owner-facing add-on gating.
+- The background ARI sync pipeline (`runAvailabilitySync`/`runRateSync`/
+  `pushInitialInventory`, triggered from rooms/ratePeriods/roomPhotos/etc.
+  routes whenever property data changes) — NOT part of "the connect-a-
+  channel flow and everything downstream" as scoped by this task (that's the
+  wizard's own steps, all 16 of which are gated above). Whether an existing,
+  already-connected channel should STOP syncing the moment
+  `has_channel_manager_addon` lapses is a real, undecided product question
+  this task didn't ask me to resolve — changing it now risks breaking active
+  syncs for real customers on a guess. Left exactly as-is.
+- `customer.subscription.deleted` (full cancellation) does not clear
+  `has_charges_addon` OR (now, identically) `has_channel_manager_addon` —
+  confirmed this is a pre-existing gap in Bar & Charges' own webhook
+  handling, not something introduced here. Mirrored faithfully rather than
+  silently fixed, per "same logic path Bar & Charges already uses" — flagged
+  here as a shared, pre-existing limitation worth a decision, not a new bug.
+
+**Verified live, via the dev-only Plan Switcher (per instruction — these are
+real live Stripe price ids, never tested against them):**
+- Toggling the Channel Manager add-on checkbox off (plan Multi): nav item
+  disappeared, direct `/channel-manager` URL visit rendered nothing,
+  `GET /api/properties/:id/channex/adapters` returned a real live
+  `403 {"error":"The Channel Manager add-on is required."}`, and the Billing
+  card correctly switched to "Price coming soon" / "Add to my plan".
+- Plan switched to Free (addon still off): the Channel Manager card
+  disappeared from Billing entirely (neither pro nor multi) — same
+  behavior as the free-plan Bar & Charges disappearance, confirmed
+  independently.
+- Plan switched to Pro + addon re-enabled: nav item reappeared, the real
+  Channel Manager page rendered fully (Connection Status, Room Mapping,
+  Online Travel Agents, "Connect a channel"/"Connect Airbnb" all present and
+  functional) — confirms the gate accepts Pro, not just Multi. Billing page
+  showed BOTH the Bar & Charges card (not purchased) and the Channel
+  Manager card (active) side by side, correctly independent of each other.
+- The two new routes (`addon/channel-manager/add`/`remove`) hit directly via
+  curl with a real auth token: both fail cleanly with
+  `400 {"error":"No active subscription found."}` (the demo account has no
+  real `subscriptions` row) — confirmed graceful, no crash, no unhandled
+  exception, before ever reaching the `stripe` client (which is `null` in
+  this environment).
+- Demo account (`demo@nestbook.io`) restored to its exact original state
+  afterward (`plan: multi, has_charges_addon: 0, has_channel_manager_addon:
+  1`) — confirmed via a direct DB read, not assumed.
+- Regression: dev server started clean (no new errors beyond the pre-existing
+  "Stripe not configured" warnings, expected in this environment); Bar &
+  Charges' own card, checkbox, and independent state confirmed unaffected
+  throughout every step above.
+
+---
+
 ## CA-7 follow-up — "already connected" 409 branch — LIVE-VERIFIED (2026-09-17) — genuinely reproduced two ways (fresh-load pre-empt AND a real mid-flow race), both handled gracefully, no white-label leak, no code changes
 
 This code path (`server/routes/properties.js` `POST /:id/channex/channels`'

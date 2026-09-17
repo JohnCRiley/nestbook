@@ -75,6 +75,8 @@ function AccountSubscriptionCard() {
   const [deleteAccountOpen, setDeleteAccountOpen]  = useState(false);
   const [addonLoading,      setAddonLoading]       = useState(false);
   const [showRemoveAddon,   setShowRemoveAddon]    = useState(false);
+  const [channelAddonLoading,    setChannelAddonLoading]    = useState(false);
+  const [showRemoveChannelAddon, setShowRemoveChannelAddon] = useState(false);
 
   const showToast = useCallback((msg, type = 'success') => {
     setBillingMessage({ type: type === 'error' ? 'error' : 'success', text: msg });
@@ -214,6 +216,53 @@ function AccountSubscriptionCard() {
       showToast('Could not remove add-on. Please try again.', 'error');
     }
     setAddonLoading(false);
+  }
+
+  async function handleAddChannelManagerAddon() {
+    setChannelAddonLoading(true);
+    try {
+      const res  = await apiFetch('/api/stripe/addon/channel-manager/add', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        const freshUser = await apiFetch('/api/auth/me').then(r => r.ok ? r.json() : null);
+        if (freshUser?.id) {
+          const stored  = JSON.parse(localStorage.getItem('nb_user') || '{}');
+          const updated = { ...stored, ...freshUser };
+          localStorage.setItem('nb_user', JSON.stringify(updated));
+          updateUser(updated);
+        }
+        showToast(t('channelAddonActivated'));
+      } else {
+        showToast(data.error || t('channelAddonGenericError'), 'error');
+      }
+    } catch {
+      showToast(t('channelAddonGenericError'), 'error');
+    }
+    setChannelAddonLoading(false);
+  }
+
+  async function handleRemoveChannelManagerAddon() {
+    setShowRemoveChannelAddon(false);
+    setChannelAddonLoading(true);
+    try {
+      const res  = await apiFetch('/api/stripe/addon/channel-manager/remove', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        const freshUser = await apiFetch('/api/auth/me').then(r => r.ok ? r.json() : null);
+        if (freshUser?.id) {
+          const stored  = JSON.parse(localStorage.getItem('nb_user') || '{}');
+          const updated = { ...stored, ...freshUser };
+          localStorage.setItem('nb_user', JSON.stringify(updated));
+          updateUser(updated);
+        }
+        showToast(t('channelAddonRemoved'));
+      } else {
+        showToast(data.error || t('channelAddonGenericError'), 'error');
+      }
+    } catch {
+      showToast(t('channelAddonGenericError'), 'error');
+    }
+    setChannelAddonLoading(false);
   }
 
   if (user?.role !== 'owner') return null;
@@ -514,6 +563,66 @@ function AccountSubscriptionCard() {
           confirmLabel={t('chargesAddonRemove')}
           onConfirm={handleRemoveAddon}
           onCancel={() => setShowRemoveAddon(false)}
+        />
+      )}
+
+      {/* ── Channel Manager add-on card — same pattern as Bar & Charges above,
+           but offered on BOTH pro and multi (not pro-only): the add-on flag is
+           always required regardless of plan tier, per
+           requireOwnerChannelManagerAccess() in properties.js. ──────────────── */}
+      {(user?.plan === 'pro' || user?.plan === 'multi') && (
+        <div className="billing-card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{ fontSize: '1.5rem', lineHeight: 1 }}>🌐</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('channelAddonTitle')}</h3>
+                {!!user?.has_channel_manager_addon && (
+                  <span style={{
+                    background: '#dcfce7', color: '#166534',
+                    borderRadius: 20, padding: '2px 10px',
+                    fontSize: '0.75rem', fontWeight: 700,
+                  }}>{t('channelAddonActive')}</span>
+                )}
+              </div>
+              <p style={{ margin: '0 0 12px', fontSize: '0.83rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                {t('channelAddonDesc')}
+              </p>
+              {!user?.has_channel_manager_addon ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>{t('channelAddonPrice')}</span>
+                  <button
+                    className="btn-primary"
+                    style={{ fontSize: '0.85rem', padding: '6px 16px' }}
+                    disabled={channelAddonLoading}
+                    onClick={handleAddChannelManagerAddon}
+                  >
+                    {channelAddonLoading ? t('channelAddonAdding') : t('channelAddonAdd')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="btn-outline"
+                  style={{ fontSize: '0.82rem', padding: '5px 14px', color: '#64748b' }}
+                  disabled={channelAddonLoading}
+                  onClick={() => setShowRemoveChannelAddon(true)}
+                >
+                  {channelAddonLoading ? t('channelAddonRemoving') : t('channelAddonRemove')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRemoveChannelAddon && (
+        <ConfirmModal
+          isOpen
+          title={t('channelAddonRemove')}
+          message={t('channelAddonRemoveConfirm')}
+          confirmLabel={t('channelAddonRemove')}
+          onConfirm={handleRemoveChannelManagerAddon}
+          onCancel={() => setShowRemoveChannelAddon(false)}
         />
       )}
 

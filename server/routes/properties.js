@@ -1220,8 +1220,9 @@ propertiesRouter.put('/:id/mailer-signature', (req, res) => {
 // dedicated Channel Manager page instead of only via Super Admin. Originally
 // gated Multi-only (built for Channex certification Stage 4); now gated by
 // the real product shape — `has_channel_manager_addon` (mirrors
-// has_charges_addon) AND plan pro/multi — ahead of the Stripe/billing work
-// for this add-on, which hasn't been built yet.
+// has_charges_addon) AND plan pro/multi. Stripe billing for this add-on
+// (POST /api/stripe/addon/channel-manager/add|remove, webhook-driven) now
+// exists too — see server/routes/stripe.js.
 function requireOwnerChannelManagerAccess(req, res, propId) {
   if (!Number.isInteger(propId)) {
     res.status(400).json({ error: 'Invalid property id' });

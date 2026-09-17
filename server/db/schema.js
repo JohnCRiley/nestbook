@@ -2673,10 +2673,12 @@ John`
   // 1:1 to a timezone and a wrong guess is worse than no value.
   try { db.exec(`ALTER TABLE properties ADD COLUMN timezone TEXT`); } catch (e) {}
 
-  // Channel Manager add-on flag — same pattern as has_charges_addon (set by a
-  // future Stripe webhook once billing for this add-on exists; a dev-only
-  // switch in Settings flips it locally for now). Gates the "Channel Manager"
-  // nav item/page: visible only when this is true AND plan is pro/multi.
+  // Channel Manager add-on flag — same pattern as has_charges_addon. Set by
+  // the customer.subscription.updated webhook (server/routes/stripe.js) once
+  // the STRIPE_PRICE_CHANNEL_ADDON_GBP/EUR line item is added to/removed from
+  // a subscription; the dev-only Plan Switcher in Settings can also flip it
+  // locally without a real Stripe call. Gates the "Channel Manager" nav
+  // item/page: visible only when this is true AND plan is pro/multi.
   try { db.exec(`ALTER TABLE users ADD COLUMN has_channel_manager_addon INTEGER DEFAULT 0`); } catch (e) {}
 
   // Last-synced timestamps for the Channel Manager page's "Recent activity"
