@@ -1,3 +1,91 @@
+## CA-7 follow-up — "already connected" 409 branch — LIVE-VERIFIED (2026-09-17) — genuinely reproduced two ways (fresh-load pre-empt AND a real mid-flow race), both handled gracefully, no white-label leak, no code changes
+
+This code path (`server/routes/properties.js` `POST /:id/channex/channels`'
+pre-emptive `listChannelsForProperty` check, and its two client-side
+consumers in `ChannelConnectWizard.jsx`) had only ever been code-reviewed
+before this — never actually triggered against a real duplicate
+connection. Live-verified now, on Wigwam Holidays / property #1 (`Local
+Dev`, `a50e441f-bbd8-40b6-a69e-f728953a976e`).
+
+**Adapter substitution, disclosed:** the task suggested GlampingHub or
+Wigwam Holidays. Tried GlampingHub first — but GlampingHub **genuinely
+validates** (confirmed since round 4): fake credentials cleanly fail
+`test_connection` every time, and the wizard's step-1→2 "Continue" is
+`disabled={testOutcome !== 'success' ...}`, so a fake credential can
+never reach the create call at all. **Switched to Wigwam Holidays**,
+whose confirmed leniency (any non-empty value "succeeds") is exactly
+what let this test reach a real create call with fabricated settings —
+this is also the adapter round 2's follow-up already proved gets a real
+`201` from Channex with fully fabricated room/rate codes, so it was the
+correct choice for a proven create/delete cycle, not just the convenient
+one.
+
+**Two genuinely different ways this branch fires — both tested live, not
+assumed to be "the same thing twice":**
+
+1. **Fresh-load pre-empt (the common case)**: `ChannelConnectWizard.jsx`
+   fetches `GET .../channex/channels` on mount into `existingChannels`;
+   `alreadyConnected` is computed client-side the moment the owner picks
+   an already-connected adapter from the dropdown. Confirmed live: with
+   Wigwam Holidays already connected, opening a **fresh** wizard and
+   selecting it immediately shows the "Already connected" banner at step
+   0 — **before any network call for creation is made** — and `Continue`
+   is confirmed genuinely `disabled: true` (checked via the real DOM
+   property, not just visually), not just a cosmetic warning next to a
+   clickable button. The adapter is NOT filtered out of the dropdown
+   itself — it still lists Wigwam Holidays as an option — only selecting
+   it triggers the block.
+2. **Mid-flow server-side 409 (the race-condition case, the one that
+   actually needed a real trigger, not just a code read)**: reproduced
+   by opening TWO wizard instances (two browser tabs) against the same
+   property before either created anything, so both loaded an identical,
+   now-stale `existingChannels: []`. Tab A completed a real create
+   (confirmed via a live `201` and a real Channex channel id). Tab B —
+   still holding its stale empty state, so its own `alreadyConnected`
+   check never fired — was driven all the way through settings, test
+   connection, and the manual-entry mapping fallback, then clicked
+   "Create connection" for real. The server's own live
+   `listChannelsForProperty` check (not a local DB check — it asks
+   Channex directly) caught the real duplicate and returned a genuine
+   `409 {"error":"already_connected", "channel": {...}}`. Confirmed via
+   the DB (only one `channex_channels` row, id 4) and a live
+   `GET /channels?filter[property_id]=` call (exactly one channel
+   present) that **no duplicate was ever written** — the pre-empt fully
+   did its job.
+
+**Client-side handling of the real 409 — confirmed graceful, no crash, no
+white-label leak:** `ChannelConnectWizard.jsx`'s `createConnection()`
+checks `res.status === 409 && data.error === 'already_connected'`
+specifically (not just "any non-2xx"), appends the now-known channel to
+`existingChannels`, and silently resets to step 0 — where the same
+translated "Already connected" banner then renders (since
+`existingChannels` is now correct and `selectedCode` is unchanged). No
+raw Channex error text ever reaches the DOM, no unhandled-promise crash,
+no generic "Something went wrong" fallback — the exact right message. The
+copy (`cmOtaAlreadyConnectedTitle`/`cmOtaAlreadyConnectedMsg`) was
+already translated into all 5 languages before this check (not just
+English placeholders) — no new i18n work needed.
+
+**No genuinely new bug found** — this round confirmed existing,
+previously-only-code-reviewed behavior works exactly as designed, on both
+paths. Nothing was fixed because nothing was broken.
+
+**Cleanup, confirmed thoroughly**: the test channel was deleted via the
+real UI's Delete button (not a raw API call) after both paths were
+confirmed; re-checked afterward that `channex_channels` is empty locally
+AND that a live `GET /channels?filter[property_id]=` on the same property
+returns zero channels — no orphaned local row, no orphaned live Channex
+channel.
+
+**Regression check:** no code was changed this pass (pure live
+verification). Dev server started clean (no Channex-related startup
+errors), Channel Manager's Room Mapping section, the main page's
+Connect-a-channel/Connect-Airbnb buttons, and the picker's adapter
+dropdown (still listing every adapter, unfiltered by connection status)
+all behaved correctly throughout.
+
+---
+
 ## CA-7 follow-up — Vrbo investigation — DONE (2026-09-17) — exists, production-only (same `implementation_not_defined` pattern as Klook/Traveloka/HRS), AND out of the room_rate_multioccupancy cluster this whole sweep targeted (`mapping_mode: "listing"`) — a genuinely new, more severe class of mapping-step gap than Hostelworld/Klook's "one ignored field"
 
 **Investigation-only, no code changes**, run the same way as the Klook/
