@@ -901,15 +901,6 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: auto;
 }
-/* Placeholder for the graphic until the final text-free asset is supplied —
-   keeps the column's proportions stable so the layout doesn't jump once the
-   real <img> replaces it. */
-.cm-graphic-placeholder {
-  aspect-ratio: 5 / 3;
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
-  background: rgba(255,255,255,0.5);
-}
 /* "Coming Soon" stamp — diagonal, overlapping the graphic. No pre-existing
    ribbon/badge pattern exists anywhere on the site to reuse (the marketing
    page's original Coming Soon section — coming-soon/coming-soon-card, built
@@ -1781,9 +1772,7 @@ img { display: block; max-width: 100%; }
         <p class="cm-line" data-i18n="channelManager.line3">No double bookings, no lost revenue.</p>
       </div>
       <div class="cm-graphic">
-        <!-- TODO: replace with the final text-free graphic once supplied:
-             <img src="/images/landing/channel-manager-hub.png" alt="" /> -->
-        <div class="cm-graphic-placeholder" aria-hidden="true"></div>
+        <img src="/images/landing/channel-manager-hub.png" alt="" />
         <div class="cm-stamp" data-i18n="channelManager.comingSoon">Coming soon</div>
       </div>
     </div>

@@ -49,3 +49,8 @@ server/public/images/blog/*.webp
 server/public/images/landing/*.jpg
 server/public/images/landing/*.png
 server/public/images/landing/*.webp
+# Exception: a designed, source-controlled graphic (not an admin-uploaded
+# screenshot via LandingImages.jsx, which always flattens to opaque .jpg —
+# would destroy this file's transparency, needed to sit on the Channel
+# Manager teaser section's gradient background).
+!server/public/images/landing/channel-manager-hub.png
