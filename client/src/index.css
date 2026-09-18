@@ -2904,14 +2904,87 @@ html[data-theme="forest"] .main-content {
 
 /* ─── Settings page ──────────────────────────────────────────────────────── */
 
-.settings-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: start;
+/* Settings tabs — desktop/tablet connected tab bar (≥768px) */
+.settings-tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 0;
 }
+.settings-tab-btn {
+  padding: 12px 20px;
+  border: 2px solid transparent;
+  border-bottom: none;
+  background: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: normal;
+  text-align: center;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  top: 2px;
+}
+.settings-tab-btn.active {
+  background: var(--section-bg);
+  color: var(--accent);
+  border-color: var(--border);
+  border-bottom-color: var(--section-bg);
+}
+.settings-tab-panel {
+  background: var(--section-bg);
+  border: 2px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+@media (max-width: 1024px) and (min-width: 768px) {
+  .settings-tab-btn { font-size: 0.8rem; padding: 10px 14px; }
+}
+
+/* Settings tabs — mobile pill accordion (<768px) */
+.settings-accordion-group { display: none; flex-direction: column; gap: 8px; }
 @media (max-width: 767px) {
-  .settings-layout { grid-template-columns: 1fr; }
+  /* !important: .settings-tab-panel's active/inactive state is an inline
+     style (see Settings.jsx), which otherwise always outranks this rule
+     regardless of media query. */
+  .settings-tab-bar, .settings-tab-panel { display: none !important; }
+  .settings-accordion-group { display: flex; margin-bottom: 20px; }
+}
+.settings-accordion-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.settings-accordion-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--section-bg);
+  color: var(--section-text);
+  border: none;
+  padding: 14px 18px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-accordion-toggle.active {
+  background: var(--accent);
+  color: #fff;
+}
+.settings-accordion-chevron { flex-shrink: 0; font-size: 0.75rem; }
+.settings-accordion-body {
+  border-top: 1px solid var(--border);
+  padding: 16px;
+  background: var(--card-bg);
 }
 
 /* Section cards */

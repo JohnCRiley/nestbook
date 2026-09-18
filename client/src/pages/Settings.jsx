@@ -127,6 +127,7 @@ export default function Settings() {
   const [form,        setForm]        = useState(null);
   const [saving,      setSaving]      = useState(false);
   const [toast,       setToast]       = useState(null);   // { msg, type }
+  const [activeTab,          setActiveTab]          = useState('propertySetup'); // Settings tab split: propertySetup | booking | guestExperience | marketing | admin
   const [showInvite,      setShowInvite]      = useState(false);
   const [resetTarget,     setResetTarget]     = useState(null);   // user object | null
   const [sub,               setSub]               = useState(null);   // subscription info
@@ -319,10 +320,18 @@ export default function Settings() {
   // bounded window, then hand scroll control back to the owner.
   useEffect(() => {
     if (searchParams.get('report') !== '1' || !bugReportingEnabled) return;
+    setActiveTab('admin');
     let ro;
-    const pin = () => document
-      .getElementById('report-issue')
-      ?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    // The report card's JSX is shared between the desktop tab panel and the
+    // mobile accordion body (see the tab-content consts below), so both are
+    // mounted at once and only one is actually visible — pick that one
+    // rather than a plain getElementById, which would always resolve to the
+    // same copy regardless of viewport.
+    const pin = () => {
+      const candidates = document.querySelectorAll('[data-report-anchor]');
+      const target = Array.from(candidates).find((el) => el.offsetParent !== null) || candidates[0];
+      target?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    };
     const startId = requestAnimationFrame(() => {
       pin();
       ro = new ResizeObserver(pin);
@@ -635,51 +644,13 @@ export default function Settings() {
   // ── Render ─────────────────────────────────────────────────────────────────
   if (!form) return <div className="loading-screen">{t('loadingDashboard')}</div>;
 
-  return (
+
+  // ── Settings tab groups ──────────────────────────────────────────────────
+  // Each group's JSX is built once here and rendered from both the desktop
+  // tab panel and the mobile pill accordion below it, so there's a single
+  // place to edit per section rather than two copies to keep in sync.
+  const propertySetupTab = (
     <>
-      {/* ── Page header ──────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <h1>{t('settings')}</h1>
-        <div className="page-date">{t('settingsSubtitle')}</div>
-      </div>
-
-      {/* ── Two-column layout ─────────────────────────────────────────────── */}
-      <div className="settings-layout">
-
-        {/* ── LEFT COLUMN — Property details ────────────────────────────── */}
-        <div>
-
-          {/* ── Sample data banner ───────────────────────────────────────── */}
-          {property?.has_sample_data === 1 && (
-            <div className="settings-card" style={{ borderLeft: '3px solid #f59e0b', marginBottom: 20 }}>
-              <div className="settings-card-header">
-                <h2>{t('settings.sampleDataHeading')}</h2>
-                <p>{t('settings.sampleDataExplain')}</p>
-              </div>
-              <div className="settings-card-body">
-                <button
-                  className="btn-danger-outline"
-                  style={{ width: '100%' }}
-                  disabled={deletingSampleData}
-                  onClick={async () => {
-                    setDeletingSampleData(true);
-                    try {
-                      const res = await apiFetch(`/api/properties/${property.id}/sample-data`, { method: 'DELETE' });
-                      if (res.ok) {
-                        const fresh = await apiFetch(`/api/properties/${property.id}`).then(r => r.json());
-                        setProperty(fresh);
-                        setToast({ msg: t('settings.sampleDataDeleted'), type: 'success' });
-                      }
-                    } catch {}
-                    setDeletingSampleData(false);
-                  }}
-                >
-                  {deletingSampleData ? t('settings.deletingSampleData') : t('settings.deleteSampleData')}
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="settings-card">
             <div className="settings-card-header">
               <h2>{t('propDetails')}</h2>
@@ -954,50 +925,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Room Organization — Phase 3 migration switch, IR "named" mode only.
-              Only eligible accounts (individual rooms, not yet switched) see
-              this; switching back is deliberately not offered here. Left column,
-              directly below Property Details. */}
-          {activeProperty?.rental_type === 'rooms' && activeProperty?.ir_room_mode === 'named' && (
-            <div style={{ marginTop: 16 }}>
-              <RoomOrganizationCard
-                t={t}
-                onSwitchClick={() => setShowRoomOrgWarning(true)}
-              />
-            </div>
-          )}
-
-          {/* Unit Sub-Type — Units mode only, dev-reachable, not exposed in onboarding.
-              Left column, property-setup section — belongs with Property Details, not
-              the right column's feature toggles. */}
-          {form && activeProperty?.rental_type === 'units' && (
-            <div style={{ marginTop: 16 }}>
-              <UnSubTypeSection
-                form={form}
-                setForm={setForm}
-                handleSave={handleSave}
-                saving={saving}
-                t={t}
-              />
-            </div>
-          )}
-
-          {/* Partnership Links — Pro/Multi only */}
-          <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro" title={t('settings.partnerLinks')} detail={t('settings.partnerLinksHint')}>
-              <PartnershipLinksSection
-                propertyId={activeProperty?.id}
-                links={partnerLinks}
-                setLinks={setPartnerLinks}
-                saving={linkSaving}
-                setSaving={setLinkSaving}
-                error={linkError}
-                setError={setLinkError}
-                t={t}
-              />
-            </PlanGate>
-          </div>
-
           {/* Multi-property management — Multi plan only */}
           {user?.role === 'owner' && plan === 'multi' && (
             <div className="settings-card">
@@ -1048,6 +975,54 @@ export default function Settings() {
                   </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Room Organization — Phase 3 migration switch, IR "named" mode only.
+              Only eligible accounts (individual rooms, not yet switched) see
+              this; switching back is deliberately not offered here. Property
+              Setup tab, grouped with Unit Sub-Type/Room Categories below since
+              only one of the three ever renders for a given property. */}
+          {activeProperty?.rental_type === 'rooms' && activeProperty?.ir_room_mode === 'named' && (
+            <div style={{ marginTop: 16 }}>
+              <RoomOrganizationCard
+                t={t}
+                onSwitchClick={() => setShowRoomOrgWarning(true)}
+              />
+            </div>
+          )}
+
+          {/* Unit Sub-Type — Units mode only, dev-reachable, not exposed in onboarding.
+              Property Setup tab — belongs with Property Details, not the
+              Booking & Availability tab's feature toggles. */}
+          {form && activeProperty?.rental_type === 'units' && (
+            <div style={{ marginTop: 16 }}>
+              <UnSubTypeSection
+                form={form}
+                setForm={setForm}
+                handleSave={handleSave}
+                saving={saving}
+                t={t}
+              />
+            </div>
+          )}
+
+          {/* Room Categories — IR-mode "categories" sub-type management,
+              visible once a property has switched via the migration above
+              (or a new signup chose it during onboarding). Core property
+              configuration, so this lives in the Property Setup tab alongside
+              Property Details/Multi-property/Breakfast Hours/Appearance —
+              not the Booking & Availability tab's feature toggles. */}
+          {activeProperty?.ir_room_mode === 'categories' && (
+            <div style={{ marginTop: 16 }}>
+              <RoomCategoriesSection
+                t={t}
+                roomCategories={roomCategories}
+                error={roomCategoryDeleteError}
+                onAdd={() => { setEditingRoomCategory(null); setShowRoomCategoryModal(true); }}
+                onEdit={(c) => { setEditingRoomCategory(c); setShowRoomCategoryModal(true); }}
+                onDelete={(c) => { setRoomCategoryDeleteError(null); setRoomCategoryDeleteTarget(c); }}
+              />
             </div>
           )}
 
@@ -1145,111 +1120,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Room Categories — IR-mode "categories" sub-type management,
-              visible once a property has switched via the migration above
-              (or a new signup chose it during onboarding). Core property
-              configuration, so this lives in the left column alongside
-              Property Details/Properties/Breakfast Hours/Appearance —
-              not the right column's feature toggles. */}
-          {activeProperty?.ir_room_mode === 'categories' && (
-            <div style={{ marginTop: 16 }}>
-              <RoomCategoriesSection
-                t={t}
-                roomCategories={roomCategories}
-                error={roomCategoryDeleteError}
-                onAdd={() => { setEditingRoomCategory(null); setShowRoomCategoryModal(true); }}
-                onEdit={(c) => { setEditingRoomCategory(c); setShowRoomCategoryModal(true); }}
-                onDelete={(c) => { setRoomCategoryDeleteError(null); setRoomCategoryDeleteTarget(c); }}
-              />
-            </div>
-          )}
-
-          {/* Report an issue */}
-          {bugReportingEnabled && (
-            <div className="settings-card" style={{ marginTop: 0 }} ref={reportSectionRef} id="report-issue">
-              <div className="settings-card-header">
-                <h2><BugIcon size={19} /> {t('settings.reportIssue')}</h2>
-                <p>{t('settings.reportIssueHint')}</p>
-              </div>
-              <div className="settings-card-body">
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.55 }}>
-                  {t('settings.reportDescription')}
-                </p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.55 }}>
-                  {t('settings.reportExamples')}
-                </p>
-
-                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>
-                  {t('settings.reportCategory')}
-                </label>
-                <select
-                  className="form-control"
-                  value={reportCategory}
-                  onChange={(e) => setReportCategory(e.target.value)}
-                  style={{ width: '100%', marginBottom: 12 }}
-                >
-                  <option value="calculation">{t('settings.reportCatCalculation')}</option>
-                  <option value="booking">{t('settings.reportCatBooking')}</option>
-                  <option value="payment">{t('settings.reportCatPayment')}</option>
-                  <option value="display">{t('settings.reportCatDisplay')}</option>
-                  <option value="email">{t('settings.reportCatEmail')}</option>
-                  <option value="performance">{t('settings.reportCatPerformance')}</option>
-                  <option value="other">{t('settings.reportCatOther')}</option>
-                </select>
-
-                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>
-                  {t('settings.reportDescriptionLabel')}
-                </label>
-                <textarea
-                  className="form-control"
-                  value={reportDescription}
-                  onChange={(e) => setReportDescription(e.target.value)}
-                  rows={4}
-                  placeholder={t('settings.reportPlaceholder')}
-                  style={{ width: '100%', marginBottom: 12, resize: 'vertical' }}
-                />
-
-                {reportStatus === 'success' && (
-                  <div style={{
-                    background: 'var(--tint-bg)', color: 'var(--tint-text)',
-                    padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
-                  }}>
-                    <CheckIcon size={14} /> {t('settings.reportSuccess')}
-                  </div>
-                )}
-                {reportStatus === 'error' && (
-                  <div style={{
-                    background: '#fef2f2', color: '#dc2626',
-                    padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
-                  }}>
-                    <XIcon size={14} /> {t('settings.reportError')}
-                  </div>
-                )}
-
-                <button
-                  onClick={handleSubmitReport}
-                  disabled={reportSubmitting || reportDescription.trim().length < 10}
-                  style={{
-                    width: '100%', padding: '10px',
-                    background: reportDescription.trim().length < 10 ? 'var(--border)' : 'var(--accent)',
-                    color: '#fff', border: 'none', borderRadius: 8,
-                    fontWeight: 600, fontFamily: 'inherit',
-                    cursor: reportDescription.trim().length < 10 ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {reportSubmitting ? t('settings.reportSending') : t('settings.reportSend')}
-                </button>
-
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
-                  {t('settings.reportContact')}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── RIGHT COLUMN — Features + Access ──────────────────────────── */}
-        <div>
           {/* ── DEV ONLY — Plan switcher (invisible in production builds) ─── */}
           {import.meta.env.DEV && (
             <div className="settings-card" style={{ borderStyle: 'dashed', borderColor: '#f59e0b', marginBottom: 20 }}>
@@ -1428,52 +1298,17 @@ export default function Settings() {
               </div>
             </div>
           </div>
+    </>
+  );
 
+  const bookingTab = (
+    <>
           {/* Widget embed code (Pro) */}
           <div style={{ marginTop: 16 }}>
             <PlanGate requiredPlan="pro" title={t('settings.widgetEmbed')} detail={t('settings.widgetEmbedHint')}>
               <EmbedSection snippet={embedSnippet} t={t} propertyId={activeProperty?.id} />
             </PlanGate>
           </div>
-
-          {/* QR Code — all plans */}
-          <div style={{ marginTop: 16 }}>
-            <QrCodeSection property={property} t={t} />
-          </div>
-
-          {/* WiFi QR Card — all plans */}
-          <div style={{ marginTop: 16 }}>
-            <WifiQrSection property={property} form={form} setForm={setForm} t={t} />
-          </div>
-
-          {/* Specials Banner — all plans */}
-          {form && (
-            <div style={{ marginTop: 16 }}>
-              <SpecialsBannerSection property={property} theme={theme} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
-            </div>
-          )}
-
-          {/* Custom Section — all plans */}
-          {form && (
-            <div style={{ marginTop: 16 }}>
-              <CustomSectionSection property={property} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
-            </div>
-          )}
-
-          {/* Facebook Action Button & slug editor — available on all plans */}
-          <div style={{ marginTop: 16 }}>
-            <FacebookActionSection
-              property={property}
-              onSaved={(updated) => { setProperty(updated); setContextProperty(updated); updatePropertyInList(updated); }}
-            />
-          </div>
-
-          {/* Guest Access — WP mode only */}
-          {form && activeProperty?.rental_type === 'whole_property' && (
-            <div style={{ marginTop: 16 }}>
-              <AccessCodeSection form={form} onChange={handleFormChange} t={t} property={activeProperty} />
-            </div>
-          )}
 
           {/* Deposit & Balance — WP mode only */}
           {form && activeProperty?.rental_type === 'whole_property' && (
@@ -1754,6 +1589,40 @@ export default function Settings() {
               )}
             </div>
           )}
+    </>
+  );
+
+  const guestExperienceTab = (
+    <>
+          {/* Specials Banner — all plans */}
+          {form && (
+            <div style={{ marginTop: 16 }}>
+              <SpecialsBannerSection property={property} theme={theme} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
+            </div>
+          )}
+
+          {/* Custom Section — all plans */}
+          {form && (
+            <div style={{ marginTop: 16 }}>
+              <CustomSectionSection property={property} form={form} setForm={setForm} handleSave={handleSave} saving={saving} t={t} />
+            </div>
+          )}
+
+          {/* Guest Notes — Pro/Multi only */}
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro" title={t('settings.guestNotes')} detail={t('settings.guestNotesHint')}>
+              {form && (
+                <GuestNotesSection
+                  form={form}
+                  setForm={setForm}
+                  property={property}
+                  handleSave={handleSave}
+                  saving={saving}
+                  t={t}
+                />
+              )}
+            </PlanGate>
+          </div>
 
           {/* Review Requests — Pro/Multi only */}
           <div style={{ marginTop: 16 }}>
@@ -1828,28 +1697,55 @@ export default function Settings() {
             </PlanGate>
           </div>
 
-          {/* Guest Notes — Pro/Multi only */}
+          {/* Guest Access — WP mode only */}
+          {form && activeProperty?.rental_type === 'whole_property' && (
+            <div style={{ marginTop: 16 }}>
+              <AccessCodeSection form={form} onChange={handleFormChange} t={t} property={activeProperty} />
+            </div>
+          )}
+    </>
+  );
+
+  const marketingTab = (
+    <>
+          {/* QR Code — all plans */}
           <div style={{ marginTop: 16 }}>
-            <PlanGate requiredPlan="pro" title={t('settings.guestNotes')} detail={t('settings.guestNotesHint')}>
-              {form && (
-                <GuestNotesSection
-                  form={form}
-                  setForm={setForm}
-                  property={property}
-                  handleSave={handleSave}
-                  saving={saving}
-                  t={t}
-                />
-              )}
-            </PlanGate>
+            <QrCodeSection property={property} t={t} />
           </div>
 
-          {/* Billing — moved to dedicated page */}
-          <p style={{ marginTop: 16, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Manage your plan and view invoices on the{' '}
-            <Link to="/billing">Billing page</Link>.
-          </p>
+          {/* WiFi QR Card — all plans */}
+          <div style={{ marginTop: 16 }}>
+            <WifiQrSection property={property} form={form} setForm={setForm} t={t} />
+          </div>
 
+          {/* Facebook Action Button & slug editor — available on all plans */}
+          <div style={{ marginTop: 16 }}>
+            <FacebookActionSection
+              property={property}
+              onSaved={(updated) => { setProperty(updated); setContextProperty(updated); updatePropertyInList(updated); }}
+            />
+          </div>
+
+          {/* Partnership Links — Pro/Multi only */}
+          <div style={{ marginTop: 16 }}>
+            <PlanGate requiredPlan="pro" title={t('settings.partnerLinks')} detail={t('settings.partnerLinksHint')}>
+              <PartnershipLinksSection
+                propertyId={activeProperty?.id}
+                links={partnerLinks}
+                setLinks={setPartnerLinks}
+                saving={linkSaving}
+                setSaving={setLinkSaving}
+                error={linkError}
+                setError={setLinkError}
+                t={t}
+              />
+            </PlanGate>
+          </div>
+    </>
+  );
+
+  const adminTab = (
+    <>
           {/* Service Categories — Multi plan or Charges add-on, owner only */}
           {(plan === 'multi' || !!user?.has_charges_addon) && user?.role === 'owner' && (
             <div className="settings-card" style={{ marginTop: 16 }}>
@@ -1866,7 +1762,7 @@ export default function Settings() {
                       <button
                         className="btn-primary"
                         style={{ fontSize: '0.82rem', padding: '6px 16px' }}
-                        onClick={() => newCatInputRef.current?.focus()}
+                        onClick={(e) => e.currentTarget.closest('.settings-card-body')?.querySelector('input')?.focus()}
                       >
                         {t('chargesCatAdd')}
                       </button>
@@ -2075,8 +1971,188 @@ export default function Settings() {
             </div>
           </div>
 
-        </div>
+          {/* Report an issue */}
+          {bugReportingEnabled && (
+            <div className="settings-card" style={{ marginTop: 0 }} ref={reportSectionRef} data-report-anchor="true">
+              <div className="settings-card-header">
+                <h2><BugIcon size={19} /> {t('settings.reportIssue')}</h2>
+                <p>{t('settings.reportIssueHint')}</p>
+              </div>
+              <div className="settings-card-body">
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.55 }}>
+                  {t('settings.reportDescription')}
+                </p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.55 }}>
+                  {t('settings.reportExamples')}
+                </p>
 
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>
+                  {t('settings.reportCategory')}
+                </label>
+                <select
+                  className="form-control"
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  style={{ width: '100%', marginBottom: 12 }}
+                >
+                  <option value="calculation">{t('settings.reportCatCalculation')}</option>
+                  <option value="booking">{t('settings.reportCatBooking')}</option>
+                  <option value="payment">{t('settings.reportCatPayment')}</option>
+                  <option value="display">{t('settings.reportCatDisplay')}</option>
+                  <option value="email">{t('settings.reportCatEmail')}</option>
+                  <option value="performance">{t('settings.reportCatPerformance')}</option>
+                  <option value="other">{t('settings.reportCatOther')}</option>
+                </select>
+
+                <label style={{ fontSize: '0.82rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>
+                  {t('settings.reportDescriptionLabel')}
+                </label>
+                <textarea
+                  className="form-control"
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  rows={4}
+                  placeholder={t('settings.reportPlaceholder')}
+                  style={{ width: '100%', marginBottom: 12, resize: 'vertical' }}
+                />
+
+                {reportStatus === 'success' && (
+                  <div style={{
+                    background: 'var(--tint-bg)', color: 'var(--tint-text)',
+                    padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
+                  }}>
+                    <CheckIcon size={14} /> {t('settings.reportSuccess')}
+                  </div>
+                )}
+                {reportStatus === 'error' && (
+                  <div style={{
+                    background: '#fef2f2', color: '#dc2626',
+                    padding: '10px 14px', borderRadius: 8, fontSize: '0.85rem', marginBottom: 12,
+                  }}>
+                    <XIcon size={14} /> {t('settings.reportError')}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubmitReport}
+                  disabled={reportSubmitting || reportDescription.trim().length < 10}
+                  style={{
+                    width: '100%', padding: '10px',
+                    background: reportDescription.trim().length < 10 ? 'var(--border)' : 'var(--accent)',
+                    color: '#fff', border: 'none', borderRadius: 8,
+                    fontWeight: 600, fontFamily: 'inherit',
+                    cursor: reportDescription.trim().length < 10 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {reportSubmitting ? t('settings.reportSending') : t('settings.reportSend')}
+                </button>
+
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
+                  {t('settings.reportContact')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Billing — moved to dedicated page */}
+          <p style={{ marginTop: 16, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+            Manage your plan and view invoices on the{' '}
+            <Link to="/billing">Billing page</Link>.
+          </p>
+    </>
+  );
+
+  const TAB_DEFS = [
+    ['propertySetup',     t('settings.tabPropertySetup'),        propertySetupTab],
+    ['booking',           t('settings.tabBookingAvailability'),  bookingTab],
+    ['guestExperience',   t('settings.tabGuestExperience'),      guestExperienceTab],
+    ['marketing',         t('settings.tabMarketing'),            marketingTab],
+    ['admin',             t('settings.tabAdminSupport'),         adminTab],
+  ];
+
+  return (
+    <>
+      {/* ── Page header ──────────────────────────────────────────────────── */}
+      <div className="page-header">
+        <h1>{t('settings')}</h1>
+        <div className="page-date">{t('settingsSubtitle')}</div>
+      </div>
+
+      {/* ── Sample data banner — always visible, outside the tab system ── */}
+          {/* ── Sample data banner ───────────────────────────────────────── */}
+          {property?.has_sample_data === 1 && (
+            <div className="settings-card" style={{ borderLeft: '3px solid #f59e0b', marginBottom: 20 }}>
+              <div className="settings-card-header">
+                <h2>{t('settings.sampleDataHeading')}</h2>
+                <p>{t('settings.sampleDataExplain')}</p>
+              </div>
+              <div className="settings-card-body">
+                <button
+                  className="btn-danger-outline"
+                  style={{ width: '100%' }}
+                  disabled={deletingSampleData}
+                  onClick={async () => {
+                    setDeletingSampleData(true);
+                    try {
+                      const res = await apiFetch(`/api/properties/${property.id}/sample-data`, { method: 'DELETE' });
+                      if (res.ok) {
+                        const fresh = await apiFetch(`/api/properties/${property.id}`).then(r => r.json());
+                        setProperty(fresh);
+                        setToast({ msg: t('settings.sampleDataDeleted'), type: 'success' });
+                      }
+                    } catch {}
+                    setDeletingSampleData(false);
+                  }}
+                >
+                  {deletingSampleData ? t('settings.deletingSampleData') : t('settings.deleteSampleData')}
+                </button>
+              </div>
+            </div>
+          )}
+
+      {/* ── Settings tabs — desktop/tablet connected tab bar ──────────────── */}
+      <div className="settings-tab-bar">
+        {TAB_DEFS.map(([key, label]) => (
+          <button
+            key={key}
+            className={`settings-tab-btn${activeTab === key ? ' active' : ''}`}
+            onClick={() => setActiveTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {TAB_DEFS.map(([key, label, content]) => (
+        <div
+          key={key}
+          className="settings-tab-panel"
+          style={{ display: activeTab === key ? 'block' : 'none' }}
+        >
+          {content}
+        </div>
+      ))}
+
+      {/* ── Settings tabs — mobile pill accordion (<768px) ─────────────────── */}
+      <div className="settings-accordion-group">
+        {TAB_DEFS.map(([key, label, content]) => (
+          <div key={key} className="settings-accordion-item">
+            <button
+              className={`settings-accordion-toggle${activeTab === key ? ' active' : ''}`}
+              onClick={() => setActiveTab(activeTab === key ? null : key)}
+              aria-expanded={activeTab === key}
+            >
+              <span>{label}</span>
+              <span className="settings-accordion-chevron">{activeTab === key ? '▲' : '▼'}</span>
+            </button>
+            <div
+              className="settings-accordion-body"
+              style={{ display: activeTab === key ? 'block' : 'none' }}
+            >
+              {content}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ── Modals & toast ───────────────────────────────────────────────── */}
