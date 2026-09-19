@@ -395,9 +395,13 @@ adminRouter.delete('/discount-codes/:id', async (req, res) => {
 // Query params: page (default 1), limit (default 25), search (name/country)
 adminRouter.get('/properties', (req, res) => {
   try {
-    const { page, limit, search } = req.query;
+    const { page, limit, search, demo_only } = req.query;
     const conditions = [];
     const params     = [];
+
+    // demo_only=1 — used by the Channex Channel API debug page so real customer
+    // properties are never selectable there (see the guard in routes/channex.js).
+    if (demo_only === '1') conditions.push('p.is_demo = 1');
 
     if (search) {
       const pattern = `%${search}%`;

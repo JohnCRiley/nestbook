@@ -111,7 +111,7 @@ export default function ChannexChannelApi() {
   }, []);
 
   useEffect(() => {
-    apiFetch('/api/admin/properties')
+    apiFetch('/api/admin/properties?demo_only=1')
       .then((r) => r.ok ? r.json() : [])
       .then((rows) => {
         setProperties(rows);
@@ -370,6 +370,10 @@ export default function ChannexChannelApi() {
 
       <div className="admin-card" style={{ marginBottom: 20 }}>
         <h2 style={{ marginTop: 0 }}>Connected Channels</h2>
+        <p className="admin-muted" style={{ marginTop: 0 }}>
+          Demo properties only (is_demo flag). Real customer properties are deliberately not selectable here.
+          {properties.length === 0 && ' No demo properties found — flag one on the Properties page first.'}
+        </p>
         <div style={{ marginBottom: 12 }}>
           <select
             value={propertyId}

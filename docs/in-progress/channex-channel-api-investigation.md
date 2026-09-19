@@ -3436,3 +3436,42 @@ before any owner-facing surface existed.
   credential fails cleanly (`{success:false, errors:null}`, `200`, no
   exception) — never a crash, matches this codebase's existing
   never-throw-on-a-bad-external-response discipline elsewhere.
+
+---
+
+## Production cutover — 2026-09-19
+
+**Finding (read-only SSH investigation):** production `.env` already held a
+*production* `CHANNEX_API_KEY` (401 on `staging.channex.io`, 200 on
+`app.channex.io`) but had no `CHANNEX_API_BASE_URL`, so `channexClient.js`
+defaulted to staging → every production Channex call 401'd, including the
+Super Admin "Available Adapters" list (502). Production DB at the time: 18
+properties (4 `is_demo`), all `channex_*` tables empty, no `channex_property_id`
+on any property, and the Channex production account had 0 channels / 0
+properties (only the `Nestbook PMS` user + an empty "User Group"). No real
+customer was ever touched by CA-round testing (that was all local dev,
+properties #1/#2, against staging).
+
+**Changes made:**
+- Production `.env`: `CHANNEX_API_BASE_URL=https://app.channex.io`, then
+  `pm2 restart nestbook-api --update-env`. (`.env` isn't in git — applied by hand.)
+- Code: the Channel API debug page is now **demo-only**, in depth:
+  - `GET /api/admin/properties?demo_only=1` (opt-in filter; the unfiltered
+    endpoint used by Properties / Rental Mode pages is unchanged). The debug
+    page's dropdown requests it.
+  - `isDemoProperty()` guard in `server/routes/channex.js` → 403 on every
+    `channexAdminRouter` route that takes a `property_id`: `GET /channels`,
+    `GET /room-mappings`, `POST /channels/create`, `POST /airbnb/connection-link`,
+    `POST /channels/:id/airbnb/mappings`. Blocks direct API calls, not just the UI.
+
+**Known gaps / not done:**
+- Routes keyed only by a Channex `channelId` (`activate`, `check-readiness`,
+  `GET /channels/:id`, airbnb `listings`/`listing-details`) have no property
+  guard; they can only reach channels someone already has an id for.
+- `Properties.jsx` still has per-property Channex create/push/resync/disconnect
+  buttons on ALL properties (real customers included) — a separate, live path to
+  Channex production. Untouched here; worth a decision.
+- Demo properties currently have no `channex_property_id`, so the create/connect
+  flows can't actually run on them until one is connected via the Properties page.
+- Local dev has no `is_demo` properties, so the debug dropdown is empty locally
+  until one is flagged.

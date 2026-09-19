@@ -218,6 +218,18 @@ channexAdminRouter.delete('/webhooks/:id', async (req, res) => {
 // ── Slice CA-1 — Channel API groundwork, read-only debug endpoints ───────────
 // See docs/in-progress/channex-channel-api-investigation.md.
 
+// ── Demo-only guard for the Super Admin Channel API debug page ───────────────
+// The CA-1/CA-2/CA-3 debug flows can create LIVE Channex channels (production
+// cutover: CHANNEX_API_BASE_URL points at app.channex.io). Every route below that
+// accepts a property_id is restricted to properties flagged is_demo = 1, so a
+// real customer's property can never be used from this page — even by a direct
+// API call that bypasses the dropdown (which is filtered the same way client-side
+// via GET /api/admin/properties?demo_only=1).
+const DEMO_ONLY_ERROR = 'The Channel API debug tools only work on demo properties (is_demo = 1). This property is not flagged as a demo.';
+function isDemoProperty(propId) {
+  return Boolean(db.prepare('SELECT 1 FROM properties WHERE id = ? AND is_demo = 1').get(propId));
+}
+
 channexAdminRouter.get('/adapters', async (_req, res) => {
   try {
     const adapters = await listChannelAdapters();
@@ -232,6 +244,7 @@ channexAdminRouter.get('/channels', async (req, res) => {
   if (!Number.isInteger(propId)) {
     return res.status(400).json({ error: 'property_id query param is required' });
   }
+  if (!isDemoProperty(propId)) return res.status(403).json({ error: DEMO_ONLY_ERROR });
   const property = db.prepare('SELECT id, name, channex_property_id FROM properties WHERE id = ?').get(propId);
   if (!property) return res.status(404).json({ error: 'Property not found' });
   if (!property.channex_property_id) {
@@ -260,6 +273,7 @@ channexAdminRouter.get('/room-mappings', (req, res) => {
   if (!Number.isInteger(propId)) {
     return res.status(400).json({ error: 'property_id query param is required' });
   }
+  if (!isDemoProperty(propId)) return res.status(403).json({ error: DEMO_ONLY_ERROR });
   const rows = db.prepare(`
     SELECT id, nestbook_ref_type, nestbook_ref_id, channex_room_type_id, channex_rate_plan_id
     FROM channex_room_mappings
@@ -332,6 +346,7 @@ channexAdminRouter.post('/channels/create', async (req, res) => {
 
   const propId = Number(property_id);
   if (!Number.isInteger(propId)) return res.status(400).json({ error: 'property_id is required' });
+  if (!isDemoProperty(propId)) return res.status(403).json({ error: DEMO_ONLY_ERROR });
   if (!channel_code || !hotel_id || !title) {
     return res.status(400).json({ error: 'channel_code, hotel_id, and title are required' });
   }
@@ -446,6 +461,7 @@ function sweepStaleOauthLinks() {
 channexAdminRouter.post('/airbnb/connection-link', async (req, res) => {
   const propId = Number(req.body?.property_id);
   if (!Number.isInteger(propId)) return res.status(400).json({ error: 'property_id is required' });
+  if (!isDemoProperty(propId)) return res.status(403).json({ error: DEMO_ONLY_ERROR });
 
   const property = db.prepare('SELECT id, name, channex_property_id FROM properties WHERE id = ?').get(propId);
   if (!property) return res.status(404).json({ error: 'Property not found' });
@@ -512,6 +528,7 @@ channexAdminRouter.post('/channels/:channelId/airbnb/mappings', async (req, res)
   const { property_id, rate_plan_id, listing_id } = req.body ?? {};
   const propId = Number(property_id);
   if (!Number.isInteger(propId)) return res.status(400).json({ error: 'property_id is required' });
+  if (!isDemoProperty(propId)) return res.status(403).json({ error: DEMO_ONLY_ERROR });
   if (!rate_plan_id || !listing_id) {
     return res.status(400).json({ error: 'rate_plan_id and listing_id are both required' });
   }
