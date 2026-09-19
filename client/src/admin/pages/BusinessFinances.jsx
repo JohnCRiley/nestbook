@@ -730,8 +730,11 @@ export default function BusinessFinances() {
       {stats && (
         <>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
-            <StatCard label="Monthly Recurring Revenue" value={GBP(stats.mrr)} sub="Current MRR" accent="#22c55e" />
-            <StatCard label="Annual Run Rate" value={GBP(stats.arr)} sub="MRR × 12" />
+            <StatCard label="Monthly Recurring Revenue" value={GBP(stats.mrr.GBP)} sub="Current MRR (GBP subscribers)" accent="#22c55e" />
+            <StatCard label="Annual Run Rate" value={GBP(stats.arr.GBP)} sub="MRR × 12" />
+            {stats.mrr.EUR > 0 && (
+              <StatCard label="MRR — EUR subscribers" value={`€${Number(stats.mrr.EUR).toFixed(2)}`} sub="Not included in the GBP figures/tax maths above" />
+            )}
             <StatCard label="Paid Subscribers" value={stats.proCount + stats.multiCount} sub={`Pro: ${stats.proCount} · Multi: ${stats.multiCount}`} />
             <StatCard label="Free Users" value={stats.freeCount} sub={`${stats.totalUsers} total`} />
             <StatCard label="Conversion Rate" value={pct(stats.conversionPct)} sub="Free → paid" />

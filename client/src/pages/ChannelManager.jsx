@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../utils/apiFetch.js';
+import { hasChannelManagerAccess } from '../utils/currency.js';
 import { useT, useLocale } from '../i18n/LocaleContext.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { usePlan } from '../hooks/usePlan.js';
@@ -33,7 +34,7 @@ export default function ChannelManager() {
 
   // Gate mirrors Sidebar.jsx's canSeeChannelManager() — the nav item is hidden
   // when this is false, but a direct URL visit must not render the page either.
-  const allowed = user?.role === 'owner' && (plan === 'pro' || plan === 'multi') && !!user?.has_channel_manager_addon;
+  const allowed = user?.role === 'owner' && hasChannelManagerAccess(plan, user?.has_channel_manager_addon);
 
   const fetchStatus = useCallback(() => {
     if (!allowed || !property?.id) { setLoading(false); return; }

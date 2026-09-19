@@ -7,6 +7,11 @@ import { sendUpgradeWelcome, sendMultiWelcome, sendPaymentFailedEmail, sendPromo
 import { logEmailFailureReport } from './errorReports.js';
 import { logAction, getIp } from '../utils/auditLog.js';
 import { scheduleAvailabilityPush } from '../utils/channexDebounce.js';
+import { currencyForLanguage, normaliseCurrency } from '../utils/currency.js';
+import {
+  planPriceId, planFromPriceId, planFromSubscription,
+  chargesAddonPriceId, channelAddonPriceId, isChargesAddonPrice, isChannelAddonPrice,
+} from '../utils/stripePrices.js';
 
 export const stripeRouter = Router();
 
@@ -88,10 +93,28 @@ if (getWebhookSecrets().length === 0) {
   console.log(`[STRIPE] Webhook signature verification will try ${getWebhookSecrets().length} secret(s) per event, in order: ${getWebhookSecrets().map(s => s.name).join(', ')} — routed to POST /api/stripe/webhook`);
 }
 
-const PLAN_PRICES = {
-  pro:   process.env.STRIPE_PRICE_PRO,
-  multi: process.env.STRIPE_PRICE_MULTI,
-};
+// Pro/Multi have one fixed Stripe Price per currency (STRIPE_PRICE_{PRO,MULTI}_{GBP,EUR}).
+// Currency follows the user's language (EN → GBP, FR/DE/ES/NL → EUR) — see
+// utils/currency.js. A Stripe customer's currency is locked once they have
+// a subscription, so an existing customer's currency wins over language.
+async function resolveCheckoutCurrency(user, customerId) {
+  if (customerId) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      if (customer?.currency) return normaliseCurrency(customer.currency);
+    } catch (e) {
+      console.warn('[stripe] Could not read customer currency, falling back to language:', e.message);
+    }
+  }
+  return currencyForLanguage(user?.language);
+}
+
+// Records the billing currency of a subscription (used by admin MRR reporting).
+function saveSubscriptionCurrency(stripeSubscriptionId, currency) {
+  if (!stripeSubscriptionId || !currency) return;
+  db.prepare('UPDATE subscriptions SET currency = ? WHERE stripe_subscription_id = ?')
+    .run(normaliseCurrency(currency), stripeSubscriptionId);
+}
 
 // ── GET /api/stripe/subscription ─────────────────────────────────────────────
 // Returns the logged-in user's current plan and subscription status.
@@ -192,12 +215,11 @@ stripeRouter.post('/sync-session', async (req, res) => {
     const userId     = session.metadata?.userId;
     const sub        = session.subscription;
     const priceId    = sub?.items?.data[0]?.price?.id;
-    const plan       = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
+    const plan       = planFromPriceId(priceId) ?? 'pro';
     const customerId = session.customer;
 
     console.log('[sync-session] userId:', userId, '| plan resolved to:', plan);
     console.log('[sync-session] priceId from Stripe:', priceId);
-    console.log('[sync-session] STRIPE_PRICE_PRO env:', process.env.STRIPE_PRICE_PRO);
     console.log('[sync-session] raw current_period_end:', sub?.current_period_end);
 
     // current_period_end can be null in test mode if the subscription hasn't
@@ -239,6 +261,7 @@ stripeRouter.post('/sync-session', async (req, res) => {
       `).run(userId, customerId, sub?.id ?? null, plan, periodEnd);
       console.log('[sync-session] INSERT subscriptions done');
     }
+    saveSubscriptionCurrency(sub?.id, sub?.currency);
 
     // Increment discount code usage if the user had one applied
     const userRow = db.prepare('SELECT discount_code FROM users WHERE id = ?').get(userId);
@@ -288,12 +311,19 @@ stripeRouter.post('/sync-session', async (req, res) => {
 stripeRouter.post('/create-checkout-session', async (req, res) => {
   const { plan } = req.body;
 
-  if (!plan || !PLAN_PRICES[plan]) {
+  if (plan !== 'pro' && plan !== 'multi') {
     return res.status(400).json({ error: 'Invalid plan. Choose "pro" or "multi".' });
   }
 
-  const user = db.prepare('SELECT id, name, email, discount_code FROM users WHERE id = ?').get(req.user.userId);
+  const user = db.prepare('SELECT id, name, email, discount_code, language, stripe_customer_id FROM users WHERE id = ?').get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
+
+  const currency = await resolveCheckoutCurrency(user, user.stripe_customer_id);
+  const priceId  = planPriceId(plan, currency);
+  if (!priceId) {
+    console.error(`[stripe] No Price ID configured for ${plan}/${currency} (STRIPE_PRICE_${plan.toUpperCase()}_${currency})`);
+    return res.status(500).json({ error: 'This plan is not available in your currency right now.' });
+  }
 
   // Resolve any valid discount code for this user
   let discounts = [];
@@ -313,8 +343,10 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       mode:       'subscription',
-      line_items: [{ price: PLAN_PRICES[plan], quantity: 1 }],
-      customer_email: user.email,
+      line_items: [{ price: priceId, quantity: 1 }],
+      // A returning Stripe customer must be reused (their currency is locked);
+      // otherwise let Checkout create one from the email.
+      ...(user.stripe_customer_id ? { customer: user.stripe_customer_id } : { customer_email: user.email }),
       metadata:   { userId: String(user.id) },
       subscription_data: { trial_period_days: 30 },
       success_url: `https://nestbook.io/app/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
@@ -356,11 +388,18 @@ stripeRouter.post('/create-promo-checkout', async (req, res) => {
 
     const trialEnd = Math.floor(new Date(user.trial_ends_at).getTime() / 1000);
 
+    const promoCurrency = await resolveCheckoutCurrency(user, customerId);
+    const promoPriceId  = planPriceId('pro', promoCurrency);
+    if (!promoPriceId) {
+      console.error(`[stripe] No Price ID configured for pro/${promoCurrency}`);
+      return res.status(500).json({ error: 'This plan is not available in your currency right now.' });
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer:             customerId,
       mode:                 'subscription',
       payment_method_types: ['card'],
-      line_items: [{ price: PLAN_PRICES.pro, quantity: 1 }],
+      line_items: [{ price: promoPriceId, quantity: 1 }],
       subscription_data: {
         trial_end: trialEnd,
         metadata: {
@@ -549,16 +588,13 @@ stripeRouter.post('/addon/charges/add', async (req, res) => {
 
     const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
     const currency = subscription.currency ?? 'gbp';
-    const addonPriceId = currency === 'gbp'
-      ? process.env.STRIPE_PRICE_CHARGES_ADDON_GBP
-      : process.env.STRIPE_PRICE_CHARGES_ADDON_EUR;
+    const addonPriceId = chargesAddonPriceId(currency);
 
     if (!addonPriceId) return res.status(500).json({ error: 'Charges add-on price not configured.' });
 
     // Check not already subscribed
     const alreadyHas = subscription.items.data.some(
-      item => item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_GBP ||
-              item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
+      item => isChargesAddonPrice(item.price.id)
     );
     if (alreadyHas) return res.status(400).json({ error: 'Charges add-on already active.' });
 
@@ -588,8 +624,7 @@ stripeRouter.post('/addon/charges/remove', async (req, res) => {
 
     const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
     const addonItem = subscription.items.data.find(
-      item => item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_GBP ||
-              item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
+      item => isChargesAddonPrice(item.price.id)
     );
     if (!addonItem) return res.status(400).json({ error: 'Charges add-on not found on subscription.' });
 
@@ -611,6 +646,12 @@ stripeRouter.post('/addon/channel-manager/add', async (req, res) => {
   try {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Owner only.' });
 
+    // Multi includes Channel Manager — there is nothing to buy.
+    const planRow = db.prepare('SELECT plan FROM users WHERE id = ?').get(req.user.userId);
+    if (planRow?.plan === 'multi') {
+      return res.status(400).json({ error: 'Channel Manager is already included in your Multi plan.' });
+    }
+
     const sub = db.prepare(`
       SELECT stripe_subscription_id, stripe_customer_id
       FROM subscriptions
@@ -621,16 +662,13 @@ stripeRouter.post('/addon/channel-manager/add', async (req, res) => {
 
     const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
     const currency = subscription.currency ?? 'gbp';
-    const addonPriceId = currency === 'gbp'
-      ? process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP
-      : process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR;
+    const addonPriceId = channelAddonPriceId(currency);
 
     if (!addonPriceId) return res.status(500).json({ error: 'Channel Manager add-on price not configured.' });
 
     // Check not already subscribed
     const alreadyHas = subscription.items.data.some(
-      item => item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP ||
-              item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR
+      item => isChannelAddonPrice(item.price.id)
     );
     if (alreadyHas) return res.status(400).json({ error: 'Channel Manager add-on already active.' });
 
@@ -660,8 +698,7 @@ stripeRouter.post('/addon/channel-manager/remove', async (req, res) => {
 
     const subscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
     const addonItem = subscription.items.data.find(
-      item => item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP ||
-              item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR
+      item => isChannelAddonPrice(item.price.id)
     );
     if (!addonItem) return res.status(400).json({ error: 'Channel Manager add-on not found on subscription.' });
 
@@ -910,13 +947,14 @@ export async function stripeWebhookHandler(req, res) {
             sendPromoPaymentConfirmedEmail(promoUser)
               .catch(err => console.error('[stripe] Promo confirmed email failed:', err.message));
           }
+          saveSubscriptionCurrency(subscriptionId, stripeSub.currency);
           console.log(`[stripe] Promo conversion complete for user ${userId}`);
           break;
         }
 
         const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId   = stripeSub.items.data[0]?.price?.id;
-        const plan      = priceId === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
+        const plan      = planFromPriceId(priceId) ?? 'pro';
         const periodEnd = stripeSub.current_period_end
           ? new Date(stripeSub.current_period_end * 1000).toISOString()
           : null;
@@ -946,6 +984,7 @@ export async function stripeWebhookHandler(req, res) {
         // both key off this being set.
         db.prepare('UPDATE users SET plan = ?, stripe_customer_id = ?, stripe_subscription_id = ? WHERE id = ?')
           .run(plan, customerId, subscriptionId, userId);
+        saveSubscriptionCurrency(subscriptionId, stripeSub.currency);
         console.log(`✓ Subscription activated: user ${userId} → ${plan}`);
         console.log('[stripe/webhook/upgrade] Old plan:', oldWebhookPlan, '→ New plan:', plan);
         console.log('[stripe/webhook/upgrade] User:', oldWebhookUser?.email);
@@ -980,32 +1019,25 @@ export async function stripeWebhookHandler(req, res) {
       case 'customer.subscription.updated': {
         const sub = event.data.object;
         // Search all items for the plan price — addon is a second line item
-        const planItem = sub.items.data.find(
-          item => item.price.id === process.env.STRIPE_PRICE_MULTI ||
-                  item.price.id === process.env.STRIPE_PRICE_PRO
-        );
-        const plan    = planItem?.price?.id === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
+        const { plan } = planFromSubscription(sub);
         const status  = sub.status === 'past_due' ? 'past_due' : 'active';
         const periodEnd = sub.current_period_end
           ? new Date(sub.current_period_end * 1000).toISOString()
           : null;
         const cancelAtEnd = sub.cancel_at_period_end ? 1 : 0;
 
-        const hasAddon = sub.items.data.some(
-          item => item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_GBP ||
-                  item.price.id === process.env.STRIPE_PRICE_CHARGES_ADDON_EUR
-        ) ? 1 : 0;
+        const hasAddon = sub.items.data.some(item => isChargesAddonPrice(item.price.id)) ? 1 : 0;
 
-        const hasChannelManagerAddon = sub.items.data.some(
-          item => item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_GBP ||
-                  item.price.id === process.env.STRIPE_PRICE_CHANNEL_ADDON_EUR
-        ) ? 1 : 0;
+        // Multi includes Channel Manager, so this flag only gates Pro — but
+        // keep mirroring the real add-on line item either way, so our DB never
+        // disagrees with what Stripe is actually billing.
+        const hasChannelManagerAddon = sub.items.data.some(item => isChannelAddonPrice(item.price.id)) ? 1 : 0;
 
         db.prepare(`
           UPDATE subscriptions
-          SET plan = ?, status = ?, current_period_end = ?, cancel_at_period_end = ?
+          SET plan = ?, status = ?, current_period_end = ?, cancel_at_period_end = ?, currency = ?
           WHERE stripe_subscription_id = ?
-        `).run(plan, status, periodEnd, cancelAtEnd, sub.id);
+        `).run(plan, status, periodEnd, cancelAtEnd, normaliseCurrency(sub.currency), sub.id);
 
         // Also backfills/keeps users.stripe_subscription_id in sync — this
         // fires for any subscription change (addon add/remove, plan swap),
@@ -1066,11 +1098,7 @@ export async function stripeWebhookHandler(req, res) {
           if (user.local_plan === 'free' && invoice.subscription) {
             try {
               const stripeSub = await stripe.subscriptions.retrieve(invoice.subscription);
-              const planItem = stripeSub.items.data.find(
-                item => item.price.id === process.env.STRIPE_PRICE_MULTI ||
-                        item.price.id === process.env.STRIPE_PRICE_PRO
-              );
-              const restoredPlan = planItem?.price?.id === process.env.STRIPE_PRICE_MULTI ? 'multi' : 'pro';
+              const { plan: restoredPlan } = planFromSubscription(stripeSub);
               db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(restoredPlan, user.id);
               console.log(`[webhook] Restored plan '${restoredPlan}' for previously-downgraded user ${user.email} after a late successful payment`);
             } catch (restoreErr) {

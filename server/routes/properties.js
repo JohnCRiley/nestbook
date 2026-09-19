@@ -10,6 +10,7 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { generateSlug, uniqueSlug } from '../utils/slugify.js';
 import { seedCategories } from '../utils/categories.js';
 import { sanitizeBanner } from '../utils/sanitizeBanner.js';
+import { hasChannelManagerAccess } from '../utils/channelManagerAccess.js';
 import { GUEST_ICON_NAMES } from '../utils/guestIconNames.js';
 import { ROOM_UPLOAD_DIR, PHOTO_LIMITS } from './roomPhotos.js';
 import { cleanupFile } from '../utils/fileCleanup.js';
@@ -1237,9 +1238,9 @@ function requireOwnerChannelManagerAccess(req, res, propId) {
     return null;
   }
   const owner = db.prepare('SELECT plan, has_channel_manager_addon FROM users WHERE id = ?').get(req.user.userId);
-  const planOk = owner?.plan === 'pro' || owner?.plan === 'multi';
-  if (!planOk || !owner?.has_channel_manager_addon) {
-    res.status(403).json({ error: 'The Channel Manager add-on is required.' });
+  // Multi includes Channel Manager (no add-on flag needed); Pro needs the flag.
+  if (!hasChannelManagerAccess(owner?.plan, owner?.has_channel_manager_addon)) {
+    res.status(403).json({ error: 'Channel Manager is included in Multi, or available as an add-on on Pro.' });
     return null;
   }
   const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propId);

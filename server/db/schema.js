@@ -2681,6 +2681,12 @@ John`
   // item/page: visible only when this is true AND plan is pro/multi.
   try { db.exec(`ALTER TABLE users ADD COLUMN has_channel_manager_addon INTEGER DEFAULT 0`); } catch (e) {}
 
+  // Billing currency ('GBP' | 'EUR') of each subscription, captured from Stripe
+  // by the webhook/sync paths. Pro/Multi now have fixed per-currency prices, so
+  // admin MRR reporting needs the real currency per subscriber. NULL (rows
+  // created before this column) is treated as GBP by the MRR code.
+  try { db.exec(`ALTER TABLE subscriptions ADD COLUMN currency TEXT`); } catch (e) {}
+
   // Last-synced timestamps for the Channel Manager page's "Recent activity"
   // section. Populated at the exact point runAvailabilitySync()/runRateSync()/
   // pushInitialInventory() (server/utils/channexPushInventory.js) already log

@@ -12,6 +12,8 @@ import { logAction, getIp } from '../utils/auditLog.js';
 import { seedCategories } from '../utils/categories.js';
 import { deleteUserAccount } from '../utils/deleteUserAccount.js';
 import { seedSampleData } from '../utils/seedSampleData.js';
+import { currencyForLanguage, normaliseCurrency } from '../utils/currency.js';
+import { planPriceId } from '../utils/stripePrices.js';
 
 export const authRouter = Router();
 
@@ -88,9 +90,14 @@ async function applyDiscountCodeOnRegistration(user) {
       const discountEnd = hasDuration ? new Date(trialEnd) : null;
       if (discountEnd) discountEnd.setMonth(discountEnd.getMonth() + code.duration_months);
 
+      // Pro price in the user's currency (language-derived); a coupon is a
+      // percent-off so it applies unchanged to either currency's Price.
+      const proPriceId = planPriceId('pro', currencyForLanguage(fullUser.language));
+      if (!proPriceId) throw new Error(`No Pro Price ID configured for ${currencyForLanguage(fullUser.language)}`);
+
       const subParams = {
         customer:  customerId,
-        items:     [{ price: process.env.STRIPE_PRICE_PRO }],
+        items:     [{ price: proPriceId }],
         discounts: [{ coupon: code.stripe_coupon_id }],
         trial_end: Math.floor(trialEnd.getTime() / 1000),
       };
@@ -109,18 +116,19 @@ async function applyDiscountCodeOnRegistration(user) {
         ? new Date(sub.current_period_end * 1000).toISOString()
         : null;
       const existingSub = db.prepare(`SELECT id FROM subscriptions WHERE user_id = ?`).get(fullUser.id);
+      const subCurrency = normaliseCurrency(sub.currency);
       if (existingSub) {
         db.prepare(`
           UPDATE subscriptions
           SET stripe_customer_id = ?, stripe_subscription_id = ?, plan = 'pro',
-              status = 'active', current_period_end = ?
+              status = 'active', current_period_end = ?, currency = ?
           WHERE user_id = ?
-        `).run(customerId, sub.id, periodEnd, fullUser.id);
+        `).run(customerId, sub.id, periodEnd, subCurrency, fullUser.id);
       } else {
         db.prepare(`
-          INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end)
-          VALUES (?, ?, ?, 'pro', 'active', ?)
-        `).run(fullUser.id, customerId, sub.id, periodEnd);
+          INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, plan, status, current_period_end, currency)
+          VALUES (?, ?, ?, 'pro', 'active', ?, ?)
+        `).run(fullUser.id, customerId, sub.id, periodEnd, subCurrency);
       }
 
       db.prepare(`UPDATE discount_codes SET current_uses = current_uses + 1 WHERE id = ?`).run(code.id);

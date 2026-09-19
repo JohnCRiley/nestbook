@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
+import { formatMoneyPair } from '../../utils/currency.js';
 import { Icon, XIcon } from '../icons.jsx';
 
 const MARKETING_MATERIALS = [
@@ -115,7 +116,7 @@ export default function Overview() {
         <StatCard label="Total Users"         value={stats?.totalUsers      ?? '—'} />
         <StatCard label="Pro Subscriptions"   value={stats?.proSubs         ?? '—'} />
         <StatCard label="Multi Subscriptions" value={stats?.multiSubs       ?? '—'} />
-        <StatCard label="MRR"                 value={stats ? `€${stats.mrr}` : '—'} accent />
+        <StatCard label="MRR"                 value={stats ? formatMoneyPair(stats.mrr) : '—'} accent />
         <StatCard label="New this week"       value={stats?.newThisWeek     ?? '—'} />
       </div>
 

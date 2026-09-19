@@ -1067,6 +1067,7 @@ export const LANGS = {
     channelAddonAdd:      'Add to my plan',
     channelAddonAdding:   'Adding…',
     channelAddonActive:   'Add-on active',
+    channelIncludedInPlan: 'Included in your Multi plan',
     channelAddonRemove:   'Remove add-on',
     channelAddonRemoving: 'Removing…',
     channelAddonRemoveConfirm: 'Removing the add-on will disconnect Channel Manager at the end of your current billing period. Are you sure?',

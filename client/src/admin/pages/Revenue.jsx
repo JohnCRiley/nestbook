@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { saApiFetch as apiFetch } from '../saApiFetch.js';
 
-const PLAN_MRR = { pro: 19, multi: 39 };
+import { CURRENCY_SYMBOL as SYM, PLAN_PRICES, formatMoneyPair } from '../../utils/currency.js';
+
+// Subscribers bill in GBP or EUR (fixed per-currency Stripe Prices) — every
+// figure below is kept per-currency and never summed across currencies.
+const CCYS = ['GBP', 'EUR'];
+const sumByCcy = (rows) => rows.reduce((t, r) => { t[r.currency === 'EUR' ? 'EUR' : 'GBP'] += r.amount; return t; }, { GBP: 0, EUR: 0 });
+const scaleCcy = (t, k) => ({ GBP: t.GBP * k, EUR: t.EUR * k });
+const money    = (n, c) => `${SYM[c]}${Number(n).toFixed(2)}`;
+const moneyByCcy = (t) => { const p = CCYS.filter(c => t[c] !== 0).map(c => money(t[c], c)); return p.length ? p.join(' + ') : money(0, 'GBP'); };
 
 // ── UK tax year helpers ───────────────────────────────────────────────────────
 function ukTaxYear(yearStart) {
@@ -122,27 +130,32 @@ function AccountantExports() {
       Email:     s.email,
       Country:   s.country,
       Plan:      s.plan,
-      'Gross (£)':  s.amount.toFixed(2),
-      'VAT (£)':    (s.amount * vat / 100).toFixed(2),
-      'Net (£)':    (s.amount * (1 - vat / 100)).toFixed(2),
+      Currency:     s.currency,
+      Gross:        s.amount.toFixed(2),
+      VAT:          (s.amount * vat / 100).toFixed(2),
+      Net:          (s.amount * (1 - vat / 100)).toFixed(2),
       Status:    s.status,
       'Stripe ID':  s.stripeId ?? '',
     }));
-    const total = data.subscriptions.reduce((sum, s) => sum + s.amount, 0);
-    rows.push({
-      Date: '', Name: 'TOTAL', Email: '', Country: '', Plan: '',
-      'Gross (£)': total.toFixed(2),
-      'VAT (£)':   (total * vat / 100).toFixed(2),
-      'Net (£)':   (total * (1 - vat / 100)).toFixed(2),
-      Status: '', 'Stripe ID': '',
-    });
+    const totals = sumByCcy(data.subscriptions);
+    for (const c of CCYS) {
+      if (c !== 'GBP' && totals[c] === 0) continue;
+      rows.push({
+        Date: '', Name: `TOTAL ${c}`, Email: '', Country: '', Plan: '',
+        Currency: c,
+        Gross:    totals[c].toFixed(2),
+        VAT:      (totals[c] * vat / 100).toFixed(2),
+        Net:      (totals[c] * (1 - vat / 100)).toFixed(2),
+        Status: '', 'Stripe ID': '',
+      });
+    }
     downloadBlob(csvBlob(rows, Object.keys(rows[0])), `nestbook-subscriptions-${from}-${to}.csv`);
   };
 
   const exportSubsPDF = async () => {
     const data = await fetchData(); if (!data) return;
     const vat  = parseFloat(vatRate) || 0;
-    const total = data.subscriptions.reduce((sum, s) => sum + s.amount, 0);
+    const total = sumByCcy(data.subscriptions);
     const rows  = data.subscriptions.map(s => `
       <tr>
         <td>${s.createdAt?.slice(0, 10) ?? ''}</td>
@@ -150,9 +163,9 @@ function AccountantExports() {
         <td>${s.email}</td>
         <td>${s.country}</td>
         <td style="text-transform:capitalize">${s.plan}</td>
-        <td class="num">£${s.amount.toFixed(2)}</td>
-        <td class="num">£${(s.amount * vat / 100).toFixed(2)}</td>
-        <td class="num">£${(s.amount * (1 - vat / 100)).toFixed(2)}</td>
+        <td class="num">${money(s.amount, s.currency)}</td>
+        <td class="num">${money(s.amount * vat / 100, s.currency)}</td>
+        <td class="num">${money(s.amount * (1 - vat / 100), s.currency)}</td>
         <td>${s.status}</td>
       </tr>`).join('');
     openPrintWindow(`<!DOCTYPE html><html><head><title>Subscription Revenue Report</title>
@@ -174,9 +187,9 @@ function AccountantExports() {
       <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Country</th><th>Plan</th><th class="num">Gross</th><th class="num">VAT</th><th class="num">Net</th><th>Status</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr class="total"><td colspan="5">TOTAL (${data.subscriptions.length} subscriptions)</td>
-        <td class="num">£${total.toFixed(2)}</td>
-        <td class="num">£${(total * vat / 100).toFixed(2)}</td>
-        <td class="num">£${(total * (1 - vat / 100)).toFixed(2)}</td>
+        <td class="num">${moneyByCcy(total)}</td>
+        <td class="num">${moneyByCcy(scaleCcy(total, vat / 100))}</td>
+        <td class="num">${moneyByCcy(scaleCcy(total, 1 - vat / 100))}</td>
         <td></td></tr></tfoot>
     </table>
     </body></html>`);
@@ -192,8 +205,10 @@ function AccountantExports() {
       Cancellations:  m.cancelled,
       'Active Pro':   m.activePro,
       'Active Multi': m.activeMulti,
-      'MRR (£)':      m.mrr.toFixed(2),
-      'Revenue (£)':  m.revenue.toFixed(2),
+      'MRR (£)':      m.mrrGBP.toFixed(2),
+      'MRR (€)':      m.mrrEUR.toFixed(2),
+      'Revenue (£)':  m.revenueGBP.toFixed(2),
+      'Revenue (€)':  m.revenueEUR.toFixed(2),
     }));
     downloadBlob(csvBlob(rows, Object.keys(rows[0])), `nestbook-monthly-summary-${from}-${to}.csv`);
   };
@@ -208,8 +223,8 @@ function AccountantExports() {
         <td class="num">${m.cancelled}</td>
         <td class="num">${m.activePro}</td>
         <td class="num">${m.activeMulti}</td>
-        <td class="num">£${m.mrr.toFixed(2)}</td>
-        <td class="num">£${m.revenue.toFixed(2)}</td>
+        <td class="num">${moneyByCcy({ GBP: m.mrrGBP, EUR: m.mrrEUR })}</td>
+        <td class="num">${moneyByCcy({ GBP: m.revenueGBP, EUR: m.revenueEUR })}</td>
       </tr>`).join('');
     openPrintWindow(`<!DOCTYPE html><html><head><title>Monthly Revenue Summary</title>
     <style>
@@ -239,19 +254,23 @@ function AccountantExports() {
   const exportAnnualPDF = async () => {
     const data = await fetchData(); if (!data) return;
     const vat  = parseFloat(vatRate) || 0;
-    const totalGross = data.subscriptions.reduce((sum, s) => sum + s.amount, 0);
-    const totalVat   = totalGross * vat / 100;
-    const totalNet   = totalGross - totalVat;
-    const proCount   = data.subscriptions.filter(s => s.plan === 'pro').length;
-    const multiCount = data.subscriptions.filter(s => s.plan === 'multi').length;
+    const totalGross = sumByCcy(data.subscriptions);
+    const totalVat   = scaleCcy(totalGross, vat / 100);
+    const totalNet   = scaleCcy(totalGross, 1 - vat / 100);
+    const breakdownRows = ['pro', 'multi'].flatMap(p => CCYS.map(c => {
+      const n = data.subscriptions.filter(s => s.plan === p && s.currency === c).length;
+      if (!n) return '';
+      const rate = PLAN_PRICES[p][c];
+      return `<tr><td style="text-transform:capitalize">${p} (${c})</td><td class="num">${n}</td><td class="num">${money(rate, c)}</td><td class="num">${money(n * rate, c)}</td></tr>`;
+    })).join('');
     const monthRows  = data.monthlySummary.map(m => `
       <tr>
         <td>${m.month}</td>
         <td class="num">${m.newPro + m.newMulti}</td>
         <td class="num">${m.cancelled}</td>
-        <td class="num">£${m.revenue.toFixed(2)}</td>
-        <td class="num">£${(m.revenue * vat / 100).toFixed(2)}</td>
-        <td class="num">£${(m.revenue * (1 - vat / 100)).toFixed(2)}</td>
+        <td class="num">${moneyByCcy({ GBP: m.revenueGBP, EUR: m.revenueEUR })}</td>
+        <td class="num">${moneyByCcy({ GBP: m.revenueGBP * vat / 100, EUR: m.revenueEUR * vat / 100 })}</td>
+        <td class="num">${moneyByCcy({ GBP: m.revenueGBP * (1 - vat / 100), EUR: m.revenueEUR * (1 - vat / 100) })}</td>
       </tr>`).join('');
 
     openPrintWindow(`<!DOCTYPE html><html><head><title>Annual Summary</title>
@@ -293,15 +312,15 @@ function AccountantExports() {
 
     <div class="summary-grid">
       <div class="summary-box">
-        <div class="val">£${totalGross.toFixed(2)}</div>
+        <div class="val">${moneyByCcy(totalGross)}</div>
         <div class="lbl">Total Gross Revenue</div>
       </div>
       <div class="summary-box">
-        <div class="val">£${totalVat.toFixed(2)}</div>
+        <div class="val">${moneyByCcy(totalVat)}</div>
         <div class="lbl">VAT Collected (${vat}%)</div>
       </div>
       <div class="summary-box">
-        <div class="val">£${totalNet.toFixed(2)}</div>
+        <div class="val">${moneyByCcy(totalNet)}</div>
         <div class="lbl">Net Revenue</div>
       </div>
     </div>
@@ -310,10 +329,9 @@ function AccountantExports() {
     <table>
       <thead><tr><th>Plan</th><th class="num">Count</th><th class="num">Rate/mo</th><th class="num">Total Gross</th></tr></thead>
       <tbody>
-        <tr><td>Pro</td><td class="num">${proCount}</td><td class="num">£19.00</td><td class="num">£${(proCount * 19).toFixed(2)}</td></tr>
-        <tr><td>Multi</td><td class="num">${multiCount}</td><td class="num">£39.00</td><td class="num">£${(multiCount * 39).toFixed(2)}</td></tr>
+        ${breakdownRows}
       </tbody>
-      <tfoot><tr class="total-row"><td colspan="3">Total</td><td class="num">£${totalGross.toFixed(2)}</td></tr></tfoot>
+      <tfoot><tr class="total-row"><td colspan="3">Total</td><td class="num">${moneyByCcy(totalGross)}</td></tr></tfoot>
     </table>
 
     <h3>Month-by-Month</h3>
@@ -329,9 +347,9 @@ function AccountantExports() {
       <strong>VAT Summary</strong>
       <table style="margin-top:10px">
         <tr><td>VAT rate applied</td><td class="num">${vat}%</td></tr>
-        <tr><td>Gross revenue</td><td class="num">£${totalGross.toFixed(2)}</td></tr>
-        <tr><td>VAT element (${vat}% of gross)</td><td class="num">£${totalVat.toFixed(2)}</td></tr>
-        <tr><td>Net revenue ex-VAT</td><td class="num">£${totalNet.toFixed(2)}</td></tr>
+        <tr><td>Gross revenue</td><td class="num">${moneyByCcy(totalGross)}</td></tr>
+        <tr><td>VAT element (${vat}% of gross)</td><td class="num">${moneyByCcy(totalVat)}</td></tr>
+        <tr><td>Net revenue ex-VAT</td><td class="num">${moneyByCcy(totalNet)}</td></tr>
       </table>
     </div>
 
@@ -347,7 +365,8 @@ function AccountantExports() {
       Email:                c.email,
       Country:              c.country,
       Plan:                 c.plan,
-      'Monthly Amount (£)': c.amount.toFixed(2),
+      Currency:             c.currency,
+      'Monthly Amount':     c.amount.toFixed(2),
       'Subscription Start': c.subStart?.slice(0, 10) ?? '',
     }));
     downloadBlob(csvBlob(rows, Object.keys(rows[0])), `nestbook-customers-vat-${new Date().toISOString().slice(0,10)}.csv`);
@@ -467,7 +486,10 @@ export default function Revenue() {
     const W = canvas.width  = canvas.offsetWidth;
     const H = canvas.height = 180;
 
-    const maxVal = Math.max(...months.map(m => m.mrr), 1);
+    // Bar height is a nominal GBP+EUR magnitude (chart shape only); the label
+    // above each bar shows the real per-currency figures.
+    const nominal = (p) => (p?.GBP ?? 0) + (p?.EUR ?? 0);
+    const maxVal = Math.max(...months.map(m => nominal(m.mrr)), 1);
     const gapW   = Math.floor((W - 60) / months.length);
     const barW   = Math.floor(gapW * 0.6);
     const padL   = 30;
@@ -479,8 +501,8 @@ export default function Revenue() {
     months.forEach((m, i) => {
       const x = padL + i * gapW + (gapW - barW) / 2;
 
-      const multiH = Math.round((m.multi * PLAN_MRR.multi / maxVal) * chartH);
-      const proH   = Math.round((m.pro   * PLAN_MRR.pro   / maxVal) * chartH);
+      const multiH = Math.round((nominal(m.multiMrr) / maxVal) * chartH);
+      const proH   = Math.round((nominal(m.proMrr)   / maxVal) * chartH);
       const totalH = multiH + proH;
 
       if (multiH > 0) {
@@ -501,10 +523,10 @@ export default function Revenue() {
       ctx.textAlign = 'center';
       ctx.fillText(m.month.slice(5), x + barW / 2, H - 8);
 
-      if (m.mrr > 0) {
+      if (nominal(m.mrr) > 0) {
         ctx.fillStyle = '#334155';
         ctx.font      = '11px system-ui';
-        ctx.fillText(`€${m.mrr}`, x + barW / 2, H - padB - totalH - 4);
+        ctx.fillText(formatMoneyPair(m.mrr), x + barW / 2, H - padB - totalH - 4);
       }
     });
 
@@ -609,16 +631,16 @@ export default function Revenue() {
       <div className="admin-section-title">Monthly Recurring Revenue</div>
       <div className="admin-stats-grid">
         <div className="admin-stat-card accent">
-          <div className="admin-stat-value">€{mrr}</div>
+          <div className="admin-stat-value">{formatMoneyPair(mrr)}</div>
           <div className="admin-stat-label">Current MRR</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-value">{proCount}</div>
-          <div className="admin-stat-label">Pro subscribers (€19/mo)</div>
+          <div className="admin-stat-label">Pro subscribers ({formatMoneyPair(PLAN_PRICES.pro).replace(' + ', ' / ')}/mo)</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-value">{multiCount}</div>
-          <div className="admin-stat-label">Multi subscribers (€39/mo)</div>
+          <div className="admin-stat-label">Multi subscribers ({formatMoneyPair(PLAN_PRICES.multi).replace(' + ', ' / ')}/mo)</div>
         </div>
         <div className="admin-stat-card">
           <div className="admin-stat-value">{freeCount}</div>
@@ -647,7 +669,7 @@ export default function Revenue() {
           <div className="admin-stat-label">Total churned subscriptions</div>
         </div>
         <div className="admin-stat-card accent-green">
-          <div className="admin-stat-value">€{netNewRevenue}</div>
+          <div className="admin-stat-value">{formatMoneyPair(netNewRevenue)}</div>
           <div className="admin-stat-label">Net new revenue this month</div>
           <div className="admin-stat-sub">{newProThisMonth} Pro + {newMultiThisMonth} Multi</div>
         </div>
@@ -679,7 +701,7 @@ export default function Revenue() {
           <div className="admin-stat-sub">Requires follow-up</div>
         </div>
         <div className="admin-stat-card">
-          <div className="admin-stat-value">€{mrr * 12}</div>
+          <div className="admin-stat-value">{formatMoneyPair({ GBP: mrr.GBP * 12, EUR: mrr.EUR * 12 })}</div>
           <div className="admin-stat-label">Annualised revenue (ARR)</div>
           <div className="admin-stat-sub">MRR × 12</div>
         </div>

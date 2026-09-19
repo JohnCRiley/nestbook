@@ -566,10 +566,10 @@ function AccountSubscriptionCard() {
         />
       )}
 
-      {/* ── Channel Manager add-on card — same pattern as Bar & Charges above,
-           but offered on BOTH pro and multi (not pro-only): the add-on flag is
-           always required regardless of plan tier, per
-           requireOwnerChannelManagerAccess() in properties.js. ──────────────── */}
+      {/* ── Channel Manager card — Pro: paid add-on (flag required); Multi:
+           included in the plan, shown as a status badge with no purchase
+           controls. Access rule lives in hasChannelManagerAccess() /
+           requireOwnerChannelManagerAccess() in properties.js. ─────────────── */}
       {(user?.plan === 'pro' || user?.plan === 'multi') && (
         <div className="billing-card">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -577,18 +577,18 @@ function AccountSubscriptionCard() {
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>{t('channelAddonTitle')}</h3>
-                {!!user?.has_channel_manager_addon && (
+                {(user?.plan === 'multi' || !!user?.has_channel_manager_addon) && (
                   <span style={{
                     background: '#dcfce7', color: '#166534',
                     borderRadius: 20, padding: '2px 10px',
                     fontSize: '0.75rem', fontWeight: 700,
-                  }}>{t('channelAddonActive')}</span>
+                  }}>{user?.plan === 'multi' ? t('channelIncludedInPlan') : t('channelAddonActive')}</span>
                 )}
               </div>
               <p style={{ margin: '0 0 12px', fontSize: '0.83rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 {t('channelAddonDesc')}
               </p>
-              {!user?.has_channel_manager_addon ? (
+              {user?.plan === 'multi' ? null : !user?.has_channel_manager_addon ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>{t('channelAddonPrice')}</span>
                   <button

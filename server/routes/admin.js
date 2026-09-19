@@ -19,6 +19,8 @@ import { seedCategories } from '../utils/categories.js';
 import { createChannexProperty, updateChannexProperty } from '../utils/createChannexProperty.js';
 import { ChannexError } from '../utils/channexClient.js';
 import { pushInitialInventory, disconnectChannexProperty } from '../utils/channexPushInventory.js';
+import { mrrFor, sumMrr } from '../utils/stripePrices.js';
+import { normaliseCurrency } from '../utils/currency.js';
 
 export const adminRouter = Router();
 
@@ -28,7 +30,25 @@ adminRouter.use('/prospect-finder', prospectFinderRouter);
 adminRouter.use('/user-mailer', userMailerRouter);
 adminRouter.use('/ai-assistant', aiAssistantLogsRouter);
 
-const PLAN_MRR  = { pro: 19, multi: 39 };
+// MRR is per-currency: Pro/Multi have distinct fixed GBP and EUR prices
+// (see PLAN_MRR in utils/stripePrices.js), so every MRR figure below is a
+// { GBP, EUR } pair built from each subscriber's real billing currency
+// (subscriptions.currency; NULL on pre-existing rows → GBP). GBP and EUR are
+// never summed together — no FX rate is assumed.
+
+// Paid users grouped by plan + billing currency (plan comes from users.plan,
+// matching the pre-existing behaviour of the /bi and /business endpoints).
+function paidUserRows() {
+  return db.prepare(`
+    SELECT u.plan AS plan, COALESCE(s.currency, 'GBP') AS currency, COUNT(*) AS count
+    FROM users u LEFT JOIN subscriptions s ON s.user_id = u.id
+    WHERE u.plan IN ('pro','multi')
+    GROUP BY u.plan, COALESCE(s.currency, 'GBP')
+  `).all();
+}
+const countPlan = (rows, plan, currency) => rows
+  .filter(r => r.plan === plan && (!currency || normaliseCurrency(r.currency) === currency))
+  .reduce((n, r) => n + r.count, 0);
 
 // ── Blog image upload setup ───────────────────────────────────────────────────
 const __dirname   = dirname(fileURLToPath(import.meta.url));
@@ -59,7 +79,10 @@ adminRouter.get('/stats', (req, res) => {
   const proSubs         = db.prepare("SELECT COUNT(*) as n FROM subscriptions WHERE plan='pro'  AND status='active'").get().n;
   const multiSubs       = db.prepare("SELECT COUNT(*) as n FROM subscriptions WHERE plan='multi' AND status='active'").get().n;
   const newThisWeek     = db.prepare("SELECT COUNT(*) as n FROM users WHERE datetime(created_at) >= datetime('now','-7 days')").get().n;
-  const mrr             = proSubs * PLAN_MRR.pro + multiSubs * PLAN_MRR.multi;
+  const mrr             = sumMrr(db.prepare(`
+    SELECT plan, COALESCE(currency, 'GBP') AS currency, COUNT(*) AS count FROM subscriptions
+    WHERE status = 'active' AND plan IN ('pro','multi') GROUP BY plan, COALESCE(currency, 'GBP')
+  `).all());
 
   res.json({ totalProperties, totalUsers, proSubs, multiSubs, mrr, newThisWeek });
 });
@@ -1198,7 +1221,7 @@ adminRouter.get('/bi', (req, res) => {
     const proCount   = planRows.find(p => p.plan === 'pro')?.count   ?? 0;
     const multiCount = planRows.find(p => p.plan === 'multi')?.count ?? 0;
     const freeCount  = planRows.find(p => p.plan === 'free')?.count  ?? 0;
-    const mrr        = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
+    const mrr        = sumMrr(paidUserRows());
 
     // Active paid subscriptions
     const activeSubscriptions = db.prepare(`
@@ -1229,14 +1252,19 @@ adminRouter.get('/bi', (req, res) => {
       const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
       const key = d.toISOString().slice(0, 7);
       const rows = db.prepare(`
-        SELECT plan, COUNT(*) as count FROM subscriptions
+        SELECT plan, COALESCE(currency, 'GBP') AS currency, COUNT(*) as count FROM subscriptions
         WHERE status = 'active' AND plan IN ('pro','multi')
         AND strftime('%Y-%m', created_at) <= ?
-        GROUP BY plan
+        GROUP BY plan, COALESCE(currency, 'GBP')
       `).all(key);
-      const p = rows.find(r => r.plan === 'pro')?.count   ?? 0;
-      const m = rows.find(r => r.plan === 'multi')?.count ?? 0;
-      mrrTrend.push({ month: key, pro: p, multi: m, mrr: p * PLAN_MRR.pro + m * PLAN_MRR.multi });
+      mrrTrend.push({
+        month: key,
+        pro:   countPlan(rows, 'pro'),
+        multi: countPlan(rows, 'multi'),
+        mrr:      sumMrr(rows),
+        proMrr:   sumMrr(rows.filter(r => r.plan === 'pro')),
+        multiMrr: sumMrr(rows.filter(r => r.plan === 'multi')),
+      });
     }
 
     // Conversions in last 30 days (new paid subs)
@@ -1258,14 +1286,14 @@ adminRouter.get('/bi', (req, res) => {
 
     // Net new revenue this month
     const newThisMonth = db.prepare(`
-      SELECT plan, COUNT(*) as count FROM subscriptions
+      SELECT plan, COALESCE(currency, 'GBP') AS currency, COUNT(*) as count FROM subscriptions
       WHERE status = 'active' AND plan IN ('pro','multi')
       AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now')
-      GROUP BY plan
+      GROUP BY plan, COALESCE(currency, 'GBP')
     `).all();
-    const newProThisMonth   = newThisMonth.find(r => r.plan === 'pro')?.count   ?? 0;
-    const newMultiThisMonth = newThisMonth.find(r => r.plan === 'multi')?.count ?? 0;
-    const netNewRevenue     = newProThisMonth * PLAN_MRR.pro + newMultiThisMonth * PLAN_MRR.multi;
+    const newProThisMonth   = countPlan(newThisMonth, 'pro');
+    const newMultiThisMonth = countPlan(newThisMonth, 'multi');
+    const netNewRevenue     = sumMrr(newThisMonth);
 
     // Trials / subscriptions ending in next 7 days
     const trialsEndingSoon = db.prepare(`
@@ -1301,12 +1329,10 @@ adminRouter.get('/export', (req, res) => {
     const { from, to } = req.query;
     if (!from || !to) return res.status(400).json({ error: 'from and to are required' });
 
-    const PLAN_AMOUNT = { pro: 19, multi: 39 };
-
     // Per-subscription rows created in the date range
     const subRows = db.prepare(`
       SELECT
-        s.id, s.stripe_subscription_id, s.plan, s.status,
+        s.id, s.stripe_subscription_id, s.plan, s.status, COALESCE(s.currency, 'GBP') AS currency,
         s.created_at, s.current_period_end, s.cancel_at_period_end,
         u.name, u.email,
         p.country
@@ -1328,7 +1354,8 @@ adminRouter.get('/export', (req, res) => {
       name:           r.name,
       email:          r.email,
       country:        r.country ?? '',
-      amount:         PLAN_AMOUNT[r.plan] ?? 0,
+      currency:       normaliseCurrency(r.currency),
+      amount:         mrrFor(r.plan, r.currency),
     }));
 
     // Monthly summary: for each calendar month between from → to,
@@ -1342,9 +1369,9 @@ adminRouter.get('/export', (req, res) => {
       const key = cur.toISOString().slice(0, 7);
 
       const newSubs = db.prepare(`
-        SELECT plan, COUNT(*) as count FROM subscriptions
+        SELECT plan, COALESCE(currency, 'GBP') AS currency, COUNT(*) as count FROM subscriptions
         WHERE plan IN ('pro','multi') AND strftime('%Y-%m', created_at) = ?
-        GROUP BY plan
+        GROUP BY plan, COALESCE(currency, 'GBP')
       `).all(key);
 
       const cancelled = db.prepare(`
@@ -1353,18 +1380,18 @@ adminRouter.get('/export', (req, res) => {
       `).get(key).n;
 
       const activeRows = db.prepare(`
-        SELECT plan, COUNT(*) as count FROM subscriptions
+        SELECT plan, COALESCE(currency, 'GBP') AS currency, COUNT(*) as count FROM subscriptions
         WHERE status = 'active' AND plan IN ('pro','multi')
           AND strftime('%Y-%m', created_at) <= ?
-        GROUP BY plan
+        GROUP BY plan, COALESCE(currency, 'GBP')
       `).all(key);
 
-      const proNew   = newSubs.find(r => r.plan === 'pro')?.count   ?? 0;
-      const multiNew = newSubs.find(r => r.plan === 'multi')?.count ?? 0;
-      const proAct   = activeRows.find(r => r.plan === 'pro')?.count   ?? 0;
-      const multiAct = activeRows.find(r => r.plan === 'multi')?.count ?? 0;
-      const mrr      = proAct * PLAN_AMOUNT.pro + multiAct * PLAN_AMOUNT.multi;
-      const revenue  = proNew * PLAN_AMOUNT.pro + multiNew * PLAN_AMOUNT.multi;
+      const proNew   = countPlan(newSubs, 'pro');
+      const multiNew = countPlan(newSubs, 'multi');
+      const proAct   = countPlan(activeRows, 'pro');
+      const multiAct = countPlan(activeRows, 'multi');
+      const mrr      = sumMrr(activeRows);
+      const revenue  = sumMrr(newSubs);
 
       monthlySummary.push({
         month:       key,
@@ -1373,8 +1400,10 @@ adminRouter.get('/export', (req, res) => {
         cancelled,
         activePro:   proAct,
         activeMulti: multiAct,
-        mrr,
-        revenue,
+        mrrGBP:      mrr.GBP,
+        mrrEUR:      mrr.EUR,
+        revenueGBP:  revenue.GBP,
+        revenueEUR:  revenue.EUR,
       });
 
       cur.setMonth(cur.getMonth() + 1);
@@ -1384,7 +1413,7 @@ adminRouter.get('/export', (req, res) => {
     const custRows = db.prepare(`
       SELECT
         u.name, u.email, u.plan, u.created_at as userCreated,
-        s.created_at as subStart,
+        s.created_at as subStart, COALESCE(s.currency, 'GBP') AS currency,
         p.country
       FROM subscriptions s
       JOIN users u ON u.id = s.user_id
@@ -1398,7 +1427,8 @@ adminRouter.get('/export', (req, res) => {
       email:    r.email,
       country:  r.country ?? '',
       plan:     r.plan,
-      amount:   PLAN_AMOUNT[r.plan] ?? 0,
+      currency: normaliseCurrency(r.currency),
+      amount:   mrrFor(r.plan, r.currency),
       subStart: r.subStart,
     }));
 
@@ -1632,13 +1662,14 @@ adminRouter.get('/business/stats', (req, res) => {
     const multiCount = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'multi'").get().n;
     const freeCount  = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'free'").get().n;
     const totalUsers = proCount + multiCount + freeCount;
-    const mrr        = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
-    const arr        = mrr * 12;
+    const mrr        = sumMrr(paidUserRows());
+    const arr        = { GBP: mrr.GBP * 12, EUR: mrr.EUR * 12 };
     const conversionPct = totalUsers > 0 ? +((proCount + multiCount) / totalUsers * 100).toFixed(1) : 0;
     const atRisk = db.prepare(
       "SELECT COUNT(*) as n FROM subscriptions WHERE cancel_at_period_end = 1 AND status = 'active'"
     ).get().n;
-    res.json({ mrr, arr, proCount, multiCount, freeCount, totalUsers, conversionPct, atRisk, vatRolling12: arr });
+    // The UK VAT threshold is GBP-only; EUR revenue is deliberately excluded (no FX rate assumed).
+    res.json({ mrr, arr, proCount, multiCount, freeCount, totalUsers, conversionPct, atRisk, vatRolling12: arr.GBP });
   } catch (e) {
     console.error('[admin/business/stats]', e);
     res.status(500).json({ error: 'Database error.' });
@@ -1651,15 +1682,16 @@ adminRouter.get('/business/month', (req, res) => {
   if (!month || !/^\d{4}-\d{2}$/.test(month))
     return res.status(400).json({ error: 'month required (YYYY-MM)' });
   try {
-    const proCount       = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'pro'").get().n;
-    const multiCount     = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'multi'").get().n;
-    const revenue        = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
-    const subscriberCount = proCount + multiCount;
+    const paid           = paidUserRows();
+    const mrr            = sumMrr(paid);
+    const revenue        = mrr.GBP;          // GBP books — EUR reported separately
+    const revenueEur     = mrr.EUR;
+    const subscriberCount = countPlan(paid, 'pro', 'GBP') + countPlan(paid, 'multi', 'GBP');
     const stripeFees     = +(revenue * 0.015 + subscriberCount * 0.20).toFixed(2);
     const expenses       = db.prepare(
       `SELECT id, category, description, amount_gbp, receipt_ref, miles FROM nestbook_expenses WHERE month = ? ORDER BY id`
     ).all(month);
-    res.json({ revenue, stripeFees, subscriberCount, expenses });
+    res.json({ revenue, revenueEur, stripeFees, subscriberCount, expenses });
   } catch (e) {
     console.error('[admin/business/month]', e);
     res.status(500).json({ error: 'Database error.' });
@@ -1699,10 +1731,9 @@ adminRouter.post('/business/expenses', (req, res) => {
 adminRouter.get('/business/annual', (req, res) => {
   const taxYear = parseInt(req.query.taxYear) || new Date().getFullYear();
   try {
-    const proCount        = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'pro'").get().n;
-    const multiCount      = db.prepare("SELECT COUNT(*) as n FROM users WHERE plan = 'multi'").get().n;
-    const mrr             = proCount * PLAN_MRR.pro + multiCount * PLAN_MRR.multi;
-    const subscriberCount = proCount + multiCount;
+    const paid            = paidUserRows();
+    const mrr             = sumMrr(paid).GBP;   // GBP books — EUR excluded (no FX rate assumed)
+    const subscriberCount = countPlan(paid, 'pro', 'GBP') + countPlan(paid, 'multi', 'GBP');
 
     const months = [];
     for (let i = 0; i < 12; i++) {

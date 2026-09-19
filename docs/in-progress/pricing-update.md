@@ -1,4 +1,4 @@
-# Pricing update — audit (scoping only, no code changed)
+# Pricing update — Phase A built (logic), Phase B (display surfaces) pending
 
 Current: Pro £19/€22, Multi £39/€45, Bar & Charges £6/€7 (Pro only), Channel Manager add-on £9/€10 (Pro AND Multi).
 Change coming: new plan prices (TBD) and Channel Manager included free on Multi (Pro still needs `has_channel_manager_addon`).
@@ -28,3 +28,20 @@ Settings.jsx dev plan switcher 620-640, 1138-1176; auth.js dev switch 509-531; B
 
 ## Next
 Get user decisions (new prices, whether existing Multi subs with the add-on line item get it removed/refunded), then implement as one change.
+
+## Phase A — DONE (committed to main, NOT deployed)
+New prices: Pro £14/€16, Multi £25/€29, Bar & Charges £4/€5 (Channel add-on unchanged £9/€10, Pro only). Fixed per-currency Prices, no Adaptive Pricing.
+- Env (server/.env local is reference only; PRODUCTION .env must be updated by hand before deploy): STRIPE_PRICE_{PRO,MULTI}_{GBP,EUR} and STRIPE_PRICE_CHARGES_ADDON_{GBP,EUR} = new IDs. Old STRIPE_PRICE_PRO/MULTI are only READ as a legacy fallback for plan detection (utils/stripePrices.js) — safe to delete once John is migrated.
+- server/utils/currency.js + client/src/utils/currency.js: language→currency (en→GBP, fr/de/es/nl→EUR, other→GBP). Client also has PLAN_PRICES + planPrice(plan, lang) for Phase B display.
+- server/utils/stripePrices.js: ID lookup/reverse-lookup, PLAN_MRR {pro:{GBP:14,EUR:16},multi:{GBP:25,EUR:29}}, sumMrr.
+- Checkout / promo-checkout / registration-coupon subscription pick the Price by currency: existing Stripe customer's currency wins, else users.language. Coupons are percent-off, so no recalculation needed.
+- subscriptions.currency column added (schema.js); written by checkout webhook, sync-session, promo path, subscription.updated webhook, registration-coupon path. NULL = GBP.
+- Channel Manager: hasChannelManagerAccess(plan, flag) (server/utils/channelManagerAccess.js; mirrored in client currency.js) used by properties.js gate, Sidebar, ChannelManager page. Multi bypasses flag; add route rejects Multi; Billing card shows 'Included in your Multi plan' badge. Webhook still mirrors real add-on line items.
+- MRR: every admin figure is now {GBP,EUR} (never summed). Endpoints: /stats, /bi (mrr, mrrTrend[].mrr/proMrr/multiMrr, netNewRevenue), /business/stats (mrr, arr objects; vatRolling12 = GBP only), /business/month (+revenueEur), /export (flat mrrGBP/mrrEUR/revenueGBP/revenueEUR, per-row currency). UK tax/P&L pages stay GBP-only by design (no FX assumed). Revenue.jsx dashboard + accountant exports updated.
+- Verified locally: logic harness (ids, lang→ccy, gate, MRR), all admin MRR endpoints (£92 = 3 Pro + 2 Multi). NOT verified: real Stripe calls (no key locally).
+- server/scripts/migrate-sub-to-fixed-price.mjs: dry-run-by-default migration for John's sub. NOT RUN — awaiting confirmation of sub id.
+
+## Still to do
+- Phase B: all display surfaces (see locations above) — use client planPrice(); index.html/compare.html/marketing/blogs are static HTML and need their own language switch logic.
+- Migrate John's subscription (Stripe) — see script. Update prod .env. Then deploy (update.sh) only after Phase B.
+- Channel Manager add-on text on landing/compare/help still says add-on on Multi — Phase B.
