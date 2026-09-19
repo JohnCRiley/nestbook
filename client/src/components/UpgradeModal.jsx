@@ -101,6 +101,7 @@ const MODAL_T = {
         desc: 'Give your bar or restaurant staff their own login to add room charges — without access to bookings, guest data or financial reports. They see only what they need.' },
       { icon: '📸', name: '10 Photos per Room',
         desc: 'Upload up to 10 photos per room across all your properties. The more visual your listing, the more confident guests feel — and the fewer questions you get before they book.' },
+      { icon: '🌐', name: 'Channel Manager included' },
     ],
   },
 
@@ -179,6 +180,7 @@ const MODAL_T = {
         desc: 'Donnez à votre personnel de bar ou de restaurant leur propre accès pour ajouter des extras en chambre — sans accès aux réservations, données clients ou rapports financiers.' },
       { icon: '📸', name: '10 photos par chambre',
         desc: 'Téléchargez jusqu\'à 10 photos par chambre dans tous vos hébergements. Plus votre annonce est visuelle, plus les voyageurs se sentent en confiance — et moins vous recevez de questions.' },
+      { icon: '🌐', name: 'Channel Manager inclus' },
     ],
   },
 
@@ -257,6 +259,7 @@ const MODAL_T = {
         desc: 'Dé a su personal de bar o restaurante su propio acceso para añadir cargos — sin acceso a reservas, datos de huéspedes ni informes financieros. Verán únicamente lo que necesitan.' },
       { icon: '📸', name: '10 fotos por habitación',
         desc: 'Suba hasta 10 fotos por habitación en todas sus propiedades. Cuanto más visual sea su anuncio, más seguros se sentirán los huéspedes antes de reservar — y menos preguntas recibirá.' },
+      { icon: '🌐', name: 'Channel Manager incluido' },
     ],
   },
 
@@ -335,6 +338,7 @@ const MODAL_T = {
         desc: 'Geben Sie Ihrem Bar- oder Restaurantpersonal eigene Zugangsdaten zum Erfassen von Extras — ohne Zugriff auf Buchungen, Gästedaten oder Finanzberichte.' },
       { icon: '📸', name: '10 Fotos pro Zimmer',
         desc: 'Laden Sie bis zu 10 Fotos pro Zimmer für alle Ihre Unterkünfte hoch. Je visueller Ihr Angebot, desto mehr Vertrauen bei den Gästen — und desto weniger Rückfragen vor der Buchung.' },
+      { icon: '🌐', name: 'Channel Manager inklusive' },
     ],
   },
 
@@ -413,6 +417,7 @@ const MODAL_T = {
         desc: 'Geef uw bar- of restaurantpersoneel hun eigen login om kamerrekeningen toe te voegen — zonder toegang tot boekingen, gastgegevens of financiële rapporten. Ze zien alleen wat ze nodig hebben.' },
       { icon: '📸', name: '10 foto\'s per kamer',
         desc: 'Upload maximaal 10 foto\'s per kamer voor al uw accommodaties. Hoe visueler uw aanbieding, hoe meer vertrouwen gasten hebben voor het boeken — en hoe minder vragen u ontvangt.' },
+      { icon: '🌐', name: 'Channel Manager inbegrepen' },
     ],
   },
 };
@@ -581,7 +586,7 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
                 <TiIcon name={ICON_MAP[f.icon] ?? 'circle'} size={20} color="#94a3b8" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f5f9', marginBottom: 5 }}>{f.name}</div>
-                  <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>{f.desc}</div>
+                  {f.desc && <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6 }}>{f.desc}</div>}
                 </div>
               </div>
             ))}

@@ -60,3 +60,10 @@ New prices: Pro £14/€16, Multi £25/€29, Bar & Charges £4/€5 (Channel ad
 - channelIncludedInPlan badge ('Included in your Multi plan') + the other channelAddon* Billing strings are EN-only.
 - Landing 'channelManager.caption' (index.html blob, all 5 langs) still says 'Add-on available on the Pro and Multi plans' — price now correct but wording is wrong for Multi (included).
 - Pricing.jsx footnote planAdaptivePricingNote ('Price shown in your local currency at checkout') is now slightly stale; wording decision.
+
+## Final wording pass — DONE (John-supplied translations, committed, NOT deployed)
+- 'Channel Manager included' bullet (EN/FR/ES/DE/NL): i18n planMultiFeatures (all 5), UpgradeModal Multi list (name-only entry, desc now optional), index.html Multi card (new key pricing.multi.fCM in blob).
+- channelIncludedInPlan badge: all 5 languages in i18n/index.js.
+- Landing channelManager.caption: replaced entirely in all 5 languages + static EN HTML.
+- planAdaptivePricingNote: EN only -> 'Prices shown in your selected language's currency.' NOTE: FR/ES/DE/NL still carry the OLD translated 'price shown in your local currency at checkout' wording (the key exists in all 5 languages) — needs John's translations.
+- Remaining channelAddon* Billing strings (Title/Desc/Add/Adding/Active/Remove/Removing/RemoveConfirm/Activated/Removed/GenericError) are still EN-only — awaiting John's translations.
