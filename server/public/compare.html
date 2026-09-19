@@ -555,7 +555,8 @@ img { display: block; max-width: 100%; }
               <div class="th-plan-name">Pro</div>
               <div class="th-plan-price" data-i18n="compare.pro.price">£14</div>
               <div class="th-plan-period" data-i18n="thead.period">per month, billed monthly</div>
-              <div class="th-plan-period" style="margin-top:4px;font-size:0.72rem;font-weight:700;color:var(--dark)" data-i18n="compare.pro.addon">Bar &amp; Charges add-on (£4/mo)</div>
+              <div class="th-plan-period" style="margin-top:4px;margin-bottom:0;font-size:0.72rem;font-weight:700;color:var(--dark)" data-i18n="compare.pro.addon">Bar &amp; Charges add-on (£4/mo)</div>
+              <div class="th-plan-period" style="margin-top:2px;font-size:0.72rem;font-weight:700;color:var(--dark)" data-i18n="compare.pro.addonCM">Channel Manager add-on (£9/mo)</div>
               <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="th-plan-cta cta-pro" data-i18n="thead.proCta">Start free trial</a>
             </th>
 
@@ -926,7 +927,8 @@ img { display: block; max-width: 100%; }
           <div class="mpc-plan-name">Pro</div>
           <div class="mpc-price" data-i18n="compare.pro.price">£14</div>
           <div class="mpc-period" data-i18n="thead.period">per month, billed monthly</div>
-          <div style="font-size:0.72rem;font-weight:700;color:var(--dark);margin:-8px 0 6px" data-i18n="compare.pro.addon">Bar &amp; Charges add-on (£4/mo)</div>
+          <div style="font-size:0.72rem;font-weight:700;color:var(--dark);margin:-8px 0 2px" data-i18n="compare.pro.addon">Bar &amp; Charges add-on (£4/mo)</div>
+          <div style="font-size:0.72rem;font-weight:700;color:var(--dark);margin:0 0 6px" data-i18n="compare.pro.addonCM">Channel Manager add-on (£9/mo)</div>
           <a href="/app/register" onclick="gtag('event', 'signup_click', {event_category: 'conversion', event_label: 'try_free_button'})" class="mpc-cta cta-pro" data-i18n="thead.proCta">Start free trial</a>
         </div>
         <div class="mpc-features">
@@ -1227,6 +1229,7 @@ var I18N = {
     'cell.included': 'Included',
     'detail.channelManager': 'Automatically sync your rooms, rates and availability with Booking.com, Airbnb, Expedia, Agoda and more — no more logging into five different sites to update the same calendar. Bookings made on those channels flow back into NestBook automatically too, so you\'re always protected from double bookings.',
     'compare.pro.addon': 'Bar & Charges add-on (£4/mo)',
+    'compare.pro.addonCM': 'Channel Manager add-on (£9/mo)',
     'compare.pro.price': '£14',
     'compare.multi.price': '£25',
     'detail.partnerLinks': 'Partner with local restaurants, spas, and event venues to fill your quiet season — add their link to your booking page as a thank-you for the partnership. We believe small independent businesses do better working together, not competing for the same commission-driven platforms. <a href="/blog/partner-with-local-businesses.html" style="color:var(--mid);font-weight:600">Read the full story →</a>'
@@ -1353,6 +1356,7 @@ var I18N = {
     'cell.included': 'Inclus',
     'detail.channelManager': 'Synchronisez automatiquement vos chambres, tarifs et disponibilités avec Booking.com, Airbnb, Expedia, Agoda et bien d\'autres — fini les connexions à cinq sites différents pour mettre à jour le même calendrier. Les réservations effectuées sur ces canaux reviennent aussi automatiquement dans NestBook, pour que vous soyez toujours protégé contre les doubles réservations.',
     'compare.pro.addon': 'Option Bar & Charges (€5/mois)',
+    'compare.pro.addonCM': 'Module Channel Manager (€10/mois)',
     'compare.pro.price': '16 €',
     'compare.multi.price': '29 €',
     'detail.partnerLinks': 'Associez-vous à des restaurants, spas et lieux d\'événements locaux pour remplir votre basse saison — ajoutez leur lien à votre page de réservation en remerciement du partenariat. Nous croyons que les entreprises indépendantes locales réussissent mieux en travaillant ensemble plutôt qu\'en rivalisant sur des plateformes à commission.'
@@ -1479,6 +1483,7 @@ var I18N = {
     'cell.included': 'Incluido',
     'detail.channelManager': 'Sincronice automáticamente sus habitaciones, tarifas y disponibilidad con Booking.com, Airbnb, Expedia, Agoda y más — se acabó entrar en cinco sitios distintos para actualizar el mismo calendario. Las reservas realizadas en esos canales también llegan automáticamente a NestBook, así siempre está protegido frente a las reservas dobles.',
     'compare.pro.addon': 'Complemento Bar & Charges (€5/mes)',
+    'compare.pro.addonCM': 'Complemento Channel Manager (€10/mes)',
     'compare.pro.price': '16 €',
     'compare.multi.price': '29 €',
     'detail.partnerLinks': 'Colabore con restaurantes, spas y locales de eventos cercanos para llenar su temporada baja — añada su enlace a su página de reservas como agradecimiento por la colaboración. Creemos que los negocios locales independientes prosperan mejor trabajando juntos que compitiendo en plataformas basadas en comisiones.'
@@ -1605,6 +1610,7 @@ var I18N = {
     'cell.included': 'Enthalten',
     'detail.channelManager': 'Synchronisieren Sie Ihre Zimmer, Preise und Verfügbarkeit automatisch mit Booking.com, Airbnb, Expedia, Agoda und mehr — Sie müssen sich nicht mehr bei fünf verschiedenen Seiten anmelden, um denselben Kalender zu pflegen. Buchungen über diese Kanäle fließen automatisch auch zurück in NestBook, sodass Sie immer vor Doppelbuchungen geschützt sind.',
     'compare.pro.addon': 'Bar & Charges Add-on (€5/Monat)',
+    'compare.pro.addonCM': 'Channel Manager-Zusatzfunktion (€10/Monat)',
     'compare.pro.price': '16 €',
     'compare.multi.price': '29 €',
     'detail.partnerLinks': 'Arbeiten Sie mit lokalen Restaurants, Spas und Veranstaltungsorten zusammen, um Ihre Nebensaison zu füllen — fügen Sie deren Link als Dankeschön für die Partnerschaft zu Ihrer Buchungsseite hinzu. Wir glauben, dass unabhängige lokale Unternehmen gemeinsam erfolgreicher sind als im Wettbewerb auf provisionsbasierten Plattformen.'
@@ -1731,6 +1737,7 @@ var I18N = {
     'cell.included': 'Inbegrepen',
     'detail.channelManager': 'Synchroniseer kamers, tarieven en beschikbaarheid automatisch met Booking.com, Airbnb, Expedia, Agoda en meer — niet meer op vijf verschillende sites inloggen om dezelfde kalender bij te werken. Boekingen via die kanalen komen ook automatisch terug in NestBook, zodat dubbele boekingen altijd worden voorkomen.',
     'compare.pro.addon': 'Bar & Charges-add-on (€5/maand)',
+    'compare.pro.addonCM': 'Channel Manager add-on (€10/maand)',
     'compare.pro.price': '€16',
     'compare.multi.price': '€29',
     'detail.partnerLinks': 'Werk samen met lokale restaurants, spa\'s en evenementenlocaties om uw laagseizoen te vullen — voeg hun link toe aan uw boekingspagina als bedankje voor de samenwerking. Wij geloven dat onafhankelijke lokale bedrijven beter gedijen door samen te werken dan door te concurreren op platforms die op commissie draaien.'

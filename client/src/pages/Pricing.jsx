@@ -112,6 +112,9 @@ export default function Pricing() {
               {plan.key === 'pro' && (
                 <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-dark)', marginTop: 6 }}>{t('planProAddonLine')}</div>
               )}
+              {plan.key === 'pro' && (
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-dark)', marginTop: 2 }}>{t('planProAddonLineCM')}</div>
+              )}
               <p className="pricing-desc">{plan.desc}</p>
 
               <ul className="pricing-features">

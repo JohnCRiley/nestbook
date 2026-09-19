@@ -91,3 +91,10 @@ Closes the "Channel Manager … compare.html (no CM row, deferred)" and help.htm
 ### Channel Manager copy fix (2026-09-19, follow-up)
 - help.html: removed "it isn't inside Settings" and "(not Settings)" framing (state only where it IS: sidebar / Billing page). Added the reverse-sync direction as a new paragraph (`help.cm.what.p2` = works both ways, OTA bookings update the NestBook calendar → protected from double bookings); the supported-channels line moved to new key `help.cm.what.p3`. `help.cm.connect.p2` now says sync goes "to that channel". All 5 langs.
 - compare.html: `detail.channelManager` (5 langs + EN data-detail attr) now covers both directions instead of the one-way "Update once in NestBook, and it goes everywhere".
+
+### Channel Manager add-on line beside the Bar & Charges callout (2026-09-19)
+Second line added under every "Bar & Charges add-on" callout, same font size/weight/colour as the B&C line (2px gap between the two):
+- app `Pricing.jsx` Pro tile — new i18n key `planProAddonLineCM` (5 langs, "…add-on available (£9/mo)" phrasing to parallel the B&C "…available" line there).
+- landing `index.html` Pro card — new blob key `pricing.pro.addonCM` (5 langs, same "available" phrasing) + EN fallback in HTML.
+- `compare.html` Pro column header (desktop `th`) and Pro mobile card header — new dict key `compare.pro.addonCM` (5 langs, "Channel Manager add-on (£9/mo)" phrasing to parallel compare's existing B&C line). Desktop first line got `margin-bottom:0` (class default is 16px) so the two lines stack tightly; mobile margins split -8/2 and 0/6.
+- Currency: EN £9; FR/ES/DE/NL €10 (symbol-first, like the existing €5 callouts). A build-time assertion refuses any £ in a non-EN string.
