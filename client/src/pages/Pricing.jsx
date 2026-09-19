@@ -20,7 +20,7 @@ export default function Pricing() {
     {
       key:      'free',
       name:     t('planStarterName'),
-      price:    'Free',
+      price:    t('planStarterPrice'),
       period:   t('planForever'),
       desc:     t('planStarterDesc'),
       features: t('planStarterFeatures'),
@@ -107,7 +107,7 @@ export default function Pricing() {
               <div className="pricing-name">{plan.name}</div>
               <div className="pricing-price">
                 {plan.price}
-                <span className="pricing-period">/{plan.period}</span>
+                {plan.key !== 'free' && <span className="pricing-period">/{plan.period}</span>}
               </div>
               {plan.key === 'pro' && (
                 <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-dark)', marginTop: 6 }}>{t('planProAddonLine')}</div>

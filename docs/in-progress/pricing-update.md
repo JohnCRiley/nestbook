@@ -67,3 +67,7 @@ New prices: Pro £14/€16, Multi £25/€29, Bar & Charges £4/€5 (Channel ad
 - Landing channelManager.caption: replaced entirely in all 5 languages + static EN HTML.
 - planAdaptivePricingNote: EN only -> 'Prices shown in your selected language's currency.' NOTE: FR/ES/DE/NL still carry the OLD translated 'price shown in your local currency at checkout' wording (the key exists in all 5 languages) — needs John's translations.
 - Remaining channelAddon* Billing strings (Title/Desc/Add/Adding/Active/Remove/Removing/RemoveConfirm/Activated/Removed/GenericError) are still EN-only — awaiting John's translations.
+
+## Starter heading fix — DONE (committed, NOT deployed)
+- Pricing.jsx Starter tile heading was hardcoded 'Free' + translated '/suffix'. Now new i18n key planStarterPrice (EN Free / FR Gratuit / ES Gratis / DE Kostenlos / NL Gratis), suffix removed for the free tile only (Pro/Multi keep '/per month'). Verified live in all 5 languages (property.locale switched via API, restored to en). No other hardcoded-English-word patterns found in Pricing.jsx or UpgradeModal.jsx.
+- STILL OPEN (no translations have been supplied — never applied): the 11 channelAddon* keys (Title, Desc, Add, Adding, Active, Remove, Removing, RemoveConfirm, Activated, Removed, GenericError) are EN-only; planAdaptivePricingNote FR/ES/DE/NL still carry the OLD 'price shown in your local currency at checkout' wording.
