@@ -6,7 +6,7 @@ This file is the sole knowledge source for the in-app AI Help Chat. It is read f
 
 **This is different from `help.html`.** `help.html` is the public-facing help centre — polished, general, translated into 5 languages by hand. This file is internal, English-only, and can be as blunt, detailed, and complete as needed. The bot translates its answers into the user's language live, using the app's own existing translated terminology (from `en-translations.json` / the client's `LANGS` object and `help.html`) as its reference for feature names — it should not invent its own translation of a feature name from scratch.
 
-**Plan and mode awareness is mandatory.** Every request to the bot is sent along with the asking user's actual `plan` (Free / Pro / Multi), `has_charges_addon` (boolean), and `rental_type` / mode (IR-Named, IR-Categories, WP, SC-Aparthotel, SC-Glamping, SC-Holiday Rentals). The bot MUST:
+**Plan and mode awareness is mandatory.** Every request to the bot is sent along with the asking user's actual `plan` (Free / Pro / Multi), `has_charges_addon` (boolean), `has_channel_manager_addon` (boolean), and `rental_type` / mode (IR-Named, IR-Categories, WP, SC-Aparthotel, SC-Glamping, SC-Holiday Rentals). The bot MUST:
 - Only describe a feature as available to the user if their actual plan/mode supports it.
 - If asked about a feature they don't have, say so plainly and name what unlocks it (e.g. "That needs the Pro plan" or "That's specific to Individual Rooms mode — you're on Whole Property, so it works a bit differently for you: ..."), in the same calm, factual tone as the rest of NestBook's product copy — informative, never a sales pitch.
 - Never assume the user's plan/mode from the page they're on alone — always use the passed-in account data as the source of truth.
@@ -33,17 +33,18 @@ The left-hand sidebar is the main way owners move around NestBook. What appears 
 - **[Guests]** — the guest registry. Always visible.
 - **[Rooms]** (IR-N, IR-C) / **[Property]** (WP) / **[Units]** (SC-A, SC-G, SC-H) — the same nav slot, labelled differently per mode, for managing bookable inventory. Always visible, but its internal structure differs significantly by mode.
 - **[Media Library]** — the single place to manage all property/room/unit photos and the logo. All plans; visible to owners (not shown to reception/staff roles).
-- **[Charges]** — room/property charges. **Multi plan, or Pro with the Bar & Charges add-on.** The only nav item genuinely removed from the sidebar otherwise — every other gated item below stays visible to all plans, opening an upgrade prompt on Free rather than disappearing.
+- **[Charges]** — room/property charges. **Multi plan, or Pro with the Bar & Charges add-on.** One of only two nav items genuinely removed from the sidebar when the account doesn't have it (the other is [Channel Manager], below) — every other gated item stays visible to all plans, opening an upgrade prompt on Free rather than disappearing.
 - **[Reports]** — revenue reporting, P&L, expenses. Visible to all plans; **Pro and Multi** get the real page, Free sees an upgrade prompt.
 - **[Social Media Kit]** — auto-captioned social media images. Always visible, all plans.
 - **[Guest Mailer]** — branded email to your own guest list. Visible to all plans; **Pro and Multi** get the real feature, Free sees an upgrade prompt. 100 recipient-emails/month cap.
 - **[Property Info Sheet]** — printable/shareable guest info document builder. Visible to all plans; **Pro and Multi** get the real feature, Free sees an upgrade prompt.
 - **[Activity Log]** — full audit trail. Visible to all plans; **Pro and Multi** get the real page, Free sees an upgrade prompt. Sits near the bottom of the nav, between Property Info Sheet and Billing — not high up near the top.
 - **[Billing]** — subscription, real Stripe invoices, Guest Payments ledger, Stripe Connect. Always visible — owner-only, positioned above Settings.
-- **[Settings]** — the largest page; every configuration panel for the property lives here. Always visible. See Section 8 for the full panel-by-panel walkthrough.
+- **[Channel Manager]** — connects NestBook to Booking.com, Airbnb, Expedia, Agoda and more, so availability, rates and bookings sync automatically (see Section 10). **Multi plan (included automatically — no activation needed), or Pro with the Channel Manager add-on.** Owner-only. The second of the two nav items genuinely removed from the sidebar when the account doesn't have access — including on Free. Sits between [Billing] and [Settings].
+- **[Settings]** — the largest page; every configuration panel for the property lives here, organised into five tabs. Always visible. See Section 8 for the full tab-by-tab walkthrough.
 - **[Pricing]** — a plan-comparison page (Free/Pro/Multi cards), reachable from the nav for owners and most staff roles. If a user asks "what's that Pricing link," this is just the upgrade/compare page, not a separate feature.
 
-**Important general rule on "hidden" vs "locked":** only [Charges] is actually removed from the sidebar on a plan that doesn't have it. Everything else marked Pro/Multi above still shows as a normal, clickable nav item on Free — clicking it opens the real page's layout with an upgrade prompt in place of the actual content, rather than the item disappearing. If a Free user says "I can see it in the menu but it won't let me use it," that's expected, correct behaviour, not a bug.
+**Important general rule on "hidden" vs "locked":** exactly two nav items are actually removed from the sidebar when the account doesn't have them — **[Charges]** (needs Multi, or Pro + the Bar & Charges add-on) and **[Channel Manager]** (needs Multi, or Pro + the Channel Manager add-on; hidden on Free too). Everything else marked Pro/Multi above still shows as a normal, clickable nav item on Free — clicking it opens the real page's layout with an upgrade prompt in place of the actual content, rather than the item disappearing. If a Free user says "I can see it in the menu but it won't let me use it," that's expected, correct behaviour, not a bug. If a user says they *can't see* [Charges] or [Channel Manager] in their menu, that is also expected: check their plan and add-on status (passed in with the account data) and tell them which one applies — for Channel Manager, Pro without the add-on can activate it on [Billing]; Free needs Pro plus the add-on, or Multi. A direct link to the Channel Manager page shows nothing to an account without access.
 
 If a user asks "where do I find X" and X is plan- or mode-gated away from them, say so directly rather than describing a menu item they can't see.
 
@@ -138,7 +139,7 @@ The guest registry — every person who has ever stayed, or been added as a cont
 2. [Dashboard] → [+ New Guest] — same form, different entry point.
 3. [Dashboard] → [+ New Booking] — creates a guest automatically if the entered name/email doesn't match an existing record; matches and reuses an existing one if it does.
 4. [Bookings] → [+ New Booking] — same as above.
-5. [Guests] → [Import from CSV] — bulk import via the Guest Import Wizard (see Section 13). Free plan included.
+5. [Guests] → [Import from CSV] — bulk import via the Guest Import Wizard (see Section 14). Free plan included.
 
 **Matching logic:** guests are primarily matched by email during booking creation and CSV import, to avoid duplicate records for the same real person. A guest record's `property_id` is set from that guest's *earliest* booking — on a Multi-plan account with more than one property, this means a guest who has stayed at two different properties under the same account can still show a reference to the first property even after being "removed" from it elsewhere. This is expected, not a bug, if a Multi user asks why a guest still appears to be linked to an old property.
 
@@ -190,7 +191,7 @@ This is the single page where the six modes diverge most. Always confirm the use
 - **Room-type dropdown note**: three legacy values (`narrowboat`, `farmhouse`, `chateau`) exist in the underlying data options from old migrations but aren't selectable anywhere in the current UI. If one somehow appears on an older property, the booking page correctly omits the badge rather than showing anything broken — this isn't something a user can create going forward.
 
 ### All modes — Room/Unit Import Wizard
-- [Rooms]/[Property]/[Units] → [Import Rooms] (label may read "Import" depending on mode) — bulk-adds rooms/units from a CSV, following the same download-template → fill in → upload → fix any flagged errors → import pattern as the other import wizards (see Section 13). There are dedicated templates for IR-Named, IR-Categories, WP, and each SC sub-type, since the required columns differ. The photo-count example column in each template matches that plan's actual photo limit.
+- [Rooms]/[Property]/[Units] → [Import Rooms] (label may read "Import" depending on mode) — bulk-adds rooms/units from a CSV, following the same download-template → fill in → upload → fix any flagged errors → import pattern as the other import wizards (see Section 14). There are dedicated templates for IR-Named, IR-Categories, WP, and each SC sub-type, since the required columns differ. The photo-count example column in each template matches that plan's actual photo limit.
 
 ---
 
@@ -240,44 +241,55 @@ The single place to manage most images on the account — added specifically to 
 
 ---
 
-## 8. Settings — full panel-by-panel walkthrough (verified against source, September 2026)
+## 8. Settings — five tabs (verified against source, September 2026)
 
-Settings is a two-column layout. Panels render top-to-bottom within each column, and most are conditional on plan/mode. If a user says "I can't find X," check both columns and the notes on what's moved elsewhere before assuming it's missing.
+Settings is organised into **five tabs** across the top of the page: **Property Setup** (opens by default), **Booking & Availability**, **Guest Experience**, **Marketing & Distribution**, and **Admin & Support**. On desktop/tablet they appear as a connected tab bar; on a phone the same five sections appear as an expandable list of pills. This replaced the old single long two-column scroll — if a user describes "the left column" or "scrolling down to find it," they're picturing an older layout, so point them to the right tab instead. Within a tab, panels render top-to-bottom and most are conditional on plan/mode. If a user says "I can't find X," work out which tab X lives in (below), then check plan/mode before assuming it's missing.
 
-### LEFT COLUMN, in order:
+*(Note on gating language below: most Pro/Multi panels still render for Free users as a visible, locked card with an upgrade prompt — they are not removed from the page. Only Properties (Multi-only) and Service Categories are truly hidden by a hard condition and won't appear at all on an ineligible account.)*
 
-1. **Sample data banner** — only shown if the property still has sample data loaded. Has a "Delete sample data" button.
-2. **Property Details** — the main property info panel: name, property type, rental mode-specific fields (WP shows capacity/bedrooms/bathrooms/rate here too), address, city, country, check-in/out times, currency, language, description. Also contains, as inline sub-sections within this same panel (not separate cards): **Hero Photo** and **Property "At a Glance" facts**.
+**Above the tabs:** a **Sample data banner**, only shown if the property still has sample data loaded, with a "Delete sample data" button.
+
+### Tab 1 — Property Setup (default)
+
+1. **Property Details** — the main property info panel: name, property type, rental mode-specific fields (WP shows capacity/bedrooms/bathrooms/rate here too), address, city, country, check-in/out times, currency, language, description. Also contains, as inline sub-sections within this same panel (not separate cards): **Hero Photo**, **Property "At a Glance" facts**, and **Amenities** (a structured amenity picker for the property as a whole).
+2. **Properties** — Multi plan only, owner role. Multi-property management: list, add another property, remove a property.
 3. **Room Organization** — IR-Named mode only. Lets an IR-Named account migrate into Room Categories mode (one-way, guided).
 4. **Unit Sub-Type** — SC modes only (SC-A/SC-G/SC-H).
-5. **Partnership Links** — Pro and Multi only (locked card on Free). Add local businesses (restaurants, cafés, activity providers) with an icon and a link, shown on the booking page below the map — genuine small-business cross-promotion, not paid advertising. Goes through Content Review moderation before appearing live, same as other user-submitted content.
-6. **Properties** — Multi plan only. Multi-property management: list, add another property, remove a property.
-7. **Breakfast Service Hours** — hidden entirely in WP mode.
-8. **Appearance (theme picker)** — owner role only. See theme list below.
-9. **Room Categories** — IR-Categories mode only. Manage the categories themselves (buffers, amenities, descriptions).
-10. **Report an issue** — only shown if bug-reporting is enabled for the account (an admin-controlled flag). This is the "error-report tool" referenced elsewhere as the fallback when the help bot can't answer something.
+5. **Room Categories** — IR-Categories mode only. Manage the categories themselves (buffers, amenities, descriptions).
+6. **Breakfast Service Hours** — hidden entirely in WP mode.
+7. **Appearance (theme picker)** — owner role only. See theme list below.
+8. **Features** — always shown. Contains three top toggles — **Online Booking Widget, Email Confirmations, Offline Mode** — that currently have no real effect: they visually flip but aren't saved anywhere, reset to on every time the page reloads, and don't change actual app behaviour (confirmation emails always send regardless of the toggle; there is no offline-sync capability anywhere in the app — the offline banner elsewhere actually warns that changes made offline will NOT be saved, the opposite of what this toggle implies). **If a user asks how to turn off confirmation emails or enable offline mode, be honest that this isn't currently wired up to do anything, rather than describing it as a working feature.** Below these, for non-WP modes: the property-wide free-breakfast toggle (Named Rooms only) with a warning note, the widget-breakfast toggle and price (paid plans), the simple Require Deposit toggle and amount, and a Block-booking protection toggle with a threshold setting (off by default, and this one IS fully functional — see Section 4 for what it actually does).
 
-### RIGHT COLUMN, in order:
+*(A dev-only Plan Switcher also renders on this tab in development builds — it never appears in production, ignore if mentioned.)*
 
-*(Note on gating language below: most Pro/Multi panels still render for Free users as a visible, locked card with an upgrade prompt — they are not removed from the page. Only Properties (left column, Multi-only) and Service Categories are truly hidden by a hard condition and won't appear at all on an ineligible account.)*
+### Tab 2 — Booking & Availability
 
-1. *(Dev-only Plan Switcher — never appears in production, ignore if mentioned.)*
-2. **Features** — always shown. Contains three top toggles — **Online Booking Widget, Email Confirmations, Offline Mode** — that currently have no real effect: they visually flip but aren't saved anywhere, reset to on every time the page reloads, and don't change actual app behaviour (confirmation emails always send regardless of the toggle; there is no offline-sync capability anywhere in the app — the offline banner elsewhere actually warns that changes made offline will NOT be saved, the opposite of what this toggle implies). **If a user asks how to turn off confirmation emails or enable offline mode, be honest that this isn't currently wired up to do anything, rather than describing it as a working feature.** Below these, for non-WP modes: the property-wide free-breakfast toggle (Named Rooms only) with a warning note, the widget-breakfast toggle and price (paid plans), the simple Require Deposit toggle and amount, and a Block-booking protection toggle with a threshold setting (off by default, and this one IS fully functional — see Section 4 for what it actually does).
-3. **Widget embed code** — Pro and Multi only (locked card on Free).
-4. **QR Code** — all plans. Generates the booking-page QR code, with the property logo composited into its centre.
-5. **WiFi QR Card** — all plans. Same pattern, for a WiFi-access QR code.
-6. **Specials Banner** — all plans. A dismissible promotional pop-out on the booking page.
-7. **Custom Section** — all plans. A free-form title + rich-text content block on the booking page — the difference from Specials Banner is that Specials Banner is a dismissible pop-out meant for something time-limited (an offer, last-minute availability), while Custom Section is a permanent part of the page layout for anything else worth telling guests (recent renovations, house history, anything that doesn't fit a structured field).
-8. **Facebook Action Button** — all plans. Also contains the booking-page URL/slug editor.
-9. **Guest Access** (access code / arrival info) — WP mode only.
-10. **Deposit & Balance** — WP mode only. *(This is WP's fuller deposit system — beyond just enabling deposits, it also covers refund policy text, exactly when the remaining balance is due, and automatic deposit/balance/reminder emails — genuinely more than IR's simpler on/off toggle.)*
-11. **Seasonal Pricing** — Free: not usable (0 periods), **Pro: up to 5 periods**, Multi: unlimited (locked card on Free).
-12. **Calendar Sync** — shown once the property has rooms, or in WP mode. Collapsible, closed by default. Contains both the export URLs (for pasting into Booking.com/Airbnb/etc.) and the import-feed field (for pulling external calendars in).
-13. **Review Requests** — Pro and Multi only (locked card on Free). Automatically emails a guest asking for a review a set number of days after checkout, including the owner's own Google/TripAdvisor review links.
-14. **Guest Notes** — Pro and Multi only (locked card on Free). Lets a guest leave a short note about their stay after checkout, as a source of testimonials. **Important:** the property owner does NOT approve or decline these notes themselves — that's done centrally by the NestBook team via Super Admin's Content Review queue. Once a note is approved, it appears under "Approved notes" in this same panel, where the owner can toggle each one between Show and Hide on their own public page — but cannot approve a pending one or reverse a rejection themselves.
-15. **Billing** — always shown, but this is just a one-line link out to the separate [Billing] page, not a full panel — the real subscription/invoice/Stripe Connect content lives on that dedicated page, not in Settings itself.
-16. **Service Categories** — Multi plan, or Pro with the Bar & Charges add-on, owner role only. Genuinely hidden otherwise, not just locked.
-17. **Access & Roles** — always shown (inviting new staff specifically requires Pro or Multi).
+1. **Embed Booking Widget** — Pro and Multi only (locked card on Free). The embed code for putting the booking widget on the owner's own website.
+2. **Deposit & Balance** — WP mode only. In the app this panel's heading reads **"Payment & Deposit Manager."** It is WP's fuller deposit system — beyond just enabling deposits, it also covers refund policy text, exactly when the remaining balance is due, and automatic deposit/balance/reminder emails — genuinely more than IR's simpler on/off Require Deposit toggle (which lives in Features, Tab 1).
+3. **Seasonal Pricing** — Free: not usable (0 periods), **Pro: up to 5 periods**, Multi: unlimited (locked card on Free).
+4. **Calendar Sync** — shown once the property has rooms, or in WP mode. Its own collapsible accordion, closed by default. Contains both the export URLs (for pasting into Booking.com/Airbnb/etc.) and the import-feed field (for pulling external calendars in). This is the basic iCal method, available on every plan — it is different from, and much more limited than, Channel Manager (Section 10).
+
+### Tab 3 — Guest Experience
+
+1. **Special Offer Banner** — all plans (also called the "Specials Banner"). A dismissible promotional pop-out on the booking page.
+2. **Custom Section** — all plans. A free-form title + rich-text content block on the booking page — the difference from the Special Offer Banner is that the banner is a dismissible pop-out meant for something time-limited (an offer, last-minute availability), while Custom Section is a permanent part of the page layout for anything else worth telling guests (recent renovations, house history, anything that doesn't fit a structured field).
+3. **Guest Notes** — Pro and Multi only (locked card on Free). Lets a guest leave a short note about their stay after checkout, as a source of testimonials. **Important:** the property owner does NOT approve or decline these notes themselves — that's done centrally by the NestBook team via Super Admin's Content Review queue. Once a note is approved, it appears under "Approved notes" in this same panel, where the owner can toggle each one between Show and Hide on their own public page — but cannot approve a pending one or reverse a rejection themselves.
+4. **Review Requests** — Pro and Multi only (locked card on Free). Automatically emails a guest asking for a review a set number of days after checkout, including the owner's own Google/TripAdvisor review links.
+5. **Guest Access** (access code / arrival info) — WP mode only in Settings. (Self-catering units have their own per-unit Access & Arrival settings on the unit itself — see Section 6 — not here.)
+
+### Tab 4 — Marketing & Distribution
+
+1. **QR Code** — all plans. Generates the booking-page QR code, with the property logo composited into its centre.
+2. **WiFi QR Card** — all plans. Same pattern, for a WiFi-access QR code.
+3. **Facebook Action Button** — all plans. Also contains the booking-page URL/slug editor.
+4. **Partnership Links** — Pro and Multi only (locked card on Free). Add local businesses (restaurants, cafés, activity providers) with an icon and a link, shown on the booking page below the map — genuine small-business cross-promotion, not paid advertising. Goes through Content Review moderation before appearing live, same as other user-submitted content.
+
+### Tab 5 — Admin & Support
+
+1. **Service Categories** (the Charges categories) — Multi plan, or Pro with the Bar & Charges add-on, owner role only. Genuinely hidden otherwise, not just locked.
+2. **Access & Roles** — always shown (inviting new staff specifically requires Pro or Multi).
+3. **Report an Issue** — only shown if bug-reporting is enabled for the account (an admin-controlled flag). This is the "error-report tool" referenced elsewhere as the fallback when the help bot can't answer something. If a user can't find it, they can email hello@nestbook.io instead.
+4. **Manage your plan** — a one-line link out to the separate [Billing] page, not a full panel. All subscription, add-on and invoice controls live on [Billing].
 
 ### Colour themes — 11 available
 
@@ -287,21 +299,34 @@ Forest (default), Navy, Warm Gold, Ruby, Sky Blue, Lavender, Aero, Charcoal, Sla
 - Facebook's panel is the **"Action Button,"** not "Booking Button" — Facebook has no native booking integration, this just links out.
 - SC-H is **"Holiday Rentals,"** not "Serviced Apartment" (retired name).
 
-### What's genuinely NOT in Settings (moved to their own top-level pages):
-- Subscription, real invoices, and Stripe Connect → **[Billing]** (Settings only links to it).
+### What's genuinely NOT in Settings:
+- **Subscription, add-ons (Bar & Charges, Channel Manager), real invoices, and Stripe Connect** → **[Billing]** (Settings only has a "Manage your plan" link to it; there is no add-on purchasing or subscription control anywhere in the Settings tabs).
+- **The Property Info Sheet builder** → its own top-level **[Property Info Sheet]** nav item (Section 13), not Settings and not Billing.
+- **Channel Manager** → its own top-level **[Channel Manager]** nav item (Section 10), not a Settings panel.
 - Rental mode (IR/WP/SC) switching for an existing property with real data isn't self-service anywhere in Settings — it requires contacting support.
 
 ---
 
 ## 9. Billing
 
-Its own top-level nav item, positioned above Settings — owner-only. Two sections:
+Its own top-level nav item, positioned above [Channel Manager] and [Settings] — owner-only. **Billing is the one place an owner manages their subscription and their add-ons.** In on-screen order, it contains:
 
-**Account (left side)**
-- Current plan, and real Stripe invoices (pulled live from Stripe, not a static record) shown in a table.
-- If the account is on a Promotional Pro period (via a discount code), a dedicated panel shows here too — colour-coded green → amber → red as the promo period counts down, reminder emails sent automatically at 30 days and 7 days before it ends, and an "Add payment details" option that sets up a card for automatic conversion to paid Pro at expiry (the card is saved but not charged until the promo actually ends).
+**Plan and subscription**
+- If the account is on a Promotional Pro period (via a discount code), a dedicated panel shows first — colour-coded green → amber → red as the promo period counts down, reminder emails sent automatically at 30 days and 7 days before it ends, and an "Add payment details" option that sets up a card for automatic conversion to paid Pro at expiry (the card is saved but not charged until the promo actually ends). A separate panel appears for partial-discount trials.
+- **Subscription card** — shows the current plan (Free / Pro / Multi), the next billing date (or the date it cancels on, if cancellation is scheduled), and, on Free, a "View plans and upgrade" link to the [Pricing] page.
 
-**Guest Payments & Stripe Connect (right side)**
+**Add-ons — where an owner buys, sees and removes them**
+Add-ons are extras on top of a paid plan, added to and billed with the existing subscription. Each has its own card on Billing showing its price, what it does, and its status — an **Active** badge plus a **Remove** button if it's on, or an **Add** button if not. Adding or removing needs the owner to have an active paid subscription; there's no separate checkout.
+- **Bar & Charges add-on** — **Pro plan only** (£4/€5 per month; the card doesn't appear on Free or Multi). Unlocks room/property Charges on Pro — the [Charges] sidebar item and the Service Categories panel in Settings. Multi already includes Charges, so it has no add-on card.
+- **Channel Manager add-on** — shown on **Pro and Multi** (£9/€10 per month on Pro). On **Pro**, this card is where the owner activates it (Add) or removes it (Remove, with a confirmation prompt). On **Multi**, the card shows an **"Included in your Multi plan"** badge and no buttons — there's nothing to buy or activate. On Free the card doesn't appear (Channel Manager needs Pro + the add-on, or Multi). Once activated, [Channel Manager] appears in the sidebar; if removed, it disappears again. Full detail on the feature itself is in Section 10.
+- Prices are shown in pounds (£) for English-language accounts and euros (€) for the other four languages.
+- If a user asks "how do I get / cancel [Bar & Charges / Channel Manager]," the answer is always: [Billing] → that add-on's card. If the Add button reports a problem (e.g. "No active subscription found"), the account has no active paid subscription to attach it to — send them to the subscription card first, or to support if that looks wrong.
+
+**Manage Subscription (expandable section)**
+- **[Cancel subscription]** (stops billing at the end of the current period, keeps the account and data on Free) and **[Delete account]** (permanent) — see Section 15 for the wording of each.
+
+**Invoices, Guest Payments & Stripe Connect**
+- **Invoices** — real Stripe invoices (pulled live from Stripe, not a static record) shown in a table.
 - **Guest Payments** — a ledger of deposits and balances collected from guests across all bookings, so the owner can see payment status without opening each booking individually.
 - **Stripe Connect** — where the owner connects their own Stripe account to take guest payments directly. NestBook uses a "direct charge" model with zero application fee — money goes straight to the owner's own Stripe account, NestBook's servers never touch it. Available on **all plans**, not gated.
 - Connecting requires going through Stripe's own onboarding (business details, bank details, identity verification) — this is Stripe's own compliance process, not something NestBook controls the speed of; it can take anywhere from a few minutes to longer if Stripe needs to review submitted details.
@@ -311,7 +336,68 @@ Its own top-level nav item, positioned above Settings — owner-only. Two sectio
 
 ---
 
-## 10. Reports
+## 10. Channel Manager
+
+Its own top-level nav item — **not** inside Settings or Billing. This section is deliberately deeper than the public help centre, because owners often ask this in two very different ways: "how do I use it?" and "do I even need it?" Answer whichever they asked, and be ready for the second.
+
+### What it is
+Channel Manager connects a NestBook property directly to the online travel agents (OTAs) an owner already sells rooms on — **Booking.com, Airbnb, Expedia, Agoda, and more, with new channels being added over time** — so that availability and rates stay in step automatically, **in both directions**:
+- **Out:** when availability or rates change in NestBook, NestBook pushes the update to each connected channel. The owner updates once, in NestBook.
+- **In:** when a guest books through Booking.com, Airbnb or another connected channel, that booking flows back into NestBook's own calendar automatically. This inbound half is what actually prevents double bookings — a room sold on one channel is blocked everywhere else without the owner doing anything.
+
+### Why an owner might want it (for "do I need this?" questions)
+- **The problem it solves:** an owner selling the same rooms on their own NestBook booking page *and* on one or more OTAs otherwise has several calendars to keep in step by hand. Every missed update is a risk of a double booking (one room, two guests) and every change of price means logging into each site separately.
+- **Compared with iCal sync (Settings → Booking & Availability → Calendar Sync, available on every plan):** iCal shares *blocked dates* between calendars, and each platform refreshes an imported calendar on its own schedule, so there can be a delay before a booking on one site shows on another. It doesn't carry rates. Channel Manager is a direct connection that keeps availability *and rates* in step and brings OTA bookings into NestBook as real bookings. iCal is a perfectly reasonable choice for an owner with a small amount of OTA activity; Channel Manager is aimed at owners for whom manual upkeep or double-booking risk has become a real cost.
+- **Who it tends to suit:** an owner listed on two or more OTAs, taking a steady stream of bookings through them, who is spending time on manual updates or has had (or fears) a double booking.
+- **Who probably doesn't need it:** an owner who only takes direct bookings, or who is on a single OTA with occasional bookings where iCal already covers them.
+- **Cost, stated plainly:** included free on Multi; on Pro it's a paid add-on (£9/€10 per month). Present this as information, never a pitch — if they'd be better served by iCal or by staying on their current plan, say so.
+
+### Where it lives, and who can see it
+- The **[Channel Manager]** sidebar item, between [Billing] and [Settings]. **Owner-only** — reception and other staff roles don't see it.
+- It is genuinely removed from the sidebar (not shown-with-an-upgrade-prompt) unless the account has access: **Multi always has it; Pro has it only with the Channel Manager add-on; Free doesn't have it.** Use the account context passed with each question (plan and Channel Manager add-on status) as the source of truth — never guess.
+
+### Plan and pricing
+- **Pro:** a paid add-on, £9/€10 per month, activated by the owner on **[Billing]** → the Channel Manager card → Add. It needs an active paid Pro subscription. It can be removed the same way (Remove, with a confirmation prompt); the sidebar item then disappears.
+- **Multi:** **included free and automatically.** Nothing to activate or buy — Billing shows an "Included in your Multi plan" badge.
+- **Free:** not available. It needs Pro plus the add-on, or Multi.
+- If an owner asks what happens to their connected channels if they remove the add-on or downgrade, do not guess or promise either way — say they'd lose access to the Channel Manager page, and suggest they contact support *before* removing it if they have live channels.
+
+### What the page contains (top to bottom)
+1. **Connection Status** — shows Connected / Not Connected. The first time, the owner clicks **[Connect and update property]**, which connects the NestBook property to NestBook's channel-management system and sends across its rooms/units, rates and availability. Once connected, two more buttons appear: **[Update Property Details]** (re-sends the property's current name, currency, timezone, country, description, facilities and contact details — useful after editing those in Settings) and **[Disconnect]**. Be careful with Disconnect: it also removes the room mappings, so it isn't a casual "reset."
+2. **Nudges** — a prompt to set the property's **timezone** in Settings if it's missing (required for the connection), and a recommendation to add a contact email or phone number.
+3. **Room Mapping** — lists the property's rooms/units with a status: **Mapped**, **Not mapped**, or **Removed from NestBook**. This is the link between NestBook's own rooms and the channel-management system; it is set up when the property is connected.
+4. **Online Travel Agents** — the heart of the page, shown once the property is connected. It lists each channel the owner has connected, with a badge — **Active** (syncing) or **Not yet active** — and per-channel actions: **[Deactivate]** (pauses syncing; reversible, offered while a channel is active) and **[Delete]** (permanently removes the connection; only offered once the channel is inactive; the owner would have to set it up again from scratch). Below the list: **[Connect a channel]** (the generic wizard) and, if no Airbnb connection exists yet, **[Connect Airbnb]**.
+5. **Recent Activity** — timestamps such as "Availability last updated 5 minutes ago" and "Rates last updated…". The Photos / Description / Facilities / Contact lines in this list refer to NestBook keeping its own record in the channel-management system up to date; they do **not** mean the owner's photos or text are being sent to Booking.com or Airbnb (see "What it does NOT do").
+6. **"Something not right?"** — a small box on the page. See the troubleshooting guidance below before quoting what it says.
+
+### How connecting a channel works — [Connect a channel] wizard (Booking.com, Expedia, Agoda and the other non-Airbnb channels)
+The owner must already have an account with that OTA — **NestBook does not create an OTA account for them; it connects to the one they already have.** The wizard has four steps:
+1. **Choose a channel** — pick from the list (the list is curated by NestBook and grows over time). If the property already has a connection for that channel, the wizard says "Already connected."
+2. **Enter your account details** — the fields that specific channel needs (typically the owner's existing property/hotel ID and account details for that OTA — exactly which fields varies by channel, and the wizard shows the right ones). **[Test connection]** checks them; a failure says "We couldn't verify these details. Double-check them and try again." Nothing is created until they continue.
+3. **Map your rooms and rates** — for each NestBook room/rate ("Your room/rate"), the owner picks the matching room and rate on the channel ("Channel room" / "Channel rate"), so NestBook knows which of its rooms is which room/listing on that OTA. If the wizard can't fetch the channel's room list automatically, it asks for the room and rate codes to be typed in (found in the owner's account with that channel). The owner also chooses the **pricing type**: *Standard* (one price per room) or *Occupancy-based* (a different price per number of guests — extra rows adjust the room price up or down by a percentage or amount; they should double-check the resulting prices in the channel's own dashboard afterwards). Then **[Create connection]**.
+4. **Go live** — **[Check readiness]**, then **[Activate]**. On success: "Connected and activated! Availability and rates will start syncing." Until activated, the channel shows "Not yet active."
+Once a channel is active, syncing is automatic from then on — nothing more for the owner to do day to day.
+
+### Airbnb works differently
+Airbnb doesn't take typed-in credentials. It uses a **login-redirect** flow: the owner clicks **[Connect Airbnb]**, is taken to **Airbnb's own site** to log in and approve the connection there (NestBook never sees their Airbnb password), and is then returned to the Channel Manager page automatically. A toast confirms "Airbnb connected successfully," or says the connection wasn't completed and they can try again any time (e.g. if they closed the tab or declined). The redirect leaves NestBook and comes back, so it should be done in one sitting on the same browser.
+Be honest about one limit: after the return, the app itself doesn't show a separate Airbnb listing-mapping screen. If the Airbnb connection appears in the list but stays **"Not yet active,"** don't try to talk the owner through steps that don't exist in the app — send them to support (see below).
+
+### What it does NOT do
+- It syncs **availability, rates and bookings** — nothing else. It **does not push photos, descriptions or other property content to the OTAs.** The owner still manages their listing's photos, description, amenities and policies directly on each OTA's own site; editing them in NestBook does not change what guests see on Booking.com, Airbnb, etc.
+- It doesn't create OTA accounts or listings, and it doesn't manage the OTAs' own commission, payouts or guest messaging.
+- It's not the same as iCal sync (see the comparison above), which remains available on every plan and is unaffected.
+
+### Troubleshooting — how the assistant should respond
+Do **not** try to diagnose the underlying cause of a sync problem yourself, and don't attempt a technical fix through chat. If an owner says syncing isn't working, availability or rates look wrong on an OTA, a booking didn't arrive, or a channel shows as failed, disconnected, or stuck on "Not yet active":
+1. **First, point them to the Channel Manager page itself** and ask them to check the connection status there — the Connected/Not Connected indicator, the channel's Active / Not yet active badge, the Room Mapping statuses, and the "last updated" times under Recent Activity. That may show them (and you) what's happening.
+2. **If that doesn't resolve it, direct them to support** — **Report an Issue** (Settings → Admin & Support tab), or email **hello@nestbook.io** if that link isn't available on their account. Suggest they include which channel and roughly when they noticed it.
+3. **Don't lead with Disconnect / reconnect.** The "Something not right?" box on the page suggests disconnecting and reconnecting re-syncs everything, but Disconnect removes the room mappings and the owner would have to redo setup — so it's not a safe first step to recommend through chat. If the owner has already read that hint and asks about it, explain the consequence honestly and suggest contacting support first.
+4. Don't promise timings for how quickly an OTA will reflect a change, and don't speculate about problems on the OTA's side.
+For anything about how the feature is *supposed* to work (setup steps, what syncs, which plan includes it), answer confidently from this section. Only the "something's gone wrong" cases go to support.
+
+---
+
+## 11. Reports
 
 **Visible to all plans; Pro and Multi get the real page, Free sees an upgrade prompt.**
 
@@ -321,7 +407,7 @@ Its own top-level nav item, positioned above Settings — owner-only. Two sectio
 
 ---
 
-## 11. Activity Log
+## 12. Activity Log
 
 **Pro and Multi only.**
 
@@ -331,7 +417,7 @@ Its own top-level nav item, positioned above Settings — owner-only. Two sectio
 
 ---
 
-## 12. Social Media Kit, Guest Mailer, and Property Info Sheet
+## 13. Social Media Kit, Guest Mailer, and Property Info Sheet
 
 Three separate top-level nav items, grouped here because they're all part of the same "owner-facing marketing suite" idea — helping an independent owner market their own property without needing outside design or marketing skills.
 
@@ -352,7 +438,7 @@ Three separate top-level nav items, grouped here because they're all part of the
 
 ---
 
-## 13. Import Wizards
+## 14. Import Wizards
 
 Three separate wizards, each accessed from within its own relevant page rather than from one central import screen:
 
@@ -375,7 +461,7 @@ Three separate wizards, each accessed from within its own relevant page rather t
 
 ---
 
-## 14. Common gaps and things worth flagging honestly
+## 15. Common gaps and things worth flagging honestly
 
 This section exists for exactly the kind of question that isn't neatly covered by a single feature panel — the "I got stuck and don't know where to even start" moment. Give a complete, confident answer where the app genuinely supports something, and an honest "here's what to do instead" where it doesn't — never a vague non-answer.
 
@@ -386,7 +472,13 @@ Fully covered — see Section 4, "Creating a booking manually." In short: [Booki
 [Billing] → "Manage Subscription" (an expandable section, near the bottom of the Subscription card) → **[Delete account]**. Requires typing "DELETE" to confirm. This permanently and immediately deletes the property itself, all bookings, guests, rooms, photos, reports data and history, and cancels the Stripe subscription — with no undo, no grace period. A separate, much gentler option sits directly above it in the same section: **[Cancel subscription]**, which stops billing at the end of the current period but keeps the account and all its data on the Free plan — worth pointing a user toward this instead if what they actually want is to stop paying, not to erase everything.
 
 **"Why can't I see [a Pro/Multi feature] on my account?"**
-Always check plan first. Common ones a Free user will hit: Reports, Activity Log, Guest Mailer, Property Info Sheet, Review Requests, Partnership Links, Seasonal Pricing, Guest Notes, the Widget embed panel, Room/Property Charges (this last one is the one exception that's actually removed from the nav rather than shown-but-locked). For everything else in this list, the nav item and page layout are visible on Free — the content is replaced with an upgrade prompt, not hidden. Frame it as "you can see it, it just needs a plan upgrade to use," not "it's hidden from you."
+Always check plan first. Common ones a Free user will hit: Reports, Activity Log, Guest Mailer, Property Info Sheet, Review Requests, Partnership Links, Seasonal Pricing, Guest Notes, the Widget embed panel, Room/Property Charges and Channel Manager (these last two are the exceptions that are actually removed from the nav rather than shown-but-locked — Charges needs Multi or Pro + the Bar & Charges add-on; Channel Manager needs Multi or Pro + the Channel Manager add-on, and is hidden on Free too). For everything else in this list, the nav item and page layout are visible on Free — the content is replaced with an upgrade prompt, not hidden. Frame it as "you can see it, it just needs a plan upgrade to use," not "it's hidden from you."
+
+**"Where's Channel Manager? / How do I get it?"**
+See Section 10. It has its own sidebar item, between [Billing] and [Settings], visible only to owners on Multi (included) or Pro with the add-on. If it isn't in their menu, check their plan and add-on status: Pro without the add-on → [Billing] → the Channel Manager card → Add; Free → needs Pro plus the add-on, or Multi.
+
+**"How do I add or remove an add-on (Bar & Charges / Channel Manager)?"**
+[Billing] — each add-on has its own card there. See Section 9.
 
 **"Why can't I see [a mode-specific feature]?"**
 Common ones: breakfast anywhere in WP mode (not offered there at all), Room Categories/Room Organization outside IR-Named, Unit Sub-Type outside SC modes, Guest Access/Deposit & Balance panels outside WP, per-unit Access & Arrival outside SC-Glamping/SC-Holiday Rentals.

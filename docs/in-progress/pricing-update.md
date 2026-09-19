@@ -98,3 +98,6 @@ Second line added under every "Bar & Charges add-on" callout, same font size/wei
 - landing `index.html` Pro card — new blob key `pricing.pro.addonCM` (5 langs, same "available" phrasing) + EN fallback in HTML.
 - `compare.html` Pro column header (desktop `th`) and Pro mobile card header — new dict key `compare.pro.addonCM` (5 langs, "Channel Manager add-on (£9/mo)" phrasing to parallel compare's existing B&C line). Desktop first line got `margin-bottom:0` (class default is 16px) so the two lines stack tightly; mobile margins split -8/2 and 0/6.
 - Currency: EN £9; FR/ES/DE/NL €10 (symbol-first, like the existing €5 callouts). A build-time assertion refuses any £ in a non-EN string.
+
+### Help-bot knowledge file updated for Channel Manager (2026-09-19)
+`server/docs/help-bot-knowledge.md` (§1, §8, §9, new §10) + `helpChat.js` context now cover the Channel Manager add-on/Multi-included model and the Billing add-on cards. Details in `ai-help-chat.md`.

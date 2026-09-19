@@ -8,7 +8,7 @@
 //
 // The knowledge file is English-only; the system prompt tells the model to
 // translate its answer into the user's language. It also carries the asking
-// user's plan / Bar & Charges add-on / rental mode so the model can honour the
+// user's plan / Bar & Charges + Channel Manager add-ons / rental mode so the model can honour the
 // plan- and mode-awareness rules the file spells out in its Section 0.
 //
 // ANTHROPIC_API_KEY must be set in server/.env (never hardcoded, never in
@@ -82,7 +82,7 @@ const UNAVAILABLE_MSG = {
 function loadUserContext(userId) {
   try {
     return db.prepare(`
-      SELECT u.language, u.plan, u.has_charges_addon,
+      SELECT u.language, u.plan, u.has_charges_addon, u.has_channel_manager_addon,
              p.rental_type, p.un_sub_type, p.ir_room_mode
       FROM users u
       LEFT JOIN properties p ON p.id = u.property_id
@@ -122,6 +122,7 @@ function accountContextBlock(ctx) {
   return `THIS USER'S ACCOUNT (use as the source of truth for what they can and can't do — never guess from the screen they're on):
 - Plan: ${planLabel}
 - Bar & Charges add-on: ${ctx?.has_charges_addon ? 'yes' : 'no'}
+- Channel Manager add-on: ${ctx?.has_channel_manager_addon ? 'yes' : 'no'}${plan === 'multi' ? ' (not needed — Channel Manager is included automatically on Multi)' : ''}
 - Rental mode: ${describeMode(ctx)}
 
 Apply the plan- and mode-awareness rules from Section 0 of the knowledge base: only describe a feature as available to this user if their plan and mode actually support it, and if they ask about something they don't have, say so plainly and name what unlocks it — factually, never as a sales pitch.`;
@@ -135,7 +136,7 @@ function buildSystemBlocks(knowledge, lang, ctx) {
 
   const knowledgeBlock = `You are the in-app help assistant for NestBook, booking and property-management software for small hospitality businesses (B&Bs, gîtes, guesthouses, holiday rentals).
 
-The NestBook knowledge base below is your single source of truth. Follow the instructions inside it, especially Section 0 (how to answer, plan/mode awareness) and Section 14 (handling gaps).
+The NestBook knowledge base below is your single source of truth. Follow the instructions inside it, especially Section 0 (how to answer, plan/mode awareness) and Section 15 (handling gaps).
 
 NestBook knowledge base:
 ---
