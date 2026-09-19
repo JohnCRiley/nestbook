@@ -82,11 +82,14 @@ built for Europe.
 
 ## 2. Plans and pricing (prospect level)
 
-Three plans plus one optional add-on. **Subscriptions are billed in GBP or EUR only** —
+Three plans plus two optional add-ons for Pro. **Subscriptions are billed in GBP or EUR only** —
 not the visitor's own local currency. The card issuer handles any conversion. (The
 separate property-level *guest* currency shown on the booking page supports more
 currencies; that is an unrelated setting and does not change how the subscription is
-billed.) The headline figures below are GBP / EUR.
+billed.) The headline figures below are GBP / EUR. **The currency follows the language of
+the site the visitor is using:** English shows and charges GBP (£); French, German,
+Spanish and Dutch show and charge EUR (€). Each visitor sees one price, in one currency —
+not both. Quote only the figure that matches the language they are writing in.
 
 ### Free ("Starter") — free forever, no card required
 
@@ -104,7 +107,7 @@ billed.) The headline figures below are GBP / EUR.
 - Not on Free: the embeddable booking widget, seasonal pricing, revenue reports, staff
   accounts, Partnership Links, Guest Mailer, review requests, Guest Notes.
 
-### Pro — £19 / €22 per month, billed monthly
+### Pro — £14 (GBP) / €16 (EUR) per month, billed monthly
 
 - **1 property, unlimited rooms.**
 - Everything in Free, plus: **white-label booking widget** for the owner's own website,
@@ -121,7 +124,7 @@ billed.) The headline figures below are GBP / EUR.
   chalet, individual holiday apartment); or a single self-catering site with multiple
   units (aparthotel, holiday-apartment block, glamping site, small caravan park).
 
-### Multi — £39 / €45 per month, billed monthly
+### Multi — £25 (GBP) / €29 (EUR) per month, billed monthly
 
 - **Up to 5 properties.**
 - Everything in Pro, plus: **unlimited staff accounts**, **cross-property calendar
@@ -130,15 +133,26 @@ billed.) The headline figures below are GBP / EUR.
   **Room Charges** system — bar, restaurant, shop and activity charges, a full guest
   folio with itemised checkout, service categories with tax rates, and a dedicated
   charges-staff portal.
+- **Channel Manager included at no extra cost** — connect properties to online travel
+  agents and sync availability and rates automatically (see the Channel Manager add-on
+  below, which Pro customers pay for separately).
 - **30-day free trial.**
 - Best for an owner running **a mix of up to 5 properties** of the Pro-plan types.
 
-### Bar & Charges add-on — £6 / €7 per month, on top of Pro
+### Bar & Charges add-on — £4 (GBP) / €5 (EUR) per month, on top of Pro
 
 For an owner on **Pro** who has one property but also runs a bar or restaurant tab and
 wants to add room charges without paying for the full Multi plan. Adds the Room Charges
 system and service categories with tax rates to a Pro account. (On Multi it's already
 included — no add-on needed.)
+
+### Channel Manager add-on — £9 (GBP) / €10 (EUR) per month, on top of Pro
+
+For an owner on **Pro** who wants to connect their property to online travel agents and
+have availability and rates synced automatically, instead of updating each channel by
+hand. It is **live**. On **Multi** it is **already included — no add-on needed and nothing
+extra to pay.** (This is different from the iCal sync, which is on every plan and updates
+on a schedule — see Section 5.)
 
 ### What every plan includes
 
@@ -204,7 +218,7 @@ typically charges hosts **15–18%**; Airbnb charges hosts a **15.5% host-only f
 December 2025 (guests pay no separate service charge); Vrbo charges hosts around **8%**
 (5% commission + 3% payment processing) and still adds a **6–15% guest service fee** on
 top of the nightly rate. On, say, 20 bookings a year at £150/night, platform commission
-runs well over £1,300 a year — a flat Pro plan is £228/year (€264/year). The marketing
+runs well over £1,300 a year — a flat Pro plan is £168/year (€192/year). The marketing
 frames the platforms' commission as "a reasonable marketing cost when you're starting
 out, but a mistake to treat as a permanent cost of doing business."
 
@@ -239,8 +253,9 @@ existing system so they can test before cancelling anything. The public advice: 
 
 **Everything in one price.** "No add-ons, no hidden fees, everything in one place" — the
 booking page, Facebook action button, guest mailer, social kit, QR codes, reports and
-themes are part of the plan, not upsells. The one optional paid add-on is Bar & Charges
-(£6/€7), and even that is a plain published number, not a "contact us for a quote".
+themes are part of the plan, not upsells. The optional paid add-ons for Pro are Bar & Charges
+(£4/€5) and Channel Manager (£9/€10 — included free on Multi); both are plain published
+numbers, not a "contact us for a quote".
 
 **Privacy and data.** EU company, **EU hosting** (Hetzner, in Germany and Finland),
 **GDPR-compliant**, Data Processing Agreements with its processors (Stripe for payments,
@@ -288,10 +303,12 @@ published guidance: if you regularly get multiple bookings for
 the same room on the same day, or list on more than 3–4 platforms with a steady booking
 flow, a real channel manager is probably worth the cost; if not — and most small
 independents don't — "iCal sync gives you 90% of the protection at none of the cost."
-*(NestBook has said it is exploring a real-time channel-management add-on at a flat
-£9/€10 per property per month, but it is **not built yet** — do not present it as
-available; if asked, say it's something they're considering and suggest the visitor
-mention their interest to hello@nestbook.io.)*
+*(NestBook also now has its own **Channel Manager**, which connects to online travel
+agents and syncs availability and rates automatically — **included on Multi, or £9/€10
+per month as an add-on on Pro.** Unlike iCal it is not a scheduled calendar import, so
+for an owner who needs that level of sync it is a far cheaper route than a standalone
+channel manager. Do not go into which specific channels are supported or how quickly
+each one updates beyond what is stated here — point to hello@nestbook.io for specifics.)*
 
 **"How is this different from a website builder (Wix, Squarespace, etc.)?"**
 A website builder gives you a page but usually **no way for a guest to actually book** —
@@ -407,7 +424,8 @@ Keep this at the level a prospect actually asks about — no in-app button steps
 - **"Which plan do I need?"** — One property, want direct booking + business tools → Pro.
   Several properties (up to 5) → Multi. Just want a simple booking page and calendar,
   one small property → Free. Bar/restaurant tab on one property but don't need Multi →
-  Pro + the Bar & Charges add-on.
+  Pro + the Bar & Charges add-on. Want to connect to online travel agents and sync
+  automatically → Multi (Channel Manager included) or Pro + the Channel Manager add-on.
 
 - **Anything requiring a firm legal/refund/region answer, or a custom setup** — don't
   guess. Trial removes most of the risk; for the specifics, hello@nestbook.io.
@@ -423,7 +441,7 @@ Keep this at the level a prospect actually asks about — no in-app button steps
 
 NestBook is **not currently VAT-registered** (it is below the UK's £90,000 mandatory
 registration threshold), so **no VAT is added to subscription prices**. The advertised
-prices — £19 / €22 Pro, £39 / €45 Multi, £6 / €7 add-on — are the **full amount charged**,
+prices — £14 / €16 Pro, £25 / €29 Multi, £4 / €5 Bar & Charges add-on, £9 / €10 Channel Manager add-on — are the **full amount charged**,
 with **no VAT line on the invoice**. This applies regardless of the customer's own
 location or VAT status: there is currently no VAT number to provide for reverse-charge
 purposes, because no VAT is being charged.
@@ -441,8 +459,7 @@ supports **one property**), **the owner chooses which property to keep**. The ot
 nothing is lost.
 
 That is the intended policy. As of this file's writing the mechanism is **not fully
-automated in the app yet** — same honesty rule as the £9/€10 channel-management add-on in
-Section 5: describe the policy plainly, don't imply a self-service button that doesn't
+automated in the app yet** — so the same honesty rule applies: describe the policy plainly, don't imply a self-service button that doesn't
 exist. So if a Multi customer asks about this today, the assistant should say: *you'd pick
 the one property to keep; the rest are exported and emailed to you as a CSV, nothing is
 just deleted* — and point them to **hello@nestbook.io** to arrange it, because it

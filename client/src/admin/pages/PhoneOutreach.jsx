@@ -31,8 +31,8 @@ const PROMPT_GROUPS = [
       },
       {
         trigger: '"How much does it cost?"',
-        response: "The free plan is completely free — no credit card, no time limit, up to three rooms. If you want the full booking widget for your website it's £19 a month. And there's absolutely no commission on any booking, ever — just that flat fee.",
-        tip: 'Pause after "£19 a month." Let it land. Do not fill the silence.',
+        response: "The free plan is completely free — no credit card, no time limit, up to three rooms. If you want the full booking widget for your website it's £14 a month. And there's absolutely no commission on any booking, ever — just that flat fee.",
+        tip: 'Pause after "£14 a month." Let it land. Do not fill the silence.',
         next: 'If they hesitate — "Most owners find it pays for itself after just one or two direct bookings."',
       },
       {
@@ -73,7 +73,7 @@ const PROMPT_GROUPS = [
       },
       {
         trigger: '"Is there a free trial?"',
-        response: "There's a free plan that's free forever — up to three rooms, your own booking page, Facebook button, calendar sync. If you want the full booking widget for your own website, Pro is £19 a month with a 30-day free trial. No credit card needed to start.",
+        response: "There's a free plan that's free forever — up to three rooms, your own booking page, Facebook button, calendar sync. If you want the full booking widget for your own website, Pro is £14 a month with a 30-day free trial. No credit card needed to start.",
         tip: 'Lead with the free plan. "Trial" sounds temporary — "free plan" sounds permanent.',
         next: '"Would you like me to send you the link to sign up? Takes about a minute."',
       },

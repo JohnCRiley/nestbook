@@ -1190,7 +1190,7 @@ I hope you don't mind me reaching out — I came across {{company}} and thought 
 
 NestBook is simple property management software built for small B&Bs, gîtes, and guesthouses. It handles bookings, guests, rooms, revenue reports, and even the booking widget for your website — all in one place.
 
-No complicated setup. No per-booking fees. Just a flat monthly subscription starting at £19.
+No complicated setup. No per-booking fees. Just a flat monthly subscription starting at £14.
 
 Would you be open to a quick look? There's a 30-day free trial, no credit card required.
 
@@ -1239,7 +1239,7 @@ One of the most popular NestBook features is the booking widget — a small snip
 
 No more back-and-forth emails asking "is the 12th available?". Guests see live availability and book instantly. You get an automatic confirmation.
 
-It's included in the Pro plan (from £19/month), and the 30-day trial is free.
+It's included in the Pro plan (from £14/month), and the 30-day trial is free.
 
 Worth a look: nestbook.io
 

@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { usePlan } from '../hooks/usePlan.js';
 import { apiFetch } from '../utils/apiFetch.js';
-import { useT } from '../i18n/LocaleContext.jsx';
+import { useT, useLocale } from '../i18n/LocaleContext.jsx';
+import { planPrice } from '../utils/currency.js';
 
 const PLAN_RANK = { free: 0, pro: 1, multi: 2 };
 
 export default function Pricing() {
   const currentPlan = usePlan();
   const t           = useT();
+  const { locale }  = useLocale();
+  // One currency, chosen by the current language (EN → £, FR/DE/ES/NL → €).
+  const proPrice    = planPrice('pro', locale);
+  const multiPrice  = planPrice('multi', locale);
   const [loading, setLoading] = useState(null);
   const [error,   setError]   = useState('');
 
@@ -24,8 +29,7 @@ export default function Pricing() {
     {
       key:      'pro',
       name:     t('planProName'),
-      price:    '£19',
-      priceEur: '€22',
+      price:    proPrice.label,
       period:   t('planPerMonth'),
       desc:     t('planProDesc'),
       popular:  true,
@@ -35,8 +39,7 @@ export default function Pricing() {
     {
       key:      'multi',
       name:     t('planMultiName'),
-      price:    '£39',
-      priceEur: '€45',
+      price:    multiPrice.label,
       period:   t('planPerMonth'),
       desc:     t('planMultiDesc'),
       features: t('planMultiFeatures'),
@@ -58,7 +61,7 @@ export default function Pricing() {
       const res  = await apiFetch('/api/stripe/create-checkout-session', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ plan: planKey }),
+        body:    JSON.stringify({ plan: planKey, currency: planPrice(planKey, locale).currency }),
       });
       const data = await res.json();
 
@@ -104,7 +107,6 @@ export default function Pricing() {
               <div className="pricing-name">{plan.name}</div>
               <div className="pricing-price">
                 {plan.price}
-                {plan.priceEur && <span className="pricing-eur"> / {plan.priceEur}</span>}
                 <span className="pricing-period">/{plan.period}</span>
               </div>
               {plan.key === 'pro' && (

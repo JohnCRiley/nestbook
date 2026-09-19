@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocale } from '../i18n/LocaleContext.jsx';
+import { planPrice } from '../utils/currency.js';
 import { apiFetch } from '../utils/apiFetch.js';
 import { TiIcon } from './TablerIcons.jsx';
 
@@ -28,7 +29,7 @@ const MODAL_T = {
   en: {
     title:        'Unlock NestBook Pro',
     subtitle:     'Everything you need to run your property professionally',
-    price:        'From £19/month — or €22/month',
+    price:        'From £14/month',
     trial:        '30-day free trial included',
     tabPro:       'Pro',
     tabMulti:     'Multi-property',
@@ -106,7 +107,7 @@ const MODAL_T = {
   fr: {
     title:        'Passer à NestBook Pro',
     subtitle:     'Tout ce qu\'il faut pour gérer votre hébergement comme un pro',
-    price:        'À partir de 22 €/mois — ou £19/mois',
+    price:        'À partir de 16 €/mois',
     trial:        'Essai gratuit de 30 jours inclus',
     tabPro:       'Pro',
     tabMulti:     'Multi-hébergement',
@@ -184,7 +185,7 @@ const MODAL_T = {
   es: {
     title:        'Activar NestBook Pro',
     subtitle:     'Todo lo que necesita para gestionar su alojamiento como un profesional',
-    price:        'Desde 22 €/mes — o £19/mes',
+    price:        'Desde 16 €/mes',
     trial:        'Prueba gratuita de 30 días incluida',
     tabPro:       'Pro',
     tabMulti:     'Multi-alojamiento',
@@ -262,7 +263,7 @@ const MODAL_T = {
   de: {
     title:        'NestBook Pro freischalten',
     subtitle:     'Alles, was Sie brauchen, um Ihre Unterkunft professionell zu führen',
-    price:        'Ab 22 €/Monat — oder £19/Monat',
+    price:        'Ab 16 €/Monat',
     trial:        '30-tägige kostenlose Testphase inklusive',
     tabPro:       'Pro',
     tabMulti:     'Mehrere Unterkünfte',
@@ -340,7 +341,7 @@ const MODAL_T = {
   nl: {
     title:        'NestBook Pro activeren',
     subtitle:     'Alles wat u nodig heeft om uw accommodatie professioneel te beheren',
-    price:        'Vanaf 22 €/maand — of £19/maand',
+    price:        'Vanaf 16 €/maand',
     trial:        '30 dagen gratis proberen inbegrepen',
     tabPro:       'Pro',
     tabMulti:     'Meerdere accommodaties',
@@ -435,7 +436,8 @@ export default function UpgradeModal({ onClose, defaultTab = 'pro' }) {
       const res  = await apiFetch('/api/stripe/create-checkout-session', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ plan }),
+        body:    JSON.stringify({ plan, currency: planPrice(plan, locale).currency }),
+
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Checkout error'); setLoading(false); return; }

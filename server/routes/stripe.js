@@ -97,7 +97,7 @@ if (getWebhookSecrets().length === 0) {
 // Currency follows the user's language (EN → GBP, FR/DE/ES/NL → EUR) — see
 // utils/currency.js. A Stripe customer's currency is locked once they have
 // a subscription, so an existing customer's currency wins over language.
-async function resolveCheckoutCurrency(user, customerId) {
+async function resolveCheckoutCurrency(user, customerId, preferred) {
   if (customerId) {
     try {
       const customer = await stripe.customers.retrieve(customerId);
@@ -106,6 +106,10 @@ async function resolveCheckoutCurrency(user, customerId) {
       console.warn('[stripe] Could not read customer currency, falling back to language:', e.message);
     }
   }
+  // The currency the client actually displayed (derived from the UI language)
+  // wins over the stored users.language, so what the customer saw is what they pay.
+  const p = String(preferred ?? '').toUpperCase();
+  if (p === 'GBP' || p === 'EUR') return p;
   return currencyForLanguage(user?.language);
 }
 
@@ -309,7 +313,7 @@ stripeRouter.post('/sync-session', async (req, res) => {
 // Creates a Stripe Checkout session for the chosen plan, returns the hosted URL.
 // Automatically applies the user's discount code if valid.
 stripeRouter.post('/create-checkout-session', async (req, res) => {
-  const { plan } = req.body;
+  const { plan, currency: requestedCurrency } = req.body;
 
   if (plan !== 'pro' && plan !== 'multi') {
     return res.status(400).json({ error: 'Invalid plan. Choose "pro" or "multi".' });
@@ -318,7 +322,7 @@ stripeRouter.post('/create-checkout-session', async (req, res) => {
   const user = db.prepare('SELECT id, name, email, discount_code, language, stripe_customer_id FROM users WHERE id = ?').get(req.user.userId);
   if (!user) return res.status(404).json({ error: 'User not found.' });
 
-  const currency = await resolveCheckoutCurrency(user, user.stripe_customer_id);
+  const currency = await resolveCheckoutCurrency(user, user.stripe_customer_id, requestedCurrency);
   const priceId  = planPriceId(plan, currency);
   if (!priceId) {
     console.error(`[stripe] No Price ID configured for ${plan}/${currency} (STRIPE_PRICE_${plan.toUpperCase()}_${currency})`);

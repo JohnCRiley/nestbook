@@ -1,4 +1,4 @@
-# Pricing update — Phase A built (logic), Phase B (display surfaces) pending
+# Pricing update — Phase A (logic) + Phase B (display surfaces) DONE; awaiting deploy
 
 Current: Pro £19/€22, Multi £39/€45, Bar & Charges £6/€7 (Pro only), Channel Manager add-on £9/€10 (Pro AND Multi).
 Change coming: new plan prices (TBD) and Channel Manager included free on Multi (Pro still needs `has_channel_manager_addon`).
@@ -45,3 +45,18 @@ New prices: Pro £14/€16, Multi £25/€29, Bar & Charges £4/€5 (Channel ad
 - Phase B: all display surfaces (see locations above) — use client planPrice(); index.html/compare.html/marketing/blogs are static HTML and need their own language switch logic.
 - Migrate John's subscription (Stripe) — see script. Update prod .env. Then deploy (update.sh) only after Phase B.
 - Channel Manager add-on text on landing/compare/help still says add-on on Multi — Phase B.
+
+## Phase B — DONE (committed to main, NOT deployed; deploy Phase A+B together)
+- React: Pricing.jsx (single currency via planPrice(plan, locale); sends currency to checkout so displayed == charged — server: create-checkout-session accepts optional currency, existing Stripe customer's locked currency still wins), UpgradeModal (5 langs, 'From £14' / '16 €' etc.), i18n planProFeatures/planProAddonLine/chargesAddonPrice/channelAddonPrice (EN £, FR/ES/DE/NL €; channelAddonPrice added for FR/ES/DE/NL). EN Multi feature list now has 'Channel Manager included…'. Revenue.jsx PDF literals were already replaced in Phase A.
+- Static pages (blob/dictionary edits, each language its own single currency): index.html (blob + meta + JSON-LD 14/25 GBP + pricing cards now data-i18n pricing.pro.price/multi.price), compare.html (headers, mobile cards, B&C row, detail.trial, new compare.pro.price/multi.price keys, 5 langs), how-it-works.html (blob + statics; p2/p3 amounts now data-i18n so they translate), calculator.html, help.html (blob 5 langs; also fixed old Multi £38 -> £25), marketing/compare-plans.html (EN, £ only).
+- Annual figure: 14 x 12 = £168 (EUR 16 x 12 = €192 in FR/ES/DE/NL). nbFlat/NB_FLAT constants updated; how-it-works default calc verified by running its JS: saves £732/yr vs Booking.com, £762 vs Airbnb, £61/mo, break-even 4 bookings; static HTML defaults match.
+- landing-ai-knowledge.md: all prices, currency-by-language rule, Channel Manager add-on section (live; included on Multi), 'not built yet' notes removed, VAT-section prices. schema.js seeded outreach email templates 'from £14' (only affects fresh DBs — existing email_templates rows are NOT rewritten).
+- PhoneOutreach.jsx call-script £19 -> £14. Unreferenced extra-language JSONs (zh-CN, vi, th, ms, ja, id) + en-translations.json: £19 -> £14 (unused/dead, trivial).
+- Dead scripts: add_bc_marketing.mjs, fix_bc_tiles.mjs — one-off HTML patchers (23 Jul 2026), no references; NOT updated, and must never be re-run (they would re-insert old £6/£19 strings).
+- NOT touched (per John): all print flyers/handouts/feather-flag, blog posts.
+
+## Open items needing John's wording (FR/ES/DE/NL not drafted)
+- Multi feature bullet 'Channel Manager included…' in i18n planMultiFeatures (fr/es/de/nl) and in UpgradeModal / index.html pricing.multi / compare.html (no CM row, deferred).
+- channelIncludedInPlan badge ('Included in your Multi plan') + the other channelAddon* Billing strings are EN-only.
+- Landing 'channelManager.caption' (index.html blob, all 5 langs) still says 'Add-on available on the Pro and Multi plans' — price now correct but wording is wrong for Multi (included).
+- Pricing.jsx footnote planAdaptivePricingNote ('Price shown in your local currency at checkout') is now slightly stale; wording decision.

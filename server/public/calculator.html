@@ -458,8 +458,8 @@ function checkPw() {
             </div></td>
             <td><span id="tot-bookings-nb" class="val-neu">—</span></td>
             <td><span id="tot-revenue-nb"  class="val-neu">—</span></td>
-            <td><span style="font-size:12px;font-weight:800;color:var(--green);">£228/yr flat</span>
-                <span class="val-sub">£19/month</span></td>
+            <td><span style="font-size:12px;font-weight:800;color:var(--green);">£168/yr flat</span>
+                <span class="val-sub">£14/month</span></td>
             <td><span id="nb-per-booking" class="val-good">—</span>
                 <span class="val-sub">flat fee only</span></td>
             <td><span id="nb-per-week"    class="val-good">—</span></td>
@@ -481,7 +481,7 @@ function checkPw() {
   </div>
 
   <p class="disclaimer">
-    Commission rates based on publicly available platform information. Airbnb introduced a 15.5% host-only fee in December 2025. Booking.com 15–18%, VRBO 8% host + ~10% guest fee. Rates may vary by region — check each platform for current terms. NestBook Pro £228/year based on £19/month.
+    Commission rates based on publicly available platform information. Airbnb introduced a 15.5% host-only fee in December 2025. Booking.com 15–18%, VRBO 8% host + ~10% guest fee. Rates may vary by region — check each platform for current terms. NestBook Pro £168/year based on £14/month.
   </p>
 
 </div>
@@ -491,7 +491,7 @@ function checkPw() {
 var pcts = { bc: 40, ab: 30, vr: 0, dir: 30 };
 var KEYS = ['bc','ab','vr','dir'];
 var RATES = { bc: 0.15, ab: 0.155, vr: 0.08, dir: 0 };
-var NB_FLAT = 228;
+var NB_FLAT = 168; // £14/month x 12
 var AVG_STAY = 2;
 
 function fmt(n) {
@@ -668,10 +668,10 @@ function calc() {
     sub.textContent = "That's " + fmt(saving / 12) + "/month — or " +
                       fmt(savingPerWk) + " every week — back in your pocket.";
   } else if (pcts.dir === 100) {
-    hl.textContent  = 'You already take 100% direct bookings — NestBook costs just £228/year flat';
+    hl.textContent  = 'You already take 100% direct bookings — NestBook costs just £168/year flat';
     sub.textContent = 'Zero commission on every booking. That\'s ' + fmt(nbPerBkg) + ' per booking.';
   } else {
-    hl.textContent  = 'NestBook Pro is £228/year flat — no commission ever';
+    hl.textContent  = 'NestBook Pro is £168/year flat — no commission ever';
     sub.textContent = 'Every booking you move from platforms to direct saves you the full commission fee.';
   }
 }
