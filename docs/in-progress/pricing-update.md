@@ -71,3 +71,11 @@ New prices: Pro £14/€16, Multi £25/€29, Bar & Charges £4/€5 (Channel ad
 ## Starter heading fix — DONE (committed, NOT deployed)
 - Pricing.jsx Starter tile heading was hardcoded 'Free' + translated '/suffix'. Now new i18n key planStarterPrice (EN Free / FR Gratuit / ES Gratis / DE Kostenlos / NL Gratis), suffix removed for the free tile only (Pro/Multi keep '/per month'). Verified live in all 5 languages (property.locale switched via API, restored to en). No other hardcoded-English-word patterns found in Pricing.jsx or UpgradeModal.jsx.
 - STILL OPEN (no translations have been supplied — never applied): the 11 channelAddon* keys (Title, Desc, Add, Adding, Active, Remove, Removing, RemoveConfirm, Activated, Removed, GenericError) are EN-only; planAdaptivePricingNote FR/ES/DE/NL still carry the OLD 'price shown in your local currency at checkout' wording.
+
+## Final translation batch — DONE (John-supplied wording, committed, NOT deployed)
+- 11 channelAddon* keys now translated in FR/ES/DE/NL (NL title 'Channel Manager add-on' is identical to EN by design).
+- planAdaptivePricingNote FR/ES/DE/NL updated to match the new EN sentence.
+- UpgradeModal 'Channel Manager included' entry now has a description in all 5 languages.
+- Verified live (dev stack, demo property locale + dev plan switcher, restored to multi/en afterwards): Billing add-on card title/desc/price/add button, active badge/remove button and remove-confirm modal in FR/ES/DE/NL; Pricing footnote in all 5; UpgradeModal Multi tab entry + description in all 5.
+- Not visible in UI checks (transient, verified present in LANGS): Adding…/Removing… and the Activated/Removed/GenericError toasts.
+- All planned translation items are now complete. Remaining before go-live: production .env price IDs, then deploy Phase A+B together.

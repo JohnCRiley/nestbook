@@ -101,7 +101,8 @@ const MODAL_T = {
         desc: 'Give your bar or restaurant staff their own login to add room charges — without access to bookings, guest data or financial reports. They see only what they need.' },
       { icon: '📸', name: '10 Photos per Room',
         desc: 'Upload up to 10 photos per room across all your properties. The more visual your listing, the more confident guests feel — and the fewer questions you get before they book.' },
-      { icon: '🌐', name: 'Channel Manager included' },
+      { icon: '🌐', name: 'Channel Manager included',
+        desc: 'Sync automatically with Booking.com, Airbnb and more — no extra cost on Multi.' },
     ],
   },
 
@@ -180,7 +181,8 @@ const MODAL_T = {
         desc: 'Donnez à votre personnel de bar ou de restaurant leur propre accès pour ajouter des extras en chambre — sans accès aux réservations, données clients ou rapports financiers.' },
       { icon: '📸', name: '10 photos par chambre',
         desc: 'Téléchargez jusqu\'à 10 photos par chambre dans tous vos hébergements. Plus votre annonce est visuelle, plus les voyageurs se sentent en confiance — et moins vous recevez de questions.' },
-      { icon: '🌐', name: 'Channel Manager inclus' },
+      { icon: '🌐', name: 'Channel Manager inclus',
+        desc: 'Synchronisez automatiquement avec Booking.com, Airbnb et bien d\'autres — sans surcoût sur l\'offre Multi.' },
     ],
   },
 
@@ -259,7 +261,8 @@ const MODAL_T = {
         desc: 'Dé a su personal de bar o restaurante su propio acceso para añadir cargos — sin acceso a reservas, datos de huéspedes ni informes financieros. Verán únicamente lo que necesitan.' },
       { icon: '📸', name: '10 fotos por habitación',
         desc: 'Suba hasta 10 fotos por habitación en todas sus propiedades. Cuanto más visual sea su anuncio, más seguros se sentirán los huéspedes antes de reservar — y menos preguntas recibirá.' },
-      { icon: '🌐', name: 'Channel Manager incluido' },
+      { icon: '🌐', name: 'Channel Manager incluido',
+        desc: 'Sincroniza automáticamente con Booking.com, Airbnb y más — sin coste adicional en el plan Multi.' },
     ],
   },
 
@@ -338,7 +341,8 @@ const MODAL_T = {
         desc: 'Geben Sie Ihrem Bar- oder Restaurantpersonal eigene Zugangsdaten zum Erfassen von Extras — ohne Zugriff auf Buchungen, Gästedaten oder Finanzberichte.' },
       { icon: '📸', name: '10 Fotos pro Zimmer',
         desc: 'Laden Sie bis zu 10 Fotos pro Zimmer für alle Ihre Unterkünfte hoch. Je visueller Ihr Angebot, desto mehr Vertrauen bei den Gästen — und desto weniger Rückfragen vor der Buchung.' },
-      { icon: '🌐', name: 'Channel Manager inklusive' },
+      { icon: '🌐', name: 'Channel Manager inklusive',
+        desc: 'Synchronisieren Sie automatisch mit Booking.com, Airbnb und mehr — ohne Aufpreis im Multi-Plan.' },
     ],
   },
 
@@ -417,7 +421,8 @@ const MODAL_T = {
         desc: 'Geef uw bar- of restaurantpersoneel hun eigen login om kamerrekeningen toe te voegen — zonder toegang tot boekingen, gastgegevens of financiële rapporten. Ze zien alleen wat ze nodig hebben.' },
       { icon: '📸', name: '10 foto\'s per kamer',
         desc: 'Upload maximaal 10 foto\'s per kamer voor al uw accommodaties. Hoe visueler uw aanbieding, hoe meer vertrouwen gasten hebben voor het boeken — en hoe minder vragen u ontvangt.' },
-      { icon: '🌐', name: 'Channel Manager inbegrepen' },
+      { icon: '🌐', name: 'Channel Manager inbegrepen',
+        desc: 'Synchroniseer automatisch met Booking.com, Airbnb en meer — zonder extra kosten bij Multi.' },
     ],
   },
 };
